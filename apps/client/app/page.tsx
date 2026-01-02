@@ -1002,12 +1002,31 @@ const Pricing = () => {
       }
 
       // Parse features - handle both JSON string and array
+      // Features can be: array of strings, array of objects with 'name' property, or JSON string
       let featuresArray: string[] = [];
       if (Array.isArray(plan.features)) {
-        featuresArray = plan.features;
+        // If array of objects, extract 'name' property; if array of strings, use directly
+        featuresArray = plan.features.map((feature: any) => {
+          if (typeof feature === 'string') {
+            return feature;
+          } else if (feature && typeof feature === 'object' && feature.name) {
+            return feature.name;
+          }
+          return String(feature);
+        });
       } else if (typeof plan.features === 'string') {
         try {
-          featuresArray = JSON.parse(plan.features);
+          const parsed = JSON.parse(plan.features);
+          if (Array.isArray(parsed)) {
+            featuresArray = parsed.map((feature: any) => {
+              if (typeof feature === 'string') {
+                return feature;
+              } else if (feature && typeof feature === 'object' && feature.name) {
+                return feature.name;
+              }
+              return String(feature);
+            });
+          }
         } catch (e) {
           console.warn('Failed to parse features JSON:', e);
           featuresArray = [];
