@@ -1521,7 +1521,7 @@ export const simplifiedOrders = {
           { OR: searchConditions }
         ];
       } else {
-        where.OR = searchConditions;
+      where.OR = searchConditions;
       }
     } else if (outletFilter) {
       // If no search but we have outlet filter, apply it directly

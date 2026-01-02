@@ -8,7 +8,8 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@rentalshop/utils/client": ["../../utils/src/client"]
     }
   },
   "include": ["src/**/*"],

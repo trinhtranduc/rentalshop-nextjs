@@ -16,7 +16,7 @@
     "webAccess": "Truy cập Web",
     "mobileAccess": "Truy cập Mobile",
     "webAccessDescription": "Truy cập qua trình duyệt web (Máy tính, Máy tính bảng)",
-    "mobileAccessDescription": "Truy cập qua ứng dụng di động (iOS, Android)",
+    "mobileAccessDescription": "Truy cập qua ứng dụng di động (iOS)",
     "noPlatformAccessWarning": "Cảnh báo: Gói này không có nền tảng nào được kích hoạt. Người dùng sẽ không thể truy cập hệ thống.",
     "allPlatformsEnabled": "Gói này cho phép truy cập từ cả web và mobile.",
     "selectPlatforms": "Chọn các nền tảng mà người dùng có thể truy cập với gói này",

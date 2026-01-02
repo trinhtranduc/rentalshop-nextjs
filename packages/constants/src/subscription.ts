@@ -217,9 +217,7 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Basic inventory management', description: 'Track products and stock levels', included: true },
       { name: 'Customer management', description: 'Store customer information and history', included: true },
       { name: 'Order processing', description: 'Create and manage rental orders', included: true },
-      { name: 'Basic reporting', description: 'View sales and rental reports', included: true },
-      { name: 'Public product catalog', description: 'Share product list publicly with customers', included: true },
-      { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true }
+      { name: 'Basic reporting', description: 'View sales and rental reports', included: true }
     ],
     platform: 'mobile',
     publicProductCheck: true,
@@ -250,8 +248,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Advanced reporting & analytics', description: 'Detailed business insights and trends', included: true },
       { name: 'Inventory forecasting', description: 'Predict demand and optimize stock levels', included: true },
       { name: 'Online payments', description: 'Accept online payments and deposits', included: true },
-      { name: 'API integration', description: 'Connect with third-party tools', included: true },
-      { name: 'Team collaboration tools', description: 'Manage team permissions and workflows', included: true },
+      { name: 'Public product catalog', description: 'Share product list publicly with customers', included: true },
+      { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true },
       { name: 'Priority support', description: 'Fast response times for support', included: true }
     ],
     platform: 'mobile+web',
