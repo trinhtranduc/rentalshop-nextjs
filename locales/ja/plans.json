@@ -16,7 +16,7 @@
     "webAccess": "Webアクセス",
     "mobileAccess": "モバイルアクセス",
     "webAccessDescription": "Webブラウザ経由のアクセス（デスクトップ、タブレット）",
-    "mobileAccessDescription": "モバイルアプリ経由のアクセス（iOS、Android）",
+    "mobileAccessDescription": "モバイルアプリ経由のアクセス（iOS）",
     "noPlatformAccessWarning": "警告：このプランにはプラットフォームアクセスが有効になっていません。ユーザーはシステムにアクセスできません。",
     "allPlatformsEnabled": "このプランはWebとモバイルプラットフォームの両方からのアクセスを許可します。",
     "selectPlatforms": "このプランでユーザーがアクセスできるプラットフォームを選択",

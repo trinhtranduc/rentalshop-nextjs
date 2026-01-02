@@ -16,7 +16,7 @@
     "webAccess": "Web访问",
     "mobileAccess": "移动端访问",
     "webAccessDescription": "通过Web浏览器访问（桌面、平板）",
-    "mobileAccessDescription": "通过移动应用访问（iOS、Android）",
+    "mobileAccessDescription": "通过移动应用访问（iOS）",
     "noPlatformAccessWarning": "警告：此套餐未启用任何平台访问。用户将无法访问系统。",
     "allPlatformsEnabled": "此套餐允许从Web和移动平台访问。",
     "selectPlatforms": "选择用户可以使用此套餐访问的平台",

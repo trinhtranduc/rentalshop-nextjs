@@ -16,7 +16,7 @@
     "webAccess": "웹 액세스",
     "mobileAccess": "모바일 액세스",
     "webAccessDescription": "웹 브라우저를 통한 액세스 (데스크톱, 태블릿)",
-    "mobileAccessDescription": "모바일 앱을 통한 액세스 (iOS, Android)",
+    "mobileAccessDescription": "모바일 앱을 통한 액세스 (iOS)",
     "noPlatformAccessWarning": "경고: 이 플랜에는 플랫폼 액세스가 활성화되어 있지 않습니다. 사용자는 시스템에 액세스할 수 없습니다.",
     "allPlatformsEnabled": "이 플랜은 웹 및 모바일 플랫폼 모두에서 액세스를 허용합니다.",
     "selectPlatforms": "이 플랜으로 사용자가 액세스할 수 있는 플랫폼 선택",
