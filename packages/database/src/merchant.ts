@@ -264,9 +264,10 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  */
 export async function create(data: MerchantCreateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  // @ts-expect-error - referredByMerchantId field will be available after Prisma Client regeneration
+  // Cast rest to any to bypass TypeScript checking for referredByMerchantId
+  // This field will be properly typed after Prisma Client regeneration
   const createData: any = {
-    ...rest,
+    ...(rest as any),
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     createdAt: new Date(),
@@ -286,9 +287,10 @@ export async function create(data: MerchantCreateData) {
  */
 export async function update(id: number, data: MerchantUpdateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  // @ts-expect-error - referredByMerchantId field will be available after Prisma Client regeneration
+  // Cast rest to any to bypass TypeScript checking for referredByMerchantId
+  // This field will be properly typed after Prisma Client regeneration
   const updateData: any = {
-    ...rest,
+    ...(rest as any),
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     updatedAt: new Date()
