@@ -28,12 +28,25 @@ if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
   exit 1
 fi
 
+# Check if Railway CLI is available
+if command -v railway &> /dev/null && [ -n "$RAILWAY_ENVIRONMENT" ]; then
+  echo "✅ Running in Railway environment - DATABASE_URL will be auto-injected"
+  USE_RAILWAY_CLI=false
+elif command -v railway &> /dev/null; then
+  echo "🔧 Railway CLI detected - Using Railway to run migration..."
+  echo ""
+  railway run --service apis --environment production \
+    npx prisma migrate deploy --schema=./prisma/schema.prisma
+  exit $?
+fi
+
 # Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
   echo "❌ Error: DATABASE_URL is not set"
   echo ""
-  echo "Recommended: Use Railway CLI for security"
-  echo "  railway run --service apis --environment production npx prisma migrate deploy --schema=./prisma/schema.prisma"
+  echo "💡 Recommended: Use Railway CLI (Auto-injects DATABASE_URL)"
+  echo "  railway run --service apis --environment production \\"
+  echo "    npx prisma migrate deploy --schema=./prisma/schema.prisma"
   echo ""
   exit 1
 fi
