@@ -264,14 +264,14 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  */
 export async function create(data: MerchantCreateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  // Build data object with any type to bypass TypeScript checking
-  // until Prisma Client is regenerated with new schema
-  const createData: any = Object.assign({}, rest, {
+  // @ts-expect-error - referredByMerchantId field will be available after Prisma Client regeneration
+  const createData: any = {
+    ...rest,
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     createdAt: new Date(),
     updatedAt: new Date()
-  });
+  };
   return await prisma.merchant.create({
     data: createData,
     include: {
@@ -286,13 +286,13 @@ export async function create(data: MerchantCreateData) {
  */
 export async function update(id: number, data: MerchantUpdateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  // Build data object with any type to bypass TypeScript checking
-  // until Prisma Client is regenerated with new schema
-  const updateData: any = Object.assign({}, rest, {
+  // @ts-expect-error - referredByMerchantId field will be available after Prisma Client regeneration
+  const updateData: any = {
+    ...rest,
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     updatedAt: new Date()
-  });
+  };
   return await prisma.merchant.update({
     where: { id },
     data: updateData,
