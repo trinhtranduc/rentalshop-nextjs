@@ -271,7 +271,7 @@ export async function create(data: MerchantCreateData) {
       ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
       createdAt: new Date(),
       updatedAt: new Date()
-    },
+    } as any, // Type assertion needed until Prisma Client is regenerated with new schema
     include: {
       Plan: true,
       subscription: true
@@ -283,14 +283,15 @@ export async function create(data: MerchantCreateData) {
  * Update merchant
  */
 export async function update(id: number, data: MerchantUpdateData) {
-  const { planId, ...rest } = data;
+  const { planId, referredByMerchantId, ...rest } = data;
   return await prisma.merchant.update({
     where: { id },
     data: {
       ...rest,
       ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
+      ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
       updatedAt: new Date()
-    },
+    } as any, // Type assertion needed until Prisma Client is regenerated with new schema
     include: {
       Plan: true,
       subscription: true
