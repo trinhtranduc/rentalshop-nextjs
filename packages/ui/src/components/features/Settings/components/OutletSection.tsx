@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardHeader,
@@ -9,6 +9,8 @@ import {
   Input,
   Label
 } from '@rentalshop/ui';
+import { CheckCircle2, Copy, Users } from 'lucide-react';
+import { merchantsApi } from '@rentalshop/utils';
 import { useSettingsTranslations, usePermissions } from '@rentalshop/hooks';
 
 // ============================================================================
@@ -52,6 +54,50 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
   const t = useSettingsTranslations();
   // ✅ Use permissions hook to check if user can manage outlets
   const { canManageOutlets, hasPermission, permissions } = usePermissions();
+  
+  // Merchant data state for referral code
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const fetchingRef = useRef(false);
+  const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+  
+  // Fetch merchant data if user has merchantId but no full merchant object
+  useEffect(() => {
+    const fetchMerchantData = async () => {
+      if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
+        fetchingRef.current = true;
+        setLoadingMerchant(true);
+        try {
+          const response = await merchantsApi.getMerchantById(user.merchantId);
+          if (response.success && response.data) {
+            setMerchantData(response.data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch merchant data:', error);
+        } finally {
+          setLoadingMerchant(false);
+          fetchingRef.current = false;
+        }
+      }
+    };
+    
+    fetchMerchantData();
+  }, [user?.merchantId, user?.merchant]);
+  
+  // Get merchant (use user.merchant if available, otherwise use fetched merchantData)
+  const merchant = user?.merchant || merchantData;
+  
+  // Copy referral code to clipboard
+  const handleCopyReferralCode = async () => {
+    if (!merchant?.tenantKey) return;
+    try {
+      await navigator.clipboard.writeText(merchant.tenantKey);
+      setCopiedReferralCode(true);
+      setTimeout(() => setCopiedReferralCode(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy referral code:', error);
+    }
+  };
   
   // Debug logging for permissions
   console.log('🔍 OutletSection - User:', user);
@@ -257,6 +303,52 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Referral Code Card */}
+      {merchant?.tenantKey ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-green-700" />
+              <h3 className="text-lg font-semibold text-gray-900">{t('merchant.referralCode') || 'Referral Code'}</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              {t('merchant.referralCodeDesc') || 'Share this code with others to refer them to our platform. You will receive commission for successful referrals.'}
+            </p>
+
+            <div className="space-y-4">
+              {/* Referral Code Display - Clickable */}
+              <div className="flex items-center gap-2">
+                <Input
+                  value={merchant.tenantKey}
+                  readOnly
+                  onClick={handleCopyReferralCode}
+                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                  title="Click to copy referral code"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyReferralCode}
+                  className="h-10 whitespace-nowrap"
+                >
+                  {copiedReferralCode ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {t('merchant.copied') || 'Copied!'}
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('merchant.copy') || 'Copy'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 };
