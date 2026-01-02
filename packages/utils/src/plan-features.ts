@@ -115,6 +115,7 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
     'multioutletmanagement': 'features.multiOutletManagement',
     'advancedanalytics': 'features.advancedAnalytics',
     'whitelabel': 'features.whiteLabel',
+    'whitelabelsolution': 'features.white-label solution',
     // New features
     'allbasicfeatures': 'features.allBasicFeatures',
     'webdashboardaccess': 'features.webDashboardAccess',

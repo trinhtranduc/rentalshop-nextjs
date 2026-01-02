@@ -1019,7 +1019,8 @@ const Pricing = () => {
         'inventoryForecasting',
         'onlinePayments',
         'customIntegrations',
-        'teamCollaborationTools'
+        'teamCollaborationTools',
+        'apiIntegration'
       ];
       
       const filteredFeatures = featuresArray.filter(feature => {
