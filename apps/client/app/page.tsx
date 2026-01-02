@@ -1023,6 +1023,14 @@ const Pricing = () => {
         'apiIntegration'
       ];
       
+      // Hide publicProductCatalog and productPublicCheck from Basic plan only
+      const currentPlanNameLower = (plan.name || '').toLowerCase();
+      const isBasicPlan = currentPlanNameLower.includes('basic');
+      
+      if (isBasicPlan) {
+        excludedFeatures.push('publicProductCatalog', 'productPublicCheck');
+      }
+      
       const filteredFeatures = featuresArray.filter(feature => {
         const normalizedFeature = feature.toLowerCase()
           .replace(/\s+/g, '')
