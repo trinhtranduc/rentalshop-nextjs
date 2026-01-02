@@ -690,6 +690,13 @@ const Stats = () => {
 
 const Testimonials = () => {
   const t = useTranslations('landing.testimonials')
+  const tItems = useTranslations('landing.testimonials.items')
+  
+  // Get first letter of name for avatar
+  const getInitial = (name: string) => {
+    return name.charAt(0).toUpperCase();
+  };
+  
   return (
     <section className="py-32 bg-gradient-to-b from-bg-card to-bg-secondary relative overflow-hidden" aria-label="Testimonials section">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -720,15 +727,15 @@ const Testimonials = () => {
                 ))}
               </div>
               <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
+                "{tItems('john.quote')}"
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-br from-brand-primary to-action-primary rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  J
+                  {getInitial(tItems('john.name'))}
                 </div>
                 <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">John Smith</div>
-                  <div className="text-sm text-text-tertiary">Rental Shop Owner</div>
+                  <div className="font-bold text-text-primary text-lg">{tItems('john.name')}</div>
+                  <div className="text-sm text-text-tertiary">{tItems('john.role')}</div>
                 </div>
               </div>
             </div>
@@ -743,15 +750,15 @@ const Testimonials = () => {
                 ))}
               </div>
               <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "The order management feature is very convenient. I can track all orders easily and manage my inventory effectively."
+                "{tItems('sarah.quote')}"
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-br from-action-success to-emerald-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  S
+                  {getInitial(tItems('sarah.name'))}
                 </div>
                 <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">Sarah Johnson</div>
-                  <div className="text-sm text-text-tertiary">Shop Manager</div>
+                  <div className="font-bold text-text-primary text-lg">{tItems('sarah.name')}</div>
+                  <div className="text-sm text-text-tertiary">{tItems('sarah.role')}</div>
                 </div>
               </div>
             </div>
@@ -766,15 +773,15 @@ const Testimonials = () => {
                 ))}
               </div>
               <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "The mobile app is very convenient. I can manage my shop from anywhere and the interface is intuitive."
+                "{tItems('mike.quote')}"
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-br from-action-primary to-blue-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  M
+                  {getInitial(tItems('mike.name'))}
                 </div>
                 <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">Mike Wilson</div>
-                  <div className="text-sm text-text-tertiary">Business Owner</div>
+                  <div className="font-bold text-text-primary text-lg">{tItems('mike.name')}</div>
+                  <div className="text-sm text-text-tertiary">{tItems('mike.role')}</div>
                 </div>
               </div>
             </div>
