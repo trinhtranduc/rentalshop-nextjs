@@ -68,6 +68,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         taxId: userProfile.merchant.taxId,
         website: userProfile.merchant.website,
         description: userProfile.merchant.description,
+        tenantKey: userProfile.merchant.tenantKey, // Include tenantKey for referral code
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
         totalRevenue: userProfile.merchant.totalRevenue,

@@ -413,6 +413,7 @@ export const simplifiedUsers = {
             taxId: true,
             website: true,
             description: true,
+            tenantKey: true, // Include tenantKey for referral code
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status
