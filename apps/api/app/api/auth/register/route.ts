@@ -120,12 +120,30 @@ export async function POST(request: NextRequest) {
           console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
         }
 
+        // 2.5. Handle referral code if provided
+        let referredByMerchantId: number | undefined;
+        if (validatedData.referralCode && validatedData.referralCode.trim().length > 0) {
+          const referralCode = validatedData.referralCode.trim();
+          const referringMerchant = await tx.merchant.findUnique({
+            where: { tenantKey: referralCode },
+            select: { id: true, name: true }
+          });
+          
+          if (referringMerchant) {
+            referredByMerchantId = referringMerchant.id;
+            console.log(`✅ Referral code found: "${referralCode}" -> Merchant ID: ${referringMerchant.id} (${referringMerchant.name})`);
+          } else {
+            console.log(`⚠️ Referral code "${referralCode}" not found, continuing without referral`);
+          }
+        }
+
         // 3. Create merchant with business configuration
         console.log('📝 Step 1: Creating merchant with data:', {
           name: validatedData.businessName,
           email: validatedData.email,
           phone: validatedData.phone,
-          tenantKey
+          tenantKey,
+          referredByMerchantId
         });
         
         // Create merchant with retry logic for tenant key uniqueness
@@ -150,6 +168,8 @@ export async function POST(request: NextRequest) {
             country: validatedData.country,
             businessType: validatedData.businessType || 'GENERAL',
             pricingType: validatedData.pricingType || 'FIXED',
+            // Referral tracking
+            referredByMerchantId: referredByMerchantId || undefined,
             // Lock pricing configuration after registration using constants
             pricingConfig: JSON.stringify(
               validatedData.businessType && validatedData.pricingType
@@ -420,7 +440,7 @@ export async function POST(request: NextRequest) {
             firstName: firstName,
             lastName: lastName,
             phone: validatedData.phone,
-            role: validatedData.role || 'CLIENT',
+            role: validatedData.role || USER_ROLE.OUTLET_STAFF,
             emailVerified: false,
             emailVerifiedAt: null
           }

@@ -93,6 +93,8 @@
     "selected": "Selected",
     "selectCurrency": "Select Currency",
     "savingCurrency": "Updating currency...",
+    "referralCode": "Referral Code",
+    "referralCodeDesc": "Share this code with others to refer them to our platform. You will receive commission for successful referrals.",
     "publicProductLink": "Public Product Link",
     "publicProductLinkDesc": "Share this link with your customers so they can browse your products. This link is public and doesn't require login.",
     "copy": "Copy Link",

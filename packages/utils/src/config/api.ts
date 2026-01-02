@@ -285,6 +285,9 @@ export interface ApiUrls {
     calendar: {
       orders: string;
     };
+    referrals: {
+      list: string;
+    };
   }
 
 /**
@@ -768,6 +771,9 @@ function createApiUrls(): ApiUrls {
     },
     calendar: {
       orders: `${base}/api/calendar/orders`,
+    },
+    referrals: {
+      list: `${base}/api/referrals`,
     },
   };
 }

@@ -11,7 +11,7 @@ import {
   Badge,
   SearchableCountrySelect
 } from '@rentalshop/ui';
-import { CheckCircle2, Copy, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Users } from 'lucide-react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useLocale } from 'next-intl';
 import { 
@@ -73,7 +73,6 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   const { canManageMerchants } = usePermissions();
   const [merchantData, setMerchantData] = useState<any>(null);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
-  const [copied, setCopied] = useState(false);
   const fetchingRef = useRef(false);
   const currencyUpdateRef = useRef<string | null>(null); // Track last currency update to prevent loops
   
@@ -183,15 +182,31 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   
   const publicProductLink = getPublicProductLink();
   
+  // Copy states
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+  
   // Copy link to clipboard
   const handleCopyLink = async () => {
     if (!publicProductLink) return;
     try {
       await navigator.clipboard.writeText(publicProductLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch (error) {
       console.error('Failed to copy link:', error);
+    }
+  };
+  
+  // Copy referral code to clipboard
+  const handleCopyReferralCode = async () => {
+    if (!merchant?.tenantKey) return;
+    try {
+      await navigator.clipboard.writeText(merchant.tenantKey);
+      setCopiedReferralCode(true);
+      setTimeout(() => setCopiedReferralCode(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy referral code:', error);
     }
   };
   
@@ -488,6 +503,52 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
         </CardContent>
       </Card>
 
+      {/* Referral Code Card */}
+      {merchant?.tenantKey ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-green-700" />
+              <h3 className="text-lg font-semibold text-gray-900">{t('merchant.referralCode') || 'Referral Code'}</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              {t('merchant.referralCodeDesc') || 'Share this code with others to refer them to our platform. You will receive commission for successful referrals.'}
+            </p>
+
+            <div className="space-y-4">
+              {/* Referral Code Display - Clickable */}
+              <div className="flex items-center gap-2">
+                <Input
+                  value={merchant.tenantKey}
+                  readOnly
+                  onClick={handleCopyReferralCode}
+                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                  title="Click to copy referral code"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyReferralCode}
+                  className="h-10 whitespace-nowrap"
+                >
+                  {copiedReferralCode ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {t('merchant.copied') || 'Copied!'}
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('merchant.copy') || 'Copy'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Public Product Link Card */}
       {merchant?.tenantKey ? (
       <Card>
@@ -516,7 +577,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   onClick={handleCopyLink}
                   className="h-10 whitespace-nowrap"
                 >
-                  {copied ? (
+                  {copiedLink ? (
                     <>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
                       {t('merchant.copied')}

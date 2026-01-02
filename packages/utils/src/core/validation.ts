@@ -51,6 +51,8 @@ export const registerSchema = z.object({
   ] as [string, ...string[]]).optional(),
   // Optional tenant key (domain-like identifier) for future multi-tenant routing
   tenantKey: z.string().min(1).max(50).regex(/^[a-z0-9\-]+$/i, 'Tenant key must be alphanumeric').optional(),
+  // Optional referral code (tenantKey of referring merchant)
+  referralCode: z.string().min(1).optional(),
   // Business configuration (optional - defaults will be used)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
