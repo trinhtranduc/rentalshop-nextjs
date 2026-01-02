@@ -83,7 +83,24 @@
   },
   "testimonials": {
     "title": "What Our Customers Say",
-    "description": "Join hundreds of satisfied rental business owners"
+    "description": "Join hundreds of satisfied rental business owners",
+    "items": {
+      "john": {
+        "quote": "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive.",
+        "name": "John Smith",
+        "role": "Rental Shop Owner"
+      },
+      "sarah": {
+        "quote": "The order management feature is very convenient. I can track all orders easily and manage my inventory effectively.",
+        "name": "Sarah Johnson",
+        "role": "Shop Manager"
+      },
+      "mike": {
+        "quote": "The mobile app is very convenient. I can manage my shop from anywhere and the interface is intuitive.",
+        "name": "Mike Wilson",
+        "role": "Business Owner"
+      }
+    }
   },
   "cta": {
     "title": "Ready to Get Started?",
