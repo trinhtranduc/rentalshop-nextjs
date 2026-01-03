@@ -6,12 +6,12 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../../ui/table';
 import { CheckCircle, XCircle, AlertCircle, Edit2, X } from 'lucide-react';
-import { cn } from '../../lib/cn';
-import type { ValidationError } from '@rentalshop/utils';
+import { cn } from '@rentalshop/ui';
+import type { ImportValidationError } from '@rentalshop/utils';
 
 export interface ImportPreviewTableProps<T> {
   data: T[];
-  errors: ValidationError[];
+  errors: ImportValidationError[];
   columns: Array<{
     key: keyof T | string;
     label: string;
@@ -44,11 +44,11 @@ export function ImportPreviewTable<T extends Record<string, any>>({
     setEditedData(data);
   }, [data]);
 
-  const getRowErrors = (rowIndex: number): ValidationError[] => {
+  const getRowErrors = (rowIndex: number): ImportValidationError[] => {
     return errors.filter(error => error.row === rowIndex + 2); // +2 because Excel row 1 is header, data starts at row 2
   };
 
-  const getFieldError = (rowIndex: number, field: string): ValidationError | undefined => {
+  const getFieldError = (rowIndex: number, field: string): ImportValidationError | undefined => {
     return errors.find(error => error.row === rowIndex + 2 && error.field === field);
   };
 
@@ -227,7 +227,7 @@ export function ImportPreviewTable<T extends Record<string, any>>({
                           {fieldError && (
                             <div className="text-xs text-red-600 mt-1 flex items-center gap-1">
                               <AlertCircle className="w-3 h-3" />
-                              {fieldError.message}
+                              {(fieldError as any).message || (fieldError as any).error}
                             </div>
                           )}
                         </TableCell>
@@ -250,7 +250,7 @@ export function ImportPreviewTable<T extends Record<string, any>>({
             <div className="text-sm text-red-700 space-y-1">
               {errors.slice(0, 10).map((error, index) => (
                 <div key={index}>
-                  Row {error.row}: {error.field} - {error.message}
+                  Row {error.row}: {error.field} - {(error as any).message || (error as any).error}
                 </div>
               ))}
               {errors.length > 10 && (

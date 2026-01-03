@@ -42,6 +42,7 @@
     "db:fix-sequences": "tsx scripts/fix-database-sequences.ts",
     "db:fix-sequences:dev": "NODE_ENV=development tsx scripts/fix-database-sequences.ts --env development",
     "db:fix-sequences:prod": "NODE_ENV=production tsx scripts/fix-database-sequences.ts --env production",
+    "db:update-tenant-keys": "tsx scripts/update-merchant-tenant-keys.ts",
     "audit:error-translations": "node scripts/audit-error-translations.js"
   },
   "devDependencies": {
