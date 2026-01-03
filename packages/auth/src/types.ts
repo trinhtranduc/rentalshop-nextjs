@@ -28,11 +28,21 @@ export interface AuthUser {
     id: number;
     name: string;
     description?: string;
+    tenantKey?: string; // Include tenantKey for referral link
+    referralLink?: string; // Referral code (same as tenantKey)
+    publicProductLink?: string; // Public product link URL
   };
   outlet?: {
     id: number;
     name: string;
     address?: string;
+    merchant?: {
+      id: number;
+      name: string;
+      tenantKey?: string; // Include tenantKey for referral link
+      referralLink?: string; // Referral code (same as tenantKey)
+      publicProductLink?: string; // Public product link URL
+    };
     defaultBankAccount?: {
       id: number;
       accountHolderName: string;

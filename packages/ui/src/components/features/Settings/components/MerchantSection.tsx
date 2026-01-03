@@ -19,7 +19,7 @@ import {
   getPricingTypeDescription,
   COUNTRIES
 } from '@rentalshop/constants';
-import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
+import type { BusinessType, PricingType } from '@rentalshop/constants';
 import type { CurrencyCode } from '@rentalshop/types';
 import { useSettingsTranslations, usePermissions } from '@rentalshop/hooks';
 
@@ -90,12 +90,28 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   console.log('🔍 MerchantSection render - loadingMerchant:', loadingMerchant);
   console.log('🔍 MerchantSection render - fetchingRef.current:', fetchingRef.current);
   
-  // Fetch merchant data if user has merchantId but no full merchant object
+  // Get tenantKey from user.merchant.tenantKey (from login response) - no need to fetch merchant detail
+  // Priority: user.merchant.tenantKey (from login) > fetch merchant detail (fallback only)
+  const getTenantKeyFromMerchant = () => {
+    // First try: Get from user.merchant.tenantKey (from login response)
+    if (user?.merchant?.tenantKey) {
+      return user.merchant.tenantKey;
+    }
+    return null;
+  };
+
+  const tenantKey = getTenantKeyFromMerchant();
+  
+  // Only fetch merchant detail if tenantKey is not available from login response
   useEffect(() => {
     const fetchMerchantData = async () => {
-      // Prevent infinite loops by checking if we're already fetching
-      if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
-        console.log('🔄 Fetching merchant data for merchantId:', user.merchantId);
+      // Only fetch if tenantKey is not available from login response
+      const needsFetch = user?.merchantId && 
+        !tenantKey && 
+        !fetchingRef.current;
+      
+      if (needsFetch) {
+        console.log('🔄 MerchantSection - Fetching merchant data for tenantKey (fallback)');
         fetchingRef.current = true;
         setLoadingMerchant(true);
         
@@ -104,10 +120,8 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
           console.log('🔍 Merchant API response:', result);
           
           if (result.success && result.data) {
-            // Handle nested structure: result.data.merchant or direct result.data
             const merchantInfo = (result.data as any).merchant || result.data;
-            console.log('✅ Merchant data extracted:', merchantInfo);
-            console.log('🔍 Merchant tenantKey:', merchantInfo?.tenantKey);
+            console.log('✅ MerchantSection - Merchant data fetched:', merchantInfo);
             setMerchantData(merchantInfo);
           } else {
             console.error('❌ Failed to fetch merchant data:', result);
@@ -123,14 +137,25 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
     
     fetchMerchantData();
     
-    // Cleanup function to reset fetching ref
     return () => {
       fetchingRef.current = false;
     };
-  }, [user?.merchantId, user?.merchant]); // Removed loadingMerchant from dependencies
+  }, [user?.merchantId, tenantKey]);
   
-  // Use merchant data from user object or fetched data
-  const merchant = user?.merchant || merchantData;
+  // Get merchant object with tenantKey: priority is user.merchant.tenantKey (from login) > fetched merchantData
+  // Ensure merchant object always has tenantKey if available
+  const merchant = (() => {
+    // If we have tenantKey from login, merge it with user.merchant
+    if (tenantKey) {
+      return { ...user?.merchant, tenantKey };
+    }
+    // If we have fetched merchantData with tenantKey, use it
+    if (merchantData?.tenantKey) {
+      return merchantData;
+    }
+    // Otherwise use user.merchant or merchantData (may not have tenantKey)
+    return user?.merchant || merchantData;
+  })();
   
   // Debug merchant data for Public Product Link
   console.log('🔍 MerchantSection - Merchant data for Public Product Link:', {
@@ -171,8 +196,13 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, merchant, currentCurrency]); // Include currentCurrency to avoid stale closure
   
-  // Get public product link
+  // Get public product link from login response (preferred) or calculate from tenantKey
   const getPublicProductLink = () => {
+    // First try: Use from login response
+    if (user?.merchant?.publicProductLink) {
+      return user.merchant.publicProductLink;
+    }
+    // Fallback: Calculate from tenantKey
     if (!merchant?.tenantKey) return null;
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
@@ -181,6 +211,9 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   };
   
   const publicProductLink = getPublicProductLink();
+  
+  // Get referral link from login response (preferred) or use tenantKey
+  const referralLink = user?.merchant?.referralLink || merchant?.tenantKey;
   
   // Copy states
   const [copiedLink, setCopiedLink] = useState(false);
@@ -200,9 +233,9 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   
   // Copy referral code to clipboard
   const handleCopyReferralCode = async () => {
-    if (!merchant?.tenantKey) return;
+    if (!referralLink) return;
     try {
-      await navigator.clipboard.writeText(merchant.tenantKey);
+      await navigator.clipboard.writeText(referralLink);
       setCopiedReferralCode(true);
       setTimeout(() => setCopiedReferralCode(false), 2000);
     } catch (error) {
@@ -503,112 +536,118 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
         </CardContent>
       </Card>
 
-      {/* Referral Code Card */}
-      {merchant?.tenantKey ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-green-700" />
-              <h3 className="text-lg font-semibold text-gray-900">{t('merchant.referralCode') || 'Referral Code'}</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              {t('merchant.referralCodeDesc') || 'Share this code with others to refer them to our platform. You will receive commission for successful referrals.'}
-            </p>
-
-            <div className="space-y-4">
-              {/* Referral Code Display - Clickable */}
-              <div className="flex items-center gap-2">
-                <Input
-                  value={merchant.tenantKey}
-                  readOnly
-                  onClick={handleCopyReferralCode}
-                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                  title="Click to copy referral code"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyReferralCode}
-                  className="h-10 whitespace-nowrap"
-                >
-                  {copiedReferralCode ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {t('merchant.copied') || 'Copied!'}
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      {t('merchant.copy') || 'Copy'}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* Public Product Link Card */}
-      {merchant?.tenantKey ? (
+      {/* Referral Code Card - Always show, display "Chưa có" if no tenantKey */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-              <ExternalLink className="h-5 w-5 text-blue-700" />
-              <h3 className="text-lg font-semibold text-gray-900">{t('merchant.publicProductLink')}</h3>
+            <Users className="h-5 w-5 text-green-700" />
+            <h3 className="text-lg font-semibold text-gray-900">{t('merchant.referralCode') || 'Referral Code'}</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-              {t('merchant.publicProductLinkDesc')}
+            {t('merchant.referralCodeDesc') || 'Share this code with others to refer them to our platform. You will receive commission for successful referrals.'}
           </p>
 
-            <div className="space-y-4">
-              {/* Link Display - Clickable */}
-              <div className="flex items-center gap-2">
-                <Input
-                  value={publicProductLink || ''}
-                  readOnly
-                  onClick={handleCopyLink}
-                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                  title="Click to copy link"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyLink}
-                  className="h-10 whitespace-nowrap"
-                >
-                  {copiedLink ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {t('merchant.copied')}
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      {t('merchant.copy')}
-                    </>
-                  )}
-                </Button>
-                  </div>
-
-              {/* Clickable Link */}
-              {publicProductLink && (
-                <div className="pt-4 border-t border-gray-200">
-                  <a
-                    href={publicProductLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    {t('merchant.viewPublicPage')}
-                  </a>
-                    </div>
-              )}
+          <div className="space-y-4">
+            {/* Referral Code Display */}
+            <div className="flex items-center gap-2">
+              <Input
+                value={referralLink || t('merchant.notProvided') || 'Chưa có'}
+                readOnly
+                onClick={referralLink ? handleCopyReferralCode : undefined}
+                className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
+                  referralLink 
+                    ? 'cursor-pointer hover:bg-gray-100 transition-colors' 
+                    : 'cursor-default text-gray-400'
+                }`}
+                title={referralLink ? "Click to copy referral code" : "Referral code not available"}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyReferralCode}
+                disabled={!referralLink}
+                className="h-10 whitespace-nowrap"
+              >
+                {copiedReferralCode ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    {t('merchant.copied') || 'Copied!'}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    {t('merchant.copy') || 'Copy'}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
-      ) : null}
+
+      {/* Public Product Link Card - Always show, display "Chưa có" if no tenantKey */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ExternalLink className="h-5 w-5 text-blue-700" />
+            <h3 className="text-lg font-semibold text-gray-900">{t('merchant.publicProductLink')}</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            {t('merchant.publicProductLinkDesc')}
+          </p>
+
+          <div className="space-y-4">
+            {/* Link Display */}
+            <div className="flex items-center gap-2">
+              <Input
+                value={publicProductLink || t('merchant.notProvided') || 'Chưa có'}
+                readOnly
+                onClick={publicProductLink ? handleCopyLink : undefined}
+                className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
+                  publicProductLink 
+                    ? 'cursor-pointer hover:bg-gray-100 transition-colors' 
+                    : 'cursor-default text-gray-400'
+                }`}
+                title={publicProductLink ? "Click to copy link" : "Public product link not available"}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                disabled={!publicProductLink}
+                className="h-10 whitespace-nowrap"
+              >
+                {copiedLink ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    {t('merchant.copied')}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    {t('merchant.copy')}
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Clickable Link - Only show if link is available */}
+            {publicProductLink && (
+              <div className="pt-4 border-t border-gray-200">
+                <a
+                  href={publicProductLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {t('merchant.viewPublicPage')}
+                </a>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
