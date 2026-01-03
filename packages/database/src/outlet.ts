@@ -187,7 +187,8 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
       merchant: {
         select: {
           id: true,
-          name: true
+          name: true,
+          tenantKey: true // Include tenantKey for referral code
         }
       }
     },
@@ -210,7 +211,8 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
       id: outlet.merchant.id,
-      name: outlet.merchant.name
+      name: outlet.merchant.name,
+      tenantKey: outlet.merchant.tenantKey // Include tenantKey for referral code
     }
   }));
 
@@ -253,7 +255,8 @@ export async function getOutletsByMerchant(merchantId: number) {
       merchant: {
         select: {
           id: true,
-          name: true
+          name: true,
+          tenantKey: true // Include tenantKey for referral code
         }
       }
     },
@@ -274,7 +277,8 @@ export async function getOutletsByMerchant(merchantId: number) {
     merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
       id: outlet.merchant.id,
-      name: outlet.merchant.name
+      name: outlet.merchant.name,
+      tenantKey: outlet.merchant.tenantKey // Include tenantKey for referral code
     }
   }));
 }
@@ -297,7 +301,8 @@ export async function getOutletByPublicId(id: number) {
       merchant: {
         select: {
           id: true,
-          name: true
+          name: true,
+          tenantKey: true // Include tenantKey for referral code
         }
       }
     }
@@ -318,7 +323,8 @@ export async function getOutletByPublicId(id: number) {
     merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
       id: outlet.merchant.id,
-      name: outlet.merchant.name
+      name: outlet.merchant.name,
+      tenantKey: outlet.merchant.tenantKey // Include tenantKey for referral code
     }
   };
 }
@@ -362,7 +368,8 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
       merchant: {
         select: {
           id: true,
-          name: true
+          name: true,
+          tenantKey: true // Include tenantKey for referral code
         }
       }
     }
@@ -381,7 +388,8 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
     merchantId: outlet.merchant.id, // Return merchant id
     merchant: {
       id: outlet.merchant.id,
-      name: outlet.merchant.name
+      name: outlet.merchant.name,
+      tenantKey: outlet.merchant.tenantKey // Include tenantKey for referral code
     }
   };
 }
@@ -421,7 +429,8 @@ export async function updateOutlet(id: number, input: OutletUpdateInput) {
       merchant: {
         select: {
           id: true,
-          name: true
+          name: true,
+          tenantKey: true // Include tenantKey for referral code
         }
       }
     }
@@ -444,7 +453,8 @@ export async function updateOutlet(id: number, input: OutletUpdateInput) {
     merchantId: updatedOutlet.merchant.id, // Return merchant id
     merchant: {
       id: updatedOutlet.merchant.id,
-      name: updatedOutlet.merchant.name
+      name: updatedOutlet.merchant.name,
+      tenantKey: updatedOutlet.merchant.tenantKey // Include tenantKey for referral code
     }
   };
 }
@@ -481,7 +491,7 @@ export const simplifiedOutlets = {
     return await prisma.outlet.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
+        merchant: { select: { id: true, name: true, tenantKey: true } },
         _count: {
           select: { 
             users: true,
@@ -518,7 +528,7 @@ export const simplifiedOutlets = {
       const outlet = await prisma.outlet.create({
         data,
         include: {
-          merchant: { select: { id: true, name: true } }
+          merchant: { select: { id: true, name: true, tenantKey: true } }
         }
       });
       
@@ -538,7 +548,7 @@ export const simplifiedOutlets = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } }
+        merchant: { select: { id: true, name: true, tenantKey: true } }
       }
     });
   },
@@ -550,7 +560,7 @@ export const simplifiedOutlets = {
     return await prisma.outlet.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
+        merchant: { select: { id: true, name: true, tenantKey: true } },
         _count: {
           select: { 
             users: true,
@@ -662,7 +672,7 @@ export const simplifiedOutlets = {
       prisma.outlet.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
+          merchant: { select: { id: true, name: true, tenantKey: true } },
           _count: {
             select: { 
               users: true,
