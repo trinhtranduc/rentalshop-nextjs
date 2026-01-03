@@ -87,7 +87,7 @@ export async function generateMetadata(): Promise<Metadata> {
         default: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê Chuyên nghiệp',
         template: '%s | AnyRent',
       },
-      description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng. Hỗ trợ đa nền tảng iOS, Android và Web.',
+      description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng. Hỗ trợ đa nền tảng iOS và Web.',
       keywords: [
         'phần mềm quản lý cửa hàng cho thuê',
         'hệ thống quản lý cho thuê',
@@ -504,7 +504,7 @@ export async function generateMetadata(): Promise<Metadata> {
       default: 'AnyRent - Rental Shop Management Software & System',
       template: '%s | AnyRent',
     },
-    description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system with rental order management, rental inventory management, and customer management. Multi-platform support for iOS, Android, and Web.',
+    description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system with rental order management, rental inventory management, and customer management. Multi-platform support for iOS, and Web.',
     keywords: [
       'rental shop management software',
       'rental management system',

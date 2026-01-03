@@ -41,6 +41,7 @@ export interface MerchantCreateData {
   currency?: string; // Currency code (USD, VND), defaults to USD
   pricingConfig?: string;
   planId?: number;
+  referredByMerchantId?: number; // ID of merchant who referred this merchant
   // subscriptionStatus removed - use subscription.status instead
 }
 
@@ -262,14 +263,18 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  * Create new merchant
  */
 export async function create(data: MerchantCreateData) {
-  const { planId, ...rest } = data;
+  const { planId, referredByMerchantId, ...rest } = data;
+  // Cast rest to any to bypass TypeScript checking for referredByMerchantId
+  // This field will be properly typed after Prisma Client regeneration
+  const createData: any = {
+    ...(rest as any),
+    ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
+    ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
   return await prisma.merchant.create({
-    data: {
-      ...rest,
-      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
+    data: createData,
     include: {
       Plan: true,
       subscription: true
@@ -281,14 +286,18 @@ export async function create(data: MerchantCreateData) {
  * Update merchant
  */
 export async function update(id: number, data: MerchantUpdateData) {
-  const { planId, ...rest } = data;
+  const { planId, referredByMerchantId, ...rest } = data;
+  // Cast rest to any to bypass TypeScript checking for referredByMerchantId
+  // This field will be properly typed after Prisma Client regeneration
+  const updateData: any = {
+    ...(rest as any),
+    ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
+    ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
+    updatedAt: new Date()
+  };
   return await prisma.merchant.update({
     where: { id },
-    data: {
-      ...rest,
-      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
-      updatedAt: new Date()
-    },
+    data: updateData,
     include: {
       Plan: true,
       subscription: true
@@ -392,6 +401,64 @@ export async function checkDuplicate(email?: string, phone?: string, excludeId?:
   return await prisma.merchant.findFirst({ where });
 }
 
+/**
+ * Get all merchants referred by a specific merchant
+ * @param merchantId ID of the referring merchant
+ * @param page Page number (default: 1)
+ * @param limit Items per page (default: 20)
+ */
+export async function getReferrals(merchantId?: number, page: number = 1, limit: number = 20) {
+  const skip = (page - 1) * limit;
+  
+  const where: any = {};
+  if (merchantId) {
+    where.referredByMerchantId = merchantId;
+  } else {
+    // Get all merchants with referrals (not null)
+    where.referredByMerchantId = { not: null };
+  }
+
+  const [merchants, total] = await Promise.all([
+    prisma.merchant.findMany({
+      where,
+      include: {
+        referredBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            tenantKey: true
+          }
+        },
+        subscription: {
+          include: {
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                basePrice: true,
+                currency: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit
+    }),
+    prisma.merchant.count({ where })
+  ]);
+
+  return {
+    data: merchants,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total
+  };
+}
+
 // ============================================================================
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
@@ -431,7 +498,8 @@ export const simplifiedMerchants = {
   remove,
   getStats,
   count,
-  checkDuplicate
+  checkDuplicate,
+  getReferrals
 };
 
 

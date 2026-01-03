@@ -717,75 +717,58 @@ const Testimonials = () => {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-brand-primary/50 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/0 to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center mb-6">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
-                ))}
-              </div>
-              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "{tItems('john.quote')}"
-              </p>
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-primary to-action-primary rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  {getInitial(tItems('john.name'))}
-                </div>
-                <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">{tItems('john.name')}</div>
-                  <div className="text-sm text-text-tertiary">{tItems('john.role')}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-action-success/50 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-action-success/0 to-action-success/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center mb-6">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
-                ))}
-              </div>
-              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "{tItems('sarah.quote')}"
-              </p>
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-success to-emerald-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  {getInitial(tItems('sarah.name'))}
-                </div>
-                <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">{tItems('sarah.name')}</div>
-                  <div className="text-sm text-text-tertiary">{tItems('sarah.role')}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-action-primary/50 relative overflow-hidden md:col-span-2">
-            <div className="absolute inset-0 bg-gradient-to-br from-action-primary/0 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center mb-6">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
-                ))}
-              </div>
-              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
-                "{tItems('mike.quote')}"
-              </p>
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-primary to-blue-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
-                  {getInitial(tItems('mike.name'))}
-                </div>
-                <div className="ml-4">
-                  <div className="font-bold text-text-primary text-lg">{tItems('mike.name')}</div>
-                  <div className="text-sm text-text-tertiary">{tItems('mike.role')}</div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          {/* Testimonial Card Component */}
+          {([
+            { key: 'john', gradient: 'from-brand-primary to-action-primary' },
+            { key: 'sarah', gradient: 'from-action-success to-emerald-500' },
+            { key: 'mike', gradient: 'from-action-primary to-blue-500' },
+            { key: 'aoDai', gradient: 'from-purple-500 to-pink-500' },
+            { key: 'equipment', gradient: 'from-orange-500 to-red-500' },
+            { key: 'weddingDress', gradient: 'from-rose-500 to-pink-400' },
+            { key: 'camera', gradient: 'from-cyan-500 to-blue-500' }
+          ] as const).map(({ key, gradient }) => {
+            const borderColor = key === 'john' ? 'hover:border-brand-primary/50' :
+                               key === 'sarah' ? 'hover:border-action-success/50' :
+                               key === 'mike' ? 'hover:border-action-primary/50' :
+                               key === 'aoDai' ? 'hover:border-purple-500/50' :
+                               key === 'equipment' ? 'hover:border-orange-500/50' :
+                               key === 'weddingDress' ? 'hover:border-rose-500/50' :
+                               'hover:border-cyan-500/50';
+            
+            const bgGradient = key === 'john' ? 'from-brand-primary/0 to-brand-primary/5' :
+                              key === 'sarah' ? 'from-action-success/0 to-action-success/5' :
+                              key === 'mike' ? 'from-action-primary/0 to-action-primary/5' :
+                              key === 'aoDai' ? 'from-purple-500/0 to-purple-500/5' :
+                              key === 'equipment' ? 'from-orange-500/0 to-orange-500/5' :
+                              key === 'weddingDress' ? 'from-rose-500/0 to-rose-500/5' :
+                              'from-cyan-500/0 to-cyan-500/5';
+
+            return (
+              <div key={key} className={`group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 ${borderColor} relative overflow-hidden`}>
+                <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                <div className="relative z-10">
+                  <div className="flex items-center mb-4">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="w-5 h-5 text-action-warning fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-text-secondary mb-4 text-sm leading-relaxed">
+                    "{tItems(`${key}.quote`)}"
+                  </p>
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center text-text-inverted font-bold text-base shadow-lg`}>
+                      {getInitial(tItems(`${key}.name`))}
+                    </div>
+                    <div className="ml-3">
+                      <div className="font-bold text-text-primary text-base">{tItems(`${key}.name`)}</div>
+                      <div className="text-xs text-text-tertiary">{tItems(`${key}.role`)}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>

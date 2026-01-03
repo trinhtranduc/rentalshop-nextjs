@@ -68,6 +68,168 @@ export const VIETNAM_BANK_CODES: Record<string, string> = {
 };
 
 /**
+ * Bank information interface for selection
+ */
+export interface BankOption {
+  name: string;
+  code: string;
+  binCode: string;
+  displayName: string; // Vietnamese display name
+}
+
+/**
+ * Get list of all banks as options for selection
+ * Returns sorted array of bank options with display names
+ * 
+ * @returns Array of bank options sorted by display name
+ */
+export function getBankOptions(): BankOption[] {
+  const banks: BankOption[] = [];
+  
+  // Map bank names to Vietnamese display names
+  const displayNames: Record<string, string> = {
+    'Vietcombank': 'Vietcombank (VCB)',
+    'Vietinbank': 'Vietinbank (ICB)',
+    'BIDV': 'BIDV',
+    'Techcombank': 'Techcombank (TCB)',
+    'ACB': 'ACB',
+    'VPBank': 'VPBank',
+    'MBBank': 'MB Bank',
+    'TPBank': 'TPBank',
+    'VietABank': 'VietABank',
+    'SHB': 'SHB',
+    'HDBank': 'HDBank',
+    'MSB': 'MSB',
+    'Sacombank': 'Sacombank',
+    'Eximbank': 'Eximbank',
+    'VIB': 'VIB',
+    'OCB': 'OCB',
+    'SeABank': 'SeABank',
+    'PGBank': 'PGBank',
+    'NamABank': 'NamABank',
+    'BacABank': 'BacABank',
+    'ABBank': 'ABBank',
+    'VietBank': 'VietBank',
+    'PVcomBank': 'PVcomBank',
+    'GPBank': 'GPBank',
+    'Agribank': 'Agribank',
+    'LienVietPostBank': 'LienVietPostBank',
+    'DongABank': 'DongABank',
+    'KienLongBank': 'KienLongBank',
+    'NCB': 'NCB',
+    'OceanBank': 'OceanBank',
+    'PublicBank': 'PublicBank',
+    'SCB': 'SCB',
+    'VietCapitalBank': 'VietCapitalBank',
+    'VietnamBank': 'VietnamBank',
+    'SaigonBank': 'SaigonBank',
+    'StandardChartered': 'Standard Chartered',
+    'VRBank': 'VRBank',
+    'ShinhanBank': 'Shinhan Bank',
+    'IndovinaBank': 'Indovina Bank',
+    'BaoVietBank': 'BaoVietBank',
+    'CBBank': 'CBBank',
+    'COOPBANK': 'COOPBANK',
+    'HongLeong': 'Hong Leong Bank',
+    'Woori': 'Woori Bank',
+    'UnitedOverseas': 'United Overseas Bank (UOB)',
+    'CIMBBank': 'CIMB Bank',
+    'KookminHN': 'Kookmin Bank - Hà Nội',
+    'KookminHCM': 'Kookmin Bank - TP.HCM',
+    'SINOPAC': 'SINOPAC',
+    'KEBHanaHCM': 'KEB HANA - TP.HCM',
+    'KEBHANAHN': 'KEB HANA - Hà Nội',
+    'IBKHN': 'Industrial Bank of Korea - Hà Nội',
+    'IBKHCM': 'Industrial Bank of Korea - TP.HCM',
+  };
+  
+  // Convert bank codes to options array
+  for (const [name, binCode] of Object.entries(VIETNAM_BANK_CODES)) {
+    // Get bank code from BIN codes mapping if available
+    const bankCode = Object.entries(VIETNAM_BANK_BIN_CODES).find(
+      ([_, code]) => code === binCode
+    )?.[0] || name;
+    
+    banks.push({
+      name,
+      code: bankCode,
+      binCode,
+      displayName: displayNames[name] || name,
+    });
+  }
+  
+  // Remove duplicates (some banks have same BIN code)
+  const uniqueBanks = banks.filter((bank, index, self) =>
+    index === self.findIndex((b) => b.binCode === bank.binCode)
+  );
+  
+  // Sort by display name
+  return uniqueBanks.sort((a, b) => a.displayName.localeCompare(b.displayName, 'vi'));
+}
+
+/**
+ * Get bank names as simple array for select/dropdown
+ * Returns sorted array of bank names
+ * 
+ * @returns Array of bank names sorted alphabetically
+ */
+export function getBankNames(): string[] {
+  return getBankOptions().map(bank => bank.name).sort();
+}
+
+/**
+ * Get bank display names as array for select/dropdown
+ * Returns sorted array of display names
+ * 
+ * @returns Array of bank display names sorted alphabetically
+ */
+export function getBankDisplayNames(): string[] {
+  return getBankOptions().map(bank => bank.displayName).sort();
+}
+
+/**
+ * Find bank by name or code
+ * 
+ * @param searchTerm - Bank name or code to search for
+ * @returns Bank option if found, null otherwise
+ */
+export function findBank(searchTerm: string): BankOption | null {
+  const options = getBankOptions();
+  
+  // Search by name (case insensitive)
+  let found = options.find(
+    bank => bank.name.toLowerCase() === searchTerm.toLowerCase()
+  );
+  
+  if (found) return found;
+  
+  // Search by code (case insensitive)
+  found = options.find(
+    bank => bank.code.toLowerCase() === searchTerm.toLowerCase()
+  );
+  
+  if (found) return found;
+  
+  // Search by display name (case insensitive, partial match)
+  found = options.find(
+    bank => bank.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  return found || null;
+}
+
+/**
+ * Get bank BIN code by name or code
+ * 
+ * @param searchTerm - Bank name, code, or display name
+ * @returns BIN code (6 digits) or empty string if not found
+ */
+export function getBankBINCodeByNameOrCode(searchTerm: string): string {
+  const bank = findBank(searchTerm);
+  return bank?.binCode || '';
+}
+
+/**
  * Vietnam bank BIN codes mapping (Bank Code -> BIN Code)
  * For backward compatibility and direct bank code lookup
  */

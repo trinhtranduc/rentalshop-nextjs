@@ -29,6 +29,8 @@
     "db:migrate:dev": "npx prisma migrate dev --schema=./prisma/schema.prisma",
     "db:migrate:status": "npx prisma migrate status --schema=./prisma/schema.prisma",
     "db:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "db:migrate:dev:manual": "bash scripts/migrate-dev.sh",
+    "db:migrate:prod:manual": "bash scripts/migrate-prod.sh",
     "railway:migrate": "npx prisma migrate deploy --schema=./prisma/schema.prisma",
     "railway:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "railway:seed": "node scripts/regenerate-entire-system-2025.js",
@@ -37,6 +39,9 @@
     "db:check-sync": "./scripts/check-db-sync.sh",
     "db:check-sync:dev": "./scripts/check-db-sync.sh --service dev-apis",
     "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis",
+    "db:fix-sequences": "tsx scripts/fix-database-sequences.ts",
+    "db:fix-sequences:dev": "NODE_ENV=development tsx scripts/fix-database-sequences.ts --env development",
+    "db:fix-sequences:prod": "NODE_ENV=production tsx scripts/fix-database-sequences.ts --env production",
     "audit:error-translations": "node scripts/audit-error-translations.js"
   },
   "devDependencies": {
