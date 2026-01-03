@@ -32,6 +32,7 @@ export * from './sync/transformers';
 
 // Import utilities
 export * from './import/validator';
+export * from './import';
 
 // Plan features utilities
 export * from './plan-features';

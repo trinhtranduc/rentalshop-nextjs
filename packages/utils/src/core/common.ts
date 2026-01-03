@@ -141,6 +141,62 @@ export const publicFetch = async (
  * - Consistent header management
  * - Type-safe implementation
  */
+/**
+ * Check if token is expiring soon (within 1 day)
+ * Returns true if token should be refreshed proactively
+ */
+const isTokenExpiringSoon = (token: string): boolean => {
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        const expiresIn = payload.exp - now;
+        const oneDayInSeconds = 24 * 60 * 60;
+        // Refresh if token expires within 1 day
+        return expiresIn < oneDayInSeconds && expiresIn > 0;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to check token expiration:', error);
+  }
+  return false;
+};
+
+/**
+ * Proactively refresh token if it's expiring soon
+ * This runs in background and doesn't block the request
+ */
+const tryProactiveRefresh = async (token: string): Promise<void> => {
+  if (!isTokenExpiringSoon(token)) {
+    return; // Token is still valid for more than 1 day
+  }
+
+  try {
+    console.log('🔄 Token expiring soon, refreshing proactively...');
+    const refreshUrl = createApiUrl('api/auth/refresh');
+    const refreshResponse = await fetch(refreshUrl, {
+      method: 'POST',
+      headers: {
+        [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+        [API.HEADERS.AUTHORIZATION]: `Bearer ${token}`,
+      },
+    });
+
+    if (refreshResponse.ok) {
+      const refreshData = await refreshResponse.json();
+      if (refreshData.success && refreshData.data?.token) {
+        console.log('✅ Token refreshed proactively');
+        updateAuthToken(refreshData.data.token);
+      }
+    }
+  } catch (error) {
+    // Silent fail - don't block the request if proactive refresh fails
+    console.warn('Proactive token refresh failed (non-blocking):', error);
+  }
+};
+
 export const authenticatedFetch = async (
   url: string,
   options: RequestInit = {}
@@ -152,6 +208,14 @@ export const authenticatedFetch = async (
   const token = getAuthToken();
   if (!token && typeof window !== 'undefined') {
     throw new Error('Authentication required - token not found. Please log in again.');
+  }
+
+  // Proactive token refresh (non-blocking, runs in background)
+  if (token && typeof window !== 'undefined') {
+    // Don't await - let it run in background
+    tryProactiveRefresh(token).catch(() => {
+      // Silent fail - don't affect the main request
+    });
   }
   
   // Extract and convert options.headers to plain object (handle Headers, array, and object formats)
@@ -307,19 +371,69 @@ export const authenticatedFetch = async (
             throw retryError;
           }
         } else {
-          // Normal 401 - check if token is still valid
+          // Normal 401 - try to refresh token first before logging out
           const currentToken = getAuthToken();
           if (!currentToken) {
             console.error('❌ No token available, logging out');
             clearAuthData();
             window.location.href = '/login';
           } else {
-            console.error('❌ Token exists but backend returned 401 - this is unusual');
+            // Try to refresh token before giving up
+            console.log('🔄 Attempting to refresh token...');
+            try {
+              // Use direct fetch (not authenticatedFetch) to avoid infinite loop
+              // But we still need to send the old token for refresh
+              // Use relative URL for refresh endpoint
+              const refreshUrl = createApiUrl('api/auth/refresh');
+              const refreshResponse = await fetch(refreshUrl, {
+                method: 'POST',
+                headers: {
+                  [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+                  [API.HEADERS.AUTHORIZATION]: `Bearer ${currentToken}`,
+                },
+              });
+              
+              if (refreshResponse.ok) {
+                const refreshData = await refreshResponse.json();
+                if (refreshData.success && refreshData.data?.token) {
+                  console.log('✅ Token refreshed successfully');
+                  // Update token in localStorage
+                  updateAuthToken(refreshData.data.token);
+                  
+                  // Retry original request with new token
+                  const newMergedHeaders = {
+                    ...mergedHeaders,
+                    [API.HEADERS.AUTHORIZATION]: `Bearer ${refreshData.data.token}`,
+                  };
+                  const retryOptions: RequestInit = {
+                    ...defaultOptions,
+                    headers: newMergedHeaders,
+                  };
+                  
+                  console.log('🔄 Retrying original request with new token...');
+                  const retryResponse = await fetch(url, retryOptions);
+                  
+                  if (retryResponse.ok || retryResponse.status < 500) {
+                    console.log('✅ Retry successful after token refresh');
+                    return retryResponse;
+                  } else {
+                    console.error('❌ Retry failed even after token refresh');
+                  }
+                }
+              } else {
+                console.error('❌ Token refresh failed:', refreshResponse.status);
+              }
+            } catch (refreshError) {
+              console.error('❌ Error during token refresh:', refreshError);
+            }
+            
+            // If refresh failed or retry failed, log out
+            console.error('❌ Token refresh failed or retry failed, logging out');
             console.error('❌ This could indicate:');
             console.error('   1. Token is invalid or expired');
             console.error('   2. Backend authentication service is down');
             console.error('   3. Token was revoked');
-            console.error('❌ Logging out for security');
+            console.error('   4. User permissions changed');
             clearAuthData();
             window.location.href = '/login';
           }
@@ -753,6 +867,55 @@ export const clearAuthData = (): void => {
  */
 export const getCurrentUser = (): StoredUser | null => {
   return getStoredUser();
+};
+
+/**
+ * Update authentication token without changing user data
+ * Used for token refresh
+ */
+export const updateAuthToken = (newToken: string): void => {
+  if (typeof window === 'undefined') return;
+  
+  const authData = localStorage.getItem('authData');
+  if (!authData) {
+    console.warn('No auth data found to update token');
+    return;
+  }
+  
+  try {
+    const parsed = JSON.parse(authData);
+    
+    // Decode JWT token to get actual expiration time
+    let expiresAt = Date.now() + (24 * 60 * 60 * 1000); // Default fallback
+    try {
+      const parts = newToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp) {
+          expiresAt = payload.exp * 1000; // Convert to milliseconds
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to decode new JWT token for expiration time:', error);
+    }
+    
+    // Update token and expiration time, keep user data unchanged
+    const updatedAuthData = {
+      ...parsed,
+      token: newToken,
+      expiresAt,
+    };
+    
+    localStorage.setItem('authData', JSON.stringify(updatedAuthData));
+    console.log('✅ Auth token updated successfully');
+    
+    // Dispatch custom event for same-tab sync
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-storage-change'));
+    }
+  } catch (error) {
+    console.error('Failed to update auth token:', error);
+  }
 };
 
 /**
