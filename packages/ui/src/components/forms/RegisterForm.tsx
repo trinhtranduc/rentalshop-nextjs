@@ -180,7 +180,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const result = await authApi.register(registrationData);
         
         if (!result.success) {
-          throw new Error(result.message || result.error || 'Registration failed');
+          // Error will be automatically handled by useGlobalErrorHandler
+          // No need to show toast here - it will cause duplicate toasts
+          return;
         }
 
         // Registration successful - ALWAYS redirect to email verification page
@@ -209,10 +211,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           router.replace(redirectUrl);
         }
       } catch (error: any) {
-        toastError(
-          t('register.registrationFailed'),
-          error.message || t('register.somethingWentWrong')
-        );
+        // Error automatically handled by useGlobalErrorHandler
+        // No need to show toast here - it will cause duplicate toasts
+        console.error('Registration error:', error);
       } finally {
         setIsSubmitting(false);
       }
