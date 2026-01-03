@@ -16,6 +16,7 @@ export {
   getCurrentUser,
   getAuthToken,
   storeAuthData,
+  updateAuthToken,
   clearAuthData,
   getStoredUser,
   getToastType,
