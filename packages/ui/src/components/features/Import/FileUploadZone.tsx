@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Upload, File, X, AlertCircle } from 'lucide-react';
-import { cn } from '../../lib/cn';
+import { cn } from '@rentalshop/ui';
 
 export interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
