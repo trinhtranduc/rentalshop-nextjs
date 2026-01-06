@@ -33,22 +33,15 @@ export * from './sync/transformers';
 // Import utilities
 // Note: validator.ts exports are for JSON imports (different use case)
 // Excel imports use validators.ts which is exported via './import'
-// Explicitly export to avoid type conflicts between validators.ts and validator.ts
-export type {
-  ImportValidationError,
-  ImportValidationResult
-} from './import/validators';
-export {
-  CUSTOMER_COLUMN_MAPPING,
-  PRODUCT_COLUMN_MAPPING,
-  validateCustomers,
-  validateProducts
-} from './import/validators';
+// Export Excel validator types and functions (from validators.ts) - use export * to include generic types
+export * from './import/validators';
+// Export JSON validator types with different names to avoid conflicts (from validator.ts)
 export type {
   ImportValidationError as JsonImportValidationError,
   ImportValidationResult as JsonImportValidationResult
 } from './import/validator';
 export { validateImportData } from './import/validator';
+// Export other import utilities
 export * from './import/excel-parser';
 export * from './import/sample-generator';
 
