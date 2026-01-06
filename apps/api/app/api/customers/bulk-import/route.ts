@@ -59,14 +59,43 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             merchantId
           };
 
-          // Create customer using transaction client
+          // Find merchant by id (userScope.merchantId is the merchant id)
           const merchant = await tx.merchant.findUnique({
             where: { id: merchantId }
           });
 
           if (!merchant) {
-            errors.push({ row: rowNumber, error: 'Merchant not found' });
+            errors.push({ row: rowNumber, error: `Merchant with ID ${merchantId} not found` });
             continue;
+          }
+
+          // Convert dateOfBirth string to Date object if provided
+          // Prisma DateTime requires Date object or ISO-8601 string with time
+          let dateOfBirth: Date | null = null;
+          if (customerInput.dateOfBirth) {
+            const dateValue = customerInput.dateOfBirth;
+            if (typeof dateValue === 'string') {
+              // If it's a date string (e.g., "1990-01-15"), convert to Date
+              // Add time component if missing to make it valid ISO-8601
+              const dateStr = dateValue.trim();
+              if (dateStr) {
+                // If it's just a date (YYYY-MM-DD), add time to make it valid
+                const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})$/);
+                if (dateMatch) {
+                  dateOfBirth = new Date(`${dateMatch[1]}T00:00:00.000Z`);
+                } else {
+                  // Try parsing as-is (might already be ISO-8601)
+                  dateOfBirth = new Date(dateStr);
+                }
+                // Validate the date
+                if (isNaN(dateOfBirth.getTime())) {
+                  dateOfBirth = null;
+                }
+              }
+            } else if (dateValue && typeof dateValue === 'object' && 'getTime' in dateValue) {
+              // It's already a Date object
+              dateOfBirth = dateValue as Date;
+            }
           }
 
           const customer = await tx.customer.create({
@@ -82,7 +111,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
               country: customerInput.country && customerInput.country.trim() !== '' ? customerInput.country.trim() : null,
               idNumber: customerInput.idNumber && customerInput.idNumber.trim() !== '' ? customerInput.idNumber.trim() : null,
               notes: customerInput.notes && customerInput.notes.trim() !== '' ? customerInput.notes.trim() : null,
-              dateOfBirth: customerInput.dateOfBirth || null,
+              dateOfBirth: dateOfBirth,
               idType: customerInput.idType || null,
               isActive: true,
               merchantId: merchant.id
