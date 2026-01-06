@@ -92,7 +92,7 @@ export {
   getDurationUnitLabel,
   type PricingInfo,
   type CalculatedPricing,
-  type ValidationResult,
+  // Note: ValidationResult is exported explicitly from index.ts to avoid conflicts
   type RentalPeriodValidation
 } from './pricing-calculator';
 
@@ -164,6 +164,9 @@ export * from './date-range';
 
 // Excel utilities
 export * from './excel';
+
+// CSV parser utilities
+export * from './csvParser';
 
 // Bank QR code utilities (Vietnam bank transfer)
 export * from './bank-qr';
