@@ -50,7 +50,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
       for (let i = 0; i < customers.length; i++) {
         const customerData = customers[i];
-        const rowNumber = i + 2; // +2 because Excel row 1 is header, data starts at row 2
+        const rowNumber = i + 1; // Start from 1 (matching UI display)
 
         try {
           // Ensure merchantId is set

@@ -167,6 +167,20 @@
     "MERCHANT": "Chủ doanh nghiệp",
     "OUTLET_ADMIN": "Quản lý cửa hàng",
     "OUTLET_STAFF": "Nhân viên cửa hàng"
+  },
+  "import": {
+    "preview": {
+      "total": "Tổng",
+      "valid": "Hợp lệ",
+      "invalid": "Không hợp lệ",
+      "errors": "lỗi",
+      "errorsPlural": "lỗi",
+      "duplicates": "trùng lặp",
+      "duplicatesPlural": "trùng lặp",
+      "status": "Trạng thái",
+      "showing": "Hiển thị {maxRows} dòng đầu tiên trong tổng số {total} dòng",
+      "validStatus": "Hợp lệ"
+    }
   }
 }
 

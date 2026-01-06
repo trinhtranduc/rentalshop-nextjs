@@ -153,6 +153,34 @@
     "enterState": "Nhập tỉnh/thành (tùy chọn)",
     "enterZipCode": "Nhập mã bưu điện (tùy chọn)",
     "enterCountry": "Nhập quốc gia (tùy chọn)"
+  },
+  "importLabel": "Nhập khách hàng",
+  "import": {
+    "title": "Nhập khách hàng",
+    "description": "Tải lên file CSV (tối đa {maxRows} dòng). Các bản ghi trùng lặp sẽ được bỏ qua.",
+    "template": "Mẫu",
+    "downloadTemplate": "Tải mẫu",
+    "parsing": "Đang phân tích file CSV...",
+    "importing": "Đang nhập...",
+    "import": "Nhập {count} khách hàng",
+    "importPlural": "Nhập {count} khách hàng",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "completed": "Nhập hoàn tất: {imported} đã nhập, {failed} thất bại, {skipped} đã bỏ qua",
+    "success": "Nhập khách hàng thành công",
+    "failed": "Nhập khách hàng thất bại",
+    "fileError": "Không thể đọc file CSV",
+    "parseError": "Không thể phân tích file CSV",
+    "maxRowsExceeded": "File CSV vượt quá tối đa {maxRows} dòng",
+    "noData": "Không tìm thấy dữ liệu hợp lệ trong file CSV",
+    "selectFile": "Chọn file CSV",
+    "clickOrDrag": "Click để chọn file hoặc kéo thả file vào đây",
+    "onlyCsv": "Chỉ hỗ trợ file CSV",
+    "noValidCustomers": "Không có khách hàng hợp lệ để nhập",
+    "importFailed": "Nhập khách hàng thất bại",
+    "total": "Tổng cộng",
+    "successCount": "Thành công",
+    "failedCount": "Thất bại"
   }
 }
 

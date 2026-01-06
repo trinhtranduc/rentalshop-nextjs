@@ -4,10 +4,10 @@ import React, { useRef, useState } from 'react';
 import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Upload, File, X, AlertCircle } from 'lucide-react';
-import { cn } from '@rentalshop/ui';
+import { cn } from '../../../lib/cn';
 
 export interface FileUploadZoneProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (file: File) => void | Promise<void>; // Support both sync and async handlers
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
   className?: string;
@@ -16,7 +16,7 @@ export interface FileUploadZoneProps {
 
 export function FileUploadZone({
   onFileSelect,
-  acceptedFileTypes = ['.xlsx'],
+  acceptedFileTypes = ['.xlsx', '.csv'],
   maxFileSize = 10 * 1024 * 1024, // 10MB default
   className,
   disabled = false
@@ -52,7 +52,7 @@ export function FileUploadZone({
     return null;
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
@@ -62,10 +62,10 @@ export function FileUploadZone({
 
     setError(null);
     setSelectedFile(file);
-    onFileSelect(file);
+    await onFileSelect(file); // Support async handlers
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -73,15 +73,15 @@ export function FileUploadZone({
     if (disabled) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
+      await handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
 
     if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
+      await handleFile(e.target.files[0]);
     }
   };
 
@@ -105,8 +105,8 @@ export function FileUploadZone({
   };
 
   return (
-    <Card className={cn('border-2 border-dashed', className)}>
-      <CardContent className="p-6">
+    <Card className={cn('border-2 border-dashed w-full', className)}>
+      <CardContent className="p-8">
         <input
           ref={fileInputRef}
           type="file"
@@ -145,7 +145,7 @@ export function FileUploadZone({
           // Upload zone
           <div
             className={cn(
-              'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+              'border-2 border-dashed rounded-lg p-12 text-center transition-colors',
               dragActive && !disabled
               ? 'border-action-primary bg-action-primary/10'
               : disabled
@@ -161,14 +161,14 @@ export function FileUploadZone({
           >
             <Upload
               className={cn(
-                'w-10 h-10 mx-auto mb-3',
+                'w-12 h-12 mx-auto mb-4',
                 disabled ? 'text-gray-400' : 'text-text-secondary'
               )}
             />
-            <p className="text-text-primary font-medium mb-1">
+            <p className="text-text-primary font-medium mb-2 text-base">
               {disabled ? 'Upload disabled' : 'Drag & drop your file here'}
             </p>
-            <p className="text-text-secondary text-sm mb-4">
+            <p className="text-text-secondary text-sm mb-5">
               or click to browse
             </p>
             <p className="text-xs text-text-secondary">

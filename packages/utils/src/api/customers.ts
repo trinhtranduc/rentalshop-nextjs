@@ -223,6 +223,13 @@ export const customersApi = {
   },
 
   /**
+   * Import customers from CSV (alias for bulkImport)
+   */
+  async importCustomers(customers: CustomerInput[]): Promise<CustomerApiResponse> {
+    return this.bulkImport(customers);
+  },
+
+  /**
    * Download sample file for import
    */
   async downloadSampleFile(): Promise<Blob> {

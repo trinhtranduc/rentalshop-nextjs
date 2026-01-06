@@ -204,6 +204,34 @@
     "totalStock": "Total Stock",
     "noBarcode": "No Barcode",
     "noCategory": "No Category"
+  },
+  "importLabel": "Import Products",
+  "import": {
+    "title": "Import Products",
+    "description": "Upload CSV file (max {maxRows} rows). Duplicates will be skipped.",
+    "template": "Template",
+    "downloadTemplate": "Download Template",
+    "parsing": "Parsing CSV file...",
+    "importing": "Importing...",
+    "import": "Import {count} Product",
+    "importPlural": "Import {count} Products",
+    "cancel": "Cancel",
+    "close": "Close",
+    "completed": "Import completed: {imported} imported, {failed} failed, {skipped} skipped",
+    "success": "Products imported successfully",
+    "failed": "Failed to import products",
+    "fileError": "Failed to read CSV file",
+    "parseError": "Failed to parse CSV file",
+    "maxRowsExceeded": "CSV file exceeds maximum {maxRows} rows",
+    "noData": "No valid data found in CSV file",
+    "selectFile": "Select CSV file",
+    "clickOrDrag": "Click to select file or drag and drop here",
+    "onlyCsv": "Only CSV files are supported",
+    "noValidProducts": "No valid products to import",
+    "importFailed": "Failed to import products",
+    "total": "Total",
+    "successCount": "Success",
+    "failedCount": "Failed"
   }
 }
 

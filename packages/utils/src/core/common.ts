@@ -25,31 +25,43 @@ const API = CONSTANTS.API;
  * Create API URL with proper base URL
  */
 export const createApiUrl = (endpoint: string): string => {
+  // Check if it's already a full URL
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  
+  // If endpoint starts with /api/, it's a local Next.js API route - keep it relative
+  if (endpoint.startsWith('/api/')) {
+    return endpoint;
+  }
+  
   // Remove leading slash if present
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
-  // Check if it's already a full URL
-  if (cleanEndpoint.startsWith('http://') || cleanEndpoint.startsWith('https://')) {
-    return cleanEndpoint;
-  }
-  
-  // For relative endpoints, construct full URL
+  // For endpoints starting with api/ (without leading slash), check if it's a local route
+  // If NEXT_PUBLIC_API_URL is set, use it for external API calls
+  // Otherwise, treat as local Next.js route
   if (cleanEndpoint.startsWith('api/')) {
-    // Always use environment variable for server-side rendering compatibility
-    // In server components, require() may fail, so we use env var directly
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    // Check if we should use external API or local route
+    // If endpoint explicitly starts with /api/, it's always local
+    // Otherwise, use external API if NEXT_PUBLIC_API_URL is set
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     
-    // Debug logging to track URL construction
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-      console.log('🔍 createApiUrl debug:', {
-        endpoint: cleanEndpoint,
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-        baseUrl,
-        finalUrl: `${baseUrl}/${cleanEndpoint}`
-      });
+    if (baseUrl) {
+      // Use external API
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+        console.log('🔍 createApiUrl debug:', {
+          endpoint: cleanEndpoint,
+          NEXT_PUBLIC_API_URL: baseUrl,
+          baseUrl,
+          finalUrl: `${baseUrl}/${cleanEndpoint}`
+        });
+      }
+      return `${baseUrl}/${cleanEndpoint}`;
     }
     
-      return `${baseUrl}/${cleanEndpoint}`;
+    // No external API URL set, use local route
+    return `/${cleanEndpoint}`;
   }
   
   // Default to relative API path
@@ -275,7 +287,9 @@ export const authenticatedFetch = async (
   };
   
   try {
-    const response = await fetch(url, defaultOptions);
+    // Create full URL using createApiUrl helper
+    const fullUrl = createApiUrl(url);
+    const response = await fetch(fullUrl, defaultOptions);
     
     // Handle subscription errors (402) - return response for parseApiResponse
     if (response.status === API.STATUS.PAYMENT_REQUIRED) {

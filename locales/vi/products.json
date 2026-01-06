@@ -203,6 +203,34 @@
     "totalStock": "Tổng kho",
     "noBarcode": "Không có mã vạch",
     "noCategory": "Chưa có danh mục"
+  },
+  "importLabel": "Nhập sản phẩm",
+  "import": {
+    "title": "Nhập sản phẩm",
+    "description": "Tải lên file CSV (tối đa {maxRows} dòng). Các bản ghi trùng lặp sẽ được bỏ qua.",
+    "template": "Mẫu",
+    "downloadTemplate": "Tải mẫu",
+    "parsing": "Đang phân tích file CSV...",
+    "importing": "Đang nhập...",
+    "import": "Nhập {count} sản phẩm",
+    "importPlural": "Nhập {count} sản phẩm",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "completed": "Nhập hoàn tất: {imported} đã nhập, {failed} thất bại, {skipped} đã bỏ qua",
+    "success": "Nhập sản phẩm thành công",
+    "failed": "Nhập sản phẩm thất bại",
+    "fileError": "Không thể đọc file CSV",
+    "parseError": "Không thể phân tích file CSV",
+    "maxRowsExceeded": "File CSV vượt quá tối đa {maxRows} dòng",
+    "noData": "Không tìm thấy dữ liệu hợp lệ trong file CSV",
+    "selectFile": "Chọn file CSV",
+    "clickOrDrag": "Click để chọn file hoặc kéo thả file vào đây",
+    "onlyCsv": "Chỉ hỗ trợ file CSV",
+    "noValidProducts": "Không có sản phẩm hợp lệ để nhập",
+    "importFailed": "Nhập sản phẩm thất bại",
+    "total": "Tổng cộng",
+    "successCount": "Thành công",
+    "failedCount": "Thất bại"
   }
 }
 
