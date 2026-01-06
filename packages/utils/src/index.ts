@@ -31,8 +31,29 @@ export * from './sync/oldServerSync';
 export * from './sync/transformers';
 
 // Import utilities
-export * from './import/validator';
-export * from './import';
+// Note: validator.ts exports are for JSON imports (different use case)
+// Excel imports use validators.ts which is exported via './import'
+// Explicitly export to avoid type conflicts between validators.ts and validator.ts
+export type {
+  ImportValidationError,
+  ImportValidationResult
+} from './import/validators';
+export {
+  CUSTOMER_COLUMN_MAPPING,
+  PRODUCT_COLUMN_MAPPING,
+  validateCustomers,
+  validateProducts
+} from './import/validators';
+export type {
+  ImportValidationError as JsonImportValidationError,
+  ImportValidationResult as JsonImportValidationResult
+} from './import/validator';
+export { validateImportData } from './import/validator';
+export * from './import/excel-parser';
+export * from './import/sample-generator';
+
+// Contentful utilities (Blog CMS)
+export * from './contentful';
 
 // Plan features utilities
 export * from './plan-features';
