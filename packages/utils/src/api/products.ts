@@ -350,7 +350,14 @@ export const productsApi = {
       method: 'POST',
       body: JSON.stringify({ products }),
     });
-    return await parseApiResponse(response);
+    return await parseApiResponse<ApiResponse>(response);
+  },
+
+  /**
+   * Import products from CSV (alias for bulkImport)
+   */
+  async importProducts(products: any[]): Promise<ApiResponse> {
+    return this.bulkImport(products);
   },
 
   /**

@@ -91,7 +91,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
       for (let i = 0; i < products.length; i++) {
         const productData = products[i];
-        const rowNumber = i + 2; // +2 because Excel row 1 is header, data starts at row 2
+        const rowNumber = i + 1; // Start from 1 (matching UI display)
 
         try {
           // Map categoryName to categoryId
