@@ -45,8 +45,9 @@ export { validateImportData } from './import/validator';
 export * from './import/excel-parser';
 export * from './import/sample-generator';
 
-// Contentful utilities (Blog CMS)
-export * from './contentful';
+// Contentful utilities (Blog CMS) - Commented out, not in use yet
+// export * from './contentful/client';
+// export * from './contentful/blog';
 
 // Plan features utilities
 export * from './plan-features';
