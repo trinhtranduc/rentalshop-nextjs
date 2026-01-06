@@ -234,9 +234,20 @@ export function ImportCustomerDialog({
 
         if (response.data.imported > 0) {
           toastSuccess(t('success'));
+          // Close dialog and reload page on successful import
           if (onImportSuccess) {
             onImportSuccess();
           }
+          // Close dialog after a short delay to show success message
+          setTimeout(() => {
+            setFile(null);
+            setPreviewData([]);
+            setHeaders([]);
+            setErrors([]);
+            setDuplicates([]);
+            setImportResult(null);
+            onOpenChange(false);
+          }, 1000);
         }
 
         if (response.data.failed > 0) {
