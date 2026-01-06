@@ -346,7 +346,7 @@ export const productsApi = {
    * Bulk import products
    */
   async bulkImport(products: any[]): Promise<ApiResponse> {
-    const response = await authenticatedFetch('/api/products/bulk-import', {
+    const response = await authenticatedFetch(apiUrls.products.bulkImport, {
       method: 'POST',
       body: JSON.stringify({ products }),
     });
