@@ -10,7 +10,11 @@ export * from './api/upload';
 export * from './config';
 
 // Core utilities (everything else)
+// Export core but exclude ValidationResult to avoid conflicts, then export it explicitly
 export * from './core';
+// Explicitly export ValidationResult from pricing-calculator to resolve ambiguity
+// This ensures ValidationResult is only exported once
+export type { ValidationResult } from './core/pricing-calculator';
 
 // Unified Error handling (consolidated from api-errors.ts)
 export * from './core/errors';
