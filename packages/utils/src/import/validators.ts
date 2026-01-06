@@ -12,7 +12,7 @@ export interface ImportValidationError {
   value: any;
 }
 
-export interface ValidationResult<T> {
+export interface ImportValidationResult<T> {
   valid: boolean;
   data: T[];
   errors: ImportValidationError[];
@@ -96,7 +96,7 @@ const productExcelSchema = z.object({
 export function validateCustomers(
   excelData: any[],
   merchantId: number
-): ValidationResult<CustomerCreateInput> {
+): ImportValidationResult<CustomerCreateInput> {
   const errors: ImportValidationError[] = [];
   const validData: CustomerCreateInput[] = [];
 
@@ -169,7 +169,7 @@ export function validateProducts(
   excelData: any[],
   merchantId: number,
   outletId: number
-): ValidationResult<Omit<ProductCreateInput, 'categoryId' | 'outletStock'>> {
+): ImportValidationResult<Omit<ProductCreateInput, 'categoryId' | 'outletStock'>> {
   const errors: ImportValidationError[] = [];
   const validData: Omit<ProductCreateInput, 'categoryId' | 'outletStock'>[] = [];
 
@@ -231,7 +231,9 @@ export function validateProducts(
     }
 
     // Convert to ProductCreateInput (without categoryId and outletStock)
-    validData.push({
+    // Note: pricingType, durationConfig, merchantId, and categoryName are not part of ProductCreateInput
+    // They will be handled separately during product creation
+    const productData: Omit<ProductCreateInput, 'categoryId' | 'outletStock'> = {
       name: result.data.name,
       description: result.data.description || undefined,
       barcode: result.data.barcode || undefined,
@@ -239,12 +241,11 @@ export function validateProducts(
       salePrice: result.data.salePrice || undefined,
       costPrice: result.data.costPrice || undefined,
       deposit: result.data.deposit,
-      totalStock: result.data.stock,
-      pricingType: result.data.pricingType || null,
-      durationConfig: result.data.durationConfig || null,
-      merchantId,
-      categoryName: result.data.categoryName // Keep for mapping later
-    });
+      totalStock: result.data.stock
+      // Note: pricingType, durationConfig, merchantId, and categoryName are validated
+      // but not included in ProductCreateInput - they will be handled during import processing
+    };
+    validData.push(productData);
   });
 
   return {
