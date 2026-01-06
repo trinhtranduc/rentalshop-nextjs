@@ -215,7 +215,7 @@ export const customersApi = {
    * Bulk import customers
    */
   async bulkImport(customers: CustomerInput[]): Promise<CustomerApiResponse> {
-    const response = await authenticatedFetch('/api/customers/bulk-import', {
+    const response = await authenticatedFetch(apiUrls.customers.bulkImport, {
       method: 'POST',
       body: JSON.stringify({ customers }),
     });
