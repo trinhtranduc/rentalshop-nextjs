@@ -73,12 +73,22 @@ export const GET = async (
       };
 
       // Flatten order items with parsed productImages
+      // If productImages is empty array [], fallback to product.images
       const flattenedOrder = {
         ...order,
-        orderItems: order.orderItems?.map((item: any) => ({
-          ...item,
-          productImages: parseProductImages(item.productImages || item.product?.images)
-        })) || order.orderItems
+        orderItems: order.orderItems?.map((item: any) => {
+          // Parse snapshot images first
+          const snapshotImages = parseProductImages(item.productImages);
+          // If snapshot is empty array, fallback to product.images
+          const productImages = snapshotImages.length > 0 
+            ? snapshotImages 
+            : parseProductImages(item.product?.images);
+          
+          return {
+            ...item,
+            productImages: productImages
+          };
+        }) || order.orderItems
       };
 
       // Normalize date fields to UTC ISO strings using toISOString()
@@ -336,7 +346,13 @@ export const PUT = async (
             return [];
           };
 
-          const productImages = parseProductImages(item.productImages || item.product?.images);
+          // Parse snapshot images first
+          const snapshotImages = parseProductImages(item.productImages);
+          // If snapshot is empty array, fallback to product.images
+          const productImages = snapshotImages.length > 0 
+            ? snapshotImages 
+            : parseProductImages(item.product?.images);
+          
           const productName = item.product?.name || item.productName || null;
           const productBarcode = item.product?.barcode || item.productBarcode || null;
 

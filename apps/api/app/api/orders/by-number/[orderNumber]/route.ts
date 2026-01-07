@@ -133,12 +133,22 @@ export async function GET(
       };
 
       // Flatten order items with parsed productImages
+      // If productImages is empty array [], fallback to product.images
       const flattenedOrder = {
         ...order,
-        orderItems: order.orderItems?.map((item: any) => ({
-          ...item,
-          productImages: parseProductImages(item.productImages || item.product?.images)
-        })) || order.orderItems
+        orderItems: order.orderItems?.map((item: any) => {
+          // Parse snapshot images first
+          const snapshotImages = parseProductImages(item.productImages);
+          // If snapshot is empty array, fallback to product.images
+          const productImages = snapshotImages.length > 0 
+            ? snapshotImages 
+            : parseProductImages(item.product?.images);
+          
+          return {
+            ...item,
+            productImages: productImages
+          };
+        }) || order.orderItems
       };
 
       return NextResponse.json({
