@@ -565,10 +565,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         };
 
         // Use productImages snapshot field (already saved during order creation)
-        // Fallback to product.images if snapshot is empty (for old orders or missing snapshots)
-        const productImages = parseProductImages(
-          item.productImages || item.product?.images
-        );
+        // Parse snapshot images first
+        const snapshotImages = parseProductImages(item.productImages);
+        // If snapshot is empty array [], fallback to product.images
+        const productImages = snapshotImages.length > 0 
+          ? snapshotImages 
+          : parseProductImages(item.product?.images);
 
         return {
           id: item.id,
