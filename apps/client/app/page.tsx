@@ -8,6 +8,9 @@ import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge } from '@renta
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
+
+// Import Blog Section (Client Component that calls API)
+// import BlogSectionWrapper from './components/BlogSectionWrapper'
 import { 
   Check, 
   ChevronDown, 
@@ -181,6 +184,7 @@ const LandingPage = () => {
               <div className="hidden md:flex items-center space-x-6">
                 <a href="#features" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.features')}</a>
                 <a href="#pricing" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.pricing')}</a>
+                {/* <a href="#blog" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.blog')}</a> */}
                 <a href="#faq" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.faq')}</a>
                 <a href="#contact" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" />
@@ -524,7 +528,7 @@ const LandingPage = () => {
 
                 {/* WhatsApp */}
                 <a
-                  href={`https://wa.me/84764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
+                  href={`https://wa.me/840764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
@@ -534,7 +538,7 @@ const LandingPage = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.whatsapp')}</div>
-                    <div className="text-white font-semibold">+84 76 4774647</div>
+                    <div className="text-white font-semibold">0764774647</div>
                   </div>
                   <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
                 </a>
@@ -648,6 +652,12 @@ const LandingPage = () => {
       {/* FAQ Section */}
       <FAQ />
 
+      {/* Blog Section */}
+      {/* <BlogSectionWrapper 
+        title={t('blog.title')}
+        subtitle={t('blog.subtitle')}
+      /> */}
+
       {/* Pricing Section */}
       <Pricing />
 
@@ -697,16 +707,35 @@ const Testimonials = () => {
     return name.charAt(0).toUpperCase();
   };
   
+  // Unified gradient for all avatars
+  const avatarGradient = 'from-brand-primary to-action-primary';
+  const hoverGradient = 'from-brand-primary/5 to-action-primary/5';
+  
+  const testimonials = [
+    { key: 'john' },
+    { key: 'sarah' },
+    { key: 'mike' },
+    { key: 'aoDai' },
+    { key: 'equipment' },
+    { key: 'weddingDress' },
+    { key: 'camera' }
+  ] as const;
+  
   return (
-    <section className="py-32 bg-gradient-to-b from-bg-card to-bg-secondary relative overflow-hidden" aria-label="Testimonials section">
+    <section className="py-24 bg-gradient-to-b from-bg-card via-bg-secondary to-bg-card relative overflow-hidden" aria-label="Testimonials section">
+      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-brand-primary/3 via-action-primary/3 to-brand-primary/3 rounded-full filter blur-3xl"></div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center mb-20">
+      
+      {/* Full width container */}
+      <div className="w-full relative z-10">
+        {/* Header Section */}
+        <div className="text-center mb-16 px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-gradient-to-r from-brand-primary/10 to-action-primary/10 backdrop-blur-sm border border-brand-primary/20 rounded-full">
-            <Star className="w-4 h-4 text-brand-primary" />
+            <Star className="w-4 h-4 text-brand-primary fill-brand-primary" />
             <span className="text-sm font-medium text-brand-primary">Testimonials</span>
           </div>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
@@ -717,58 +746,57 @@ const Testimonials = () => {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {/* Testimonial Card Component */}
-          {([
-            { key: 'john', gradient: 'from-brand-primary to-action-primary' },
-            { key: 'sarah', gradient: 'from-action-success to-emerald-500' },
-            { key: 'mike', gradient: 'from-action-primary to-blue-500' },
-            { key: 'aoDai', gradient: 'from-purple-500 to-pink-500' },
-            { key: 'equipment', gradient: 'from-orange-500 to-red-500' },
-            { key: 'weddingDress', gradient: 'from-rose-500 to-pink-400' },
-            { key: 'camera', gradient: 'from-cyan-500 to-blue-500' }
-          ] as const).map(({ key, gradient }) => {
-            const borderColor = key === 'john' ? 'hover:border-brand-primary/50' :
-                               key === 'sarah' ? 'hover:border-action-success/50' :
-                               key === 'mike' ? 'hover:border-action-primary/50' :
-                               key === 'aoDai' ? 'hover:border-purple-500/50' :
-                               key === 'equipment' ? 'hover:border-orange-500/50' :
-                               key === 'weddingDress' ? 'hover:border-rose-500/50' :
-                               'hover:border-cyan-500/50';
-            
-            const bgGradient = key === 'john' ? 'from-brand-primary/0 to-brand-primary/5' :
-                              key === 'sarah' ? 'from-action-success/0 to-action-success/5' :
-                              key === 'mike' ? 'from-action-primary/0 to-action-primary/5' :
-                              key === 'aoDai' ? 'from-purple-500/0 to-purple-500/5' :
-                              key === 'equipment' ? 'from-orange-500/0 to-orange-500/5' :
-                              key === 'weddingDress' ? 'from-rose-500/0 to-rose-500/5' :
-                              'from-cyan-500/0 to-cyan-500/5';
-
-            return (
-              <div key={key} className={`group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 ${borderColor} relative overflow-hidden`}>
-                <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
-                <div className="relative z-10">
-                  <div className="flex items-center mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-5 h-5 text-action-warning fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-text-secondary mb-4 text-sm leading-relaxed">
-                    "{tItems(`${key}.quote`)}"
-                  </p>
-                  <div className="flex items-center">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center text-text-inverted font-bold text-base shadow-lg`}>
-                      {getInitial(tItems(`${key}.name`))}
+        {/* Testimonials Grid - Full Width */}
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center gap-6 max-w-[1920px] mx-auto">
+            {testimonials.map(({ key }) => {
+              return (
+                <div 
+                  key={key} 
+                  className="group relative bg-bg-card/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-border/40 hover:border-border/80 overflow-hidden w-full md:w-[calc(33.333%-1rem)] max-w-md"
+                >
+                  {/* Subtle gradient overlay on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10">
+                    {/* Stars */}
+                    <div className="flex items-center gap-1 mb-6">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className="w-5 h-5 text-action-warning fill-action-warning" 
+                        />
+                      ))}
                     </div>
-                    <div className="ml-3">
-                      <div className="font-bold text-text-primary text-base">{tItems(`${key}.name`)}</div>
-                      <div className="text-xs text-text-tertiary">{tItems(`${key}.role`)}</div>
+                    
+                    {/* Quote */}
+                    <p className="text-text-secondary mb-6 text-base leading-relaxed font-medium">
+                      "{tItems(`${key}.quote`)}"
+                    </p>
+                    
+                    {/* Author Info */}
+                    <div className="flex items-center gap-4 pt-6 border-t border-border/30">
+                      <div className={`w-12 h-12 bg-gradient-to-br ${avatarGradient} rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg flex-shrink-0`}>
+                        {getInitial(tItems(`${key}.name`))}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-text-primary text-base truncate">
+                          {tItems(`${key}.name`)}
+                        </div>
+                        <div className="text-sm text-text-tertiary truncate">
+                          {tItems(`${key}.role`)}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Decorative corner accent */}
+                  <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${avatarGradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-bl-full`}></div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -1390,9 +1418,9 @@ const Footer = () => {
 };
 
 const FloatingButtons = () => {
-  // Số điện thoại: +840764774647
-  // Format cho WhatsApp: 840764774647 (bỏ dấu +)
-  // Format cho Zalo: 0764774647 (bỏ +84, thêm số 0 đầu)
+  // Số điện thoại: 0764774647
+  // Format cho WhatsApp: 840764774647 (thêm 84 đầu)
+  // Format cho Zalo: 0764774647
   const phoneNumber = '840764774647';
   const zaloNumber = '0764774647';
   const whatsappMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
