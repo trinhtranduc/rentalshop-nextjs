@@ -26,13 +26,12 @@ export default function CalendarPage() {
   // Initialize to current month
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // 🎯 NEW: State for orders count by date and status
-  const [ordersCountByDate, setOrdersCountByDate] = useState<Map<string, Map<string, number>>>(new Map());
+  // 🎯 State for orders count by date and status
+  const [ordersCountByDate, setOrdersCountByDate] = useState<Map<string, number>>(new Map()); // Map<date, count>
   const [selectedStatus, setSelectedStatus] = useState<string>(ORDER_STATUS.RESERVED); // Default to RESERVED
   const [loadingCounts, setLoadingCounts] = useState(false);
   
   // Handle month change from Calendars component
-  // Use useRef to prevent unnecessary updates
   const handleMonthChange = useCallback((date: Date) => {
     setCurrentDate(prev => {
       // Only update if month/year actually changed
@@ -43,7 +42,7 @@ export default function CalendarPage() {
     });
   }, []);
   
-  // 🎯 NEW: State for daily order details modal
+  // 🎯 State for daily order details modal
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dailyOrders, setDailyOrders] = useState<(CalendarOrderSummary & { type: 'pickup' | 'return' })[]>([]);
   const [showDailyModal, setShowDailyModal] = useState(false);
@@ -52,8 +51,8 @@ export default function CalendarPage() {
   // Track previous month to avoid unnecessary fetches
   const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
   const prevUserIdRef = useRef<number | null>(null);
-  
-  // 🎯 NEW: Fetch orders count for each day in the month
+
+  // 🎯 Fetch orders count for each day in the month by status
   const fetchOrdersCountByDate = useCallback(async () => {
     if (!authenticated || !user) return;
     
@@ -81,131 +80,56 @@ export default function CalendarPage() {
         tempDate.setDate(tempDate.getDate() + 1);
       }
       
-      // Fetch counts for all statuses for each date
-      const statuses = [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED, ORDER_STATUS.COMPLETED, ORDER_STATUS.RETURNED, ORDER_STATUS.CANCELLED];
-      const countMap = new Map<string, Map<string, number>>();
+      // 🎯 Fetch count for entire month in ONE API call
+      const startDateStr = formatDateForAPI(startOfMonth);
+      const endDateStr = formatDateForAPI(endOfMonth);
       
-      // Fetch counts in parallel for better performance
-      // Use getOrdersByDate to get count for each date and status
-      const countPromises = dates.flatMap(date => 
-        statuses.map(async (status) => {
-          try {
-            const byDateResult = await calendarApi.getOrdersByDate(date, {
-              status,
-              outletId: user?.outletId,
-              limit: 1000 // Get all to count
-            });
-            
-            if (!countMap.has(date)) {
-              countMap.set(date, new Map());
-            }
-            const dateMap = countMap.get(date)!;
-            dateMap.set(status, byDateResult.data?.orders.length || 0);
-          } catch (error) {
-            console.error(`Error fetching count for ${date} ${status}:`, error);
-            if (!countMap.has(date)) {
-              countMap.set(date, new Map());
-            }
-            const dateMap = countMap.get(date)!;
-            dateMap.set(status, 0);
-          }
-        })
-      );
+      const countResult = await calendarApi.getOrdersCount({
+        status: selectedStatus,
+        outletId: user?.outletId,
+        startDate: startDateStr, // Start of month
+        endDate: endDateStr // End of month
+      });
       
-      await Promise.all(countPromises);
+      // Parse countByDate from API response
+      const countMap = new Map<string, number>();
+      if (countResult.data?.countByDate) {
+        // API returns countByDate as Record<string, number>
+        Object.entries(countResult.data.countByDate).forEach(([date, count]) => {
+          countMap.set(date, count as number);
+        });
+      }
+      
+      // Fill in missing dates with 0
+      dates.forEach(date => {
+        if (!countMap.has(date)) {
+          countMap.set(date, 0);
+        }
+      });
       
       setOrdersCountByDate(countMap);
-      console.log('📊 Orders count by date loaded:', countMap);
+      console.log('📊 Orders count by date loaded:', {
+        status: selectedStatus,
+        counts: Array.from(countMap.entries())
+      });
     } catch (error) {
       console.error('Error fetching orders count by date:', error);
     } finally {
       setLoadingCounts(false);
     }
-  }, [authenticated, user, currentDate]);
+  }, [authenticated, user, currentDate, selectedStatus]);
 
-  // 🎯 NEW: Fetch calendar data using specialized calendar API
-  const fetchCalendarData = useCallback(async () => {
-    if (!authenticated) {
-      // Don't show error for unauthenticated users - just show empty calendar
-      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
-      setLoading(false);
-      return;
-    }
+  // 🎯 REMOVED: Auto-fetch calendar data
+  // Calendar will only load orders when user clicks on a date
+  // const fetchCalendarData = useCallback(async () => {
+  //   ... (removed to prevent auto-loading)
+  // }, [authenticated]);
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
-      const currentYear = currentDate.getFullYear();
-      
-      console.log('📅 Calendar API Loading:', { 
-        currentMonth, 
-        currentYear,
-        strategy: 'calendar-specialized-api',
-        reason: 'Optimized for calendar display with date grouping'
-      });
-      console.log('📅 User info:', { 
-        userId: user?.id, 
-        userRole: user?.role, 
-        userMerchantId: user?.merchantId,
-        userOutletId: user?.outletId 
-      });
-      
-      // 🎯 NEW: Use specialized calendar API with startDate and endDate
-      // Use UTC date format (YYYY-MM-DD) to match backend API validation
-      const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-      const endOfMonth = new Date(currentYear, currentMonth, 0);
-      
-      // Format dates as YYYY-MM-DD for API (not YYYY/MM/DD from getUTCDateKey)
-      const formatDateForAPI = (date: Date): string => {
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
-      const result = await calendarApi.getCalendarOrders({
-        startDate: formatDateForAPI(startOfMonth),
-        endDate: formatDateForAPI(endOfMonth),
-        outletId: user?.outletId,
-        limit: 4 // Max 4 orders per day
-      });
-      
-      console.log('📅 Calendar API response:', result);
-      
-      if (result.success && result.data) {
-        console.log('📅 Calendar data received:', result.data);
-        console.log('📅 Days with orders:', result.data.calendar.length);
-        
-        setCalendarData(result.data);
-        setCalendarMeta(result.meta || null);
-        
-        if (result.data.calendar.length === 0) {
-          console.log('📅 No orders found for the month');
-        }
-      } else {
-        console.error('❌ Failed to fetch calendar data:', result.message);
-        setError(result.message || 'Failed to fetch calendar data');
-        setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
-        setCalendarMeta(null);
-      }
-    } catch (error) {
-      console.error('💥 Error fetching calendar data:', error);
-      setError('An error occurred while fetching calendar data');
-      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
-      setCalendarMeta(null);
-      // Error automatically handled by useGlobalErrorHandler
-    } finally {
-      setLoading(false);
-    }
-  }, [authenticated]);
-
-  // Fetch calendar data when component mounts or when month/user actually changes
+  // 🎯 Fetch orders count by date when component mounts or month/status changes
   useEffect(() => {
     if (!authenticated) {
-      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
-      setLoading(false);
+      setOrdersCountByDate(new Map());
+      setLoadingCounts(false);
       return;
     }
 
@@ -216,7 +140,7 @@ export default function CalendarPage() {
     const prevMonth = prevMonthRef.current;
     const prevUserId = prevUserIdRef.current;
 
-    // Only fetch if month/year or user actually changed
+    // Only fetch if month/year, user, or status actually changed
     const monthChanged = !prevMonth || prevMonth.year !== currentYear || prevMonth.month !== currentMonth;
     const userChanged = prevUserId !== currentUserId;
 
@@ -224,68 +148,33 @@ export default function CalendarPage() {
       prevMonthRef.current = { year: currentYear, month: currentMonth };
       prevUserIdRef.current = currentUserId;
       
-      // Call fetchCalendarData directly (don't include in dependencies to avoid loops)
-      fetchCalendarData();
-      // 🎯 NEW: Also fetch orders count by date
+      // Fetch orders count for each day in the month
       fetchOrdersCountByDate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated, currentDate, user?.id]);
-
-  // Handle retry with better error handling
-  const handleRetry = useCallback(() => {
-    setError(null);
-    fetchCalendarData();
-  }, [fetchCalendarData]);
-
-  // Convert calendar data to the format expected by Calendars component
-  const pickupOrders: PickupOrder[] = React.useMemo(() => {
-    console.log('📅 Transforming calendar data:', { 
-      calendarDays: calendarData.calendar.length,
-      totalOrders: calendarData.summary.totalOrders
-    });
-    
-    const orders: PickupOrder[] = [];
-    
-    // Flatten calendar data into pickup orders format
-    for (const dayData of calendarData.calendar) {
-      const date = new Date(dayData.date);
-      
-      // Add pickup orders
-      dayData.orders.forEach((order: CalendarOrderSummary) => {
-        orders.push({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-          productName: order.productName || 'Unknown Product',
-          productCount: order.productCount || 1,
-          totalAmount: order.totalAmount,
-          // Keep original field names for CalendarGrid compatibility
-          pickupDate: new Date(order.pickupPlanAt || dayData.date),
-          returnDate: new Date(order.returnPlanAt || dayData.date),
-          status: order.status,
-          outletName: order.outletName,
-          notes: order.notes || '',
-          isOverdue: order.status === ORDER_STATUS.PICKUPED && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
-          duration: order.pickupPlanAt && order.returnPlanAt ? 
-            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-          // Keep original fields for CalendarGrid to match dates correctly
-          pickupPlanAt: order.pickupPlanAt,
-          returnPlanAt: order.returnPlanAt,
-          pickedUpAt: (order as any).pickedUpAt // Include if available
-        } as any);
-      });
-      
-      // Only process pickup orders - no return orders needed
+  }, [authenticated, currentDate, user?.id, selectedStatus]);
+  
+  // Initialize empty calendar data
+  useEffect(() => {
+    if (!authenticated) {
+      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
+      setLoading(false);
     }
-    
-    console.log('📅 Final pickupOrders:', {
-      ordersCount: orders.length
-    });
-    
-    return orders;
-  }, [calendarData]);
+  }, [authenticated]);
+
+  // 🎯 REMOVED: Retry handler (no auto-loading anymore)
+  // const handleRetry = useCallback(() => {
+  //   setError(null);
+  //   fetchCalendarData();
+  // }, [fetchCalendarData]);
+
+  // 🎯 REMOVED: Convert calendar data to pickup orders
+  // Calendar will be empty until user clicks on a date
+  // Orders will be loaded on-demand when clicking a date
+  const pickupOrders: PickupOrder[] = React.useMemo(() => {
+    // Return empty array - no auto-loading
+    return [];
+  }, []);
 
   // 🎯 NEW: Handle date click to show daily orders - using new API
   const handleDateClick = useCallback(async (date: Date) => {
@@ -346,10 +235,10 @@ export default function CalendarPage() {
   return (
     <PageWrapper>
       {/* Page Loading Indicator - Floating, non-blocking */}
-      <PageLoadingIndicator loading={loading || loadingCounts} />
+      <PageLoadingIndicator loading={loading || loadingDailyOrders} />
       <div className="space-y-8">
-      {/* 🎯 Status Filter - Hidden for now, default to RESERVED */}
-      {/* {authenticated && (
+      {/* 🎯 Status Filter - Hidden for now, default to RESERVED
+      {authenticated && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium text-gray-700">
@@ -366,12 +255,10 @@ export default function CalendarPage() {
               <option value={ORDER_STATUS.RETURNED}>{to(`status.${ORDER_STATUS.RETURNED}`)}</option>
               <option value={ORDER_STATUS.CANCELLED}>{to(`status.${ORDER_STATUS.CANCELLED}`)}</option>
             </select>
-            {loadingCounts && (
-              <span className="text-sm text-gray-500">Loading counts...</span>
-            )}
           </div>
         </div>
-      )} */}
+      )}
+      */}
       
       {/* Calendar Component - Always Visible */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -390,7 +277,7 @@ export default function CalendarPage() {
               console.log('Please log in to view order details');
             }
           }}
-          onRetry={authenticated ? handleRetry : undefined} // Only show retry for authenticated users
+          onRetry={undefined} // No retry needed - orders load on date click
           // Note: ordersCountByDate and selectedStatus will be used in future updates to display counts on calendar
         />
       </div>
