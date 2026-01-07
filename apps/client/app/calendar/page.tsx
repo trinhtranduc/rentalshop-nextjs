@@ -348,8 +348,8 @@ export default function CalendarPage() {
       {/* Page Loading Indicator - Floating, non-blocking */}
       <PageLoadingIndicator loading={loading || loadingCounts} />
       <div className="space-y-8">
-      {/* 🎯 NEW: Status Filter */}
-      {authenticated && (
+      {/* 🎯 Status Filter - Hidden for now, default to RESERVED */}
+      {/* {authenticated && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium text-gray-700">
@@ -371,7 +371,7 @@ export default function CalendarPage() {
             )}
           </div>
         </div>
-      )}
+      )} */}
       
       {/* Calendar Component - Always Visible */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
