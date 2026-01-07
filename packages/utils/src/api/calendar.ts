@@ -269,7 +269,9 @@ export const calendarApi = {
   }): Promise<{
     success: boolean;
     data?: {
-      count: number;
+      count?: number; // Total count (when no date range)
+      countByDate?: Record<string, number>; // Breakdown by date (when date range provided)
+      total?: number; // Total from countByDate
       filters: {
         outletId: number | null;
         merchantId: number | null;
@@ -292,7 +294,9 @@ export const calendarApi = {
 
     const response = await authenticatedFetch(`${apiUrls.calendar.ordersCount}?${searchParams}`);
     const result = await parseApiResponse<{
-      count: number;
+      count?: number; // Total count (when no date range)
+      countByDate?: Record<string, number>; // Breakdown by date (when date range provided)
+      total?: number; // Total from countByDate
       filters: {
         outletId: number | null;
         merchantId: number | null;

@@ -122,24 +122,75 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('🔍 Orders count where clause:', where);
 
-    // Get count using getStats for performance
-    const count = await db.orders.getStats(where);
+    // If date range is provided, return breakdown by date
+    // Otherwise, return total count
+    if (startDate && endDate) {
+      // Determine which date field to use based on status
+      const dateField = (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) 
+        ? 'pickupPlanAt' 
+        : 'createdAt';
+      
+      // Use db.orders.search to fetch orders (will get all fields but we only use date field)
+      const ordersResult = await db.orders.search({
+        where,
+        limit: 10000, // Get all orders in the month
+        page: 1
+      });
 
-    console.log('📦 Orders count:', count);
-
-    return NextResponse.json(
-      ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
-        count,
-        filters: {
-          outletId: outletId || null,
-          merchantId: merchantId || null,
-          orderType: orderType || null,
-          status: status || null,
-          startDate: startDate || null,
-          endDate: endDate || null
+      // Group by date (YYYY-MM-DD format)
+      const countByDate: Record<string, number> = {};
+      
+      if (ordersResult.data) {
+        for (const order of ordersResult.data) {
+          // Get date value based on status
+          const dateValue = dateField === 'pickupPlanAt' 
+            ? order.pickupPlanAt 
+            : order.createdAt;
+          
+          if (dateValue) {
+            const date = new Date(dateValue);
+            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+          }
         }
-      })
-    );
+      }
+
+      console.log('📦 Orders count by date:', countByDate);
+
+      return NextResponse.json(
+        ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
+          countByDate, // Breakdown by date
+          total: Object.values(countByDate).reduce((sum, count) => sum + count, 0),
+          filters: {
+            outletId: outletId || null,
+            merchantId: merchantId || null,
+            orderType: orderType || null,
+            status: status || null,
+            startDate: startDate || null,
+            endDate: endDate || null
+          }
+        })
+      );
+    } else {
+      // No date range - return total count only
+      const count = await db.orders.getStats(where);
+
+      console.log('📦 Orders count:', count);
+
+      return NextResponse.json(
+        ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
+          count,
+          filters: {
+            outletId: outletId || null,
+            merchantId: merchantId || null,
+            orderType: orderType || null,
+            status: status || null,
+            startDate: startDate || null,
+            endDate: endDate || null
+          }
+        })
+      );
+    }
 
   } catch (error) {
     console.error('❌ Calendar Orders Count API error:', error);
