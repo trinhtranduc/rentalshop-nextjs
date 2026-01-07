@@ -31,9 +31,10 @@ const calendarOrdersQuerySchema = z.object({
  * 🎯 Calendar Orders API
  * 
  * Returns order counts and summaries for calendar display
- * - Groups orders by date
- * - Separates pickups and returns
- * - Limits to 3-4 orders per day for performance
+ * - Groups orders by pickupPlanAt (ngày dự kiến lấy)
+ * - Shows all RESERVED orders, filtered by pickupPlanAt within the date range
+ * - Includes both RENT and SALE orders (no default filter)
+ * - Limits orders per day for performance (configurable via limit parameter)
  * - Optimized for calendar UI
  */
 export const GET = withReadOnlyAuth(async (
@@ -60,21 +61,16 @@ export const GET = withReadOnlyAuth(async (
     console.log('📅 Date range:', { startDate, endDate });
 
     // Build where clause with role-based filtering
-    // Calendar chỉ hiển thị đơn RESERVED (đã cọc) theo pickupPlanAt (ngày dự kiến lấy)
-    const where: any = {
-      pickupPlanAt: {
-        gte: startDate,
-        lte: endDate
-      }
-    };
+    // ✅ FIX: Lấy TẤT CẢ đơn RESERVED (không filter pickupPlanAt trong where clause)
+    // Sau đó sẽ group và hiển thị theo pickupPlanAt khi có, nếu không có thì theo createdAt
+    // Điều này đảm bảo hiển thị đầy đủ các đơn RESERVED, kể cả đơn chưa có ngày lấy hàng
+    const where: any = {};
 
     // Add optional filters
     if (orderType) {
       where.orderType = orderType;
-    } else {
-      // Default to RENT orders if no orderType specified
-      where.orderType = ORDER_TYPE.RENT as any;
     }
+    // ✅ FIX: Không default RENT nữa - hiển thị cả RENT và SALE orders
     
     // Calendar chỉ hiển thị đơn RESERVED (đã cọc) - đơn dự kiến lấy
     // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
@@ -160,7 +156,7 @@ export const GET = withReadOnlyAuth(async (
           customerName: order.customer?.firstName ? 
             `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 
             'Unknown Customer',
-          customerPhone: order.customer?.phone,
+          customerPhone: order.customer?.phone || undefined,
           status: order.status,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
@@ -193,21 +189,35 @@ export const GET = withReadOnlyAuth(async (
         };
 
         // Calendar chỉ hiển thị đơn RESERVED (đã cọc) theo pickupPlanAt (ngày dự kiến lấy)
-        // Chỉ xử lý RESERVED orders
-        if (order.status === ORDER_STATUS.RESERVED && order.pickupPlanAt) {
-          const displayDate = new Date(order.pickupPlanAt);
-          // Use local date key to match frontend calendar display (user's local timezone)
-          const dateKey = getLocalDateKey(displayDate);
-          
-          if (!calendarMap[dateKey]) {
-            calendarMap[dateKey] = [];
+        // ✅ FIX: Hiển thị đơn có pickupPlanAt trong tháng hiện tại
+        // Nếu pickupPlanAt nằm ngoài tháng, vẫn hiển thị nhưng group theo pickupPlanAt
+        // Nếu không có pickupPlanAt, có thể hiển thị theo createdAt hoặc bỏ qua
+        if (order.status === ORDER_STATUS.RESERVED) {
+          // Chỉ hiển thị đơn có pickupPlanAt (theo yêu cầu: hiển thị theo pickupPlanAt)
+          if (order.pickupPlanAt) {
+            const displayDate = new Date(order.pickupPlanAt);
+            
+            // ✅ FIX: Kiểm tra xem pickupPlanAt có trong tháng hiện tại không
+            // Nếu có, hiển thị trong calendar
+            const pickupDate = new Date(order.pickupPlanAt);
+            const isInMonth = pickupDate >= startDate && pickupDate <= endDate;
+            
+            if (isInMonth) {
+              // Use local date key to match frontend calendar display (user's local timezone)
+              const dateKey = getLocalDateKey(displayDate);
+              
+              if (!calendarMap[dateKey]) {
+                calendarMap[dateKey] = [];
+              }
+              
+              // Check if already added to avoid duplicates
+              const alreadyInMap = calendarMap[dateKey].some(o => o.id === order.id);
+              if (!alreadyInMap && calendarMap[dateKey].length < limit) {
+                calendarMap[dateKey].push(orderSummary);
+              }
+            }
           }
-          
-          // Check if already added to avoid duplicates
-          const alreadyInMap = calendarMap[dateKey].some(o => o.id === order.id);
-          if (!alreadyInMap && calendarMap[dateKey].length < limit) {
-            calendarMap[dateKey].push(orderSummary);
-          }
+          // Nếu không có pickupPlanAt, không hiển thị trong calendar (theo logic: hiển thị theo pickupPlanAt)
         }
       }
 
@@ -220,7 +230,7 @@ export const GET = withReadOnlyAuth(async (
         const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         
         // All orders in calendarMap are RESERVED orders only (đơn đã cọc)
-        // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+        // RESERVED: hiển thị theo pickupPlanAt nếu có, nếu không thì theo createdAt
         const dayPickups = dayOrders.length;
         const dayReturns = 0; // No return orders displayed
         

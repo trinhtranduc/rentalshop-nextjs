@@ -23,7 +23,8 @@
     "overdue": "Quá hạn",
     "month": "Tháng",
     "noOrders": "Không có đơn hàng",
-    "more": "Thêm..."
+    "more": "Thêm...",
+    "filterByStatus": "Lọc theo trạng thái"
   },
   "stats": {
     "ordersToday": "Đơn hàng hôm nay",

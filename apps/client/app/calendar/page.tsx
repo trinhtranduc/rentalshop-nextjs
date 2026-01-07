@@ -26,6 +26,11 @@ export default function CalendarPage() {
   // Initialize to current month
   const [currentDate, setCurrentDate] = useState(new Date());
   
+  // 🎯 NEW: State for orders count by date and status
+  const [ordersCountByDate, setOrdersCountByDate] = useState<Map<string, Map<string, number>>>(new Map());
+  const [selectedStatus, setSelectedStatus] = useState<string>(ORDER_STATUS.RESERVED); // Default to RESERVED
+  const [loadingCounts, setLoadingCounts] = useState(false);
+  
   // Handle month change from Calendars component
   // Use useRef to prevent unnecessary updates
   const handleMonthChange = useCallback((date: Date) => {
@@ -42,10 +47,81 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dailyOrders, setDailyOrders] = useState<(CalendarOrderSummary & { type: 'pickup' | 'return' })[]>([]);
   const [showDailyModal, setShowDailyModal] = useState(false);
+  const [loadingDailyOrders, setLoadingDailyOrders] = useState(false);
 
   // Track previous month to avoid unnecessary fetches
   const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
   const prevUserIdRef = useRef<number | null>(null);
+  
+  // 🎯 NEW: Fetch orders count for each day in the month
+  const fetchOrdersCountByDate = useCallback(async () => {
+    if (!authenticated || !user) return;
+    
+    try {
+      setLoadingCounts(true);
+      
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+      const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+      const endOfMonth = new Date(currentYear, currentMonth, 0);
+      
+      // Format dates as YYYY-MM-DD
+      const formatDateForAPI = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // Get all dates in the month
+      const dates: string[] = [];
+      const tempDate = new Date(startOfMonth);
+      while (tempDate <= endOfMonth) {
+        dates.push(formatDateForAPI(new Date(tempDate)));
+        tempDate.setDate(tempDate.getDate() + 1);
+      }
+      
+      // Fetch counts for all statuses for each date
+      const statuses = [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED, ORDER_STATUS.COMPLETED, ORDER_STATUS.RETURNED, ORDER_STATUS.CANCELLED];
+      const countMap = new Map<string, Map<string, number>>();
+      
+      // Fetch counts in parallel for better performance
+      // Use getOrdersByDate to get count for each date and status
+      const countPromises = dates.flatMap(date => 
+        statuses.map(async (status) => {
+          try {
+            const byDateResult = await calendarApi.getOrdersByDate(date, {
+              status,
+              outletId: user?.outletId,
+              limit: 1000 // Get all to count
+            });
+            
+            if (!countMap.has(date)) {
+              countMap.set(date, new Map());
+            }
+            const dateMap = countMap.get(date)!;
+            dateMap.set(status, byDateResult.data?.orders.length || 0);
+          } catch (error) {
+            console.error(`Error fetching count for ${date} ${status}:`, error);
+            if (!countMap.has(date)) {
+              countMap.set(date, new Map());
+            }
+            const dateMap = countMap.get(date)!;
+            dateMap.set(status, 0);
+          }
+        })
+      );
+      
+      await Promise.all(countPromises);
+      
+      setOrdersCountByDate(countMap);
+      console.log('📊 Orders count by date loaded:', countMap);
+    } catch (error) {
+      console.error('Error fetching orders count by date:', error);
+    } finally {
+      setLoadingCounts(false);
+    }
+  }, [authenticated, user, currentDate]);
 
   // 🎯 NEW: Fetch calendar data using specialized calendar API
   const fetchCalendarData = useCallback(async () => {
@@ -150,6 +226,8 @@ export default function CalendarPage() {
       
       // Call fetchCalendarData directly (don't include in dependencies to avoid loops)
       fetchCalendarData();
+      // 🎯 NEW: Also fetch orders count by date
+      fetchOrdersCountByDate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, currentDate, user?.id]);
@@ -209,118 +287,92 @@ export default function CalendarPage() {
     return orders;
   }, [calendarData]);
 
-  // 🎯 NEW: Handle date click to show daily orders
-  const handleDateClick = useCallback((date: Date) => {
+  // 🎯 NEW: Handle date click to show daily orders - using new API
+  const handleDateClick = useCallback(async (date: Date) => {
     console.log('📅 Date clicked:', date);
     
-    // Fix: Normalize date to local timezone before creating dateKey
-    // This ensures consistency with CalendarGrid and backend date matching
-    // Create a new Date object using local date components to avoid timezone issues
-    const normalizedDate = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
+    if (!authenticated || !user) return;
     
-    // Use getLocalDateKey to ensure consistency with CalendarGrid date matching
-    // This ensures the dateKey matches exactly how CalendarGrid matches dates with orders
-    const dateKey = getLocalDateKey(normalizedDate);
-    
-    console.log('📅 Date click debug:', {
-      originalDate: date,
-      normalizedDate: normalizedDate,
-      dateKey,
-      originalDateComponents: {
-        year: date.getFullYear(),
-        month: date.getMonth(),
-        day: date.getDate()
-      },
-      normalizedDateComponents: {
-        year: normalizedDate.getFullYear(),
-        month: normalizedDate.getMonth(),
-        day: normalizedDate.getDate()
-      }
-    });
-    
-    // CRITICAL FIX: Find orders from pickupOrders array (transformed data)
-    // instead of calendarData.calendar (backend data) because:
-    // - Backend may group orders by different dateKey (e.g., timezone conversion)
-    // - CalendarGrid matches orders by pickupPlanAt (actual pickup date)
-    // - pickupOrders array contains orders with correct pickupDate from pickupPlanAt
-    const matchingOrders = pickupOrders.filter(order => {
-      // Match by pickupPlanAt (actual pickup date), not backend dateKey
-      const orderPickupDate = (order as any).pickupPlanAt 
-        ? new Date((order as any).pickupPlanAt)
-        : order.pickupDate;
+    try {
+      setLoadingDailyOrders(true);
+      setSelectedDate(date);
+      setShowDailyModal(true);
       
-      if (!orderPickupDate) return false;
+      // Format date as YYYY-MM-DD
+      const formatDateForAPI = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
       
-      const orderDateKey = getLocalDateKey(orderPickupDate);
-      return orderDateKey === dateKey;
-    });
-    
-    console.log('📅 Looking for dateKey:', dateKey);
-    console.log('📅 Available dates from backend:', calendarData.calendar.map(day => day.date));
-    console.log('📅 Orders matching dateKey:', {
-      dateKey,
-      matchingOrdersCount: matchingOrders.length,
-      orderNumbers: matchingOrders.map(o => o.orderNumber)
-    });
-    
-    if (matchingOrders.length > 0) {
-      // Find original CalendarOrderSummary from calendarData to preserve all fields
-      const allOrders: (CalendarOrderSummary & { type: 'pickup' | 'return' })[] = matchingOrders.map(order => {
-        // Find original order data from calendarData
-        let originalOrder: CalendarOrderSummary | undefined;
-        for (const dayData of calendarData.calendar) {
-          originalOrder = dayData.orders.find(o => o.id === order.id);
-          if (originalOrder) break;
-        }
+      const dateStr = formatDateForAPI(date);
+      
+      // 🎯 NEW: Fetch orders by date and status using new API
+      const result = await calendarApi.getOrdersByDate(dateStr, {
+        status: selectedStatus,
+        outletId: user?.outletId,
+        limit: 100 // Get up to 100 orders
+      });
+      
+      console.log('📅 Orders by date API response:', result);
+      
+      if (result.success && result.data) {
+        const orders = result.data.orders.map(order => ({
+          ...order,
+          type: (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED) 
+            ? 'pickup' as const 
+            : 'return' as const
+        }));
         
-        // Use original order data if found, otherwise construct from PickupOrder
-        return originalOrder ? {
-          ...originalOrder,
-          type: 'pickup' as const
-        } : {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          customerPhone: order.customerPhone || undefined,
-          totalAmount: order.totalAmount || 0,
-          status: order.status,
-          outletName: order.outletName || undefined,
-          notes: order.notes || undefined,
-          pickupPlanAt: (order as any).pickupPlanAt || order.pickupDate?.toISOString(),
-          returnPlanAt: order.returnDate?.toISOString(),
-          productName: order.productName,
-          productCount: order.productCount || 1,
-          orderItems: [], // Fallback empty array
-          type: 'pickup' as const
-        };
-      });
-      
-      console.log('📅 Orders found for selected date:', {
-        dateKey,
-        matchingOrders: allOrders.length,
-        orderNumbers: allOrders.map(o => o.orderNumber)
-      });
-      
-      setSelectedDate(date);
-      setDailyOrders(allOrders);
-      setShowDailyModal(true);
-    } else {
-      console.log('📅 No orders for selected date:', dateKey);
-      setSelectedDate(date);
+        setDailyOrders(orders);
+        console.log('📅 Orders loaded for date:', {
+          date: dateStr,
+          status: selectedStatus,
+          count: orders.length
+        });
+      } else {
+        console.error('❌ Failed to fetch orders by date:', result.message);
+        setDailyOrders([]);
+      }
+    } catch (error) {
+      console.error('💥 Error fetching orders by date:', error);
       setDailyOrders([]);
-      setShowDailyModal(true);
+    } finally {
+      setLoadingDailyOrders(false);
     }
-  }, [pickupOrders, calendarData]);
+  }, [authenticated, user, selectedStatus]);
 
   return (
     <PageWrapper>
       {/* Page Loading Indicator - Floating, non-blocking */}
-      <PageLoadingIndicator loading={loading} />
+      <PageLoadingIndicator loading={loading || loadingCounts} />
       <div className="space-y-8">
+      {/* 🎯 NEW: Status Filter */}
+      {authenticated && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-700">
+              {tcal('labels.filterByStatus') || 'Filter by Status:'}
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={ORDER_STATUS.RESERVED}>{to(`status.${ORDER_STATUS.RESERVED}`)}</option>
+              <option value={ORDER_STATUS.PICKUPED}>{to(`status.${ORDER_STATUS.PICKUPED}`)}</option>
+              <option value={ORDER_STATUS.COMPLETED}>{to(`status.${ORDER_STATUS.COMPLETED}`)}</option>
+              <option value={ORDER_STATUS.RETURNED}>{to(`status.${ORDER_STATUS.RETURNED}`)}</option>
+              <option value={ORDER_STATUS.CANCELLED}>{to(`status.${ORDER_STATUS.CANCELLED}`)}</option>
+            </select>
+            {loadingCounts && (
+              <span className="text-sm text-gray-500">Loading counts...</span>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Calendar Component - Always Visible */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <Calendars
@@ -339,6 +391,7 @@ export default function CalendarPage() {
             }
           }}
           onRetry={authenticated ? handleRetry : undefined} // Only show retry for authenticated users
+          // Note: ordersCountByDate and selectedStatus will be used in future updates to display counts on calendar
         />
       </div>
 
@@ -395,14 +448,12 @@ export default function CalendarPage() {
 
             {/* Modal Content */}
             <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {(() => {
-                console.log('🔍 Modal rendering with dailyOrders:', {
-                  length: dailyOrders.length,
-                  orders: dailyOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
-                });
-                return null;
-              })()}
-              {dailyOrders.length === 0 ? (
+              {loadingDailyOrders ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">{tcal('modal.loading') || 'Loading orders...'}</p>
+                </div>
+              ) : dailyOrders.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

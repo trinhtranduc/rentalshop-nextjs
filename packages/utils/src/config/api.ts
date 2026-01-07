@@ -286,6 +286,8 @@ export interface ApiUrls {
     };
     calendar: {
       orders: string;
+      ordersCount: string;
+      ordersByDate: string;
     };
     referrals: {
       list: string;
@@ -775,6 +777,8 @@ function createApiUrls(): ApiUrls {
     },
     calendar: {
       orders: `${base}/api/calendar/orders`,
+      ordersCount: `${base}/api/calendar/orders/count`,
+      ordersByDate: `${base}/api/calendar/orders/by-date`,
     },
     referrals: {
       list: `${base}/api/referrals`,
