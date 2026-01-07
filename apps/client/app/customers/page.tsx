@@ -11,14 +11,19 @@ import {
   CustomerDetailDialog,
   AddCustomerDialog,
   EditCustomerDialog,
+  ImportCustomerDialog,
   ConfirmationDialog,
   Button,
   LoadingIndicator,
-  ExportDialog
+  ExportDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@rentalshop/ui';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, Upload, MoreVertical } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
@@ -43,6 +48,7 @@ export default function CustomersPage() {
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
+  const { canManageCustomers } = usePermissions();
   
   // Dialog states
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -52,6 +58,7 @@ export default function CustomersPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
 
@@ -318,6 +325,24 @@ export default function CustomersPage() {
               <Plus className="w-4 h-4 mr-2" />
               {t('createCustomer')}
             </Button>
+            {/* More actions menu (3 dots) - only show if user can manage customers */}
+            {canManageCustomers && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowImportDialog(true)}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {t('importLabel') || 'Import Customers'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </PageHeader>
@@ -432,6 +457,16 @@ export default function CustomersPage() {
         onCancel={() => {
           setShowDeleteConfirm(false);
           setCustomerToDelete(null);
+        }}
+      />
+
+      {/* Import Dialog */}
+      <ImportCustomerDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportSuccess={() => {
+          // Refresh customer list after import
+          router.refresh();
         }}
       />
 

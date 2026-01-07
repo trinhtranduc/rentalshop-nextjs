@@ -211,6 +211,37 @@ export const customersApi = {
     return await parseApiResponse<CustomerApiResponse>(response);
   },
 
+  /**
+   * Bulk import customers
+   */
+  async bulkImport(customers: CustomerInput[]): Promise<CustomerApiResponse> {
+    const response = await authenticatedFetch(apiUrls.customers.bulkImport, {
+      method: 'POST',
+      body: JSON.stringify({ customers }),
+    });
+    return await parseApiResponse<CustomerApiResponse>(response);
+  },
+
+  /**
+   * Import customers from CSV (alias for bulkImport)
+   */
+  async importCustomers(customers: CustomerInput[]): Promise<CustomerApiResponse> {
+    return this.bulkImport(customers);
+  },
+
+  /**
+   * Download sample file for import
+   */
+  async downloadSampleFile(): Promise<Blob> {
+    const response = await authenticatedFetch('/api/import/sample/customers');
+    
+    if (!response.ok) {
+      throw new Error('Failed to download sample file');
+    }
+    
+    return await response.blob();
+  },
+
   // ============================================================================
   // TESTING AND DEBUG ENDPOINTS
   // ============================================================================

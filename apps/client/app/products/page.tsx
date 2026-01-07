@@ -9,6 +9,7 @@ import {
   ProductsLoading,
   useToast,
   ProductAddDialog,
+  ImportProductDialog,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,9 +20,13 @@ import {
   ConfirmationDialog,
   Button,
   LoadingIndicator,
-  ExportDialog
+  ExportDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@rentalshop/ui';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, MoreVertical, Upload } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useOutletsData, useCategoriesData } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
@@ -74,6 +79,7 @@ export default function ProductsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   
@@ -375,16 +381,16 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Export button */}
-            {canExport && (
+            {/* Export button - only show when items are selected */}
+            {canExport && selectedProductIds.length > 0 && (
               <Button
                 onClick={() => setShowExportDialog(true)}
-                variant={selectedProductIds.length > 0 ? "default" : "outline"}
+                variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
                 {tc('buttons.export')}
-                {selectedProductIds.length > 0 && ` (${selectedProductIds.length})`}
+                {` (${selectedProductIds.length})`}
               </Button>
             )}
             {/* ✅ Only show Add Product button if user can manage products */}
@@ -397,6 +403,24 @@ export default function ProductsPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 {t('createProduct')}
               </Button>
+            )}
+            {/* More actions menu (3 dots) - only show if user can manage products */}
+            {canManageProducts && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowImportDialog(true)}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {t('importLabel') || 'Import Products'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
@@ -527,6 +551,16 @@ export default function ProductsPage() {
         onCancel={() => {
           setShowDeleteConfirm(false);
           setProductToDelete(null);
+        }}
+      />
+
+      {/* Import Dialog */}
+      <ImportProductDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportSuccess={() => {
+          // Refresh product list after import
+          router.refresh();
         }}
       />
 

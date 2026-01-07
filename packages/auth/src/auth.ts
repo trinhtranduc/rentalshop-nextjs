@@ -14,6 +14,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
           id: true,
           name: true,
           description: true,
+          tenantKey: true, // Include tenantKey for referral link
         },
       },
       outlet: {
@@ -21,6 +22,13 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
           id: true,
           name: true,
           address: true,
+          merchant: {
+            select: {
+              id: true,
+              name: true,
+              tenantKey: true, // Include tenantKey for referral link
+            },
+          },
         },
       },
     },
@@ -72,6 +80,40 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
     permissionsChangedAt: permissionsChangedAt,
   });
 
+  // Get base URL for public product links
+  const getBaseUrl = () => {
+    // Try to get from environment variable first
+    if (process.env.NEXT_PUBLIC_CLIENT_URL) {
+      return process.env.NEXT_PUBLIC_CLIENT_URL;
+    }
+    // Fallback to default
+    return 'https://dev.anyrent.shop';
+  };
+
+  const baseUrl = getBaseUrl();
+
+  // Generate referral link and public product link for merchant
+  const getMerchantLinks = (tenantKey?: string | null) => {
+    if (!tenantKey) {
+      return {
+        referralLink: undefined,
+        publicProductLink: undefined,
+      };
+    }
+    return {
+      referralLink: tenantKey, // Referral code is the tenantKey itself
+      publicProductLink: `${baseUrl}/${tenantKey}/products`,
+    };
+  };
+
+  // Get merchant links
+  const merchantTenantKey = (user.merchant as any)?.tenantKey;
+  const merchantLinks = getMerchantLinks(merchantTenantKey);
+
+  // Get outlet merchant links
+  const outletMerchantTenantKey = (user.outlet as any)?.merchant?.tenantKey;
+  const outletMerchantLinks = getMerchantLinks(outletMerchantTenantKey);
+
   return {
     user: {
       id: user.id, // Return id to frontend (number)
@@ -88,11 +130,21 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
         id: user.merchant.id, // Return merchant id to frontend (number)
         name: user.merchant.name,
         description: user.merchant.description || undefined,
+        tenantKey: merchantTenantKey || undefined, // Include tenantKey for referral link
+        referralLink: merchantLinks.referralLink, // Referral code (tenantKey)
+        publicProductLink: merchantLinks.publicProductLink, // Public product link
       } : undefined,
       outlet: user.outlet ? {
         id: user.outlet.id, // Return outlet id to frontend (number)
         name: user.outlet.name,
         address: user.outlet.address || undefined,
+        merchant: (user.outlet as any).merchant ? {
+          id: (user.outlet as any).merchant.id,
+          name: (user.outlet as any).merchant.name,
+          tenantKey: outletMerchantTenantKey || undefined,
+          referralLink: outletMerchantLinks.referralLink, // Referral code (tenantKey)
+          publicProductLink: outletMerchantLinks.publicProductLink, // Public product link
+        } : undefined,
       } : undefined,
     },
     token,

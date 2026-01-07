@@ -10,7 +10,11 @@ export * from './api/upload';
 export * from './config';
 
 // Core utilities (everything else)
+// Export core but exclude ValidationResult to avoid conflicts, then export it explicitly
 export * from './core';
+// Explicitly export ValidationResult from pricing-calculator to resolve ambiguity
+// This ensures ValidationResult is only exported once
+export type { ValidationResult } from './core/pricing-calculator';
 
 // Unified Error handling (consolidated from api-errors.ts)
 export * from './core/errors';
@@ -31,7 +35,23 @@ export * from './sync/oldServerSync';
 export * from './sync/transformers';
 
 // Import utilities
-export * from './import/validator';
+// Note: validator.ts exports are for JSON imports (different use case)
+// Excel imports use validators.ts which is exported via './import'
+// Export Excel validator types and functions (from validators.ts) - use export * to include generic types
+export * from './import/validators';
+// Export JSON validator types with different names to avoid conflicts (from validator.ts)
+export type {
+  ImportValidationError as JsonImportValidationError,
+  ImportValidationResult as JsonImportValidationResult
+} from './import/validator';
+export { validateImportData } from './import/validator';
+// Export other import utilities
+export * from './import/excel-parser';
+export * from './import/sample-generator';
+
+// Contentful utilities (Blog CMS) - Commented out, not in use yet
+// export * from './contentful/client';
+// export * from './contentful/blog';
 
 // Plan features utilities
 export * from './plan-features';

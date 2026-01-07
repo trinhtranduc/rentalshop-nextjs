@@ -6,6 +6,7 @@ import { prisma } from './client';
 import { createUser } from './user';
 import { createSubscription } from './subscription';
 import { hashPassword } from '@rentalshop/auth';
+import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
 
 export interface RegistrationInput {
@@ -173,10 +174,22 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     console.log('✅ Trial plan created automatically');
   }
 
-  // 3. Create merchant (let DB autoincrement id)
+  // 3. Generate unique tenantKey for merchant
+  const merchantName = data.businessName || `${data.name}'s Business`;
+  const tenantKey = await generateUniqueTenantKey(
+    merchantName,
+    async (key: string) => {
+      const existing = await tx.merchant.findUnique({
+        where: { tenantKey: key }
+      });
+      return !!existing;
+    }
+  );
+
+  // 4. Create merchant (let DB autoincrement id)
   const merchant = await tx.merchant.create({
     data: {
-      name: data.businessName || `${data.name}'s Business`,
+      name: merchantName,
       email: data.email,
       phone: data.phone,
       address: data.address,
@@ -184,12 +197,13 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
+      tenantKey: tenantKey, // Set generated tenantKey
       isActive: true
       // subscriptionStatus removed - will be set in subscription.status
     }
   });
 
-  // 4. Create default outlet with merchant information FIRST
+  // 5. Create default outlet with merchant information FIRST
   const outlet = await tx.outlet.create({
     data: {
       name: data.outletName || 'Main Store',
@@ -207,7 +221,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 5. Create default category for merchant
+  // 6. Create default category for merchant
   const defaultCategory = await tx.category.create({
     data: {
       name: 'General',
@@ -217,7 +231,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 6. Create merchant user with outlet assignment
+  // 7. Create merchant user with outlet assignment
   const hashedPassword = await hashPassword(data.password);
   const user = await tx.user.create({
     data: {

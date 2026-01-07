@@ -342,6 +342,37 @@ export const productsApi = {
     return await parseApiResponse<ProductAvailabilityResponse>(response);
   },
 
+  /**
+   * Bulk import products
+   */
+  async bulkImport(products: any[]): Promise<ApiResponse> {
+    const response = await authenticatedFetch(apiUrls.products.bulkImport, {
+      method: 'POST',
+      body: JSON.stringify({ products }),
+    });
+    return await parseApiResponse<ApiResponse>(response);
+  },
+
+  /**
+   * Import products from CSV (alias for bulkImport)
+   */
+  async importProducts(products: any[]): Promise<ApiResponse> {
+    return this.bulkImport(products);
+  },
+
+  /**
+   * Download sample file for import
+   */
+  async downloadSampleFile(): Promise<Blob> {
+    const response = await authenticatedFetch('/api/import/sample/products');
+    
+    if (!response.ok) {
+      throw new Error('Failed to download sample file');
+    }
+    
+    return await response.blob();
+  },
+
 };
 
 

@@ -166,6 +166,20 @@
     "MERCHANT": "Merchant",
     "OUTLET_ADMIN": "Outlet Admin",
     "OUTLET_STAFF": "Outlet Staff"
+  },
+  "import": {
+    "preview": {
+      "total": "Total",
+      "valid": "Valid",
+      "invalid": "Invalid",
+      "errors": "error",
+      "errorsPlural": "errors",
+      "duplicates": "duplicate",
+      "duplicatesPlural": "duplicates",
+      "status": "Status",
+      "showing": "Showing first {maxRows} of {total} rows",
+      "validStatus": "Valid"
+    }
   }
 }
 

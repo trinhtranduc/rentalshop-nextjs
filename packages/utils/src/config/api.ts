@@ -66,6 +66,7 @@ export interface ApiUrls {
     delete: (id: number) => string;
     updateStock: (id: number) => string;
     bulkUpdate: string;
+    bulkImport: string;
     availability: (id: number) => string;
     export: string;
   };
@@ -86,6 +87,7 @@ export interface ApiUrls {
     delete: (id: number) => string;
     stats: string;
     export: string;
+    bulkImport: string;
   };
   outlets: {
     list: string;
@@ -553,6 +555,7 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/products/${id}`,
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
+      bulkImport: `${base}/api/products/bulk-import`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
       export: `${base}/api/products/export`,
     },
@@ -573,6 +576,7 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/customers/${id}`,
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
+      bulkImport: `${base}/api/customers/bulk-import`,
     },
     outlets: {
       list: `${base}/api/outlets`,
