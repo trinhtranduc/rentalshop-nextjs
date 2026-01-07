@@ -412,7 +412,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
           // Snapshot product info to preserve it even if product is deleted later
           return {
-            product: { connect: { id: item.productId } },
+            productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
             // Snapshot fields
             productName: product.name || null,
             productBarcode: product.barcode || null,
@@ -565,7 +565,10 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         };
 
         // Use productImages snapshot field (already saved during order creation)
-        const productImages = parseProductImages(item.productImages);
+        // Fallback to product.images if snapshot is empty (for old orders or missing snapshots)
+        const productImages = parseProductImages(
+          item.productImages || item.product?.images
+        );
 
         return {
           id: item.id,
