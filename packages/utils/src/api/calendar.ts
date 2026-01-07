@@ -252,6 +252,144 @@ export const calendarApi = {
       outletId,
       ...options
     });
+  },
+
+  /**
+   * Get count of orders by status
+   * @param filters - Filter options
+   * @returns Promise with order count
+   */
+  async getOrdersCount(filters?: {
+    outletId?: number;
+    merchantId?: number;
+    orderType?: string;
+    status?: string; // RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
+    startDate?: string; // YYYY-MM-DD
+    endDate?: string; // YYYY-MM-DD
+  }): Promise<{
+    success: boolean;
+    data?: {
+      count: number;
+      filters: {
+        outletId: number | null;
+        merchantId: number | null;
+        orderType: string | null;
+        status: string | null;
+        startDate: string | null;
+        endDate: string | null;
+      };
+    };
+    code?: string;
+    message?: string;
+  }> {
+    const searchParams = new URLSearchParams();
+    if (filters?.outletId) searchParams.append('outletId', filters.outletId.toString());
+    if (filters?.merchantId) searchParams.append('merchantId', filters.merchantId.toString());
+    if (filters?.orderType) searchParams.append('orderType', filters.orderType);
+    if (filters?.status) searchParams.append('status', filters.status);
+    if (filters?.startDate) searchParams.append('startDate', filters.startDate);
+    if (filters?.endDate) searchParams.append('endDate', filters.endDate);
+
+    const response = await authenticatedFetch(`${apiUrls.calendar.ordersCount}?${searchParams}`);
+    const result = await parseApiResponse<{
+      count: number;
+      filters: {
+        outletId: number | null;
+        merchantId: number | null;
+        orderType: string | null;
+        status: string | null;
+        startDate: string | null;
+        endDate: string | null;
+      };
+    }>(response);
+
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: result.data,
+        code: 'ORDERS_COUNT_SUCCESS',
+        message: 'Orders count retrieved successfully'
+      };
+    }
+
+    return {
+      success: false,
+      message: result.message || 'Failed to get orders count'
+    };
+  },
+
+  /**
+   * Get orders by date and status
+   * @param date - Date (YYYY-MM-DD)
+   * @param filters - Filter options
+   * @returns Promise with orders for the date
+   */
+  async getOrdersByDate(
+    date: string,
+    filters?: {
+      outletId?: number;
+      merchantId?: number;
+      orderType?: string;
+      status?: string; // RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
+      limit?: number;
+    }
+  ): Promise<{
+    success: boolean;
+    data?: {
+      date: string;
+      orders: CalendarOrderSummary[];
+      summary: {
+        totalOrders: number;
+        totalRevenue: number;
+        averageOrderValue: number;
+      };
+      filters: {
+        outletId: number | null;
+        merchantId: number | null;
+        orderType: string | null;
+        status: string | null;
+      };
+    };
+    code?: string;
+    message?: string;
+  }> {
+    const searchParams = new URLSearchParams({ date });
+    if (filters?.outletId) searchParams.append('outletId', filters.outletId.toString());
+    if (filters?.merchantId) searchParams.append('merchantId', filters.merchantId.toString());
+    if (filters?.orderType) searchParams.append('orderType', filters.orderType);
+    if (filters?.status) searchParams.append('status', filters.status);
+    if (filters?.limit) searchParams.append('limit', filters.limit.toString());
+
+    const response = await authenticatedFetch(`${apiUrls.calendar.ordersByDate}?${searchParams}`);
+    const result = await parseApiResponse<{
+      date: string;
+      orders: CalendarOrderSummary[];
+      summary: {
+        totalOrders: number;
+        totalRevenue: number;
+        averageOrderValue: number;
+      };
+      filters: {
+        outletId: number | null;
+        merchantId: number | null;
+        orderType: string | null;
+        status: string | null;
+      };
+    }>(response);
+
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: result.data,
+        code: 'ORDERS_BY_DATE_SUCCESS',
+        message: 'Orders by date retrieved successfully'
+      };
+    }
+
+    return {
+      success: false,
+      message: result.message || 'Failed to get orders by date'
+    };
   }
 };
 

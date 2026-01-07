@@ -200,6 +200,210 @@ export const calendarSwaggerConfig = {
           productDeposit: { type: 'number' }
         }
       }
+    },
+    '/api/calendar/orders/count': {
+      get: {
+        tags: ['Calendar'],
+        summary: 'Get orders count by status',
+        description: 'Get count of orders filtered by status (RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'status',
+            in: 'query',
+            description: 'Order status to filter by',
+            required: false,
+            schema: {
+              type: 'string',
+              enum: ['RESERVED', 'PICKUPED', 'COMPLETED', 'RETURNED', 'CANCELLED'],
+              example: 'RESERVED'
+            }
+          },
+          {
+            name: 'outletId',
+            in: 'query',
+            description: 'Filter by specific outlet',
+            schema: { type: 'number' }
+          },
+          {
+            name: 'merchantId',
+            in: 'query',
+            description: 'Filter by specific merchant',
+            schema: { type: 'number' }
+          },
+          {
+            name: 'orderType',
+            in: 'query',
+            description: 'Filter by order type',
+            schema: {
+              type: 'string',
+              enum: ['RENT', 'SALE']
+            }
+          },
+          {
+            name: 'startDate',
+            in: 'query',
+            description: 'Start date for date range filter (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+              format: 'date',
+              example: '2025-01-01'
+            }
+          },
+          {
+            name: 'endDate',
+            in: 'query',
+            description: 'End date for date range filter (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+              format: 'date',
+              example: '2025-01-31'
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Orders count retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        count: { type: 'number' },
+                        filters: {
+                          type: 'object',
+                          properties: {
+                            outletId: { type: 'number', nullable: true },
+                            merchantId: { type: 'number', nullable: true },
+                            orderType: { type: 'string', nullable: true },
+                            status: { type: 'string', nullable: true },
+                            startDate: { type: 'string', nullable: true },
+                            endDate: { type: 'string', nullable: true }
+                          }
+                        }
+                      }
+                    },
+                    code: { type: 'string' },
+                    message: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/calendar/orders/by-date': {
+      get: {
+        tags: ['Calendar'],
+        summary: 'Get orders by date and status',
+        description: 'Get orders for a specific date filtered by status. For RESERVED/PICKUPED: filters by pickupPlanAt. For others: filters by createdAt.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'date',
+            in: 'query',
+            description: 'Target date (YYYY-MM-DD)',
+            required: true,
+            schema: {
+              type: 'string',
+              format: 'date',
+              example: '2025-01-15'
+            }
+          },
+          {
+            name: 'status',
+            in: 'query',
+            description: 'Order status to filter by',
+            required: false,
+            schema: {
+              type: 'string',
+              enum: ['RESERVED', 'PICKUPED', 'COMPLETED', 'RETURNED', 'CANCELLED'],
+              example: 'RESERVED'
+            }
+          },
+          {
+            name: 'outletId',
+            in: 'query',
+            description: 'Filter by specific outlet',
+            schema: { type: 'number' }
+          },
+          {
+            name: 'merchantId',
+            in: 'query',
+            description: 'Filter by specific merchant',
+            schema: { type: 'number' }
+          },
+          {
+            name: 'orderType',
+            in: 'query',
+            description: 'Filter by order type',
+            schema: {
+              type: 'string',
+              enum: ['RENT', 'SALE']
+            }
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            description: 'Maximum number of orders to return (1-100)',
+            schema: {
+              type: 'number',
+              minimum: 1,
+              maximum: 100,
+              default: 50
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Orders by date retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        date: { type: 'string' },
+                        orders: {
+                          type: 'array',
+                          items: { type: 'object' }
+                        },
+                        summary: {
+                          type: 'object',
+                          properties: {
+                            totalOrders: { type: 'number' },
+                            totalRevenue: { type: 'number' },
+                            averageOrderValue: { type: 'number' }
+                          }
+                        },
+                        filters: {
+                          type: 'object',
+                          properties: {
+                            outletId: { type: 'number', nullable: true },
+                            merchantId: { type: 'number', nullable: true },
+                            orderType: { type: 'string', nullable: true },
+                            status: { type: 'string', nullable: true }
+                          }
+                        }
+                      }
+                    },
+                    code: { type: 'string' },
+                    message: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 };

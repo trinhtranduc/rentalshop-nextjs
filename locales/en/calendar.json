@@ -23,7 +23,8 @@
     "overdue": "Overdue",
     "month": "Month",
     "noOrders": "No orders",
-    "more": "More..."
+    "more": "More...",
+    "filterByStatus": "Filter by Status"
   },
   "stats": {
     "ordersToday": "Orders Today",
