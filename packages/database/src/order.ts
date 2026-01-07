@@ -831,7 +831,10 @@ export const simplifiedOrders = {
             productId: true,
             notes: true,
             rentalDays: true,
-            product: { select: { id: true, name: true, barcode: true } }
+            productName: true,
+            productBarcode: true,
+            productImages: true,
+            product: { select: { id: true, name: true, barcode: true, images: true } }
           }
         },
         payments: true
