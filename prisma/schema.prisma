@@ -29,6 +29,7 @@ model User {
   outletId               Int?
   deletedAt              DateTime?
   auditLogs              AuditLog[]
+  requestLogs            RequestLog[]           @relation("RequestLogs")
   emailVerifications     EmailVerification[]
   createdOrders          Order[]
   passwordResets         PasswordReset[]
@@ -102,6 +103,7 @@ model Merchant {
   products        Product[]
   subscription    Subscription?
   users           User[]
+  requestLogs     RequestLog[]     @relation("RequestLogs")
   planLimitAddons PlanLimitAddon[]
   referredBy      Merchant?        @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
   referredMerchants Merchant[]     @relation("MerchantReferrals")
@@ -442,6 +444,36 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+model RequestLog {
+  id            Int       @id @default(autoincrement())
+  correlationId String    @unique // Request ID để trace
+  method        String    // GET, POST, PUT, DELETE
+  path          String    // /api/orders
+  queryParams   String?   // JSON string của query params
+  requestBody   String?   // JSON string của request body (sanitized)
+  responseBody  String?   // JSON string của response body (sanitized)
+  statusCode    Int       // 200, 404, 500
+  duration      Int       // milliseconds
+  userId        Int?      // User ID nếu authenticated
+  merchantId    Int?      // Merchant ID nếu có
+  outletId      Int?      // Outlet ID nếu có
+  ipAddress     String?
+  userAgent     String?
+  errorMessage  String?   // Nếu có error
+  createdAt     DateTime  @default(now())
+  
+  user          User?     @relation("RequestLogs", fields: [userId], references: [id])
+  merchant      Merchant? @relation("RequestLogs", fields: [merchantId], references: [id])
+  
+  @@index([correlationId])
+  @@index([method, path])
+  @@index([userId])
+  @@index([merchantId])
+  @@index([createdAt])
+  @@index([statusCode])
+  @@index([path])
 }
 
 model EmailVerification {

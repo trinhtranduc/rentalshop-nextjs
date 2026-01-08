@@ -176,3 +176,6 @@ export * from './bank-qr';
 // Audit utilities
 export * from './audit-config';
 export * from './audit-helper';
+
+// Request logging utilities
+export * from './request-logger';

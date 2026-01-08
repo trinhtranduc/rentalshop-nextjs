@@ -21,6 +21,7 @@ export * from './plans';
 export * from './billing-cycles';
 export * from './payments';
 export * from './audit-logs';
+export * from './request-logs';
 export * from './settings';
 export * from './subscriptions';
 export * from './plan-limit-addons';
