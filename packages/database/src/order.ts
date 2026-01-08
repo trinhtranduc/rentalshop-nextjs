@@ -6,7 +6,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
-import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 export interface OrderWithRelations {
   id: number
@@ -1707,22 +1707,12 @@ export const simplifiedOrders = {
       
       // Order items with flattened product data
       orderItems: order.orderItems?.map(item => {
-        // Helper function to parse productImages (handle both JSON string and array)
-        const parseProductImages = (images: any): string[] => {
-          if (!images) return [];
-          if (Array.isArray(images)) return images;
-          if (typeof images === 'string') {
-            try {
-              const parsed = JSON.parse(images);
-              return Array.isArray(parsed) ? parsed : [];
-            } catch {
-              return [];
-            }
-          }
-          return [];
-        };
-
-        const productImages = parseProductImages(item.product?.images);
+        // Priority 1: Use productImages (snapshot field saved when order was created)
+        // Priority 2: Fallback to product.images (from product relation - current images)
+        const snapshotImages = parseProductImages((item as any).productImages);
+        const productImages = snapshotImages.length > 0 
+          ? snapshotImages 
+          : parseProductImages(item.product?.images);
 
         return {
           id: item.id,
