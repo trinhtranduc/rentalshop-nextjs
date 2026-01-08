@@ -267,6 +267,9 @@ export * from './password-reset';
 // Query builder helpers
 export * from './query-builder';
 
+// Cleanup utilities
+export { cleanupOldRequestLogs } from './cleanup-request-logs';
+
 // ============================================================================
 // MIGRATION GUIDE
 // ============================================================================

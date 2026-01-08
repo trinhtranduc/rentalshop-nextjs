@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
+import { generateCorrelationId } from '@rentalshop/utils';
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -54,10 +55,13 @@ const adminRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  // Generate correlation ID for request tracking
+  const correlationId = generateCorrelationId();
+  
   // Detect platform from request headers
   const platformInfo = detectPlatform(request);
   
-  console.log(formatPlatformLog(request, `Request received: ${request.method} ${pathname}`));
+  console.log(formatPlatformLog(request, `Request received: ${request.method} ${pathname} [${correlationId}]`));
   console.log('🔍 MIDDLEWARE: Request details:', {
     method: request.method,
     pathname,
@@ -143,7 +147,12 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicRoute || !isApiRoute) {
     console.log('🔍 MIDDLEWARE: Route is public or not API, allowing through with CORS headers');
-    const response = NextResponse.next();
+    
+    // Add correlation ID to headers even for public routes
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-correlation-id', correlationId);
+    
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
     
     // Add CORS headers to response
     Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -273,9 +282,18 @@ export async function middleware(request: NextRequest) {
 
     // Forward user context to downstream handlers via request headers
     const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-correlation-id', correlationId);
     requestHeaders.set('x-user-id', payload.userId.toString());
     requestHeaders.set('x-user-email', payload.email);
     requestHeaders.set('x-user-role', payload.role);
+    
+    // Forward merchant/outlet context if available
+    if (payload.merchantId) {
+      requestHeaders.set('x-merchant-id', payload.merchantId.toString());
+    }
+    if (payload.outletId) {
+      requestHeaders.set('x-outlet-id', payload.outletId.toString());
+    }
     
     // Forward platform info to downstream handlers
     requestHeaders.set('x-platform', platformInfo.platform);
