@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -549,25 +549,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       updatedAt: order.updatedAt,
       // Flatten order items with product info
       orderItems: order.orderItems?.map((item: any) => {
-        // Helper function to parse productImages (handle both JSON string and array)
-        const parseProductImages = (images: any): string[] => {
-          if (!images) return [];
-          if (Array.isArray(images)) return images;
-          if (typeof images === 'string') {
-            try {
-              const parsed = JSON.parse(images);
-              return Array.isArray(parsed) ? parsed : [];
-            } catch {
-              return [];
-            }
-          }
-          return [];
-        };
-
-        // Use productImages snapshot field (already saved during order creation)
-        // Parse snapshot images first
+        // Priority 1: Use productImages (snapshot field saved when order was created)
+        // Priority 2: Fallback to product.images (from product relation - current images)
         const snapshotImages = parseProductImages(item.productImages);
-        // If snapshot is empty array [], fallback to product.images
         const productImages = snapshotImages.length > 0 
           ? snapshotImages 
           : parseProductImages(item.product?.images);
