@@ -10,6 +10,7 @@ export { ProductDetailList } from './ProductDetailList';
 export { ProductEdit} from './ProductEdit';
 export { ProductAddForm } from './ProductAddForm';
 export { ProductAddDialog } from './ProductAddDialog';
+export { ImportProductDialog } from './ImportProductDialog';
 export { ProductCard } from './ProductCard';
 export { ProductOrdersView } from './ProductOrdersView';
 export { ProductOrdersDialog } from './ProductOrdersDialog';

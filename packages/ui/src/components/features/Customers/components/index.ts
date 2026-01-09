@@ -22,5 +22,6 @@ export { CustomerSearch } from './CustomerSearch';
 export { CustomerStats } from './CustomerStats';
 export { CustomerOrdersDialog } from './CustomerOrdersDialog';
 export { CustomersLoading, CustomerDetailLoading } from './CustomersLoading';
+export { ImportCustomerDialog } from './ImportCustomerDialog';
 
 

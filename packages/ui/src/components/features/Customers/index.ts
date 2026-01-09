@@ -1,7 +1,7 @@
 // ============================================================================
 // CUSTOMERS FEATURE COMPONENTS
 // ============================================================================
-export { default as Customers } from './Customers';
+export { Customers } from './Customers';
 
 // Export all components for easy access
 export * from './components';

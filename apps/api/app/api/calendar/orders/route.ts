@@ -158,6 +158,7 @@ export const GET = withReadOnlyAuth(async (
             'Unknown Customer',
           customerPhone: order.customer?.phone || undefined,
           status: order.status,
+          orderType: order.orderType || undefined,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,

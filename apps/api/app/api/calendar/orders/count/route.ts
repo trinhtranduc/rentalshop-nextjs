@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
 
-// Validation schema for orders count query
+// ============================================================================
+// VALIDATION SCHEMA
+// ============================================================================
+
 const ordersCountQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
-  orderType: z.enum([
-    ORDER_TYPE.RENT,
-    ORDER_TYPE.SALE
-  ] as [string, ...string[]]).optional(),
-  // Status filter - can filter by RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
+  orderType: z.enum([ORDER_TYPE.RENT, ORDER_TYPE.SALE] as [string, ...string[]]).optional(),
   status: z.enum([
     ORDER_STATUS.RESERVED,
     ORDER_STATUS.PICKUPED,
@@ -22,160 +20,297 @@ const ordersCountQuerySchema = z.object({
     ORDER_STATUS.RETURNED,
     ORDER_STATUS.CANCELLED
   ] as [string, ...string[]]).optional(),
-  // Optional date range filter (pickupPlanAt for RESERVED/PICKUPED, createdAt for others)
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format').optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format').optional(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'From date must be in YYYY-MM-DD format').optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'To date must be in YYYY-MM-DD format').optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(), // Month (1-12)
+  year: z.coerce.number().int().min(2000).max(2100).optional(), // Year (defaults to current year)
 });
 
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 /**
- * 🎯 Calendar Orders Count API
- * 
- * Returns count of orders by status for calendar display
- * - Counts orders filtered by status (RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED)
- * - Supports filtering by outlet, merchant, orderType, and date range
- * - Optimized for quick count queries
+ * Build where clause with role-based access control
  */
-export const GET = withReadOnlyAuth(async (
-  request: NextRequest,
-  { user, userScope }
-) => {
-  console.log(`🔍 GET /api/calendar/orders/count - User: ${user.email} (${user.role})`);
-  console.log(`🔍 Calendar Orders Count API - UserScope:`, userScope);
+function buildWhereClause(
+  user: any,
+  userScope: any,
+  filters: {
+    outletId?: number;
+    merchantId?: number;
+    orderType?: string;
+    status?: string;
+    from?: string;
+    to?: string;
+  }
+): any {
+  const where: any = {};
 
-  try {
-    // Parse query parameters
-    const { searchParams } = new URL(request.url);
-    const query = Object.fromEntries(searchParams.entries());
-    const validatedQuery = ordersCountQuerySchema.parse(query);
+  // Status and order type filters
+  // 🎯 Filter by status from request (e.g., status=RESERVED)
+  if (filters.status) {
+    where.status = filters.status;
+    console.log('🔍 Filtering by status:', filters.status);
+  }
+  if (filters.orderType) where.orderType = filters.orderType;
 
-    console.log('📅 Orders count query:', validatedQuery);
+  // Date range filter (from/to)
+  // 🎯 Calendar always filters by pickupPlanAt (pickup date plan)
+  if (filters.from || filters.to) {
+    // Parse dates as UTC to avoid timezone issues
+    // "2026-01-01" should be treated as 2026-01-01 00:00:00 UTC
+    const fromDate = filters.from ? new Date(filters.from + 'T00:00:00.000Z') : null;
+    const toDate = filters.to ? new Date(filters.to + 'T23:59:59.999Z') : null;
 
-    const { outletId, merchantId, orderType, status, startDate, endDate } = validatedQuery;
-
-    // Build where clause with role-based filtering
-    const where: any = {};
-
-    // Add status filter if provided
-    if (status) {
-      where.status = status as any;
+    // Calendar always uses pickupPlanAt for filtering (ngày dự kiến lấy)
+    where.pickupPlanAt = {};
+    if (fromDate) {
+      where.pickupPlanAt.gte = fromDate;
     }
-
-    // Add optional filters
-    if (orderType) {
-      where.orderType = orderType;
+    if (toDate) {
+      where.pickupPlanAt.lte = toDate;
     }
+    console.log('🔍 Filtering by pickupPlanAt:', {
+      from: filters.from,
+      to: filters.to,
+      fromDate: fromDate?.toISOString(),
+      toDate: toDate?.toISOString(),
+      fromDateUTC: fromDate?.toUTCString(),
+      toDateUTC: toDate?.toUTCString()
+    });
+  }
 
-    // Date range filter
-    // For RESERVED/PICKUPED: filter by pickupPlanAt
-    // For others: filter by createdAt
-    if (startDate || endDate) {
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
+  // Role-based access control
+  if (user.role === USER_ROLE.ADMIN) {
+    // ADMIN: Can see all orders, optionally filter by outletId
+    if (filters.outletId) {
+      where.outletId = filters.outletId;
+    }
+  } else if (user.role === USER_ROLE.MERCHANT) {
+    // MERCHANT: Can see orders from all their outlets
+    if (filters.outletId) {
+      where.outletId = filters.outletId;
+    } else {
+      where.outlet = { merchantId: userScope.merchantId };
+    }
+  } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    // OUTLET users: Can only see orders from their assigned outlet
+    const allowedOutletId = filters.outletId && filters.outletId === userScope.outletId
+      ? filters.outletId
+      : userScope.outletId;
+    where.outletId = allowedOutletId;
+  }
+
+  return where;
+}
+
+/**
+ * Group orders by date (YYYY-MM-DD format)
+ * Uses UTC date to avoid timezone issues
+ */
+function groupOrdersByDate(
+  orders: any[],
+  dateField: 'pickupPlanAt' | 'createdAt'
+): Record<string, number> {
+  const countByDate: Record<string, number> = {};
+
+  for (const order of orders) {
+    const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
+    if (dateValue) {
+      const date = new Date(dateValue);
+      // Use UTC methods to avoid timezone issues
+      // This ensures "2026-01-08T00:00:00.000Z" is always grouped as "2026-01-08"
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth() + 1;
+      const day = date.getUTCDate();
+      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+    }
+  }
+
+  return countByDate;
+}
+
+/**
+ * Generate all dates between from and to (inclusive)
+ * Returns array of date strings in YYYY-MM-DD format
+ */
+function generateDateRange(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const startDate = new Date(from);
+  const endDate = new Date(to);
+  
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    dates.push(`${year}-${month}-${day}`);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return dates;
+}
+
+/**
+ * Fill missing dates with 0 count
+ * Ensures all dates from 'from' to 'to' are included in the result
+ */
+function fillDateRange(
+  countByDate: Record<string, number>,
+  from: string,
+  to: string
+): Record<string, number> {
+  const allDates = generateDateRange(from, to);
+  const filled: Record<string, number> = {};
+  
+  for (const date of allDates) {
+    filled[date] = countByDate[date] || 0;
+  }
+  
+  return filled;
+}
+
+/**
+ * Get start and end date of a month
+ * @param month - Month number (1-12)
+ * @param year - Year (defaults to current year)
+ * @returns Object with from (YYYY-MM-DD) and to (YYYY-MM-DD)
+ */
+function getMonthDateRange(month: number, year?: number): { from: string; to: string } {
+  const now = new Date();
+  const targetYear = year || now.getFullYear();
+  const targetMonth = month - 1; // JavaScript months are 0-indexed
+  
+  // First day of month
+  const firstDay = new Date(targetYear, targetMonth, 1);
+  const from = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+  
+  // Last day of month
+  const lastDay = new Date(targetYear, targetMonth + 1, 0);
+  const to = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+  
+  return { from, to };
+}
+
+// ============================================================================
+// API ROUTE
+// ============================================================================
+
+/**
+ * GET /api/calendar/orders/count
+ * Get count of orders by status for calendar display
+ * 
+ * Authorization: Requires 'orders.view' permission
+ */
+export const GET = withPermissions(['orders.view'], { requireActiveSubscription: false })(
+  async (request: NextRequest, { user, userScope }) => {
+    try {
+      // Parse and validate query parameters
+      const { searchParams } = new URL(request.url);
+      const query = Object.fromEntries(searchParams.entries());
+      const validatedQuery = ordersCountQuerySchema.parse(query);
+
+      const { outletId, merchantId, orderType, status, from, to, month, year } = validatedQuery;
+
+      // If month is provided, calculate from/to automatically
+      let finalFrom = from;
+      let finalTo = to;
       
-      if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
-        // Filter by pickupPlanAt for RESERVED and PICKUPED orders
-        where.pickupPlanAt = {};
-        if (start) {
-          start.setHours(0, 0, 0, 0);
-          where.pickupPlanAt.gte = start;
-        }
-        if (end) {
-          end.setHours(23, 59, 59, 999);
-          where.pickupPlanAt.lte = end;
-        }
-      } else {
-        // Filter by createdAt for other statuses
-        where.createdAt = {};
-        if (start) {
-          start.setHours(0, 0, 0, 0);
-          where.createdAt.gte = start;
-        }
-        if (end) {
-          end.setHours(23, 59, 59, 999);
-          where.createdAt.lte = end;
-        }
+      if (month) {
+        const monthRange = getMonthDateRange(month, year);
+        finalFrom = monthRange.from;
+        finalTo = monthRange.to;
+        
+        console.log('📅 Month parameter detected:', {
+          month,
+          year: year || 'current',
+          from: finalFrom,
+          to: finalTo,
+        });
       }
-    }
 
-    // Role-based filtering
-    if (user.role === USER_ROLE.ADMIN) {
-      // ADMIN: Can see all orders, optionally filter by outletId
-      if (outletId) {
-        where.outletId = outletId;
-      }
-      // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === USER_ROLE.MERCHANT) {
-      // MERCHANT: Can see orders from all their outlets
-      // Filter by outlet.merchantId through relation
-      where.outlet = {
-        merchantId: userScope.merchantId
-      };
-      if (outletId) {
-        where.outletId = outletId;
-        // Remove outlet filter if outletId is specified
-        delete where.outlet;
-      }
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
-      // OUTLET users: Can only see orders from their assigned outlet
-      where.outletId = userScope.outletId;
-    }
-
-    console.log('🔍 Orders count where clause:', where);
-
-    // If date range is provided, return breakdown by date
-    // Otherwise, return total count
-    if (startDate && endDate) {
-      // Determine which date field to use based on status
-      const dateField = (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) 
-        ? 'pickupPlanAt' 
-        : 'createdAt';
-      
-      // Use db.orders.search to fetch orders (will get all fields but we only use date field)
-      const ordersResult = await db.orders.search({
-        where,
-        limit: 10000, // Get all orders in the month
-        page: 1
+      // Build where clause with role-based filtering
+      const where = buildWhereClause(user, userScope, {
+        outletId,
+        merchantId,
+        orderType,
+        status,
+        from: finalFrom,
+        to: finalTo,
       });
 
-      // Group by date (YYYY-MM-DD format)
-      const countByDate: Record<string, number> = {};
-      
-      if (ordersResult.data) {
-        for (const order of ordersResult.data) {
-          // Get date value based on status
-          const dateValue = dateField === 'pickupPlanAt' 
-            ? order.pickupPlanAt 
-            : order.createdAt;
-          
-          if (dateValue) {
-            const date = new Date(dateValue);
-            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
-          }
-        }
+      // If date range provided (from/to or month), return breakdown by date with all dates filled
+      if (finalFrom && finalTo) {
+        // 🎯 Calendar always groups by pickupPlanAt (pickup date plan)
+        const dateField = 'pickupPlanAt';
+
+        const ordersResult = await db.orders.search({
+          where,
+          limit: 10000,
+          page: 1,
+        });
+
+        const sampleOrders = (ordersResult.data || []).slice(0, 3).map((order: any) => ({
+          id: order.id,
+          status: order.status,
+          pickupPlanAt: order.pickupPlanAt,
+          createdAt: order.createdAt
+        }));
+        
+        console.log('🔍 Calendar orders search:', {
+          where,
+          status: status || 'all',
+          ordersFound: ordersResult.data?.length || 0,
+          sampleOrders
+        });
+
+        // 🎯 Group orders by pickupPlanAt date (always use pickupPlanAt for calendar)
+        // Status filter is already applied in where clause
+        const countByDate = groupOrdersByDate(ordersResult.data || [], dateField);
+        
+        console.log('📊 Orders grouped by pickupPlanAt:', {
+          status: status || 'all',
+          countByDateKeys: Object.keys(countByDate).length,
+          sampleCounts: Object.entries(countByDate).slice(0, 5)
+        });
+        
+        // Fill all dates from 'from' to 'to' with 0 if no orders
+        const filledCountByDate = fillDateRange(countByDate, finalFrom, finalTo);
+        
+        const total = Object.values(filledCountByDate).reduce((sum, count) => sum + count, 0);
+
+        console.log('📦 Calendar orders count:', {
+          from: finalFrom,
+          to: finalTo,
+          month: month || null,
+          year: year || null,
+          totalDays: Object.keys(filledCountByDate).length,
+          totalOrders: total,
+          ordersFound: ordersResult.data?.length || 0,
+        });
+
+        return NextResponse.json(
+          ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
+            countByDate: filledCountByDate,
+            total,
+            filters: {
+              outletId: outletId || null,
+              merchantId: merchantId || null,
+              orderType: orderType || null,
+              status: status || null,
+              from: finalFrom || null,
+              to: finalTo || null,
+              month: month || null,
+              year: year || null,
+            },
+          })
+        );
       }
 
-      console.log('📦 Orders count by date:', countByDate);
-
-      return NextResponse.json(
-        ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
-          countByDate, // Breakdown by date
-          total: Object.values(countByDate).reduce((sum, count) => sum + count, 0),
-          filters: {
-            outletId: outletId || null,
-            merchantId: merchantId || null,
-            orderType: orderType || null,
-            status: status || null,
-            startDate: startDate || null,
-            endDate: endDate || null
-          }
-        })
-      );
-    } else {
       // No date range - return total count only
       const count = await db.orders.getStats(where);
-
-      console.log('📦 Orders count:', count);
 
       return NextResponse.json(
         ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
@@ -185,20 +320,19 @@ export const GET = withReadOnlyAuth(async (
             merchantId: merchantId || null,
             orderType: orderType || null,
             status: status || null,
-            startDate: startDate || null,
-            endDate: endDate || null
-          }
+            from: finalFrom || null,
+            to: finalTo || null,
+            month: month || null,
+            year: year || null,
+          },
         })
       );
+    } catch (error) {
+      console.error('❌ Calendar Orders Count API error:', error);
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-
-  } catch (error) {
-    console.error('❌ Calendar Orders Count API error:', error);
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
   }
-});
+);
 
 export const runtime = 'nodejs';
-

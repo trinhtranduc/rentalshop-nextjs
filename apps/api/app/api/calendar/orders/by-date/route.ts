@@ -24,7 +24,8 @@ const ordersByDateQuerySchema = z.object({
     ORDER_STATUS.RETURNED,
     ORDER_STATUS.CANCELLED
   ] as [string, ...string[]]).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50), // Max 100 orders per day
+  limit: z.coerce.number().int().min(1).max(100).default(20), // Default 20 items per page
+  page: z.coerce.number().int().min(1).default(1), // Page number for pagination
 });
 
 /**
@@ -51,7 +52,7 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📅 Orders by date query:', validatedQuery);
 
-    const { date: dateStr, outletId, merchantId, orderType, status, limit } = validatedQuery;
+    const { date: dateStr, outletId, merchantId, orderType, status, limit, page } = validatedQuery;
 
     // Parse date string
     const targetDate = new Date(dateStr);
@@ -122,11 +123,11 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('🔍 Orders by date where clause:', where);
 
-    // Fetch orders with orderItems included
+    // Fetch orders with orderItems included (with pagination)
     const ordersResult = await db.orders.searchWithItems({
       where,
       limit,
-      page: 1
+      page: page || 1
     });
     
     const orders = ordersResult.data || [];
@@ -162,6 +163,7 @@ export const GET = withReadOnlyAuth(async (
           'Unknown Customer',
         customerPhone: order.customer?.phone || undefined,
         status: order.status,
+        orderType: order.orderType || undefined,
         totalAmount: order.totalAmount,
         outletName: order.outlet?.name,
         pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
@@ -197,10 +199,19 @@ export const GET = withReadOnlyAuth(async (
     const totalRevenue = orderSummaries.reduce((sum, order) => sum + order.totalAmount, 0);
     const averageOrderValue = orderSummaries.length > 0 ? totalRevenue / orderSummaries.length : 0;
 
+    // Get pagination info from search result
+    const total = ordersResult.total || orderSummaries.length;
+    const currentPage = page || 1;
+    const totalPages = Math.ceil(total / limit);
+    const hasMore = currentPage < totalPages;
+
     console.log('📅 Orders by date prepared:', {
       date: dateStr,
       status: status || 'all',
       ordersCount: orderSummaries.length,
+      total,
+      page: currentPage,
+      totalPages,
       totalRevenue,
       averageOrderValue
     });
@@ -210,9 +221,16 @@ export const GET = withReadOnlyAuth(async (
         date: dateStr,
         orders: orderSummaries,
         summary: {
-          totalOrders: orderSummaries.length,
+          totalOrders: total, // Total count from database
           totalRevenue,
           averageOrderValue
+        },
+        pagination: {
+          page: currentPage,
+          limit,
+          total,
+          totalPages,
+          hasMore
         },
         filters: {
           outletId: outletId || null,

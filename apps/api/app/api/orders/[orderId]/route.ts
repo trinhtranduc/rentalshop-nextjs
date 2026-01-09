@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError, formatFullName } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -57,23 +57,9 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
-      // Helper function to parse productImages (handle both JSON string and array)
-      const parseProductImages = (images: any): string[] => {
-        if (!images) return [];
-        if (Array.isArray(images)) return images;
-        if (typeof images === 'string') {
-          try {
-            const parsed = JSON.parse(images);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        }
-        return [];
-      };
-
       // Flatten order items with parsed productImages
-      // If productImages is empty array [], fallback to product.images
+      // Priority 1: Use productImages (snapshot field saved when order was created)
+      // Priority 2: Fallback to product.images (from product relation - current images)
       const flattenedOrder = {
         ...order,
         orderItems: order.orderItems?.map((item: any) => {
@@ -331,24 +317,9 @@ export const PUT = async (
         updatedAt: fullOrder.updatedAt,
         // Flatten order items with product info
         orderItems: fullOrder.orderItems?.map((item: any) => {
-          // Helper function to parse productImages (handle both JSON string and array)
-          const parseProductImages = (images: any): string[] => {
-            if (!images) return [];
-            if (Array.isArray(images)) return images;
-            if (typeof images === 'string') {
-              try {
-                const parsed = JSON.parse(images);
-                return Array.isArray(parsed) ? parsed : [];
-              } catch {
-                return [];
-              }
-            }
-            return [];
-          };
-
-          // Parse snapshot images first
+          // Priority 1: Use productImages (snapshot field saved when order was created)
+          // Priority 2: Fallback to product.images (from product relation - current images)
           const snapshotImages = parseProductImages(item.productImages);
-          // If snapshot is empty array, fallback to product.images
           const productImages = snapshotImages.length > 0 
             ? snapshotImages 
             : parseProductImages(item.product?.images);

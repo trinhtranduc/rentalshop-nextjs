@@ -24,6 +24,7 @@ export interface CalendarOrderSummary {
   customerPhone?: string;
   totalAmount: number;
   status: string;
+  orderType?: string; // RENT, SALE, RENT_TO_OWN
   outletName?: string;
   notes?: string;
   pickupPlanAt?: string;
@@ -264,21 +265,26 @@ export const calendarApi = {
     merchantId?: number;
     orderType?: string;
     status?: string; // RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
-    startDate?: string; // YYYY-MM-DD
-    endDate?: string; // YYYY-MM-DD
+    month?: number; // Month (1-12) - automatically calculates from/to
+    year?: number; // Year (defaults to current year) - used with month parameter
+    // Alternative: use from/to for custom date range
+    from?: string; // YYYY-MM-DD (start date) - only if month is not provided
+    to?: string; // YYYY-MM-DD (end date) - only if month is not provided
   }): Promise<{
     success: boolean;
     data?: {
       count?: number; // Total count (when no date range)
-      countByDate?: Record<string, number>; // Breakdown by date (when date range provided)
+      countByDate?: Record<string, number>; // Breakdown by date (when date range provided) - includes all dates from 'from' to 'to'
       total?: number; // Total from countByDate
       filters: {
         outletId: number | null;
         merchantId: number | null;
         orderType: string | null;
         status: string | null;
-        startDate: string | null;
-        endDate: string | null;
+        from: string | null;
+        to: string | null;
+        month: number | null;
+        year: number | null;
       };
     };
     code?: string;
@@ -289,21 +295,33 @@ export const calendarApi = {
     if (filters?.merchantId) searchParams.append('merchantId', filters.merchantId.toString());
     if (filters?.orderType) searchParams.append('orderType', filters.orderType);
     if (filters?.status) searchParams.append('status', filters.status);
-    if (filters?.startDate) searchParams.append('startDate', filters.startDate);
-    if (filters?.endDate) searchParams.append('endDate', filters.endDate);
+    
+    // Priority: month > from/to
+    if (filters?.month) {
+      searchParams.append('month', filters.month.toString());
+      if (filters?.year) {
+        searchParams.append('year', filters.year.toString());
+      }
+    } else if (filters?.from || filters?.to) {
+      // Use 'from/to' for custom date range (only if month is not provided)
+      if (filters.from) searchParams.append('from', filters.from);
+      if (filters.to) searchParams.append('to', filters.to);
+    }
 
     const response = await authenticatedFetch(`${apiUrls.calendar.ordersCount}?${searchParams}`);
     const result = await parseApiResponse<{
       count?: number; // Total count (when no date range)
-      countByDate?: Record<string, number>; // Breakdown by date (when date range provided)
+      countByDate?: Record<string, number>; // Breakdown by date (when date range provided) - includes all dates from 'from' to 'to'
       total?: number; // Total from countByDate
       filters: {
         outletId: number | null;
         merchantId: number | null;
         orderType: string | null;
         status: string | null;
-        startDate: string | null;
-        endDate: string | null;
+        from: string | null;
+        to: string | null;
+        month: number | null;
+        year: number | null;
       };
     }>(response);
 
@@ -336,6 +354,7 @@ export const calendarApi = {
       orderType?: string;
       status?: string; // RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
       limit?: number;
+      page?: number; // Page number for pagination
     }
   ): Promise<{
     success: boolean;
@@ -346,6 +365,13 @@ export const calendarApi = {
         totalOrders: number;
         totalRevenue: number;
         averageOrderValue: number;
+      };
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
       };
       filters: {
         outletId: number | null;
@@ -363,6 +389,7 @@ export const calendarApi = {
     if (filters?.orderType) searchParams.append('orderType', filters.orderType);
     if (filters?.status) searchParams.append('status', filters.status);
     if (filters?.limit) searchParams.append('limit', filters.limit.toString());
+    if (filters?.page) searchParams.append('page', filters.page.toString());
 
     const response = await authenticatedFetch(`${apiUrls.calendar.ordersByDate}?${searchParams}`);
     const result = await parseApiResponse<{
@@ -372,6 +399,13 @@ export const calendarApi = {
         totalOrders: number;
         totalRevenue: number;
         averageOrderValue: number;
+      };
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
       };
       filters: {
         outletId: number | null;
