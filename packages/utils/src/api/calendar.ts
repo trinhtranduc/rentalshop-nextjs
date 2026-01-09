@@ -24,6 +24,7 @@ export interface CalendarOrderSummary {
   customerPhone?: string;
   totalAmount: number;
   status: string;
+  orderType?: string; // RENT, SALE, RENT_TO_OWN
   outletName?: string;
   notes?: string;
   pickupPlanAt?: string;
