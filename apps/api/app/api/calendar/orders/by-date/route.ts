@@ -24,7 +24,7 @@ const ordersByDateQuerySchema = z.object({
     ORDER_STATUS.RETURNED,
     ORDER_STATUS.CANCELLED
   ] as [string, ...string[]]).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20), // Default 20 items per page
+  limit: z.coerce.number().int().min(1).max(500).default(20), // Default 20 items per page, max 500 for iOS app
   page: z.coerce.number().int().min(1).default(1), // Page number for pagination
 });
 
