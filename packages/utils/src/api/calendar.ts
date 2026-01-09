@@ -8,6 +8,7 @@ export interface CalendarOrderItem {
   unitPrice: number;
   totalPrice: number;
   notes?: string;
+  isReadyToDeliver?: boolean; // Whether the order is ready to deliver
   // Flattened product data
   productId?: number;
   productName?: string;
