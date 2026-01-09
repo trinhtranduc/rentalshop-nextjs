@@ -59,57 +59,42 @@ export default function CalendarPage() {
     try {
       setLoadingCounts(true);
       
-      const currentMonth = currentDate.getMonth() + 1;
+      const currentMonth = currentDate.getMonth() + 1; // 1-12
       const currentYear = currentDate.getFullYear();
-      const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-      const endOfMonth = new Date(currentYear, currentMonth, 0);
       
-      // Format dates as YYYY-MM-DD
-      const formatDateForAPI = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
+      // 🎯 Update URL with month/year query params
+      const url = new URL(window.location.href);
+      url.searchParams.set('month', currentMonth.toString());
+      url.searchParams.set('year', currentYear.toString());
+      if (selectedStatus) url.searchParams.set('status', selectedStatus);
+      if (user?.outletId) url.searchParams.set('outletId', user.outletId.toString());
+      window.history.replaceState({}, '', url.toString());
       
-      // Get all dates in the month
-      const dates: string[] = [];
-      const tempDate = new Date(startOfMonth);
-      while (tempDate <= endOfMonth) {
-        dates.push(formatDateForAPI(new Date(tempDate)));
-        tempDate.setDate(tempDate.getDate() + 1);
-      }
-      
-      // 🎯 Fetch count for entire month in ONE API call
-      const startDateStr = formatDateForAPI(startOfMonth);
-      const endDateStr = formatDateForAPI(endOfMonth);
-      
+      // 🎯 Fetch count for entire month using new month parameter API
       const countResult = await calendarApi.getOrdersCount({
         status: selectedStatus,
         outletId: user?.outletId,
-        startDate: startDateStr, // Start of month
-        endDate: endDateStr // End of month
+        month: currentMonth, // 1-12
+        year: currentYear
       });
       
       // Parse countByDate from API response
+      // API now returns ALL dates in the month with count (0 if no orders)
       const countMap = new Map<string, number>();
       if (countResult.data?.countByDate) {
-        // API returns countByDate as Record<string, number>
+        // API returns countByDate as Record<string, number> with all dates filled
         Object.entries(countResult.data.countByDate).forEach(([date, count]) => {
           countMap.set(date, count as number);
         });
       }
       
-      // Fill in missing dates with 0
-      dates.forEach(date => {
-        if (!countMap.has(date)) {
-          countMap.set(date, 0);
-        }
-      });
-      
       setOrdersCountByDate(countMap);
       console.log('📊 Orders count by date loaded:', {
+        month: currentMonth,
+        year: currentYear,
         status: selectedStatus,
+        totalDays: countMap.size,
+        totalOrders: countResult.data?.total || 0,
         counts: Array.from(countMap.entries())
       });
     } catch (error) {
@@ -161,6 +146,38 @@ export default function CalendarPage() {
       setLoading(false);
     }
   }, [authenticated]);
+
+  // 🎯 Read month/year from URL on mount and update currentDate if needed
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const monthParam = urlParams.get('month');
+    const yearParam = urlParams.get('year');
+    const statusParam = urlParams.get('status');
+    
+    // Read month/year from URL
+    if (monthParam) {
+      const month = parseInt(monthParam, 10);
+      const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
+      
+      if (month >= 1 && month <= 12 && year >= 2000 && year <= 2100) {
+        // Create date for first day of the month
+        const targetDate = new Date(year, month - 1, 1);
+        // Only update if month/year is different
+        const currentMonth = currentDate.getMonth() + 1;
+        const currentYear = currentDate.getFullYear();
+        if (month !== currentMonth || year !== currentYear) {
+          setCurrentDate(targetDate);
+        }
+      }
+    }
+    
+    // If 'status' is provided, update selectedStatus
+    if (statusParam && Object.values(ORDER_STATUS).includes(statusParam as any)) {
+      setSelectedStatus(statusParam);
+    }
+  }, []); // Only run on mount
 
   // 🎯 REMOVED: Retry handler (no auto-loading anymore)
   // const handleRetry = useCallback(() => {
