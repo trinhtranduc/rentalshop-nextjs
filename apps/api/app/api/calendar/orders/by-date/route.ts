@@ -183,6 +183,7 @@ export const GET = withReadOnlyAuth(async (
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
             notes: item.notes,
+            isReadyToDeliver: order.isReadyToDeliver || false, // From parent order
             // Flattened product data
             productId: item.product?.id,
             productName: item.product?.name,
