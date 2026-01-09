@@ -1,7 +1,7 @@
 // ============================================================================
 // PRODUCTS FEATURE COMPONENTS
 // ============================================================================
-export { default as Products } from './Products';
+export { Products } from './Products';
 
 // Export all components for easy access
 export * from './components';
