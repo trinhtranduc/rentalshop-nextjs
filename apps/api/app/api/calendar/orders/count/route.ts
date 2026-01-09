@@ -20,8 +20,10 @@ const ordersCountQuerySchema = z.object({
     ORDER_STATUS.RETURNED,
     ORDER_STATUS.CANCELLED
   ] as [string, ...string[]]).optional(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format').optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format').optional(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'From date must be in YYYY-MM-DD format').optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'To date must be in YYYY-MM-DD format').optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(), // Month (1-12)
+  year: z.coerce.number().int().min(2000).max(2100).optional(), // Year (defaults to current year)
 });
 
 // ============================================================================
@@ -39,8 +41,8 @@ function buildWhereClause(
     merchantId?: number;
     orderType?: string;
     status?: string;
-    startDate?: string;
-    endDate?: string;
+    from?: string;
+    to?: string;
   }
 ): any {
   const where: any = {};
@@ -49,10 +51,10 @@ function buildWhereClause(
   if (filters.status) where.status = filters.status;
   if (filters.orderType) where.orderType = filters.orderType;
 
-  // Date range filter
-  if (filters.startDate || filters.endDate) {
-    const start = filters.startDate ? new Date(filters.startDate) : null;
-    const end = filters.endDate ? new Date(filters.endDate) : null;
+  // Date range filter (from/to)
+  if (filters.from || filters.to) {
+    const fromDate = filters.from ? new Date(filters.from) : null;
+    const toDate = filters.to ? new Date(filters.to) : null;
 
     // For RESERVED/PICKUPED: filter by pickupPlanAt
     // For others: filter by createdAt
@@ -62,23 +64,23 @@ function buildWhereClause(
 
     if (dateField === 'pickupPlanAt') {
       where.pickupPlanAt = {};
-      if (start) {
-        start.setHours(0, 0, 0, 0);
-        where.pickupPlanAt.gte = start;
+      if (fromDate) {
+        fromDate.setHours(0, 0, 0, 0);
+        where.pickupPlanAt.gte = fromDate;
       }
-      if (end) {
-        end.setHours(23, 59, 59, 999);
-        where.pickupPlanAt.lte = end;
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+        where.pickupPlanAt.lte = toDate;
       }
     } else {
       where.createdAt = {};
-      if (start) {
-        start.setHours(0, 0, 0, 0);
-        where.createdAt.gte = start;
+      if (fromDate) {
+        fromDate.setHours(0, 0, 0, 0);
+        where.createdAt.gte = fromDate;
       }
-      if (end) {
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = toDate;
       }
     }
   }
@@ -128,6 +130,68 @@ function groupOrdersByDate(
   return countByDate;
 }
 
+/**
+ * Generate all dates between from and to (inclusive)
+ * Returns array of date strings in YYYY-MM-DD format
+ */
+function generateDateRange(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const startDate = new Date(from);
+  const endDate = new Date(to);
+  
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    dates.push(`${year}-${month}-${day}`);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return dates;
+}
+
+/**
+ * Fill missing dates with 0 count
+ * Ensures all dates from 'from' to 'to' are included in the result
+ */
+function fillDateRange(
+  countByDate: Record<string, number>,
+  from: string,
+  to: string
+): Record<string, number> {
+  const allDates = generateDateRange(from, to);
+  const filled: Record<string, number> = {};
+  
+  for (const date of allDates) {
+    filled[date] = countByDate[date] || 0;
+  }
+  
+  return filled;
+}
+
+/**
+ * Get start and end date of a month
+ * @param month - Month number (1-12)
+ * @param year - Year (defaults to current year)
+ * @returns Object with from (YYYY-MM-DD) and to (YYYY-MM-DD)
+ */
+function getMonthDateRange(month: number, year?: number): { from: string; to: string } {
+  const now = new Date();
+  const targetYear = year || now.getFullYear();
+  const targetMonth = month - 1; // JavaScript months are 0-indexed
+  
+  // First day of month
+  const firstDay = new Date(targetYear, targetMonth, 1);
+  const from = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+  
+  // Last day of month
+  const lastDay = new Date(targetYear, targetMonth + 1, 0);
+  const to = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+  
+  return { from, to };
+}
+
 // ============================================================================
 // API ROUTE
 // ============================================================================
@@ -146,7 +210,24 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
       const query = Object.fromEntries(searchParams.entries());
       const validatedQuery = ordersCountQuerySchema.parse(query);
 
-      const { outletId, merchantId, orderType, status, startDate, endDate } = validatedQuery;
+      const { outletId, merchantId, orderType, status, from, to, month, year } = validatedQuery;
+
+      // If month is provided, calculate from/to automatically
+      let finalFrom = from;
+      let finalTo = to;
+      
+      if (month) {
+        const monthRange = getMonthDateRange(month, year);
+        finalFrom = monthRange.from;
+        finalTo = monthRange.to;
+        
+        console.log('📅 Month parameter detected:', {
+          month,
+          year: year || 'current',
+          from: finalFrom,
+          to: finalTo,
+        });
+      }
 
       // Build where clause with role-based filtering
       const where = buildWhereClause(user, userScope, {
@@ -154,12 +235,12 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
         merchantId,
         orderType,
         status,
-        startDate,
-        endDate,
+        from: finalFrom,
+        to: finalTo,
       });
 
-      // If date range provided, return breakdown by date
-      if (startDate && endDate) {
+      // If date range provided (from/to or month), return breakdown by date with all dates filled
+      if (finalFrom && finalTo) {
         const dateField = (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED)
           ? 'pickupPlanAt'
           : 'createdAt';
@@ -170,20 +251,37 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
           page: 1,
         });
 
+        // Group orders by date
         const countByDate = groupOrdersByDate(ordersResult.data || [], dateField);
-        const total = Object.values(countByDate).reduce((sum, count) => sum + count, 0);
+        
+        // Fill all dates from 'from' to 'to' with 0 if no orders
+        const filledCountByDate = fillDateRange(countByDate, finalFrom, finalTo);
+        
+        const total = Object.values(filledCountByDate).reduce((sum, count) => sum + count, 0);
+
+        console.log('📦 Calendar orders count:', {
+          from: finalFrom,
+          to: finalTo,
+          month: month || null,
+          year: year || null,
+          totalDays: Object.keys(filledCountByDate).length,
+          totalOrders: total,
+          ordersFound: ordersResult.data?.length || 0,
+        });
 
         return NextResponse.json(
           ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
-            countByDate,
+            countByDate: filledCountByDate,
             total,
             filters: {
               outletId: outletId || null,
               merchantId: merchantId || null,
               orderType: orderType || null,
               status: status || null,
-              startDate: startDate || null,
-              endDate: endDate || null,
+              from: finalFrom || null,
+              to: finalTo || null,
+              month: month || null,
+              year: year || null,
             },
           })
         );
@@ -200,8 +298,10 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
             merchantId: merchantId || null,
             orderType: orderType || null,
             status: status || null,
-            startDate: startDate || null,
-            endDate: endDate || null,
+            from: finalFrom || null,
+            to: finalTo || null,
+            month: month || null,
+            year: year || null,
           },
         })
       );
