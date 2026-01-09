@@ -900,6 +900,14 @@ export const simplifiedOrders = {
     if (whereFilters.outletId) {
       // Support both simple values and complex objects like { in: [...] }
       where.outletId = whereFilters.outletId;
+      // Remove outlet relation filter if outletId is specified (outletId is more specific)
+      delete where.outlet;
+    }
+    
+    // Also check if whereClause already has outletId - remove outlet relation filter in that case too
+    if (where.outletId && where.outlet) {
+      console.log('🔍 Removing where.outlet filter because where.outletId is already set');
+      delete where.outlet;
     }
     
     if (whereFilters.customerId) where.customerId = whereFilters.customerId;

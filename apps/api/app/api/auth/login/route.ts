@@ -79,10 +79,70 @@ export async function POST(request: NextRequest) {
       // Don't throw here - let the actual query fail to get better error context
     }
     
-    const body = await request.json();
+    // 🔍 DIAGNOSTIC LOGGING: Check request content type and body
+    const contentType = request.headers.get('content-type');
+    console.log('🔍 LOGIN REQUEST BODY CHECK:', {
+      contentType,
+      hasBody: request.body !== null,
+      contentLength: request.headers.get('content-length'),
+    });
     
-    // Validate input
-    const validatedData = loginSchema.parse(body);
+    // Parse request body with error handling
+    let body: any;
+    try {
+      body = await request.json();
+      console.log('🔍 REQUEST BODY PARSED:', {
+        hasEmail: !!body?.email,
+        hasPassword: !!body?.password,
+        bodyKeys: body ? Object.keys(body) : [],
+      });
+    } catch (jsonError: any) {
+      console.error('❌ REQUEST BODY PARSE ERROR:', {
+        errorName: jsonError?.name,
+        errorMessage: jsonError?.message,
+        contentType,
+        contentLength: request.headers.get('content-length'),
+      });
+      
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_INPUT'),
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
+      );
+    }
+    
+    // Validate input with Zod schema
+    let validatedData: any;
+    try {
+      validatedData = loginSchema.parse(body);
+    } catch (validationError: any) {
+      console.error('❌ VALIDATION ERROR:', {
+        errorName: validationError?.name,
+        errorMessage: validationError?.message,
+        errors: validationError?.errors,
+        bodyReceived: body,
+      });
+      
+      // Handle ZodError with proper flatten
+      if (validationError?.name === 'ZodError' && validationError.flatten) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(validationError.flatten()),
+          { 
+            status: 400,
+            headers: corsHeaders
+          }
+        );
+      }
+      
+      // For non-Zod errors, use generic error handler
+      const { response, statusCode } = handleApiError(validationError);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: corsHeaders
+      });
+    }
     
     console.log('🔍 LOGIN ATTEMPT:', {
       email: validatedData.email,
