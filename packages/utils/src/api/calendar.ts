@@ -353,6 +353,7 @@ export const calendarApi = {
       orderType?: string;
       status?: string; // RESERVED, PICKUPED, COMPLETED, RETURNED, CANCELLED
       limit?: number;
+      page?: number; // Page number for pagination
     }
   ): Promise<{
     success: boolean;
@@ -363,6 +364,13 @@ export const calendarApi = {
         totalOrders: number;
         totalRevenue: number;
         averageOrderValue: number;
+      };
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
       };
       filters: {
         outletId: number | null;
@@ -380,6 +388,7 @@ export const calendarApi = {
     if (filters?.orderType) searchParams.append('orderType', filters.orderType);
     if (filters?.status) searchParams.append('status', filters.status);
     if (filters?.limit) searchParams.append('limit', filters.limit.toString());
+    if (filters?.page) searchParams.append('page', filters.page.toString());
 
     const response = await authenticatedFetch(`${apiUrls.calendar.ordersByDate}?${searchParams}`);
     const result = await parseApiResponse<{
@@ -389,6 +398,13 @@ export const calendarApi = {
         totalOrders: number;
         totalRevenue: number;
         averageOrderValue: number;
+      };
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
       };
       filters: {
         outletId: number | null;

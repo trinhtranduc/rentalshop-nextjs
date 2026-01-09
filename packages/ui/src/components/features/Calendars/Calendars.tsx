@@ -25,6 +25,7 @@ interface CalendarsProps {
   onRetry?: () => void;
   initialDate?: Date; // Allow parent to control the displayed month
   onMonthChange?: (date: Date) => void; // Notify parent when month changes
+  ordersCountByDate?: Map<string, number> | Record<string, number>; // Orders count by date (YYYY-MM-DD format)
   className?: string;
 }
 
@@ -41,6 +42,7 @@ export function Calendars({
   onRetry,
   initialDate,
   onMonthChange,
+  ordersCountByDate,
   className = ''
 }: CalendarsProps) {
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
@@ -142,6 +144,7 @@ export function Calendars({
         currentDate={currentDate}
         selectedDate={selectedDate}
         orders={orders}
+        ordersCountByDate={ordersCountByDate}
         onDateClick={handleDateClick}
       />
     </div>
