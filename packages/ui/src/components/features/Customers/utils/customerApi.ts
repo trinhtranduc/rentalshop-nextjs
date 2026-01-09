@@ -1,7 +1,18 @@
 import type { CustomerWithMerchant, CustomerInput, CustomerUpdateInput } from '@rentalshop/database';
-import { getAuthToken } from '@rentalshop/utils';
+import { getAuthToken, getApiBaseUrl } from '@rentalshop/utils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Use getApiBaseUrl() to ensure consistent API URL across all environments
+// This will use NEXT_PUBLIC_API_URL from .env.local or fallback to environment-based defaults
+const getApiBaseUrlSafe = (): string => {
+  try {
+    return getApiBaseUrl();
+  } catch {
+    // Fallback only if getApiBaseUrl fails (shouldn't happen)
+    return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+  }
+};
+
+const API_BASE_URL = getApiBaseUrlSafe();
 
 export interface CustomerApiResponse<T> {
   success: boolean;

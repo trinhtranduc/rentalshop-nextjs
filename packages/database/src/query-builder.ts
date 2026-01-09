@@ -114,11 +114,14 @@ export async function convertPublicIdToCuid(
   publicId: number
 ): Promise<string | null> {
   try {
+    // Note: In this schema, id IS the publicId (Int, not CUID)
+    // This function is kept for compatibility but just returns the id as string
     const record = await (prisma as any)[model].findUnique({
       where: { id: publicId },
       select: { id: true }
     });
-    return record?.id || null;
+    // Return id as string for compatibility (even though it's actually a number)
+    return record ? String(record.id) : null;
   } catch (error) {
     console.error(`Error converting public ID to CUID for ${model}:`, error);
     return null;

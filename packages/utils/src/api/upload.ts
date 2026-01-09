@@ -485,7 +485,10 @@ export async function uploadImage(
     formData.append('image', fileToUpload);
     formData.append('folder', folder);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    // Use getApiBaseUrl() to ensure consistent API URL across all environments
+    // This will use NEXT_PUBLIC_API_URL from .env.local or fallback to environment-based defaults
+    const { getApiBaseUrl } = await import('../config/api');
+    const apiUrl = getApiBaseUrl();
     const uploadUrl = `${apiUrl}/api/upload/image`;
 
     const result = await uploadWithProgress(uploadUrl, formData, token, onProgress);
