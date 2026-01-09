@@ -36,6 +36,18 @@ export default function CalendarPage() {
     setCurrentDate(prev => {
       // Only update if month/year actually changed
       if (prev.getMonth() !== date.getMonth() || prev.getFullYear() !== date.getFullYear()) {
+        // Update URL immediately when month changes
+        const newMonth = date.getMonth() + 1;
+        const newYear = date.getFullYear();
+        const url = new URL(window.location.href);
+        // Remove legacy from/to parameters
+        url.searchParams.delete('from');
+        url.searchParams.delete('to');
+        // Set new month/year
+        url.searchParams.set('month', newMonth.toString());
+        url.searchParams.set('year', newYear.toString());
+        window.history.replaceState({}, '', url.toString());
+        
         return date;
       }
       return prev;
@@ -62,8 +74,12 @@ export default function CalendarPage() {
       const currentMonth = currentDate.getMonth() + 1; // 1-12
       const currentYear = currentDate.getFullYear();
       
-      // 🎯 Update URL with month/year query params
+      // 🎯 Update URL with month/year query params (remove from/to if exists)
       const url = new URL(window.location.href);
+      // Remove legacy from/to parameters
+      url.searchParams.delete('from');
+      url.searchParams.delete('to');
+      // Set month/year parameters
       url.searchParams.set('month', currentMonth.toString());
       url.searchParams.set('year', currentYear.toString());
       if (selectedStatus) url.searchParams.set('status', selectedStatus);

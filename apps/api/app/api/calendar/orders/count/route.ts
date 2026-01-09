@@ -48,41 +48,35 @@ function buildWhereClause(
   const where: any = {};
 
   // Status and order type filters
-  if (filters.status) where.status = filters.status;
+  // 🎯 Filter by status from request (e.g., status=RESERVED)
+  if (filters.status) {
+    where.status = filters.status;
+    console.log('🔍 Filtering by status:', filters.status);
+  }
   if (filters.orderType) where.orderType = filters.orderType;
 
   // Date range filter (from/to)
+  // 🎯 Calendar always filters by pickupPlanAt (pickup date plan)
   if (filters.from || filters.to) {
     const fromDate = filters.from ? new Date(filters.from) : null;
     const toDate = filters.to ? new Date(filters.to) : null;
 
-    // For RESERVED/PICKUPED: filter by pickupPlanAt
-    // For others: filter by createdAt
-    const dateField = (filters.status === ORDER_STATUS.RESERVED || filters.status === ORDER_STATUS.PICKUPED)
-      ? 'pickupPlanAt'
-      : 'createdAt';
-
-    if (dateField === 'pickupPlanAt') {
-      where.pickupPlanAt = {};
-      if (fromDate) {
-        fromDate.setHours(0, 0, 0, 0);
-        where.pickupPlanAt.gte = fromDate;
-      }
-      if (toDate) {
-        toDate.setHours(23, 59, 59, 999);
-        where.pickupPlanAt.lte = toDate;
-      }
-    } else {
-      where.createdAt = {};
-      if (fromDate) {
-        fromDate.setHours(0, 0, 0, 0);
-        where.createdAt.gte = fromDate;
-      }
-      if (toDate) {
-        toDate.setHours(23, 59, 59, 999);
-        where.createdAt.lte = toDate;
-      }
+    // Calendar always uses pickupPlanAt for filtering (ngày dự kiến lấy)
+    where.pickupPlanAt = {};
+    if (fromDate) {
+      fromDate.setHours(0, 0, 0, 0);
+      where.pickupPlanAt.gte = fromDate;
     }
+    if (toDate) {
+      toDate.setHours(23, 59, 59, 999);
+      where.pickupPlanAt.lte = toDate;
+    }
+    console.log('🔍 Filtering by pickupPlanAt:', {
+      from: filters.from,
+      to: filters.to,
+      fromDate: fromDate?.toISOString(),
+      toDate: toDate?.toISOString()
+    });
   }
 
   // Role-based access control
@@ -241,9 +235,8 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
 
       // If date range provided (from/to or month), return breakdown by date with all dates filled
       if (finalFrom && finalTo) {
-        const dateField = (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED)
-          ? 'pickupPlanAt'
-          : 'createdAt';
+        // 🎯 Calendar always groups by pickupPlanAt (pickup date plan)
+        const dateField = 'pickupPlanAt';
 
         const ordersResult = await db.orders.search({
           where,
@@ -251,8 +244,29 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
           page: 1,
         });
 
-        // Group orders by date
+        const sampleOrders = (ordersResult.data || []).slice(0, 3).map((order: any) => ({
+          id: order.id,
+          status: order.status,
+          pickupPlanAt: order.pickupPlanAt,
+          createdAt: order.createdAt
+        }));
+        
+        console.log('🔍 Calendar orders search:', {
+          where,
+          status: status || 'all',
+          ordersFound: ordersResult.data?.length || 0,
+          sampleOrders
+        });
+
+        // 🎯 Group orders by pickupPlanAt date (always use pickupPlanAt for calendar)
+        // Status filter is already applied in where clause
         const countByDate = groupOrdersByDate(ordersResult.data || [], dateField);
+        
+        console.log('📊 Orders grouped by pickupPlanAt:', {
+          status: status || 'all',
+          countByDateKeys: Object.keys(countByDate).length,
+          sampleCounts: Object.entries(countByDate).slice(0, 5)
+        });
         
         // Fill all dates from 'from' to 'to' with 0 if no orders
         const filledCountByDate = fillDateRange(countByDate, finalFrom, finalTo);
