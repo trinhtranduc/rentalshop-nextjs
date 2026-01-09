@@ -58,24 +58,26 @@ function buildWhereClause(
   // Date range filter (from/to)
   // 🎯 Calendar always filters by pickupPlanAt (pickup date plan)
   if (filters.from || filters.to) {
-    const fromDate = filters.from ? new Date(filters.from) : null;
-    const toDate = filters.to ? new Date(filters.to) : null;
+    // Parse dates as UTC to avoid timezone issues
+    // "2026-01-01" should be treated as 2026-01-01 00:00:00 UTC
+    const fromDate = filters.from ? new Date(filters.from + 'T00:00:00.000Z') : null;
+    const toDate = filters.to ? new Date(filters.to + 'T23:59:59.999Z') : null;
 
     // Calendar always uses pickupPlanAt for filtering (ngày dự kiến lấy)
     where.pickupPlanAt = {};
     if (fromDate) {
-      fromDate.setHours(0, 0, 0, 0);
       where.pickupPlanAt.gte = fromDate;
     }
     if (toDate) {
-      toDate.setHours(23, 59, 59, 999);
       where.pickupPlanAt.lte = toDate;
     }
     console.log('🔍 Filtering by pickupPlanAt:', {
       from: filters.from,
       to: filters.to,
       fromDate: fromDate?.toISOString(),
-      toDate: toDate?.toISOString()
+      toDate: toDate?.toISOString(),
+      fromDateUTC: fromDate?.toUTCString(),
+      toDateUTC: toDate?.toUTCString()
     });
   }
 
@@ -105,6 +107,7 @@ function buildWhereClause(
 
 /**
  * Group orders by date (YYYY-MM-DD format)
+ * Uses UTC date to avoid timezone issues
  */
 function groupOrdersByDate(
   orders: any[],
@@ -116,7 +119,12 @@ function groupOrdersByDate(
     const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
     if (dateValue) {
       const date = new Date(dateValue);
-      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      // Use UTC methods to avoid timezone issues
+      // This ensures "2026-01-08T00:00:00.000Z" is always grouped as "2026-01-08"
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth() + 1;
+      const day = date.getUTCDate();
+      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
     }
   }

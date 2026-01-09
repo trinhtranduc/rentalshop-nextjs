@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from '@rentalshop/ui';
+import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator, Pagination } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
@@ -59,6 +59,10 @@ export default function CalendarPage() {
   const [dailyOrders, setDailyOrders] = useState<(CalendarOrderSummary & { type: 'pickup' | 'return' })[]>([]);
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [loadingDailyOrders, setLoadingDailyOrders] = useState(false);
+  // 🎯 Pagination state for daily orders
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const itemsPerPage = 20;
 
   // Track previous month to avoid unnecessary fetches
   const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
@@ -209,9 +213,9 @@ export default function CalendarPage() {
     return [];
   }, []);
 
-  // 🎯 NEW: Handle date click to show daily orders - using new API
-  const handleDateClick = useCallback(async (date: Date) => {
-    console.log('📅 Date clicked:', date);
+  // 🎯 NEW: Handle date click to show daily orders - using new API with pagination
+  const handleDateClick = useCallback(async (date: Date, page: number = 1) => {
+    console.log('📅 Date clicked:', date, 'page:', page);
     
     if (!authenticated || !user) return;
     
@@ -219,6 +223,7 @@ export default function CalendarPage() {
       setLoadingDailyOrders(true);
       setSelectedDate(date);
       setShowDailyModal(true);
+      setCurrentPage(page);
       
       // Format date as YYYY-MM-DD
       const formatDateForAPI = (date: Date): string => {
@@ -230,11 +235,12 @@ export default function CalendarPage() {
       
       const dateStr = formatDateForAPI(date);
       
-      // 🎯 NEW: Fetch orders by date and status using new API
+      // 🎯 Fetch orders by date and status using new API with pagination
       const result = await calendarApi.getOrdersByDate(dateStr, {
         status: selectedStatus,
         outletId: user?.outletId,
-        limit: 100 // Get up to 100 orders
+        limit: itemsPerPage,
+        page: page
       });
       
       console.log('📅 Orders by date API response:', result);
@@ -248,22 +254,30 @@ export default function CalendarPage() {
         }));
         
         setDailyOrders(orders);
+        // Use pagination total if available, otherwise use summary totalOrders
+        const total = result.data.pagination?.total || result.data.summary?.totalOrders || result.data.orders.length;
+        setTotalOrders(total);
         console.log('📅 Orders loaded for date:', {
           date: dateStr,
           status: selectedStatus,
-          count: orders.length
+          page,
+          count: orders.length,
+          total,
+          pagination: result.data.pagination
         });
       } else {
         console.error('❌ Failed to fetch orders by date:', result.message);
         setDailyOrders([]);
+        setTotalOrders(0);
       }
     } catch (error) {
       console.error('💥 Error fetching orders by date:', error);
       setDailyOrders([]);
+      setTotalOrders(0);
     } finally {
       setLoadingDailyOrders(false);
     }
-  }, [authenticated, user, selectedStatus]);
+  }, [authenticated, user, selectedStatus, itemsPerPage]);
 
   return (
     <PageWrapper>
@@ -311,14 +325,14 @@ export default function CalendarPage() {
             }
           }}
           onRetry={undefined} // No retry needed - orders load on date click
-          // Note: ordersCountByDate and selectedStatus will be used in future updates to display counts on calendar
+          ordersCountByDate={ordersCountByDate} // 🎯 Pass orders count by date to display in calendar cells
         />
       </div>
 
       {/* 🎯 NEW: Daily Orders Modal */}
       {showDailyModal && selectedDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[80vh] overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 h-[85vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
@@ -357,7 +371,10 @@ export default function CalendarPage() {
                 </p>
               </div>
               <Button
-                onClick={() => setShowDailyModal(false)}
+                onClick={() => {
+                  setShowDailyModal(false);
+                  setCurrentPage(1); // Reset page when closing modal
+                }}
                 variant="ghost"
                 size="icon"
                 className="text-gray-400 hover:text-gray-600"
@@ -367,7 +384,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="flex-1 p-6 overflow-y-auto flex flex-col">
               {loadingDailyOrders ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -384,77 +401,97 @@ export default function CalendarPage() {
                   <p className="text-gray-600">{tcal('modal.noPickupReturnOrders')}</p>
                 </div>
                  ) : (
-                   <div className="overflow-x-auto">
-                     <table className="min-w-full divide-y divide-gray-200">
-                       <thead className="bg-gray-50">
-                         <tr>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
-                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
-                         </tr>
-                       </thead>
-                       <tbody className="bg-white divide-y divide-gray-200">
-                         {dailyOrders.map((order) => (
-                           <tr key={order.id} className="hover:bg-gray-50">
-                             <td className="px-6 py-4 whitespace-nowrap">
-                               <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
-                               <div className="text-sm text-gray-500">
-                                 {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
-                               </div>
-                             </td>
-                             <td className="px-6 py-4 whitespace-nowrap">
-                               <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
-                               {order.customerPhone && (
-                                 <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
-                               )}
-                             </td>
-                             <td className="px-6 py-4">
-                               <div className="text-sm font-medium text-gray-900">{order.productName}</div>
-                               {(order.productCount && order.productCount > 1) && (
-                                 <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
-                               )}
-                             </td>
-                             <td className="px-6 py-4 whitespace-nowrap">
-                               <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                 order.type === 'pickup' ? 'bg-green-100 text-green-800' :
-                                 order.type === 'return' ? 'bg-blue-100 text-blue-800' :
-                                 'bg-gray-100 text-gray-800'
-                               }`}>
-                                 {order.type === 'pickup' ? tcal('labels.pickup') : tcal('labels.return')}
-                               </span>
-                             </td>
-                             <td className="px-6 py-4 whitespace-nowrap">
-                               <div className="flex items-center gap-2">
+                   <div className="flex-1 flex flex-col">
+                     <div className="flex-1 overflow-x-auto">
+                       <table className="min-w-full divide-y divide-gray-200">
+                         <thead className="bg-gray-50 sticky top-0">
+                           <tr>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
+                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
+                           </tr>
+                         </thead>
+                         <tbody className="bg-white divide-y divide-gray-200">
+                           {dailyOrders.map((order) => (
+                             <tr key={order.id} className="hover:bg-gray-50">
+                               <td className="px-6 py-4 whitespace-nowrap">
+                                 <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
+                                 <div className="text-sm text-gray-500">
+                                   {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
+                                 </div>
+                               </td>
+                               <td className="px-6 py-4 whitespace-nowrap">
+                                 <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                                 {order.customerPhone && (
+                                   <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
+                                 )}
+                               </td>
+                               <td className="px-6 py-4">
+                                 <div className="text-sm font-medium text-gray-900">{order.productName}</div>
+                                 {(order.productCount && order.productCount > 1) && (
+                                   <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
+                                 )}
+                               </td>
+                               <td className="px-6 py-4 whitespace-nowrap">
                                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                   order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
-                                   order.status === ORDER_STATUS.PICKUPED ? 'bg-green-100 text-green-800' :
-                                   order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
+                                   order.type === 'pickup' ? 'bg-green-100 text-green-800' :
+                                   order.type === 'return' ? 'bg-blue-100 text-blue-800' :
                                    'bg-gray-100 text-gray-800'
                                  }`}>
-                                   {to(`status.${order.status}`)}
+                                   {order.type === 'pickup' ? tcal('labels.pickup') : tcal('labels.return')}
                                  </span>
-                                 {order.isOverdue && (
-                                   <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
-                                     {tcal('labels.overdue')}
+                               </td>
+                               <td className="px-6 py-4 whitespace-nowrap">
+                                 <div className="flex items-center gap-2">
+                                   <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                     order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
+                                     order.status === ORDER_STATUS.PICKUPED ? 'bg-green-100 text-green-800' :
+                                     order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
+                                     'bg-gray-100 text-gray-800'
+                                   }`}>
+                                     {to(`status.${order.status}`)}
+                                   </span>
+                                   {order.isOverdue && (
+                                     <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
+                                       {tcal('labels.overdue')}
+                                     </span>
+                                   )}
+                                 </div>
+                               </td>
+                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                 {(order.totalAmount && order.totalAmount > 0) && (
+                                   <span className="font-semibold">
+                                     {formatCurrencyAdvanced(order.totalAmount, { currency: 'VND', showSymbol: true })}
                                    </span>
                                  )}
-                               </div>
-                             </td>
-                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                               {(order.totalAmount && order.totalAmount > 0) && (
-                                 <span className="font-semibold">
-                                   {formatCurrencyAdvanced(order.totalAmount, { currency: 'VND', showSymbol: true })}
-                                 </span>
-                               )}
-                             </td>
-                           </tr>
-                         ))}
-                       </tbody>
-                     </table>
-                </div>
+                               </td>
+                             </tr>
+                           ))}
+                         </tbody>
+                       </table>
+                     </div>
+                     
+                     {/* 🎯 Pagination */}
+                     {totalOrders > 0 && (
+                       <div className="mt-4 pt-4 border-t border-gray-200">
+                         <Pagination
+                           currentPage={currentPage}
+                           totalPages={Math.ceil(totalOrders / itemsPerPage)}
+                           total={totalOrders}
+                           limit={itemsPerPage}
+                           onPageChange={(page) => {
+                             if (selectedDate) {
+                               handleDateClick(selectedDate, page);
+                             }
+                           }}
+                           itemName={tcal('modal.orders') || 'orders'}
+                         />
+                       </div>
+                     )}
+                   </div>
               )}
             </div>
           </div>
