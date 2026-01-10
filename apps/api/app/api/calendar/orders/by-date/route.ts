@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -134,21 +134,6 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📦 Found orders:', orders.length);
 
-    // Helper function to parse productImages (handle both JSON string and array)
-    const parseProductImages = (images: any): string[] => {
-      if (!images) return [];
-      if (Array.isArray(images)) return images;
-      if (typeof images === 'string') {
-        try {
-          const parsed = JSON.parse(images);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      }
-      return [];
-    };
-
     // Transform orders to CalendarOrderSummary format
     const orderSummaries: CalendarOrderSummary[] = orders.map((order: any) => {
       const orderItems = order.orderItems || [];
@@ -174,8 +159,13 @@ export const GET = withReadOnlyAuth(async (
         productCount: totalProductCount,
         // Include order items with flattened product data
         orderItems: orderItems.map((item: any) => {
-          // Parse productImages to ensure it's always an array
-          const productImages = parseProductImages(item.product?.images);
+          // Parse productImages with priority: snapshot first, then current product images
+          // Priority 1: Use productImages (snapshot field saved when order was created)
+          const snapshotImages = parseProductImages(item.productImages);
+          // Priority 2: Fallback to product.images (from product relation - current images)
+          const productImages = snapshotImages.length > 0 
+            ? snapshotImages 
+            : parseProductImages(item.product?.images);
           
           return {
             id: item.id,

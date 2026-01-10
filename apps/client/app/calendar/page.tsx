@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator, Pagination } from '@rentalshop/ui';
-import { X } from 'lucide-react';
+import { X, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAuth, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced, formatPhoneNumberMasked } from '@rentalshop/utils';
+import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced, formatPhoneNumberMasked, parseProductImages } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import { ORDER_STATUS } from '@rentalshop/constants';
 import type { PickupOrder } from '@rentalshop/ui';
@@ -63,7 +63,22 @@ export default function CalendarPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const itemsPerPage = 20;
-
+  // 🎯 State for expanded orders (to show order items)
+  const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
+  
+  // Toggle expand/collapse for order items
+  const toggleOrderExpand = useCallback((orderId: number) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  }, []);
+  
   // Track previous month to avoid unnecessary fetches
   const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
   const prevUserIdRef = useRef<number | null>(null);
@@ -246,6 +261,9 @@ export default function CalendarPage() {
       console.log('📅 Orders by date API response:', result);
       
       if (result.success && result.data) {
+        // Reset expanded orders when fetching new data
+        setExpandedOrders(new Set());
+        
         const orders = result.data.orders.map(order => ({
           ...order,
           type: (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED) 
@@ -374,6 +392,7 @@ export default function CalendarPage() {
                 onClick={() => {
                   setShowDailyModal(false);
                   setCurrentPage(1); // Reset page when closing modal
+                  setExpandedOrders(new Set()); // Reset expanded orders when closing modal
                 }}
                 variant="ghost"
                 size="icon"
@@ -404,73 +423,189 @@ export default function CalendarPage() {
                    <div className="flex-1 flex flex-col">
                      <div className="flex-1 overflow-x-auto">
                        <table className="min-w-full divide-y divide-gray-200">
-                         <thead className="bg-gray-50 sticky top-0">
-                           <tr>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
-                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
-                           </tr>
-                         </thead>
-                         <tbody className="bg-white divide-y divide-gray-200">
-                           {dailyOrders.map((order) => (
-                             <tr key={order.id} className="hover:bg-gray-50">
-                               <td className="px-6 py-4 whitespace-nowrap">
-                                 <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
-                                 <div className="text-sm text-gray-500">
-                                   {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
-                                 </div>
-                               </td>
-                               <td className="px-6 py-4 whitespace-nowrap">
-                                 <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
-                                 {order.customerPhone && (
-                                   <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
-                                 )}
-                               </td>
-                               <td className="px-6 py-4">
-                                 <div className="text-sm font-medium text-gray-900">{order.productName}</div>
-                                 {(order.productCount && order.productCount > 1) && (
-                                   <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
-                                 )}
-                               </td>
-                               <td className="px-6 py-4 whitespace-nowrap">
-                                 <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                   order.type === 'pickup' ? 'bg-green-100 text-green-800' :
-                                   order.type === 'return' ? 'bg-blue-100 text-blue-800' :
-                                   'bg-gray-100 text-gray-800'
-                                 }`}>
-                                   {order.type === 'pickup' ? tcal('labels.pickup') : tcal('labels.return')}
-                                 </span>
-                               </td>
-                               <td className="px-6 py-4 whitespace-nowrap">
-                                 <div className="flex items-center gap-2">
-                                   <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                     order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
-                                     order.status === ORDER_STATUS.PICKUPED ? 'bg-green-100 text-green-800' :
-                                     order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
-                                     'bg-gray-100 text-gray-800'
-                                   }`}>
-                                     {to(`status.${order.status}`)}
-                                   </span>
-                                   {order.isOverdue && (
-                                     <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
-                                       {tcal('labels.overdue')}
-                                     </span>
-                                   )}
-                                 </div>
-                               </td>
-                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                 {(order.totalAmount && order.totalAmount > 0) && (
-                                   <span className="font-semibold">
-                                     {formatCurrencyAdvanced(order.totalAmount, { currency: 'VND', showSymbol: true })}
-                                   </span>
-                                 )}
-                               </td>
-                             </tr>
-                           ))}
-                         </tbody>
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="w-12 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {dailyOrders.map((order) => {
+                            const isExpanded = expandedOrders.has(order.id);
+                            const orderItems = order.orderItems || [];
+                            const hasItems = orderItems.length > 0;
+                            
+                            return (
+                              <React.Fragment key={order.id}>
+                                {/* Main Order Row */}
+                                <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => hasItems && toggleOrderExpand(order.id)}>
+                                  {/* Expand/Collapse Button */}
+                                  <td className="px-2 py-4 whitespace-nowrap">
+                                    {hasItems ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleOrderExpand(order.id);
+                                        }}
+                                        className="p-1 rounded hover:bg-gray-200 transition-colors"
+                                      >
+                                        {isExpanded ? (
+                                          <ChevronDown className="w-4 h-4 text-gray-600" />
+                                        ) : (
+                                          <ChevronRight className="w-4 h-4 text-gray-600" />
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <span className="w-4 h-4"></span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
+                                    <div className="text-sm text-gray-500">
+                                      {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                                    {order.customerPhone && (
+                                      <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="text-sm font-medium text-gray-900">{order.productName}</div>
+                                    {(order.productCount && order.productCount > 1) && (
+                                      <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                      order.orderType === 'RENT' ? 'bg-blue-100 text-blue-800' :
+                                      order.orderType === 'SALE' ? 'bg-purple-100 text-purple-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {order.orderType === 'RENT' ? 'THUÊ' : order.orderType === 'SALE' ? 'BÁN' : order.orderType}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                        order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
+                                        order.status === ORDER_STATUS.PICKUPED ? 'bg-green-100 text-green-800' :
+                                        order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {to(`status.${order.status}`)}
+                                      </span>
+                                      {order.isOverdue && (
+                                        <span className="px-2 py-1 text-xs rounded-full font-medium bg-orange-100 text-orange-800">
+                                          {tcal('labels.overdue')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {(order.totalAmount && order.totalAmount > 0) && (
+                                      <span className="font-semibold">
+                                        {formatCurrencyAdvanced(order.totalAmount, { currency: 'VND', showSymbol: true })}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                                
+                                {/* Expanded Order Items Row */}
+                                {isExpanded && hasItems && (
+                                  <tr className="bg-gray-50">
+                                    <td colSpan={7} className="px-6 py-4">
+                                      <div className="space-y-3">
+                                        <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                                          {tcal('modal.items')} ({orderItems.length})
+                                        </div>
+                                        <div className="grid gap-3">
+                                          {orderItems.map((item: any) => {
+                                            // Parse productImages with priority: snapshot first, then current product images
+                                            const snapshotImages = parseProductImages(item.productImages);
+                                            const productImages = snapshotImages.length > 0 
+                                              ? snapshotImages 
+                                              : parseProductImages(item.product?.images || []);
+                                            const firstImage = Array.isArray(productImages) && productImages.length > 0 
+                                              ? productImages[0] 
+                                              : null;
+                                            
+                                            return (
+                                              <div key={item.id} className="flex items-start gap-4 p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                                                {/* Product Image - Always show, with placeholder if no image */}
+                                                <div className="flex-shrink-0">
+                                                  {firstImage ? (
+                                                    <img
+                                                      src={firstImage}
+                                                      alt={item.productName || 'Product'}
+                                                      className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                                                      onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = '/placeholder-product.png';
+                                                      }}
+                                                    />
+                                                  ) : (
+                                                    <div className="w-16 h-16 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center">
+                                                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                      </svg>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                {/* Product Info */}
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1">
+                                                      <div className="text-sm font-medium text-gray-900">
+                                                        {item.productName || 'Unknown Product'}
+                                                      </div>
+                                                      {item.productBarcode && (
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                          Barcode: {item.productBarcode}
+                                                        </div>
+                                                      )}
+                                                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                                                        <span>SL: <span className="font-medium">{item.quantity || 1}</span></span>
+                                                        <span>Đơn giá: <span className="font-medium">{formatCurrencyAdvanced(item.unitPrice || 0, { currency: 'VND', showSymbol: true })}</span></span>
+                                                        {item.productRentPrice && (
+                                                          <span>Giá thuê: <span className="font-medium">{formatCurrencyAdvanced(item.productRentPrice, { currency: 'VND', showSymbol: true })}</span></span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                      <div className="text-sm font-semibold text-gray-900">
+                                                        {formatCurrencyAdvanced(item.totalPrice || 0, { currency: 'VND', showSymbol: true })}
+                                                      </div>
+                                                      {item.productDeposit && item.productDeposit > 0 && (
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                          Cọc: {formatCurrencyAdvanced(item.productDeposit, { currency: 'VND', showSymbol: true })}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  {item.notes && (
+                                                    <div className="mt-2 text-xs text-gray-600 italic">
+                                                      Ghi chú: {item.notes}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </tbody>
                        </table>
                      </div>
                      
