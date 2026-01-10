@@ -44,6 +44,7 @@
     "returnOrders": "Đơn trả hàng",
     "viewDetails": "Xem chi tiết",
     "close": "Đóng",
+    "loading": "Đang tải đơn hàng...",
     "ordersFound": "đơn hàng",
     "ordersFoundPlural": "đơn hàng",
     "noOrders": "Không có đơn hàng",
