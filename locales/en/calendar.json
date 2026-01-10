@@ -44,6 +44,7 @@
     "returnOrders": "Return Orders",
     "viewDetails": "View Details",
     "close": "Close",
+    "loading": "Loading orders...",
     "ordersFound": "order found",
     "ordersFoundPlural": "orders found",
     "noOrders": "No Orders",
