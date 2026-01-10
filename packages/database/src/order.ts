@@ -803,7 +803,8 @@ export const simplifiedOrders = {
             productId: true,
             notes: true,
             rentalDays: true,
-            product: { select: { id: true, name: true, barcode: true } }
+            productImages: true, // Snapshot images saved when order was created
+            product: { select: { id: true, name: true, barcode: true, images: true } } // Include product images for fallback
           }
         },
         payments: true
