@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift } from "lucide-react";
 import { authApi, isValidEmail } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
@@ -42,6 +42,8 @@ interface RegisterFormData {
   acceptTermsAndPrivacy: boolean;
   // Role is always MERCHANT for public registration
   role: 'MERCHANT';
+  // Optional referral code
+  referralCode?: string;
 }
 
 interface RegisterFormProps {
@@ -76,8 +78,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       const refCode = params.get('referralCode');
       if (refCode) {
         setReferralCode(refCode);
+        // Auto-fill referral code in form
+        formik.setFieldValue('referralCode', refCode);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Step 1 validation schema (Account Information)
@@ -135,6 +140,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       address: "",
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
+      referralCode: referralCode || "",
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     validateOnBlur: true,
@@ -187,7 +193,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           businessType: values.businessType || 'GENERAL',
           pricingType: values.pricingType || 'FIXED',
           address: values.address || '',
-          referralCode: referralCode || undefined, // Include referral code from URL
+          referralCode: values.referralCode?.trim() || referralCode || undefined, // Include referral code from form or URL
         };
         
         const result = await authApi.register(registrationData);
@@ -481,6 +487,32 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     </div>
                     {formik.errors.address && formik.touched.address && (
                       <p className="text-red-500 text-sm">{formik.errors.address}</p>
+                    )}
+                  </div>
+
+                  {/* Referral Code Field (optional) */}
+                  <div className="space-y-2">
+                    <label htmlFor="referralCode" className="text-sm font-medium text-gray-700">
+                      {t('register.referralCode')} {t('register.optional') && `(${t('register.optional')})`}
+                    </label>
+                    <div className="relative">
+                      <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="referralCode"
+                        name="referralCode"
+                        type="text"
+                        placeholder={t('register.enterReferralCode') || 'Enter referral code (optional)'}
+                        value={formik.values.referralCode || ''}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="pl-10"
+                        disabled={!!referralCode} // Disable if auto-filled from URL
+                      />
+                    </div>
+                    {referralCode && (
+                      <p className="text-xs text-gray-500">
+                        {t('register.referralCodeAutoFilled') || 'Referral code automatically filled from link'}
+                      </p>
                     )}
                   </div>
                 </div>
