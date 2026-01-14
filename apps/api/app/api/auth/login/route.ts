@@ -6,9 +6,11 @@ import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
- * Build CORS headers for response
+ * Build CORS headers for response (safe, never throws)
+ * This function is guaranteed to return valid CORS headers
  */
 function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  try {
   const origin = request.headers.get('origin') || '';
   const allowedOrigins = [
     'http://localhost:3000',
@@ -33,17 +35,49 @@ function buildCorsHeaders(request: NextRequest): Record<string, string> {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
     'Access-Control-Allow-Credentials': 'true',
   };
+  } catch (error) {
+    // Fallback: return permissive CORS headers if anything fails
+    console.error('❌ LOGIN: Error building CORS headers, using fallback:', error);
+    const origin = request.headers.get('origin') || '*';
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
 }
 
 export async function OPTIONS(request: NextRequest) {
+  try {
   const corsHeaders = buildCorsHeaders(request);
   return new NextResponse(null, {
     status: 204,
     headers: corsHeaders,
   });
+  } catch (error: any) {
+    console.error('❌ OPTIONS ERROR:', {
+      errorName: error?.name,
+      errorMessage: error?.message,
+    });
+    
+    // Return basic CORS headers even on error
+    const fallbackHeaders = {
+      'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+    
+    return new NextResponse(null, {
+      status: 204,
+      headers: fallbackHeaders,
+    });
+  }
 }
 
 export async function POST(request: NextRequest) {
+  // Build CORS headers first (safe, never throws)
   const corsHeaders = buildCorsHeaders(request);
   
   // 🔍 DIAGNOSTIC LOGGING: Log request origin and environment
@@ -79,70 +113,10 @@ export async function POST(request: NextRequest) {
       // Don't throw here - let the actual query fail to get better error context
     }
     
-    // 🔍 DIAGNOSTIC LOGGING: Check request content type and body
-    const contentType = request.headers.get('content-type');
-    console.log('🔍 LOGIN REQUEST BODY CHECK:', {
-      contentType,
-      hasBody: request.body !== null,
-      contentLength: request.headers.get('content-length'),
-    });
+    const body = await request.json();
     
-    // Parse request body with error handling
-    let body: any;
-    try {
-      body = await request.json();
-      console.log('🔍 REQUEST BODY PARSED:', {
-        hasEmail: !!body?.email,
-        hasPassword: !!body?.password,
-        bodyKeys: body ? Object.keys(body) : [],
-      });
-    } catch (jsonError: any) {
-      console.error('❌ REQUEST BODY PARSE ERROR:', {
-        errorName: jsonError?.name,
-        errorMessage: jsonError?.message,
-        contentType,
-        contentLength: request.headers.get('content-length'),
-      });
-      
-      return NextResponse.json(
-        ResponseBuilder.error('INVALID_INPUT'),
-        { 
-          status: 400,
-          headers: corsHeaders
-        }
-      );
-    }
-    
-    // Validate input with Zod schema
-    let validatedData: any;
-    try {
-      validatedData = loginSchema.parse(body);
-    } catch (validationError: any) {
-      console.error('❌ VALIDATION ERROR:', {
-        errorName: validationError?.name,
-        errorMessage: validationError?.message,
-        errors: validationError?.errors,
-        bodyReceived: body,
-      });
-      
-      // Handle ZodError with proper flatten
-      if (validationError?.name === 'ZodError' && validationError.flatten) {
-        return NextResponse.json(
-          ResponseBuilder.validationError(validationError.flatten()),
-          { 
-            status: 400,
-            headers: corsHeaders
-          }
-        );
-      }
-      
-      // For non-Zod errors, use generic error handler
-      const { response, statusCode } = handleApiError(validationError);
-      return NextResponse.json(response, { 
-        status: statusCode,
-        headers: corsHeaders
-      });
-    }
+    // Validate input
+    const validatedData = loginSchema.parse(body);
     
     console.log('🔍 LOGIN ATTEMPT:', {
       email: validatedData.email,
@@ -268,6 +242,7 @@ export async function POST(request: NextRequest) {
           pricingType: merchant.pricingType || undefined,
           taxId: merchant.taxId || undefined,
           currency: (merchant as any).currency || 'USD',
+          tenantKey: (merchant as any).tenantKey || undefined, // ✅ Include tenantKey for referral code
           // ✅ Include subscription data in merchant object
           subscription: subscriptionData,
         };
@@ -282,14 +257,20 @@ export async function POST(request: NextRequest) {
         const { getDefaultBankAccount } = await import('@rentalshop/database');
         const defaultBankAccount = await getDefaultBankAccount(user.outletId);
         
-        // ✅ Follow OutletReference type: { id, name, address?, phone?, merchantId, defaultBankAccount? }
+        // ✅ Follow OutletReference type: { id, name, address?, phone?, merchantId, defaultBankAccount?, merchant? }
         outletData = {
           id: outlet.id,
           name: outlet.name,
           address: outlet.address || undefined,
           phone: outlet.phone || undefined,
           merchantId: outlet.merchantId,
-          defaultBankAccount: defaultBankAccount || undefined
+          defaultBankAccount: defaultBankAccount || undefined,
+          // ✅ Include merchant data with tenantKey for referral code
+          merchant: (outlet as any).merchant ? {
+            id: (outlet as any).merchant.id,
+            name: (outlet as any).merchant.name,
+            tenantKey: (outlet as any).merchant.tenantKey || undefined
+          } : undefined
         };
       }
     }
@@ -428,6 +409,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
     
+    try {
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     
@@ -441,5 +423,20 @@ export async function POST(request: NextRequest) {
       status: statusCode,
       headers: corsHeaders
     });
+    } catch (handleError: any) {
+      // If handleApiError itself throws, return generic error with CORS headers
+      console.error('❌ LOGIN: Error in handleApiError, using fallback:', {
+        originalError: error?.message,
+        handleError: handleError?.message,
+      });
+      
+      return NextResponse.json(
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
+        { 
+          status: 500,
+          headers: corsHeaders
+        }
+      );
+    }
   }
 } 
