@@ -5445,7 +5445,19 @@ function useSubscriptionError() {
     };
     const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
     const errorMessage = error2.message || error2?.response?.data?.message;
-    const translatedMessage = errorCode === "PLAN_LIMIT_EXCEEDED" ? te("PLAN_LIMIT_EXCEEDED") : errorMessage || t3("errors.generic");
+    let translatedMessage = errorMessage || t3("errors.generic");
+    if (errorCode === "PLAN_LIMIT_EXCEEDED") {
+      translatedMessage = te("PLAN_LIMIT_EXCEEDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_ENDED") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_ENDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_MISSING") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_MISSING");
+    } else if (errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION")) {
+      const translated = te(errorCode);
+      if (translated !== errorCode) {
+        translatedMessage = translated;
+      }
+    }
     const subscriptionError = {
       message: translatedMessage,
       subscriptionStatus,
@@ -5476,6 +5488,12 @@ function useSubscriptionError() {
       action = t3("errors.merchantAccountAction");
     } else if (error2.code === "PLAN_LIMIT_EXCEEDED") {
       message = te("PLAN_LIMIT_EXCEEDED");
+    } else if (error2.code === "SUBSCRIPTION_PERIOD_ENDED") {
+      message = te("SUBSCRIPTION_PERIOD_ENDED");
+      action = t3("errors.expiredAction") || "Choose a new plan to continue using the service.";
+    } else if (error2.code === "SUBSCRIPTION_PERIOD_MISSING") {
+      message = te("SUBSCRIPTION_PERIOD_MISSING");
+      action = t3("errors.merchantAccountAction") || "Contact support to resolve account issues.";
     }
     const errorTitle = t3("errors.title");
     addToast("error", errorTitle, action ? `${message}

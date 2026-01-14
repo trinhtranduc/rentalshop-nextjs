@@ -44,6 +44,65 @@ const adminRoutes = [
 ];
 
 /**
+ * Build CORS headers safely (never throws)
+ * This function is guaranteed to return valid CORS headers
+ */
+function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  try {
+    // Get allowed origins from environment
+    const corsOrigins = (process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    
+    // Add localhost, Railway domains, and custom domains
+    const allowedOrigins = [
+      ...corsOrigins,
+      // Local development
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      // Custom domains - anyrent.shop (production)
+      'https://anyrent.shop',
+      'https://www.anyrent.shop', // Production website (www subdomain)
+      'https://api.anyrent.shop', // Production API
+      'https://admin.anyrent.shop',
+      // Custom domains - anyrent.shop (development)
+      'https://dev.anyrent.shop',
+      'https://dev-api.anyrent.shop', // Development API
+      'https://dev-admin.anyrent.shop'
+    ];
+    
+    // Get request origin safely
+    const requestOrigin = request.headers.get('origin') || '';
+    
+    // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
+    const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
+    
+    // Use request origin if allowed, otherwise null (reject)
+    const allowOrigin = isAllowedOrigin ? requestOrigin : 'null';
+    
+    return {
+      'Access-Control-Allow-Origin': allowOrigin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    };
+  } catch (error) {
+    // Fallback: return permissive CORS headers if anything fails
+    console.error('❌ MIDDLEWARE: Error building CORS headers, using fallback:', error);
+    const requestOrigin = request.headers.get('origin') || '*';
+    return {
+      'Access-Control-Allow-Origin': requestOrigin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+}
+
+/**
  * Middleware for API authentication and authorization
  * 
  * Best Practices:
@@ -51,88 +110,46 @@ const adminRoutes = [
  * - Proper error handling without exposing sensitive information
  * - Consistent response format
  * - Security headers forwarding
+ * - CORS headers always included, even on errors
  */
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  // Build CORS headers first (safe, never throws)
+  const corsHeaders = buildCorsHeaders(request);
   
-  // Generate correlation ID for request tracking
-  const correlationId = generateCorrelationId();
-  
-  // Detect platform from request headers
-  const platformInfo = detectPlatform(request);
-  
-  console.log(formatPlatformLog(request, `Request received: ${request.method} ${pathname} [${correlationId}]`));
-  console.log('🔍 MIDDLEWARE: Request details:', {
-    method: request.method,
-    pathname,
-    url: request.url,
-    platform: platformInfo.platform,
-    deviceType: platformInfo.deviceType,
-    version: platformInfo.version,
-    headers: Object.fromEntries(request.headers.entries())
-  });
-
-  // ============================================================================
-  // CORS CONFIGURATION - Best Practices Implementation
-  // ============================================================================
-  
-  // Get allowed origins from environment
-  const corsOrigins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-  
-  // Add localhost, Railway domains, and custom domains
-  const allowedOrigins = [
-    ...corsOrigins,
-    // Local development
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    // Custom domains - anyrent.shop (production)
-    'https://anyrent.shop',
-    'https://www.anyrent.shop', // Production website (www subdomain)
-    'https://api.anyrent.shop', // Production API
-    'https://admin.anyrent.shop',
-    // Custom domains - anyrent.shop (development)
-    'https://dev.anyrent.shop',
-    'https://dev-api.anyrent.shop', // Development API
-    'https://dev-admin.anyrent.shop'
-  ];
-  
-  // Get request origin
-  const requestOrigin = request.headers.get('origin') || '';
-  
-  // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
-  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
-  
-  // Use request origin if allowed, otherwise null (reject)
-  const allowOrigin = isAllowedOrigin ? requestOrigin : 'null';
-  
-  console.log('🔍 MIDDLEWARE: CORS check:', {
-    requestOrigin,
-    allowedOrigins,
-    isAllowed: isAllowedOrigin,
-    allowOrigin
-  });
-
-  // Common CORS headers for all responses
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-
-  // Handle OPTIONS preflight requests
+  // Handle OPTIONS preflight requests immediately
+  // This must be done before any other processing to ensure CORS works
   if (request.method === 'OPTIONS') {
-    console.log('🔍 MIDDLEWARE: OPTIONS preflight request');
+    const requestOrigin = request.headers.get('origin') || '';
+    console.log('🔍 MIDDLEWARE: OPTIONS preflight request', {
+      origin: requestOrigin,
+      pathname: request.nextUrl.pathname
+    });
     return new NextResponse(null, {
       status: 204,
       headers: corsHeaders,
     });
   }
+
+  // Wrap all remaining middleware logic in try-catch
+  // This ensures errors don't break CORS responses
+  try {
+    const { pathname } = request.nextUrl;
+
+    // Generate correlation ID for request tracking
+    const correlationId = generateCorrelationId();
+    
+    // Detect platform from request headers
+    const platformInfo = detectPlatform(request);
+    
+    console.log(formatPlatformLog(request, `Request received: ${request.method} ${pathname} [${correlationId}]`));
+    console.log('🔍 MIDDLEWARE: Request details:', {
+      method: request.method,
+      pathname,
+      url: request.url,
+      platform: platformInfo.platform,
+      deviceType: platformInfo.deviceType,
+      version: platformInfo.version,
+    });
 
   // Check if route is public or not an API route
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
@@ -187,7 +204,6 @@ export async function middleware(request: NextRequest) {
     return createUnauthorizedResponse('Token is required', corsHeaders);
   }
 
-  try {
     console.log('🔍 MIDDLEWARE: Starting token verification for:', pathname);
     console.log('🔍 MIDDLEWARE: Token preview:', token.substring(0, 20) + '...');
     console.log('🔍 MIDDLEWARE: Token signature:', token.split('.')[2] ? `${token.split('.')[2].substring(0, 20)}...` : 'MISSING');
@@ -236,36 +252,36 @@ export async function middleware(request: NextRequest) {
           
           if (!allowWebAccess) {
             const planName = subscription.plan?.name || 'Unknown';
-        console.log('❌ MIDDLEWARE: Platform access denied:', {
-          planName,
-          platform: platformInfo.platform,
+            console.log('❌ MIDDLEWARE: Platform access denied:', {
+              planName,
+              platform: platformInfo.platform,
               allowWebAccess,
               merchantId: payload.merchantId,
               message: 'Plan does not allow web access'
-        });
-        
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'PLATFORM_ACCESS_DENIED',
+            });
+            
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'PLATFORM_ACCESS_DENIED',
                 message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
-            data: {
-              currentPlan: planName,
-              currentPlatform: platformInfo.platform,
-              allowedPlatforms: ['mobile'],
-              upgradeRequired: true,
-              upgradeUrl: '/settings/subscription'
-            }
-          },
-          {
-            status: API.STATUS.FORBIDDEN,
-            headers: {
-              ...corsHeaders,
-              'X-Platform-Access-Denied': 'true',
-              'X-Upgrade-Required': 'true'
-            }
-          }
-        );
+                data: {
+                  currentPlan: planName,
+                  currentPlatform: platformInfo.platform,
+                  allowedPlatforms: ['mobile'],
+                  upgradeRequired: true,
+                  upgradeUrl: '/settings/subscription'
+                }
+              },
+              {
+                status: API.STATUS.FORBIDDEN,
+                headers: {
+                  ...corsHeaders,
+                  'X-Platform-Access-Denied': 'true',
+                  'X-Upgrade-Required': 'true'
+                }
+              }
+            );
           }
         }
       } catch (error) {
@@ -324,10 +340,27 @@ export async function middleware(request: NextRequest) {
     return response;
   } catch (error) {
     // Log error for debugging (but don't expose sensitive information)
-    console.error('🔍 MIDDLEWARE: Authentication error:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('🔍 MIDDLEWARE: Error details:', error);
+    console.error('❌ MIDDLEWARE: Error processing request:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ MIDDLEWARE: Error details:', error);
     
-    // Return generic error message to prevent information leakage
+    // Always return a response with CORS headers, even on error
+    // This ensures CORS preflight requests always work
+    const pathname = request.nextUrl.pathname;
+    
+    // If it's a public route, allow through with CORS headers
+    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+    if (isPublicRoute) {
+      const response = NextResponse.next({ 
+        request: { headers: request.headers } 
+      });
+      // Add CORS headers to response
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
+    
+    // For protected routes, return unauthorized with CORS headers
     return createUnauthorizedResponse('Authentication failed', corsHeaders);
   }
 }

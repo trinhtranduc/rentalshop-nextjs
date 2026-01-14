@@ -37,7 +37,8 @@ import {
   Zap,
   Loader2,
   MessageCircle,
-  Briefcase
+  Briefcase,
+  ArrowRight
 } from 'lucide-react'
 
 const LandingPage = () => {
@@ -165,10 +166,10 @@ const LandingPage = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleData) }}
       />
       
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       
         {/* Header */}
-        <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50" role="banner">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50" role="banner">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
@@ -181,103 +182,102 @@ const LandingPage = () => {
                   showBackground={false}
                 />
               </Link>
-              <div className="hidden md:flex items-center space-x-6">
-                <a href="#features" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.features')}</a>
-                <a href="#pricing" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.pricing')}</a>
-                {/* <a href="#blog" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.blog')}</a> */}
-                <a href="#faq" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.faq')}</a>
-                <a href="#contact" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.contact')}</a>
+              <div className="hidden md:flex items-center space-x-8">
+                <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
+                <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</a>
+                {/* <a href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.blog')}</a> */}
+                <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
+                <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" />
-                <Link href="/login" className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-4 py-2 rounded-lg hover:from-brand-secondary hover:to-action-primary transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
-                  {t('navigation.login')}
-                </Link>
+                <Button
+                  asChild
+                  variant="default"
+                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/login">
+                    {t('navigation.login')}
+                  </Link>
+                </Button>
               </div>
               {/* Mobile menu - simplified */}
               <div className="md:hidden flex items-center space-x-3">
                 <LanguageSwitcher variant="compact" />
-                <Link href="/login" className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-3 py-1.5 rounded-lg text-sm">
-                  {t('navigation.login')}
-                </Link>
+                <Button
+                  asChild
+                  variant="default"
+                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium"
+                >
+                  <Link href="/login">
+                    {t('navigation.login')}
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Hero Banner - Modern Design */}
-        <section className="relative overflow-hidden min-h-[90vh] flex items-center" aria-label="Hero section">
-          {/* Enhanced Background decoration with modern gradients */}
-          <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-            {/* Animated gradient orbs */}
-            <div className="absolute top-20 left-4 md:left-10 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-brand-primary/40 to-action-primary/40 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse"></div>
-            <div className="absolute top-40 right-4 md:right-10 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-action-primary/40 to-brand-secondary/40 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse animation-delay-2000"></div>
-            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-action-success/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse animation-delay-4000"></div>
-            
-            {/* Grid pattern overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative z-10">
+        {/* Hero Banner - Clean & Modern */}
+        <section className="relative overflow-hidden pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white" aria-label="Hero section">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               {/* Badge */}
-              <Badge variant="outline" className="mb-8 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
-                <Sparkles className="w-4 h-4 mr-2 text-brand-primary" />
+              <Badge variant="outline" className="mb-6 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+                <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
                 {t('hero.subtitle')}
               </Badge>
 
-              {/* Main Heading with better typography */}
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-text-primary mb-6 leading-tight">
+              {/* Main Heading */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
                 <span className="block">{t('hero.title')}</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-action-primary to-brand-secondary animate-gradient">
-                  {t('hero.subtitle')}
-                </span>
+                <span className="block">{t('hero.subtitle')}</span>
               </h1>
               
-              {/* Description with better spacing */}
-              <p className="text-lg md:text-xl lg:text-2xl text-text-secondary mb-12 max-w-4xl mx-auto leading-relaxed" role="text">
+              {/* Description */}
+              <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed" role="text">
                 {t('hero.description')}
               </p>
               
-              {/* CTA Buttons with modern design using shadcn Button */}
+              {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
                   asChild
                   size="lg"
-                  className="group bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-2xl hover:shadow-brand-primary/50 hover:scale-105 transition-all duration-300 text-lg font-semibold rounded-2xl px-8 py-6"
+                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                <a 
-                  href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                    <Download className="w-5 h-5 mr-2 group-hover:translate-y-0.5 transition-transform" />
-                  {t('hero.downloadApp')}
-                </a>
+                  <a 
+                    href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    {t('hero.downloadApp')}
+                  </a>
                 </Button>
                 <Button
                   asChild
                   variant="outline"
                   size="lg"
-                  className="group bg-background/80 backdrop-blur-sm border-2 border-brand-primary/30 text-brand-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-action-primary hover:text-white hover:border-transparent shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-lg font-semibold rounded-2xl px-8 py-6"
+                  className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
                 >
                   <Link href="/login">
-                    <Globe className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                  {t('hero.tryWebPortal')}
-                </Link>
+                    <Globe className="w-5 h-5 mr-2" />
+                    {t('hero.tryWebPortal')}
+                  </Link>
                 </Button>
               </div>
 
               {/* Trust indicators */}
-              <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-text-tertiary">
+              <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-action-success" />
+                  <Check className="w-5 h-5 text-green-600" />
                   <span>500+ Active Stores</span>
-            </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-action-warning fill-current" />
+                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
                   <span>4.9/5 Rating</span>
-          </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-action-primary" />
+                  <Shield className="w-5 h-5 text-gray-700" />
                   <span>Secure & Reliable</span>
                 </div>
               </div>
@@ -285,18 +285,18 @@ const LandingPage = () => {
           </div>
         </section>
 
-      {/* App Download Section - Modern Design */}
-      <section id="download" className="py-32 bg-gradient-to-b from-bg-card to-bg-secondary relative overflow-hidden" aria-label="Download section">
+      {/* App Download Section - Clean Design */}
+      <section id="download" className="py-24 bg-white" aria-label="Download section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
-              <Smartphone className="w-4 h-4 mr-2 text-brand-primary" />
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+              <Smartphone className="w-4 h-4 mr-2 text-gray-600" />
               Platforms
             </Badge>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
               {t('download.title')}
             </h2>
-            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               {t('download.description')}
             </p>
           </div>
@@ -304,69 +304,65 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Smartphone className="w-6 h-6 text-brand-primary" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Smartphone className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.mobileApp')}</h3>
-                  <p className="text-text-secondary">{t('download.mobileAppDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.mobileApp')}</h3>
+                  <p className="text-gray-600">{t('download.mobileAppDesc')}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-action-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Globe className="w-6 h-6 text-action-primary" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.webPortal')}</h3>
-                  <p className="text-text-secondary">{t('download.webPortalDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.webPortal')}</h3>
+                  <p className="text-gray-600">{t('download.webPortalDesc')}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-action-success/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BarChart className="w-6 h-6 text-action-success" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <BarChart className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.analytics')}</h3>
-                  <p className="text-text-secondary">{t('download.analyticsDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.analytics')}</h3>
+                  <p className="text-gray-600">{t('download.analyticsDesc')}</p>
                 </div>
               </div>
             </div>
             
             <div className="text-center">
-              <Card className="bg-gradient-to-br from-card/90 to-muted/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border-border/50 relative overflow-hidden group hover:shadow-brand-primary/20 transition-all duration-500">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
+              <Card className="bg-white border border-gray-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-0">
                   <div className="w-full flex items-center justify-center mb-8">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-action-primary/20 rounded-3xl blur-2xl scale-110"></div>
-                  <Image 
-                    src="/anyrent-iphone-splashscreen.jpg"
-                    alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
-                    width={288}
-                    height={576}
-                    priority
-                        className="relative rounded-3xl shadow-2xl border border-border/50 transform group-hover:scale-105 transition-transform duration-500"
-                  />
-                    </div>
-                </div>
-                <div className="mt-8">
+                    <Image 
+                      src="/anyrent-iphone-splashscreen.jpg"
+                      alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
+                      width={288}
+                      height={576}
+                      priority
+                      className="rounded-3xl shadow-xl border border-gray-200"
+                    />
+                  </div>
+                  <div className="mt-8">
                     <Button
                       asChild
                       size="lg"
-                      className="group/btn w-full bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-semibold rounded-2xl"
+                      className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                     >
-                  <a 
-                    href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                        <Download className="w-5 h-5 mr-2 group-hover/btn:translate-y-0.5 transition-transform" />
-                    {t('download.downloadOnAppStore')}
-                  </a>
+                      <a 
+                        href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        {t('download.downloadOnAppStore')}
+                      </a>
                     </Button>
-                </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -374,202 +370,204 @@ const LandingPage = () => {
         </div>
       </section>
 
-        {/* Features Section - Modern Glassmorphism Design */}
-        <section id="features" className="py-32 bg-gradient-to-b from-bg-secondary via-bg-card to-bg-secondary relative overflow-hidden" aria-label="Features section">
-          {/* Background decoration */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-20">
-            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 mr-2 text-brand-primary" />
-              Features
-            </Badge>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
+        {/* Features Section - Clean Design */}
+        <section id="features" className="py-24 bg-gray-50" aria-label="Features section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+                <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
+                Features
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
                 {t('features.title')}
               </h2>
-              <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 {t('features.description')}
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-brand-primary/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/0 to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-brand-primary/20 to-action-primary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <BarChart3 className="w-7 h-7 text-brand-primary" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.orderManagement')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.orderManagementDesc')}</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <BarChart3 className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.orderManagement')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.orderManagementDesc')}</p>
                 </CardContent>
               </Card>
               
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-success/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-action-success/0 to-action-success/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-action-success/20 to-emerald-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Users className="w-7 h-7 text-action-success" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.customerManagement')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.customerManagementDesc')}</p>
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <Users className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.customerManagement')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.customerManagementDesc')}</p>
                 </CardContent>
               </Card>
               
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-warning/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-action-warning/0 to-action-warning/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-action-warning/20 to-amber-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Clock className="w-7 h-7 text-action-warning" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.calendarScheduling')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <Clock className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.calendarScheduling')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
                 </CardContent>
               </Card>
             
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-primary/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-action-primary/0 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-action-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <DollarSign className="w-7 h-7 text-action-primary" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.financialReports')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.financialReportsDesc')}</p>
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <DollarSign className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.financialReports')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.financialReportsDesc')}</p>
                 </CardContent>
               </Card>
             
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-danger/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-action-danger/0 to-action-danger/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-action-danger/20 to-red-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <AlertTriangle className="w-7 h-7 text-action-danger" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.duplicatePrevention')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <AlertTriangle className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.duplicatePrevention')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
                 </CardContent>
               </Card>
             
-              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-brand-secondary/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-secondary/0 to-brand-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative z-10 p-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-brand-secondary/20 to-blue-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Sparkles className="w-7 h-7 text-brand-secondary" />
-                </div>
-                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.multiPlatform')}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t('features.multiPlatformDesc')}</p>
+              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <Sparkles className="w-6 h-6 text-gray-900" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.multiPlatform')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.multiPlatformDesc')}</p>
                 </CardContent>
               </Card>
+            </div>
+            
+            {/* View Details Button */}
+            <div className="mt-12 text-center">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+              >
+                <Link href="/features">
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  {t('features.viewAllFeatures')}
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
 
       {/* Custom Solution Contact Section */}
-      <section id="custom-solution" className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden" aria-label="Custom solution contact section">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <section id="custom-solution" className="py-24 bg-gray-900" aria-label="Custom solution contact section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-6">
               <Briefcase className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">
               {t('customSolution.title')}
             </h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               {t('customSolution.description')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Benefits Card */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <h3 className="text-2xl font-semibold mb-6">{t('customSolution.benefits.title')}</h3>
-              <ul className="space-y-4">
-                {[
-                  'customSolution.benefits.customized',
-                  'customSolution.benefits.dedicated',
-                  'customSolution.benefits.scalable',
-                  'customSolution.benefits.integration'
-                ].map((key, index) => (
-                  <li key={index} className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-white/90">{t(key)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-semibold mb-6 text-white">{t('customSolution.benefits.title')}</h3>
+                <ul className="space-y-4">
+                  {[
+                    'customSolution.benefits.customized',
+                    'customSolution.benefits.dedicated',
+                    'customSolution.benefits.scalable',
+                    'customSolution.benefits.integration'
+                  ].map((key, index) => (
+                    <li key={index} className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-white/90 text-sm">{t(key)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
 
             {/* Contact Card */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <h3 className="text-2xl font-semibold mb-6">{t('customSolution.contact.title')}</h3>
-              <p className="text-white/80 mb-6">
-                {t('customSolution.contact.description')}
-              </p>
-              
-              <div className="space-y-4">
-                {/* Email */}
-                <a
-                  href={`mailto:trinhduc20@gmail.com?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
-                  className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
-                >
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                    <Mail className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.email')}</div>
-                    <div className="text-white font-semibold">trinhduc20@gmail.com</div>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
-                </a>
-
-                {/* WhatsApp */}
-                <a
-                  href={`https://wa.me/840764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
-                >
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                    <MessageCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.whatsapp')}</div>
-                    <div className="text-white font-semibold">0764774647</div>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
-                </a>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-white/20">
-                <p className="text-sm text-white/70 text-center">
-                  {t('customSolution.contact.responseTime')}
+            <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-semibold mb-6 text-white">{t('customSolution.contact.title')}</h3>
+                <p className="text-white/80 mb-6 text-sm">
+                  {t('customSolution.contact.description')}
                 </p>
-              </div>
-            </div>
+                
+                <div className="space-y-4">
+                  {/* Email */}
+                  <a
+                    href={`mailto:trinhduc20@gmail.com?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
+                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                  >
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                      <Mail className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.email')}</div>
+                      <div className="text-white font-semibold text-sm">trinhduc20@gmail.com</div>
+                    </div>
+                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                  </a>
+
+                  {/* WhatsApp */}
+                  <a
+                    href={`https://wa.me/840764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                  >
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.whatsapp')}</div>
+                      <div className="text-white font-semibold text-sm">0764774647</div>
+                    </div>
+                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                  </a>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-white/20">
+                  <p className="text-sm text-white/70 text-center">
+                    {t('customSolution.contact.responseTime')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us Section - Modern Design */}
-      <section className="py-32 bg-gradient-to-b from-bg-secondary via-bg-card to-bg-secondary relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-20">
-            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
-              <Star className="w-4 h-4 mr-2 text-brand-primary" />
+      {/* Why Choose Us Section - Clean Design */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+              <Star className="w-4 h-4 mr-2 text-gray-600" />
               Why Choose Us
             </Badge>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
               {t('whyChoose.title')}
             </h2>
-            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               {t('whyChoose.description')}
             </p>
           </div>
@@ -577,64 +575,64 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Star className="w-6 h-6 text-brand-primary" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Star className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.easyToUse')}</h3>
-                  <p className="text-text-secondary">{t('whyChoose.easyToUseDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.easyToUse')}</h3>
+                  <p className="text-gray-600">{t('whyChoose.easyToUseDesc')}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-action-success/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-6 h-6 text-action-success" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.timeSaving')}</h3>
-                  <p className="text-text-secondary">{t('whyChoose.timeSavingDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.timeSaving')}</h3>
+                  <p className="text-gray-600">{t('whyChoose.timeSavingDesc')}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-action-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-6 h-6 text-action-primary" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.increaseRevenue')}</h3>
-                  <p className="text-text-secondary">{t('whyChoose.increaseRevenueDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.increaseRevenue')}</h3>
+                  <p className="text-gray-600">{t('whyChoose.increaseRevenueDesc')}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-action-warning/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-action-warning" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.support')}</h3>
-                  <p className="text-text-secondary">{t('whyChoose.supportDesc')}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.support')}</h3>
+                  <p className="text-gray-600">{t('whyChoose.supportDesc')}</p>
                 </div>
               </div>
             </div>
             
             <div className="relative">
-              <div className="bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-3xl p-10 text-text-inverted shadow-2xl relative overflow-hidden group hover:shadow-brand-primary/50 transition-all duration-500">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]"></div>
-                <div className="text-center relative z-10">
-                  <div className="flex items-center justify-center mb-4">
-                    <Zap className="w-10 h-10 mr-3 text-yellow-300 animate-pulse" />
-                    <div className="text-7xl font-extrabold bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">500+</div>
+              <Card className="bg-gray-900 border-0 rounded-3xl p-10 text-white shadow-2xl">
+                <CardContent className="p-0">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-4">
+                      <Zap className="w-10 h-10 mr-3 text-yellow-400" />
+                      <div className="text-7xl font-extrabold text-white">500+</div>
+                    </div>
+                    <div className="text-2xl mb-10 font-bold">{t('whyChoose.activeStores')}</div>
+                    <div className="flex justify-center space-x-2 mb-6">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="w-7 h-7 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <div className="text-lg font-semibold">{t('whyChoose.rating')}</div>
                   </div>
-                  <div className="text-2xl mb-10 font-bold">{t('whyChoose.activeStores')}</div>
-                  <div className="flex justify-center space-x-2 mb-6">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-7 h-7 fill-yellow-300 text-yellow-300" />
-                    ))}
-                  </div>
-                  <div className="text-lg font-semibold">{t('whyChoose.rating')}</div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -672,25 +670,24 @@ const LandingPage = () => {
 // Simple component implementations for the landing page
 const Stats = () => {
   return (
-    <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden" aria-label="Statistics section">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-20 bg-gray-900" aria-label="Statistics section">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold mb-2">500+</div>
-            <div className="text-text-inverted/70">Active Stores</div>
+            <div className="text-4xl font-bold text-white mb-2">500+</div>
+            <div className="text-gray-300">Active Stores</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">500,000+</div>
-            <div className="text-text-inverted/70">Orders Processed</div>
+            <div className="text-4xl font-bold text-white mb-2">500,000+</div>
+            <div className="text-gray-300">Orders Processed</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">4.9/5</div>
-            <div className="text-text-inverted/70">Customer Rating</div>
+            <div className="text-4xl font-bold text-white mb-2">4.9/5</div>
+            <div className="text-gray-300">Customer Rating</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">24/7</div>
-            <div className="text-text-inverted/70">Support Available</div>
+            <div className="text-4xl font-bold text-white mb-2">24/7</div>
+            <div className="text-gray-300">Support Available</div>
           </div>
         </div>
       </div>
@@ -722,78 +719,63 @@ const Testimonials = () => {
   ] as const;
   
   return (
-    <section className="py-24 bg-gradient-to-b from-bg-card via-bg-secondary to-bg-card relative overflow-hidden" aria-label="Testimonials section">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-brand-primary/3 via-action-primary/3 to-brand-primary/3 rounded-full filter blur-3xl"></div>
-      </div>
-      
-      {/* Full width container */}
-      <div className="w-full relative z-10">
+    <section className="py-24 bg-white" aria-label="Testimonials section">
+      <div className="w-full">
         {/* Header Section */}
         <div className="text-center mb-16 px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-gradient-to-r from-brand-primary/10 to-action-primary/10 backdrop-blur-sm border border-brand-primary/20 rounded-full">
-            <Star className="w-4 h-4 text-brand-primary fill-brand-primary" />
-            <span className="text-sm font-medium text-brand-primary">Testimonials</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
+          <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+            <Star className="w-4 h-4 mr-2 text-gray-600 fill-gray-600" />
+            <span className="text-sm font-medium">Testimonials</span>
+          </Badge>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             {t('description')}
           </p>
         </div>
         
-        {/* Testimonials Grid - Full Width */}
+        {/* Testimonials Grid */}
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-6 max-w-[1920px] mx-auto">
+          <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
             {testimonials.map(({ key }) => {
               return (
-                <div 
+                <Card 
                   key={key} 
-                  className="group relative bg-bg-card/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-border/40 hover:border-border/80 overflow-hidden w-full md:w-[calc(33.333%-1rem)] max-w-md"
+                  className="group border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white w-full md:w-[calc(33.333%-1rem)] max-w-md"
                 >
-                  {/* Subtle gradient overlay on hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                  
-                  {/* Content */}
-                  <div className="relative z-10">
+                  <CardContent className="p-6">
                     {/* Stars */}
                     <div className="flex items-center gap-1 mb-6">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star 
                           key={star} 
-                          className="w-5 h-5 text-action-warning fill-action-warning" 
+                          className="w-5 h-5 text-yellow-500 fill-yellow-500" 
                         />
                       ))}
                     </div>
                     
                     {/* Quote */}
-                    <p className="text-text-secondary mb-6 text-base leading-relaxed font-medium">
+                    <p className="text-gray-600 mb-6 text-sm leading-relaxed">
                       "{tItems(`${key}.quote`)}"
                     </p>
                     
                     {/* Author Info */}
-                    <div className="flex items-center gap-4 pt-6 border-t border-border/30">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${avatarGradient} rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg flex-shrink-0`}>
+                    <div className="flex items-center gap-4 pt-6 border-t border-gray-200">
+                      <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                         {getInitial(tItems(`${key}.name`))}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-text-primary text-base truncate">
+                        <div className="font-semibold text-gray-900 text-sm truncate">
                           {tItems(`${key}.name`)}
                         </div>
-                        <div className="text-sm text-text-tertiary truncate">
+                        <div className="text-xs text-gray-500 truncate">
                           {tItems(`${key}.role`)}
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Decorative corner accent */}
-                  <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${avatarGradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-bl-full`}></div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
@@ -807,34 +789,42 @@ const CTA = () => {
   const t = useTranslations('landing.cta')
   const tHero = useTranslations('landing.hero')
   return (
-      <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary relative overflow-hidden" aria-label="Call to action section">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-4xl font-bold text-text-inverted mb-4">
+      <section className="py-24 bg-gray-900" aria-label="Call to action section">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-xl text-white/90 mb-8">
+          <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
             {t('description')}
           </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a 
-            href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-8 py-4 bg-bg-card text-brand-primary rounded-xl hover:bg-bg-secondary transition-all duration-200 font-semibold"
-          >
-            <Download className="w-5 h-5 mr-2" />
-            {tHero('downloadApp')}
-          </a>
-          <Link 
-            href="/login" 
-            className="inline-flex items-center justify-center px-8 py-4 border-2 border-bg-card text-bg-card rounded-xl hover:bg-bg-card hover:text-brand-primary transition-all duration-200"
-          >
-            <Globe className="w-5 h-5 mr-2" />
-            {tHero('tryWebPortal')}
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <a 
+                href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                {tHero('downloadApp')}
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+            >
+              <Link href="/login">
+                <Globe className="w-5 h-5 mr-2" />
+                {tHero('tryWebPortal')}
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
     </section>
   );
 };
@@ -894,38 +884,38 @@ const FAQ = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
       />
-      <section id="faq" className="py-20 bg-bg-secondary" aria-label="Frequently asked questions">
+      <section id="faq" className="py-24 bg-gray-50" aria-label="Frequently asked questions">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-text-primary mb-4">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-xl text-text-secondary">
+          <p className="text-lg text-gray-600">
             {t('description')}
           </p>
         </div>
         
         <div className="space-y-4">
           {faqItems.map((item, index) => (
-            <div key={index} className="bg-bg-card rounded-lg shadow-sm">
+            <Card key={index} className="border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
               <Button
                 onClick={() => toggleItem(index)}
                 variant="ghost"
-                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-bg-secondary rounded-lg"
+                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-gray-50 rounded-lg"
               >
-                <span className="font-semibold text-text-primary">{item.question}</span>
+                <span className="font-semibold text-gray-900">{item.question}</span>
                 {openItems.has(index) ? (
-                  <ChevronUp className="w-5 h-5 text-text-tertiary" />
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-text-tertiary" />
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
                 )}
               </Button>
               {openItems.has(index) && (
                 <div className="px-6 pb-4">
-                  <p className="text-text-secondary">{item.answer}</p>
+                  <p className="text-gray-600">{item.answer}</p>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -1184,51 +1174,51 @@ const Pricing = () => {
   const pricingData = getPricingData();
 
   return (
-    <section id="pricing" className="py-20 bg-bg-card" aria-label="Pricing plans">
+    <section id="pricing" className="py-24 bg-white" aria-label="Pricing plans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-text-primary mb-4">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
             {tPricing('title')}
           </h2>
-          <p className="text-xl text-text-secondary">
+          <p className="text-lg text-gray-600">
             {tPricing('description')}
           </p>
         </div>
         
         {/* Duration Toggle */}
         <div className="flex justify-center mb-12">
-          <div className="flex items-center bg-bg-secondary rounded-lg p-1">
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <Button
               onClick={() => setSelectedDuration('3')}
               variant={selectedDuration === '3' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '3' ? 'bg-bg-card shadow-sm' : ''}
+              className={selectedDuration === '3' ? 'bg-white shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>{tPricing('months.three')}</div>
-                <div className="text-lg text-text-secondary font-bold">{tPricing('discounts.three')}</div>
+                <div className="text-sm">{tPricing('months.three')}</div>
+                <div className="text-lg text-gray-900 font-bold">{tPricing('discounts.three')}</div>
               </div>
             </Button>
             <Button
               onClick={() => setSelectedDuration('6')}
               variant={selectedDuration === '6' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '6' ? 'bg-bg-card shadow-sm' : ''}
+              className={selectedDuration === '6' ? 'bg-white shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>{tPricing('months.six')}</div>
-                <div className="text-lg text-action-success font-bold">{tPricing('discounts.six')}</div>
+                <div className="text-sm">{tPricing('months.six')}</div>
+                <div className="text-lg text-green-600 font-bold">{tPricing('discounts.six')}</div>
               </div>
             </Button>
             <Button
               onClick={() => setSelectedDuration('12')}
               variant={selectedDuration === '12' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '12' ? 'bg-bg-card shadow-sm' : ''}
+              className={selectedDuration === '12' ? 'bg-white shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>{tPricing('months.twelve')}</div>
-                <div className="text-lg text-action-danger font-bold">{tPricing('discounts.twelve')}</div>
+                <div className="text-sm">{tPricing('months.twelve')}</div>
+                <div className="text-lg text-red-600 font-bold">{tPricing('discounts.twelve')}</div>
               </div>
             </Button>
           </div>
@@ -1237,18 +1227,19 @@ const Pricing = () => {
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
-            <span className="ml-3 text-text-secondary">{tPricing('loading')}</span>
+            <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+            <span className="ml-3 text-gray-600">{tPricing('loading')}</span>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
           <div className="text-center py-20">
-            <p className="text-action-danger mb-4">{error || tPricing('error')}</p>
+            <p className="text-red-600 mb-4">{error || tPricing('error')}</p>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline"
+              className="border-gray-200 text-gray-700 hover:bg-gray-50"
             >
               {tPricing('retry')}
             </Button>
@@ -1259,54 +1250,56 @@ const Pricing = () => {
         {!loading && !error && pricingData.length > 0 && (
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pricingData.map((plan, index) => (
-            <div key={index} className={`relative bg-bg-card rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl ${
-              plan.popular ? 'border-brand-primary scale-105' : 'border-border'
+            <Card key={index} className={`relative border-2 transition-all duration-300 hover:shadow-xl bg-white ${
+              plan.popular ? 'border-gray-900 scale-105' : 'border-gray-200'
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                  <Badge className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
                     {tPricing('plans.basic.mostPopular')}
-                  </span>
+                  </Badge>
                 </div>
               )}
               
-              <div className="p-8">
+              <CardContent className="p-8">
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-text-primary mb-2">{plan.name}</h3>
-                  <p className="text-text-secondary mb-4">{plan.subtitle}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <p className="text-gray-600 mb-4">{plan.subtitle}</p>
                   <div className="mb-4">
-                    <span className="text-4xl font-bold text-text-primary">{plan.price}</span>
-                    <span className="text-text-secondary">/{tPricing('plans.basic.period')}</span>
+                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-gray-600">/{tPricing('plans.basic.period')}</span>
                   </div>
-                  <p className="text-sm text-text-secondary">{plan.description}</p>
+                  <p className="text-sm text-gray-600">{plan.description}</p>
                 </div>
                         
                 {/* Features */}
                 <div className="space-y-4 mb-8">
                   {plan.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center justify-between">
-                      <span className={`text-sm ${feature.included ? 'text-text-primary' : 'text-text-tertiary'}`}>
+                      <span className={`text-sm ${feature.included ? 'text-gray-900' : 'text-gray-400'}`}>
                         {feature.text}
                       </span>
                       {feature.included ? (
-                        <Check className="w-6 h-6 text-action-success drop-shadow-sm" />
+                        <Check className="w-5 h-5 text-green-600" />
                       ) : (
-                        <X className="w-6 h-6 text-action-danger drop-shadow-sm" />
+                        <X className="w-5 h-5 text-red-500" />
                       )}
                     </div>
                   ))}
                 </div>
 
                 {/* CTA Button */}
-                <Link 
-                  href="/login" 
-                  className={`w-full py-4 px-6 rounded-xl font-semibold text-text-inverted transition-all duration-200 ${plan.buttonClass} inline-block text-center`}
+                <Button
+                  asChild
+                  className={`w-full ${plan.popular ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'} rounded-xl font-semibold transition-all duration-200`}
                 >
-                  {plan.buttonText || tPricing('buttonText')}
-                </Link>
-              </div>
-            </div>
+                  <Link href="/login">
+                    {plan.buttonText || tPricing('buttonText')}
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           ))}
         </div>
         )}
@@ -1314,39 +1307,41 @@ const Pricing = () => {
         {/* Empty State */}
         {!loading && !error && pricingData.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-text-secondary">{tPricing('noPlans')}</p>
+            <p className="text-gray-600">{tPricing('noPlans')}</p>
           </div>
         )}
         
         {/* Additional information */}
         <div className="mt-16 text-center">
-          <div className="bg-bg-secondary rounded-2xl p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-text-primary mb-4">
-              {tPricing('allPlansInclude')}
-            </h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="flex items-center space-x-3">
-                <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">{tPricing('support24')}</span>
+          <Card className="bg-gray-50 border border-gray-200 rounded-2xl p-8 max-w-4xl mx-auto">
+            <CardContent className="p-0">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                {tPricing('allPlansInclude')}
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="flex items-center justify-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-900">{tPricing('support24')}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-900">{tPricing('dataBackup')}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-900">{tPricing('freeUpdates')}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-900">{tPricing('features.mobileApp')}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-900">{tPricing('training')}</span>
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">{tPricing('dataBackup')}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">{tPricing('freeUpdates')}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">{tPricing('features.mobileApp')}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">{tPricing('training')}</span>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
@@ -1361,12 +1356,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-xl flex items-center justify-center mr-3 shadow-lg">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
                 <Store className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">AnyRent</span>
+              <span className="text-xl font-bold text-white">AnyRent</span>
             </div>
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-400 mb-4 text-sm">
               {tf('description')}
             </p>
             <div className="flex space-x-4">
@@ -1382,33 +1377,33 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">{tf('product.features')}</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">{tf('product.pricing')}</a></li>
-              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors">{tf('product.downloadApp')}</a></li>
+              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
+              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</a></li>
+              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors">{tf('support.faq')}</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('support.documentation')}</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('support.contact')}</a></li>
+              <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.faq')}</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.documentation')}</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.contact')}</a></li>
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('company.aboutUs')}</a></li>
-              <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">{tf('company.terms')}</Link></li>
-              <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">{tf('company.privacy')}</Link></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</a></li>
+              <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.terms')}</Link></li>
+              <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.privacy')}</Link></li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm">
             {tf('copyright')}
           </p>
         </div>
@@ -1449,26 +1444,6 @@ const FloatingButtons = () => {
         >
           <MessageCircle className="w-6 h-6" />
         </a>
-        
-        {/* Download App Button */}
-        <a 
-          href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-text-primary text-text-inverted p-3 rounded-full shadow-lg hover:bg-text-secondary transition-colors"
-          title="Download iOS App"
-        >
-          <Download className="w-6 h-6" />
-        </a>
-        
-        {/* Login Button */}
-        <Link 
-          href="/login" 
-          className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted p-3 rounded-full shadow-lg hover:from-brand-secondary hover:to-action-primary transition-all duration-200 transform hover:scale-110"
-          title="Login"
-        >
-          <Globe className="w-6 h-6" />
-        </Link>
       </div>
     </div>
   );

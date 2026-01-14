@@ -39,7 +39,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       businessType, 
       taxId, 
       website, 
-      description 
+      description,
+      tenantKey
     } = body;
 
     // Validate required fields
@@ -72,9 +73,31 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       );
     }
 
+    // Validate tenantKey if provided
+    if (tenantKey !== undefined) {
+      // Validate format: alphanumeric + hyphen only
+      if (tenantKey && !/^[a-z0-9\-]+$/i.test(tenantKey)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_TENANT_KEY'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+
+      // Check if tenantKey is already taken by another merchant
+      if (tenantKey) {
+        const existingMerchant = await db.merchants.findByTenantKey(tenantKey);
+        if (existingMerchant && existingMerchant.id !== dbUser.merchant.id) {
+          return NextResponse.json(
+            ResponseBuilder.error('TENANT_KEY_ALREADY_EXISTS'),
+            { status: API.STATUS.CONFLICT }
+          );
+        }
+      }
+    }
+
     // Update merchant using the centralized database function
     console.log('🔍 MERCHANT API: Calling updateMerchant with id:', dbUser.merchant.id);
-    const updatedMerchant = await db.merchants.update(dbUser.merchant.id, {
+    const updateData: any = {
       name,
       phone,
       address,
@@ -86,7 +109,14 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       taxId,
       website,
       description
-    });
+    };
+    
+    // Only include tenantKey if it's provided (allows clearing tenantKey by passing empty string)
+    if (tenantKey !== undefined) {
+      updateData.tenantKey = tenantKey || null;
+    }
+    
+    const updatedMerchant = await db.merchants.update(dbUser.merchant.id, updateData);
 
     console.log('🔍 MERCHANT API: Update successful, returning response');
     return NextResponse.json(
@@ -104,6 +134,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         taxId: updatedMerchant.taxId,
         website: updatedMerchant.website,
         description: updatedMerchant.description,
+        tenantKey: updatedMerchant.tenantKey,
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

@@ -24,6 +24,7 @@ import enPlans from '../../../locales/en/plans.json';
 import enSubscription from '../../../locales/en/subscription.json';
 import enLanding from '../../../locales/en/landing.json';
 import enBankAccounts from '../../../locales/en/bankAccounts.json';
+import enFeatures from '../../../locales/en/features.json';
 
 import viCommon from '../../../locales/vi/common.json';
 import viAuth from '../../../locales/vi/auth.json';
@@ -42,20 +43,24 @@ import viPlans from '../../../locales/vi/plans.json';
 import viSubscription from '../../../locales/vi/subscription.json';
 import viLanding from '../../../locales/vi/landing.json';
 import viBankAccounts from '../../../locales/vi/bankAccounts.json';
+import viFeatures from '../../../locales/vi/features.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../../locales/zh/common.json';
 import zhAuth from '../../../locales/zh/auth.json';
 import zhLanding from '../../../locales/zh/landing.json';
 import zhPlans from '../../../locales/zh/plans.json';
+import zhFeatures from '../../../locales/zh/features.json';
 import koCommon from '../../../locales/ko/common.json';
 import koAuth from '../../../locales/ko/auth.json';
 import koLanding from '../../../locales/ko/landing.json';
 import koPlans from '../../../locales/ko/plans.json';
+import koFeatures from '../../../locales/ko/features.json';
 import jaCommon from '../../../locales/ja/common.json';
 import jaAuth from '../../../locales/ja/auth.json';
 import jaLanding from '../../../locales/ja/landing.json';
 import jaPlans from '../../../locales/ja/plans.json';
+import jaFeatures from '../../../locales/ja/features.json';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -625,6 +630,7 @@ const messages = {
     subscription: enSubscription,
     landing: enLanding,
     bankAccounts: enBankAccounts,
+    features: enFeatures,
   },
   vi: {
     common: viCommon,
@@ -644,6 +650,7 @@ const messages = {
     subscription: viSubscription,
     landing: viLanding,
     bankAccounts: viBankAccounts,
+    features: viFeatures,
   },
   // Chinese (Simplified) - Landing page only
   zh: {
@@ -651,6 +658,7 @@ const messages = {
     auth: zhAuth,
     landing: zhLanding,
     plans: zhPlans,
+    features: zhFeatures,
     // Fallback to English for other sections
     dashboard: enDashboard,
     orders: enOrders,
@@ -672,6 +680,7 @@ const messages = {
     auth: koAuth,
     landing: koLanding,
     plans: koPlans,
+    features: koFeatures,
     // Fallback to English for other sections
     dashboard: enDashboard,
     orders: enOrders,
@@ -693,6 +702,7 @@ const messages = {
     auth: jaAuth,
     landing: jaLanding,
     plans: jaPlans,
+    features: jaFeatures,
     // Fallback to English for other sections
     dashboard: enDashboard,
     orders: enOrders,

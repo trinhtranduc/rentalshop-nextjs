@@ -42,6 +42,7 @@ export interface MerchantSectionProps {
     businessType: string;
     pricingType: string;
     taxId: string;
+    tenantKey: string;
   };
   currentCurrency: CurrencyCode;
   onEdit: () => void;
@@ -539,6 +540,34 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     ) : (
                       ''
                     )}
+                  </p>
+                )}
+              </div>
+
+              {/* Tenant Key Field */}
+              <div className="md:col-span-2">
+                <Label htmlFor="tenantKey" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('merchant.tenantKey') || 'Store URL Key'}
+                </Label>
+                {isEditing && canManageMerchants ? (
+                  <div>
+                    <Input
+                      id="tenantKey"
+                      name="tenantKey"
+                      type="text"
+                      value={formData.tenantKey || ''}
+                      onChange={onInputChange}
+                      placeholder={t('merchant.enterTenantKey') || 'e.g., rentalshopdemo'}
+                      pattern="[a-z0-9\-]+"
+                      className="lowercase"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('merchant.tenantKeyDesc') || 'Only lowercase letters, numbers, and hyphens are allowed. This will be used in your public product URL.'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    {merchant?.tenantKey || ''}
                   </p>
                 )}
               </div>

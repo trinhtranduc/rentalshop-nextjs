@@ -125,6 +125,7 @@ export const SettingsComponent: React.FC = () => {
     businessType: '',
     pricingType: '',
     taxId: '',
+    tenantKey: '',
   });
   
   const [outletFormData, setOutletFormData] = useState({
@@ -299,6 +300,7 @@ export const SettingsComponent: React.FC = () => {
         businessType: user.merchant.businessType || '',
         pricingType: user.merchant.pricingType || '',
         taxId: user.merchant.taxId || '',
+        tenantKey: user.merchant.tenantKey || '',
       });
     }
     

@@ -1224,13 +1224,22 @@ export const simplifiedOrders = {
             }
           },
           orderItems: {
-            include: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
+              deposit: true,
+              productId: true,
+              notes: true,
+              rentalDays: true,
+              productImages: true, // Snapshot images saved when order was created
               product: {
                 select: {
                   id: true,
                   name: true,
                   barcode: true,
-                  images: true,
+                  images: true, // Current images for fallback
                   rentPrice: true,
                   deposit: true
                 }

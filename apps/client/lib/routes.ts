@@ -18,6 +18,7 @@ export const PUBLIC_ROUTES = [
   '/verify-email',
   '/terms',
   '/privacy',
+  '/features',
 ] as const;
 
 /**

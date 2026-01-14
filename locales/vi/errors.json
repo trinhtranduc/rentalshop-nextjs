@@ -161,6 +161,7 @@
   "INVALID_ACTION": "Hành động không hợp lệ",
   "INVALID_REQUEST": "Định dạng yêu cầu không hợp lệ",
   "INVALID_TENANT_KEY": "Tenant key không hợp lệ",
+  "TENANT_KEY_ALREADY_EXISTS": "Mã URL cửa hàng này đã được sử dụng. Vui lòng chọn mã khác.",
   "MISSING_ENDPOINT_OR_TOKEN": "Thiếu endpoint hoặc token trong yêu cầu",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Phương thức thanh toán và mã giao dịch là bắt buộc",
   "INVALID_DATE_RANGE": "Khoảng ngày không hợp lệ",
