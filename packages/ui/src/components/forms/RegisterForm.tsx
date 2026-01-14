@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
@@ -67,6 +67,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
+  
+  // Get referralCode from URL query params
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('referralCode');
+      if (refCode) {
+        setReferralCode(refCode);
+      }
+    }
+  }, []);
 
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
@@ -175,6 +187,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           businessType: values.businessType || 'GENERAL',
           pricingType: values.pricingType || 'FIXED',
           address: values.address || '',
+          referralCode: referralCode || undefined, // Include referral code from URL
         };
         
         const result = await authApi.register(registrationData);
