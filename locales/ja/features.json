@@ -1,0 +1,157 @@
+{
+  "navigation": {
+    "home": "ホーム",
+    "pricing": "価格",
+    "login": "ログイン"
+  },
+  "hero": {
+    "badge": "主な機能",
+    "title": "AnyRentの強力な機能を発見",
+    "description": "モバイルアプリとウェブポータルの両方に完全な機能を備えた包括的なレンタルショップ管理ソフトウェア。どこからでもビジネスを効率的に管理できます。",
+    "downloadApp": "アプリをダウンロード",
+    "tryWebPortal": "ウェブポータルを試す"
+  },
+  "platforms": {
+    "title": "複数のプラットフォーム",
+    "description": "あらゆるデバイスからレンタルショップにアクセスして管理",
+    "mobile": {
+      "title": "モバイルアプリ",
+      "description": "iOSおよびAndroidモバイルアプリでいつでもどこでもレンタルショップを管理",
+      "features": {
+        "ios": "完全なiOSサポート",
+        "android": "Androidサポート",
+        "offline": "オフラインモード",
+        "sync": "自動データ同期"
+      }
+    },
+    "web": {
+      "title": "ウェブポータル",
+      "description": "モダンなレスポンシブデザインのウェブブラウザーを通じて完全な機能にアクセス",
+      "features": {
+        "responsive": "レスポンシブデザイン",
+        "fullFeatures": "完全な機能",
+        "reports": "詳細レポート",
+        "multiUser": "マルチユーザーサポート"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "モバイルアプリ",
+    "title": "モバイルアプリ機能",
+    "description": "強力な機能でスマートフォンからレンタルショップを管理",
+    "screenshotPlaceholder": "モバイルアプリのスクリーンショット",
+    "features": {
+      "orderManagement": {
+        "title": "注文管理",
+        "description": "スマートフォンからレンタル注文を作成、表示、管理します。注文ステータスと取引履歴を追跡します。"
+      },
+      "customerManagement": {
+        "title": "顧客管理",
+        "description": "顧客情報、レンタル履歴を保存し、顧客関係を簡単に管理します。"
+      },
+      "inventoryManagement": {
+        "title": "在庫管理",
+        "description": "製品数量、在庫状況を追跡し、在庫を効率的に管理します。"
+      },
+      "scheduling": {
+        "title": "カレンダーとスケジュール",
+        "description": "レンタルカレンダー、返却を表示し、スケジュールを視覚的に管理します。"
+      },
+      "quickSearch": {
+        "title": "クイック検索",
+        "description": "スマート検索機能で注文、顧客、製品を素早く検索します。"
+      },
+      "notifications": {
+        "title": "通知",
+        "description": "新しい注文、返却リマインダー、重要なイベントに関する通知を受け取ります。"
+      }
+    }
+  },
+  "web": {
+    "badge": "ウェブポータル",
+    "title": "ウェブポータル機能",
+    "description": "ウェブブラウザーを通じてレンタルショップを包括的に管理し、完全な機能を提供",
+    "screenshotPlaceholder": "ウェブポータルのスクリーンショット",
+    "features": {
+      "analytics": {
+        "title": "分析とレポート",
+        "description": "詳細な収益レポートを表示し、ビジネスパフォーマンスと販売トレンドを分析します。"
+      },
+      "reports": {
+        "title": "財務レポート",
+        "description": "財務レポート、収益レポート、包括的なレポートを作成およびエクスポートします。"
+      },
+      "settings": {
+        "title": "設定と構成",
+        "description": "システム設定、ショップ構成を管理し、必要に応じてカスタマイズします。"
+      },
+      "userManagement": {
+        "title": "ユーザー管理",
+        "description": "ユーザー、権限、役割を追加、編集、管理します。"
+      },
+      "payments": {
+        "title": "支払い管理",
+        "description": "支払い、請求書を追跡し、財務を詳細に管理します。"
+      },
+      "security": {
+        "title": "セキュリティ",
+        "description": "暗号化、自動バックアップ、アクセス制御でデータを保護します。"
+      }
+    },
+    "details": {
+      "viewDetails": "詳細を見る",
+      "benefits": {
+        "fullInterface": {
+          "title": "完全なインターフェース",
+          "description": "ウェブ上のすべての機能"
+        },
+        "detailedReports": {
+          "title": "詳細レポート",
+          "description": "データのエクスポートと分析"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "機能の詳細",
+    "description": "AnyRentの強力な機能について詳しく知る",
+    "mobileApp": "モバイルアプリ",
+    "webPortal": "ウェブポータル"
+  },
+  "shared": {
+    "badge": "共有機能",
+    "title": "共有機能",
+    "description": "モバイルアプリとウェブポータルの両方で利用可能な機能",
+    "features": {
+      "cloudSync": {
+        "title": "クラウド同期",
+        "description": "データはすべてのデバイス間で自動的に同期されます。1つのデバイスでの変更が他のデバイスに即座に更新されます。"
+      },
+      "dataSecurity": {
+        "title": "データセキュリティ",
+        "description": "データは暗号化され、クラウドに安全に保存されます。自動バックアップによりデータ損失を防ぎます。"
+      },
+      "realTime": {
+        "title": "リアルタイム更新",
+        "description": "すべての変更がすべてのデバイスで即座に更新されます。常に同期されたデータでチームで効率的に作業します。"
+      },
+      "scalable": {
+        "title": "スケーラブル",
+        "description": "システムはビジネスのニーズに応じて拡張できます。小さなショップから大規模なチェーンまで。"
+      }
+    }
+  },
+  "cta": {
+    "title": "始める準備はできましたか？",
+    "description": "AnyRentを使用している何千ものレンタルビジネスに参加してください",
+    "downloadApp": "アプリをダウンロード",
+    "tryWebPortal": "ウェブポータルを試す"
+  },
+  "footer": {
+    "description": "AnyRent - ベトナムで最高のレンタルショップ管理ソフトウェア",
+    "home": "ホーム",
+    "pricing": "価格",
+    "login": "ログイン",
+    "copyright": "© 2024 AnyRent. 全著作権所有。"
+  }
+}

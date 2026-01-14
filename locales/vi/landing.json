@@ -38,7 +38,8 @@
     "duplicatePrevention": "Ngăn chặn Đơn hàng Trùng lặp",
     "duplicatePreventionDesc": "Hệ thống thông minh trong phần mềm quản lý cửa hàng cho thuê ngăn chặn đơn hàng trùng lặp và đảm bảo quản lý hàng tồn kho chính xác. Quản lý kho cho thuê hiệu quả với hệ thống quản lý cho thuê.",
     "multiPlatform": "Hỗ trợ Đa nền tảng",
-    "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê."
+    "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê.",
+    "viewAllFeatures": "Xem chi tiết tất cả tính năng"
   },
   "customSolution": {
     "title": "Cần Giải pháp Cho thuê Tùy chỉnh?",

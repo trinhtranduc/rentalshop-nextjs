@@ -1,0 +1,157 @@
+{
+  "navigation": {
+    "home": "홈",
+    "pricing": "가격",
+    "login": "로그인"
+  },
+  "hero": {
+    "badge": "주요 기능",
+    "title": "AnyRent의 강력한 기능 발견",
+    "description": "모바일 앱과 웹 포털 모두에 완전한 기능을 갖춘 포괄적인 렌탈 샵 관리 소프트웨어. 어디서나 비즈니스를 효율적으로 관리하세요.",
+    "downloadApp": "앱 다운로드",
+    "tryWebPortal": "웹 포털 체험"
+  },
+  "platforms": {
+    "title": "다양한 플랫폼",
+    "description": "모든 기기에서 렌탈 샵에 액세스하고 관리",
+    "mobile": {
+      "title": "모바일 앱",
+      "description": "iOS 및 Android 모바일 앱으로 언제 어디서나 렌탈 샵 관리",
+      "features": {
+        "ios": "전체 iOS 지원",
+        "android": "Android 지원",
+        "offline": "오프라인 모드",
+        "sync": "자동 데이터 동기화"
+      }
+    },
+    "web": {
+      "title": "웹 포털",
+      "description": "현대적인 반응형 디자인의 웹 브라우저를 통해 전체 기능 액세스",
+      "features": {
+        "responsive": "반응형 디자인",
+        "fullFeatures": "전체 기능",
+        "reports": "상세 보고서",
+        "multiUser": "다중 사용자 지원"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "모바일 앱",
+    "title": "모바일 앱 기능",
+    "description": "강력한 기능으로 휴대폰에서 렌탈 샵 관리",
+    "screenshotPlaceholder": "모바일 앱 스크린샷",
+    "features": {
+      "orderManagement": {
+        "title": "주문 관리",
+        "description": "휴대폰에서 렌탈 주문을 생성, 보기 및 관리하세요. 주문 상태 및 거래 내역을 추적하세요."
+      },
+      "customerManagement": {
+        "title": "고객 관리",
+        "description": "고객 정보, 렌탈 내역을 저장하고 고객 관계를 쉽게 관리하세요."
+      },
+      "inventoryManagement": {
+        "title": "재고 관리",
+        "description": "제품 수량, 가용성 상태를 추적하고 재고를 효율적으로 관리하세요."
+      },
+      "scheduling": {
+        "title": "캘린더 및 일정",
+        "description": "렌탈 캘린더, 반납을 보고 일정을 시각적으로 관리하세요."
+      },
+      "quickSearch": {
+        "title": "빠른 검색",
+        "description": "스마트 검색 기능으로 주문, 고객 및 제품을 빠르게 검색하세요."
+      },
+      "notifications": {
+        "title": "알림",
+        "description": "새 주문, 반납 알림 및 중요한 이벤트에 대한 알림을 받으세요."
+      }
+    }
+  },
+  "web": {
+    "badge": "웹 포털",
+    "title": "웹 포털 기능",
+    "description": "웹 브라우저를 통해 렌탈 샵을 포괄적으로 관리하며 전체 기능 제공",
+    "screenshotPlaceholder": "웹 포털 스크린샷",
+    "features": {
+      "analytics": {
+        "title": "분석 및 보고서",
+        "description": "상세한 수익 보고서를 보고 비즈니스 성과 및 판매 추세를 분석하세요."
+      },
+      "reports": {
+        "title": "재무 보고서",
+        "description": "재무 보고서, 수익 보고서 및 종합 보고서를 생성하고 내보내세요."
+      },
+      "settings": {
+        "title": "설정 및 구성",
+        "description": "시스템 설정, 샵 구성을 관리하고 필요에 따라 사용자 정의하세요."
+      },
+      "userManagement": {
+        "title": "사용자 관리",
+        "description": "사용자, 권한 및 역할을 추가, 편집 및 관리하세요."
+      },
+      "payments": {
+        "title": "결제 관리",
+        "description": "결제, 인보이스를 추적하고 재무를 상세히 관리하세요."
+      },
+      "security": {
+        "title": "보안",
+        "description": "암호화, 자동 백업 및 액세스 제어로 데이터를 보호하세요."
+      }
+    },
+    "details": {
+      "viewDetails": "세부사항 보기",
+      "benefits": {
+        "fullInterface": {
+          "title": "전체 인터페이스",
+          "description": "웹의 모든 기능"
+        },
+        "detailedReports": {
+          "title": "상세 보고서",
+          "description": "데이터 내보내기 및 분석"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "기능 세부사항",
+    "description": "AnyRent의 강력한 기능에 대해 자세히 알아보세요",
+    "mobileApp": "모바일 앱",
+    "webPortal": "웹 포털"
+  },
+  "shared": {
+    "badge": "공유 기능",
+    "title": "공유 기능",
+    "description": "모바일 앱과 웹 포털 모두에서 사용 가능한 기능",
+    "features": {
+      "cloudSync": {
+        "title": "클라우드 동기화",
+        "description": "데이터가 모든 기기에서 자동으로 동기화됩니다. 한 기기에서의 변경 사항이 다른 기기에 즉시 업데이트됩니다."
+      },
+      "dataSecurity": {
+        "title": "데이터 보안",
+        "description": "데이터가 암호화되어 클라우드에 안전하게 저장됩니다. 자동 백업으로 데이터 손실을 방지합니다."
+      },
+      "realTime": {
+        "title": "실시간 업데이트",
+        "description": "모든 변경 사항이 모든 기기에서 즉시 업데이트됩니다. 항상 동기화된 데이터로 팀에서 효율적으로 작업하세요."
+      },
+      "scalable": {
+        "title": "확장 가능",
+        "description": "시스템은 비즈니스 요구에 따라 확장할 수 있습니다. 작은 샵부터 대형 체인까지."
+      }
+    }
+  },
+  "cta": {
+    "title": "시작할 준비가 되셨나요?",
+    "description": "AnyRent를 사용하는 수천 개의 렌탈 비즈니스에 합류하세요",
+    "downloadApp": "앱 다운로드",
+    "tryWebPortal": "웹 포털 체험"
+  },
+  "footer": {
+    "description": "AnyRent - 베트남 최고의 렌탈 샵 관리 소프트웨어",
+    "home": "홈",
+    "pricing": "가격",
+    "login": "로그인",
+    "copyright": "© 2024 AnyRent. 모든 권리 보유."
+  }
+}

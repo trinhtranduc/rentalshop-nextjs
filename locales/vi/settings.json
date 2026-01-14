@@ -95,6 +95,8 @@
     "savingCurrency": "Đang cập nhật tiền tệ...",
     "referralCode": "Mã Giới Thiệu",
     "referralCodeDesc": "Chia sẻ mã này với người khác để giới thiệu họ đến nền tảng của chúng tôi. Bạn sẽ nhận được hoa hồng cho các giới thiệu thành công.",
+    "registrationLink": "Link Đăng Ký",
+    "registrationLinkDesc": "Gửi link này cho shop để họ đăng ký với mã giới thiệu của bạn",
     "publicProductLink": "Link Sản Phẩm Công Khai",
     "publicProductLinkDesc": "Chia sẻ link này với khách hàng để họ có thể xem sản phẩm của bạn. Link này là công khai và không cần đăng nhập.",
     "copy": "Sao chép Link",

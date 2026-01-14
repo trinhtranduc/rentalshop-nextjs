@@ -76,7 +76,6 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
   // tenantKey is now available from user.outlet.merchant.tenantKey (from login response)
   // This eliminates unnecessary API call to /api/merchants/[id]
   
-  const [copiedReferralCode, setCopiedReferralCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRegistrationLink, setCopiedRegistrationLink] = useState(false);
   
@@ -108,31 +107,19 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
   
   const publicProductLink = getPublicProductLink();
   
-  // Get referral link from login response (preferred) or use tenantKey
-  const referralLink = user?.outlet?.merchant?.referralLink || merchant?.tenantKey;
+  // Get referral code from login response (preferred) or use tenantKey
+  const referralCode = user?.outlet?.merchant?.referralLink || merchant?.tenantKey;
   
   // Generate registration link with referral code
   const getRegistrationLink = () => {
-    if (!referralLink) return null;
+    if (!referralCode) return null;
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop';
-    return `${baseUrl}/register?referralCode=${referralLink}`;
+    return `${baseUrl}/register?referralCode=${referralCode}`;
   };
   
   const registrationLink = getRegistrationLink();
-  
-  // Copy referral code to clipboard
-  const handleCopyReferralCode = async () => {
-    if (!referralLink) return;
-    try {
-      await navigator.clipboard.writeText(referralLink);
-      setCopiedReferralCode(true);
-      setTimeout(() => setCopiedReferralCode(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy referral code:', error);
-    }
-  };
   
   // Copy registration link to clipboard
   const handleCopyRegistrationLink = async () => {
@@ -375,49 +362,10 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
           </p>
 
           <div className="space-y-4">
-            {/* Referral Code Display */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('merchant.referralCode') || 'Mã Giới Thiệu'}
-              </label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={referralLink || ''}
-                  readOnly
-                  onClick={referralLink ? handleCopyReferralCode : undefined}
-                  className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
-                    referralLink 
-                      ? 'cursor-pointer hover:bg-gray-100 transition-colors' 
-                      : 'cursor-default text-gray-400'
-                  }`}
-                  title={referralLink ? "Click to copy referral code" : "Referral code not available"}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyReferralCode}
-                  disabled={!referralLink}
-                  className="h-10 whitespace-nowrap"
-                >
-                  {copiedReferralCode ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {t('merchant.copied') || 'Copied!'}
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      {t('merchant.copy') || 'Copy'}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-            
             {/* Registration Link Display */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('merchant.registrationLink') || 'Link Đăng Ký'}
+                {t('merchant.registrationLink')}
               </label>
               <div className="flex items-center gap-2">
                 <Input
@@ -453,7 +401,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
               </div>
               {registrationLink && (
                 <p className="text-xs text-gray-500 mt-2">
-                  {t('merchant.registrationLinkDesc') || 'Gửi link này cho shop để họ đăng ký với mã giới thiệu của bạn'}
+                  {t('merchant.registrationLinkDesc')}
                 </p>
               )}
             </div>

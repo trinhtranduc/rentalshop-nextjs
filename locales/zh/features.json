@@ -1,0 +1,157 @@
+{
+  "navigation": {
+    "home": "首页",
+    "pricing": "定价",
+    "login": "登录"
+  },
+  "hero": {
+    "badge": "特色功能",
+    "title": "探索 AnyRent 的强大功能",
+    "description": "全面的租赁店管理软件，移动应用和网络门户功能齐全。随时随地高效管理您的业务。",
+    "downloadApp": "下载应用",
+    "tryWebPortal": "试用网络门户"
+  },
+  "platforms": {
+    "title": "多平台",
+    "description": "在任何设备上访问和管理您的租赁店",
+    "mobile": {
+      "title": "移动应用",
+      "description": "使用 iOS 和 Android 移动应用随时随地管理您的租赁店",
+      "features": {
+        "ios": "完整 iOS 支持",
+        "android": "Android 支持",
+        "offline": "离线模式",
+        "sync": "自动数据同步"
+      }
+    },
+    "web": {
+      "title": "网络门户",
+      "description": "通过具有现代响应式设计的网络浏览器访问完整功能",
+      "features": {
+        "responsive": "响应式设计",
+        "fullFeatures": "完整功能",
+        "reports": "详细报告",
+        "multiUser": "多用户支持"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "移动应用",
+    "title": "移动应用功能",
+    "description": "使用强大的功能在手机上管理您的租赁店",
+    "screenshotPlaceholder": "移动应用截图",
+    "features": {
+      "orderManagement": {
+        "title": "订单管理",
+        "description": "在手机上创建、查看和管理租赁订单。跟踪订单状态和交易历史。"
+      },
+      "customerManagement": {
+        "title": "客户管理",
+        "description": "轻松存储客户信息、租赁历史和管理客户关系。"
+      },
+      "inventoryManagement": {
+        "title": "库存管理",
+        "description": "跟踪产品数量、可用状态并高效管理库存。"
+      },
+      "scheduling": {
+        "title": "日历和调度",
+        "description": "直观地查看租赁日历、退货和管理日程安排。"
+      },
+      "quickSearch": {
+        "title": "快速搜索",
+        "description": "使用智能搜索功能快速搜索订单、客户和产品。"
+      },
+      "notifications": {
+        "title": "通知",
+        "description": "接收有关新订单、退货提醒和重要事件的通知。"
+      }
+    }
+  },
+  "web": {
+    "badge": "网络门户",
+    "title": "网络门户功能",
+    "description": "通过网络浏览器全面管理租赁店，功能齐全",
+    "screenshotPlaceholder": "网络门户截图",
+    "features": {
+      "analytics": {
+        "title": "分析和报告",
+        "description": "查看详细的收入报告，分析业务绩效和销售趋势。"
+      },
+      "reports": {
+        "title": "财务报告",
+        "description": "创建和导出财务报告、收入报告和综合报告。"
+      },
+      "settings": {
+        "title": "设置和配置",
+        "description": "管理系统设置、商店配置并根据需要进行自定义。"
+      },
+      "userManagement": {
+        "title": "用户管理",
+        "description": "添加、编辑和管理用户、权限和角色。"
+      },
+      "payments": {
+        "title": "支付管理",
+        "description": "详细跟踪支付、发票和管理财务。"
+      },
+      "security": {
+        "title": "安全性",
+        "description": "通过加密、自动备份和访问控制保护数据。"
+      }
+    },
+    "details": {
+      "viewDetails": "查看详情",
+      "benefits": {
+        "fullInterface": {
+          "title": "完整界面",
+          "description": "网络上的所有功能"
+        },
+        "detailedReports": {
+          "title": "详细报告",
+          "description": "导出和分析数据"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "功能详情",
+    "description": "深入了解 AnyRent 的强大功能",
+    "mobileApp": "移动应用",
+    "webPortal": "网络门户"
+  },
+  "shared": {
+    "badge": "共享功能",
+    "title": "共享功能",
+    "description": "移动应用和网络门户均可用的功能",
+    "features": {
+      "cloudSync": {
+        "title": "云同步",
+        "description": "数据在所有设备之间自动同步。一个设备上的更改会立即更新到其他设备。"
+      },
+      "dataSecurity": {
+        "title": "数据安全",
+        "description": "您的数据经过加密并安全存储在云端。自动备份确保不会丢失数据。"
+      },
+      "realTime": {
+        "title": "实时更新",
+        "description": "所有更改在所有设备上即时更新。使用始终同步的数据高效团队协作。"
+      },
+      "scalable": {
+        "title": "可扩展",
+        "description": "系统可以根据您的业务需求进行扩展。从小商店到大连锁店。"
+      }
+    }
+  },
+  "cta": {
+    "title": "准备开始了吗？",
+    "description": "加入数千家使用 AnyRent 的租赁企业",
+    "downloadApp": "下载应用",
+    "tryWebPortal": "试用网络门户"
+  },
+  "footer": {
+    "description": "AnyRent - 越南领先的租赁店管理软件",
+    "home": "首页",
+    "pricing": "定价",
+    "login": "登录",
+    "copyright": "© 2024 AnyRent. 保留所有权利。"
+  }
+}

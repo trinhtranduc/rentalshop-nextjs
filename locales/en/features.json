@@ -1,0 +1,170 @@
+{
+  "navigation": {
+    "home": "Home",
+    "pricing": "Pricing",
+    "login": "Login"
+  },
+  "hero": {
+    "badge": "Featured",
+    "title": "Discover the Power of AnyRent",
+    "description": "Comprehensive rental shop management software with full features for both mobile app and web portal. Manage your business efficiently from anywhere.",
+    "downloadApp": "Download App",
+    "tryWebPortal": "Try Web Portal"
+  },
+  "platforms": {
+    "title": "Multiple Platforms",
+    "description": "Access and manage your rental shop on any device",
+    "mobile": {
+      "title": "Mobile App",
+      "description": "Manage your rental shop anytime, anywhere with iOS and Android mobile apps",
+      "features": {
+        "ios": "Full iOS support",
+        "android": "Android support",
+        "offline": "Offline mode",
+        "sync": "Auto data sync"
+      }
+    },
+    "web": {
+      "title": "Web Portal",
+      "description": "Access full features through web browser with modern responsive design",
+      "features": {
+        "responsive": "Responsive design",
+        "fullFeatures": "Full features",
+        "reports": "Detailed reports",
+        "multiUser": "Multi-user support"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "Mobile App",
+    "title": "Mobile App Features",
+    "description": "Manage your rental shop right on your phone with powerful features",
+    "screenshotPlaceholder": "Mobile app screenshot",
+    "features": {
+      "orderManagement": {
+        "title": "Order Management",
+        "description": "Create, view and manage rental orders right on your phone. Track order status and transaction history."
+      },
+      "customerManagement": {
+        "title": "Customer Management",
+        "description": "Store customer information, rental history and manage customer relationships easily."
+      },
+      "inventoryManagement": {
+        "title": "Inventory Management",
+        "description": "Track product quantities, availability status and manage inventory efficiently."
+      },
+      "scheduling": {
+        "title": "Calendar & Scheduling",
+        "description": "View rental calendar, returns and manage schedules visually."
+      },
+      "quickSearch": {
+        "title": "Quick Search",
+        "description": "Search orders, customers and products quickly with smart search feature."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Receive notifications about new orders, return reminders and important events."
+      }
+    },
+    "details": {
+      "viewDetails": "View Details",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "Access Anytime, Anywhere",
+          "description": "Manage from your mobile device"
+        },
+        "autoSync": {
+          "title": "Auto Sync",
+          "description": "Data always up to date"
+        }
+      }
+    }
+  },
+  "web": {
+    "badge": "Web Portal",
+    "title": "Web Portal Features",
+    "description": "Comprehensive rental shop management through web browser with full features",
+    "screenshotPlaceholder": "Web portal screenshot",
+    "features": {
+      "analytics": {
+        "title": "Analytics & Reports",
+        "description": "View detailed revenue reports, analyze business performance and sales trends."
+      },
+      "reports": {
+        "title": "Financial Reports",
+        "description": "Create and export financial reports, revenue reports and comprehensive reports."
+      },
+      "settings": {
+        "title": "Settings & Configuration",
+        "description": "Manage system settings, shop configuration and customize according to needs."
+      },
+      "userManagement": {
+        "title": "User Management",
+        "description": "Add, edit and manage users, permissions and roles."
+      },
+      "payments": {
+        "title": "Payment Management",
+        "description": "Track payments, invoices and manage finances in detail."
+      },
+      "security": {
+        "title": "Security",
+        "description": "Protect data with encryption, automatic backups and access control."
+      }
+    },
+    "details": {
+      "viewDetails": "View Details",
+      "benefits": {
+        "fullInterface": {
+          "title": "Full Interface",
+          "description": "All features on web"
+        },
+        "detailedReports": {
+          "title": "Detailed Reports",
+          "description": "Export and analyze data"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "Feature Details",
+    "description": "Discover more about AnyRent's powerful features",
+    "mobileApp": "Mobile App",
+    "webPortal": "Web Portal"
+  },
+  "shared": {
+    "badge": "Shared Features",
+    "title": "Shared Features",
+    "description": "Features available on both mobile app and web portal",
+    "features": {
+      "cloudSync": {
+        "title": "Cloud Sync",
+        "description": "Data is automatically synced across all devices. Changes on one device are instantly updated on other devices."
+      },
+      "dataSecurity": {
+        "title": "Data Security",
+        "description": "Your data is encrypted and stored securely in the cloud. Automatic backups ensure no data loss."
+      },
+      "realTime": {
+        "title": "Real-time Updates",
+        "description": "All changes are updated instantly across all devices. Work efficiently in teams with always-synced data."
+      },
+      "scalable": {
+        "title": "Scalable",
+        "description": "System can scale according to your business needs. From small shops to large chains."
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to Get Started?",
+    "description": "Join thousands of rental businesses using AnyRent",
+    "downloadApp": "Download App",
+    "tryWebPortal": "Try Web Portal"
+  },
+  "footer": {
+    "description": "AnyRent - Leading rental shop management software in Vietnam",
+    "home": "Home",
+    "pricing": "Pricing",
+    "login": "Login",
+    "copyright": "© 2024 AnyRent. All rights reserved."
+  }
+}

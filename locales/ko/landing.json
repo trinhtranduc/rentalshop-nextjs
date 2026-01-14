@@ -38,7 +38,8 @@
     "duplicatePrevention": "중복 주문 방지",
     "duplicatePreventionDesc": "렌탈샵 관리 소프트웨어의 스마트 시스템이 중복 주문을 방지하고 정확한 재고 관리를 보장합니다. 렌탈 관리 시스템으로 렌탈 재고를 효율적으로 관리하세요.",
     "multiPlatform": "멀티 플랫폼 지원",
-    "multiPlatformDesc": "멀티 플랫폼 렌탈 관리 시스템. 렌탈샵 관리 소프트웨어를 통해 iOS 및 웹 플랫폼에서 렌탈샵 관리 데이터를 원활하게 액세스하세요."
+    "multiPlatformDesc": "멀티 플랫폼 렌탈 관리 시스템. 렌탈샵 관리 소프트웨어를 통해 iOS 및 웹 플랫폼에서 렌탈샵 관리 데이터를 원활하게 액세스하세요.",
+    "viewAllFeatures": "모든 기능 세부사항 보기"
   },
   "customSolution": {
     "title": "맞춤형 렌탈 솔루션이 필요하신가요?",

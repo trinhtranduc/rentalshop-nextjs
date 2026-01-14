@@ -38,7 +38,8 @@
     "duplicatePrevention": "防止重复订单",
     "duplicatePreventionDesc": "租赁店管理软件中的智能系统可防止重复订单并确保准确的库存管理。使用租赁管理系统高效管理租赁库存。",
     "multiPlatform": "多平台支持",
-    "multiPlatformDesc": "多平台租赁管理系统。通过租赁店管理软件从iOS和Web平台无缝访问租赁店管理数据。"
+    "multiPlatformDesc": "多平台租赁管理系统。通过租赁店管理软件从iOS和Web平台无缝访问租赁店管理数据。",
+    "viewAllFeatures": "查看所有功能详情"
   },
   "customSolution": {
     "title": "需要定制租赁解决方案？",

@@ -95,6 +95,8 @@
     "savingCurrency": "Updating currency...",
     "referralCode": "Referral Code",
     "referralCodeDesc": "Share this code with others to refer them to our platform. You will receive commission for successful referrals.",
+    "registrationLink": "Registration Link",
+    "registrationLinkDesc": "Send this link to shops so they can register with your referral code",
     "publicProductLink": "Public Product Link",
     "publicProductLinkDesc": "Share this link with your customers so they can browse your products. This link is public and doesn't require login.",
     "copy": "Copy Link",

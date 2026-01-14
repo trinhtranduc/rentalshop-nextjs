@@ -1,0 +1,170 @@
+{
+  "navigation": {
+    "home": "Trang chủ",
+    "pricing": "Bảng giá",
+    "login": "Đăng nhập"
+  },
+  "hero": {
+    "badge": "Tính năng nổi bật",
+    "title": "Khám phá Sức mạnh của AnyRent",
+    "description": "Phần mềm quản lý cửa hàng cho thuê toàn diện với đầy đủ tính năng cho cả ứng dụng di động và web portal. Quản lý doanh nghiệp của bạn một cách hiệu quả từ mọi nơi.",
+    "downloadApp": "Tải ứng dụng",
+    "tryWebPortal": "Dùng thử Web Portal"
+  },
+  "platforms": {
+    "title": "Nền tảng đa dạng",
+    "description": "Truy cập và quản lý cửa hàng cho thuê của bạn trên mọi thiết bị",
+    "mobile": {
+      "title": "Ứng dụng Di động",
+      "description": "Quản lý cửa hàng cho thuê của bạn mọi lúc, mọi nơi với ứng dụng di động iOS và Android",
+      "features": {
+        "ios": "Hỗ trợ iOS đầy đủ",
+        "android": "Hỗ trợ Android",
+        "offline": "Hoạt động offline",
+        "sync": "Đồng bộ dữ liệu tự động"
+      }
+    },
+    "web": {
+      "title": "Web Portal",
+      "description": "Truy cập đầy đủ tính năng qua trình duyệt web với giao diện responsive hiện đại",
+      "features": {
+        "responsive": "Thiết kế responsive",
+        "fullFeatures": "Đầy đủ tính năng",
+        "reports": "Báo cáo chi tiết",
+        "multiUser": "Hỗ trợ nhiều người dùng"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "Ứng dụng Di động",
+    "title": "Tính năng Ứng dụng Di động",
+    "description": "Quản lý cửa hàng cho thuê của bạn ngay trên điện thoại với các tính năng mạnh mẽ",
+    "screenshotPlaceholder": "Hình ảnh ứng dụng di động",
+    "features": {
+      "orderManagement": {
+        "title": "Quản lý Đơn hàng",
+        "description": "Tạo, xem và quản lý đơn hàng cho thuê ngay trên điện thoại. Theo dõi trạng thái đơn hàng và lịch sử giao dịch."
+      },
+      "customerManagement": {
+        "title": "Quản lý Khách hàng",
+        "description": "Lưu trữ thông tin khách hàng, lịch sử thuê và quản lý quan hệ khách hàng một cách dễ dàng."
+      },
+      "inventoryManagement": {
+        "title": "Quản lý Kho",
+        "description": "Theo dõi số lượng sản phẩm, tình trạng sẵn có và quản lý kho hàng hiệu quả."
+      },
+      "scheduling": {
+        "title": "Lịch & Lên lịch",
+        "description": "Xem lịch cho thuê, trả hàng và quản lý lịch trình một cách trực quan."
+      },
+      "quickSearch": {
+        "title": "Tìm kiếm Nhanh",
+        "description": "Tìm kiếm đơn hàng, khách hàng và sản phẩm một cách nhanh chóng với tính năng tìm kiếm thông minh."
+      },
+      "notifications": {
+        "title": "Thông báo",
+        "description": "Nhận thông báo về đơn hàng mới, nhắc nhở trả hàng và các sự kiện quan trọng."
+      }
+    },
+    "details": {
+      "viewDetails": "Xem chi tiết",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "Truy cập mọi lúc mọi nơi",
+          "description": "Quản lý từ điện thoại di động"
+        },
+        "autoSync": {
+          "title": "Đồng bộ tự động",
+          "description": "Dữ liệu luôn được cập nhật"
+        }
+      }
+    }
+  },
+  "web": {
+    "badge": "Web Portal",
+    "title": "Tính năng Web Portal",
+    "description": "Quản lý toàn diện cửa hàng cho thuê qua trình duyệt web với đầy đủ tính năng",
+    "screenshotPlaceholder": "Hình ảnh web portal",
+    "features": {
+      "analytics": {
+        "title": "Phân tích & Báo cáo",
+        "description": "Xem báo cáo doanh thu chi tiết, phân tích hiệu suất kinh doanh và xu hướng bán hàng."
+      },
+      "reports": {
+        "title": "Báo cáo Tài chính",
+        "description": "Tạo và xuất báo cáo tài chính, báo cáo doanh thu và báo cáo tổng hợp."
+      },
+      "settings": {
+        "title": "Cài đặt & Cấu hình",
+        "description": "Quản lý cài đặt hệ thống, cấu hình cửa hàng và tùy chỉnh theo nhu cầu."
+      },
+      "userManagement": {
+        "title": "Quản lý Người dùng",
+        "description": "Thêm, chỉnh sửa và quản lý người dùng, phân quyền và vai trò."
+      },
+      "payments": {
+        "title": "Quản lý Thanh toán",
+        "description": "Theo dõi thanh toán, hóa đơn và quản lý tài chính một cách chi tiết."
+      },
+      "security": {
+        "title": "Bảo mật",
+        "description": "Bảo vệ dữ liệu với mã hóa, sao lưu tự động và kiểm soát truy cập."
+      }
+    },
+    "details": {
+      "viewDetails": "Xem chi tiết",
+      "benefits": {
+        "fullInterface": {
+          "title": "Giao diện đầy đủ",
+          "description": "Tất cả tính năng trên web"
+        },
+        "detailedReports": {
+          "title": "Báo cáo chi tiết",
+          "description": "Xuất và phân tích dữ liệu"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "Chi tiết Tính năng",
+    "description": "Khám phá sâu hơn về các tính năng mạnh mẽ của AnyRent",
+    "mobileApp": "Mobile App",
+    "webPortal": "Web Portal"
+  },
+  "shared": {
+    "badge": "Tính năng Chung",
+    "title": "Tính năng Chia sẻ",
+    "description": "Các tính năng có sẵn trên cả ứng dụng di động và web portal",
+    "features": {
+      "cloudSync": {
+        "title": "Đồng bộ Đám mây",
+        "description": "Dữ liệu được đồng bộ tự động giữa tất cả các thiết bị. Thay đổi trên một thiết bị sẽ được cập nhật ngay lập tức trên các thiết bị khác."
+      },
+      "dataSecurity": {
+        "title": "Bảo mật Dữ liệu",
+        "description": "Dữ liệu của bạn được mã hóa và lưu trữ an toàn trên đám mây. Sao lưu tự động đảm bảo không mất dữ liệu."
+      },
+      "realTime": {
+        "title": "Cập nhật Thời gian Thực",
+        "description": "Tất cả thay đổi được cập nhật ngay lập tức trên tất cả các thiết bị. Làm việc nhóm hiệu quả với dữ liệu luôn được đồng bộ."
+      },
+      "scalable": {
+        "title": "Mở rộng Linh hoạt",
+        "description": "Hệ thống có thể mở rộng theo nhu cầu kinh doanh của bạn. Từ cửa hàng nhỏ đến chuỗi cửa hàng lớn."
+      }
+    }
+  },
+  "cta": {
+    "title": "Sẵn sàng bắt đầu?",
+    "description": "Tham gia cùng hàng nghìn doanh nghiệp cho thuê đang sử dụng AnyRent",
+    "downloadApp": "Tải ứng dụng",
+    "tryWebPortal": "Dùng thử Web Portal"
+  },
+  "footer": {
+    "description": "AnyRent - Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam",
+    "home": "Trang chủ",
+    "pricing": "Bảng giá",
+    "login": "Đăng nhập",
+    "copyright": "© 2024 AnyRent. Bảo lưu mọi quyền."
+  }
+}
