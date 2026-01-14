@@ -81,44 +81,16 @@ export async function GET(
       );
     }
 
-    // Find merchant by tenantKey (case-insensitive search)
+    // Find merchant by tenantKey (handles case-insensitive search internally)
     console.log('🔍 Looking for merchant with tenantKey:', tenantKey);
     
-    // Try exact match first
-    let merchant = await db.merchants.findByTenantKey(tenantKey);
-    
-    // If not found, try case-insensitive search
-    if (!merchant) {
-      console.log('🔍 Exact match not found, trying case-insensitive search...');
-      const { prisma } = await import('@rentalshop/database');
-      merchant = await prisma.merchant.findFirst({
-        where: {
-          tenantKey: {
-            equals: tenantKey,
-            mode: 'insensitive'
-          }
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          address: true,
-          phone: true,
-          email: true,
-          website: true,
-          city: true,
-          country: true,
-          currency: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      });
-    }
+    // findByTenantKey now handles case-insensitive search internally
+    const merchant = await db.merchants.findByTenantKey(tenantKey);
     
     if (!merchant) {
       console.error('❌ Merchant not found with tenantKey:', tenantKey);
       console.error('💡 Tip: Make sure merchant has a tenantKey set in database');
+      console.error('💡 Tip: Check if tenantKey matches exactly (case-insensitive)');
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { 

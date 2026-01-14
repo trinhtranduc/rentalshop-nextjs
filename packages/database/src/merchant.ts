@@ -122,10 +122,19 @@ export async function findByEmail(email: string) {
 /**
  * Find merchant by tenantKey
  * Used for public product pages where merchant shares link with customers
+ * Supports case-insensitive search for better compatibility
  */
 export async function findByTenantKey(tenantKey: string) {
-  return await prisma.merchant.findUnique({
-    where: { tenantKey },
+  if (!tenantKey) {
+    return null;
+  }
+  
+  // Normalize tenantKey: trim and convert to lowercase for consistent matching
+  const normalizedKey = tenantKey.trim().toLowerCase();
+  
+  // Try exact match first (case-sensitive)
+  let merchant = await prisma.merchant.findUnique({
+    where: { tenantKey: normalizedKey },
     select: {
       id: true,
       name: true,
@@ -142,6 +151,35 @@ export async function findByTenantKey(tenantKey: string) {
       updatedAt: true
     }
   });
+  
+  // If not found with exact match, try case-insensitive search
+  if (!merchant) {
+    merchant = await prisma.merchant.findFirst({
+      where: {
+        tenantKey: {
+          equals: normalizedKey,
+          mode: 'insensitive'
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        address: true,
+        phone: true,
+        email: true,
+        website: true,
+        city: true,
+        country: true,
+        currency: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+  }
+  
+  return merchant;
 }
 
 /**
