@@ -187,7 +187,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           password: completeData.password!,
           firstName: firstName,
           lastName: lastName,
-          phone: completeData.phone?.trim() || undefined,
+          phone: completeData.phone?.trim() || values.phone?.trim() || '',
           role: completeData.role!,
           businessName: values.businessName,
           businessType: values.businessType || 'GENERAL',
