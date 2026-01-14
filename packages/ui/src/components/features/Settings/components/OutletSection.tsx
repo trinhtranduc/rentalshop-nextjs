@@ -210,7 +210,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.name || t('outlet.notProvided')}
+                    {user?.outlet?.name || ''}
                   </p>
                 )}
               </div>
@@ -230,7 +230,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.phone || t('outlet.notProvided')}
+                    {user?.outlet?.phone || ''}
                   </p>
                 )}
               </div>
@@ -250,7 +250,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.address || t('outlet.notProvided')}
+                    {user?.outlet?.address || ''}
                   </p>
                 )}
               </div>
@@ -272,7 +272,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     />
                   ) : (
                     <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                      {user?.outlet?.city || t('outlet.notProvided')}
+                      {user?.outlet?.city || ''}
                     </p>
                   )}
                 </div>
@@ -292,7 +292,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     />
                   ) : (
                     <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                      {user?.outlet?.state || t('outlet.notProvided')}
+                      {user?.outlet?.state || ''}
                     </p>
                   )}
                 </div>
@@ -312,7 +312,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     />
                   ) : (
                     <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                      {user?.outlet?.zipCode || t('outlet.notProvided')}
+                      {user?.outlet?.zipCode || ''}
                     </p>
                   )}
                 </div>
@@ -334,7 +334,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.country || t('outlet.notProvided')}
+                    {user?.outlet?.country || ''}
                   </p>
                 )}
               </div>
@@ -354,7 +354,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.description || t('outlet.notProvided')}
+                    {user?.outlet?.description || ''}
                   </p>
                 )}
               </div>
@@ -382,7 +382,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
               </label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={referralLink || t('merchant.notProvided') || 'Chưa có'}
+                  value={referralLink || ''}
                   readOnly
                   onClick={referralLink ? handleCopyReferralCode : undefined}
                   className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
@@ -421,7 +421,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
               </label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={registrationLink || t('merchant.notProvided') || 'Chưa có'}
+                  value={registrationLink || ''}
                   readOnly
                   onClick={registrationLink ? handleCopyRegistrationLink : undefined}
                   className={`flex-1 bg-gray-50 text-gray-900 text-sm ${
@@ -476,7 +476,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
             {/* Link Display */}
             <div className="flex items-center gap-2">
               <Input
-                value={publicProductLink || t('merchant.notProvided') || 'Chưa có'}
+                value={publicProductLink || ''}
                 readOnly
                 onClick={publicProductLink ? handleCopyLink : undefined}
                 className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${

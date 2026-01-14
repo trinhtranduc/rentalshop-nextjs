@@ -156,6 +156,10 @@ export async function GET(
     });
     console.log('📂 Categories found:', categoriesResult.length);
 
+    // Get outlets for this merchant (for contact information)
+    const outletsResult = await db.outlets.getOutletsByMerchant(merchant.id);
+    console.log('🏪 Outlets found:', outletsResult.length);
+
     // Transform products to ensure they have categoryId
     const transformedProducts = (productsResult.data || []).map((product: any) => ({
       ...product,
@@ -191,6 +195,16 @@ export async function GET(
       },
       products: transformedProducts,
       categories: categoriesResult || [],
+      outlets: (outletsResult || []).map((outlet: any) => ({
+        id: outlet.id,
+        name: outlet.name,
+        address: outlet.address || '',
+        phone: outlet.phone || '',
+        city: outlet.city || '',
+        state: outlet.state || '',
+        zipCode: outlet.zipCode || '',
+        country: outlet.country || ''
+      })),
       pagination: {
         total: productsResult.total || 0,
         page: productsResult.page || page,

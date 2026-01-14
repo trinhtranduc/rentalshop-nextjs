@@ -94,7 +94,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.firstName || t('profile.notProvided')}
+                    {user?.firstName || ''}
                   </p>
                 )}
               </div>
@@ -114,7 +114,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.lastName || t('profile.notProvided')}
+                    {user?.lastName || ''}
                   </p>
                 )}
               </div>
@@ -151,7 +151,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.phone || t('profile.notProvided')}
+                    {user?.phone || ''}
                   </p>
                 )}
               </div>

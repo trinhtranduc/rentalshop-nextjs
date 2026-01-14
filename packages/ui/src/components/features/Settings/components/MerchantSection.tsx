@@ -334,7 +334,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.name || t('merchant.notProvided')}
+                    {merchant?.name || ''}
                   </p>
                 )}
               </div>
@@ -371,7 +371,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.taxId || t('merchant.notProvided')}
+                    {merchant?.taxId || ''}
                   </p>
                 )}
               </div>
@@ -391,7 +391,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.phone || t('merchant.notProvided')}
+                    {merchant?.phone || ''}
                   </p>
                 )}
               </div>
@@ -409,7 +409,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                         id="businessType"
                         name="businessType"
                         type="text"
-                        value={merchant?.businessType || t('merchant.notProvided')}
+                        value={merchant?.businessType || ''}
                         placeholder={t('merchant.businessType')}
                         disabled={true}
                         className="bg-gray-100 text-gray-600 cursor-not-allowed"
@@ -429,7 +429,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                         id="pricingType"
                         name="pricingType"
                         type="text"
-                        value={merchant?.pricingType || t('merchant.notProvided')}
+                        value={merchant?.pricingType || ''}
                         placeholder={t('merchant.pricingType')}
                         disabled={true}
                         className="bg-gray-100 text-gray-600 cursor-not-allowed"
@@ -457,7 +457,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.address || t('merchant.notProvided')}
+                    {merchant?.address || ''}
                   </p>
                 )}
               </div>
@@ -477,7 +477,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.city || t('merchant.notProvided')}
+                    {merchant?.city || ''}
                   </p>
                 )}
               </div>
@@ -497,7 +497,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.state || t('merchant.notProvided')}
+                    {merchant?.state || ''}
                   </p>
                 )}
               </div>
@@ -517,7 +517,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.zipCode || t('merchant.notProvided')}
+                    {merchant?.zipCode || ''}
                   </p>
                 )}
               </div>
@@ -550,7 +550,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                         {merchant.country}
                       </>
                     ) : (
-                      t('merchant.notProvided')
+                      ''
                     )}
                   </p>
                 )}
@@ -579,7 +579,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
               </label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={referralLink || t('merchant.notProvided') || 'Chưa có'}
+                  value={referralLink || ''}
                   readOnly
                   onClick={referralLink ? handleCopyReferralCode : undefined}
                   className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
@@ -618,7 +618,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
               </label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={registrationLink || t('merchant.notProvided') || 'Chưa có'}
+                  value={registrationLink || ''}
                   readOnly
                   onClick={registrationLink ? handleCopyRegistrationLink : undefined}
                   className={`flex-1 bg-gray-50 text-gray-900 text-sm ${
@@ -673,7 +673,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
             {/* Link Display */}
             <div className="flex items-center gap-2">
               <Input
-                value={publicProductLink || t('merchant.notProvided') || 'Chưa có'}
+                value={publicProductLink || ''}
                 readOnly
                 onClick={publicProductLink ? handleCopyLink : undefined}
                 className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${

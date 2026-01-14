@@ -90,13 +90,13 @@ export default async function PublicProductsPage({
   
   console.log('✅ Found merchant:', data.merchant.name, 'with', data.products?.length || 0, 'products');
 
-  const { merchant, products = [], categories = [], pagination } = data;
+  const { merchant, products = [], categories = [], outlets = [], pagination } = data;
 
   // Show merchant info even if no products (for better UX)
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Merchant Header */}
-      <MerchantHeader merchant={merchant} />
+      <MerchantHeader merchant={merchant} outlets={outlets} />
 
       {/* Products Grid - Will show empty state if no products */}
       <PublicProductGrid 
