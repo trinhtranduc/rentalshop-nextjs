@@ -225,23 +225,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{description}</p>
           )}
 
-          {/* Stock Information */}
-          <div className="mb-3 space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('inventory.totalStock')}:</span>
-              <span className="font-medium">{stock}</span>
+          {/* Stock Information - Hidden for public/client variant */}
+          {variant !== 'client' && (
+            <div className="mb-3 space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">{t('inventory.totalStock')}:</span>
+                <span className="font-medium">{stock}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">{t('fields.renting')}:</span>
+                <span className="font-medium text-orange-600">{renting}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">{t('fields.available')}:</span>
+                <span className={cn('font-medium', isAvailable ? 'text-green-600' : 'text-red-600')}>
+                  {available}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('fields.renting')}:</span>
-              <span className="font-medium text-orange-600">{renting}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('fields.available')}:</span>
-              <span className={cn('font-medium', isAvailable ? 'text-green-600' : 'text-red-600')}>
-                {available}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Pricing */}
           <div className="mb-4 space-y-1">
