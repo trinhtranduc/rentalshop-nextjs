@@ -37,25 +37,30 @@ async function fetchPublicProducts(tenantKey: string, searchParams: any) {
     
     console.log('📡 Response status:', response.status, response.statusText);
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API Error:', errorText);
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error(`Failed to fetch products: ${response.statusText}`);
-    }
-
+    // Parse response (handles both success and error cases)
     const result = await parseApiResponse<any>(response);
     console.log('📦 Parsed result:', {
       success: result.success,
+      code: result.code,
+      message: result.message,
       hasData: !!result.data,
       productsCount: result.data?.products?.length || 0,
       merchantName: result.data?.merchant?.name
     });
     
-    if (!result.success || !result.data) {
-      console.error('❌ Invalid result structure:', result);
+    // If error response (MERCHANT_NOT_FOUND, etc.)
+    if (!result.success) {
+      console.error('❌ API Error:', {
+        code: result.code,
+        message: result.message,
+        tenantKey
+      });
+      return null;
+    }
+    
+    // Check if data exists
+    if (!result.data) {
+      console.error('❌ No data in response:', result);
       return null;
     }
 

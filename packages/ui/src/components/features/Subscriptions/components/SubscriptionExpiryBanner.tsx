@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import { Button, Card, CardContent, Badge } from '@rentalshop/ui';
+import { useSubscriptionTranslations } from '@rentalshop/hooks';
 import { Subscription } from '@rentalshop/types';
 
 // ============================================================================
@@ -35,6 +36,8 @@ export const SubscriptionExpiryBanner: React.FC<SubscriptionExpiryBannerProps> =
   onDismiss,
   showDismiss = false
 }) => {
+  const t = useSubscriptionTranslations();
+  
   const isExpired = subscription.status === 'EXPIRED';
   const isExpiringSoon = subscription.status === 'ACTIVE' && 
     subscription.endDate && 
@@ -43,17 +46,18 @@ export const SubscriptionExpiryBanner: React.FC<SubscriptionExpiryBannerProps> =
   const getExpiryMessage = () => {
     if (isExpired) {
       return {
-        title: 'Subscription Expired',
-        message: 'Your subscription has expired. Please renew to continue using the service.',
+        title: t('errors.expired') || 'Subscription Expired',
+        message: t('errors.expired') || 'Your subscription has expired. Please renew to continue using the service.',
         variant: 'destructive' as const,
         icon: AlertTriangle
       };
     }
     
     if (isExpiringSoon) {
+      const expiryDate = new Date(subscription.endDate!).toLocaleDateString();
       return {
-        title: 'Subscription Expiring Soon',
-        message: `Your subscription expires on ${new Date(subscription.endDate!).toLocaleDateString()}. Renew now to avoid service interruption.`,
+        title: t('expiringSoon.title') || 'Subscription Expiring Soon',
+        message: t('expiringSoon.message', { date: expiryDate }) || `Your subscription expires on ${expiryDate}. Renew now to avoid service interruption.`,
         variant: 'warning' as const,
         icon: Clock
       };
@@ -103,7 +107,7 @@ export const SubscriptionExpiryBanner: React.FC<SubscriptionExpiryBannerProps> =
                 </h3>
                 {daysUntilExpiry !== null && (
                   <Badge variant={expiryInfo.variant === 'destructive' ? 'destructive' : 'secondary'}>
-                    {isExpired ? 'Expired' : `${daysUntilExpiry} days left`}
+                    {isExpired ? (t('status.expired') || 'Expired') : (t('expiringSoon.daysLeft', { days: daysUntilExpiry }) || `${daysUntilExpiry} days left`)}
                   </Badge>
                 )}
               </div>
@@ -120,14 +124,14 @@ export const SubscriptionExpiryBanner: React.FC<SubscriptionExpiryBannerProps> =
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-600">
-                    Plan: {subscription.plan?.name}
+                    {t('planDetails.plan') || 'Plan'}: {subscription.plan?.name}
                   </span>
                 </div>
                 {subscription.endDate && (
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-gray-600">
-                      Expires: {new Date(subscription.endDate).toLocaleDateString()}
+                      {t('expiringSoon.expires') || 'Expires'}: {new Date(subscription.endDate).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -145,7 +149,7 @@ export const SubscriptionExpiryBanner: React.FC<SubscriptionExpiryBannerProps> =
               } text-white`}
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              {isExpired ? 'Renew Now' : 'Extend Plan'}
+              {isExpired ? (t('actions.renewNow') || 'Renew Now') : (t('actions.extendPlan') || 'Extend Plan')}
               <ExternalLink className="h-4 w-4 ml-2" />
             </Button>
             

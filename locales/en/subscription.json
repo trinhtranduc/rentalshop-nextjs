@@ -6,12 +6,14 @@
   "billingInformation": "Billing Information",
   "paymentHistory": "Payment History",
   "status": {
+    "label": "Status",
     "active": "Active",
     "trialing": "Trial",
     "past_due": "Past Due",
     "canceled": "Canceled",
     "unpaid": "Unpaid",
-    "paused": "Paused"
+    "paused": "Paused",
+    "expired": "Expired"
   },
   "billing": {
     "cycle": "Billing Cycle",
@@ -40,14 +42,32 @@
     "endsOn": "Trial Ends On",
     "expired": "Trial Expired"
   },
+  "expiringSoon": {
+    "title": "Subscription Expiring Soon",
+    "message": "Your subscription expires on {date}. Renew now to avoid service interruption.",
+    "daysLeft": "{days} days left",
+    "expires": "Expires"
+  },
+  "planDetails": {
+    "plan": "Plan"
+  },
+  "common": {
+    "unknown": "Unknown",
+    "lastUpdated": "Last Updated"
+  },
   "actions": {
     "upgrade": "Upgrade Plan",
     "downgrade": "Downgrade Plan",
     "cancel": "Cancel Subscription",
     "resume": "Resume Subscription",
+    "renew": "Renew Subscription",
+    "choosePlan": "Choose New Plan",
     "updatePayment": "Update Payment Method",
     "viewInvoices": "View Invoices",
-    "changePlan": "Change Plan"
+    "changePlan": "Change Plan",
+    "contactSupport": "Contact Support",
+    "renewNow": "Renew Now",
+    "extendPlan": "Extend Plan"
   },
   "modals": {
     "upgrade": {

@@ -51,9 +51,22 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
 
     // Get translated error message
     const errorMessage = error.message || error?.response?.data?.message;
-    const translatedMessage = errorCode === 'PLAN_LIMIT_EXCEEDED' 
-      ? te('PLAN_LIMIT_EXCEEDED')
-      : errorMessage || t('errors.generic');
+    let translatedMessage = errorMessage || t('errors.generic');
+    
+    // Translate specific error codes
+    if (errorCode === 'PLAN_LIMIT_EXCEEDED') {
+      translatedMessage = te('PLAN_LIMIT_EXCEEDED');
+    } else if (errorCode === 'SUBSCRIPTION_PERIOD_ENDED') {
+      translatedMessage = te('SUBSCRIPTION_PERIOD_ENDED');
+    } else if (errorCode === 'SUBSCRIPTION_PERIOD_MISSING') {
+      translatedMessage = te('SUBSCRIPTION_PERIOD_MISSING');
+    } else if (errorCode && typeof errorCode === 'string' && errorCode.includes('SUBSCRIPTION')) {
+      // Try to translate any subscription error code
+      const translated = te(errorCode);
+      if (translated !== errorCode) {
+        translatedMessage = translated;
+      }
+    }
     
     const subscriptionError: SubscriptionError = {
       message: translatedMessage,
@@ -90,6 +103,12 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
       action = t('errors.merchantAccountAction');
     } else if (error.code === 'PLAN_LIMIT_EXCEEDED') {
       message = te('PLAN_LIMIT_EXCEEDED');
+    } else if (error.code === 'SUBSCRIPTION_PERIOD_ENDED') {
+      message = te('SUBSCRIPTION_PERIOD_ENDED');
+      action = t('errors.expiredAction') || 'Choose a new plan to continue using the service.';
+    } else if (error.code === 'SUBSCRIPTION_PERIOD_MISSING') {
+      message = te('SUBSCRIPTION_PERIOD_MISSING');
+      action = t('errors.merchantAccountAction') || 'Contact support to resolve account issues.';
     }
 
     // Show error toast with action

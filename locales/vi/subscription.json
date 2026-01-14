@@ -6,12 +6,14 @@
   "billingInformation": "Thông tin thanh toán",
   "paymentHistory": "Lịch sử thanh toán",
   "status": {
+    "label": "Trạng thái",
     "active": "Hoạt động",
     "trialing": "Dùng thử",
     "past_due": "Quá hạn",
     "canceled": "Đã hủy",
     "unpaid": "Chưa thanh toán",
-    "paused": "Tạm dừng"
+    "paused": "Tạm dừng",
+    "expired": "Đã hết hạn"
   },
   "billing": {
     "cycle": "Chu kỳ thanh toán",
@@ -40,14 +42,32 @@
     "endsOn": "Kết thúc vào",
     "expired": "Hết hạn dùng thử"
   },
+  "expiringSoon": {
+    "title": "Gói đăng ký sắp hết hạn",
+    "message": "Gói đăng ký của bạn sẽ hết hạn vào {date}. Gia hạn ngay để tránh gián đoạn dịch vụ.",
+    "daysLeft": "Còn {days} ngày",
+    "expires": "Hết hạn"
+  },
+  "planDetails": {
+    "plan": "Gói"
+  },
+  "common": {
+    "unknown": "Không xác định",
+    "lastUpdated": "Cập nhật lần cuối"
+  },
   "actions": {
     "upgrade": "Nâng cấp gói",
     "downgrade": "Hạ cấp gói",
     "cancel": "Hủy đăng ký",
     "resume": "Tiếp tục đăng ký",
+    "renew": "Gia hạn đăng ký",
+    "choosePlan": "Chọn gói mới",
     "updatePayment": "Cập nhật phương thức thanh toán",
     "viewInvoices": "Xem hóa đơn",
-    "changePlan": "Thay đổi gói"
+    "changePlan": "Thay đổi gói",
+    "contactSupport": "Liên hệ hỗ trợ",
+    "renewNow": "Gia hạn ngay",
+    "extendPlan": "Gia hạn gói"
   },
   "modals": {
     "upgrade": {

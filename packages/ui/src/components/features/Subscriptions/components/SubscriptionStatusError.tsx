@@ -5,6 +5,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '../../../ui';
 import { AlertTriangle, Clock, XCircle, RefreshCw, CreditCard } from 'lucide-react';
+import { useSubscriptionTranslations } from '@rentalshop/hooks';
 import type { Subscription } from '@rentalshop/types';
 
 interface SubscriptionStatusErrorProps {
@@ -22,6 +23,8 @@ export function SubscriptionStatusError({
   onContactSupport,
   className = ''
 }: SubscriptionStatusErrorProps) {
+  const t = useSubscriptionTranslations();
+  
   if (!subscription) return null;
 
   const getErrorConfig = (status: string) => {
@@ -29,53 +32,53 @@ export function SubscriptionStatusError({
       case 'paused':
         return {
           icon: Clock,
-          title: 'Subscription Paused',
-          message: 'Your subscription has been paused. Some features may be limited.',
+          title: t('errors.paused') || 'Subscription Paused',
+          message: t('errors.paused') || 'Your subscription has been paused. Some features may be limited.',
           color: 'text-orange-600',
           bgColor: 'bg-orange-50',
           borderColor: 'border-orange-200',
           actions: [
-            { label: 'Resume Subscription', onClick: onReactivate, variant: 'default' as const },
-            { label: 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
+            { label: t('actions.resume') || 'Resume Subscription', onClick: onReactivate, variant: 'default' as const },
+            { label: t('actions.contactSupport') || 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
           ]
         };
       case 'expired':
         return {
           icon: XCircle,
-          title: 'Subscription Expired',
-          message: 'Your subscription has expired. Please renew to continue using the service.',
+          title: t('errors.expired') || 'Subscription Expired',
+          message: t('errors.expired') || 'Your subscription has expired. Please renew to continue using the service.',
           color: 'text-red-600',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
           actions: [
-            { label: 'Renew Subscription', onClick: onUpgrade, variant: 'default' as const },
-            { label: 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
+            { label: t('actions.renew') || 'Renew Subscription', onClick: onUpgrade, variant: 'default' as const },
+            { label: t('actions.contactSupport') || 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
           ]
         };
       case 'cancelled':
         return {
           icon: XCircle,
-          title: 'Subscription Cancelled',
-          message: 'Your subscription has been cancelled. You can reactivate or choose a new plan.',
+          title: t('errors.cancelled') || 'Subscription Cancelled',
+          message: t('errors.cancelled') || 'Your subscription has been cancelled. You can reactivate or choose a new plan.',
           color: 'text-red-600',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
           actions: [
-            { label: 'Choose New Plan', onClick: onUpgrade, variant: 'default' as const },
-            { label: 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
+            { label: t('actions.choosePlan') || 'Choose New Plan', onClick: onUpgrade, variant: 'default' as const },
+            { label: t('actions.contactSupport') || 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
           ]
         };
       case 'past_due':
         return {
           icon: AlertTriangle,
-          title: 'Payment Past Due',
-          message: 'Your payment is past due. Please update your payment method to avoid service interruption.',
+          title: t('errors.pastDue') || 'Payment Past Due',
+          message: t('errors.pastDue') || 'Your payment is past due. Please update your payment method to avoid service interruption.',
           color: 'text-yellow-600',
           bgColor: 'bg-yellow-50',
           borderColor: 'border-yellow-200',
           actions: [
-            { label: 'Update Payment', onClick: onUpgrade, variant: 'default' as const },
-            { label: 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
+            { label: t('actions.updatePayment') || 'Update Payment', onClick: onUpgrade, variant: 'default' as const },
+            { label: t('actions.contactSupport') || 'Contact Support', onClick: onContactSupport, variant: 'outline' as const }
           ]
         };
       default:
@@ -105,25 +108,25 @@ export function SubscriptionStatusError({
         <div className="bg-white/50 rounded-lg p-3 mb-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-500">Plan:</span>
-              <span className="ml-2 font-medium">{subscription.plan?.name || 'Unknown'}</span>
+              <span className="text-gray-500">{t('planDetails.plan') || 'Plan'}:</span>
+              <span className="ml-2 font-medium">{subscription.plan?.name || t('common.unknown') || 'Unknown'}</span>
             </div>
             <div>
-              <span className="text-gray-500">Status:</span>
+              <span className="text-gray-500">{t('status.label') || 'Status'}:</span>
               <span className={`ml-2 font-medium ${errorConfig.color}`}>
-                {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                {t(`status.${subscription.status.toLowerCase()}`) || subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Amount:</span>
+              <span className="text-gray-500">{t('billing.amount') || 'Amount'}:</span>
               <span className="ml-2 font-medium">
-                ${subscription.amount?.toFixed(2) || '0.00'} / {subscription.billingInterval || 'month'}
+                ${subscription.amount?.toFixed(2) || '0.00'} / {subscription.billingInterval || t('billing.monthly') || 'month'}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Last Updated:</span>
+              <span className="text-gray-500">{t('common.lastUpdated') || 'Last Updated'}:</span>
               <span className="ml-2 font-medium">
-                {subscription.updatedAt ? new Date(subscription.updatedAt).toLocaleDateString() : 'Unknown'}
+                {subscription.updatedAt ? new Date(subscription.updatedAt).toLocaleDateString() : (t('common.unknown') || 'Unknown')}
               </span>
             </div>
           </div>
