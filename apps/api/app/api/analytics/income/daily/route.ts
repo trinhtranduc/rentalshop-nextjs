@@ -393,6 +393,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
     // Theo dõi đơn đã được đếm để tránh đếm trùng
     const newOrdersCounted = new Set<string>();
+    // Theo dõi đơn đã được thêm vào danh sách orders để tránh duplicate
+    // Key: `${order.id}-${dateKey}` -> order entry trong danh sách
+    const ordersInList = new Map<string, {
+      index: number;
+      revenue: number;
+      events: Array<{ revenueType: string; description: string; revenueDate: string }>;
+    }>();
 
     // Xử lý từng đơn hàng
     for (const order of allOrders) {
@@ -429,26 +436,64 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         // Cộng doanh thu vào tổng ngày
         dailyData.totalRevenue += event.revenue;
 
-        // Thêm đơn vào danh sách
-        const customerName = order.customer 
-          ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()
-          : undefined;
-        
-        dailyData.orders.push({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          orderType: order.orderType,
-          status: order.status,
-          revenue: event.revenue,
-          revenueType: event.revenueType,
-          description: event.description,
-          revenueDate: event.date.toISOString(),
-          customerName,
-          customerPhone: order.customer?.phone || undefined,
-          outletName: order.outlet?.name,
-          totalAmount: order.totalAmount || 0,
-          depositAmount: order.depositAmount || 0
-        });
+        // Kiểm tra xem đơn đã được thêm vào danh sách chưa
+        const orderKey = `${order.id}-${dateKey}`;
+        const existingOrder = ordersInList.get(orderKey);
+
+        if (existingOrder) {
+          // Đơn đã tồn tại: cộng dồn revenue và thêm event vào danh sách
+          const orderEntry = dailyData.orders[existingOrder.index];
+          existingOrder.revenue += event.revenue;
+          existingOrder.events.push({
+            revenueType: event.revenueType,
+            description: event.description,
+            revenueDate: event.date.toISOString()
+          });
+          
+          // Cập nhật entry trong danh sách
+          orderEntry.revenue = existingOrder.revenue;
+          // Nếu có nhiều events, đánh dấu là MULTIPLE và tạo description tổng hợp
+          if (existingOrder.events.length > 1) {
+            orderEntry.revenueType = 'MULTIPLE';
+            // Tạo description từ danh sách các events (loại bỏ trùng lặp)
+            const uniqueDescriptions = [...new Set(existingOrder.events.map(e => e.description))];
+            orderEntry.description = uniqueDescriptions.join(' + ');
+            // Giữ revenueDate là ngày của event đầu tiên (sớm nhất)
+          }
+        } else {
+          // Đơn chưa tồn tại: thêm mới vào danh sách
+          const customerName = order.customer 
+            ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()
+            : undefined;
+          
+          const orderIndex = dailyData.orders.length;
+          dailyData.orders.push({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            orderType: order.orderType,
+            status: order.status,
+            revenue: event.revenue,
+            revenueType: event.revenueType,
+            description: event.description,
+            revenueDate: event.date.toISOString(),
+            customerName,
+            customerPhone: order.customer?.phone || undefined,
+            outletName: order.outlet?.name,
+            totalAmount: order.totalAmount || 0,
+            depositAmount: order.depositAmount || 0
+          });
+
+          // Lưu vào map để theo dõi
+          ordersInList.set(orderKey, {
+            index: orderIndex,
+            revenue: event.revenue,
+            events: [{
+              revenueType: event.revenueType,
+              description: event.description,
+              revenueDate: event.date.toISOString()
+            }]
+          });
+        }
       }
 
       // ============================================================================
