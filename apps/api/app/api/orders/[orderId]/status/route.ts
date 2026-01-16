@@ -111,32 +111,51 @@ export async function PATCH(
       ...(collateralDetails && { collateralDetails }),
     };
 
-    // CRITICAL: Always set pickedUpAt when status is PICKUPED (if not already set or if explicitly provided)
-    // This ensures orders that are already PICKUPED but have null pickedUpAt get the timestamp set
+    // ============================================================================
+    // TỰ ĐỘNG SET TIMESTAMP KHI STATUS THAY ĐỔI
+    // ============================================================================
+    // CRITICAL: Luôn set pickedUpAt khi status là PICKUPED
+    // - Nếu status thay đổi từ khác sang PICKUPED: luôn set timestamp (trừ khi đã có)
+    // - Nếu status đã là PICKUPED: chỉ set nếu chưa có
     if (status === ORDER_STATUS.PICKUPED) {
+      const isStatusChanging = existingOrder.status !== ORDER_STATUS.PICKUPED;
+      
       if (pickedUpAt) {
-        // Use provided timestamp
+        // Sử dụng timestamp được cung cấp
         updateInput.pickedUpAt = pickedUpAt;
+        console.log('✅ Using provided pickedUpAt timestamp');
       } else if (!existingOrder.pickedUpAt) {
-        // Auto-set if not already set (either null or missing)
-      updateInput.pickedUpAt = new Date().toISOString();
-        console.log('✅ Auto-setting pickedUpAt for PICKUPED order');
+        // Tự động set nếu chưa có (null hoặc missing)
+        updateInput.pickedUpAt = new Date().toISOString();
+        console.log(`✅ Auto-setting pickedUpAt for PICKUPED order${isStatusChanging ? ' (status changed)' : ''}`);
+      } else if (isStatusChanging) {
+        // Nếu status đang thay đổi sang PICKUPED và đã có timestamp, vẫn cập nhật để đảm bảo chính xác
+        updateInput.pickedUpAt = new Date().toISOString();
+        console.log('✅ Updating pickedUpAt for status change to PICKUPED');
       }
-      // If pickedUpAt already exists, keep it (don't override)
+      // Nếu status đã là PICKUPED và đã có timestamp, giữ nguyên (không override)
     }
     
-    // CRITICAL: Always set returnedAt when status is RETURNED (if not already set or if explicitly provided)
-    // This ensures orders that are already RETURNED but have null returnedAt get the timestamp set
+    // CRITICAL: Luôn set returnedAt khi status là RETURNED
+    // - Nếu status thay đổi từ khác sang RETURNED: luôn set timestamp (trừ khi đã có)
+    // - Nếu status đã là RETURNED: chỉ set nếu chưa có
     if (status === ORDER_STATUS.RETURNED) {
+      const isStatusChanging = existingOrder.status !== ORDER_STATUS.RETURNED;
+      
       if (returnedAt) {
-        // Use provided timestamp
+        // Sử dụng timestamp được cung cấp
         updateInput.returnedAt = returnedAt;
+        console.log('✅ Using provided returnedAt timestamp');
       } else if (!existingOrder.returnedAt) {
-        // Auto-set if not already set (either null or missing)
-      updateInput.returnedAt = new Date().toISOString();
-        console.log('✅ Auto-setting returnedAt for RETURNED order');
+        // Tự động set nếu chưa có (null hoặc missing)
+        updateInput.returnedAt = new Date().toISOString();
+        console.log(`✅ Auto-setting returnedAt for RETURNED order${isStatusChanging ? ' (status changed)' : ''}`);
+      } else if (isStatusChanging) {
+        // Nếu status đang thay đổi sang RETURNED và đã có timestamp, vẫn cập nhật để đảm bảo chính xác
+        updateInput.returnedAt = new Date().toISOString();
+        console.log('✅ Updating returnedAt for status change to RETURNED');
       }
-      // If returnedAt already exists, keep it (don't override)
+      // Nếu status đã là RETURNED và đã có timestamp, giữ nguyên (không override)
       
       // Enhanced return handling with collateral management
       if (returnAmount === undefined) {

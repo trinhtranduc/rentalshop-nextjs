@@ -437,13 +437,15 @@ export async function updateOrder(
     hasOutlet: !!updateData.outlet
   });
   
-  // Get old order status before update (for stock/renting updates)
+  // Get old order status before update (for stock/renting updates and timestamp auto-setting)
   const oldOrder = await prisma.order.findUnique({
     where: { id },
     select: {
       orderType: true,
       status: true,
       outletId: true,
+      pickedUpAt: true, // Include để kiểm tra khi auto-set
+      returnedAt: true, // Include để kiểm tra khi auto-set
       orderItems: {
         select: {
           productId: true,
@@ -458,6 +460,29 @@ export async function updateOrder(
   const orderType = (updateData.orderType || oldOrder?.orderType) as 'RENT' | 'SALE' | undefined;
   const oldOutletId = oldOrder?.outletId;
   const oldOrderItems = oldOrder?.orderItems || [];
+  
+  // ============================================================================
+  // TỰ ĐỘNG SET TIMESTAMP KHI STATUS THAY ĐỔI
+  // ============================================================================
+  // CRITICAL: Tự động set pickedUpAt khi status thay đổi sang PICKUPED
+  // (nếu chưa được set hoặc không được cung cấp trong updateData)
+  if (newStatus === ORDER_STATUS.PICKUPED && newStatus !== oldStatus) {
+    if (!updateData.pickedUpAt && !oldOrder?.pickedUpAt) {
+      // Chỉ set nếu chưa có trong updateData và chưa có trong database
+      updateData.pickedUpAt = new Date();
+      console.log('✅ Auto-setting pickedUpAt for PICKUPED order (status changed)');
+    }
+  }
+  
+  // CRITICAL: Tự động set returnedAt khi status thay đổi sang RETURNED
+  // (nếu chưa được set hoặc không được cung cấp trong updateData)
+  if (newStatus === ORDER_STATUS.RETURNED && newStatus !== oldStatus) {
+    if (!updateData.returnedAt && !oldOrder?.returnedAt) {
+      // Chỉ set nếu chưa có trong updateData và chưa có trong database
+      updateData.returnedAt = new Date();
+      console.log('✅ Auto-setting returnedAt for RETURNED order (status changed)');
+    }
+  }
   
   // Update the order
   const order = await prisma.order.update({
