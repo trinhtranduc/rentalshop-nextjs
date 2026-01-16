@@ -253,9 +253,25 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       // XỬ LÝ ĐƠN THUÊ (RENT)
       // ============================================================================
       else {
+        // Kiểm tra xem đơn có được trả trong cùng ngày với tạo/lấy không
+        // (để quyết định có tính deposit/pickup riêng hay chỉ tính return)
+        const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+        const createdDate = order.createdAt ? new Date(order.createdAt) : null;
+        const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+        
+        let isSameDayReturn = false;
+        if (returnDate) {
+          const returnDateKey = getUTCDateKey(returnDate);
+          const startDate = pickupDate || createdDate;
+          const startDateKey = startDate ? getUTCDateKey(startDate) : null;
+          // Kiểm tra cùng ngày (không cần kiểm tra trong khoảng vì sẽ kiểm tra sau)
+          isSameDayReturn = startDateKey !== null && startDateKey === returnDateKey;
+        }
+
         // 1. ĐƠN CỌC (RESERVED): Thu tiền cọc khi tạo đơn
         // Doanh thu = depositAmount
-        if (order.createdAt) {
+        // LƯU Ý: Nếu thuê và trả cùng ngày, không tạo deposit event (chỉ tính return)
+        if (!isSameDayReturn && order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
             // Bỏ qua nếu đơn bị hủy ngay khi tạo
@@ -276,44 +292,47 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         // 2. ĐƠN LẤY (PICKUPED): Thu tiền khi khách lấy hàng
         // Doanh thu = totalAmount - depositAmount + securityDeposit
         // Tìm ngày lấy hàng: ưu tiên pickedUpAt, nếu không có thì dùng createdAt hoặc updatedAt
-        let pickupDate: Date | null = null;
-        
-        if (order.pickedUpAt) {
-          const pickedUpDate = new Date(order.pickedUpAt);
-          if (pickedUpDate >= dateRangeStart && pickedUpDate <= dateRangeEnd) {
-            pickupDate = pickedUpDate;
-          }
-        }
-        
-        // Nếu không có pickedUpAt trong khoảng, kiểm tra createdAt hoặc updatedAt
-        if (!pickupDate && order.status === ORDER_STATUS.PICKUPED) {
-          if (order.createdAt) {
-            const createdDate = new Date(order.createdAt);
-            if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
-              pickupDate = createdDate;
+        // LƯU Ý: Nếu thuê và trả cùng ngày, không tạo pickup event (chỉ tính return)
+        if (!isSameDayReturn) {
+          let pickupDate: Date | null = null;
+          
+          if (order.pickedUpAt) {
+            const pickedUpDate = new Date(order.pickedUpAt);
+            if (pickedUpDate >= dateRangeStart && pickedUpDate <= dateRangeEnd) {
+              pickupDate = pickedUpDate;
             }
           }
-          if (!pickupDate && order.updatedAt) {
-            const updatedDate = new Date(order.updatedAt);
-            if (updatedDate >= dateRangeStart && updatedDate <= dateRangeEnd) {
-              pickupDate = updatedDate;
+          
+          // Nếu không có pickedUpAt trong khoảng, kiểm tra createdAt hoặc updatedAt
+          if (!pickupDate && order.status === ORDER_STATUS.PICKUPED) {
+            if (order.createdAt) {
+              const createdDate = new Date(order.createdAt);
+              if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
+                pickupDate = createdDate;
+              }
+            }
+            if (!pickupDate && order.updatedAt) {
+              const updatedDate = new Date(order.updatedAt);
+              if (updatedDate >= dateRangeStart && updatedDate <= dateRangeEnd) {
+                pickupDate = updatedDate;
+              }
             }
           }
-        }
-        
-        // Tạo event nếu tìm thấy ngày lấy hàng trong khoảng
-        if (pickupDate) {
-          const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
-          events.push({
-            revenue: pickupRevenue,
-            date: pickupDate,
-            description: 'Thu tiền khi lấy hàng',
-            revenueType: 'RENT_PICKUP'
-          });
+          
+          // Tạo event nếu tìm thấy ngày lấy hàng trong khoảng
+          if (pickupDate) {
+            const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+            events.push({
+              revenue: pickupRevenue,
+              date: pickupDate,
+              description: 'Thu tiền khi lấy hàng',
+              revenueType: 'RENT_PICKUP'
+            });
+          }
         }
 
         // 3. ĐƠN TRẢ (RETURNED): Thanh toán cuối cùng khi khách trả hàng
-        // - Nếu thuê và trả trong cùng 1 ngày: doanh thu = totalAmount + damageFee
+        // - Nếu thuê và trả trong cùng 1 ngày: doanh thu = totalAmount + damageFee (KHÔNG tính deposit và pickup)
         // - Nếu khác ngày: doanh thu = securityDeposit - damageFee
         //   * Dương: hoàn tiền cọc (securityDeposit > damageFee)
         //   * Âm: thu thêm phí hư hỏng (damageFee > securityDeposit)
@@ -334,6 +353,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             
             if (startDateKey && startDateKey === returnDateKey) {
               // Thuê và trả trong cùng 1 ngày: doanh thu = totalAmount + damageFee
+              // KHÔNG tính deposit và pickup riêng (đã bỏ qua ở trên)
               returnRevenue = (order.totalAmount || 0) + (order.damageFee || 0);
               description = 'Thuê và trả trong cùng ngày';
             } else {
@@ -414,6 +434,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         outletName?: string;
         totalAmount: number;
         depositAmount: number;
+        securityDeposit: number; // Tiền cọc an toàn
+        damageFee: number; // Phí hư hỏng
       }>;
     }>();
 
@@ -506,7 +528,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             customerPhone: order.customer?.phone || undefined,
             outletName: order.outlet?.name,
             totalAmount: order.totalAmount || 0,
-            depositAmount: order.depositAmount || 0
+            depositAmount: order.depositAmount || 0,
+            securityDeposit: order.securityDeposit || 0,
+            damageFee: order.damageFee || 0
           });
 
           // Lưu vào map để theo dõi
