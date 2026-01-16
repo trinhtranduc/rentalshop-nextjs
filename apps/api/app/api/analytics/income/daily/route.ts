@@ -6,18 +6,29 @@ import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey } fr
 import { API } from '@rentalshop/constants';
 
 /**
- * GET /api/analytics/income/daily - Get daily income with order breakdown
- * Returns income grouped by day with detailed order information
+ * GET /api/analytics/income/daily - Lấy doanh thu theo ngày với chi tiết đơn hàng
  * 
- * For each day, shows:
- * - Total revenue for that day
- * - List of orders with their individual revenue contributions
- * - Number of new orders created that day
+ * TRẢ VỀ:
+ * - Doanh thu tổng theo từng ngày
+ * - Danh sách đơn hàng với doanh thu từng đơn
+ * - Số đơn mới được tạo trong ngày
  * 
- * Authorization: Roles with 'analytics.view.revenue' or 'analytics.view.revenue.daily' permission can access
- * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics (analytics.view.revenue)
- * - OUTLET_STAFF: Can view daily income analytics only (analytics.view.revenue.daily)
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * QUY TẮC TÍNH DOANH THU:
+ * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
+ * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount - depositAmount + securityDeposit
+ * 3. Đơn trả (RETURNED - khi khách trả hàng): securityDeposit - damageFee
+ *    - Dương: thu thêm phí hư hỏng (damageFee > securityDeposit)
+ *    - Âm: hoàn tiền cọc (securityDeposit > damageFee)
+ * 4. Đơn hủy (CANCELLED): revenue = 0 (hoàn lại toàn bộ đã thu)
+ * 
+ * ĐIỀU KIỆN LỌC:
+ * - Chỉ lấy đơn có thay đổi trạng thái trong khoảng thời gian (create, pickup, return, cancel)
+ * - Mỗi sự kiện thay đổi trạng thái tạo một revenue event riêng
+ * 
+ * PHÂN QUYỀN:
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Xem toàn bộ analytics (analytics.view.revenue)
+ * - OUTLET_STAFF: Chỉ xem doanh thu theo ngày (analytics.view.revenue.daily)
+ * - Nguồn phân quyền: ROLE_PERMISSIONS trong packages/auth/src/core.ts
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
@@ -56,18 +67,25 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       );
     }
 
-    // Build outlet filter based on user scope
-    // Include orders that have ANY activity (create, status change, update) in the date range
+    // ============================================================================
+    // XÂY DỰNG ĐIỀU KIỆN QUERY: Lấy các đơn có thay đổi trạng thái trong khoảng thời gian
+    // ============================================================================
+    // Đảm bảo chỉ lấy đơn phát sinh trong ngày (có thay đổi trạng thái):
+    // - CREATE: Đơn được tạo (createdAt trong khoảng)
+    // - PICKUPED: Đơn được lấy (pickedUpAt trong khoảng)
+    // - RETURNED: Đơn được trả (returnedAt trong khoảng)
+    // - CANCELLED: Đơn bị hủy (status = CANCELLED và updatedAt trong khoảng)
+    // - COMPLETED: Đơn bán hoàn thành (SALE orders, status = COMPLETED và updatedAt trong khoảng)
     const whereClause: any = {
       OR: [
-        // Orders created in the range (MOST IMPORTANT - ensures orders appear even after updates)
+        // Đơn được tạo trong khoảng thời gian
         {
           createdAt: {
             gte: start,
             lte: end
           }
         },
-        // Orders picked up in the range (status change to PICKUPED)
+        // Đơn được lấy trong khoảng thời gian
         {
           pickedUpAt: {
             gte: start,
@@ -75,7 +93,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             not: null
           }
         },
-        // Orders returned in the range (status change to RETURNED)
+        // Đơn được trả trong khoảng thời gian
         {
           returnedAt: {
             gte: start,
@@ -83,54 +101,34 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             not: null
           }
         },
-        // Orders cancelled in the range (status change to CANCELLED)
-        // Use updatedAt when status is CANCELLED and cancelled happened in the range
+        // Đơn bị hủy trong khoảng thời gian
         {
           AND: [
-            {
-              status: ORDER_STATUS.CANCELLED
-            },
-            {
-              updatedAt: {
-                gte: start,
-                lte: end
-              }
-            },
-            // Exclude soft-deleted orders
-            {
-              deletedAt: null
-            }
+            { status: ORDER_STATUS.CANCELLED },
+            { updatedAt: { gte: start, lte: end } },
+            { deletedAt: null } // Loại bỏ đơn đã xóa mềm
           ]
         },
-        // Orders completed in the range (SALE orders - status change to COMPLETED)
+        // Đơn bán hoàn thành trong khoảng thời gian
         {
           AND: [
-            {
-              orderType: ORDER_TYPE.SALE
-            },
-            {
-              status: ORDER_STATUS.COMPLETED
-            },
-            {
-              updatedAt: {
-                gte: start,
-                lte: end
-              }
-            },
-            {
-              deletedAt: null
-            }
+            { orderType: ORDER_TYPE.SALE },
+            { status: ORDER_STATUS.COMPLETED },
+            { updatedAt: { gte: start, lte: end } },
+            { deletedAt: null }
           ]
         }
       ]
     };
 
-    // Apply outlet filtering based on user role
+    // ============================================================================
+    // ÁP DỤNG LỌC THEO PHẠM VI NGƯỜI DÙNG
+    // ============================================================================
     if (userScope.outletId) {
-      // id in Prisma is the integer publicId
+      // Nhân viên cửa hàng: chỉ xem đơn của cửa hàng mình
       whereClause.outletId = userScope.outletId;
     } else if (userScope.merchantId) {
-      // Find merchant's outlets
+      // Chủ cửa hàng: xem đơn của tất cả cửa hàng trong merchant
       const merchant = await prisma.merchant.findUnique({
         where: { id: userScope.merchantId },
         select: {
@@ -143,9 +141,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         whereClause.outletId = { in: merchant.outlets.map((o: { id: number }) => o.id) };
       }
     }
-    // ADMIN users have no outlet filter (see all data)
+    // ADMIN: không có filter (xem tất cả dữ liệu)
 
-    // Fetch all orders that might contribute to revenue in the date range
+    // ============================================================================
+    // LẤY TẤT CẢ ĐƠN HÀNG CÓ THAY ĐỔI TRẠNG THÁI TRONG KHOẢNG THỜI GIAN
+    // ============================================================================
     const allOrders = await prisma.order.findMany({
       where: whereClause,
       select: {
@@ -182,17 +182,20 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     });
 
     /**
-     * Generate revenue events based on TIMESTAMPS in the date range
-     * Each event represents revenue collected/refunded on a specific day
+     * Tính toán doanh thu theo từng sự kiện thay đổi trạng thái đơn hàng
      * 
-     * Logic matches order detail page:
-     * - RESERVED: depositAmount (collected when order created)
-     * - PICKUPED: totalAmount - depositAmount + securityDeposit (collected when picked up)
-     * - RETURNED: damageFee - securityDeposit (positive = collect more, negative = refund)
-     * - CANCELLED: negative revenue (refund based on what was collected)
+     * QUY TẮC TÍNH DOANH THU:
+     * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
+     * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount - depositAmount + securityDeposit
+     * 3. Đơn trả (RETURNED - khi khách trả hàng): securityDeposit - damageFee
+     *    - Nếu securityDeposit > damageFee: hoàn tiền (âm)
+     *    - Nếu securityDeposit < damageFee: thu thêm phí hư hỏng (dương)
+     * 4. Đơn hủy (CANCELLED): revenue = 0 (hoàn lại toàn bộ đã thu)
      * 
-     * IMPORTANT: Track events by timestamp, not current status
-     * This ensures orders appear on the correct day they were created/updated
+     * LƯU Ý:
+     * - Chỉ tính doanh thu khi có thay đổi trạng thái trong khoảng thời gian truy vấn
+     * - Mỗi sự kiện (create, pickup, return, cancel) tạo một revenue event riêng
+     * - Đơn hủy sẽ tạo event âm để offset lại doanh thu đã thu trước đó
      */
     const getOrderRevenueEvents = (order: any, dateRangeStart: Date, dateRangeEnd: Date): Array<{
       revenue: number;
@@ -202,13 +205,15 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     }> => {
       const events: Array<{ revenue: number; date: Date; description: string; revenueType: string }> = [];
 
+      // ============================================================================
+      // XỬ LÝ ĐƠN BÁN (SALE)
+      // ============================================================================
       if (order.orderType === ORDER_TYPE.SALE) {
-        // SALE orders: revenue is totalAmount on createdAt date IF created in range
-        // IMPORTANT: Order will appear in results if createdAt is in range
+        // 1. Đơn bán được tạo: doanh thu = totalAmount
         if (order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
-            // Only count if order was created in the range AND not cancelled at creation
+            // Bỏ qua nếu đơn bị hủy ngay khi tạo (không có doanh thu)
             const wasCancelledAtCreation = order.status === ORDER_STATUS.CANCELLED && 
               (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
             
@@ -216,128 +221,143 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
               events.push({
                 revenue: order.totalAmount || 0,
                 date: createdDate,
-                description: 'Sale order created',
+                description: 'Đơn bán được tạo',
                 revenueType: 'SALE'
               });
             }
           }
         }
 
-        // SALE order cancellation: create negative event to offset revenue (ensure total revenue = 0)
-        // IMPORTANT: Order will appear in results if cancelled in range,
-        // even if createdAt is before the range
+        // 2. Đơn bán bị hủy: hoàn lại toàn bộ (revenue = 0)
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
             const createdDate = order.createdAt ? new Date(order.createdAt) : null;
+            // Chỉ hoàn lại nếu đơn đã được tạo trước khi hủy
             if (createdDate && createdDate < cancelledDate) {
-              // Order was created before being cancelled, create negative event to offset
               events.push({
                 revenue: -(order.totalAmount || 0),
                 date: cancelledDate,
-                description: 'Sale order cancelled (revenue offset to 0)',
+                description: 'Đơn bán bị hủy (hoàn lại)',
                 revenueType: 'SALE_CANCELLED'
               });
             }
           }
         }
-      } else {
-        // RENT orders: track events by timestamp
-        
-        // 1. RESERVED: Deposit collected when order is CREATED (createdAt within range)
-        // IMPORTANT: Order will appear in results if createdAt is in range
+      } 
+      // ============================================================================
+      // XỬ LÝ ĐƠN THUÊ (RENT)
+      // ============================================================================
+      else {
+        // 1. ĐƠN CỌC (RESERVED): Thu tiền cọc khi tạo đơn
+        // Doanh thu = depositAmount
         if (order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
-            // Check if order was cancelled at creation time
+            // Bỏ qua nếu đơn bị hủy ngay khi tạo
             const wasCancelledAtCreation = order.status === ORDER_STATUS.CANCELLED && 
               (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
             
             if (!wasCancelledAtCreation) {
-              // Order created (RESERVED status): revenue is depositAmount (tiền cọc)
-              // If depositAmount = 0, revenue = 0 (chưa thu tiền cọc)
-              // If depositAmount > 0, revenue = depositAmount (đã thu tiền cọc)
-              // Always create event to ensure order appears
               events.push({
                 revenue: order.depositAmount || 0,
                 date: createdDate,
-                description: 'Rental deposit collected',
+                description: 'Thu tiền cọc',
                 revenueType: 'RENT_DEPOSIT'
               });
             }
           }
         }
 
-        // 2. PICKUPED: Additional payment when order is PICKED UP (pickedUpAt within range)
-        // Revenue = totalAmount - depositAmount + securityDeposit
-        // IMPORTANT: Order will appear in results if pickedUpAt is in range,
-        // even if createdAt is before the range (order was created earlier)
+        // 2. ĐƠN LẤY (PICKUPED): Thu tiền khi khách lấy hàng
+        // Doanh thu = totalAmount - depositAmount + securityDeposit
+        // Tìm ngày lấy hàng: ưu tiên pickedUpAt, nếu không có thì dùng createdAt hoặc updatedAt
+        let pickupDate: Date | null = null;
+        
         if (order.pickedUpAt) {
-          const pickupDate = new Date(order.pickedUpAt);
-          if (pickupDate >= dateRangeStart && pickupDate <= dateRangeEnd) {
-            // Calculate pickup revenue: total - deposit + security deposit
-            const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
-            // Always create event, even if revenue = 0, to ensure order appears
-            events.push({
-              revenue: pickupRevenue,
-              date: pickupDate,
-              description: 'Rental pickup payment',
-              revenueType: 'RENT_PICKUP'
-            });
+          const pickedUpDate = new Date(order.pickedUpAt);
+          if (pickedUpDate >= dateRangeStart && pickedUpDate <= dateRangeEnd) {
+            pickupDate = pickedUpDate;
           }
         }
+        
+        // Nếu không có pickedUpAt trong khoảng, kiểm tra createdAt hoặc updatedAt
+        if (!pickupDate && order.status === ORDER_STATUS.PICKUPED) {
+          if (order.createdAt) {
+            const createdDate = new Date(order.createdAt);
+            if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
+              pickupDate = createdDate;
+            }
+          }
+          if (!pickupDate && order.updatedAt) {
+            const updatedDate = new Date(order.updatedAt);
+            if (updatedDate >= dateRangeStart && updatedDate <= dateRangeEnd) {
+              pickupDate = updatedDate;
+            }
+          }
+        }
+        
+        // Tạo event nếu tìm thấy ngày lấy hàng trong khoảng
+        if (pickupDate) {
+          const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+          events.push({
+            revenue: pickupRevenue,
+            date: pickupDate,
+            description: 'Thu tiền khi lấy hàng',
+            revenueType: 'RENT_PICKUP'
+          });
+        }
 
-        // 3. RETURNED: Final settlement when order is RETURNED (returnedAt within range)
-        // Revenue = damageFee - securityDeposit (positive = collect more, negative = refund)
-        // IMPORTANT: Order will appear in results if returnedAt is in range,
-        // even if createdAt/pickedUpAt is before the range (order was created/picked up earlier)
+        // 3. ĐƠN TRẢ (RETURNED): Thanh toán cuối cùng khi khách trả hàng
+        // Doanh thu = securityDeposit - damageFee
+        // - Dương: thu thêm phí hư hỏng (damageFee > securityDeposit)
+        // - Âm: hoàn tiền cọc (securityDeposit > damageFee)
         if (order.returnedAt) {
           const returnDate = new Date(order.returnedAt);
           if (returnDate >= dateRangeStart && returnDate <= dateRangeEnd) {
-            // Calculate return revenue: damageFee - securityDeposit
-            const returnRevenue = (order.damageFee || 0) - (order.securityDeposit || 0);
-            // Always create event, even if revenue = 0, to ensure order appears
+            const returnRevenue = (order.securityDeposit || 0) - (order.damageFee || 0);
             events.push({
               revenue: returnRevenue,
               date: returnDate,
               description: returnRevenue > 0 
-                ? 'Rental return (damage fee)' 
+                ? 'Hoàn tiền cọc' 
                 : returnRevenue < 0 
-                  ? 'Rental return (security deposit refund)' 
-                  : 'Rental return (no additional fee)',
+                  ? 'Thu phí hư hỏng' 
+                  : 'Không có phát sinh',
               revenueType: 'RENT_RETURN'
             });
           }
         }
 
-        // 4. CANCELLED: Create negative events to offset revenue (ensure total revenue = 0)
-        // IMPORTANT: Order will appear in results if cancelled in range,
-        // even if createdAt/pickedUpAt is before the range
+        // 4. ĐƠN HỦY (CANCELLED): Hoàn lại toàn bộ đã thu (revenue = 0)
+        // Tính tổng đã thu trước khi hủy và tạo event âm để offset
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
             const createdDate = order.createdAt ? new Date(order.createdAt) : null;
             const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
             
-            // Calculate total revenue collected before cancellation to offset
+            // Tính tổng đã thu trước khi hủy
             let totalCollected = 0;
             
             if (pickupDate && pickupDate < cancelledDate) {
-              // Order was picked up: collected deposit + pickup payment
+              // Đã lấy hàng: đã thu cọc + tiền lấy hàng
               totalCollected = (order.depositAmount || 0) + 
                               ((order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0));
             } else if (createdDate && createdDate < cancelledDate) {
-              // Order was only reserved: collected deposit only
+              // Chỉ đặt cọc: chỉ thu tiền cọc
               totalCollected = order.depositAmount || 0;
             }
             
-            // Always create event to ensure order appears, even if totalCollected = 0
-            events.push({
-              revenue: -totalCollected,
-              date: cancelledDate,
-              description: 'Rental order cancelled (revenue offset to 0)',
-              revenueType: 'RENT_CANCELLED'
-            });
+            // Tạo event âm để hoàn lại
+            if (totalCollected > 0) {
+              events.push({
+                revenue: -totalCollected,
+                date: cancelledDate,
+                description: 'Đơn hủy (hoàn lại)',
+                revenueType: 'RENT_CANCELLED'
+              });
+            }
           }
         }
       }
@@ -345,22 +365,24 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       return events;
     };
 
-    // Group orders by day and calculate revenue
+    // ============================================================================
+    // NHÓM ĐƠN HÀNG THEO NGÀY VÀ TÍNH DOANH THU
+    // ============================================================================
     const dailyDataMap = new Map<string, {
-      date: string; // ISO string for date (YYYY-MM-DD) - frontend can format with locale
-      dateISO: string; // Full ISO string at midnight UTC for the day
+      date: string; // YYYY/MM/DD format (standardized)
+      dateISO: string; // Full ISO string at midnight UTC (for frontend formatting)
       dateObj: Date;
-      totalRevenue: number;
-      newOrderCount: number;
+      totalRevenue: number; // Tổng doanh thu trong ngày
+      newOrderCount: number; // Số đơn mới được tạo trong ngày
       orders: Array<{
         id: number;
         orderNumber: string;
         orderType: string;
         status: string;
-        revenue: number;
-        revenueType: string;
-        description: string;
-        revenueDate: string; // ISO string with full timestamp
+        revenue: number; // Doanh thu của sự kiện này
+        revenueType: string; // Loại doanh thu (RENT_DEPOSIT, RENT_PICKUP, etc.)
+        description: string; // Mô tả sự kiện
+        revenueDate: string; // ISO string với timestamp đầy đủ
         customerName?: string;
         customerPhone?: string;
         outletName?: string;
@@ -369,32 +391,32 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }>;
     }>();
 
-    // Track which orders have been counted as "new orders" to avoid double counting
+    // Theo dõi đơn đã được đếm để tránh đếm trùng
     const newOrdersCounted = new Set<string>();
 
-    // Process each order
+    // Xử lý từng đơn hàng
     for (const order of allOrders) {
-      // Get all revenue events for this order based on actual timestamps in the range
+      // Lấy tất cả revenue events của đơn này dựa trên timestamp trong khoảng
       const revenueEvents = getOrderRevenueEvents(order, start, end);
 
-      // Process each revenue event
+      // Xử lý từng revenue event
       for (const event of revenueEvents) {
-        // Only include if revenue date is within the range
+        // Chỉ bao gồm nếu ngày revenue trong khoảng
         if (event.date < start || event.date > end) {
           continue;
         }
 
-        // Format date as YYYY/MM/DD for grouping (use utility)
+        // Format ngày thành YYYY/MM/DD để nhóm
         const dateKey = getUTCDateKey(event.date);
-        // Normalize date to midnight UTC ISO string (use utility)
+        // Chuẩn hóa ngày về midnight UTC
         const dateISO = normalizeDateToISO(event.date);
         const dateObj = new Date(dateISO);
 
-        // Get or create daily entry
+        // Tạo hoặc lấy entry theo ngày
         if (!dailyDataMap.has(dateKey)) {
           dailyDataMap.set(dateKey, {
-            date: dateKey, // YYYY/MM/DD format (standardized)
-            dateISO: dateISO, // Full ISO string for frontend formatting (from utility)
+            date: dateKey,
+            dateISO: dateISO,
             dateObj,
             totalRevenue: 0,
             newOrderCount: 0,
@@ -404,16 +426,16 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
         const dailyData = dailyDataMap.get(dateKey)!;
 
-        // Add order revenue
+        // Cộng doanh thu vào tổng ngày
         dailyData.totalRevenue += event.revenue;
 
-        // Add order to list
+        // Thêm đơn vào danh sách
         const customerName = order.customer 
           ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()
           : undefined;
         
         dailyData.orders.push({
-          id: order.id, // id is already the integer publicId
+          id: order.id,
           orderNumber: order.orderNumber,
           orderType: order.orderType,
           status: order.status,
@@ -429,38 +451,31 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         });
       }
 
-      // Count new orders (created on any day in the range)
-      // Count ALL orders created in the range, regardless of current status
-      // because an order created today should be counted even if later picked up/returned/cancelled
+      // ============================================================================
+      // ĐẾM ĐƠN MỚI: Đếm số đơn được tạo trong ngày
+      // ============================================================================
+      // Đếm tất cả đơn được tạo trong khoảng thời gian, bất kể trạng thái hiện tại
+      // (vì đơn tạo hôm nay vẫn được tính dù sau đó bị lấy/trả/hủy)
       if (order.createdAt) {
         const createdDate = new Date(order.createdAt);
         if (createdDate >= start && createdDate <= end) {
-          const dateKey = getUTCDateKey(createdDate); // Use utility for YYYY/MM/DD format
+          const dateKey = getUTCDateKey(createdDate);
           const orderKey = `${order.orderNumber}-${dateKey}`;
           
-          // Only count once per order per day
+          // Chỉ đếm một lần mỗi đơn mỗi ngày
           if (!newOrdersCounted.has(orderKey)) {
             if (dailyDataMap.has(dateKey)) {
               const dailyData = dailyDataMap.get(dateKey)!;
-              // Count ALL orders created in the range (SALE or RENT)
-              // Don't check status because order might have been updated later
-              if (order.orderType === ORDER_TYPE.SALE) {
-                // SALE orders count as new if created (and not cancelled at creation)
-                if (order.status !== ORDER_STATUS.CANCELLED || 
-                    (order.updatedAt && new Date(order.updatedAt) > createdDate)) {
-                  // Not cancelled at creation, or cancelled later
-                  dailyData.newOrderCount += 1;
-                  newOrdersCounted.add(orderKey);
-                }
-              } else {
-                // RENT orders count as new if created (deposit collected or not)
-                // Only exclude if cancelled immediately at creation
-                if (order.status !== ORDER_STATUS.CANCELLED || 
-                    (order.updatedAt && new Date(order.updatedAt) > createdDate)) {
-                  // Not cancelled at creation, or cancelled later
-                  dailyData.newOrderCount += 1;
-                  newOrdersCounted.add(orderKey);
-                }
+              
+              // Kiểm tra xem đơn có bị hủy ngay khi tạo không
+              const wasCancelledAtCreation = order.status === ORDER_STATUS.CANCELLED && 
+                (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
+              
+              // Chỉ đếm nếu đơn không bị hủy ngay khi tạo
+              // (đơn bị hủy sau đó vẫn được tính là đơn mới)
+              if (!wasCancelledAtCreation) {
+                dailyData.newOrderCount += 1;
+                newOrdersCounted.add(orderKey);
               }
             }
           }
@@ -468,12 +483,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
 
-    // Convert map to array and sort by date
+    // ============================================================================
+    // CHUYỂN ĐỔI MAP THÀNH ARRAY VÀ SẮP XẾP THEO NGÀY
+    // ============================================================================
     const dailyDataArray = Array.from(dailyDataMap.values())
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
       .map(({ dateObj, ...rest }) => ({
         ...rest,
-        // Ensure date and dateISO are both included for frontend flexibility
         // date: YYYY/MM/DD format (standardized)
         // dateISO: Full ISO string at midnight UTC (for locale formatting)
       }));

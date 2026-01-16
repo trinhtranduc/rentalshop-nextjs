@@ -25,7 +25,7 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           events.push({
             revenue: order.totalAmount || 0,
             date: createdDate,
-            description: 'Sale order created',
+            description: 'Đơn bán được tạo',
             revenueType: 'SALE'
           });
         }
@@ -41,7 +41,7 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           events.push({
             revenue: -(order.totalAmount || 0),
             date: cancelledDate,
-            description: 'Sale order cancelled (revenue offset to 0)',
+            description: 'Đơn bán bị hủy (hoàn lại)',
             revenueType: 'SALE_CANCELLED'
           });
         }
@@ -58,46 +58,71 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
         
         if (!wasCancelledAtCreation) {
-          // Order created (RESERVED status): revenue is depositAmount (tiền cọc)
-          // If depositAmount = 0, revenue = 0 (chưa thu tiền cọc)
-          // If depositAmount > 0, revenue = depositAmount (đã thu tiền cọc)
           events.push({
             revenue: order.depositAmount || 0,
             date: createdDate,
-            description: 'Rental deposit collected',
+            description: 'Thu tiền cọc',
             revenueType: 'RENT_DEPOSIT'
           });
         }
       }
     }
 
-    // 2. PICKUPED: Additional payment when order is PICKED UP (pickedUpAt within range)
+    // 2. PICKUPED: Additional payment when order is PICKED UP
+    // Doanh thu = totalAmount - depositAmount + securityDeposit
+    // Tìm ngày lấy hàng: ưu tiên pickedUpAt, nếu không có thì dùng createdAt hoặc updatedAt
+    let pickupDate = null;
+    
     if (order.pickedUpAt) {
-      const pickupDate = new Date(order.pickedUpAt);
-      if (pickupDate >= dateRangeStart && pickupDate <= dateRangeEnd) {
-        const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
-        events.push({
-          revenue: pickupRevenue,
-          date: pickupDate,
-          description: 'Rental pickup payment',
-          revenueType: 'RENT_PICKUP'
-        });
+      const pickedUpDate = new Date(order.pickedUpAt);
+      if (pickedUpDate >= dateRangeStart && pickedUpDate <= dateRangeEnd) {
+        pickupDate = pickedUpDate;
       }
+    }
+    
+    // Nếu không có pickedUpAt trong khoảng, kiểm tra createdAt hoặc updatedAt
+    if (!pickupDate && order.status === ORDER_STATUS.PICKUPED) {
+      if (order.createdAt) {
+        const createdDate = new Date(order.createdAt);
+        if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
+          pickupDate = createdDate;
+        }
+      }
+      if (!pickupDate && order.updatedAt) {
+        const updatedDate = new Date(order.updatedAt);
+        if (updatedDate >= dateRangeStart && updatedDate <= dateRangeEnd) {
+          pickupDate = updatedDate;
+        }
+      }
+    }
+    
+    // Tạo event nếu tìm thấy ngày lấy hàng trong khoảng
+    if (pickupDate) {
+      const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+      events.push({
+        revenue: pickupRevenue,
+        date: pickupDate,
+        description: 'Thu tiền khi lấy hàng',
+        revenueType: 'RENT_PICKUP'
+      });
     }
 
     // 3. RETURNED: Final settlement when order is RETURNED (returnedAt within range)
+    // Doanh thu = securityDeposit - damageFee
+    // - Dương: thu thêm phí hư hỏng (damageFee > securityDeposit)
+    // - Âm: hoàn tiền cọc (securityDeposit > damageFee)
     if (order.returnedAt) {
       const returnDate = new Date(order.returnedAt);
       if (returnDate >= dateRangeStart && returnDate <= dateRangeEnd) {
-        const returnRevenue = (order.damageFee || 0) - (order.securityDeposit || 0);
+        const returnRevenue = (order.securityDeposit || 0) - (order.damageFee || 0);
         events.push({
           revenue: returnRevenue,
           date: returnDate,
           description: returnRevenue > 0 
-            ? 'Rental return (damage fee)' 
+            ? 'Hoàn tiền cọc' 
             : returnRevenue < 0 
-              ? 'Rental return (security deposit refund)' 
-              : 'Rental return (no additional fee)',
+              ? 'Thu phí hư hỏng' 
+              : 'Không có phát sinh',
           revenueType: 'RENT_RETURN'
         });
       }
@@ -122,13 +147,15 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           totalCollected = order.depositAmount || 0;
         }
         
-        // Always create event to ensure order appears, even if totalCollected = 0
-        events.push({
-          revenue: -totalCollected,
-          date: cancelledDate,
-          description: 'Rental order cancelled (revenue offset to 0)',
-          revenueType: 'RENT_CANCELLED'
-        });
+        // Tạo event âm để hoàn lại
+        if (totalCollected > 0) {
+          events.push({
+            revenue: -totalCollected,
+            date: cancelledDate,
+            description: 'Đơn hủy (hoàn lại)',
+            revenueType: 'RENT_CANCELLED'
+          });
+        }
       }
     }
   }
@@ -200,7 +227,7 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
     it('should create return event when order is returned (RETURNED)', () => {
       // Scenario: Order returned on 2026-01-18
       // securityDeposit: 300k, damageFee: 400k
-      // Expected: Revenue = 400 - 300 = 100k (positive = collect more) on 2026-01-18
+      // Expected: Revenue = 300 - 400 = -100k (negative = thu thêm phí hư hỏng) on 2026-01-18
       
       const startDate = new Date('2026-01-18T00:00:00Z');
       const endDate = new Date('2026-01-18T23:59:59Z');
@@ -221,16 +248,16 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(100000); // 400 - 300 = 100k (collect more)
+      expect(events[0].revenue).toBe(-100000); // 300 - 400 = -100k (thu thêm phí hư hỏng)
       expect(events[0].revenueType).toBe('RENT_RETURN');
-      expect(events[0].description).toBe('Rental return (damage fee)');
+      expect(events[0].description).toBe('Thu phí hư hỏng');
       expect(events[0].date.toISOString()).toContain('2026-01-18');
     });
 
-    it('should create negative return event when security deposit > damage fee (refund)', () => {
+    it('should create positive return event when security deposit > damage fee (refund)', () => {
       // Scenario: Order returned on 2026-01-18
       // securityDeposit: 300k, damageFee: 100k
-      // Expected: Revenue = 100 - 300 = -200k (negative = refund) on 2026-01-18
+      // Expected: Revenue = 300 - 100 = 200k (positive = hoàn tiền cọc) on 2026-01-18
       
       const startDate = new Date('2026-01-18T00:00:00Z');
       const endDate = new Date('2026-01-18T23:59:59Z');
@@ -251,9 +278,9 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(-200000); // 100 - 300 = -200k (refund)
+      expect(events[0].revenue).toBe(200000); // 300 - 100 = 200k (hoàn tiền cọc)
       expect(events[0].revenueType).toBe('RENT_RETURN');
-      expect(events[0].description).toBe('Rental return (security deposit refund)');
+      expect(events[0].description).toBe('Hoàn tiền cọc');
     });
 
     it('should create multiple events for order lifecycle across different days', () => {
@@ -296,7 +323,7 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       // Event 3: Return on 18/01
       const returnEvent = events.find(e => e.revenueType === 'RENT_RETURN');
       expect(returnEvent).toBeDefined();
-      expect(returnEvent.revenue).toBe(100000); // 400 - 300
+      expect(returnEvent.revenue).toBe(-100000); // 300 - 400 = -100k (thu thêm phí hư hỏng)
       expect(returnEvent.date.toISOString()).toContain('2026-01-18');
     });
   });
@@ -327,7 +354,7 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       expect(events).toHaveLength(1);
       expect(events[0].revenue).toBe(0); // depositAmount = 0, revenue = 0
       expect(events[0].revenueType).toBe('RENT_DEPOSIT');
-      expect(events[0].description).toBe('Rental deposit collected');
+      expect(events[0].description).toBe('Thu tiền cọc');
     });
 
     it('should show order after status update (RESERVED -> PICKUPED)', () => {
@@ -422,8 +449,9 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(-200000); // Offset deposit to ensure total revenue = 0
+      expect(events[0].revenue).toBe(-200000); // Hoàn lại tiền cọc
       expect(events[0].revenueType).toBe('RENT_CANCELLED');
+      expect(events[0].description).toBe('Đơn hủy (hoàn lại)');
     });
 
     it('should offset everything when PICKUPED order is cancelled', () => {
@@ -446,10 +474,11 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      // Total collected: deposit (200k) + pickup payment (800-200+300 = 900k) = 1100k
-      // Offset: -1100k to ensure total revenue = 0
+      // Tổng đã thu: cọc (200k) + tiền lấy hàng (800-200+300 = 900k) = 1100k
+      // Hoàn lại: -1100k
       expect(events[0].revenue).toBe(-1100000);
       expect(events[0].revenueType).toBe('RENT_CANCELLED');
+      expect(events[0].description).toBe('Đơn hủy (hoàn lại)');
     });
   });
 
