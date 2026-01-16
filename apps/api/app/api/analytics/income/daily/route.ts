@@ -16,9 +16,11 @@ import { API } from '@rentalshop/constants';
  * QUY TẮC TÍNH DOANH THU:
  * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
  * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount - depositAmount + securityDeposit
- * 3. Đơn trả (RETURNED - khi khách trả hàng): securityDeposit - damageFee
- *    - Dương: thu thêm phí hư hỏng (damageFee > securityDeposit)
- *    - Âm: hoàn tiền cọc (securityDeposit > damageFee)
+ * 3. Đơn trả (RETURNED - khi khách trả hàng):
+ *    - Nếu thuê và trả trong cùng 1 ngày: totalAmount + damageFee
+ *    - Nếu khác ngày: securityDeposit - damageFee
+ *      * Dương: hoàn tiền cọc (securityDeposit > damageFee)
+ *      * Âm: thu thêm phí hư hỏng (damageFee > securityDeposit)
  * 4. Đơn hủy (CANCELLED): revenue = 0 (hoàn lại toàn bộ đã thu)
  * 
  * ĐIỀU KIỆN LỌC:
@@ -187,9 +189,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
      * QUY TẮC TÍNH DOANH THU:
      * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
      * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount - depositAmount + securityDeposit
-     * 3. Đơn trả (RETURNED - khi khách trả hàng): securityDeposit - damageFee
-     *    - Nếu securityDeposit > damageFee: hoàn tiền (âm)
-     *    - Nếu securityDeposit < damageFee: thu thêm phí hư hỏng (dương)
+     * 3. Đơn trả (RETURNED - khi khách trả hàng):
+     *    - Nếu thuê và trả trong cùng 1 ngày: totalAmount + damageFee
+     *    - Nếu khác ngày: securityDeposit - damageFee
+     *      * Dương: hoàn tiền cọc (securityDeposit > damageFee)
+     *      * Âm: thu thêm phí hư hỏng (damageFee > securityDeposit)
      * 4. Đơn hủy (CANCELLED): revenue = 0 (hoàn lại toàn bộ đã thu)
      * 
      * LƯU Ý:
@@ -309,21 +313,43 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         }
 
         // 3. ĐƠN TRẢ (RETURNED): Thanh toán cuối cùng khi khách trả hàng
-        // Doanh thu = securityDeposit - damageFee
-        // - Dương: thu thêm phí hư hỏng (damageFee > securityDeposit)
-        // - Âm: hoàn tiền cọc (securityDeposit > damageFee)
+        // - Nếu thuê và trả trong cùng 1 ngày: doanh thu = totalAmount + damageFee
+        // - Nếu khác ngày: doanh thu = securityDeposit - damageFee
+        //   * Dương: hoàn tiền cọc (securityDeposit > damageFee)
+        //   * Âm: thu thêm phí hư hỏng (damageFee > securityDeposit)
         if (order.returnedAt) {
           const returnDate = new Date(order.returnedAt);
           if (returnDate >= dateRangeStart && returnDate <= dateRangeEnd) {
-            const returnRevenue = (order.securityDeposit || 0) - (order.damageFee || 0);
-            events.push({
-              revenue: returnRevenue,
-              date: returnDate,
-              description: returnRevenue > 0 
+            // Kiểm tra xem đơn được tạo/lấy và trả có trong cùng ngày không
+            const returnDateKey = getUTCDateKey(returnDate);
+            const createdDate = order.createdAt ? new Date(order.createdAt) : null;
+            const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+            
+            // Sử dụng ngày lấy hàng nếu có, nếu không thì dùng ngày tạo
+            const startDate = pickupDate || createdDate;
+            const startDateKey = startDate ? getUTCDateKey(startDate) : null;
+            
+            let returnRevenue: number;
+            let description: string;
+            
+            if (startDateKey && startDateKey === returnDateKey) {
+              // Thuê và trả trong cùng 1 ngày: doanh thu = totalAmount + damageFee
+              returnRevenue = (order.totalAmount || 0) + (order.damageFee || 0);
+              description = 'Thuê và trả trong cùng ngày';
+            } else {
+              // Khác ngày: doanh thu = securityDeposit - damageFee
+              returnRevenue = (order.securityDeposit || 0) - (order.damageFee || 0);
+              description = returnRevenue > 0 
                 ? 'Hoàn tiền cọc' 
                 : returnRevenue < 0 
                   ? 'Thu phí hư hỏng' 
-                  : 'Không có phát sinh',
+                  : 'Không có phát sinh';
+            }
+            
+            events.push({
+              revenue: returnRevenue,
+              date: returnDate,
+              description,
               revenueType: 'RENT_RETURN'
             });
           }
