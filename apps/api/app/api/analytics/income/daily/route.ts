@@ -204,6 +204,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
       if (order.orderType === ORDER_TYPE.SALE) {
         // SALE orders: revenue is totalAmount on createdAt date IF created in range
+        // IMPORTANT: Order will appear in results if createdAt is in range
         if (order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
@@ -223,6 +224,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         }
 
         // SALE order cancellation: create negative event to offset revenue (ensure total revenue = 0)
+        // IMPORTANT: Order will appear in results if cancelled in range,
+        // even if createdAt is before the range
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
@@ -242,6 +245,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         // RENT orders: track events by timestamp
         
         // 1. RESERVED: Deposit collected when order is CREATED (createdAt within range)
+        // IMPORTANT: Order will appear in results if createdAt is in range
         if (order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
@@ -253,6 +257,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
               // Order created (RESERVED status): revenue is depositAmount (tiền cọc)
               // If depositAmount = 0, revenue = 0 (chưa thu tiền cọc)
               // If depositAmount > 0, revenue = depositAmount (đã thu tiền cọc)
+              // Always create event to ensure order appears
               events.push({
                 revenue: order.depositAmount || 0,
                 date: createdDate,
@@ -265,6 +270,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
         // 2. PICKUPED: Additional payment when order is PICKED UP (pickedUpAt within range)
         // Revenue = totalAmount - depositAmount + securityDeposit
+        // IMPORTANT: Order will appear in results if pickedUpAt is in range,
+        // even if createdAt is before the range (order was created earlier)
         if (order.pickedUpAt) {
           const pickupDate = new Date(order.pickedUpAt);
           if (pickupDate >= dateRangeStart && pickupDate <= dateRangeEnd) {
@@ -282,6 +289,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
         // 3. RETURNED: Final settlement when order is RETURNED (returnedAt within range)
         // Revenue = damageFee - securityDeposit (positive = collect more, negative = refund)
+        // IMPORTANT: Order will appear in results if returnedAt is in range,
+        // even if createdAt/pickedUpAt is before the range (order was created/picked up earlier)
         if (order.returnedAt) {
           const returnDate = new Date(order.returnedAt);
           if (returnDate >= dateRangeStart && returnDate <= dateRangeEnd) {
@@ -302,6 +311,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         }
 
         // 4. CANCELLED: Create negative events to offset revenue (ensure total revenue = 0)
+        // IMPORTANT: Order will appear in results if cancelled in range,
+        // even if createdAt/pickedUpAt is before the range
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
@@ -320,15 +331,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
               totalCollected = order.depositAmount || 0;
             }
             
-            // Create negative event to offset all collected revenue
-            if (totalCollected !== 0) {
-              events.push({
-                revenue: -totalCollected,
-                date: cancelledDate,
-                description: 'Rental order cancelled (revenue offset to 0)',
-                revenueType: 'RENT_CANCELLED'
-              });
-            }
+            // Always create event to ensure order appears, even if totalCollected = 0
+            events.push({
+              revenue: -totalCollected,
+              date: cancelledDate,
+              description: 'Rental order cancelled (revenue offset to 0)',
+              revenueType: 'RENT_CANCELLED'
+            });
           }
         }
       }

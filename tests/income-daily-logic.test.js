@@ -122,15 +122,13 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           totalCollected = order.depositAmount || 0;
         }
         
-        // Create negative event to offset all collected revenue
-        if (totalCollected !== 0) {
-          events.push({
-            revenue: -totalCollected,
-            date: cancelledDate,
-            description: 'Rental order cancelled (revenue offset to 0)',
-            revenueType: 'RENT_CANCELLED'
-          });
-        }
+        // Always create event to ensure order appears, even if totalCollected = 0
+        events.push({
+          revenue: -totalCollected,
+          date: cancelledDate,
+          description: 'Rental order cancelled (revenue offset to 0)',
+          revenueType: 'RENT_CANCELLED'
+        });
       }
     }
   }
@@ -476,6 +474,35 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(0); // No event if cancelled at creation
+    });
+
+    it('should create pickup event when order picked up in range (even if created before range)', () => {
+      // Scenario: Order created 15/01, picked up 16/01
+      // Query date range: 16/01
+      // Expected: Pickup event on 16/01 (order should appear)
+      
+      const startDate = new Date('2026-01-16T00:00:00Z');
+      const endDate = new Date('2026-01-16T23:59:59Z');
+      
+      const order = {
+        orderType: ORDER_TYPE.RENT,
+        status: ORDER_STATUS.PICKUPED,
+        totalAmount: 800000,
+        depositAmount: 200000,
+        securityDeposit: 300000,
+        damageFee: 0,
+        createdAt: new Date('2026-01-15T10:00:00Z'), // Created before range
+        updatedAt: new Date('2026-01-16T14:00:00Z'),
+        pickedUpAt: new Date('2026-01-16T14:00:00Z'), // Picked up in range
+        returnedAt: null
+      };
+
+      const events = getOrderRevenueEvents(order, startDate, endDate);
+      
+      expect(events).toHaveLength(1); // Should have pickup event
+      expect(events[0].revenueType).toBe('RENT_PICKUP');
+      expect(events[0].revenue).toBe(900000); // (800 - 200) + 300 = 900k
+      expect(events[0].date.toISOString()).toContain('2026-01-16');
     });
 
     it('should only include events within date range', () => {
