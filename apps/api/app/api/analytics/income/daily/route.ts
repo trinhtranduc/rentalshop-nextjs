@@ -222,17 +222,17 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         }
 
-        // SALE order cancellation: negative revenue on updatedAt date
+        // SALE order cancellation: create negative event to offset revenue (ensure total revenue = 0)
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
             const createdDate = order.createdAt ? new Date(order.createdAt) : null;
             if (createdDate && createdDate < cancelledDate) {
-              // Order was created before being cancelled, refund the amount
+              // Order was created before being cancelled, create negative event to offset
               events.push({
                 revenue: -(order.totalAmount || 0),
                 date: cancelledDate,
-                description: 'Sale order cancelled (refund)',
+                description: 'Sale order cancelled (revenue offset to 0)',
                 revenueType: 'SALE_CANCELLED'
               });
             }
@@ -250,8 +250,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
               (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
             
             if (!wasCancelledAtCreation) {
-              // Order created (RESERVED status): collect deposit
-              // Always create event, even if depositAmount = 0, to ensure order appears
+              // Order created (RESERVED status): revenue is depositAmount (tiền cọc)
+              // If depositAmount = 0, revenue = 0 (chưa thu tiền cọc)
+              // If depositAmount > 0, revenue = depositAmount (đã thu tiền cọc)
               events.push({
                 revenue: order.depositAmount || 0,
                 date: createdDate,
@@ -300,29 +301,31 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         }
 
-        // 4. CANCELLED: Refund when order is CANCELLED (updatedAt within range and status is CANCELLED)
+        // 4. CANCELLED: Create negative events to offset revenue (ensure total revenue = 0)
         if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
           const cancelledDate = new Date(order.updatedAt);
           if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
             const createdDate = order.createdAt ? new Date(order.createdAt) : null;
             const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
             
-            // Calculate refund based on what was collected before cancellation
-            let refundAmount = 0;
+            // Calculate total revenue collected before cancellation to offset
+            let totalCollected = 0;
+            
             if (pickupDate && pickupDate < cancelledDate) {
-              // Order was picked up, refund everything collected
-              refundAmount = -((order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0));
+              // Order was picked up: collected deposit + pickup payment
+              totalCollected = (order.depositAmount || 0) + 
+                              ((order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0));
             } else if (createdDate && createdDate < cancelledDate) {
-              // Order was only reserved, refund deposit
-              refundAmount = -(order.depositAmount || 0);
+              // Order was only reserved: collected deposit only
+              totalCollected = order.depositAmount || 0;
             }
             
-            // Only create event if there's a refund
-            if (refundAmount !== 0) {
+            // Create negative event to offset all collected revenue
+            if (totalCollected !== 0) {
               events.push({
-                revenue: refundAmount,
+                revenue: -totalCollected,
                 date: cancelledDate,
-                description: 'Rental order cancelled (refund)',
+                description: 'Rental order cancelled (revenue offset to 0)',
                 revenueType: 'RENT_CANCELLED'
               });
             }

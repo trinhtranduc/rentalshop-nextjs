@@ -32,7 +32,7 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
       }
     }
 
-    // SALE order cancellation: negative revenue on updatedAt date
+    // SALE order cancellation: create negative event to offset revenue (ensure total revenue = 0)
     if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
       const cancelledDate = new Date(order.updatedAt);
       if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
@@ -41,7 +41,7 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           events.push({
             revenue: -(order.totalAmount || 0),
             date: cancelledDate,
-            description: 'Sale order cancelled (refund)',
+            description: 'Sale order cancelled (revenue offset to 0)',
             revenueType: 'SALE_CANCELLED'
           });
         }
@@ -58,6 +58,9 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
           (!order.updatedAt || new Date(order.updatedAt).getTime() === createdDate.getTime());
         
         if (!wasCancelledAtCreation) {
+          // Order created (RESERVED status): revenue is depositAmount (tiền cọc)
+          // If depositAmount = 0, revenue = 0 (chưa thu tiền cọc)
+          // If depositAmount > 0, revenue = depositAmount (đã thu tiền cọc)
           events.push({
             revenue: order.depositAmount || 0,
             date: createdDate,
@@ -100,25 +103,31 @@ const getOrderRevenueEvents = (order, dateRangeStart, dateRangeEnd) => {
       }
     }
 
-    // 4. CANCELLED: Refund when order is CANCELLED (updatedAt within range and status is CANCELLED)
+    // 4. CANCELLED: Create negative events to offset revenue (ensure total revenue = 0)
     if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
       const cancelledDate = new Date(order.updatedAt);
       if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
         const createdDate = order.createdAt ? new Date(order.createdAt) : null;
         const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
         
-        let refundAmount = 0;
+        // Calculate total revenue collected before cancellation to offset
+        let totalCollected = 0;
+        
         if (pickupDate && pickupDate < cancelledDate) {
-          refundAmount = -((order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0));
+          // Order was picked up: collected deposit + pickup payment
+          totalCollected = (order.depositAmount || 0) + 
+                          ((order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0));
         } else if (createdDate && createdDate < cancelledDate) {
-          refundAmount = -(order.depositAmount || 0);
+          // Order was only reserved: collected deposit only
+          totalCollected = order.depositAmount || 0;
         }
         
-        if (refundAmount !== 0) {
+        // Create negative event to offset all collected revenue
+        if (totalCollected !== 0) {
           events.push({
-            revenue: refundAmount,
+            revenue: -totalCollected,
             date: cancelledDate,
-            description: 'Rental order cancelled (refund)',
+            description: 'Rental order cancelled (revenue offset to 0)',
             revenueType: 'RENT_CANCELLED'
           });
         }
@@ -295,9 +304,9 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
   });
 
   describe('Order Updates - Orders should appear after updates', () => {
-    it('should show order even if depositAmount = 0', () => {
+    it('should show order with revenue = 0 if depositAmount = 0', () => {
       // Scenario: Order created with no deposit
-      // Expected: Still create event with revenue = 0
+      // Expected: Revenue = 0 (chưa thu tiền cọc, doanh thu = depositAmount = 0)
       
       const startDate = new Date('2026-01-16T00:00:00Z');
       const endDate = new Date('2026-01-16T23:59:59Z');
@@ -306,7 +315,7 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
         orderType: ORDER_TYPE.RENT,
         status: ORDER_STATUS.RESERVED,
         totalAmount: 800000,
-        depositAmount: 0, // No deposit
+        depositAmount: 0, // No deposit collected
         securityDeposit: 0,
         damageFee: 0,
         createdAt: new Date('2026-01-16T10:00:00Z'),
@@ -318,8 +327,9 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(0);
+      expect(events[0].revenue).toBe(0); // depositAmount = 0, revenue = 0
       expect(events[0].revenueType).toBe('RENT_DEPOSIT');
+      expect(events[0].description).toBe('Rental deposit collected');
     });
 
     it('should show order after status update (RESERVED -> PICKUPED)', () => {
@@ -372,7 +382,7 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       expect(events[0].revenueType).toBe('SALE');
     });
 
-    it('should create negative event when SALE order is cancelled', () => {
+    it('should create negative event when SALE order is cancelled (offset to 0)', () => {
       const startDate = new Date('2026-01-17T00:00:00Z');
       const endDate = new Date('2026-01-17T23:59:59Z');
       
@@ -388,13 +398,13 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(-500000);
+      expect(events[0].revenue).toBe(-500000); // Negative to offset
       expect(events[0].revenueType).toBe('SALE_CANCELLED');
     });
   });
 
   describe('CANCELLED Orders', () => {
-    it('should refund deposit when RESERVED order is cancelled', () => {
+    it('should offset deposit when RESERVED order is cancelled', () => {
       const startDate = new Date('2026-01-17T00:00:00Z');
       const endDate = new Date('2026-01-17T23:59:59Z');
       
@@ -414,11 +424,11 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      expect(events[0].revenue).toBe(-200000); // Refund deposit
+      expect(events[0].revenue).toBe(-200000); // Offset deposit to ensure total revenue = 0
       expect(events[0].revenueType).toBe('RENT_CANCELLED');
     });
 
-    it('should refund everything when PICKUPED order is cancelled', () => {
+    it('should offset everything when PICKUPED order is cancelled', () => {
       const startDate = new Date('2026-01-18T00:00:00Z');
       const endDate = new Date('2026-01-18T23:59:59Z');
       
@@ -438,8 +448,9 @@ describe('Daily Income Analytics Logic - Timestamp Based', () => {
       const events = getOrderRevenueEvents(order, startDate, endDate);
       
       expect(events).toHaveLength(1);
-      // Refund: -(total - deposit + security) = -(800 - 200 + 300) = -900k
-      expect(events[0].revenue).toBe(-900000);
+      // Total collected: deposit (200k) + pickup payment (800-200+300 = 900k) = 1100k
+      // Offset: -1100k to ensure total revenue = 0
+      expect(events[0].revenue).toBe(-1100000);
       expect(events[0].revenueType).toBe('RENT_CANCELLED');
     });
   });
