@@ -1,0 +1,92 @@
+{
+  "title": "Affiliate Link Guide",
+  "subtitle": "Learn how to use your affiliate link to grow your business",
+  "lastUpdated": "Last updated: January 2025",
+  "sections": {
+    "whatIs": {
+      "title": "What is an Affiliate Link?",
+      "content": "An affiliate link (also called a referral link) is a special URL that contains your unique referral code. When someone registers for AnyRent using your affiliate link, they become your referral, and you may receive benefits or rewards."
+    },
+    "howToGet": {
+      "title": "How to Get Your Affiliate Link",
+      "content": "Your affiliate link is automatically generated based on your merchant's tenant key. You can find it in your Settings page under the Business or Outlet section.",
+      "steps": [
+        "Go to Settings page",
+        "Navigate to Business or Outlet tab",
+        "Find the \"Referral Link\" or \"Affiliate Link\" section",
+        "Copy your unique registration link",
+        "Share it with potential users"
+      ]
+    },
+    "howToUse": {
+      "title": "How to Use Your Affiliate Link",
+      "content": "Share your affiliate link with others through various channels:",
+      "methods": [
+        "Share via social media (Facebook, Instagram, Twitter, etc.)",
+        "Send via email or messaging apps (WhatsApp, Telegram, etc.)",
+        "Include in your business website or blog",
+        "Share with friends, family, or business partners",
+        "Add to your business card or promotional materials"
+      ]
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "content": "When someone clicks on your affiliate link:",
+      "steps": [
+        "They are directed to the AnyRent registration page",
+        "Your referral code is automatically included in the registration form",
+        "When they complete registration, the system tracks that they came from your link",
+        "You may receive benefits or rewards based on your referral program"
+      ]
+    },
+    "benefits": {
+      "title": "Benefits of Using Affiliate Links",
+      "content": "Using affiliate links helps you:",
+      "items": [
+        "Track your referrals and marketing efforts",
+        "Build your network of AnyRent users",
+        "Potentially earn rewards or benefits (check your subscription plan)",
+        "Share AnyRent with others who might benefit from it",
+        "Grow your business ecosystem"
+      ]
+    },
+    "bestPractices": {
+      "title": "Best Practices",
+      "content": "To maximize the effectiveness of your affiliate link:",
+      "tips": [
+        "Share your link naturally in conversations about business management",
+        "Explain the benefits of AnyRent when sharing your link",
+        "Only share with people who might actually benefit from using AnyRent",
+        "Keep your affiliate link handy for easy sharing",
+        "Follow AnyRent's terms of service and community guidelines"
+      ]
+    },
+    "importantNotes": {
+      "title": "Important Notes",
+      "content": "Please note:",
+      "notes": [
+        "Your affiliate link is unique to your merchant account",
+        "Do not modify or tamper with the referral code in your link",
+        "Affiliate benefits and rewards may vary based on your subscription plan",
+        "AnyRent reserves the right to verify referrals and may disqualify fraudulent referrals",
+        "Respect privacy and only share your link with people who are interested"
+      ]
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "content": "If you're having issues with your affiliate link:",
+      "solutions": [
+        "Make sure you're copying the complete link, including the referral code",
+        "Verify that your merchant account is active and in good standing",
+        "Check that the link is formatted correctly",
+        "Contact support if the issue persists"
+      ]
+    }
+  },
+  "banner": {
+    "title": "Learn about Affiliate Links",
+    "description": "Discover how to use your affiliate link to grow your business",
+    "button": "View Guide",
+    "dismiss": "Dismiss"
+  }
+}

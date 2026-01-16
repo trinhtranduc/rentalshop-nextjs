@@ -14,10 +14,13 @@ import {
   Settings,
   CreditCard,
   ChevronDown,
-  Menu
+  Menu,
+  Link2,
+  X
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useCommonTranslations } from '@rentalshop/hooks';
+import { useTranslations } from 'next-intl';
 
 export interface ServerTopNavigationProps {
   currentPage: string;
@@ -27,10 +30,12 @@ export interface ServerTopNavigationProps {
 export default function ServerTopNavigation({ currentPage, userRole }: ServerTopNavigationProps) {
   const { navigateTo, prefetchRoute } = useNavigation();
   const t = useCommonTranslations();
+  const tAffiliate = useTranslations('affiliate');
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [isAffiliateBannerDismissed, setIsAffiliateBannerDismissed] = useState(false);
 
   const allNavItems = [
     { href: '/dashboard', label: t('navigation.dashboard'), icon: Home },
@@ -125,8 +130,73 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
     prefetchRoute(href);
   };
 
+  // Check if affiliate banner was dismissed in localStorage
+  useEffect(() => {
+    const dismissed = localStorage.getItem('affiliate-banner-dismissed');
+    if (dismissed === 'true') {
+      setIsAffiliateBannerDismissed(true);
+    }
+  }, []);
+
+  const handleDismissBanner = () => {
+    setIsAffiliateBannerDismissed(true);
+    localStorage.setItem('affiliate-banner-dismissed', 'true');
+  };
+
+  const handleAffiliateBannerClick = () => {
+    handleTabClick('/affiliate');
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <>
+      {/* Affiliate Banner */}
+      {!isAffiliateBannerDismissed && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <div 
+                className="flex items-center gap-3 cursor-pointer flex-1"
+                onClick={handleAffiliateBannerClick}
+              >
+                <Link2 className="w-5 h-5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm sm:text-base">
+                    {tAffiliate('banner.title')}
+                  </p>
+                  <p className="text-xs sm:text-sm text-blue-100 mt-0.5">
+                    {tAffiliate('banner.description')}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAffiliateBannerClick();
+                  }}
+                  className="text-white hover:bg-blue-600/50 hidden sm:flex items-center gap-2"
+                >
+                  {tAffiliate('banner.button')}
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismissBanner();
+                }}
+                className="text-white hover:bg-blue-600/50 flex-shrink-0 ml-2"
+                title={tAffiliate('banner.dismiss')}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className={`fixed ${!isAffiliateBannerDismissed ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-200`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

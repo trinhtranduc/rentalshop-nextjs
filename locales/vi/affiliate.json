@@ -1,0 +1,92 @@
+{
+  "title": "Hướng dẫn sử dụng Affiliate Link",
+  "subtitle": "Tìm hiểu cách sử dụng affiliate link để phát triển kinh doanh của bạn",
+  "lastUpdated": "Cập nhật lần cuối: Tháng 1, 2025",
+  "sections": {
+    "whatIs": {
+      "title": "Affiliate Link là gì?",
+      "content": "Affiliate link (còn gọi là referral link) là một URL đặc biệt chứa mã giới thiệu duy nhất của bạn. Khi ai đó đăng ký AnyRent bằng affiliate link của bạn, họ trở thành người được bạn giới thiệu và bạn có thể nhận được lợi ích hoặc phần thưởng."
+    },
+    "howToGet": {
+      "title": "Cách lấy Affiliate Link của bạn",
+      "content": "Affiliate link của bạn được tự động tạo dựa trên tenant key của merchant. Bạn có thể tìm thấy nó trong trang Settings, phần Business hoặc Outlet.",
+      "steps": [
+        "Vào trang Settings",
+        "Chuyển đến tab Business hoặc Outlet",
+        "Tìm phần \"Referral Link\" hoặc \"Affiliate Link\"",
+        "Sao chép link đăng ký duy nhất của bạn",
+        "Chia sẻ với người dùng tiềm năng"
+      ]
+    },
+    "howToUse": {
+      "title": "Cách sử dụng Affiliate Link",
+      "content": "Chia sẻ affiliate link của bạn với người khác qua nhiều kênh:",
+      "methods": [
+        "Chia sẻ qua mạng xã hội (Facebook, Instagram, Twitter, v.v.)",
+        "Gửi qua email hoặc ứng dụng nhắn tin (WhatsApp, Telegram, v.v.)",
+        "Thêm vào website hoặc blog kinh doanh của bạn",
+        "Chia sẻ với bạn bè, gia đình hoặc đối tác kinh doanh",
+        "Thêm vào danh thiếp hoặc tài liệu quảng cáo"
+      ]
+    },
+    "howItWorks": {
+      "title": "Cách hoạt động",
+      "content": "Khi ai đó nhấp vào affiliate link của bạn:",
+      "steps": [
+        "Họ được chuyển đến trang đăng ký AnyRent",
+        "Mã giới thiệu của bạn được tự động thêm vào form đăng ký",
+        "Khi họ hoàn tất đăng ký, hệ thống theo dõi rằng họ đến từ link của bạn",
+        "Bạn có thể nhận được lợi ích hoặc phần thưởng dựa trên chương trình giới thiệu"
+      ]
+    },
+    "benefits": {
+      "title": "Lợi ích của việc sử dụng Affiliate Link",
+      "content": "Sử dụng affiliate link giúp bạn:",
+      "items": [
+        "Theo dõi người được giới thiệu và nỗ lực marketing",
+        "Xây dựng mạng lưới người dùng AnyRent",
+        "Có thể kiếm phần thưởng hoặc lợi ích (kiểm tra gói đăng ký của bạn)",
+        "Chia sẻ AnyRent với những người có thể hưởng lợi",
+        "Phát triển hệ sinh thái kinh doanh của bạn"
+      ]
+    },
+    "bestPractices": {
+      "title": "Thực hành tốt nhất",
+      "content": "Để tối đa hóa hiệu quả của affiliate link:",
+      "tips": [
+        "Chia sẻ link một cách tự nhiên trong các cuộc trò chuyện về quản lý kinh doanh",
+        "Giải thích lợi ích của AnyRent khi chia sẻ link",
+        "Chỉ chia sẻ với những người thực sự có thể hưởng lợi từ AnyRent",
+        "Giữ affiliate link của bạn ở nơi dễ truy cập để chia sẻ nhanh",
+        "Tuân theo điều khoản sử dụng và quy tắc cộng đồng của AnyRent"
+      ]
+    },
+    "importantNotes": {
+      "title": "Lưu ý quan trọng",
+      "content": "Xin lưu ý:",
+      "notes": [
+        "Affiliate link của bạn là duy nhất cho tài khoản merchant của bạn",
+        "Không được sửa đổi hoặc làm giả mã giới thiệu trong link của bạn",
+        "Lợi ích và phần thưởng affiliate có thể khác nhau tùy theo gói đăng ký",
+        "AnyRent bảo lưu quyền xác minh người được giới thiệu và có thể loại bỏ các giới thiệu gian lận",
+        "Tôn trọng quyền riêng tư và chỉ chia sẻ link với những người quan tâm"
+      ]
+    },
+    "troubleshooting": {
+      "title": "Khắc phục sự cố",
+      "content": "Nếu bạn gặp vấn đề với affiliate link:",
+      "solutions": [
+        "Đảm bảo bạn đã sao chép toàn bộ link, bao gồm mã giới thiệu",
+        "Xác minh rằng tài khoản merchant của bạn đang hoạt động và trong tình trạng tốt",
+        "Kiểm tra xem link có được định dạng đúng không",
+        "Liên hệ hỗ trợ nếu vấn đề vẫn còn"
+      ]
+    }
+  },
+  "banner": {
+    "title": "Tìm hiểu về Affiliate Links",
+    "description": "Khám phá cách sử dụng affiliate link để phát triển kinh doanh",
+    "button": "Xem hướng dẫn",
+    "dismiss": "Đóng"
+  }
+}

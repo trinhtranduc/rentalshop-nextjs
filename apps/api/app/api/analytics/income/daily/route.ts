@@ -57,6 +57,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     }
 
     // Build outlet filter based on user scope
+    // Include orders that have ANY activity (create, status change) in the date range
     const whereClause: any = {
       OR: [
         // Orders created in the range
@@ -66,19 +67,60 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             lte: end
           }
         },
-        // Orders picked up in the range
+        // Orders picked up in the range (status change to PICKUPED)
         {
           pickedUpAt: {
             gte: start,
-            lte: end
+            lte: end,
+            not: null
           }
         },
-        // Orders returned in the range
+        // Orders returned in the range (status change to RETURNED)
         {
           returnedAt: {
             gte: start,
-            lte: end
+            lte: end,
+            not: null
           }
+        },
+        // Orders cancelled in the range (status change to CANCELLED)
+        // Use updatedAt when status is CANCELLED and cancelled happened in the range
+        {
+          AND: [
+            {
+              status: ORDER_STATUS.CANCELLED
+            },
+            {
+              updatedAt: {
+                gte: start,
+                lte: end
+              }
+            },
+            // Exclude soft-deleted orders
+            {
+              deletedAt: null
+            }
+          ]
+        },
+        // Orders completed in the range (SALE orders - status change to COMPLETED)
+        {
+          AND: [
+            {
+              orderType: ORDER_TYPE.SALE
+            },
+            {
+              status: ORDER_STATUS.COMPLETED
+            },
+            {
+              updatedAt: {
+                gte: start,
+                lte: end
+              }
+            },
+            {
+              deletedAt: null
+            }
+          ]
         }
       ]
     };
@@ -116,6 +158,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         securityDeposit: true,
         damageFee: true,
         createdAt: true,
+        updatedAt: true, // Include updatedAt to track status changes
         pickedUpAt: true,
         returnedAt: true,
         customer: {
@@ -139,13 +182,16 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     });
 
     /**
-     * Generate revenue events for a single order
+     * Generate revenue events for a single order based on ACTUAL TIMESTAMPS in the date range
+     * Track ALL events that happened in the date range, not just based on current status
+     * 
      * A RENT order can have multiple revenue events on different days:
-     * - Deposit on creation (RESERVED)
-     * - Pickup payment when picked up (PICKUPED)
-     * - Return refund/fee when returned (RETURNED)
+     * - Deposit on creation (createdAt within range)
+     * - Pickup payment when picked up (pickedUpAt within range)
+     * - Return refund/fee when returned (returnedAt within range)
+     * - Cancel event when cancelled (updatedAt within range and status is CANCELLED)
      */
-    const getOrderRevenueEvents = (order: any): Array<{
+    const getOrderRevenueEvents = (order: any, dateRangeStart: Date, dateRangeEnd: Date): Array<{
       revenue: number;
       date: Date;
       description: string;
@@ -154,61 +200,139 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       const events: Array<{ revenue: number; date: Date; description: string; revenueType: string }> = [];
 
       if (order.orderType === ORDER_TYPE.SALE) {
-        // SALE orders: revenue is totalAmount on createdAt date
+        // SALE orders: revenue is totalAmount on createdAt date IF created in range
         if (order.createdAt) {
-          events.push({
-            revenue: order.totalAmount || 0,
-            date: new Date(order.createdAt),
-            description: 'Sale order',
-            revenueType: 'SALE'
-          });
+          const createdDate = new Date(order.createdAt);
+          if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
+            // Only count if order was created in the range AND not cancelled
+            if (order.status !== ORDER_STATUS.CANCELLED) {
+              events.push({
+                revenue: order.totalAmount || 0,
+                date: createdDate,
+                description: 'Sale order created',
+                revenueType: 'SALE'
+              });
+            }
+          }
         }
       } else {
-        // RENT orders: multiple possible revenue events
+        // RENT orders: track all events based on timestamps within the range
         
-        // 1. Deposit when order is created (RESERVED status)
-        if (order.status === ORDER_STATUS.RESERVED && order.createdAt && order.depositAmount) {
-          events.push({
-            revenue: order.depositAmount,
-            date: new Date(order.createdAt),
-            description: 'Rental deposit',
-            revenueType: 'RENT_DEPOSIT'
-          });
+        // 1. Deposit when order is CREATED (createdAt within range)
+        // Track this even if order was later picked up/returned/cancelled
+        if (order.createdAt) {
+          const createdDate = new Date(order.createdAt);
+          if (createdDate >= dateRangeStart && createdDate <= dateRangeEnd) {
+            // Only add deposit if order was not cancelled at creation
+            // If cancelled later, we'll track that separately
+            if (order.status !== ORDER_STATUS.CANCELLED || 
+                (order.updatedAt && new Date(order.updatedAt) > createdDate)) {
+              // Order not cancelled at creation, or cancelled later
+              if (order.depositAmount && order.depositAmount > 0) {
+                events.push({
+                  revenue: order.depositAmount,
+                  date: createdDate,
+                  description: 'Rental deposit',
+                  revenueType: 'RENT_DEPOSIT'
+                });
+              }
+            }
+          }
         }
 
-        // 2. Pickup payment when order is picked up (PICKUPED status)
-        if (order.status === ORDER_STATUS.PICKUPED && order.pickedUpAt) {
-          const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
-          events.push({
-            revenue: pickupRevenue,
-            date: new Date(order.pickedUpAt),
-            description: 'Rental pickup payment',
-            revenueType: 'RENT_PICKUP'
-          });
+        // 2. Pickup payment when order is PICKED UP (pickedUpAt within range)
+        // Track this regardless of current status (even if later returned/cancelled)
+        if (order.pickedUpAt) {
+          const pickupDate = new Date(order.pickedUpAt);
+          if (pickupDate >= dateRangeStart && pickupDate <= dateRangeEnd) {
+            // Calculate pickup revenue: total - deposit + security deposit
+            const pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+            if (pickupRevenue !== 0) {
+              events.push({
+                revenue: pickupRevenue,
+                date: pickupDate,
+                description: 'Rental pickup payment',
+                revenueType: 'RENT_PICKUP'
+              });
+            }
+          }
         }
 
-        // 3. Return refund/fee when order is returned (RETURNED status)
-        if (order.status === ORDER_STATUS.RETURNED && order.returnedAt) {
-          const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+        // 3. Return refund/fee when order is RETURNED (returnedAt within range)
+        // Track this regardless of when order was picked up
+        if (order.returnedAt) {
           const returnDate = new Date(order.returnedAt);
-          
-          if (pickupDate && pickupDate.toDateString() === returnDate.toDateString()) {
-            // Same day rental: total - security deposit + damage fee
-            const revenue = (order.totalAmount || 0) - (order.securityDeposit || 0) + (order.damageFee || 0);
+          if (returnDate >= dateRangeStart && returnDate <= dateRangeEnd) {
+            const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+            
+            if (pickupDate && pickupDate.toDateString() === returnDate.toDateString()) {
+              // Same day rental: total - security deposit + damage fee
+              const revenue = (order.totalAmount || 0) - (order.securityDeposit || 0) + (order.damageFee || 0);
+              events.push({
+                revenue,
+                date: returnDate,
+                description: 'Same-day rental return',
+                revenueType: 'RENT_RETURN_SAME_DAY'
+              });
+            } else {
+              // Different days: security deposit - damage fee (negative = refund to customer)
+              const refund = (order.securityDeposit || 0) - (order.damageFee || 0);
+              if (refund !== 0) {
+                events.push({
+                  revenue: -refund, // Negative because we return money to customer
+                  date: returnDate,
+                  description: refund > 0 ? `Security deposit refund` : `Damage fee`,
+                  revenueType: 'RENT_RETURN'
+                });
+              }
+            }
+          }
+        }
+
+        // 4. Cancel event when order is CANCELLED (updatedAt within range and status is CANCELLED)
+        // Track cancellation to show refund/negative revenue
+        if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
+          const cancelledDate = new Date(order.updatedAt);
+          if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
+            // If order was cancelled, we need to reverse any revenue collected
+            // Only reverse if order was created/picked up before cancellation
+            const createdDate = order.createdAt ? new Date(order.createdAt) : null;
+            const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+            
+            // Calculate refund amount based on what was collected
+            let refundAmount = 0;
+            if (pickupDate && pickupDate < cancelledDate) {
+              // Order was picked up, need to refund everything
+              refundAmount = -(order.totalAmount || 0) + (order.securityDeposit || 0) - (order.depositAmount || 0);
+            } else if (createdDate && createdDate < cancelledDate) {
+              // Order was only reserved, refund deposit
+              refundAmount = -(order.depositAmount || 0);
+            }
+            
+            if (refundAmount !== 0) {
+              events.push({
+                revenue: refundAmount, // Negative revenue for refund
+                date: cancelledDate,
+                description: 'Order cancellation refund',
+                revenueType: 'RENT_CANCELLED'
+              });
+            }
+          }
+        }
+      }
+
+      // Handle SALE order cancellation
+      if (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
+        const cancelledDate = new Date(order.updatedAt);
+        if (cancelledDate >= dateRangeStart && cancelledDate <= dateRangeEnd) {
+          const createdDate = order.createdAt ? new Date(order.createdAt) : null;
+          if (createdDate && createdDate < cancelledDate) {
+            // Order was created before being cancelled, refund the amount
             events.push({
-              revenue,
-              date: returnDate,
-              description: 'Same-day rental return',
-              revenueType: 'RENT_RETURN_SAME_DAY'
-            });
-          } else {
-            // Different days: security deposit - damage fee (negative = refund to customer)
-            const refund = (order.securityDeposit || 0) - (order.damageFee || 0);
-            events.push({
-              revenue: -refund, // Negative because we return money to customer
-              date: returnDate,
-              description: refund > 0 ? `Security deposit refund` : `Damage fee`,
-              revenueType: 'RENT_RETURN'
+              revenue: -(order.totalAmount || 0), // Negative revenue for refund
+              date: cancelledDate,
+              description: 'Sale order cancellation refund',
+              revenueType: 'SALE_CANCELLED'
             });
           }
         }
@@ -246,8 +370,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
     // Process each order
     for (const order of allOrders) {
-      // Get all revenue events for this order
-      const revenueEvents = getOrderRevenueEvents(order);
+      // Get all revenue events for this order based on actual timestamps in the range
+      const revenueEvents = getOrderRevenueEvents(order, start, end);
 
       // Process each revenue event
       for (const event of revenueEvents) {
@@ -302,6 +426,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
 
       // Count new orders (created on any day in the range)
+      // Count ALL orders created in the range, regardless of current status
+      // because an order created today should be counted even if later picked up/returned/cancelled
       if (order.createdAt) {
         const createdDate = new Date(order.createdAt);
         if (createdDate >= start && createdDate <= end) {
@@ -312,11 +438,25 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           if (!newOrdersCounted.has(orderKey)) {
             if (dailyDataMap.has(dateKey)) {
               const dailyData = dailyDataMap.get(dateKey)!;
-              // Only count as new order if it's a sale or a reserved rental (deposit collected)
-              if (order.orderType === ORDER_TYPE.SALE || 
-                  (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.RESERVED)) {
-                dailyData.newOrderCount += 1;
-                newOrdersCounted.add(orderKey);
+              // Count ALL orders created in the range (SALE or RENT)
+              // Don't check status because order might have been updated later
+              if (order.orderType === ORDER_TYPE.SALE) {
+                // SALE orders count as new if created (and not cancelled at creation)
+                if (order.status !== ORDER_STATUS.CANCELLED || 
+                    (order.updatedAt && new Date(order.updatedAt) > createdDate)) {
+                  // Not cancelled at creation, or cancelled later
+                  dailyData.newOrderCount += 1;
+                  newOrdersCounted.add(orderKey);
+                }
+              } else {
+                // RENT orders count as new if created (deposit collected or not)
+                // Only exclude if cancelled immediately at creation
+                if (order.status !== ORDER_STATUS.CANCELLED || 
+                    (order.updatedAt && new Date(order.updatedAt) > createdDate)) {
+                  // Not cancelled at creation, or cancelled later
+                  dailyData.newOrderCount += 1;
+                  newOrdersCounted.add(orderKey);
+                }
               }
             }
           }
