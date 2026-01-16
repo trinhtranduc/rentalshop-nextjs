@@ -15,7 +15,9 @@ import { API } from '@rentalshop/constants';
  * 
  * QUY TẮC TÍNH DOANH THU:
  * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
- * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount + securityDeposit
+ * 2. Đơn lấy (PICKUPED - khi khách lấy hàng):
+ *    - Nếu pickup cùng ngày với tạo đơn: totalAmount - depositAmount + securityDeposit
+ *    - Nếu pickup khác ngày: totalAmount + securityDeposit
  * 3. Đơn trả (RETURNED - khi khách trả hàng):
  *    - Nếu thuê và trả trong cùng 1 ngày: totalAmount + damageFee
  *    - Nếu khác ngày: securityDeposit - damageFee
@@ -188,7 +190,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
      * 
      * QUY TẮC TÍNH DOANH THU:
      * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
-     * 2. Đơn lấy (PICKUPED - khi khách lấy hàng): totalAmount + securityDeposit
+     * 2. Đơn lấy (PICKUPED - khi khách lấy hàng):
+     *    - Nếu pickup cùng ngày với tạo đơn: totalAmount - depositAmount + securityDeposit
+     *    - Nếu pickup khác ngày: totalAmount + securityDeposit
      * 3. Đơn trả (RETURNED - khi khách trả hàng):
      *    - Nếu thuê và trả trong cùng 1 ngày: totalAmount + damageFee
      *    - Nếu khác ngày: securityDeposit - damageFee
@@ -253,12 +257,21 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       // XỬ LÝ ĐƠN THUÊ (RENT)
       // ============================================================================
       else {
-        // Kiểm tra xem đơn có được trả trong cùng ngày với tạo/lấy không
-        // (để quyết định có tính deposit/pickup riêng hay chỉ tính return)
+        // Kiểm tra các trường hợp cùng ngày để áp dụng logic tính toán phù hợp
         const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
         const createdDate = order.createdAt ? new Date(order.createdAt) : null;
         const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
         
+        // Kiểm tra pickup có cùng ngày với tạo đơn không
+        let isSameDayPickup = false;
+        if (pickupDate && createdDate) {
+          const pickupDateKey = getUTCDateKey(pickupDate);
+          const createdDateKey = getUTCDateKey(createdDate);
+          isSameDayPickup = pickupDateKey === createdDateKey;
+        }
+        
+        // Kiểm tra return có cùng ngày với tạo/lấy không
+        // (để quyết định có tính deposit/pickup riêng hay chỉ tính return)
         let isSameDayReturn = false;
         if (returnDate) {
           const returnDateKey = getUTCDateKey(returnDate);
@@ -290,7 +303,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         }
 
         // 2. ĐƠN LẤY (PICKUPED): Thu tiền khi khách lấy hàng
-        // Doanh thu = totalAmount + securityDeposit
+        // - Nếu pickup cùng ngày với tạo đơn: revenue = totalAmount - depositAmount + securityDeposit
+        // - Nếu pickup khác ngày: revenue = totalAmount + securityDeposit
         // Tìm ngày lấy hàng: ưu tiên pickedUpAt, nếu không có thì dùng createdAt hoặc updatedAt
         // LƯU Ý: Nếu thuê và trả cùng ngày, không tạo pickup event (chỉ tính return)
         if (!isSameDayReturn) {
@@ -321,7 +335,15 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           
           // Tạo event nếu tìm thấy ngày lấy hàng trong khoảng
           if (pickupDate) {
-            const pickupRevenue = (order.totalAmount || 0) + (order.securityDeposit || 0);
+            let pickupRevenue: number;
+            if (isSameDayPickup) {
+              // Pickup cùng ngày với tạo đơn: revenue = totalAmount - depositAmount + securityDeposit
+              pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+            } else {
+              // Pickup khác ngày: revenue = totalAmount + securityDeposit
+              pickupRevenue = (order.totalAmount || 0) + (order.securityDeposit || 0);
+            }
+            
             events.push({
               revenue: pickupRevenue,
               date: pickupDate,
@@ -388,8 +410,16 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             
             if (pickupDate && pickupDate < cancelledDate) {
               // Đã lấy hàng: đã thu cọc + tiền lấy hàng
-              totalCollected = (order.depositAmount || 0) + 
-                              ((order.totalAmount || 0) + (order.securityDeposit || 0));
+              let pickupRevenue: number;
+              if (isSameDayPickup) {
+                // Pickup cùng ngày với tạo đơn
+                pickupRevenue = (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+              } else {
+                // Pickup khác ngày
+                pickupRevenue = (order.totalAmount || 0) + (order.securityDeposit || 0);
+              }
+              
+              totalCollected = (order.depositAmount || 0) + pickupRevenue;
             } else if (createdDate && createdDate < cancelledDate) {
               // Chỉ đặt cọc: chỉ thu tiền cọc
               totalCollected = order.depositAmount || 0;
