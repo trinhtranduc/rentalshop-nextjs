@@ -2,7 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { MerchantHeader } from './components/MerchantHeader';
 import { PublicProductGrid } from './components/PublicProductGrid';
-import { publicFetch, parseApiResponse } from '@rentalshop/utils';
+import { parseApiResponse } from '@rentalshop/utils';
 import type { Product, Category } from '@rentalshop/types';
 
 interface PublicProductsPageProps {
@@ -29,11 +29,24 @@ async function fetchPublicProducts(tenantKey: string, searchParams: any) {
       queryParams.append('page', searchParams.page);
     }
 
-    const url = `api/public/${tenantKey}/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    // Build API URL - use absolute URL for server-side rendering
+    // In Next.js server components, we need to use full URL or relative path
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+    const endpoint = `api/public/${tenantKey}/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${apiBaseUrl}/${endpoint}`;
+    
     console.log('🌐 Fetching URL:', url);
     console.log('🔍 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-    const response = await publicFetch(url);
-    console.log('🔍 Actual API URL called:', response.url || 'N/A');
+    console.log('🔍 API Base URL:', apiBaseUrl);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      cache: 'no-store' // Ensure fresh data on each request
+    });
     
     console.log('📡 Response status:', response.status, response.statusText);
     

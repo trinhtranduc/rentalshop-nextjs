@@ -84,8 +84,24 @@ export async function GET(
     // Find merchant by tenantKey (handles case-insensitive search internally)
     console.log('🔍 Looking for merchant with tenantKey:', tenantKey);
     
-    // findByTenantKey now handles case-insensitive search internally
-    const merchant = await db.merchants.findByTenantKey(tenantKey);
+    let merchant;
+    try {
+      // findByTenantKey now handles case-insensitive search internally
+      merchant = await db.merchants.findByTenantKey(tenantKey);
+    } catch (error) {
+      console.error('❌ Error finding merchant by tenantKey:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return NextResponse.json(
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
+        { 
+          status: 404,
+          headers: buildCorsHeaders(request)
+        }
+      );
+    }
     
     if (!merchant) {
       console.error('❌ Merchant not found with tenantKey:', tenantKey);
@@ -100,7 +116,7 @@ export async function GET(
       );
     }
     
-    console.log('✅ Found merchant:', merchant.name, 'ID:', merchant.id);
+    console.log('✅ Found merchant:', merchant.name, 'ID:', merchant.id, 'Type:', typeof merchant.id);
 
     // Check if merchant is active
     if (!merchant.isActive) {
@@ -142,13 +158,24 @@ export async function GET(
     }
 
     // Get products
-    console.log('🔍 Searching products with filters:', productFilters);
-    const productsResult = await db.products.search(productFilters);
-    console.log('📦 Products result:', {
-      total: productsResult.total,
-      dataLength: productsResult.data?.length || 0,
-      hasMore: productsResult.hasMore
-    });
+    console.log('🔍 Searching products with filters:', JSON.stringify(productFilters, null, 2));
+    let productsResult;
+    try {
+      productsResult = await db.products.search(productFilters);
+      console.log('📦 Products result:', {
+        total: productsResult.total,
+        dataLength: productsResult.data?.length || 0,
+        hasMore: productsResult.hasMore
+      });
+    } catch (error) {
+      console.error('❌ Error searching products:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        filters: productFilters
+      });
+      throw error; // Re-throw to be caught by outer catch
+    }
 
     // Get categories for this merchant
     const categoriesResult = await db.categories.findMany({
@@ -232,9 +259,27 @@ export async function GET(
     );
 
   } catch (error) {
-    console.error('Error fetching public products:', error);
+    console.error('❌ Error fetching public products:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      tenantKey,
+      errorType: error?.constructor?.name,
+      errorName: (error as any)?.name,
+      errorCode: (error as any)?.code,
+      errorMeta: (error as any)?.meta,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+    });
+    
+    // For public endpoints, we want more specific error messages
+    // Check if it's a known error type first
+    if ((error as any)?.code?.startsWith('P')) {
+      // Prisma error - log it but return generic error for security
+      console.error('❌ Prisma error detected:', (error as any).code);
+    }
     
     const { response, statusCode } = handleApiError(error);
+    console.error('❌ Error response:', JSON.stringify(response, null, 2));
     return NextResponse.json(response, { 
       status: statusCode,
       headers: buildCorsHeaders(request)

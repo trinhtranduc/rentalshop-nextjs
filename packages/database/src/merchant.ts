@@ -133,10 +133,11 @@ export async function findByTenantKey(tenantKey: string) {
   const trimmedKey = tenantKey.trim();
   
   // Try exact match first (case-sensitive) - fastest lookup
+  // Note: Merchant.id is Int (autoincrement), so id IS the publicId
   let merchant = await prisma.merchant.findUnique({
     where: { tenantKey: trimmedKey },
     select: {
-      id: true,
+      id: true, // This IS the publicId (Int, not CUID)
       name: true,
       description: true,
       address: true,
@@ -157,9 +158,9 @@ export async function findByTenantKey(tenantKey: string) {
   if (!merchant) {
     // Use SQL raw query for case-insensitive search
     // email, name, and currency are required fields (not null) according to schema
+    // Note: Merchant.id is Int (autoincrement), so id IS the publicId
     const result = await prisma.$queryRaw<Array<{
-      id: string;
-      publicId: number;
+      id: number; // This IS the publicId (Int, not CUID)
       name: string;
       description: string | null;
       address: string | null;
@@ -175,7 +176,6 @@ export async function findByTenantKey(tenantKey: string) {
     }>>`
       SELECT 
         id,
-        "publicId",
         name,
         description,
         address,
@@ -196,7 +196,7 @@ export async function findByTenantKey(tenantKey: string) {
     if (result && result.length > 0) {
       const row = result[0];
       merchant = {
-        id: row.publicId, // Return publicId as id
+        id: row.id, // id IS the publicId (Int)
         name: row.name,
         description: row.description ?? null,
         address: row.address ?? null,
