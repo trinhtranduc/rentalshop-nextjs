@@ -129,12 +129,12 @@ export async function findByTenantKey(tenantKey: string) {
     return null;
   }
   
-  // Normalize tenantKey: trim and convert to lowercase for consistent matching
-  const normalizedKey = tenantKey.trim().toLowerCase();
+  // Trim tenantKey but don't normalize case - let Prisma handle case-insensitive search
+  const trimmedKey = tenantKey.trim();
   
-  // Try exact match first (case-sensitive)
+  // Try exact match first (case-sensitive) - fastest lookup
   let merchant = await prisma.merchant.findUnique({
-    where: { tenantKey: normalizedKey },
+    where: { tenantKey: trimmedKey },
     select: {
       id: true,
       name: true,
@@ -152,31 +152,65 @@ export async function findByTenantKey(tenantKey: string) {
     }
   });
   
-  // If not found with exact match, try case-insensitive search
+  // If not found with exact match, try case-insensitive search using raw SQL
+  // Prisma doesn't support equals with insensitive mode directly for unique fields
   if (!merchant) {
-    merchant = await prisma.merchant.findFirst({
-      where: {
-        tenantKey: {
-          equals: normalizedKey,
-          mode: 'insensitive'
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        address: true,
-        phone: true,
-        email: true,
-        website: true,
-        city: true,
-        country: true,
-        currency: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    // Use SQL raw query for case-insensitive search
+    // email, name, and currency are required fields (not null) according to schema
+    const result = await prisma.$queryRaw<Array<{
+      id: string;
+      publicId: number;
+      name: string;
+      description: string | null;
+      address: string | null;
+      phone: string | null;
+      email: string;
+      website: string | null;
+      city: string | null;
+      country: string | null;
+      currency: string; // Has default "USD", so not null
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    }>>`
+      SELECT 
+        id,
+        "publicId",
+        name,
+        description,
+        address,
+        phone,
+        email,
+        website,
+        city,
+        country,
+        currency,
+        "isActive",
+        "createdAt",
+        "updatedAt"
+      FROM "Merchant"
+      WHERE LOWER("tenantKey") = LOWER(${trimmedKey})
+      LIMIT 1
+    `;
+    
+    if (result && result.length > 0) {
+      const row = result[0];
+      merchant = {
+        id: row.publicId, // Return publicId as id
+        name: row.name,
+        description: row.description ?? null,
+        address: row.address ?? null,
+        phone: row.phone ?? null,
+        email: row.email, // email is required, not null
+        website: row.website ?? null,
+        city: row.city ?? null,
+        country: row.country ?? null,
+        currency: row.currency, // currency has default "USD", so not null
+        isActive: row.isActive,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt
+      };
+    }
   }
   
   return merchant;
