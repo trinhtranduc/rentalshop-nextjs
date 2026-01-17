@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, ORDER_STATUS} from '@rentalshop/constants';
 
 /**
@@ -73,12 +73,9 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', [])
+      );
     }
 
     // Get recent orders with date filtering
@@ -127,13 +124,14 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       };
     });
 
-    const body = JSON.stringify({ success: true, data: formattedOrders });
-    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const responseData = ResponseBuilder.success('RECENT_ORDERS_SUCCESS', formattedOrders);
+    const dataString = JSON.stringify(responseData);
+    const etag = crypto.createHash('sha1').update(dataString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching recent orders:', error);

@@ -12,11 +12,18 @@ import {
   type BreadcrumbItem,
   AddUserDialog,
   Button,
-  useToast
+  useToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  UserForm,
+  UserDetailDialog,
+  ConfirmationDialog
 } from '@rentalshop/ui';
 import { Users as UsersIcon, Plus } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
-import type { User, UserFilters, UserCreateInput } from '@rentalshop/types';
+import type { User, UserFilters, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
 /**
  * ✅ MODERN MERCHANT USERS PAGE (URL State Pattern)
@@ -54,6 +61,16 @@ export default function MerchantUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToActivate, setUserToActivate] = useState<User | null>(null);
+  const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   
   // Store pagination metadata from API response
   const [paginationMeta, setPaginationMeta] = useState({
@@ -212,17 +229,39 @@ export default function MerchantUsersPage() {
   }, [updateURL]);
 
   const handleUserAction = useCallback((action: string, userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
     switch (action) {
       case 'view':
-        router.push(`/merchants/${merchantId}/users/${userId}`);
+        // Show detail dialog
+        setSelectedUser(user);
+        setShowDetailDialog(true);
         break;
       case 'edit':
-        router.push(`/merchants/${merchantId}/users/${userId}/edit`);
+        // Show edit dialog
+        setSelectedUser(user);
+        setShowEditDialog(true);
+        break;
+      case 'activate':
+        // Show activate confirmation dialog
+        setUserToActivate(user);
+        setShowActivateConfirm(true);
+        break;
+      case 'deactivate':
+        // Show deactivate confirmation dialog
+        setUserToDeactivate(user);
+        setShowDeactivateConfirm(true);
+        break;
+      case 'delete':
+        // Show delete confirmation dialog
+        setUserToDelete(user);
+        setShowDeleteConfirm(true);
         break;
       default:
         console.log('User action:', action, userId);
     }
-  }, [router, merchantId]);
+  }, [users]);
 
   const handleUserCreated = useCallback(async (userData: UserCreateInput) => {
     try {
@@ -242,7 +281,108 @@ export default function MerchantUsersPage() {
       toastError('Failed to create user', error instanceof Error ? error.message : 'Unknown error');
       throw error; // Re-throw to let dialog handle it
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merchantId, toastSuccess, toastError]);
+
+  const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
+    if (!selectedUser) return;
+    
+    try {
+      const response = await merchantsApi.users.update(parseInt(merchantId), selectedUser.id, userData as UserUpdateInput);
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User updated successfully');
+        setShowEditDialog(false);
+        setSelectedUser(null);
+        // Refresh users list
+        fetchUsers();
+      } else {
+        throw new Error(data.message || 'Failed to update user');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toastError('Failed to update user', error instanceof Error ? error.message : 'Unknown error');
+      throw error; // Re-throw to let dialog handle it
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser, merchantId, toastSuccess, toastError]);
+
+  const handleConfirmActivate = useCallback(async () => {
+    if (!userToActivate) return;
+    
+    try {
+      setIsUpdating(true);
+      const response = await merchantsApi.users.update(parseInt(merchantId), userToActivate.id, { isActive: true });
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User activated successfully');
+        setShowActivateConfirm(false);
+        setUserToActivate(null);
+        fetchUsers();
+      } else {
+        throw new Error(data.message || 'Failed to activate user');
+      }
+    } catch (error) {
+      console.error('Error activating user:', error);
+      toastError('Failed to activate user', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsUpdating(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToActivate, merchantId, toastSuccess, toastError]);
+
+  const handleConfirmDeactivate = useCallback(async () => {
+    if (!userToDeactivate) return;
+    
+    try {
+      setIsUpdating(true);
+      const response = await merchantsApi.users.update(parseInt(merchantId), userToDeactivate.id, { isActive: false });
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User deactivated successfully');
+        setShowDeactivateConfirm(false);
+        setUserToDeactivate(null);
+        fetchUsers();
+      } else {
+        throw new Error(data.message || 'Failed to deactivate user');
+      }
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      toastError('Failed to deactivate user', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsUpdating(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToDeactivate, merchantId, toastSuccess, toastError]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!userToDelete) return;
+    
+    try {
+      setIsUpdating(true);
+      // Actually delete the user (hard delete)
+      const response = await merchantsApi.users.delete(parseInt(merchantId), userToDelete.id);
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User deleted successfully');
+        setShowDeleteConfirm(false);
+        setUserToDelete(null);
+        fetchUsers();
+      } else {
+        throw new Error(data.message || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toastError('Failed to delete user', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsUpdating(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToDelete, merchantId, toastSuccess, toastError]);
 
   // ============================================================================
   // RENDER
@@ -316,6 +456,25 @@ export default function MerchantUsersPage() {
         />
       </div>
 
+      {/* User Detail Dialog */}
+      {selectedUser && (
+        <UserDetailDialog
+          user={selectedUser}
+          open={showDetailDialog}
+          onOpenChange={setShowDetailDialog}
+          onUserUpdated={(updatedUser) => {
+            // Update user in list
+            setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+            setSelectedUser(updatedUser);
+            // Refresh users list
+            fetchUsers();
+          }}
+          onError={(error) => {
+            toastError('Error', error);
+          }}
+        />
+      )}
+
       {/* Add User Dialog */}
       <AddUserDialog
         open={showAddDialog}
@@ -324,6 +483,77 @@ export default function MerchantUsersPage() {
         onUserCreated={handleUserCreated}
         onError={(error) => {
           toastError('Error', error instanceof Error ? error.message : String(error));
+        }}
+      />
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Edit User: {selectedUser?.firstName} {selectedUser?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <UserForm
+              user={selectedUser}
+              onSave={handleUserUpdate}
+              onCancel={() => {
+                setShowEditDialog(false);
+                setSelectedUser(null);
+              }}
+              mode="edit"
+              currentUser={currentUser}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showActivateConfirm}
+        onOpenChange={setShowActivateConfirm}
+        type="info"
+        title="Activate User Account"
+        description={userToActivate ? `Are you sure you want to activate "${userToActivate.firstName} ${userToActivate.lastName || ''}"? This will allow the user to log in and access the system.` : ''}
+        confirmText={isUpdating ? 'Activating...' : 'Activate Account'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmActivate}
+        onCancel={() => {
+          setShowActivateConfirm(false);
+          setUserToActivate(null);
+        }}
+      />
+
+      {/* Deactivate User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeactivateConfirm}
+        onOpenChange={setShowDeactivateConfirm}
+        type="warning"
+        title="Deactivate User Account"
+        description={userToDeactivate ? `Are you sure you want to deactivate "${userToDeactivate.firstName} ${userToDeactivate.lastName || ''}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.` : ''}
+        confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmDeactivate}
+        onCancel={() => {
+          setShowDeactivateConfirm(false);
+          setUserToDeactivate(null);
+        }}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        type="danger"
+        title="Delete User Account"
+        description={userToDelete ? `Are you sure you want to permanently delete "${userToDelete.firstName} ${userToDelete.lastName || ''}"? This action cannot be undone. The user will be permanently removed from the system.` : ''}
+        confirmText={isUpdating ? 'Deleting...' : 'Delete Account'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setUserToDelete(null);
         }}
       />
     </PageWrapper>

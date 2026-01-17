@@ -14,6 +14,8 @@ interface UserDisplayInfoProps {
   onActivate?: () => void;
   onDeactivate?: () => void;
   onChangePassword?: () => void;
+  onVerifyEmail?: () => void;
+  onResendVerification?: () => void;
   isLoading?: boolean;
 }
 
@@ -26,6 +28,8 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
   onActivate,
   onDeactivate,
   onChangePassword,
+  onVerifyEmail,
+  onResendVerification,
   isLoading = false
 }) => {
   const t = useUsersTranslations();

@@ -119,6 +119,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT': 'Cannot create order for outlet from different merchant.',
   'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET': 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
   'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT': 'Cannot update order from outlet of different merchant.',
+  'CANNOT_DELETE_NON_CANCELLED_ORDER': 'Only cancelled orders can be deleted. Please cancel the order first before deleting.',
   
   // Password Reset Errors
   'PASSWORD_RESET_TOKEN_INVALID': 'Password reset token is invalid',

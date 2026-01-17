@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -50,12 +50,9 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', [])
+      );
     }
 
     // Add date filtering if provided
@@ -131,12 +128,9 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: topProductsWithDetails,
-      code: 'TOP_PRODUCTS_SUCCESS',
-        message: 'Top products retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('TOP_PRODUCTS_SUCCESS', topProductsWithDetails)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching top products analytics:', error);

@@ -510,7 +510,9 @@ export default function AdminDashboard() {
 
       // Recent activities
       if (activitiesResponse.success && activitiesResponse.data) {
-        setRecentActivities(activitiesResponse.data || []);
+        // API returns { data: { data: activities[], pagination: {...} } }
+        const activitiesData = activitiesResponse.data?.data || activitiesResponse.data;
+        setRecentActivities(Array.isArray(activitiesData) ? activitiesData : []);
       }
 
       // Revenue data - Transform for chart compatibility
@@ -768,6 +770,8 @@ export default function AdminDashboard() {
             Refresh
           </Button>
         </div>
+
+
         {/* Enhanced Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {enhancedMetrics.map((metric, index) => (

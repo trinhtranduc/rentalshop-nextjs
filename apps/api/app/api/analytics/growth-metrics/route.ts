@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
@@ -83,15 +83,12 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', {
           orders: { current: 0, previous: 0, growth: 0 },
           revenue: { current: 0, previous: 0, growth: 0 }
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+        })
+      );
     }
 
     // Get current period orders (use provided date range or current month)
@@ -185,12 +182,9 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       }
     };
 
-    return NextResponse.json({
-      success: true,
-      data: growthMetrics,
-      code: 'GROWTH_METRICS_SUCCESS',
-        message: 'Growth metrics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('GROWTH_METRICS_SUCCESS', growthMetrics)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching growth metrics:', error);

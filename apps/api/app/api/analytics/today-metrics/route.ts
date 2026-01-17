@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -58,9 +58,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', {
           totalOrders: 0,
           activeRentals: 0,
           completedOrders: 0,
@@ -68,10 +67,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           totalStock: 0,
           availableStock: 0,
           rentingStock: 0
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+        })
+      );
     }
 
     // Get today's orders
@@ -111,18 +108,33 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     });
 
-    // Get overdue rentals (status PICKUPED but returnPlanAt < start of today)
-    // ✅ Fix: Ensure returnPlanAt is not null and compare with start of today
+    // Get overdue rentals (status PICKUPED but returnPlanAt has passed)
+    // Overdue = returnPlanAt < now (current time)
+    // Note: Overdue orders can be created at any time, not just today
+    // So we don't include createdAt filter from orderWhereClause
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const overdueWhereClause = {
-      ...orderWhereClause,
+    const overdueWhereClause: any = {
       status: ORDER_STATUS.PICKUPED,
       returnPlanAt: {
         not: null,
-        lt: startOfToday
+        lt: now // Compare with current time, not start of today
       }
     };
+    
+    // Apply role-based filtering (merchant/outlet scope) but NOT date filter
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        overdueWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        overdueWhereClause.outletId = outlet.id;
+      }
+    }
+    // ADMIN users see all overdue orders (no additional filtering)
+    
     const overdueOrders = await db.orders.search({
       where: overdueWhereClause,
       limit: 1000
@@ -139,12 +151,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       rentingStock: stockMetrics._sum?.renting || 0
     };
 
-    return NextResponse.json({
-      success: true,
-      data: metrics,
-      code: 'TODAY_METRICS_SUCCESS',
-        message: 'Today metrics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('TODAY_METRICS_SUCCESS', metrics)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching today metrics:', error);

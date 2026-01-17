@@ -201,10 +201,12 @@ export async function DELETE(
       }
 
       // Check if this is the last admin user for the merchant
-      if (existingUser.role === USER_ROLE.ADMIN || (existingUser.role === USER_ROLE.MERCHANT && existingUser.merchantId)) {
+      // ADMIN role users (system admins) can always be deleted (they don't belong to a merchant)
+      // Only check for MERCHANT role users (merchant admins)
+      if (existingUser.role === USER_ROLE.MERCHANT && existingUser.merchantId) {
         const merchantId = existingUser.merchantId;
         const adminCount = await db.users.getStats({
-          merchantId: merchantId || null,
+          merchantId: merchantId,
           role: existingUser.role,
           isActive: true
         });
@@ -216,6 +218,9 @@ export async function DELETE(
           );
         }
       }
+      
+      // For ADMIN role users (system admins), allow deletion without merchant checks
+      // They don't belong to a merchant, so no plan limit or merchant validation needed
 
       // Invalidate all user sessions to force logout
       await db.sessions.invalidateAllUserSessions(userId);

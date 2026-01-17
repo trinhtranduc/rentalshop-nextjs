@@ -355,10 +355,10 @@ function getApiBaseUrlInternal(): string {
   // PRIORITY 2: Use environment-based defaults
   switch (env) {
     case 'local':
-      // For local, prefer localhost if available
-      const localUrl = 'http://localhost:3002';
-      console.log('⚠️ Local environment detected, using:', localUrl);
-      console.log('⚠️ If you need external API, set NEXT_PUBLIC_API_URL in .env');
+      // For local, use dev-api.anyrent.shop to avoid CORS issues
+      const localUrl = 'https://dev-api.anyrent.shop';
+      console.log('✅ Local environment detected, using dev API:', localUrl);
+      console.log('💡 To use localhost:3002, set NEXT_PUBLIC_API_URL=http://localhost:3002 in .env');
       return localUrl;
     
     case 'development':

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
@@ -88,16 +88,17 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     // Get total count for pagination
     const totalCount = await db.auditLogs.getStats();
 
-    return NextResponse.json({
-      success: true,
-      data: activities,
-      pagination: {
-        total: totalCount,
-        limit: maxLimit,
-        offset: validOffset,
-        hasMore: validOffset + maxLimit < totalCount
-      }
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('RECENT_ACTIVITIES_SUCCESS', {
+        data: activities,
+        pagination: {
+          total: totalCount,
+          limit: maxLimit,
+          offset: validOffset,
+          hasMore: validOffset + maxLimit < totalCount
+        }
+      })
+    );
 
   } catch (error) {
     console.error('Error fetching recent activities:', error);

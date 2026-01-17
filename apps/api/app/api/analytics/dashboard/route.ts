@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -59,9 +59,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         console.log('✅ Applied outlet filter:', { outletIds });
       } else {
         console.log('❌ No outlets found for merchant, returning empty data');
-        return NextResponse.json({
-          success: true,
-          data: {
+        return NextResponse.json(
+          ResponseBuilder.success('NO_OUTLETS_FOUND', {
             totalOrders: 0,
             totalRevenue: 0,
             activeRentals: 0,
@@ -71,10 +70,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
             completedOrders: 0,
             cancelledOrders: 0,
             returnedOrders: 0
-          },
-          code: 'NO_OUTLETS_FOUND',
-        message: 'No outlets found for merchant'
-        });
+          })
+        );
       }
     } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
       // Find outlet by id to get CUID
@@ -98,9 +95,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', {
           totalOrders: 0,
           totalRevenue: 0,
           activeRentals: 0,
@@ -110,10 +106,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           completedOrders: 0,
           cancelledOrders: 0,
           returnedOrders: 0
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+        })
+      );
     }
 
     console.log('🔍 Dashboard filters:', { orderWhereClause, paymentWhereClause });
@@ -125,7 +119,6 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       activeOrders,
       recentOrders,
       reservedOrders,
-      pickupOrders,
       completedOrders,
       cancelledOrders,
       returnedOrders
@@ -148,8 +141,10 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           depositAmount: true,
           securityDeposit: true,
           damageFee: true,
+          createdAt: true,
           pickedUpAt: true,
-          returnedAt: true
+          returnedAt: true,
+          updatedAt: true
         }
       }).then(result => result.data),
       
@@ -159,15 +154,10 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         status: ORDER_STATUS.PICKUPED 
       }),
       
-      // Today's orders (orders created today)
+      // Recent orders (orders in the period)
+      // ✅ Use orderWhereClause which already includes date filter if period === 'today'
       db.orders.search({
-        where: {
-          ...orderWhereClause,
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
-            lte: new Date(new Date().setHours(23, 59, 59, 999)) // End of today
-          }
-        },
+        where: orderWhereClause,
         include: {
           customer: { select: { firstName: true, lastName: true } },
           outlet: { select: { name: true } },
@@ -184,12 +174,6 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       db.orders.getStats({
         ...orderWhereClause,
         status: ORDER_STATUS.RESERVED
-      }),
-      
-      // Pickup orders count (duplicate - already above)
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: ORDER_STATUS.PICKUPED
       }),
       
       // Completed orders count
@@ -212,7 +196,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     ]);
 
     // Calculate total revenue using calculateOrderRevenueByStatus (single source of truth)
-    const totalRevenue = totalRevenueOrders.reduce((sum, order) => {
+    const totalRevenue = totalRevenueOrders.reduce((sum, order: any) => {
       const orderData = {
         orderType: order.orderType,
         status: order.status,
@@ -238,7 +222,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       },
       orderStatusCounts: {
         reserved: reservedOrders,
-        pickup: pickupOrders,
+        pickup: activeOrders, // activeOrders = PICKUPED orders
         completed: completedOrders,
         cancelled: cancelledOrders,
         returned: returnedOrders
@@ -259,7 +243,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     };
 
     // Generate ETag for caching
-    const dataString = JSON.stringify(dashboardData);
+    const responseData = ResponseBuilder.success('DASHBOARD_DATA_SUCCESS', dashboardData);
+    const dataString = JSON.stringify(responseData);
     const etag = crypto.createHash('md5').update(dataString).digest('hex');
     
     // Check if client has cached version
@@ -267,7 +252,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(dataString, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

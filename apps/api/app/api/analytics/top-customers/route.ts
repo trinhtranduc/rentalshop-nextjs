@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -38,12 +38,10 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     }
 
     // Build where clause based on user role and scope
+    // Note: We need to get ALL orders that have events in the date range, not just orders created in the range
+    // So we don't filter by createdAt here - we'll filter revenue events by date range instead
     const orderWhereClause: any = {
       customerId: { not: null },
-      createdAt: {
-        gte: dateStart,
-        lte: dateEnd
-      },
       status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] }
     };
 
@@ -67,80 +65,134 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', [])
+      );
     }
     // ADMIN sees all data (no additional filtering)
 
-    const topCustomers = await db.orders.groupBy({
-      by: ['customerId'],
-      where: orderWhereClause,
-      _count: {
-        customerId: true
+    // ✅ FIX: Get all orders and calculate revenue events within date range
+    // We need to get ALL orders (not just created in date range) because revenue events
+    // can occur on different dates (deposit, pickup, return)
+    // Use Prisma directly to get orders with custom select
+    const allOrders = await prisma.order.findMany({
+      where: {
+        ...orderWhereClause,
+        status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders from revenue
       },
-      _sum: {
-        totalAmount: true
+      select: {
+        id: true,
+        customerId: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        createdAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        updatedAt: true
       },
-      orderBy: {
-        _sum: {
-          totalAmount: 'desc'
-        }
-      },
-      take: 10
+      take: 10000 // Get enough orders to analyze
     });
 
-    // Get customer details for each top customer in order
+    // Group orders by customer and calculate revenue events within date range
+    const customerRevenueMap = new Map<number, {
+      customerId: number;
+      orderCount: number;
+      rentalCount: number;
+      saleCount: number;
+      totalRevenue: number;
+    }>();
+
+    for (const order of allOrders) {
+      if (!order.customerId) continue;
+
+      const customerId = order.customerId; // customerId is number (publicId)
+      
+      // Prepare order data for revenue calculation
+      const orderData = {
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        updatedAt: order.updatedAt
+      };
+
+      // Get revenue events within the date range
+      const revenueEvents = getOrderRevenueEvents(orderData, dateStart, dateEnd);
+      
+      // Only count this order if it has revenue events in the date range
+      if (revenueEvents.length === 0) continue;
+
+      if (!customerRevenueMap.has(customerId)) {
+        customerRevenueMap.set(customerId, {
+          customerId,
+          orderCount: 0,
+          rentalCount: 0,
+          saleCount: 0,
+          totalRevenue: 0
+        });
+      }
+
+      const customerData = customerRevenueMap.get(customerId)!;
+      customerData.orderCount += 1;
+
+      // Count by order type
+      if (order.orderType === ORDER_TYPE.RENT) {
+        customerData.rentalCount += 1;
+      } else if (order.orderType === ORDER_TYPE.SALE) {
+        customerData.saleCount += 1;
+      }
+
+      // Sum revenue from all events in the date range
+      const orderRevenueInRange = revenueEvents.reduce((sum, event) => sum + event.revenue, 0);
+      customerData.totalRevenue += orderRevenueInRange;
+    }
+
+    // Sort by total revenue and get top 10
+    const topCustomers = Array.from(customerRevenueMap.values())
+      .sort((a, b) => b.totalRevenue - a.totalRevenue)
+      .slice(0, 10);
+
+    // Get customer details for each top customer
+    // customerId is number (publicId) from order
     const topCustomersWithDetails = [];
     for (const item of topCustomers) {
-      const customer = await db.customers.findById(item.customerId!);
-
-    // Get rental count for this customer (only RENT orders)
-    const rentalCount = await db.orders.getStats({
-      where: {
-        ...orderWhereClause,
-        customerId: item.customerId!,
-        orderType: ORDER_TYPE.RENT as any
-      }
-    });
-
-    // Get sale count for this customer (only SALE orders)
-    const saleCount = await db.orders.getStats({
-      where: {
-        ...orderWhereClause,
-        customerId: item.customerId!,
-        orderType: ORDER_TYPE.SALE as any
-      }
-    });
+      // Find customer by publicId (customerId is number from order)
+      const customer = await db.customers.findById(item.customerId);
 
       topCustomersWithDetails.push({
         id: customer?.id || 0, // Use id (number) as the external ID
-        name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
+        name: customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : 'Unknown Customer',
         email: customer?.email || '',
         phone: customer?.phone || '',
         location: customer?.address || '',
-        orderCount: (item._count as any)?.customerId || 0, // Total orders (rental + sale)
-        rentalCount: rentalCount, // Only rental orders
-        saleCount: saleCount, // Only sale orders
+        orderCount: item.orderCount, // Total orders (rental + sale)
+        rentalCount: item.rentalCount, // Only rental orders
+        saleCount: item.saleCount, // Only sale orders
         // Hide financial data from OUTLET_STAFF
-        totalSpent: user.role !== USER_ROLE.OUTLET_STAFF ? (item._sum?.totalAmount || 0) : null,
+        totalSpent: user.role !== USER_ROLE.OUTLET_STAFF ? item.totalRevenue : null,
       });
     }
 
-    const body = JSON.stringify({ 
-      success: true, 
+    const responseData = ResponseBuilder.success('TOP_CUSTOMERS_SUCCESS', {
       data: topCustomersWithDetails,
       userRole: user.role // Include user role for frontend filtering
     });
-    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const dataString = JSON.stringify(responseData);
+    const etag = crypto.createHash('sha1').update(dataString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching top customers analytics:', error);

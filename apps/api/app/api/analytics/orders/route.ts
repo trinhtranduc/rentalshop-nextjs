@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -171,12 +171,9 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       analyticsData = await processOutletOrders(null);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: analyticsData,
-      code: 'ORDER_ANALYTICS_SUCCESS',
-        message: 'Order analytics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('ORDER_ANALYTICS_SUCCESS', analyticsData)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching order analytics:', error);

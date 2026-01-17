@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
 
@@ -429,6 +429,18 @@ export const DELETE = async (
           { status: API.STATUS.NOT_FOUND }
         );
       }
+
+      // Only allow deleting CANCELLED orders for OUTLET_ADMIN and MERCHANT roles
+      // ADMIN can delete any order (no status restriction)
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.MERCHANT) {
+        if (existingOrder.status !== ORDER_STATUS.CANCELLED) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+      // ADMIN role: No status check - can delete any order (handled by authorization checks below)
 
       // Authorization checks based on user role
       if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {

@@ -290,8 +290,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         } else {
           // Đơn chưa tồn tại: thêm mới vào danh sách
-          const customerName = order.customer 
-            ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()
+          const orderWithRelations = order as any; // findManyLightweight includes customer and outlet
+          const customerName = orderWithRelations.customer 
+            ? `${orderWithRelations.customer.firstName || ''} ${orderWithRelations.customer.lastName || ''}`.trim()
             : undefined;
           
           const orderIndex = dailyData.orders.length;
@@ -305,8 +306,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             description: event.description,
             revenueDate: event.date.toISOString(),
             customerName,
-            customerPhone: order.customer?.phone || undefined,
-            outletName: order.outlet?.name,
+            customerPhone: orderWithRelations.customer?.phone || undefined,
+            outletName: orderWithRelations.outlet?.name,
             totalAmount: order.totalAmount || 0,
             depositAmount: order.depositAmount || 0,
             securityDeposit: order.securityDeposit || 0,
