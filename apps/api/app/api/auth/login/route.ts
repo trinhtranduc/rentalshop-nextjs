@@ -365,6 +365,20 @@ export async function POST(request: NextRequest) {
       permissionsChangedAt, // ✅ Include permissionsChangedAt to prevent token invalidation after permissions change
     } as any);
 
+    // Generate public product link and affiliate link
+    const getBaseUrl = () => {
+      return process.env.CLIENT_URL || process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop';
+    };
+    
+    const baseUrl = getBaseUrl();
+    
+    // Get tenantKey from merchant (either from user's merchant or outlet's merchant)
+    const tenantKey = merchantData?.tenantKey || outletData?.merchant?.tenantKey;
+    
+    // Generate links
+    const publicProductLink = tenantKey ? `${baseUrl}/${tenantKey}/products` : undefined;
+    const affiliateLink = tenantKey ? `${baseUrl}/register?referralCode=${tenantKey}` : undefined;
+
     const result = {
       success: true,
       code: 'LOGIN_SUCCESS',
@@ -389,6 +403,9 @@ export async function POST(request: NextRequest) {
           merchant: merchantData,  // MerchantReference | null (includes subscription)
           // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
           outlet: outletData,      // OutletReference | null
+          // ✅ Public product link and affiliate link
+          publicProductLink,       // Link to public product page: {baseUrl}/{tenantKey}/products
+          affiliateLink,           // Link for affiliate/referral: {baseUrl}/register?referralCode={tenantKey}
         },
         token,
       },

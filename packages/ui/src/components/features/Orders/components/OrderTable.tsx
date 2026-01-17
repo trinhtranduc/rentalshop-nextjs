@@ -9,7 +9,7 @@ import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumberMasked } from '@rentalshop/utils';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
 interface OrderTableProps {
@@ -324,6 +324,20 @@ export const OrderTable = React.memo(function OrderTable({
                       <Edit className="h-4 w-4 mr-1" />
                       {t('actions.edit')}
                     </Button>
+                    
+                    {/* Show Delete button for CANCELLED orders (all roles can delete cancelled orders)
+                        ADMIN can delete any order, OUTLET_ADMIN and MERCHANT can only delete CANCELLED orders */}
+                    {order.status === 'CANCELLED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOrderAction('delete', order.orderNumber)}
+                        className="h-8 px-3 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {t('actions.delete')}
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

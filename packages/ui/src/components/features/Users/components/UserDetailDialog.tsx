@@ -6,13 +6,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  useToast
 } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserDisplayInfo } from './UserDisplayInfo';
-import { usersApi } from '@rentalshop/utils';
+import { usersApi, authApi } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { useAuth } from '@rentalshop/hooks';
@@ -34,11 +35,14 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
 }) => {
   const t = useUsersTranslations();
   const tc = useCommonTranslations();
+  const { toastSuccess, toastError } = useToast();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
 
   if (!user) return null;
 
@@ -101,6 +105,53 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
     onError?.(error);
   };
 
+  const handleVerifyEmail = async () => {
+    setIsVerifyingEmail(true);
+    try {
+      // Admin can verify email directly by updating user
+      const response = await usersApi.updateUser(user.id, { 
+        emailVerified: true
+      });
+      
+      if (response.success) {
+        // Update local user state
+        const updatedUser = { ...user, emailVerified: true };
+        onUserUpdated?.(updatedUser);
+        toastSuccess('Email Verified', 'User email has been verified successfully');
+      } else {
+        const errorMsg = response.error || 'Failed to verify email';
+        onError?.(errorMsg);
+        toastError('Verification Failed', errorMsg);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      onError?.(errorMessage);
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsSendingVerification(true);
+    try {
+      // Resend verification email
+      const response = await authApi.resendVerificationEmail(user.email);
+      
+      if (response.success) {
+        toastSuccess('Verification Email Sent', 'A verification email has been sent to the user');
+      } else {
+        const errorMsg = response.error || 'Failed to send verification email';
+        onError?.(errorMsg);
+        toastError('Send Failed', errorMsg);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      onError?.(errorMessage);
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+
   const handleDeleteUser = async () => {
     setIsLoading(true);
     try {
@@ -144,7 +195,9 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
               onActivate={() => setIsActivateConfirmOpen(true)}
               onDeactivate={() => setIsDeactivateConfirmOpen(true)}
               onDelete={() => setIsDeleteConfirmOpen(true)}
-              isLoading={isLoading}
+              onVerifyEmail={handleVerifyEmail}
+              onResendVerification={handleResendVerification}
+              isLoading={isLoading || isVerifyingEmail || isSendingVerification}
             />
             
               {/* Permission Management - Hidden */}

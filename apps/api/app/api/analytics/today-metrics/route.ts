@@ -108,18 +108,33 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     });
 
-    // Get overdue rentals (status PICKUPED but returnPlanAt < start of today)
-    // ✅ Fix: Ensure returnPlanAt is not null and compare with start of today
+    // Get overdue rentals (status PICKUPED but returnPlanAt has passed)
+    // Overdue = returnPlanAt < now (current time)
+    // Note: Overdue orders can be created at any time, not just today
+    // So we don't include createdAt filter from orderWhereClause
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const overdueWhereClause = {
-      ...orderWhereClause,
+    const overdueWhereClause: any = {
       status: ORDER_STATUS.PICKUPED,
       returnPlanAt: {
         not: null,
-        lt: startOfToday
+        lt: now // Compare with current time, not start of today
       }
     };
+    
+    // Apply role-based filtering (merchant/outlet scope) but NOT date filter
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        overdueWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      }
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        overdueWhereClause.outletId = outlet.id;
+      }
+    }
+    // ADMIN users see all overdue orders (no additional filtering)
+    
     const overdueOrders = await db.orders.search({
       where: overdueWhereClause,
       limit: 1000
