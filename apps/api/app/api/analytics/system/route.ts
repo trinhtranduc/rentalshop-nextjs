@@ -1,4 +1,4 @@
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth';
@@ -107,17 +107,18 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
         }
       }),
       
-      // Revenue in date range
-      // ✅ Exclude CANCELLED orders from revenue calculation
-      db.orders.aggregate({
+      // Get orders in date range for revenue calculation (will use calculatePeriodRevenueBatch)
+      db.orders.findManyLightweight({
         where: {
           status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
-          createdAt: {
-            gte: dateStart,
-            lte: dateEnd
-          }
+          OR: [
+            { createdAt: { gte: dateStart, lte: dateEnd } },
+            { pickedUpAt: { gte: dateStart, lte: dateEnd } },
+            { returnedAt: { gte: dateStart, lte: dateEnd } },
+            { updatedAt: { gte: dateStart, lte: dateEnd }, status: ORDER_STATUS.CANCELLED as any }
+          ]
         },
-        _sum: { totalAmount: true }
+        limit: 10000
       })
     ]);
 
@@ -184,6 +185,29 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       }
     }
 
+    // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
+    const ordersForRevenue = totalRevenue?.data || [];
+    const ordersData = ordersForRevenue.map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    const { realIncome: calculatedRevenue } = calculatePeriodRevenueBatch(
+      ordersData,
+      dateStart,
+      dateEnd
+    );
+
     const systemMetrics = {
       totalMerchants,
       totalOutlets,
@@ -191,7 +215,7 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       totalProducts,
       totalCustomers,
       totalOrders,
-      totalRevenue: totalRevenue?._sum?.totalAmount || 0,
+      totalRevenue: calculatedRevenue,
       activeMerchants,
       newMerchantsThisMonth: newMerchantsThisMonth, // New merchants in date range
       newMerchantsThisYear,

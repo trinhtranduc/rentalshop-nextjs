@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -80,12 +80,26 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       limit: 1000
     });
 
-    // Calculate metrics
-    // ✅ Exclude CANCELLED orders from revenue calculation
+    // Calculate metrics using calculateOrderRevenueByStatus (single source of truth)
     const totalOrders = todayOrders.total || 0;
     const activeRentals = todayOrders.data?.filter(order => order.status === ORDER_STATUS.PICKUPED).length || 0;
     const completedOrders = todayOrders.data?.filter(order => order.status === ORDER_STATUS.COMPLETED).length || 0;
-    const totalRevenue = todayOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    
+    const totalRevenue = (todayOrders.data || []).reduce((sum: number, order: any) => {
+      const orderData = {
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        updatedAt: order.updatedAt
+      };
+      return sum + calculateOrderRevenueByStatus(orderData);
+    }, 0);
 
     // Get stock metrics
     const stockMetrics = await db.outletStock.aggregate({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
@@ -118,12 +118,56 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       limit: 1000
     });
 
-    // Calculate growth metrics
-    // ✅ Exclude CANCELLED orders from revenue calculation
+    // Calculate growth metrics using calculatePeriodRevenueBatch (single source of truth)
     const currentMonthCount = currentMonthOrders.total || 0;
     const lastMonthCount = lastMonthOrders.total || 0;
-    const currentMonthRevenue = currentMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-    const lastMonthRevenue = lastMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    
+    // Prepare order data for revenue calculator
+    const currentMonthOrdersData = (currentMonthOrders.data || []).map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    const lastMonthOrdersData = (lastMonthOrders.data || []).map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    // Calculate revenue for each period
+    const currentMonthStart = currentMonth;
+    const currentMonthEnd = currentEnd;
+    const lastMonthStart = lastMonth;
+    
+    const { realIncome: currentMonthRevenue } = calculatePeriodRevenueBatch(
+      currentMonthOrdersData,
+      currentMonthStart,
+      currentMonthEnd
+    );
+    const { realIncome: lastMonthRevenue } = calculatePeriodRevenueBatch(
+      lastMonthOrdersData,
+      lastMonthStart,
+      lastMonthEnd
+    );
 
     const orderGrowth = lastMonthCount > 0 ? ((currentMonthCount - lastMonthCount) / lastMonthCount * 100) : 0;
     const revenueGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
