@@ -14,7 +14,11 @@ import { PageWrapper,
   ChangePasswordDialog,
   Breadcrumb,
   useToast,
-  UserForm } from '@rentalshop/ui';
+  UserForm,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
@@ -35,7 +39,7 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showEditSection, setShowEditSection] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -73,7 +77,7 @@ export default function UserDetailPage() {
 
 
   const handleEdit = () => {
-    setShowEditSection(!showEditSection);
+    setShowEditDialog(true);
   };
 
   const handleSave = async (userData: UserUpdateInput | UserCreateInput) => {
@@ -92,7 +96,7 @@ export default function UserDetailPage() {
           updatedUser.name = `${updatedUser.firstName} ${updatedUser.lastName || ''}`.trim();
         }
         setUserDetails(updatedUser);
-        setShowEditSection(false);
+        setShowEditDialog(false);
         toastSuccess('User updated', 'Changes saved successfully.');
       } else {
         const msg = data.message || 'Failed to update user';
@@ -107,7 +111,7 @@ export default function UserDetailPage() {
   };
 
   const handleCancel = () => {
-    setShowEditSection(false);
+    setShowEditDialog(false);
   };
 
   const handleActivate = async () => {
@@ -259,12 +263,10 @@ export default function UserDetailPage() {
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
           <div className="flex items-center gap-2">
-            {!showEditSection && (
-              <Button variant="outline" onClick={handleEdit}>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit User
-              </Button>
-            )}
+            <Button variant="outline" onClick={handleEdit}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit User
+            </Button>
           </div>
         </div>
       </PageHeader>
@@ -279,54 +281,36 @@ export default function UserDetailPage() {
             <p className="text-gray-600">{userDetails.email}</p>
           </div>
           <div className="flex gap-2">
-            {!showEditSection && (
-              <>
-                <Button 
-                  onClick={handleEdit} 
-                  variant="default"
-                  className="bg-blue-700 hover:bg-blue-700 text-white"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit User
-                </Button>
-                <Button 
-                  onClick={() => setShowChangePassword(true)}
-                  variant="outline"
-                  className="border-green-200 text-green-700 hover:bg-green-50"
-                >
-                  <Key className="w-4 h-4 mr-2" />
-                  Change Password
-                </Button>
-              </>
-            )}
+            <Button 
+              onClick={handleEdit} 
+              variant="default"
+              className="bg-blue-700 hover:bg-blue-700 text-white"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit User
+            </Button>
+            <Button 
+              onClick={() => setShowChangePassword(true)}
+              variant="outline"
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Key className="w-4 h-4 mr-2" />
+              Change Password
+            </Button>
           </div>
         </div>
 
-        {/* User Information - Read Only OR Edit Form */}
-        {!showEditSection ? (
-          <UserCard user={userDetails} onUserAction={() => {}} />
-        ) : (
-          <div className="mt-8">
-            <UserForm
-              mode="edit"
-              user={userDetails}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              isSubmitting={isUpdating}
-            />
-          </div>
-        )}
+        {/* User Information */}
+        <UserCard user={userDetails} onUserAction={() => {}} />
 
-        {/* Account Management (Hidden when editing) */}
-        {!showEditSection && (
-          <AccountManagementCard
-            user={userDetails}
-            isUpdating={isUpdating}
-            onActivate={handleActivate}
-            onDeactivate={() => setShowDeactivateConfirm(true)}
-            onDelete={() => setShowDeleteConfirm(true)}
-          />
-        )}
+        {/* Account Management */}
+        <AccountManagementCard
+          user={userDetails}
+          isUpdating={isUpdating}
+          onActivate={handleActivate}
+          onDeactivate={() => setShowDeactivateConfirm(true)}
+          onDelete={() => setShowDeleteConfirm(true)}
+        />
       </PageContent>
 
       {/* Delete Confirmation Dialog */}
@@ -360,6 +344,25 @@ export default function UserDetailPage() {
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Edit User: {userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}
+            </DialogTitle>
+          </DialogHeader>
+          <UserForm
+            user={userDetails}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            mode="edit"
+            isSubmitting={isUpdating}
+            currentUser={currentUser}
+          />
+        </DialogContent>
+      </Dialog>
     </PageWrapper>
   );
 }

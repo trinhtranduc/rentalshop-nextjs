@@ -80,7 +80,9 @@ export default function ActivityFeed({
     }
   };
 
-  const displayActivities = activities.slice(0, maxItems);
+  // Ensure activities is an array before calling slice
+  const activitiesArray = Array.isArray(activities) ? activities : [];
+  const displayActivities = activitiesArray.slice(0, maxItems);
 
   return (
     <Card className={className}>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -38,12 +38,10 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     }
 
     // Build where clause based on user role and scope
+    // Note: We need to get ALL orders that have events in the date range, not just orders created in the range
+    // So we don't filter by createdAt here - we'll filter revenue events by date range instead
     const orderWhereClause: any = {
       customerId: { not: null },
-      createdAt: {
-        gte: dateStart,
-        lte: dateEnd
-      },
       status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] }
     };
 
@@ -73,10 +71,11 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     }
     // ADMIN sees all data (no additional filtering)
 
-    // ✅ FIX: Get all orders and calculate revenue using revenue calculator
-    // Instead of using _sum.totalAmount (incorrect for RENT orders),
-    // we need to calculate actual revenue for each order
-    const allOrders = await db.orders.search({
+    // ✅ FIX: Get all orders and calculate revenue events within date range
+    // We need to get ALL orders (not just created in date range) because revenue events
+    // can occur on different dates (deposit, pickup, return)
+    // Use Prisma directly to get orders with custom select
+    const allOrders = await prisma.order.findMany({
       where: {
         ...orderWhereClause,
         status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders from revenue
@@ -95,23 +94,43 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         returnedAt: true,
         updatedAt: true
       },
-      limit: 10000 // Get enough orders to analyze
+      take: 10000 // Get enough orders to analyze
     });
 
-    // Group orders by customer and calculate revenue
-    const customerRevenueMap = new Map<string, {
-      customerId: string;
+    // Group orders by customer and calculate revenue events within date range
+    const customerRevenueMap = new Map<number, {
+      customerId: number;
       orderCount: number;
       rentalCount: number;
       saleCount: number;
       totalRevenue: number;
     }>();
 
-    for (const order of allOrders.data || []) {
+    for (const order of allOrders) {
       if (!order.customerId) continue;
 
-      const customerId = order.customerId;
+      const customerId = order.customerId; // customerId is number (publicId)
       
+      // Prepare order data for revenue calculation
+      const orderData = {
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        updatedAt: order.updatedAt
+      };
+
+      // Get revenue events within the date range
+      const revenueEvents = getOrderRevenueEvents(orderData, dateStart, dateEnd);
+      
+      // Only count this order if it has revenue events in the date range
+      if (revenueEvents.length === 0) continue;
+
       if (!customerRevenueMap.has(customerId)) {
         customerRevenueMap.set(customerId, {
           customerId,
@@ -132,22 +151,9 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         customerData.saleCount += 1;
       }
 
-      // Calculate revenue using revenue calculator (single source of truth)
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        updatedAt: order.updatedAt
-      };
-
-      const orderRevenue = calculateOrderRevenueByStatus(orderData);
-      customerData.totalRevenue += orderRevenue;
+      // Sum revenue from all events in the date range
+      const orderRevenueInRange = revenueEvents.reduce((sum, event) => sum + event.revenue, 0);
+      customerData.totalRevenue += orderRevenueInRange;
     }
 
     // Sort by total revenue and get top 10
@@ -156,13 +162,15 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       .slice(0, 10);
 
     // Get customer details for each top customer
+    // customerId is number (publicId) from order
     const topCustomersWithDetails = [];
     for (const item of topCustomers) {
+      // Find customer by publicId (customerId is number from order)
       const customer = await db.customers.findById(item.customerId);
 
       topCustomersWithDetails.push({
         id: customer?.id || 0, // Use id (number) as the external ID
-        name: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
+        name: customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : 'Unknown Customer',
         email: customer?.email || '',
         phone: customer?.phone || '',
         location: customer?.address || '',
