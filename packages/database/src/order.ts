@@ -609,6 +609,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
 
   const where: any = {};
 
+  // Always exclude soft-deleted orders
+  where.deletedAt = null;
+
   // Text search (diacritics-insensitive for customer names)
   if (q) {
     const searchTerm = q.trim();
@@ -1507,6 +1510,9 @@ export const simplifiedOrders = {
     } = filters;
 
     const where: any = {};
+    
+    // Always exclude soft-deleted orders
+    where.deletedAt = null;
     
     // Build base filters
     if (outletId) {

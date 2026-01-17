@@ -1,12 +1,15 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
+import { usePermissions } from '@rentalshop/hooks';
 
 interface OrderActionsProps {
   onAction: (action: string, orderId?: string) => void;
 }
 
 export function OrderActions({ onAction }: OrderActionsProps) {
+  const { canExportOrders } = usePermissions();
+  
   const actions = [
     {
       id: 'create-order',
@@ -22,13 +25,13 @@ export function OrderActions({ onAction }: OrderActionsProps) {
       icon: '📥',
       variant: 'secondary' as const
     },
-    {
+    ...(canExportOrders ? [{
       id: 'export-orders',
       label: 'Export Orders',
       description: 'Export to CSV/Excel',
       icon: '📤',
       variant: 'outline' as const
-    },
+    }] : []),
     {
       id: 'bulk-actions',
       label: 'Bulk Actions',

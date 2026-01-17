@@ -28,14 +28,26 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     let dateEnd: Date;
     
     if (startDate && endDate) {
+      // Parse dates and set to start/end of day for accurate range matching
       dateStart = new Date(startDate);
+      dateStart.setHours(0, 0, 0, 0);
       dateEnd = new Date(endDate);
+      dateEnd.setHours(23, 59, 59, 999);
     } else {
       // Default to last 30 days
       dateEnd = new Date();
+      dateEnd.setHours(23, 59, 59, 999);
       dateStart = new Date();
       dateStart.setDate(dateStart.getDate() - 30);
+      dateStart.setHours(0, 0, 0, 0);
     }
+
+    console.log('📊 Top Customers - Date Range:', {
+      startDate: dateStart.toISOString(),
+      endDate: dateEnd.toISOString(),
+      userRole: user.role,
+      userScope
+    });
 
     // Build where clause based on user role and scope
     // Note: We need to get ALL orders that have events in the date range, not just orders created in the range
@@ -78,7 +90,8 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     const allOrders = await prisma.order.findMany({
       where: {
         ...orderWhereClause,
-        status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders from revenue
+        status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders from revenue
+        deletedAt: null // Exclude soft-deleted orders
       },
       select: {
         id: true,
@@ -92,9 +105,16 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         createdAt: true,
         pickedUpAt: true,
         returnedAt: true,
-        updatedAt: true
+        updatedAt: true,
+        pickupPlanAt: true, // Add pickupPlanAt for future revenue
+        returnPlanAt: true  // Add returnPlanAt for future revenue
       },
       take: 10000 // Get enough orders to analyze
+    });
+
+    console.log('📊 Top Customers - Orders Found:', {
+      totalOrders: allOrders.length,
+      ordersWithCustomer: allOrders.filter(o => o.customerId).length
     });
 
     // Group orders by customer and calculate revenue events within date range
@@ -122,14 +142,57 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         createdAt: order.createdAt,
         pickedUpAt: order.pickedUpAt,
         returnedAt: order.returnedAt,
-        updatedAt: order.updatedAt
+        updatedAt: order.updatedAt,
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt
       };
 
       // Get revenue events within the date range
       const revenueEvents = getOrderRevenueEvents(orderData, dateStart, dateEnd);
       
       // Only count this order if it has revenue events in the date range
-      if (revenueEvents.length === 0) continue;
+      // OR if it's a SALE order created in the date range (even if no events)
+      // OR if it's a RESERVED order created in the date range (deposit event)
+      const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
+      const isCreatedInRange = orderCreatedAt && orderCreatedAt >= dateStart && orderCreatedAt <= dateEnd;
+      
+      // For SALE orders created in range, count even if no events (events might be filtered out)
+      // For RENT orders, only count if there are revenue events
+      if (revenueEvents.length === 0) {
+        // Only count SALE orders created in range if no events
+        if (order.orderType === ORDER_TYPE.SALE && isCreatedInRange) {
+          // SALE order created in range but no events - this shouldn't happen normally
+          // But we'll count it with totalAmount as revenue
+          const customerData = customerRevenueMap.get(customerId) || {
+            customerId,
+            orderCount: 0,
+            rentalCount: 0,
+            saleCount: 0,
+            totalRevenue: 0
+          };
+          if (!customerRevenueMap.has(customerId)) {
+            customerRevenueMap.set(customerId, customerData);
+          }
+          customerData.orderCount += 1;
+          customerData.saleCount += 1;
+          customerData.totalRevenue += order.totalAmount || 0;
+        }
+        // Debug: Log orders with no revenue events (only for non-SALE or SALE not in range)
+        if (order.orderType !== ORDER_TYPE.SALE || !isCreatedInRange) {
+          console.log('⚠️ Order with no revenue events in range:', {
+            orderId: order.id,
+            customerId: order.customerId,
+            orderType: order.orderType,
+            status: order.status,
+            createdAt: order.createdAt,
+            pickedUpAt: order.pickedUpAt,
+            returnedAt: order.returnedAt,
+            isCreatedInRange,
+            dateRange: { start: dateStart.toISOString(), end: dateEnd.toISOString() }
+          });
+        }
+        continue;
+      }
 
       if (!customerRevenueMap.has(customerId)) {
         customerRevenueMap.set(customerId, {

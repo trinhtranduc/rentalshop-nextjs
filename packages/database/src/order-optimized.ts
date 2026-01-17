@@ -41,6 +41,9 @@ class PerformanceMonitor {
 function buildOptimizedWhereClause(filters: OrderSearchFilter): any {
   const where: any = {};
 
+  // Always exclude soft-deleted orders
+  where.deletedAt = null;
+
   // Text search - optimized for indexed fields (diacritics-insensitive for customer names)
   if (filters.q) {
     const searchTerm = filters.q.trim();

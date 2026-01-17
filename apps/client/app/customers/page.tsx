@@ -47,8 +47,7 @@ export default function CustomersPage() {
   const { toastSuccess } = useToast();
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
-  const canExport = useCanExportData();
-  const { canManageCustomers } = usePermissions();
+  const { canManageCustomers, canExportCustomers } = usePermissions();
   
   // Dialog states
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -306,8 +305,8 @@ export default function CustomersPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Export button - only show when customers are selected */}
-            {canExport && selectedCustomerIds.length > 0 && (
+            {/* Export button - only show when customers are selected and user has export permission */}
+            {canExportCustomers && selectedCustomerIds.length > 0 && (
               <Button
                 onClick={() => setShowExportDialog(true)}
                 variant="default"

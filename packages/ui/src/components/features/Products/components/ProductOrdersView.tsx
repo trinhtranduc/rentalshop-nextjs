@@ -34,7 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../../../lib';
-import { useOrderTranslations, useCommonTranslations, useDedupedApi, useAuth } from '@rentalshop/hooks';
+import { useOrderTranslations, useCommonTranslations, useDedupedApi, useAuth, usePermissions } from '@rentalshop/hooks';
 import { ProductsLoading } from './ProductsLoading';
 import { 
   OrderFilters as OrderFiltersComponent,
@@ -72,6 +72,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const { user } = useAuth();
+  const { canExportOrders } = usePermissions();
   
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
@@ -342,10 +343,13 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
               <p className="text-gray-600">{t('productOrders.description')}</p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                {tc('buttons.export')}
-              </Button>
+              {/* Only show export button if user has export permission */}
+              {canExportOrders && (
+                <Button variant="outline" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {tc('buttons.export')}
+                </Button>
+              )}
               <Button onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {tc('buttons.refresh')}
