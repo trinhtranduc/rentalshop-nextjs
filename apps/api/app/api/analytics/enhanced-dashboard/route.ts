@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
@@ -174,11 +174,57 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     });
 
-    // Calculate metrics
-    // ✅ Exclude CANCELLED orders from revenue calculation
-    const todayRevenue = todayOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-    const thisMonthRevenue = thisMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-    const lastMonthRevenue = lastMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    // Calculate metrics using calculatePeriodRevenueBatch (single source of truth)
+    // Prepare order data for revenue calculator
+    const todayOrdersData = (todayOrders.data || []).map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    const thisMonthOrdersData = (thisMonthOrders.data || []).map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    const lastMonthOrdersData = (lastMonthOrders.data || []).map((order: any) => ({
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount || 0,
+      depositAmount: order.depositAmount || 0,
+      securityDeposit: order.securityDeposit || 0,
+      damageFee: order.damageFee || 0,
+      createdAt: order.createdAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      updatedAt: order.updatedAt
+    }));
+
+    // Calculate revenue for each period
+    const { realIncome: todayRevenue } = calculatePeriodRevenueBatch(todayOrdersData, start, end);
+    const { realIncome: thisMonthRevenue } = calculatePeriodRevenueBatch(thisMonthOrdersData, start, end);
+    const { realIncome: lastMonthRevenue } = calculatePeriodRevenueBatch(lastMonthOrdersData, lastMonth, lastMonthEnd);
 
     const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
 

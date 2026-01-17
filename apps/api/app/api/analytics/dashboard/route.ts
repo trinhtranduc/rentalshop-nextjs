@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, formatFullName } from '@rentalshop/utils';
+import { handleApiError, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -211,38 +211,21 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       })
     ]);
 
-    // Calculate total revenue based on order type and status
-    const calculateOrderRevenue = (order: any) => {
-      if (order.orderType === ORDER_TYPE.SALE) {
-        return order.totalAmount;
-      } else {
-        // RENT order
-        if (order.status === ORDER_STATUS.RESERVED) {
-          return order.depositAmount;
-        } else if (order.status === ORDER_STATUS.PICKUPED) {
-          return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
-        } else if (order.status === ORDER_STATUS.RETURNED) {
-          // Check if order was picked up and returned on the same day
-          const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
-          const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
-          
-          if (pickupDate && returnDate) {
-            const sameDay = pickupDate.toDateString() === returnDate.toDateString();
-            if (sameDay) {
-              // Same day rental: total - security deposit + damage fee
-              return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
-            }
-          }
-          
-          // Different days or no pickup/return dates: security deposit - damage fee
-          return (order.securityDeposit || 0) - (order.damageFee || 0);
-        }
-      }
-      return 0;
-    };
-
+    // Calculate total revenue using calculateOrderRevenueByStatus (single source of truth)
     const totalRevenue = totalRevenueOrders.reduce((sum, order) => {
-      return sum + calculateOrderRevenue(order);
+      const orderData = {
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        updatedAt: order.updatedAt
+      };
+      return sum + calculateOrderRevenueByStatus(orderData);
     }, 0);
 
     // Prepare response data

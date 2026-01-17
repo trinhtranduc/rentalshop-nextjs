@@ -179,3 +179,6 @@ export * from './audit-helper';
 
 // Request logging utilities
 export * from './request-logger';
+
+// Revenue calculator utilities (single source of truth for revenue calculations)
+export * from './revenue-calculator';

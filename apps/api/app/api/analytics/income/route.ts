@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
+import { handleApiError, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -51,7 +51,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     }
 
     // Generate data based on groupBy parameter
-    const incomeData = [];
+    const incomeData: any[] = [];
     
     // Helper function to get outlet IDs based on selected outlets or user scope
     const getOutletsToProcess = async () => {
@@ -68,7 +68,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
             }
           })
         );
-        return outlets.filter((o): o is { id: string; publicId: number; name: string } => o !== null);
+        return outlets.filter((o) => o !== null) as Array<{ id: string | number; publicId: number; name: string }>;
         }
 
       // Default behavior: get all merchant outlets or single outlet
@@ -97,7 +97,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     const outletsToProcess = await getOutletsToProcess();
 
     // Helper function to process income data for a specific outlet
-    const processOutletIncome = async (outlet: { id: string; publicId: number; name: string } | null, startOfPeriod: Date, endOfPeriod: Date, periodLabel: string, year: number, groupByType: 'month' | 'day') => {
+    const processOutletIncome = async (outlet: { id: string | number; publicId: number; name: string } | null, startOfPeriod: Date, endOfPeriod: Date, periodLabel: string, year: number, groupByType: 'month' | 'day') => {
       // Build where clause for orders
       const orderWhereClause: any = {
         createdAt: {
@@ -138,137 +138,99 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         }
       }
 
-      // Calculate real income based on actual transaction dates
-      // SALE: Count totalAmount on createdAt date (sale is completed immediately)
-      // RESERVED: Count depositAmount on createdAt date
-      // PICKUPED: Count (totalAmount - depositAmount + securityDeposit) on pickedUpAt date
-      // RETURNED: Count -(securityDeposit - damageFee) on returnedAt date (negative because we return money to customer)
-      
-      let realIncome = 0;
+      // Calculate income using getOrderRevenueForDate (single source of truth)
+      // Query all orders that have events or future plans in this period
+      const ordersWhereClause: any = {
+        OR: [
+          // Orders created in period
+          { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          // Orders picked up in period
+          { pickedUpAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          // Orders returned in period
+          { returnedAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          // Orders cancelled in period
+          { updatedAt: { gte: startOfPeriod, lte: endOfPeriod }, status: ORDER_STATUS.CANCELLED as any },
+          // Orders with future pickup plan in period
+          { pickupPlanAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          // Orders with future return plan in period
+          { returnPlanAt: { gte: startOfPeriod, lte: endOfPeriod } }
+        ]
+      };
 
-      // 0. SALE orders: Count totalAmount on createdAt date
-      // ✅ Exclude CANCELLED orders from revenue calculation
-      const saleOrders = await db.orders.search({
-        where: {
-          ...outletFilter,
-          orderType: ORDER_TYPE.SALE as any,
-          status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
-          createdAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
-          }
-        },
-        select: {
-          totalAmount: true
+      // Apply outlet filtering
+      if (outlet) {
+        ordersWhereClause.outletId = outlet.id;
+      } else if (userScope.merchantId && !selectedOutletIds) {
+        const merchant = await db.merchants.findById(userScope.merchantId);
+        if (merchant && merchant.outlets) {
+          ordersWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
         }
+      } else if (userScope.outletId) {
+        const outletObj = await db.outlets.findById(userScope.outletId);
+        if (outletObj) {
+          ordersWhereClause.outletId = outletObj.id;
+        }
+      }
+
+      // Query all relevant orders using db API to get all fields including securityDeposit and damageFee
+      // Use findManyLightweight which includes securityDeposit and damageFee
+      const allOrdersResult = await db.orders.findManyLightweight({
+        ...(outlet ? { outletId: typeof outlet.id === 'string' ? parseInt(outlet.id as any) : outlet.id } : {}),
+        ...(userScope.merchantId && !selectedOutletIds ? { merchantId: userScope.merchantId } : {}),
+        ...(userScope.outletId && !outlet ? { outletId: userScope.outletId } : {}),
+        startDate: startOfPeriod,
+        endDate: endOfPeriod,
+        limit: 10000 // Large limit to get all orders
       });
-      realIncome += saleOrders.data.reduce((sum: number, order: any) => {
-        return sum + (order.totalAmount || 0);
-      }, 0);
 
-      // 1. RESERVED orders (RENT only): Count depositAmount on createdAt date
-      const reservedOrders = await db.orders.search({
-        where: {
-          ...outletFilter,
-          orderType: ORDER_TYPE.RENT as any,
-          status: ORDER_STATUS.RESERVED as any,
-          createdAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
-          }
-        },
-        select: {
-          depositAmount: true
-        }
+      // Filter orders based on OR conditions (createdAt, pickedUpAt, returnedAt, etc.)
+      const allOrders = allOrdersResult.data.filter((order: any) => {
+        const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
+        const orderPickedUpAt = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+        const orderReturnedAt = order.returnedAt ? new Date(order.returnedAt) : null;
+        const orderUpdatedAt = order.updatedAt ? new Date(order.updatedAt) : null;
+        const orderPickupPlanAt = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
+        const orderReturnPlanAt = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
+
+        return (
+          // Created in period
+          (orderCreatedAt && orderCreatedAt >= startOfPeriod && orderCreatedAt <= endOfPeriod) ||
+          // Picked up in period
+          (orderPickedUpAt && orderPickedUpAt >= startOfPeriod && orderPickedUpAt <= endOfPeriod) ||
+          // Returned in period
+          (orderReturnedAt && orderReturnedAt >= startOfPeriod && orderReturnedAt <= endOfPeriod) ||
+          // Cancelled in period
+          (order.status === ORDER_STATUS.CANCELLED && orderUpdatedAt && orderUpdatedAt >= startOfPeriod && orderUpdatedAt <= endOfPeriod) ||
+          // Future pickup plan in period
+          (orderPickupPlanAt && orderPickupPlanAt >= startOfPeriod && orderPickupPlanAt <= endOfPeriod) ||
+          // Future return plan in period
+          (orderReturnPlanAt && orderReturnPlanAt >= startOfPeriod && orderReturnPlanAt <= endOfPeriod)
+        );
       });
-      realIncome += reservedOrders.data.reduce((sum: number, order: any) => {
-        return sum + (order.depositAmount || 0);
-      }, 0);
 
-      // 2. PICKUPED orders (RENT only): Count (totalAmount - depositAmount + securityDeposit) on pickedUpAt date
-      const pickedUpOrders = await db.orders.search({
-        where: {
-          ...outletFilter,
-          orderType: ORDER_TYPE.RENT as any,
-          status: ORDER_STATUS.PICKUPED as any,
-          pickedUpAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
-          }
-        },
-        select: {
-          totalAmount: true,
-          depositAmount: true,
-          securityDeposit: true
-        }
-      });
-      realIncome += pickedUpOrders.data.reduce((sum: number, order: any) => {
-        // Revenue when picking up: (total - deposit already paid) + security deposit
-        return sum + (order.totalAmount - (order.depositAmount || 0) + (order.securityDeposit || 0));
-      }, 0);
+      // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
+      // Prepare order data for revenue calculator
+      const ordersData = allOrders.map((order: any) => ({
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        updatedAt: order.updatedAt
+      }));
 
-      // 3. RETURNED orders (RENT only): Count -(securityDeposit - damageFee) on returnedAt date (negative = money returned to customer)
-      const returnedOrders = await db.orders.search({
-        where: {
-          ...outletFilter,
-          orderType: ORDER_TYPE.RENT as any,
-          status: ORDER_STATUS.RETURNED as any,
-          returnedAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
-          }
-        },
-        select: {
-          securityDeposit: true,
-          damageFee: true
-        }
-      });
-      realIncome += returnedOrders.data.reduce((sum: number, order: any) => {
-        // Revenue when returning: -(securityDeposit - damageFee) = money returned to customer (negative)
-        const refund = (order.securityDeposit || 0) - (order.damageFee || 0);
-        return sum - refund; // Negative because we return money
-        }, 0);
-
-        // Get future income (RENT orders with pickup date in this period)
-        // Future income = totalAmount - depositAmount (amount expected to receive on pickup day)
-        // Note: Only count RESERVED orders (not PICKUPED) because PICKUPED orders have already been collected
-        // Note: Don't filter by createdAt - we want all orders with pickup date in period, regardless of when they were created
-        const futureIncomeWhereClause: any = {
-          orderType: ORDER_TYPE.RENT as any, // Only RENT orders
-          status: ORDER_STATUS.RESERVED as any, // Only RESERVED orders (not yet picked up)
-          pickupPlanAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
-          }
-        };
-        
-        // Apply outlet filtering (same as realIncome)
-        if (outlet) {
-          futureIncomeWhereClause.outletId = outlet.id;
-        } else if (userScope.merchantId && !selectedOutletIds) {
-          const merchant = await db.merchants.findById(userScope.merchantId);
-          if (merchant && merchant.outlets) {
-            futureIncomeWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
-          }
-        } else if (userScope.outletId) {
-          const outletObj = await db.outlets.findById(userScope.outletId);
-          if (outletObj) {
-            futureIncomeWhereClause.outletId = outletObj.id;
-          }
-        }
-        
-        const futureIncomeOrders = await db.orders.search({
-          where: futureIncomeWhereClause,
-          select: {
-            totalAmount: true,
-            depositAmount: true
-          }
-        });
-        
-        const futureIncome = futureIncomeOrders.data.reduce((sum: number, order: any) => {
-          // Future income = total - deposit (amount expected to receive on pickup day)
-          return sum + (order.totalAmount - (order.depositAmount || 0));
-        }, 0);
+      // Calculate period revenue for all orders (batch processing)
+      const { realIncome, futureIncome } = calculatePeriodRevenueBatch(
+        ordersData,
+        startOfPeriod,
+        endOfPeriod
+      );
 
       // Get order count for the period
         const orderCount = await db.orders.getStats({
