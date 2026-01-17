@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
@@ -94,18 +94,15 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', {
           today: { orders: 0, revenue: 0 },
           thisMonth: { orders: 0, revenue: 0 },
           activeRentals: 0,
           stock: { total: 0, available: 0, renting: 0 },
           growth: { revenue: 0 }
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+        })
+      );
     }
 
     // Determine date range based on parameters
@@ -261,12 +258,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     };
 
-    return NextResponse.json({
-      success: true,
-      data: dashboardData,
-      code: 'DASHBOARD_DATA_SUCCESS',
-        message: 'Enhanced dashboard data retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('DASHBOARD_DATA_SUCCESS', dashboardData)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching enhanced dashboard:', error);

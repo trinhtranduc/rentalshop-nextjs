@@ -222,10 +222,9 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       merchantTrends
     };
 
-    return NextResponse.json({
-      success: true,
-      data: systemMetrics
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('SYSTEM_ANALYTICS_SUCCESS', systemMetrics)
+    );
 
   } catch (error) {
     console.error('Error fetching system analytics:', error);

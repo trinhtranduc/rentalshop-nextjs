@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -341,13 +341,14 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       }
     }
 
-    const body = JSON.stringify({ success: true, data: incomeData });
-    const etag = crypto.createHash('sha1').update(body).digest('hex');
+    const responseData = ResponseBuilder.success('INCOME_ANALYTICS_SUCCESS', incomeData);
+    const dataString = JSON.stringify(responseData);
+    const etag = crypto.createHash('sha1').update(dataString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
   } catch (error) {
     console.error('Error fetching income analytics:', error);

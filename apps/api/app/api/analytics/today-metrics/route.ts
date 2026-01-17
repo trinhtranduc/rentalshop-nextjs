@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -58,9 +58,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: true,
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('NO_DATA_AVAILABLE', {
           totalOrders: 0,
           activeRentals: 0,
           completedOrders: 0,
@@ -68,10 +67,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           totalStock: 0,
           availableStock: 0,
           rentingStock: 0
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
+        })
+      );
     }
 
     // Get today's orders
@@ -139,12 +136,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       rentingStock: stockMetrics._sum?.renting || 0
     };
 
-    return NextResponse.json({
-      success: true,
-      data: metrics,
-      code: 'TODAY_METRICS_SUCCESS',
-        message: 'Today metrics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('TODAY_METRICS_SUCCESS', metrics)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching today metrics:', error);
