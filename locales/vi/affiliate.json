@@ -86,7 +86,99 @@
   "banner": {
     "title": "Tìm hiểu về Affiliate Links",
     "description": "Khám phá cách sử dụng affiliate link để phát triển kinh doanh",
+    "promo": "Giảm 10% nếu giới thiệu",
     "button": "Xem hướng dẫn",
     "dismiss": "Đóng"
+  },
+  "navigation": {
+    "title": "Affiliate"
+  },
+  "guide": {
+    "title": "Hướng dẫn sử dụng Affiliate Link",
+    "subtitle": "Tìm hiểu cách sử dụng affiliate link để phát triển kinh doanh và kiếm hoa hồng",
+    "login": "Đăng nhập",
+    "yourLink": "Affiliate Link của bạn",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "overview": {
+      "commission": "Hoa hồng",
+      "autoPayment": "Tự động",
+      "payment": "Thanh toán",
+      "unlimitedLabel": "Không giới hạn",
+      "unlimited": "Số lượng giới thiệu"
+    },
+    "howItWorks": {
+      "title": "Cách hoạt động",
+      "step1": {
+        "title": "Chia sẻ link",
+        "description": "Sao chép và chia sẻ affiliate link của bạn với bạn bè, đối tác hoặc khách hàng tiềm năng"
+      },
+      "step2": {
+        "title": "Họ đăng ký",
+        "description": "Người được giới thiệu sử dụng link của bạn để đăng ký tài khoản AnyRent mới"
+      },
+      "step3": {
+        "title": "Nhận hoa hồng",
+        "description": "Khi họ thanh toán gói đăng ký, bạn sẽ nhận được 10% hoa hồng tự động vào tài khoản"
+      }
+    },
+    "commissionDetails": {
+      "title": "Chi tiết hoa hồng",
+      "rate": {
+        "label": "Tỷ lệ hoa hồng",
+        "description": "Bạn nhận được 10% hoa hồng từ mỗi giao dịch đăng ký thành công"
+      },
+      "payment": {
+        "label": "Thanh toán",
+        "description": "Hoa hồng được thanh toán tự động vào tài khoản của bạn ngay sau khi người được giới thiệu thanh toán"
+      },
+      "tracking": {
+        "label": "Theo dõi",
+        "description": "Theo dõi số lượng giới thiệu và hoa hồng của bạn trong thời gian thực"
+      }
+    },
+    "examples": {
+      "title": "Ví dụ tính toán",
+      "example1": {
+        "title": "Ví dụ 1: Gói cơ bản",
+        "label1": "Giá gói đăng ký",
+        "label2": "Trạng thái",
+        "confirmed": "Đã xác nhận",
+        "label3": "Hoa hồng của bạn"
+      },
+      "example2": {
+        "title": "Ví dụ 2: Gói nâng cao",
+        "label1": "Giá gói đăng ký",
+        "label2": "Trạng thái",
+        "confirmed": "Đã xác nhận",
+        "label3": "Hoa hồng của bạn"
+      },
+      "note": "Lưu ý: Hoa hồng chỉ được tính khi người được giới thiệu <strong>thanh toán thành công</strong> gói đăng ký. Hoa hồng được thanh toán tự động vào tài khoản của bạn."
+    },
+    "tips": {
+      "title": "Mẹo để tối đa hóa hoa hồng",
+      "tip1": {
+        "title": "Chia sẻ với đúng đối tượng",
+        "description": "Tập trung vào những người thực sự cần phần mềm quản lý cửa hàng cho thuê"
+      },
+      "tip2": {
+        "title": "Giải thích lợi ích",
+        "description": "Chia sẻ lợi ích của AnyRent khi giới thiệu để tăng tỷ lệ đăng ký"
+      },
+      "tip3": {
+        "title": "Theo dõi hiệu quả",
+        "description": "Sử dụng dashboard để theo dõi số lượng giới thiệu và hoa hồng của bạn"
+      },
+      "tip4": {
+        "title": "Chia sẻ thường xuyên",
+        "description": "Chia sẻ link của bạn trên nhiều kênh khác nhau để tiếp cận nhiều người hơn"
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng bắt đầu?",
+      "description": "Đăng ký ngay để nhận affiliate link của bạn và bắt đầu kiếm hoa hồng",
+      "register": "Đăng ký ngay",
+      "login": "Đã có tài khoản? Đăng nhập"
+    }
   }
 }

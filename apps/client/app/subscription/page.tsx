@@ -46,7 +46,8 @@ import {
   Settings,
   TrendingUp,
   Shield,
-  Zap
+  Zap,
+  History
 } from 'lucide-react';
 import type { Subscription, Plan, Payment } from '@rentalshop/types';
 
@@ -60,6 +61,9 @@ export default function MerchantSubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [subscriptionHistory, setSubscriptionHistory] = useState<Subscription[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Fetch subscription data
   const fetchSubscription = async () => {
@@ -193,6 +197,33 @@ export default function MerchantSubscriptionPage() {
     setShowBillingModal(true);
   };
 
+  const handleViewHistory = async () => {
+    setShowHistoryModal(true);
+    await fetchSubscriptionHistory();
+  };
+
+  const fetchSubscriptionHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const result = await subscriptionsApi.getSubscriptionsPaginated(1, 50);
+      if (result.success && result.data) {
+        // Filter out current subscription and sort by date
+        const history = (result.data.subscriptions || [])
+          .filter((sub: Subscription) => sub.id !== subscription?.id)
+          .sort((a: Subscription, b: Subscription) => {
+            const dateA = a.currentPeriodEnd ? new Date(a.currentPeriodEnd).getTime() : 0;
+            const dateB = b.currentPeriodEnd ? new Date(b.currentPeriodEnd).getTime() : 0;
+            return dateB - dateA; // Most recent first
+          });
+        setSubscriptionHistory(history);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
 
   if (!subscription && !loading) {
     return (
@@ -229,6 +260,13 @@ export default function MerchantSubscriptionPage() {
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleViewHistory}
+          >
+            <History className="h-4 w-4 mr-2" />
+            View History
           </Button>
           <Button
             variant="outline"
@@ -454,6 +492,79 @@ export default function MerchantSubscriptionPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Subscription History Modal */}
+      <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Subscription History
+            </DialogTitle>
+            <DialogDescription>
+              View your past subscription plans and billing history
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {historyLoading ? (
+              <div className="text-center py-8">
+                <Clock className="h-8 w-8 mx-auto text-gray-400 animate-spin" />
+                <p className="text-gray-600 mt-2">Loading history...</p>
+              </div>
+            ) : subscriptionHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No subscription history found.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Period Start</TableHead>
+                    <TableHead>Period End</TableHead>
+                    <TableHead>Interval</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscriptionHistory.map((sub: Subscription) => (
+                    <TableRow key={sub.id}>
+                      <TableCell className="font-medium">
+                        {sub.plan?.name || 'Unknown Plan'}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(sub.status)}
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(sub.amount, sub.plan?.currency || 'USD')}
+                      </TableCell>
+                      <TableCell>
+                        {sub.currentPeriodStart 
+                          ? new Date(sub.currentPeriodStart).toLocaleDateString()
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {sub.currentPeriodEnd 
+                          ? new Date(sub.currentPeriodEnd).toLocaleDateString()
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {sub.billingInterval || 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHistoryModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upgrade Modal */}
       <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>

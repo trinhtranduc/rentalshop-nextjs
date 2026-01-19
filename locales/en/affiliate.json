@@ -86,7 +86,99 @@
   "banner": {
     "title": "Learn about Affiliate Links",
     "description": "Discover how to use your affiliate link to grow your business",
+    "promo": "10% off if you refer",
     "button": "View Guide",
     "dismiss": "Dismiss"
+  },
+  "navigation": {
+    "title": "Affiliate"
+  },
+  "guide": {
+    "title": "Affiliate Link Guide",
+    "subtitle": "Learn how to use your affiliate link to grow your business and earn commissions",
+    "login": "Login",
+    "yourLink": "Your Affiliate Link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "overview": {
+      "commission": "Commission",
+      "autoPayment": "Automatic",
+      "payment": "Payment",
+      "unlimitedLabel": "Unlimited",
+      "unlimited": "Referrals"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Share your link",
+        "description": "Copy and share your affiliate link with friends, partners, or potential customers"
+      },
+      "step2": {
+        "title": "They register",
+        "description": "Referrals use your link to register for a new AnyRent account"
+      },
+      "step3": {
+        "title": "Earn commission",
+        "description": "When they pay for a subscription, you automatically receive 10% commission to your account"
+      }
+    },
+    "commissionDetails": {
+      "title": "Commission Details",
+      "rate": {
+        "label": "Commission Rate",
+        "description": "You receive 10% commission from each successful registration transaction"
+      },
+      "payment": {
+        "label": "Payment",
+        "description": "Commission is automatically paid to your account immediately after the referral pays"
+      },
+      "tracking": {
+        "label": "Tracking",
+        "description": "Track your referrals and commissions in real-time"
+      }
+    },
+    "examples": {
+      "title": "Calculation Examples",
+      "example1": {
+        "title": "Example 1: Basic Plan",
+        "label1": "Subscription price",
+        "label2": "Status",
+        "confirmed": "Confirmed",
+        "label3": "Your commission"
+      },
+      "example2": {
+        "title": "Example 2: Premium Plan",
+        "label1": "Subscription price",
+        "label2": "Status",
+        "confirmed": "Confirmed",
+        "label3": "Your commission"
+      },
+      "note": "Note: Commission is only calculated when the referral <strong>successfully pays</strong> for a subscription. Commission is automatically paid to your account."
+    },
+    "tips": {
+      "title": "Tips to Maximize Your Commission",
+      "tip1": {
+        "title": "Share with the right audience",
+        "description": "Focus on people who actually need rental shop management software"
+      },
+      "tip2": {
+        "title": "Explain the benefits",
+        "description": "Share AnyRent's benefits when referring to increase registration rates"
+      },
+      "tip3": {
+        "title": "Track performance",
+        "description": "Use the dashboard to track your referrals and commissions"
+      },
+      "tip4": {
+        "title": "Share frequently",
+        "description": "Share your link across multiple channels to reach more people"
+      }
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Register now to get your affiliate link and start earning commissions",
+      "register": "Register Now",
+      "login": "Already have an account? Login"
+    }
   }
 }

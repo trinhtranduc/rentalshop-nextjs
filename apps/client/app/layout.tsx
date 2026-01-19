@@ -25,6 +25,7 @@ import enSubscription from '../../../locales/en/subscription.json';
 import enLanding from '../../../locales/en/landing.json';
 import enBankAccounts from '../../../locales/en/bankAccounts.json';
 import enFeatures from '../../../locales/en/features.json';
+import enAffiliate from '../../../locales/en/affiliate.json';
 
 import viCommon from '../../../locales/vi/common.json';
 import viAuth from '../../../locales/vi/auth.json';
@@ -44,6 +45,7 @@ import viSubscription from '../../../locales/vi/subscription.json';
 import viLanding from '../../../locales/vi/landing.json';
 import viBankAccounts from '../../../locales/vi/bankAccounts.json';
 import viFeatures from '../../../locales/vi/features.json';
+import viAffiliate from '../../../locales/vi/affiliate.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../../locales/zh/common.json';
@@ -631,6 +633,7 @@ const messages = {
     landing: enLanding,
     bankAccounts: enBankAccounts,
     features: enFeatures,
+    affiliate: enAffiliate,
   },
   vi: {
     common: viCommon,
@@ -651,6 +654,7 @@ const messages = {
     landing: viLanding,
     bankAccounts: viBankAccounts,
     features: viFeatures,
+    affiliate: viAffiliate,
   },
   // Chinese (Simplified) - Landing page only
   zh: {
