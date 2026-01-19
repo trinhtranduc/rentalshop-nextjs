@@ -31,13 +31,26 @@ async function fetchPublicProducts(tenantKey: string, searchParams: any) {
 
     // Build API URL - use absolute URL for server-side rendering
     // In Next.js server components, we need to use full URL or relative path
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+    // Try to detect production vs development
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                         process.env.NEXT_PUBLIC_APP_ENV === 'production' ||
+                         process.env.RAILWAY_ENVIRONMENT === 'production';
+    
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                      (isProduction ? 'https://api.anyrent.shop' : 'https://dev-api.anyrent.shop');
     const endpoint = `api/public/${tenantKey}/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const url = `${apiBaseUrl}/${endpoint}`;
     
     console.log('🌐 Fetching URL:', url);
-    console.log('🔍 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-    console.log('🔍 API Base URL:', apiBaseUrl);
+    console.log('🔍 Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      isProduction,
+      apiBaseUrl,
+      tenantKey
+    });
     
     const response = await fetch(url, {
       method: 'GET',
@@ -66,8 +79,21 @@ async function fetchPublicProducts(tenantKey: string, searchParams: any) {
       console.error('❌ API Error:', {
         code: result.code,
         message: result.message,
-        tenantKey
+        tenantKey,
+        url,
+        status: response.status,
+        statusText: response.statusText
       });
+      
+      // Log more details for debugging
+      if (result.code === 'MERCHANT_NOT_FOUND') {
+        console.error('💡 Debugging tips:');
+        console.error('   - Check if merchant exists in database with tenantKey:', tenantKey);
+        console.error('   - Verify tenantKey is set correctly (case-insensitive)');
+        console.error('   - Check if merchant is active (isActive = true)');
+        console.error('   - API URL used:', url);
+      }
+      
       return null;
     }
     

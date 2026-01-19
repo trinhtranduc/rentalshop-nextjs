@@ -16,7 +16,8 @@ import {
   ChevronDown,
   LogOut,
   Clock,
-  UserPlus
+  UserPlus,
+  TrendingUp
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -63,7 +64,13 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       name: 'Referrals',
       href: '/referrals',
       icon: UserPlus,
-      current: pathname.startsWith('/referrals')
+      current: pathname.startsWith('/referrals') && !pathname.startsWith('/affiliate')
+    },
+    {
+      name: 'Affiliate Stats',
+      href: '/affiliate/stats',
+      icon: TrendingUp,
+      current: pathname.startsWith('/affiliate')
     },
     {
       name: 'Users',

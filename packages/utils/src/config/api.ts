@@ -292,6 +292,10 @@ export interface ApiUrls {
     referrals: {
       list: string;
     };
+    affiliate: {
+      stats: string;
+      referredMerchants: string;
+    };
   }
 
 /**
@@ -782,6 +786,10 @@ function createApiUrls(): ApiUrls {
     },
     referrals: {
       list: `${base}/api/referrals`,
+    },
+    affiliate: {
+      stats: `${base}/api/affiliate/stats`,
+      referredMerchants: `${base}/api/affiliate/referred-merchants`,
     },
   };
 }

@@ -40,6 +40,41 @@ export interface ReferralFilters {
   limit?: number;
 }
 
+export interface AffiliateStat {
+  referrer: {
+    id: number;
+    name: string;
+    email: string;
+    tenantKey: string | null;
+    isActive: boolean;
+    createdAt: Date | string;
+  } | null;
+  referralCount: number;
+  referredMerchantIds: number[];
+}
+
+export interface AffiliateStatsResponse {
+  stats: AffiliateStat[];
+  totalReferrers: number;
+  totalReferrals: number;
+}
+
+export interface ReferredMerchant {
+  id: number;
+  name: string;
+  email: string;
+  tenantKey: string | null;
+  isActive: boolean;
+  createdAt: string | null;
+  subscriptionStatus: string;
+  subscriptionPlan: string;
+}
+
+export interface ReferredMerchantsResponse {
+  referredMerchants: ReferredMerchant[];
+  total: number;
+}
+
 // ============================================================================
 // REFERRALS API CLIENT
 // ============================================================================
@@ -78,6 +113,25 @@ export const referralsApi = {
    */
   async getReferralsByMerchant(merchantId: number, page: number = 1, limit: number = 20): Promise<ApiResponse<ReferralsResponse>> {
     return this.getReferrals({ merchantId, page, limit });
+  },
+
+  /**
+   * Get affiliate statistics - merchants who referred others
+   */
+  async getAffiliateStats(): Promise<ApiResponse<AffiliateStatsResponse>> {
+    const response = await authenticatedFetch(apiUrls.affiliate.stats);
+    const result = await parseApiResponse<AffiliateStatsResponse>(response);
+    return result;
+  },
+
+  /**
+   * Get list of merchants referred by a specific merchant
+   */
+  async getReferredMerchants(referrerId: number): Promise<ApiResponse<ReferredMerchantsResponse>> {
+    const url = `${apiUrls.affiliate.referredMerchants}?referrerId=${referrerId}`;
+    const response = await authenticatedFetch(url);
+    const result = await parseApiResponse<ReferredMerchantsResponse>(response);
+    return result;
   },
 };
 

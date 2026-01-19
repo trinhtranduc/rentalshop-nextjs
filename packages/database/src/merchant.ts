@@ -531,6 +531,104 @@ export async function getReferrals(merchantId?: number, page: number = 1, limit:
   };
 }
 
+/**
+ * Get affiliate statistics - group by referrer merchant
+ * Returns list of merchants who referred others, with count of referrals
+ */
+export async function getAffiliateStats() {
+  // Get all merchants that have referred others (group by referredByMerchantId)
+  const referralStats = await prisma.merchant.groupBy({
+    by: ['referredByMerchantId'],
+    where: {
+      referredByMerchantId: { not: null }
+    },
+    _count: {
+      id: true
+    },
+    orderBy: {
+      _count: {
+        id: 'desc'
+      }
+    }
+  });
+
+  // Get merchant details for each referrer
+  const referrerIds = referralStats
+    .map(stat => stat.referredByMerchantId)
+    .filter((id): id is number => id !== null);
+
+  const referrers = await prisma.merchant.findMany({
+    where: {
+      id: { in: referrerIds }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      tenantKey: true,
+      isActive: true,
+      createdAt: true
+    }
+  });
+
+  // Combine stats with merchant details
+  const statsWithDetails = referralStats.map(stat => {
+    const referrer = referrers.find(r => r.id === stat.referredByMerchantId);
+    return {
+      referrer: referrer || null,
+      referralCount: stat._count.id,
+      referredMerchantIds: [] as number[] // Will be populated separately if needed
+    };
+  });
+
+  // Get total count
+  const totalReferrals = await prisma.merchant.count({
+    where: {
+      referredByMerchantId: { not: null }
+    }
+  });
+
+  return {
+    stats: statsWithDetails,
+    totalReferrers: statsWithDetails.length,
+    totalReferrals
+  };
+}
+
+/**
+ * Get list of merchants referred by a specific merchant
+ */
+export async function getReferredMerchants(referrerId: number) {
+  const referredMerchants = await prisma.merchant.findMany({
+    where: {
+      referredByMerchantId: referrerId
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      tenantKey: true,
+      isActive: true,
+      createdAt: true,
+      subscription: {
+        include: {
+          plan: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  return referredMerchants;
+}
+
 // ============================================================================
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
@@ -571,7 +669,9 @@ export const simplifiedMerchants = {
   getStats,
   count,
   checkDuplicate,
-  getReferrals
+  getReferrals,
+  getAffiliateStats,
+  getReferredMerchants
 };
 
 

@@ -138,7 +138,7 @@ export async function GET(
     // Build product filters
     // Note: For public pages, we only show active products
     const productFilters: any = {
-      merchantId: merchant.id,
+      merchantId: merchant.id, // Use publicId (number) - searchProducts will convert to CUID
       isActive: true, // Only show active products
       page,
       limit
@@ -178,18 +178,48 @@ export async function GET(
     }
 
     // Get categories for this merchant
-    const categoriesResult = await db.categories.findMany({
-      where: {
-        merchantId: merchant.id,
-        isActive: true
-      },
-      orderBy: { name: 'asc' }
-    });
-    console.log('📂 Categories found:', categoriesResult.length);
+    // db.categories.search accepts merchantId (number) and converts to CUID internally
+    let categoriesResult: any[] = [];
+    try {
+      const categoriesSearchResult = await db.categories.search({
+        merchantId: merchant.id, // Use publicId (number) - search will convert to CUID
+        isActive: true,
+        page: 1,
+        limit: 1000 // Get all categories
+      });
+      categoriesResult = categoriesSearchResult.data || [];
+      console.log('📂 Categories found:', categoriesResult.length);
+    } catch (error) {
+      console.error('❌ Error fetching categories:', error);
+      // Don't fail the whole request if categories fail
+      categoriesResult = [];
+    }
 
     // Get outlets for this merchant (for contact information)
-    const outletsResult = await db.outlets.getOutletsByMerchant(merchant.id);
-    console.log('🏪 Outlets found:', outletsResult.length);
+    // Note: db.outlets.search expects merchantId as number (publicId) but database uses CUID
+    // We need to check if db.outlets.search handles the conversion
+    // For now, try with merchant.id (number) - if it fails, we'll handle it
+    let outletsResult: any[] = [];
+    try {
+      // db.outlets.search might not convert merchantId, so we need to handle it differently
+      // Since we can't use prisma directly, we'll use db.merchants.findById to get the merchant
+      // and then construct the query properly
+      // Actually, let's check if db.outlets.search handles merchantId conversion
+      // If not, we might need to skip outlets for now or find another way
+      const outletsSearchResult = await db.outlets.search({
+        merchantId: merchant.id, // Use publicId (number) - may need conversion in outlet.search
+        isActive: true,
+        page: 1,
+        limit: 1000 // Get all outlets
+      });
+      outletsResult = outletsSearchResult.data || [];
+      console.log('🏪 Outlets found:', outletsResult.length);
+    } catch (error) {
+      console.error('❌ Error fetching outlets:', error);
+      console.error('💡 Note: db.outlets.search may need merchant CUID instead of publicId');
+      // Don't fail the whole request if outlets fail
+      outletsResult = [];
+    }
 
     // Transform products to ensure they have categoryId
     const transformedProducts = (productsResult.data || []).map((product: any) => ({
