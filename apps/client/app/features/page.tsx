@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { Button, Card, CardContent, Badge, Logo } from '@rentalshop/ui'
+import { Button, Card, CardContent, Badge, Logo, LanguageSwitcher } from '@rentalshop/ui'
 import {
   Smartphone,
   Globe,
@@ -104,6 +104,7 @@ const FeaturesPage = () => {
               <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
                 {t('navigation.home')}
               </Link>
+              <LanguageSwitcher variant="compact" />
             </div>
           </div>
         </div>
