@@ -177,7 +177,18 @@
     "comingSoon": "Subscription management features coming soon.",
     "noSubscription": "No Active Subscription",
     "noSubscriptionDesc": "You don't have an active subscription plan.",
-    "contactAdmin": "Please contact your system administrator to activate a subscription plan."
+    "contactAdmin": "Please contact your system administrator to activate a subscription plan.",
+    "viewHistory": "View History",
+    "historyTitle": "Subscription History",
+    "historyDescription": "View your past subscription plans and billing history",
+    "noHistory": "No subscription history found.",
+    "plan": "Plan",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
+    "interval": "Interval",
+    "cancelled": "Cancelled",
+    "trial": "Trial",
+    "close": "Close"
   },
   "currency": {
     "title": "Currency Settings",

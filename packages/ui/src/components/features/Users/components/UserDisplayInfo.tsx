@@ -100,6 +100,12 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
               </div>
             </div>
             <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email Verification</label>
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${user.emailVerified ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-orange-100 text-orange-800 border-orange-200'}`}>
+                {user.emailVerified ? '✓ Verified' : '✗ Not Verified'}
+              </div>
+            </div>
+            <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.id')}</label>
             <p className="text-sm text-muted-foreground font-mono">{user.id}</p>
             </div>
@@ -153,6 +159,32 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
                   </Button>
                 <p className="text-xs text-muted-foreground">
                     {t('messages.allowChangePassword')}
+                  </p>
+                </div>
+              )}
+
+              {/* Email Verification Section */}
+              {!user.emailVerified && onVerifyEmail && onResendVerification && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-text-primary">Email Verification</h4>
+                  <Button
+                    variant="outline"
+                    onClick={onVerifyEmail}
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-emerald-600 border-emerald-200 hover:bg-emerald-50 h-auto"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? `⏳ Verifying...` : `✓ Verify Email`}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={onResendVerification}
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-blue-600 border-blue-200 hover:bg-blue-50 h-auto"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? `⏳ Sending...` : `📧 Resend Verification Email`}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Verify email manually or resend verification email to the user
                   </p>
                 </div>
               )}

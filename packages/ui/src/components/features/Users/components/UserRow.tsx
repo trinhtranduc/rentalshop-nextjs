@@ -13,7 +13,9 @@ import {
   Phone,
   Calendar,
   CheckCircle,
-  XCircle
+  XCircle,
+  MailCheck,
+  Send
 } from 'lucide-react';
 import type { User } from '@rentalshop/types';
 
@@ -79,6 +81,18 @@ export function UserRow({
     return isActive ? 'Active' : 'Inactive';
   };
 
+  const getEmailVerificationBadgeStyle = (emailVerified: boolean) => {
+    if (emailVerified) {
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
+    } else {
+      return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800';
+    }
+  };
+
+  const getEmailVerificationDisplayName = (emailVerified: boolean) => {
+    return emailVerified ? 'Verified' : 'Not Verified';
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -131,6 +145,30 @@ export function UserRow({
             Deactivate
           </Button>
         );
+      case 'verify-email':
+        return (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleUserAction('verify-email', user.id)}
+            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+          >
+            <MailCheck className="w-4 h-4 mr-2" />
+            Verify Email
+          </Button>
+        );
+      case 'resend-verification':
+        return (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleUserAction('resend-verification', user.id)}
+            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Resend Email
+          </Button>
+        );
       default:
         return null;
     }
@@ -154,6 +192,12 @@ export function UserRow({
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`}>
                     {getStatusDisplayName(user.isActive)}
                   </div>
+                  {user.emailVerified !== undefined && (
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getEmailVerificationBadgeStyle(user.emailVerified)}`}>
+                      {user.emailVerified ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                      {getEmailVerificationDisplayName(user.emailVerified)}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-6 text-sm text-text-secondary">
@@ -184,7 +228,6 @@ export function UserRow({
                 
                 <div className="flex items-center gap-6 text-sm text-text-tertiary mt-1">
                   <span>Last login: {user.lastLoginAt ? formatDate(typeof user.lastLoginAt === 'string' ? user.lastLoginAt : user.lastLoginAt.toISOString()) : 'Never'}</span>
-                  <span>Email verified: {user.emailVerified ? 'Yes' : 'No'}</span>
                 </div>
               </div>
             </div>
@@ -192,7 +235,7 @@ export function UserRow({
 
           {/* Actions */}
           {showActions && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {actions.map((action) => {
                 // Show activate/deactivate based on user status
                 if (action === 'activate' && user.isActive) return null;
@@ -204,6 +247,29 @@ export function UserRow({
                   </div>
                 );
               })}
+              {/* Show email verification actions if email is not verified */}
+              {user.emailVerified === false && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleUserAction('verify-email', user.id)}
+                    className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  >
+                    <MailCheck className="w-4 h-4 mr-2" />
+                    Verify Email
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleUserAction('resend-verification', user.id)}
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Resend Email
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>

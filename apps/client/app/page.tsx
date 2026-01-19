@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
-import { usePlansTranslations } from '@rentalshop/hooks'
+import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
+import { User } from 'lucide-react'
 
 // Import Blog Section (Client Component that calls API)
 // import BlogSectionWrapper from './components/BlogSectionWrapper'
@@ -43,6 +45,8 @@ import {
 
 const LandingPage = () => {
   const t = useTranslations('landing')
+  const router = useRouter()
+  const { user } = useAuth()
   
   // Structured Data for SEO (JSON-LD)
   const structuredData = {
@@ -189,6 +193,16 @@ const LandingPage = () => {
                 <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
                 <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" />
+                {user ? (
+                  <Button
+                    onClick={() => router.push('/dashboard')}
+                    variant="default"
+                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    {user.name || user.email || 'User'}
+                  </Button>
+                ) : (
                 <Button
                   asChild
                   variant="default"
@@ -198,10 +212,21 @@ const LandingPage = () => {
                     {t('navigation.login')}
                   </Link>
                 </Button>
+                )}
               </div>
               {/* Mobile menu - simplified */}
               <div className="md:hidden flex items-center space-x-3">
                 <LanguageSwitcher variant="compact" />
+                {user ? (
+                  <Button
+                    onClick={() => router.push('/dashboard')}
+                    variant="default"
+                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    {user.name || user.email || 'User'}
+                  </Button>
+                ) : (
                 <Button
                   asChild
                   variant="default"
@@ -211,6 +236,7 @@ const LandingPage = () => {
                     {t('navigation.login')}
                   </Link>
                 </Button>
+                )}
               </div>
             </div>
           </div>

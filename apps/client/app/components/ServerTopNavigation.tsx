@@ -16,7 +16,8 @@ import {
   ChevronDown,
   Menu,
   Link2,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useCommonTranslations } from '@rentalshop/hooks';
@@ -53,6 +54,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
     { href: '/users', label: t('navigation.users'), icon: User },
     { href: '/outlets', label: t('navigation.outlets'), icon: Building2 },
     { href: '/calendar', label: t('navigation.calendar'), icon: Calendar },
+    { href: '/affiliate/guide', label: tAffiliate('navigation.title') || 'Affiliate', icon: UserPlus },
   ];
 
   // Filter nav items based on user role
@@ -149,35 +151,21 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
 
   return (
     <>
-      {/* Affiliate Banner */}
+      {/* Affiliate Vertical Banner - Top Right */}
       {!isAffiliateBannerDismissed && (
-        <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center justify-between">
               <div 
-                className="flex items-center gap-3 cursor-pointer flex-1"
+          className="fixed top-4 right-4 z-[60] bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg rounded-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-200 group"
                 onClick={handleAffiliateBannerClick}
               >
-                <Link2 className="w-5 h-5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="font-semibold text-sm sm:text-base">
+          <div className="flex flex-col items-center justify-center p-3 gap-2 min-w-[60px]">
+            <Link2 className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <p className="font-semibold text-[11px] uppercase tracking-wider leading-tight">
                     {tAffiliate('banner.title')}
                   </p>
-                  <p className="text-xs sm:text-sm text-blue-100 mt-0.5">
-                    {tAffiliate('banner.description')}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAffiliateBannerClick();
-                  }}
-                  className="text-white hover:bg-blue-600/50 hidden sm:flex items-center gap-2"
-                >
+              <p className="text-[9px] text-blue-100 opacity-90 leading-tight">
                   {tAffiliate('banner.button')}
-                </Button>
+              </p>
               </div>
               <Button
                 variant="ghost"
@@ -186,17 +174,16 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                   e.stopPropagation();
                   handleDismissBanner();
                 }}
-                className="text-white hover:bg-blue-600/50 flex-shrink-0 ml-2"
+              className="text-white hover:bg-blue-600/50 h-5 w-5 mt-1"
                 title={tAffiliate('banner.dismiss')}
               >
-                <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
               </Button>
-            </div>
           </div>
         </div>
       )}
 
-      <header className={`fixed ${!isAffiliateBannerDismissed ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-200`}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -362,6 +349,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
         </div>
       </div>
     </header>
+    </>
   );
 }
 

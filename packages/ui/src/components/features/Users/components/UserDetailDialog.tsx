@@ -117,6 +117,8 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         // Update local user state
         const updatedUser = { ...user, emailVerified: true };
         onUserUpdated?.(updatedUser);
+        // Update local user state in dialog
+        user.emailVerified = true;
         toastSuccess('Email Verified', 'User email has been verified successfully');
       } else {
         const errorMsg = response.error || 'Failed to verify email';
@@ -126,6 +128,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       onError?.(errorMessage);
+      toastError('Verification Failed', errorMessage);
     } finally {
       setIsVerifyingEmail(false);
     }

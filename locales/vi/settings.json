@@ -177,7 +177,18 @@
     "comingSoon": "Tính năng quản lý gói dịch vụ sẽ sớm ra mắt.",
     "noSubscription": "Chưa có gói dịch vụ",
     "noSubscriptionDesc": "Bạn chưa có gói đăng ký nào.",
-    "contactAdmin": "Vui lòng liên hệ quản trị viên hệ thống để kích hoạt gói dịch vụ."
+    "contactAdmin": "Vui lòng liên hệ quản trị viên hệ thống để kích hoạt gói dịch vụ.",
+    "viewHistory": "Xem lịch sử",
+    "historyTitle": "Lịch sử đăng ký",
+    "historyDescription": "Xem các gói đăng ký trước đây và lịch sử thanh toán của bạn",
+    "noHistory": "Không tìm thấy lịch sử đăng ký.",
+    "plan": "Gói",
+    "periodStart": "Bắt đầu kỳ",
+    "periodEnd": "Kết thúc kỳ",
+    "interval": "Chu kỳ",
+    "cancelled": "Đã hủy",
+    "trial": "Dùng thử",
+    "close": "Đóng"
   },
   "currency": {
     "title": "Cài đặt tiền tệ",

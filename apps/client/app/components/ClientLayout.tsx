@@ -45,7 +45,8 @@ export default function ClientLayout({
   const isPublicPage = isPublicRoute(pathname);
   const isFullWidthPage = pathname?.includes('/edit');
   const isAffiliateGuidePage = pathname?.includes('/affiliate/guide');
-  const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage;
+  const isSettingsPage = pathname?.includes('/settings');
+  const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isSettingsPage;
 
   // ============================================================================
   // AFFILIATE BANNER STATE

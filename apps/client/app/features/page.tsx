@@ -3,8 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, Card, CardContent, Badge, Logo, LanguageSwitcher } from '@rentalshop/ui'
+import { useAuth } from '@rentalshop/hooks'
+import { User } from 'lucide-react'
 import {
   Smartphone,
   Globe,
@@ -35,6 +38,8 @@ import {
 
 const FeaturesPage = () => {
   const t = useTranslations('features')
+  const router = useRouter()
+  const { user } = useAuth()
   const [mobileScreenshotIndex, setMobileScreenshotIndex] = useState(0)
   const [isMobilePaused, setIsMobilePaused] = useState(false)
   const mobileIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -105,6 +110,26 @@ const FeaturesPage = () => {
                 {t('navigation.home')}
               </Link>
               <LanguageSwitcher variant="compact" />
+              {user ? (
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  variant="default"
+                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  {user.name || user.email || 'User'}
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  variant="default"
+                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/login">
+                    {t('navigation.login')}
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

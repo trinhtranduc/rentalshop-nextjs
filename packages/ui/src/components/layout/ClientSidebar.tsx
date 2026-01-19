@@ -456,6 +456,20 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
           </div>
         )}
 
+        {onNavigate && (
+          <Button
+            variant="ghost"
+            onClick={() => onNavigate('/settings')}
+            className={cn(
+              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal',
+              isCollapsed && 'justify-center px-2'
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            {!isCollapsed && <span className="ml-2">{t('navigation.settings')}</span>}
+          </Button>
+        )}
+
         {onLogout && (
           <Button
             variant="ghost"

@@ -140,38 +140,38 @@ export function ImportProductDialog({
           error: e.message
         }));
       } else {
-        // Parse CSV file
-        const result = await parseCSVFile(selectedFile, {
-          header: true,
-          skipEmptyLines: true
-        });
+      // Parse CSV file
+      const result = await parseCSVFile(selectedFile, {
+        header: true,
+        skipEmptyLines: true
+      });
 
-        // Check max rows limit
-        if (result.data.length > MAX_ROWS) {
+      // Check max rows limit
+      if (result.data.length > MAX_ROWS) {
           toastError(
             t('maxRowsExceeded', { maxRows: MAX_ROWS }) || 
             `File contains ${result.data.length} rows. Maximum allowed is ${MAX_ROWS} rows.`
           );
-          setLoading(false);
-          return;
-        }
+        setLoading(false);
+        return;
+      }
 
-        if (result.errors.length > 0) {
+      if (result.errors.length > 0) {
           parseErrors = result.errors;
-        }
+      }
 
-        if (result.headers && result.data.length > 0) {
-          // Normalize headers
-          const headerMapping = normalizeCSVHeaders(result.headers, productFieldMapping);
-          
-          // Map data to product format
+      if (result.headers && result.data.length > 0) {
+        // Normalize headers
+        const headerMapping = normalizeCSVHeaders(result.headers, productFieldMapping);
+        
+        // Map data to product format
           mappedData = result.data.map((row, index) => {
-            const mapped = mapCSVRow(row, headerMapping);
-            return {
-              ...mapped,
-              _originalRow: index + 1 // Store display row number (start from 1)
-            };
-          });
+          const mapped = mapCSVRow(row, headerMapping);
+          return {
+            ...mapped,
+            _originalRow: index + 1 // Store display row number (start from 1)
+          };
+        });
 
           headers = result.headers;
         }
@@ -333,14 +333,14 @@ export function ImportProductDialog({
   const handleDownloadTemplate = async () => {
     try {
       const blob = await productsApi.downloadSampleFile();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
       a.download = `products-import-sample-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
     } catch (error: any) {
       toastError('Failed to download sample file', error.message);
     }

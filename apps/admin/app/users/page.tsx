@@ -17,7 +17,7 @@ import { useAuth, useUsersData } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { usersApi } from '@rentalshop/utils';
+import { usersApi, authApi } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN USERS PAGE (URL State Pattern)
@@ -176,10 +176,46 @@ export default function UsersPage() {
         console.log('Delete user:', userId);
         // After delete, refresh will happen automatically via URL
         break;
+
+      case 'verify-email':
+        // Verify email manually
+        if (userItem) {
+          try {
+            const response = await usersApi.updateUser(userId, { 
+              emailVerified: true
+            });
+            if (response.success) {
+              toastSuccess('Email Verified', 'User email has been verified successfully');
+              refetch();
+            } else {
+              throw new Error(response.error || 'Failed to verify email');
+            }
+          } catch (error) {
+            toastError('Verification Failed', error instanceof Error ? error.message : 'An error occurred');
+          }
+        }
+        break;
+
+      case 'resend-verification':
+        // Resend verification email
+        if (userItem) {
+          try {
+            const response = await authApi.resendVerificationEmail(userItem.email);
+            if (response.success) {
+              toastSuccess('Verification Email Sent', 'A verification email has been sent to the user');
+            } else {
+              throw new Error(response.error || 'Failed to send verification email');
+            }
+          } catch (error) {
+            toastError('Send Failed', error instanceof Error ? error.message : 'An error occurred');
+          }
+        }
+        break;
+
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.users]);
+  }, [data?.users, toastSuccess, toastError, refetch]);
   
   // Handle user update from edit dialog
   const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {

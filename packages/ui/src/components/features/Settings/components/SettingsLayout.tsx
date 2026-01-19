@@ -8,10 +8,12 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  Button
+  Button,
+  Breadcrumb
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ChevronRight } from 'lucide-react';
-import { useSettingsTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -48,6 +50,26 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const t = useSettingsTranslations();
+  const tCommon = useCommonTranslations();
+
+  // Get active section label for breadcrumb
+  const activeMenuItem = menuItems.find(item => item.id === activeSection);
+  const activeSectionLabel = activeMenuItem?.label || t('title');
+
+  // Build breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      label: tCommon('navigation.dashboard') || 'Dashboard',
+      href: '/dashboard'
+    },
+    {
+      label: t('title'),
+      href: '/settings'
+    },
+    {
+      label: activeSectionLabel
+    }
+  ];
 
   // Show loading state while user data is being fetched
   if (loading) {
@@ -72,6 +94,12 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 
   return (
     <PageWrapper>
+      <Breadcrumb 
+        items={breadcrumbItems}
+        showHome={false}
+        homeHref="/dashboard"
+        className="mb-4"
+      />
       <PageHeader>
         <PageTitle>{t('title')}</PageTitle>
         <p>{t('subtitle')}</p>

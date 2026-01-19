@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { User } from '@rentalshop/types';
-import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX, MailCheck, Send, CheckCircle, XCircle } from 'lucide-react';
 import { useUsersTranslations } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
 
@@ -62,10 +62,11 @@ export function UserTable({
       OUTLET_STAFF: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     };
     
-    const roleKey = role as keyof typeof t.roles;
+    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+    const roleTranslation = t(`roles.${roleKey}` as any) || role.replace('_', ' ');
     return (
       <Badge className={variants[role] || variants.OUTLET_STAFF}>
-        {t(`roles.${roleKey}` as any) || role.replace('_', ' ')}
+        {roleTranslation}
       </Badge>
     );
   };
@@ -78,6 +79,22 @@ export function UserTable({
     ) : (
       <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
         {t('fields.inactive')}
+      </Badge>
+    );
+  };
+
+  const getEmailVerificationBadge = (emailVerified: boolean | undefined) => {
+    if (emailVerified === undefined) return null;
+    
+    return emailVerified ? (
+      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 flex items-center gap-1">
+        <CheckCircle className="h-3 w-3" />
+        Verified
+      </Badge>
+    ) : (
+      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 flex items-center gap-1">
+        <XCircle className="h-3 w-3" />
+        Not Verified
       </Badge>
     );
   };
@@ -108,6 +125,9 @@ export function UserTable({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   {t('fields.status')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Email Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   {t('fields.createdAt')}
@@ -154,6 +174,11 @@ export function UserTable({
                   {/* Status */}
                   <td className="px-6 py-4">
                     {getStatusBadge(user.isActive)}
+                  </td>
+                  
+                  {/* Email Verification Status */}
+                  <td className="px-6 py-4">
+                    {getEmailVerificationBadge(user.emailVerified)}
                   </td>
                   
                   {/* Created Date */}

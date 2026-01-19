@@ -188,7 +188,7 @@ export async function GET(
         limit: 1000 // Get all categories
       });
       categoriesResult = categoriesSearchResult.data || [];
-      console.log('📂 Categories found:', categoriesResult.length);
+    console.log('📂 Categories found:', categoriesResult.length);
     } catch (error) {
       console.error('❌ Error fetching categories:', error);
       // Don't fail the whole request if categories fail
@@ -213,7 +213,7 @@ export async function GET(
         limit: 1000 // Get all outlets
       });
       outletsResult = outletsSearchResult.data || [];
-      console.log('🏪 Outlets found:', outletsResult.length);
+    console.log('🏪 Outlets found:', outletsResult.length);
     } catch (error) {
       console.error('❌ Error fetching outlets:', error);
       console.error('💡 Note: db.outlets.search may need merchant CUID instead of publicId');
