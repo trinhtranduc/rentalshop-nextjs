@@ -16,7 +16,7 @@ export interface FileUploadZoneProps {
 
 export function FileUploadZone({
   onFileSelect,
-  acceptedFileTypes = ['.xlsx', '.csv'],
+  acceptedFileTypes = ['.xlsx', '.xls', '.csv'],
   maxFileSize = 10 * 1024 * 1024, // 10MB default
   className,
   disabled = false

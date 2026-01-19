@@ -16,7 +16,14 @@ import {
   CSVPreviewTable
 } from '@rentalshop/ui';
 import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle } from 'lucide-react';
-import { parseCSVFile, normalizeCSVHeaders, mapCSVRow } from '@rentalshop/utils';
+import { 
+  parseCSVFile, 
+  normalizeCSVHeaders, 
+  mapCSVRow,
+  parseExcelFile,
+  mapExcelColumnsToFields,
+  CUSTOMER_COLUMN_MAPPING
+} from '@rentalshop/utils';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerCreateInput } from '@rentalshop/types';
 
@@ -72,8 +79,12 @@ export function ImportCustomerDialog({
   };
 
   const handleFileSelect = async (selectedFile: File) => {
-    if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
-      toastError(t('onlyCsv'));
+    const fileName = selectedFile.name.toLowerCase();
+    const isCSV = fileName.endsWith('.csv');
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    
+    if (!isCSV && !isExcel) {
+      toastError(t('onlyCsv') || 'Only CSV and Excel files (.csv, .xlsx, .xls) are supported');
       return;
     }
     
@@ -86,42 +97,102 @@ export function ImportCustomerDialog({
     setLoading(true);
 
     try {
-      // Parse CSV file
-      const result = await parseCSVFile(selectedFile, {
-        header: true,
-        skipEmptyLines: true
-      });
+      let mappedData: Array<Record<string, any>> = [];
+      let headers: string[] = [];
+      let parseErrors: Array<{ row: number; error: string }> = [];
 
-      // Check max rows limit
-      if (result.data.length > MAX_ROWS) {
-        toastError(t('maxRowsExceeded', { maxRows: MAX_ROWS }));
-        setLoading(false);
-        return;
-      }
-
-      if (result.errors.length > 0) {
-        setErrors(result.errors);
-      }
-
-      if (result.headers && result.data.length > 0) {
-        // Normalize headers
-        const headerMapping = normalizeCSVHeaders(result.headers, customerFieldMapping);
-        
-        // Map data to customer format
-        const mappedData = result.data.map((row, index) => {
-          const mapped = mapCSVRow(row, headerMapping);
-          return {
-            ...mapped,
-            _originalRow: index + 1 // Store display row number (start from 1)
-          };
+      if (isExcel) {
+        // Parse Excel file
+        const result = await parseExcelFile(selectedFile, {
+          sheetIndex: 0,
+          headerRowIndex: 0,
+          skipEmptyRows: true
         });
 
+        if (!result.success) {
+          toastError(result.errors[0]?.message || 'Failed to parse Excel file');
+          setLoading(false);
+          return;
+        }
+
+        // Check max rows limit
+        if (result.data.length > MAX_ROWS) {
+          toastError(
+            t('maxRowsExceeded', { maxRows: MAX_ROWS }) || 
+            `File contains ${result.data.length} rows. Maximum allowed is ${MAX_ROWS} rows.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Map Excel columns to customer fields
+        const mapped = mapExcelColumnsToFields(result.data, CUSTOMER_COLUMN_MAPPING);
+        
+        // Get headers from first row of mapped data
+        if (mapped.length > 0) {
+          headers = Object.keys(mapped[0]);
+        }
+
+        // Add row numbers
+        mappedData = mapped.map((row, index) => ({
+          ...row,
+          _originalRow: index + 1
+        }));
+
+        // Convert parse errors
+        parseErrors = result.errors.map(e => ({
+          row: e.row,
+          error: e.message
+        }));
+      } else {
+        // Parse CSV file
+        const result = await parseCSVFile(selectedFile, {
+          header: true,
+          skipEmptyLines: true
+        });
+
+        // Check max rows limit
+        if (result.data.length > MAX_ROWS) {
+          toastError(
+            t('maxRowsExceeded', { maxRows: MAX_ROWS }) || 
+            `File contains ${result.data.length} rows. Maximum allowed is ${MAX_ROWS} rows.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (result.errors.length > 0) {
+          parseErrors = result.errors;
+        }
+
+        if (result.headers && result.data.length > 0) {
+          // Normalize headers
+          const headerMapping = normalizeCSVHeaders(result.headers, customerFieldMapping);
+          
+          // Map data to customer format
+          mappedData = result.data.map((row, index) => {
+            const mapped = mapCSVRow(row, headerMapping);
+            return {
+              ...mapped,
+              _originalRow: index + 1 // Store display row number (start from 1)
+            };
+          });
+
+          headers = result.headers;
+        }
+      }
+
+      if (parseErrors.length > 0) {
+        setErrors(parseErrors);
+      }
+
+      if (mappedData.length > 0) {
         // Check for duplicate phones
         const phoneMap = new Map<string, number[]>();
         const duplicateList: Array<{ row: number; reason: string }> = [];
 
-        mappedData.forEach((row, index) => {
-          const rowNumber = index + 1; // Display row number (start from 1)
+        mappedData.forEach((row) => {
+          const rowNumber = row._originalRow || 1;
           const phone = (row.phone || '').trim();
           
           if (phone) {
@@ -145,13 +216,13 @@ export function ImportCustomerDialog({
         });
 
         setDuplicates(duplicateList);
-        setHeaders(result.headers);
+        setHeaders(headers);
         setPreviewData(mappedData);
       } else {
         toastError(t('noData'));
       }
     } catch (error: any) {
-      console.error('Error parsing CSV:', error);
+      console.error('Error parsing file:', error);
       toastError(error.message || t('parseError'));
     } finally {
       setLoading(false);
@@ -264,21 +335,20 @@ export function ImportCustomerDialog({
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const templateContent = `firstName,lastName,email,phone,address,city,state,zipCode,country,dateOfBirth,idNumber,idType,notes
-John,Doe,john.doe@example.com,0901234567,123 Main Street,Ho Chi Minh City,Ho Chi Minh,700000,Vietnam,1990-01-15,123456789,passport,Customer since 2020
-Jane,Smith,jane.smith@example.com,0912345678,456 Oak Avenue,Hanoi,Hanoi,100000,Vietnam,1985-05-20,987654321,national_id,Regular customer
-Bob,Johnson,bob.johnson@example.com,0923456789,789 Pine Road,Da Nang,Da Nang,550000,Vietnam,1992-08-10,456789123,drivers_license,Prefers weekend rentals`;
-
-    const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'customers-import-template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await customersApi.downloadSampleFile();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers-import-sample-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toastError('Failed to download sample file', error.message);
+    }
   };
 
   const handleClose = () => {
@@ -329,7 +399,7 @@ Bob,Johnson,bob.johnson@example.com,0923456789,789 Pine Road,Da Nang,Da Nang,550
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   onChange={(e) => {
                     const selectedFile = e.target.files?.[0];
                     if (selectedFile) {

@@ -15,7 +15,14 @@ import {
   CSVPreviewTable
 } from '@rentalshop/ui';
 import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle } from 'lucide-react';
-import { parseCSVFile, normalizeCSVHeaders, mapCSVRow } from '@rentalshop/utils';
+import { 
+  parseCSVFile, 
+  normalizeCSVHeaders, 
+  mapCSVRow,
+  parseExcelFile,
+  mapExcelColumnsToFields,
+  PRODUCT_COLUMN_MAPPING
+} from '@rentalshop/utils';
 import { productsApi } from '@rentalshop/utils';
 
 const MAX_ROWS = 1000;
@@ -67,8 +74,12 @@ export function ImportProductDialog({
   };
 
   const handleFileSelect = async (selectedFile: File) => {
-    if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
-      toastError(t('onlyCsv'));
+    const fileName = selectedFile.name.toLowerCase();
+    const isCSV = fileName.endsWith('.csv');
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    
+    if (!isCSV && !isExcel) {
+      toastError(t('onlyCsv') || 'Only CSV and Excel files (.csv, .xlsx, .xls) are supported');
       return;
     }
     
@@ -81,42 +92,102 @@ export function ImportProductDialog({
     setLoading(true);
 
     try {
-      // Parse CSV file
-      const result = await parseCSVFile(selectedFile, {
-        header: true,
-        skipEmptyLines: true
-      });
+      let mappedData: Array<Record<string, any>> = [];
+      let headers: string[] = [];
+      let parseErrors: Array<{ row: number; error: string }> = [];
 
-      // Check max rows limit
-      if (result.data.length > MAX_ROWS) {
-        toastError(t('maxRowsExceeded', { maxRows: MAX_ROWS }));
-        setLoading(false);
-        return;
-      }
-
-      if (result.errors.length > 0) {
-        setErrors(result.errors);
-      }
-
-      if (result.headers && result.data.length > 0) {
-        // Normalize headers
-        const headerMapping = normalizeCSVHeaders(result.headers, productFieldMapping);
-        
-        // Map data to product format
-        const mappedData = result.data.map((row, index) => {
-          const mapped = mapCSVRow(row, headerMapping);
-          return {
-            ...mapped,
-            _originalRow: index + 1 // Store display row number (start from 1)
-          };
+      if (isExcel) {
+        // Parse Excel file
+        const result = await parseExcelFile(selectedFile, {
+          sheetIndex: 0,
+          headerRowIndex: 0,
+          skipEmptyRows: true
         });
 
+        if (!result.success) {
+          toastError(result.errors[0]?.message || 'Failed to parse Excel file');
+          setLoading(false);
+          return;
+        }
+
+        // Check max rows limit
+        if (result.data.length > MAX_ROWS) {
+          toastError(
+            t('maxRowsExceeded', { maxRows: MAX_ROWS }) || 
+            `File contains ${result.data.length} rows. Maximum allowed is ${MAX_ROWS} rows.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Map Excel columns to product fields
+        const mapped = mapExcelColumnsToFields(result.data, PRODUCT_COLUMN_MAPPING);
+        
+        // Get headers from first row of mapped data
+        if (mapped.length > 0) {
+          headers = Object.keys(mapped[0]);
+        }
+
+        // Add row numbers
+        mappedData = mapped.map((row, index) => ({
+          ...row,
+          _originalRow: index + 1
+        }));
+
+        // Convert parse errors
+        parseErrors = result.errors.map(e => ({
+          row: e.row,
+          error: e.message
+        }));
+      } else {
+        // Parse CSV file
+        const result = await parseCSVFile(selectedFile, {
+          header: true,
+          skipEmptyLines: true
+        });
+
+        // Check max rows limit
+        if (result.data.length > MAX_ROWS) {
+          toastError(
+            t('maxRowsExceeded', { maxRows: MAX_ROWS }) || 
+            `File contains ${result.data.length} rows. Maximum allowed is ${MAX_ROWS} rows.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (result.errors.length > 0) {
+          parseErrors = result.errors;
+        }
+
+        if (result.headers && result.data.length > 0) {
+          // Normalize headers
+          const headerMapping = normalizeCSVHeaders(result.headers, productFieldMapping);
+          
+          // Map data to product format
+          mappedData = result.data.map((row, index) => {
+            const mapped = mapCSVRow(row, headerMapping);
+            return {
+              ...mapped,
+              _originalRow: index + 1 // Store display row number (start from 1)
+            };
+          });
+
+          headers = result.headers;
+        }
+      }
+
+      if (parseErrors.length > 0) {
+        setErrors(parseErrors);
+      }
+
+      if (mappedData.length > 0) {
         // Check for duplicate names
         const nameMap = new Map<string, number[]>();
         const duplicateList: Array<{ row: number; reason: string }> = [];
 
-        mappedData.forEach((row, index) => {
-          const rowNumber = index + 1; // Display row number (start from 1)
+        mappedData.forEach((row) => {
+          const rowNumber = row._originalRow || 1;
           const name = (row.name || '').trim();
           
           if (name) {
@@ -140,13 +211,13 @@ export function ImportProductDialog({
         });
 
         setDuplicates(duplicateList);
-        setHeaders(result.headers);
+        setHeaders(headers);
         setPreviewData(mappedData);
       } else {
         toastError(t('noData'));
       }
     } catch (error: any) {
-      console.error('Error parsing CSV:', error);
+      console.error('Error parsing file:', error);
       toastError(error.message || t('parseError'));
     } finally {
       setLoading(false);
@@ -259,23 +330,20 @@ export function ImportProductDialog({
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const templateContent = `name,categoryName,rentPrice,deposit,stock,description,barcode,salePrice,costPrice
-Camera Canon EOS R5,Electronics,500000,1000000,5,Professional mirrorless camera with 45MP sensor,CAM-001,25000000,20000000
-Drone DJI Mavic 3,Electronics,800000,2000000,3,4K drone with obstacle avoidance,DRN-001,35000000,28000000
-Laptop MacBook Pro 16,Electronics,1000000,5000000,2,16-inch MacBook Pro M2 Pro,LTB-001,60000000,50000000
-Projector Epson 4K,Electronics,300000,1500000,4,4K home theater projector,PRJ-001,15000000,12000000
-Sound System JBL,Electronics,200000,800000,6,Professional PA system with speakers,SND-001,8000000,6000000`;
-
-    const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'products-import-template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await productsApi.downloadSampleFile();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-import-sample-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toastError('Failed to download sample file', error.message);
+    }
   };
 
   const handleClose = () => {
