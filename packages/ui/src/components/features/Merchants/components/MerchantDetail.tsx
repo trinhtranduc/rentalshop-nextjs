@@ -83,6 +83,7 @@ export function MerchantDetail({
       <MerchantHeader 
         merchant={data.merchant}
         stats={data.stats}
+        showStats={false}
       />
 
       {/* Merchant Information */}

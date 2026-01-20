@@ -14,7 +14,7 @@ import {
   LoadingIndicator,
   CSVPreviewTable
 } from '@rentalshop/ui';
-import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { 
   parseCSVFile, 
   normalizeCSVHeaders, 
@@ -264,10 +264,22 @@ export function ImportProductDialog({
 
       // Convert to product input format
       const products: any[] = validData.map((row) => {
+        // Convert barcode: number -> string
+        let barcode = row.barcode || '';
+        if (typeof barcode === 'number') {
+          barcode = String(barcode);
+        }
+        
+        // Convert stock: ensure non-negative (if < 0 then = 0)
+        let stock = row.stock ? parseInt(String(row.stock)) : 0;
+        if (stock < 0) {
+          stock = 0;
+        }
+        
         const product: any = {
           name: row.name || '',
           description: row.description || '',
-          barcode: row.barcode || '',
+          barcode: barcode,
           // Nếu không có danh mục thì dùng "default"
           categoryName: (row.categoryname || row.categoryName || '').trim() || 'default',
           // Giá nếu không có thì để 0
@@ -275,7 +287,7 @@ export function ImportProductDialog({
           salePrice: row.saleprice || row.salePrice ? parseFloat(String(row.saleprice || row.salePrice)) : 0,
           costPrice: row.costprice || row.costPrice ? parseFloat(String(row.costprice || row.costPrice)) : 0,
           deposit: row.deposit ? parseFloat(String(row.deposit)) : 0,
-          stock: row.stock ? parseInt(String(row.stock)) : 0,
+          stock: stock,
           // pricingType and durationConfig use default values (not included in import)
         };
 
@@ -335,6 +347,22 @@ export function ImportProductDialog({
       toastError(error.message || t('failed'));
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleCopyAllErrors = async () => {
+    if (!importResult?.errors || importResult.errors.length === 0) return;
+    
+    const errorText = importResult.errors
+      .map(err => `Dòng ${err.row}: ${err.error}`)
+      .join('\n');
+    
+    try {
+      await navigator.clipboard.writeText(errorText);
+      toastSuccess('Đã copy tất cả lỗi vào clipboard');
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toastError('Không thể copy lỗi');
     }
   };
 
@@ -518,7 +546,19 @@ export function ImportProductDialog({
               {/* Error Details */}
               {showErrors && importResult.errors && importResult.errors.length > 0 && (
                 <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">Chi tiết lỗi:</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">Chi tiết lỗi:</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyAllErrors}
+                      className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy All
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     {importResult.errors.map((err, index) => (
                       <div key={index} className="text-sm text-red-800 dark:text-red-200">

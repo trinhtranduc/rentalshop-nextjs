@@ -15,7 +15,7 @@ import {
   FileUploadZone,
   CSVPreviewTable
 } from '@rentalshop/ui';
-import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { 
   parseCSVFile, 
   normalizeCSVHeaders, 
@@ -361,6 +361,22 @@ export function ImportCustomerDialog({
     }
   };
 
+  const handleCopyAllErrors = async () => {
+    if (!importResult?.errors || importResult.errors.length === 0) return;
+    
+    const errorText = importResult.errors
+      .map(err => `Dòng ${err.row}: ${err.error}`)
+      .join('\n');
+    
+    try {
+      await navigator.clipboard.writeText(errorText);
+      toastSuccess('Đã copy tất cả lỗi vào clipboard');
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toastError('Không thể copy lỗi');
+    }
+  };
+
   const handleDownloadTemplate = async () => {
     try {
       const blob = await customersApi.downloadSampleFile();
@@ -541,7 +557,19 @@ export function ImportCustomerDialog({
               {/* Error Details */}
               {showErrors && importResult.errors && importResult.errors.length > 0 && (
                 <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">Chi tiết lỗi:</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">Chi tiết lỗi:</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyAllErrors}
+                      className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy All
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     {importResult.errors.map((err, index) => (
                       <div key={index} className="text-sm text-red-800 dark:text-red-200">

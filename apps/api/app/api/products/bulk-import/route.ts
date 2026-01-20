@@ -133,164 +133,298 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       return defaultCategoryId!; // Already ensured to exist above
     };
 
-    // Import products with transaction
-    const results = await prisma.$transaction(async (tx: any) => {
-      const imported: any[] = [];
-      const errors: Array<{ row: number; error: string }> = [];
+    // Step 1: Validate ALL products BEFORE transaction (all-or-nothing)
+    const validationErrors: Array<{ row: number; error: string }> = [];
+    const validatedProducts: any[] = [];
 
-      for (let i = 0; i < products.length; i++) {
-        const productData = products[i];
-        const rowNumber = i + 1; // Start from 1 (matching UI display)
+    for (let i = 0; i < products.length; i++) {
+      const productData = products[i];
+      const rowNumber = i + 1; // Start from 1 (matching UI display)
 
-        try {
-          // Map categoryName to categoryId (number)
-          let categoryId: number | undefined;
-          const categoryName = (productData.categoryName || '').trim().toLowerCase();
+      try {
+        // Convert barcode: number -> string
+        let barcode = productData.barcode || '';
+        if (typeof barcode === 'number') {
+          barcode = String(barcode);
+        }
+        
+        // Convert stock: ensure non-negative (if < 0 then = 0)
+        let stock = productData.stock ? parseInt(String(productData.stock)) : 0;
+        if (stock < 0) {
+          stock = 0;
+        }
+
+        // Map categoryName to categoryId (number)
+        let categoryId: number | undefined;
+        const categoryName = (productData.categoryName || '').trim().toLowerCase();
+        
+        if (categoryName && categoryName !== 'default') {
+          // Try to find category by name
+          categoryId = categoryMap.get(categoryName);
           
-          if (categoryName && categoryName !== 'default') {
-            // Try to find category by name
-            categoryId = categoryMap.get(categoryName);
-            
-            if (!categoryId) {
-              errors.push({ 
-                row: rowNumber, 
-                error: `Category "${productData.categoryName}" not found` 
-              });
-              continue;
-            }
-          } else {
-            // Use default category (already created before transaction)
-            categoryId = getDefaultCategoryId();
-          }
-
-          // Ensure categoryId is valid
-          if (!categoryId || typeof categoryId !== 'number') {
-            errors.push({ 
+          if (!categoryId) {
+            validationErrors.push({ 
               row: rowNumber, 
-              error: 'Category not found. Please check category name or use default category.' 
+              error: `Category "${productData.categoryName}" not found` 
             });
             continue;
           }
+        } else {
+          // Use default category (already created before transaction)
+          categoryId = getDefaultCategoryId();
+        }
 
-          // Validate product data
-          const productInput = {
-            name: productData.name,
-            description: productData.description || '',
-            barcode: productData.barcode || '',
-            categoryId: categoryId, // Use number (publicId) directly
-            rentPrice: productData.rentPrice || 0,
-            salePrice: productData.salePrice || 0,
-            costPrice: productData.costPrice || 0,
-            deposit: productData.deposit || 0,
-            totalStock: productData.stock || 0,
-            pricingType: productData.pricingType || null,
-            durationConfig: productData.durationConfig || null,
-            merchantId,
-            outletStock: [{
-              outletId,
-              stock: productData.stock || 0
-            }]
-          };
-
-          const validated = productCreateSchema.safeParse(productInput);
-          if (!validated.success) {
-            errors.push({ 
-              row: rowNumber, 
-              error: validated.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-            });
-            continue;
-          }
-
-          // Create product
-          // All IDs are numbers (publicId) in schema: merchantId, categoryId, outletId
-          const product = await tx.product.create({
-            data: {
-              name: validated.data.name,
-              description: validated.data.description || null,
-              barcode: validated.data.barcode || null,
-              totalStock: validated.data.totalStock || 0,
-              rentPrice: validated.data.rentPrice,
-              salePrice: validated.data.salePrice || null,
-              costPrice: validated.data.costPrice || null,
-              deposit: validated.data.deposit || 0,
-              pricingType: validated.data.pricingType || null,
-              durationConfig: validated.data.durationConfig || null,
-              merchantId: merchant.id, // number (publicId)
-              categoryId: categoryId, // number (publicId)
-              outletStock: {
-                create: [{
-                  outletId: outlet.id, // number (publicId)
-                  stock: validated.data.totalStock || 0,
-                  available: validated.data.totalStock || 0,
-                  renting: 0
-                }]
-              }
-            },
-            include: {
-              category: { select: { id: true, name: true } },
-              merchant: { select: { id: true, name: true } }
-            }
-          });
-
-          imported.push(product);
-        } catch (error: any) {
-          // Format user-friendly error message
-          let errorMessage = 'Failed to import product';
-          
-          if (error.code === 'P2002') {
-            // Unique constraint violation
-            errorMessage = 'Product name or barcode already exists';
-          } else if (error.code === 'P2003') {
-            // Foreign key constraint violation
-            errorMessage = 'Invalid category or merchant reference';
-          } else if (error.message) {
-            // Check if it's a technical error or user-friendly
-            const technicalErrors = [
-              'Invalid value provided',
-              'Expected Int',
-              'Expected String',
-              'prisma',
-              'Prisma',
-              'invocation',
-              'route.js'
-            ];
-            
-            const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-            
-            if (isTechnicalError) {
-              // Technical error - use generic message
-              errorMessage = 'Invalid data format or missing required information';
-            } else {
-              // User-friendly error - use as is
-              errorMessage = error.message;
-            }
-          }
-          
-          errors.push({ 
+        // Ensure categoryId is valid
+        if (!categoryId || typeof categoryId !== 'number') {
+          validationErrors.push({ 
             row: rowNumber, 
-            error: errorMessage
+            error: 'Category not found. Please check category name or use default category.' 
           });
+          continue;
+        }
+
+        // Validate product data with converted values
+        const productInput = {
+          name: productData.name,
+          description: productData.description || '',
+          barcode: barcode, // Converted to string
+          categoryId: categoryId, // Use number (publicId) directly
+          rentPrice: productData.rentPrice || 0,
+          salePrice: productData.salePrice || 0,
+          costPrice: productData.costPrice || 0,
+          deposit: productData.deposit || 0,
+          totalStock: stock, // Converted to non-negative
+          pricingType: productData.pricingType || null,
+          durationConfig: productData.durationConfig || null,
+          merchantId,
+          outletStock: [{
+            outletId,
+            stock: stock // Converted to non-negative
+          }]
+        };
+
+        const validated = productCreateSchema.safeParse(productInput);
+        if (!validated.success) {
+          validationErrors.push({ 
+            row: rowNumber, 
+            error: validated.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          });
+          continue;
+        }
+
+        validatedProducts.push({
+          rowNumber,
+          data: validated.data,
+          categoryId
+        });
+      } catch (error: any) {
+        // Format user-friendly error message
+        let errorMessage = 'Failed to validate product';
+        
+        if (error.message) {
+          // Check if it's a technical error or user-friendly
+          const technicalErrors = [
+            'Invalid value provided',
+            'Expected Int',
+            'Expected String',
+            'prisma',
+            'Prisma',
+            'invocation',
+            'route.js'
+          ];
           
-          // Log technical details for debugging
-          console.error(`Error importing product at row ${rowNumber}:`, {
-            message: error.message,
-            code: error.code,
-            stack: error.stack
-          });
+          const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+          
+          if (isTechnicalError) {
+            // Technical error - use generic message
+            errorMessage = 'Invalid data format or missing required information';
+          } else {
+            // User-friendly error - use as is
+            errorMessage = error.message;
+          }
+        }
+        
+        validationErrors.push({ 
+          row: rowNumber, 
+          error: errorMessage
+        });
+        
+        // Log technical details for debugging
+        console.error(`Error validating product at row ${rowNumber}:`, {
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
+      }
+    }
+
+    // Step 2: If ANY validation errors, return errors WITHOUT importing anything (all-or-nothing)
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        ResponseBuilder.success('PRODUCTS_IMPORTED', {
+          imported: 0,
+          failed: validationErrors.length,
+          total: products.length,
+          errors: validationErrors
+        })
+      );
+    }
+
+    // Step 3: All products validated successfully - import ALL in a single transaction
+    try {
+      const results = await prisma.$transaction(async (tx: any) => {
+        const imported: any[] = [];
+
+        for (const validatedProduct of validatedProducts) {
+          try {
+            // Create product
+            // All IDs are numbers (publicId) in schema: merchantId, categoryId, outletId
+            const product = await tx.product.create({
+              data: {
+                name: validatedProduct.data.name,
+                description: validatedProduct.data.description || null,
+                barcode: validatedProduct.data.barcode || null,
+                totalStock: validatedProduct.data.totalStock || 0,
+                rentPrice: validatedProduct.data.rentPrice,
+                salePrice: validatedProduct.data.salePrice || null,
+                costPrice: validatedProduct.data.costPrice || null,
+                deposit: validatedProduct.data.deposit || 0,
+                pricingType: validatedProduct.data.pricingType || null,
+                durationConfig: validatedProduct.data.durationConfig || null,
+                merchantId: merchant.id, // number (publicId)
+                categoryId: validatedProduct.categoryId, // number (publicId)
+                outletStock: {
+                  create: [{
+                    outletId: outlet.id, // number (publicId)
+                    stock: validatedProduct.data.totalStock || 0,
+                    available: validatedProduct.data.totalStock || 0,
+                    renting: 0
+                  }]
+                }
+              },
+              include: {
+                category: { select: { id: true, name: true } },
+                merchant: { select: { id: true, name: true } }
+              }
+            });
+
+            imported.push(product);
+          } catch (error: any) {
+            // If ANY error during transaction, throw to rollback entire transaction
+            // Format user-friendly error message
+            let errorMessage = 'Failed to import product';
+            
+            if (error.code === 'P2002') {
+              // Unique constraint violation
+              errorMessage = 'Product name or barcode already exists';
+            } else if (error.code === 'P2003') {
+              // Foreign key constraint violation
+              errorMessage = 'Invalid category or merchant reference';
+            } else if (error.message) {
+              // Check if it's a technical error or user-friendly
+              const technicalErrors = [
+                'Invalid value provided',
+                'Expected Int',
+                'Expected String',
+                'prisma',
+                'Prisma',
+                'invocation',
+                'route.js'
+              ];
+              
+              const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+              
+              if (isTechnicalError) {
+                // Technical error - use generic message
+                errorMessage = 'Invalid data format or missing required information';
+              } else {
+                // User-friendly error - use as is
+                errorMessage = error.message;
+              }
+            }
+            
+            // Log technical details for debugging
+            console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
+              message: error.message,
+              code: error.code,
+              stack: error.stack
+            });
+            
+            // Throw error with row number to rollback entire transaction (all-or-nothing)
+            throw new Error(`Row ${validatedProduct.rowNumber}: ${errorMessage}`);
+          }
+        }
+
+        return { imported };
+      });
+
+      return NextResponse.json(
+        ResponseBuilder.success('PRODUCTS_IMPORTED', {
+          imported: results.imported.length,
+          failed: 0, // All validated successfully, so no failures
+          total: products.length,
+          errors: [] // All validated successfully, so no errors
+        })
+      );
+    } catch (transactionError: any) {
+      // Transaction failed - rollback occurred automatically
+      // Format user-friendly error message
+      let errorMessage = 'Failed to import products. Transaction rolled back.';
+      
+      if (transactionError.message) {
+        // Check if error message contains row number
+        if (transactionError.message.includes('Row ')) {
+          // Extract row number and error
+          const match = transactionError.message.match(/Row (\d+): (.+)/);
+          if (match) {
+            const rowNumber = parseInt(match[1]);
+            const rowError = match[2];
+            
+            return NextResponse.json(
+              ResponseBuilder.success('PRODUCTS_IMPORTED', {
+                imported: 0,
+                failed: 1,
+                total: products.length,
+                errors: [{ row: rowNumber, error: rowError }]
+              })
+            );
+          }
+        }
+        
+        // Check if it's a technical error or user-friendly
+        const technicalErrors = [
+          'Invalid value provided',
+          'Expected Int',
+          'Expected String',
+          'prisma',
+          'Prisma',
+          'invocation',
+          'route.js'
+        ];
+        
+        const isTechnicalError = technicalErrors.some(tech => transactionError.message.includes(tech));
+        
+        if (!isTechnicalError) {
+          errorMessage = transactionError.message;
         }
       }
-
-      return { imported, errors };
-    });
-
-    return NextResponse.json(
-      ResponseBuilder.success('PRODUCTS_IMPORTED', {
-        imported: results.imported.length,
-        failed: results.errors.length,
-        total: products.length,
-        errors: results.errors
-      })
-    );
+      
+      // Log technical details for debugging
+      console.error('Transaction error in bulk import:', {
+        message: transactionError.message,
+        code: transactionError.code,
+        stack: transactionError.stack
+      });
+      
+      return NextResponse.json(
+        ResponseBuilder.success('PRODUCTS_IMPORTED', {
+          imported: 0,
+          failed: products.length,
+          total: products.length,
+          errors: [{ row: 1, error: errorMessage }]
+        })
+      );
+    }
   } catch (error: any) {
     console.error('Error in bulk import:', error);
     

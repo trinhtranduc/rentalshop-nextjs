@@ -6,9 +6,25 @@ import type { Merchant, MerchantDetailStats } from '@rentalshop/types';
 interface MerchantHeaderProps {
   merchant: Merchant;
   stats: MerchantDetailStats;
+  showStats?: boolean; // Optional prop to show/hide stat cards
 }
 
-export function MerchantHeader({ merchant, stats }: MerchantHeaderProps) {
+export function MerchantHeader({ merchant, stats, showStats = false }: MerchantHeaderProps) {
+  // If showStats is false, only show merchant info, hide stat cards
+  if (!showStats) {
+    return (
+      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <CardContent className="p-6">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Merchant</p>
+            <p className="text-base font-bold text-gray-900 dark:text-white">{merchant.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{merchant.email}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Merchant Info */}

@@ -43,121 +43,278 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Import customers with transaction
-    const results = await prisma.$transaction(async (tx: any) => {
-      const imported: any[] = [];
-      const errors: Array<{ row: number; error: string }> = [];
+    // Get merchant CUID (for database operations)
+    const merchant = await db.merchants.findById(merchantId);
+    if (!merchant) {
+      return NextResponse.json(
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
+        { status: 404 }
+      );
+    }
 
-      for (let i = 0; i < customers.length; i++) {
-        const customerData = customers[i];
-        const rowNumber = i + 1; // Start from 1 (matching UI display)
+    // Step 1: Validate ALL customers BEFORE transaction (all-or-nothing)
+    const validationErrors: Array<{ row: number; error: string }> = [];
+    const validatedCustomers: any[] = [];
 
-        try {
-          // Validate firstName (required)
-          const firstName = (customerData.firstName || '').trim();
-          if (!firstName || firstName === '') {
-            errors.push({ 
-              row: rowNumber, 
-              error: 'First name is required' 
-            });
-            continue;
-          }
+    for (let i = 0; i < customers.length; i++) {
+      const customerData = customers[i];
+      const rowNumber = i + 1; // Start from 1 (matching UI display)
 
-          // Validate customer data with schema
-          const validationResult = customerCreateSchema.safeParse(customerData);
-          if (!validationResult.success) {
-            errors.push({ 
-              row: rowNumber, 
-              error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
-            });
-            continue;
-          }
-
-          // Ensure merchantId is set
-          const customerInput = {
-            ...validationResult.data,
-            merchantId
-          };
-
-          // Find merchant by id (userScope.merchantId is the merchant id)
-          const merchant = await tx.merchant.findUnique({
-            where: { id: merchantId }
-          });
-
-          if (!merchant) {
-            errors.push({ row: rowNumber, error: `Merchant with ID ${merchantId} not found` });
-            continue;
-          }
-
-          // Convert dateOfBirth string to Date object if provided
-          // Prisma DateTime requires Date object or ISO-8601 string with time
-          let dateOfBirth: Date | null = null;
-          if (customerInput.dateOfBirth) {
-            const dateValue = customerInput.dateOfBirth;
-            if (typeof dateValue === 'string') {
-              // If it's a date string (e.g., "1990-01-15"), convert to Date
-              // Add time component if missing to make it valid ISO-8601
-              const dateStr = dateValue.trim();
-              if (dateStr) {
-                // If it's just a date (YYYY-MM-DD), add time to make it valid
-                const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})$/);
-                if (dateMatch) {
-                  dateOfBirth = new Date(`${dateMatch[1]}T00:00:00.000Z`);
-                } else {
-                  // Try parsing as-is (might already be ISO-8601)
-                  dateOfBirth = new Date(dateStr);
-                }
-                // Validate the date
-                if (isNaN(dateOfBirth.getTime())) {
-                  dateOfBirth = null;
-                }
-              }
-            } else if (dateValue && typeof dateValue === 'object' && 'getTime' in dateValue) {
-              // It's already a Date object
-              dateOfBirth = dateValue as Date;
-            }
-          }
-
-          const customer = await tx.customer.create({
-            data: {
-              firstName: customerInput.firstName || '',
-              lastName: customerInput.lastName && customerInput.lastName.trim() !== '' ? customerInput.lastName.trim() : null,
-              phone: customerInput.phone && customerInput.phone.trim() !== '' ? customerInput.phone.trim() : null,
-              email: customerInput.email && customerInput.email.trim() !== '' ? customerInput.email.trim() : null,
-              address: customerInput.address && customerInput.address.trim() !== '' ? customerInput.address.trim() : null,
-              city: customerInput.city && customerInput.city.trim() !== '' ? customerInput.city.trim() : null,
-              state: customerInput.state && customerInput.state.trim() !== '' ? customerInput.state.trim() : null,
-              zipCode: customerInput.zipCode && customerInput.zipCode.trim() !== '' ? customerInput.zipCode.trim() : null,
-              country: customerInput.country && customerInput.country.trim() !== '' ? customerInput.country.trim() : null,
-              idNumber: customerInput.idNumber && customerInput.idNumber.trim() !== '' ? customerInput.idNumber.trim() : null,
-              notes: customerInput.notes && customerInput.notes.trim() !== '' ? customerInput.notes.trim() : null,
-              dateOfBirth: dateOfBirth,
-              idType: customerInput.idType || null,
-              isActive: true,
-              merchantId: merchant.id
-            }
-          });
-
-          imported.push(customer);
-        } catch (error: any) {
-          errors.push({ 
+      try {
+        // Validate firstName (required)
+        const firstName = (customerData.firstName || '').trim();
+        if (!firstName || firstName === '') {
+          validationErrors.push({ 
             row: rowNumber, 
-            error: error.message || 'Failed to import customer' 
+            error: 'First name is required' 
           });
+          continue;
+        }
+
+        // Validate customer data with schema
+        const validationResult = customerCreateSchema.safeParse(customerData);
+        if (!validationResult.success) {
+          validationErrors.push({ 
+            row: rowNumber, 
+            error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          });
+          continue;
+        }
+
+        // Ensure merchantId is set
+        const customerInput = {
+          ...validationResult.data,
+          merchantId
+        };
+
+        // Convert dateOfBirth string to Date object if provided
+        // Prisma DateTime requires Date object or ISO-8601 string with time
+        let dateOfBirth: Date | null = null;
+        if (customerInput.dateOfBirth) {
+          const dateValue = customerInput.dateOfBirth;
+          if (typeof dateValue === 'string') {
+            // If it's a date string (e.g., "1990-01-15"), convert to Date
+            // Add time component if missing to make it valid ISO-8601
+            const dateStr = dateValue.trim();
+            if (dateStr) {
+              // If it's just a date (YYYY-MM-DD), add time to make it valid
+              const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})$/);
+              if (dateMatch) {
+                dateOfBirth = new Date(`${dateMatch[1]}T00:00:00.000Z`);
+              } else {
+                // Try parsing as-is (might already be ISO-8601)
+                dateOfBirth = new Date(dateStr);
+              }
+              // Validate the date
+              if (isNaN(dateOfBirth.getTime())) {
+                dateOfBirth = null;
+              }
+            }
+          } else if (dateValue && typeof dateValue === 'object' && 'getTime' in dateValue) {
+            // It's already a Date object
+            dateOfBirth = dateValue as Date;
+          }
+        }
+
+        validatedCustomers.push({
+          rowNumber,
+          data: customerInput,
+          dateOfBirth
+        });
+      } catch (error: any) {
+        // Format user-friendly error message
+        let errorMessage = 'Failed to validate customer';
+        
+        if (error.message) {
+          // Check if it's a technical error or user-friendly
+          const technicalErrors = [
+            'Invalid value provided',
+            'Expected',
+            'prisma',
+            'Prisma',
+            'invocation',
+            'route.js'
+          ];
+          
+          const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+          
+          if (isTechnicalError) {
+            // Technical error - use generic message
+            errorMessage = 'Invalid data format or missing required information';
+          } else {
+            // User-friendly error - use as is
+            errorMessage = error.message;
+          }
+        }
+        
+        validationErrors.push({ 
+          row: rowNumber, 
+          error: errorMessage
+        });
+        
+        // Log technical details for debugging
+        console.error(`Error validating customer at row ${rowNumber}:`, {
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
+      }
+    }
+
+    // Step 2: If ANY validation errors, return errors WITHOUT importing anything (all-or-nothing)
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+          imported: 0,
+          failed: validationErrors.length,
+          total: customers.length,
+          errors: validationErrors
+        })
+      );
+    }
+
+    // Step 3: All customers validated successfully - import ALL in a single transaction
+    try {
+      const results = await prisma.$transaction(async (tx: any) => {
+        const imported: any[] = [];
+
+        for (const validatedCustomer of validatedCustomers) {
+          try {
+            const customer = await tx.customer.create({
+              data: {
+                firstName: validatedCustomer.data.firstName || '',
+                lastName: validatedCustomer.data.lastName && validatedCustomer.data.lastName.trim() !== '' ? validatedCustomer.data.lastName.trim() : null,
+                phone: validatedCustomer.data.phone && validatedCustomer.data.phone.trim() !== '' ? validatedCustomer.data.phone.trim() : null,
+                email: validatedCustomer.data.email && validatedCustomer.data.email.trim() !== '' ? validatedCustomer.data.email.trim() : null,
+                address: validatedCustomer.data.address && validatedCustomer.data.address.trim() !== '' ? validatedCustomer.data.address.trim() : null,
+                city: validatedCustomer.data.city && validatedCustomer.data.city.trim() !== '' ? validatedCustomer.data.city.trim() : null,
+                state: validatedCustomer.data.state && validatedCustomer.data.state.trim() !== '' ? validatedCustomer.data.state.trim() : null,
+                zipCode: validatedCustomer.data.zipCode && validatedCustomer.data.zipCode.trim() !== '' ? validatedCustomer.data.zipCode.trim() : null,
+                country: validatedCustomer.data.country && validatedCustomer.data.country.trim() !== '' ? validatedCustomer.data.country.trim() : null,
+                idNumber: validatedCustomer.data.idNumber && validatedCustomer.data.idNumber.trim() !== '' ? validatedCustomer.data.idNumber.trim() : null,
+                notes: validatedCustomer.data.notes && validatedCustomer.data.notes.trim() !== '' ? validatedCustomer.data.notes.trim() : null,
+                dateOfBirth: validatedCustomer.dateOfBirth,
+                idType: validatedCustomer.data.idType || null,
+                isActive: true,
+                merchantId: merchant.id // Use merchant.id (number/publicId)
+              }
+            });
+
+            imported.push(customer);
+          } catch (error: any) {
+            // If ANY error during transaction, throw to rollback entire transaction
+            // Format user-friendly error message
+            let errorMessage = 'Failed to import customer';
+            
+            if (error.code === 'P2002') {
+              // Unique constraint violation
+              errorMessage = 'Customer with this phone number or email already exists';
+            } else if (error.code === 'P2003') {
+              // Foreign key constraint violation
+              errorMessage = 'Invalid merchant reference';
+            } else if (error.message) {
+              // Check if it's a technical error or user-friendly
+              const technicalErrors = [
+                'Invalid value provided',
+                'Expected',
+                'prisma',
+                'Prisma',
+                'invocation',
+                'route.js'
+              ];
+              
+              const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+              
+              if (isTechnicalError) {
+                // Technical error - use generic message
+                errorMessage = 'Invalid data format or missing required information';
+              } else {
+                // User-friendly error - use as is
+                errorMessage = error.message;
+              }
+            }
+            
+            // Log technical details for debugging
+            console.error(`Error importing customer at row ${validatedCustomer.rowNumber}:`, {
+              message: error.message,
+              code: error.code,
+              stack: error.stack
+            });
+            
+            // Throw error with row number to rollback entire transaction (all-or-nothing)
+            throw new Error(`Row ${validatedCustomer.rowNumber}: ${errorMessage}`);
+          }
+        }
+
+        return { imported };
+      });
+
+      return NextResponse.json(
+        ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+          imported: results.imported.length,
+          failed: 0, // All validated successfully, so no failures
+          total: customers.length,
+          errors: [] // All validated successfully, so no errors
+        })
+      );
+    } catch (transactionError: any) {
+      // Transaction failed - rollback occurred automatically
+      // Format user-friendly error message
+      let errorMessage = 'Failed to import customers. Transaction rolled back.';
+      
+      if (transactionError.message) {
+        // Check if error message contains row number
+        if (transactionError.message.includes('Row ')) {
+          // Extract row number and error
+          const match = transactionError.message.match(/Row (\d+): (.+)/);
+          if (match) {
+            const rowNumber = parseInt(match[1]);
+            const rowError = match[2];
+            
+            return NextResponse.json(
+              ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+                imported: 0,
+                failed: 1,
+                total: customers.length,
+                errors: [{ row: rowNumber, error: rowError }]
+              })
+            );
+          }
+        }
+        
+        // Check if it's a technical error or user-friendly
+        const technicalErrors = [
+          'Invalid value provided',
+          'Expected',
+          'prisma',
+          'Prisma',
+          'invocation',
+          'route.js'
+        ];
+        
+        const isTechnicalError = technicalErrors.some(tech => transactionError.message.includes(tech));
+        
+        if (!isTechnicalError) {
+          errorMessage = transactionError.message;
         }
       }
-
-      return { imported, errors };
-    });
-
-    return NextResponse.json(
-      ResponseBuilder.success('CUSTOMERS_IMPORTED', {
-        imported: results.imported.length,
-        failed: results.errors.length,
-        total: customers.length,
-        errors: results.errors
-      })
-    );
+      
+      // Log technical details for debugging
+      console.error('Transaction error in bulk import:', {
+        message: transactionError.message,
+        code: transactionError.code,
+        stack: transactionError.stack
+      });
+      
+      return NextResponse.json(
+        ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+          imported: 0,
+          failed: customers.length,
+          total: customers.length,
+          errors: [{ row: 1, error: errorMessage }]
+        })
+      );
+    }
   } catch (error) {
     console.error('Error in bulk import:', error);
     const { response, statusCode } = handleApiError(error);

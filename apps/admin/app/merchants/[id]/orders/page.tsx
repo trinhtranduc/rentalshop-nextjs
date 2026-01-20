@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { merchantsApi } from '@rentalshop/utils';
+import { merchantsApi, ordersApi } from '@rentalshop/utils';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageWrapper,
   PageHeader,
@@ -21,6 +21,7 @@ import type { Order, OrderFilters } from '@rentalshop/types';
  * ✅ URL params as single source of truth
  * ✅ Shareable URLs (bookmarkable filters)
  * ✅ Browser back/forward support
+ * ✅ Server-side pagination and search
  */
 export default function MerchantOrdersPage() {
   const params = useParams();
@@ -50,33 +51,53 @@ export default function MerchantOrdersPage() {
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
+  // ============================================================================
+  // MEMOIZED FILTERS - For API calls
+  // ============================================================================
+  
+  const apiFilters: OrderFilters = useMemo(() => ({
+    search: search || undefined,
+    status: (status as any) || undefined,
+    orderType: (orderType as any) || undefined,
+    merchantId: parseInt(merchantId),
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [merchantId, search, status, orderType, page, limit, sortBy, sortOrder]);
+
+  // ============================================================================
+  // DATA FETCHING - Server-side pagination and search
+  // ============================================================================
+  
   useEffect(() => {
     fetchData();
-  }, [merchantId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantId, search, status, orderType, page, limit, sortBy, sortOrder]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Fetch merchant info
-      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
-      
-      if (merchantData.success && merchantData.data) {
-        setMerchantName(merchantData.data.name);
+      // Fetch merchant info (only once)
+      if (!merchantName) {
+        const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+        if (merchantData.success && merchantData.data) {
+          setMerchantName(merchantData.data.name);
+        }
       }
 
-      // Fetch orders
-      const ordersRes = await merchantsApi.orders.list(parseInt(merchantId), '');
-      const ordersData = await ordersRes.json();
-      console.log('📦 Orders API response:', ordersData);
+      // Fetch orders with server-side pagination and search
+      const ordersResponse = await ordersApi.searchOrders(apiFilters);
+      console.log('📦 Orders API response:', ordersResponse);
 
-      if (ordersData.success) {
-        // API returns data as direct array OR data.orders
-        const ordersArray = Array.isArray(ordersData.data) 
-          ? ordersData.data 
-          : ordersData.data?.orders || [];
-        console.log('📦 Orders array, count:', ordersArray.length);
+      if (ordersResponse.success && ordersResponse.data) {
+        const ordersData = ordersResponse.data;
+        const ordersArray = ordersData.orders || [];
         
         const transformedOrders = ordersArray.map((order: any) => ({
           id: order.id,
@@ -104,66 +125,37 @@ export default function MerchantOrdersPage() {
         }));
         
         setOrders(transformedOrders);
+        setTotal(ordersData.total || 0);
+        setTotalPages(ordersData.totalPages || Math.ceil((ordersData.total || 0) / limit));
       } else {
-        setError(ordersData.message || 'Failed to fetch orders');
+        setError(ordersResponse.message || 'Failed to fetch orders');
+        setOrders([]);
+        setTotal(0);
+        setTotalPages(0);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to fetch data');
+      setOrders([]);
+      setTotal(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
 
   // ============================================================================
-  // CLIENT-SIDE FILTERING & PAGINATION
+  // ORDER DATA - Server-side paginated data
   // ============================================================================
   
-  const filteredOrders = useMemo(() => {
-    let filtered = orders;
-    
-    if (search) {
-      filtered = filtered.filter(o => 
-        o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
-        o.customerName?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    if (status && status !== 'all') {
-      filtered = filtered.filter(o => o.status === status);
-    }
-    
-    if (orderType && orderType !== 'all') {
-      filtered = filtered.filter(o => o.orderType === orderType);
-    }
-    
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const aVal = (a as any)[sortBy];
-      const bVal = (b as any)[sortBy];
-      const order = sortOrder === 'desc' ? -1 : 1;
-      return (aVal > bVal ? 1 : -1) * order;
-    });
-    
-    return filtered;
-  }, [orders, search, status, orderType, sortBy, sortOrder]);
-
-  const orderData = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-    const total = filteredOrders.length;
-    const totalPages = Math.ceil(total / limit);
-    
-    return {
-      orders: paginatedOrders,
-      total,
-      currentPage: page,
-      totalPages,
-      limit,
-      hasMore: endIndex < total
-    };
-  }, [filteredOrders, page, limit]);
+  const orderData = useMemo(() => ({
+    orders,
+    total,
+    currentPage: page,
+    totalPages,
+    limit,
+    hasMore: page < totalPages
+  }), [orders, total, page, totalPages, limit]);
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -263,7 +255,7 @@ export default function MerchantOrdersPage() {
     );
   }
 
-  const filters = { search, status, orderType, sortBy, sortOrder };
+  const uiFilters = { search, status, orderType, sortBy, sortOrder };
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -284,17 +276,26 @@ export default function MerchantOrdersPage() {
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
-        <Orders
-          data={orderData}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-          onOrderAction={handleOrderAction}
-          onPageChange={handlePageChange}
-          onSort={handleSort}
-          showStats={false}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading orders...</p>
+            </div>
+          </div>
+        ) : (
+          <Orders
+            data={orderData}
+            filters={uiFilters}
+            onFiltersChange={handleFiltersChange}
+            onSearchChange={handleSearchChange}
+            onClearFilters={handleClearFilters}
+            onOrderAction={handleOrderAction}
+            onPageChange={handlePageChange}
+            onSort={handleSort}
+            showStats={false}
+          />
+        )}
       </div>
     </PageWrapper>
   );
