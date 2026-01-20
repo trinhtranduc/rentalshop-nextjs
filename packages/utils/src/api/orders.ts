@@ -269,4 +269,25 @@ export const ordersApi = {
     const response = await authenticatedFetch(apiUrls.orders.stats);
     return await parseApiResponse<any>(response);
   },
+
+  /**
+   * Batch delete CANCELLED orders
+   * Only ADMIN, MERCHANT, and OUTLET_ADMIN can delete orders
+   * OUTLET_STAFF cannot delete orders
+   */
+  async batchDeleteOrders(orderIds: number[]): Promise<ApiResponse<{
+    deleted: number;
+    total: number;
+    deletedOrders: Array<{ id: number; orderNumber: string }>;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.orders.batchDelete, {
+      method: 'POST',
+      body: JSON.stringify({ orderIds }),
+    });
+    return await parseApiResponse<{
+      deleted: number;
+      total: number;
+      deletedOrders: Array<{ id: number; orderNumber: string }>;
+    }>(response);
+  },
 };

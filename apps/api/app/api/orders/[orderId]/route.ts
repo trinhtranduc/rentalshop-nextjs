@@ -394,9 +394,8 @@ export const PUT = async (
  * Soft delete order by ID
  * 
  * Authorization: Users with 'orders.manage' permission can delete orders
- * - OUTLET_ADMIN can only delete orders from their outlet
- * - MERCHANT can delete orders from their merchant
- * - ADMIN can delete any order
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+ * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
  */
 export const DELETE = async (
   request: NextRequest,
@@ -430,21 +429,26 @@ export const DELETE = async (
         );
       }
 
-      // Only allow deleting CANCELLED orders for OUTLET_ADMIN and MERCHANT roles
-      // ADMIN can delete any order (no status restriction)
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.MERCHANT) {
-        if (existingOrder.status !== ORDER_STATUS.CANCELLED) {
-          return NextResponse.json(
-            ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
-            { status: API.STATUS.FORBIDDEN }
-          );
-        }
+      // Only allow deleting CANCELLED orders for all roles (ADMIN, MERCHANT, OUTLET_ADMIN)
+      // OUTLET_STAFF cannot delete orders (no orders.manage permission)
+      if (existingOrder.status !== ORDER_STATUS.CANCELLED) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
+          { status: API.STATUS.FORBIDDEN }
+        );
       }
-      // ADMIN role: No status check - can delete any order (handled by authorization checks below)
 
       // Authorization checks based on user role
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
-        // Outlet users can only delete orders from their outlet
+      // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)
+      if (user.role === USER_ROLE.OUTLET_STAFF) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        // Outlet admin can only delete orders from their outlet
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_DELETE_ORDER_FROM_OTHER_OUTLET'),
@@ -452,7 +456,7 @@ export const DELETE = async (
           );
         }
       } else if (user.role !== USER_ROLE.ADMIN) {
-        // Non-admin users can only delete orders from their merchant
+        // MERCHANT can only delete orders from their merchant
         const existingOutlet = await db.outlets.findById(existingOrder.outletId);
         if (existingOutlet && existingOutlet.merchantId !== userScope.merchantId) {
           return NextResponse.json(

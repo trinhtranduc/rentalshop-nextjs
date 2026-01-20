@@ -75,6 +75,7 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    batchDelete: string;
     getByNumber: (orderNumber: string) => string;
     updateStatus: (id: number) => string;
     stats: string;
@@ -570,6 +571,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/orders`,
       update: (id: number) => `${base}/api/orders/${id}`,
       delete: (id: number) => `${base}/api/orders/${id}`,
+      batchDelete: `${base}/api/orders/batch-delete`,
       getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${encodeURIComponent(orderNumber)}`,
       updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
       stats: `${base}/api/orders/stats`,

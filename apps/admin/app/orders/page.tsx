@@ -10,12 +10,14 @@ import {
   useToast,
   Button,
   ExportDialog,
+  ConfirmationDialog,
   type QuickFilterOption
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useOrdersData, useCanExportData, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useOrdersData, useCanExportData } from '@rentalshop/hooks';
 import { ordersApi } from '@rentalshop/utils';
+import { useFormatCurrency } from '@rentalshop/ui';
 import type { OrderFilters } from '@rentalshop/types';
 
 /**
@@ -33,9 +35,8 @@ export default function AdminOrdersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError, toastWarning } = useToast();
-  const t = useOrderTranslations();
-  const tc = useCommonTranslations();
   const canExport = useCanExportData();
+  const formatMoney = useFormatCurrency();
 
   // ============================================================================
   // QUICK FILTER STATE - Modern time-based filtering
@@ -46,6 +47,11 @@ export default function AdminOrdersPage() {
   );
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderNumber: string; totalAmount: number } | null>(null);
+  const [showBatchDeleteConfirmDialog, setShowBatchDeleteConfirmDialog] = useState(false);
+  const [ordersToDeleteBatch, setOrdersToDeleteBatch] = useState<number[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -233,21 +239,15 @@ export default function AdminOrdersPage() {
         
       case 'delete':
         // Find order by number to get ID
-        const orderToDelete = data?.orders.find(o => o.orderNumber === orderNumber);
-        if (orderToDelete) {
-          // Show confirmation dialog
-          if (window.confirm(`Are you sure you want to delete order ${orderNumber}?`)) {
-            try {
-              const response = await ordersApi.deleteOrder(orderToDelete.id);
-              if (response.success) {
-                // Force re-fetch
-                router.refresh();
-              }
-              // Error automatically handled by useGlobalErrorHandler
-            } catch (error) {
-              // Error automatically handled by useGlobalErrorHandler
-            }
-          }
+        const order = data?.orders.find(o => o.orderNumber === orderNumber);
+        if (order) {
+          // Set order to delete and show confirmation dialog
+          setOrderToDelete({ 
+            id: order.id, 
+            orderNumber: order.orderNumber,
+            totalAmount: order.totalAmount || 0
+          });
+          setShowDeleteConfirmDialog(true);
         }
         break;
         
@@ -255,6 +255,60 @@ export default function AdminOrdersPage() {
         console.log('Order action:', action, orderNumber);
     }
   }, [router, data?.orders]);
+
+  // Handle batch delete
+  const handleBatchDelete = useCallback(async (orderIds: number[]) => {
+    // Validate all selected orders are CANCELLED
+    const selectedOrders = data?.orders.filter(o => orderIds.includes(o.id)) || [];
+    const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
+    
+    if (!allCancelled) {
+      toastError(
+        'Error',
+        'Only CANCELLED orders can be deleted'
+      );
+      return;
+    }
+
+    // Set orders to delete and show confirmation dialog
+    setOrdersToDeleteBatch(orderIds);
+    setShowBatchDeleteConfirmDialog(true);
+  }, [data?.orders, toastError]);
+
+  // Confirm batch delete
+  const confirmBatchDelete = useCallback(async () => {
+    if (ordersToDeleteBatch.length === 0) return;
+
+    try {
+      const response = await ordersApi.batchDeleteOrders(ordersToDeleteBatch);
+      
+      if (response.success) {
+        toastSuccess(
+          'Success',
+          `${response.data?.deleted || ordersToDeleteBatch.length} orders deleted successfully`
+        );
+        
+        // Clear selection
+        setSelectedOrderIds([]);
+        setOrdersToDeleteBatch([]);
+        setShowBatchDeleteConfirmDialog(false);
+        
+        // Refetch data
+        refetch();
+      } else {
+        toastError(
+          'Error',
+          response.message || 'Failed to delete orders'
+        );
+      }
+    } catch (error: any) {
+      console.error('Error deleting orders:', error);
+      toastError(
+        'Error',
+        error.message || 'Failed to delete orders'
+      );
+    }
+  }, [ordersToDeleteBatch, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -350,6 +404,8 @@ export default function AdminOrdersPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           onDateRangeChange={handleDateRangeChange}
+          onSelectionChange={setSelectedOrderIds}
+          onBatchDelete={handleBatchDelete}
           activeQuickFilter={activeQuickFilter}
           showQuickFilters={true}
           filterStyle="dropdown"
@@ -393,6 +449,59 @@ export default function AdminOrdersPage() {
           } finally {
             setIsExporting(false);
           }
+        }}
+      />
+
+      {/* Delete Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+        type="danger"
+        title="Delete Order"
+        description={
+          orderToDelete 
+            ? `Are you sure you want to delete this order?\n\n📋 Order Number: ${orderToDelete.orderNumber}\n💰 Total Amount: ${formatMoney(orderToDelete.totalAmount)}\n\nThis action cannot be undone.`
+            : 'Are you sure you want to delete this order?'
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          try {
+            const response = await ordersApi.deleteOrder(orderToDelete.id);
+            if (response.success) {
+              toastSuccess('Order deleted successfully', 'Order deleted successfully');
+              setShowDeleteConfirmDialog(false);
+              setOrderToDelete(null);
+              // Force re-fetch
+              refetch();
+            }
+            // Error automatically handled by useGlobalErrorHandler
+          } catch (error) {
+            // Error automatically handled by useGlobalErrorHandler
+          }
+        }}
+        onCancel={() => {
+          setShowDeleteConfirmDialog(false);
+          setOrderToDelete(null);
+        }}
+      />
+
+      {/* Batch Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showBatchDeleteConfirmDialog}
+        onOpenChange={setShowBatchDeleteConfirmDialog}
+        type="danger"
+        title="Delete Selected Orders"
+        description={
+          `Are you sure you want to delete the selected orders?\n\n📋 ${ordersToDeleteBatch.length} orders selected\n\nThis action cannot be undone. Only CANCELLED orders can be deleted.`
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmBatchDelete}
+        onCancel={() => {
+          setShowBatchDeleteConfirmDialog(false);
+          setOrdersToDeleteBatch([]);
         }}
       />
     </PageWrapper>

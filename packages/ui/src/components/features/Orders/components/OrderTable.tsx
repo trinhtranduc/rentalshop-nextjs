@@ -16,20 +16,24 @@ interface OrderTableProps {
   orders: OrderListItem[];
   onOrderAction: (action: string, orderId: string) => void;
   onSelectionChange?: (selectedOrderIds: number[]) => void; // Callback when selection changes
+  onBatchDelete?: (orderIds: number[]) => void; // Callback for batch delete
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // ⭐ User role for permission checks
 }
 
 export const OrderTable = React.memo(function OrderTable({ 
   orders, 
   onOrderAction,
   onSelectionChange,
+  onBatchDelete,
   sortBy = 'createdAt',
   sortOrder = 'desc',
   onSort,
-  showMerchant = false
+  showMerchant = false,
+  userRole = 'OUTLET_STAFF' // Default to most restrictive role
 }: OrderTableProps) {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
@@ -44,17 +48,41 @@ export const OrderTable = React.memo(function OrderTable({
     handleSelectAll,
     isSelected,
   } = useTableSelection(orders, onSelectionChange);
+
+  // Check if all selected orders are CANCELLED
+  const selectedOrders = React.useMemo(() => {
+    return orders.filter(order => selectedOrderIds.has(order.id));
+  }, [orders, selectedOrderIds]);
+
+  const allSelectedAreCancelled = React.useMemo(() => {
+    if (selectedOrders.length === 0) return false;
+    return selectedOrders.every(order => order.status === 'CANCELLED');
+  }, [selectedOrders]);
+
+  // Check if user can delete (not OUTLET_STAFF)
+  const canDelete = userRole !== 'OUTLET_STAFF';
   
-  // Debug: Log order statuses
+  // Show batch delete button if:
+  // 1. User can delete (not OUTLET_STAFF)
+  // 2. Has selected orders
+  // 3. All selected orders are CANCELLED
+  const showBatchDeleteButton = canDelete && selectedOrders.length > 0 && allSelectedAreCancelled;
+  
+  // Debug: Log order statuses and delete button visibility
   React.useEffect(() => {
     if (orders.length > 0) {
-      console.log('📋 OrderTable - Order statuses:', orders.map(o => ({ 
-        orderNumber: o.orderNumber, 
-        status: o.status,
-        canEdit: o.status === 'RESERVED'
-      })));
+      console.log('📋 OrderTable - Order statuses:', orders.map(o => {
+        const canDelete = userRole !== 'OUTLET_STAFF' && o.status === 'CANCELLED';
+        return { 
+          orderNumber: o.orderNumber, 
+          status: o.status,
+          canEdit: o.status === 'RESERVED',
+          canDelete,
+          userRole
+        };
+      }));
     }
-  }, [orders]);
+  }, [orders, userRole]);
 
   if (orders.length === 0) {
     return (
@@ -116,8 +144,32 @@ export const OrderTable = React.memo(function OrderTable({
     }
   };
 
+  const handleBatchDelete = () => {
+    if (onBatchDelete && selectedOrders.length > 0) {
+      const orderIds = selectedOrders.map(order => order.id);
+      onBatchDelete(orderIds);
+    }
+  };
+
   return (
     <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+      {/* Batch Delete Toolbar */}
+      {showBatchDeleteButton && (
+        <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between">
+          <div className="text-sm text-blue-900 dark:text-blue-100">
+            {t('messages.selectedOrders', { count: selectedOrders.length }) || `${selectedOrders.length} orders selected`}
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleBatchDelete}
+            className="h-8 px-4"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {t('actions.deleteSelected') || 'Delete Selected'}
+          </Button>
+        </div>
+      )}
       <div className="overflow-y-auto flex-1 h-full">
         <table className="w-full">
           {/* Table Header with Sorting - Sticky */}
@@ -325,13 +377,26 @@ export const OrderTable = React.memo(function OrderTable({
                       {t('actions.edit')}
                     </Button>
                     
-                    {/* Show Delete button for CANCELLED orders (all roles can delete cancelled orders)
-                        ADMIN can delete any order, OUTLET_ADMIN and MERCHANT can only delete CANCELLED orders */}
-                    {order.status === 'CANCELLED' && (
+                    {/* Show Delete button:
+                        - ADMIN, MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+                        - OUTLET_STAFF: cannot delete orders */}
+                    {(
+                      userRole !== 'OUTLET_STAFF' && 
+                      order.status === 'CANCELLED'
+                    ) && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onOrderAction('delete', order.orderNumber)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🗑️ Delete button clicked:', { 
+                            orderNumber: order.orderNumber, 
+                            userRole, 
+                            status: order.status 
+                          });
+                          onOrderAction('delete', order.orderNumber);
+                        }}
                         className="h-8 px-3 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />

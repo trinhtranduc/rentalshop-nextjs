@@ -24,6 +24,7 @@ interface OrdersProps {
   onPageChange: (page: number) => void;
   onLimitChange?: (limit: number) => void; // Optional: allow changing items per page
   onSelectionChange?: (selectedOrderIds: number[]) => void; // Callback when selection changes
+  onBatchDelete?: (orderIds: number[]) => void; // Callback for batch delete
   onSort?: (column: string) => void;
   onQuickFilterChange?: (filter: QuickFilterOption | null) => void;
   onDateRangeChange?: (rangeId: string, start: Date, end: Date) => void;
@@ -45,6 +46,7 @@ export const Orders = React.memo(function Orders({
   onPageChange,
   onLimitChange,
   onSelectionChange,
+  onBatchDelete,
   onSort,
   onQuickFilterChange,
   onDateRangeChange,
@@ -135,10 +137,12 @@ export const Orders = React.memo(function Orders({
           orders={data.orders}
           onOrderAction={memoizedOnOrderAction}
           onSelectionChange={onSelectionChange}
+          onBatchDelete={onBatchDelete}
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={memoizedOnSort}
           showMerchant={showMerchant}
+          userRole={userRole}
         />
       </div>
       
