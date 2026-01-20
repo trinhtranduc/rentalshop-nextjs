@@ -218,29 +218,66 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           categoryId
         });
       } catch (error: any) {
-        // Format user-friendly error message
+        // Format user-friendly error message with details
         let errorMessage = 'Failed to validate product';
         
+        // Convert type names to user-friendly messages
+        const typeMap: Record<string, string> = {
+          'Int': 'number',
+          'String': 'text',
+          'Float': 'decimal number',
+          'Boolean': 'true/false',
+          'DateTime': 'date/time'
+        };
+        
         if (error.message) {
-          // Check if it's a technical error or user-friendly
-          const technicalErrors = [
-            'Invalid value provided',
-            'Expected Int',
-            'Expected String',
-            'prisma',
-            'Prisma',
-            'invocation',
-            'route.js'
-          ];
+          // Try to extract useful information from Prisma/validation errors
+          const message = error.message;
           
-          const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-          
-          if (isTechnicalError) {
-            // Technical error - use generic message
-            errorMessage = 'Invalid data format or missing required information';
-          } else {
+          // Check for Prisma type errors and extract details
+          if (message.includes('Expected Int') || message.includes('Expected String') || message.includes('Expected')) {
+            // Parse Prisma validation errors
+            const expectedMatch = message.match(/Expected (\w+), provided (\w+)/i);
+            const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+            
+            if (expectedMatch && fieldMatch) {
+              const field = fieldMatch[1];
+              const expected = expectedMatch[1];
+              const provided = expectedMatch[2];
+              
+              const expectedType = typeMap[expected] || expected.toLowerCase();
+              const providedType = typeMap[provided] || provided.toLowerCase();
+              
+              errorMessage = `${field}: Expected ${expectedType}, but received ${providedType}`;
+            } else if (expectedMatch) {
+              const expected = expectedMatch[1];
+              const provided = expectedMatch[2];
+              const expectedType = typeMap[expected] || expected.toLowerCase();
+              const providedType = typeMap[provided] || provided.toLowerCase();
+              errorMessage = `Invalid data type: Expected ${expectedType}, but received ${providedType}`;
+            } else {
+              // Try to extract field name from error message
+              const fieldMatch2 = message.match(/`(\w+)`/);
+              if (fieldMatch2) {
+                errorMessage = `${fieldMatch2[1]}: Invalid data format`;
+              } else {
+                errorMessage = 'Invalid data format or missing required information';
+              }
+            }
+          } else if (message.includes('Invalid value provided')) {
+            // Try to extract field name
+            const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+            if (fieldMatch) {
+              errorMessage = `${fieldMatch[1]}: Invalid value provided`;
+            } else {
+              errorMessage = 'Invalid value provided for one or more fields';
+            }
+          } else if (!message.includes('prisma') && !message.includes('Prisma') && !message.includes('invocation') && !message.includes('route.js')) {
             // User-friendly error - use as is
-            errorMessage = error.message;
+            errorMessage = message;
+          } else {
+            // Generic technical error
+            errorMessage = 'Invalid data format or missing required information';
           }
         }
         
@@ -253,7 +290,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         console.error(`Error validating product at row ${rowNumber}:`, {
           message: error.message,
           code: error.code,
-          stack: error.stack
+          stack: error.stack,
+          productData: productData
         });
       }
     }
@@ -361,7 +399,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             imported.push(product);
           } catch (error: any) {
             // If ANY error during transaction, throw to rollback entire transaction
-            // Format user-friendly error message
+            // Format user-friendly error message with details
             let errorMessage = 'Failed to import product';
             
             if (error.code === 'P2002') {
@@ -371,25 +409,59 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               // Foreign key constraint violation
               errorMessage = 'Invalid category or merchant reference';
             } else if (error.message) {
-              // Check if it's a technical error or user-friendly
-              const technicalErrors = [
-                'Invalid value provided',
-                'Expected Int',
-                'Expected String',
-                'prisma',
-                'Prisma',
-                'invocation',
-                'route.js'
-              ];
+              const message = error.message;
               
-              const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+              // Convert type names to user-friendly messages
+              const typeMap: Record<string, string> = {
+                'Int': 'number',
+                'String': 'text',
+                'Float': 'decimal number',
+                'Boolean': 'true/false',
+                'DateTime': 'date/time'
+              };
               
-              if (isTechnicalError) {
-                // Technical error - use generic message
-                errorMessage = 'Invalid data format or missing required information';
-              } else {
+              // Try to extract useful information from Prisma/validation errors
+              if (message.includes('Expected Int') || message.includes('Expected String') || message.includes('Expected')) {
+                // Parse Prisma validation errors
+                const expectedMatch = message.match(/Expected (\w+), provided (\w+)/i);
+                const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+                
+                if (expectedMatch && fieldMatch) {
+                  const field = fieldMatch[1];
+                  const expected = expectedMatch[1];
+                  const provided = expectedMatch[2];
+                  
+                  const expectedType = typeMap[expected] || expected.toLowerCase();
+                  const providedType = typeMap[provided] || provided.toLowerCase();
+                  
+                  errorMessage = `${field}: Expected ${expectedType}, but received ${providedType}`;
+                } else if (expectedMatch) {
+                  const expected = expectedMatch[1];
+                  const provided = expectedMatch[2];
+                  const expectedType = typeMap[expected] || expected.toLowerCase();
+                  const providedType = typeMap[provided] || provided.toLowerCase();
+                  errorMessage = `Invalid data type: Expected ${expectedType}, but received ${providedType}`;
+                } else {
+                  const fieldMatch2 = message.match(/`(\w+)`/);
+                  if (fieldMatch2) {
+                    errorMessage = `${fieldMatch2[1]}: Invalid data format`;
+                  } else {
+                    errorMessage = 'Invalid data format or missing required information';
+                  }
+                }
+              } else if (message.includes('Invalid value provided')) {
+                const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+                if (fieldMatch) {
+                  errorMessage = `${fieldMatch[1]}: Invalid value provided`;
+                } else {
+                  errorMessage = 'Invalid value provided for one or more fields';
+                }
+              } else if (!message.includes('prisma') && !message.includes('Prisma') && !message.includes('invocation') && !message.includes('route.js')) {
                 // User-friendly error - use as is
-                errorMessage = error.message;
+                errorMessage = message;
+              } else {
+                // Generic technical error
+                errorMessage = 'Invalid data format or missing required information';
               }
             }
             
@@ -397,7 +469,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
               message: error.message,
               code: error.code,
-              stack: error.stack
+              stack: error.stack,
+              productData: validatedProduct.data
             });
             
             // Throw error with row number to rollback entire transaction (all-or-nothing)
