@@ -55,6 +55,7 @@ export function ImportProductDialog({
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
     imported: number;
+    skipped: number;
     failed: number;
     total: number;
     errors?: Array<{ row: number; error: string }>;
@@ -310,6 +311,7 @@ export function ImportProductDialog({
       if (response.success && response.data) {
         setImportResult({
           imported: response.data.imported || 0,
+          skipped: response.data.skipped || 0,
           failed: response.data.failed || 0,
           total: response.data.total || products.length,
           errors: response.data.errors || []
@@ -498,7 +500,7 @@ export function ImportProductDialog({
           {/* Import Result */}
           {importResult && (
             <div className="space-y-4 border-t pt-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -506,6 +508,16 @@ export function ImportProductDialog({
                   </div>
                   <div className="text-2xl font-bold text-green-700 dark:text-green-400">{importResult.imported}</div>
                 </div>
+                {importResult.skipped > 0 && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertCircle className="h-5 w-5 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Bỏ qua</span>
+                    </div>
+                    <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{importResult.skipped}</div>
+                    <div className="text-xs text-yellow-600 mt-1">Trùng lặp</div>
+                  </div>
+                )}
                 <div 
                   className={`p-3 rounded-lg border transition-colors ${
                     importResult.failed > 0 
@@ -538,7 +550,7 @@ export function ImportProductDialog({
                     <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Tổng cộng</span>
                   </div>
                   <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                    {importResult.imported + importResult.failed}
+                    {importResult.imported + importResult.skipped + importResult.failed}
                   </div>
                 </div>
               </div>

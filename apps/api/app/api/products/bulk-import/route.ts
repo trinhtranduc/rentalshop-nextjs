@@ -270,12 +270,61 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Step 3: All products validated successfully - import ALL in a single transaction
+    // Step 3: Check for duplicates and filter them out
+    const productsToImport: any[] = [];
+    const skipped: Array<{ row: number; reason: string }> = [];
+
+    // Check duplicates before transaction
+    for (const validatedProduct of validatedProducts) {
+      try {
+        // Check if product with same name or barcode already exists
+        const existingProduct = await prisma.product.findFirst({
+          where: {
+            merchantId: merchant.id,
+            OR: [
+              { name: validatedProduct.data.name },
+              ...(validatedProduct.data.barcode ? [{ barcode: validatedProduct.data.barcode }] : [])
+            ]
+          }
+        });
+
+        if (existingProduct) {
+          skipped.push({
+            row: validatedProduct.rowNumber,
+            reason: 'Product name or barcode already exists'
+          });
+          continue;
+        }
+
+        productsToImport.push(validatedProduct);
+      } catch (error: any) {
+        // If error checking duplicate, skip this product
+        skipped.push({
+          row: validatedProduct.rowNumber,
+          reason: 'Failed to check duplicate'
+        });
+        console.error(`Error checking duplicate for product at row ${validatedProduct.rowNumber}:`, error);
+      }
+    }
+
+    // Step 4: Import non-duplicate products in a single transaction
+    if (productsToImport.length === 0) {
+      return NextResponse.json(
+        ResponseBuilder.success('PRODUCTS_IMPORTED', {
+          imported: 0,
+          skipped: skipped.length,
+          failed: 0,
+          total: products.length,
+          errors: []
+        })
+      );
+    }
+
     try {
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
 
-        for (const validatedProduct of validatedProducts) {
+        for (const validatedProduct of productsToImport) {
           try {
             // Create product
             // All IDs are numbers (publicId) in schema: merchantId, categoryId, outletId
@@ -315,7 +364,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             let errorMessage = 'Failed to import product';
             
             if (error.code === 'P2002') {
-              // Unique constraint violation
+              // Unique constraint violation (should not happen as we checked, but handle just in case)
               errorMessage = 'Product name or barcode already exists';
             } else if (error.code === 'P2003') {
               // Foreign key constraint violation
@@ -361,9 +410,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
           imported: results.imported.length,
-          failed: 0, // All validated successfully, so no failures
+          skipped: skipped.length,
+          failed: 0,
           total: products.length,
-          errors: [] // All validated successfully, so no errors
+          errors: []
         })
       );
     } catch (transactionError: any) {

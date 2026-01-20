@@ -173,12 +173,71 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Step 3: All customers validated successfully - import ALL in a single transaction
+    // Step 3: Check for duplicates and filter them out
+    const customersToImport: any[] = [];
+    const skipped: Array<{ row: number; reason: string }> = [];
+
+    // Check duplicates before transaction
+    for (const validatedCustomer of validatedCustomers) {
+      try {
+        // Check if customer with same phone or email already exists
+        const whereClause: any = {
+          merchantId: merchant.id
+        };
+
+        const orConditions: any[] = [];
+        if (validatedCustomer.data.phone && validatedCustomer.data.phone.trim() !== '') {
+          orConditions.push({ phone: validatedCustomer.data.phone.trim() });
+        }
+        if (validatedCustomer.data.email && validatedCustomer.data.email.trim() !== '') {
+          orConditions.push({ email: validatedCustomer.data.email.trim() });
+        }
+
+        if (orConditions.length > 0) {
+          whereClause.OR = orConditions;
+
+          const existingCustomer = await prisma.customer.findFirst({
+            where: whereClause
+          });
+
+          if (existingCustomer) {
+            skipped.push({
+              row: validatedCustomer.rowNumber,
+              reason: 'Customer with this phone number or email already exists'
+            });
+            continue;
+          }
+        }
+
+        customersToImport.push(validatedCustomer);
+      } catch (error: any) {
+        // If error checking duplicate, skip this customer
+        skipped.push({
+          row: validatedCustomer.rowNumber,
+          reason: 'Failed to check duplicate'
+        });
+        console.error(`Error checking duplicate for customer at row ${validatedCustomer.rowNumber}:`, error);
+      }
+    }
+
+    // Step 4: Import non-duplicate customers in a single transaction
+    if (customersToImport.length === 0) {
+      return NextResponse.json(
+        ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+          imported: 0,
+          skipped: skipped.length,
+          failed: 0,
+          total: customers.length,
+          errors: []
+        })
+      );
+    }
+
     try {
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
 
-        for (const validatedCustomer of validatedCustomers) {
+        for (const validatedCustomer of customersToImport) {
           try {
             const customer = await tx.customer.create({
               data: {
@@ -207,7 +266,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             let errorMessage = 'Failed to import customer';
             
             if (error.code === 'P2002') {
-              // Unique constraint violation
+              // Unique constraint violation (should not happen as we checked, but handle just in case)
               errorMessage = 'Customer with this phone number or email already exists';
             } else if (error.code === 'P2003') {
               // Foreign key constraint violation
@@ -252,9 +311,10 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMERS_IMPORTED', {
           imported: results.imported.length,
-          failed: 0, // All validated successfully, so no failures
+          skipped: skipped.length,
+          failed: 0,
           total: customers.length,
-          errors: [] // All validated successfully, so no errors
+          errors: []
         })
       );
     } catch (transactionError: any) {
