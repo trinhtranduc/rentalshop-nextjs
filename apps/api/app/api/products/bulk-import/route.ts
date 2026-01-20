@@ -275,25 +275,26 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const skipped: Array<{ row: number; reason: string }> = [];
 
     // Check duplicates before transaction
+    // Only check by barcode - allow duplicate product names
     for (const validatedProduct of validatedProducts) {
       try {
-        // Check if product with same name or barcode already exists
-        const existingProduct = await prisma.product.findFirst({
-          where: {
-            merchantId: merchant.id,
-            OR: [
-              { name: validatedProduct.data.name },
-              ...(validatedProduct.data.barcode ? [{ barcode: validatedProduct.data.barcode }] : [])
-            ]
-          }
-        });
-
-        if (existingProduct) {
-          skipped.push({
-            row: validatedProduct.rowNumber,
-            reason: 'Product name or barcode already exists'
+        // Only check duplicate by barcode (if barcode exists)
+        // Allow duplicate product names as long as barcode is different
+        if (validatedProduct.data.barcode && validatedProduct.data.barcode.trim() !== '') {
+          const existingProduct = await prisma.product.findFirst({
+            where: {
+              merchantId: merchant.id,
+              barcode: validatedProduct.data.barcode.trim()
+            }
           });
-          continue;
+
+          if (existingProduct) {
+            skipped.push({
+              row: validatedProduct.rowNumber,
+              reason: 'Product with this barcode already exists'
+            });
+            continue;
+          }
         }
 
         productsToImport.push(validatedProduct);
