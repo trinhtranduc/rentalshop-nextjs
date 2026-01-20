@@ -35,7 +35,7 @@ export default function MerchantsPage() {
   const status = searchParams.get('status') || 'all';
   const plan = searchParams.get('plan') || 'all';
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
+  const limit = parseInt(searchParams.get('limit') || '50');
   const sortBy = searchParams.get('sortBy') || 'name';
   const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
 
@@ -167,7 +167,7 @@ export default function MerchantsPage() {
         total: 0,
         currentPage: 1,
         totalPages: 1,
-        limit: 10,
+        limit: 50,
         hasMore: false,
         stats: {
           totalMerchants: 0,

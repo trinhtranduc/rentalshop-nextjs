@@ -79,19 +79,84 @@ export function MerchantDetail({
 
   return (
     <div className="space-y-6">
-      {/* Merchant Header with Statistics */}
-      <MerchantHeader 
+      {/* Merchant Header with Statistics - Hidden to save space */}
+      {/* <MerchantHeader 
         merchant={data.merchant}
         stats={data.stats}
         showStats={false}
-      />
+      /> */}
 
       {/* Merchant Information */}
       <div className="grid grid-cols-1 gap-6">
         {/* Basic Info */}
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Basic Information</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-auto justify-between"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
+                    <span>Quick Actions</span>
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56"
+                  open={dropdownOpen}
+                  onOpenChange={setDropdownOpen}
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
+                    className="cursor-pointer"
+                  >
+                    <Building2 className="mr-2 h-4 w-4 text-blue-700" />
+                    <span>Manage Outlets</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
+                    className="cursor-pointer"
+                  >
+                    <Package className="mr-2 h-4 w-4 text-green-600" />
+                    <span>Manage Products</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
+                    className="cursor-pointer"
+                  >
+                    <Users className="mr-2 h-4 w-4 text-purple-600" />
+                    <span>Manage Users</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
+                    className="cursor-pointer"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
+                    <span>Manage Orders</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
+                    className="cursor-pointer"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
+                    <span>Plan Limit Addons</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onMerchantAction('edit', data.merchant.id)}
+                    className="cursor-pointer"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4 text-gray-600" />
+                    <span>Edit Merchant</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -146,64 +211,6 @@ export function MerchantDetail({
                   <p className="text-sm text-gray-900 dark:text-white">{data.merchant.description}</p>
                 </div>
               )}
-              <div className="md:col-span-2 pt-2 border-t">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Quick Actions</label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-between"
-                      onClick={() => setDropdownOpen(!dropdownOpen)}
-                    >
-                      <span>Manage Merchant Resources</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end" 
-                    className="w-56"
-                    open={dropdownOpen}
-                    onOpenChange={setDropdownOpen}
-                  >
-                    <DropdownMenuItem
-                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
-                      className="cursor-pointer"
-                    >
-                      <Building2 className="mr-2 h-4 w-4 text-blue-700" />
-                      <span>Manage Outlets</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
-                      className="cursor-pointer"
-                    >
-                      <Package className="mr-2 h-4 w-4 text-green-600" />
-                      <span>Manage Products</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
-                      className="cursor-pointer"
-                    >
-                      <Users className="mr-2 h-4 w-4 text-purple-600" />
-                      <span>Manage Users</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
-                      className="cursor-pointer"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
-                      <span>Manage Orders</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
-                      className="cursor-pointer"
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
-                      <span>Plan Limit Addons</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </div>
           </CardContent>
         </Card>

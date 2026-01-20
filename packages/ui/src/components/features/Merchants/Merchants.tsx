@@ -84,7 +84,8 @@ export function Merchants({
     <div className="flex flex-col h-full">
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-2">
-        <MerchantListHeader stats={data.stats} />
+        {/* Stats header hidden to save space */}
+        {/* <MerchantListHeader stats={data.stats} /> */}
         
         {/* Compact Filters - All in one row */}
         <Card className="shadow-sm border-border">
