@@ -189,14 +189,25 @@ export function ImportCustomerDialog({
       }
 
       if (mappedData.length > 0) {
-        // Check for duplicate phones
+        // Validate required fields and check for duplicates
+        const validationErrors: Array<{ row: number; error: string }> = [];
         const phoneMap = new Map<string, number[]>();
         const duplicateList: Array<{ row: number; reason: string }> = [];
 
         mappedData.forEach((row) => {
           const rowNumber = row._originalRow || 1;
-          const phone = (row.phone || '').trim();
           
+          // Validate firstName (required)
+          const firstName = (row.firstname || row.firstName || '').trim();
+          if (!firstName || firstName === '') {
+            validationErrors.push({
+              row: rowNumber,
+              error: 'First name is required'
+            });
+          }
+          
+          // Check for duplicate phones
+          const phone = (row.phone || '').trim();
           if (phone) {
             if (phoneMap.has(phone)) {
               const existingRows = phoneMap.get(phone)!;
@@ -216,6 +227,11 @@ export function ImportCustomerDialog({
             }
           }
         });
+
+        // Add validation errors to existing errors
+        if (validationErrors.length > 0) {
+          setErrors(prev => [...prev, ...validationErrors]);
+        }
 
         setDuplicates(duplicateList);
         setHeaders(headers);
@@ -269,8 +285,15 @@ export function ImportCustomerDialog({
 
       // Convert to customer input format
       const customers: any[] = validData.map((row) => {
+        const firstName = (row.firstname || row.firstName || '').trim();
+        
+        // Ensure firstName is not empty (should be filtered by validation, but double check)
+        if (!firstName) {
+          return null; // Will be filtered out
+        }
+
         const customer: any = {
-          firstName: row.firstname || row.firstName || '',
+          firstName: firstName,
           lastName: row.lastname || row.lastName,
           email: row.email,
           phone: row.phone,
@@ -285,15 +308,15 @@ export function ImportCustomerDialog({
           notes: row.notes
         };
 
-        // Remove empty fields
+        // Remove empty fields (but keep firstName)
         Object.keys(customer).forEach(key => {
-          if (customer[key] === '' || customer[key] === null || customer[key] === undefined) {
+          if (key !== 'firstName' && (customer[key] === '' || customer[key] === null || customer[key] === undefined)) {
             delete customer[key];
           }
         });
 
         return customer;
-      });
+      }).filter(c => c !== null); // Filter out null entries
 
       // Call bulk import API
       const response = await customersApi.importCustomers(customers);

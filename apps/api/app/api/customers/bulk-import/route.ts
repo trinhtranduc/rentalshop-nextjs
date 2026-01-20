@@ -53,9 +53,29 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         const rowNumber = i + 1; // Start from 1 (matching UI display)
 
         try {
+          // Validate firstName (required)
+          const firstName = (customerData.firstName || '').trim();
+          if (!firstName || firstName === '') {
+            errors.push({ 
+              row: rowNumber, 
+              error: 'First name is required' 
+            });
+            continue;
+          }
+
+          // Validate customer data with schema
+          const validationResult = customerCreateSchema.safeParse(customerData);
+          if (!validationResult.success) {
+            errors.push({ 
+              row: rowNumber, 
+              error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+            });
+            continue;
+          }
+
           // Ensure merchantId is set
           const customerInput = {
-            ...customerData,
+            ...validationResult.data,
             merchantId
           };
 
