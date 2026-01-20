@@ -77,37 +77,39 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Get all categories for mapping (by name to CUID)
+    // Get all categories for mapping (by name to categoryId - number)
     const categories = await db.categories.search({ merchantId, limit: 1000 });
-    const categoryMap = new Map<string, string>(); // Map: name -> CUID
+    const categoryMap = new Map<string, number>(); // Map: name -> categoryId (number)
     categories.data?.forEach((cat: any) => {
-      // cat.id from db.categories.search is CUID (string)
-      categoryMap.set(cat.name.toLowerCase().trim(), String(cat.id));
+      // cat.id from db.categories.search is number (publicId) - Category.id is Int in schema
+      categoryMap.set(cat.name.toLowerCase().trim(), Number(cat.id));
     });
 
     // Ensure default category exists BEFORE import (create if not exists)
-    const merchantCuid = merchant.id;
-    let defaultCategoryCuid: string | undefined;
+    // merchant.id is number (publicId), not CUID
+    const merchantPublicId = merchant.id;
+    let defaultCategoryId: number | undefined;
     
     // Check if default category exists in map
     const defaultCategoryName = 'default';
     const generalCategoryName = 'general';
-    defaultCategoryCuid = categoryMap.get(defaultCategoryName) || categoryMap.get(generalCategoryName);
+    defaultCategoryId = categoryMap.get(defaultCategoryName) || categoryMap.get(generalCategoryName);
     
-    if (!defaultCategoryCuid) {
-      // Find in database
+    if (!defaultCategoryId) {
+      // Find in database - merchantId is Int (number) in schema
       const existingCategory = await prisma.category.findFirst({
         where: {
-          merchantId: merchantCuid,
+          merchantId: merchantPublicId, // Use number (publicId), not CUID
           name: { in: ['Default', 'default', 'General', 'general'] },
           isActive: true
         }
       });
       
       if (existingCategory) {
-        defaultCategoryCuid = String(existingCategory.id); // Use CUID (string)
+        // category.id is Int (number) in schema
+        defaultCategoryId = existingCategory.id;
         // Add to map for later use
-        categoryMap.set(existingCategory.name.toLowerCase().trim(), String(existingCategory.id));
+        categoryMap.set(existingCategory.name.toLowerCase().trim(), existingCategory.id);
       } else {
         // Create default category BEFORE import transaction
         console.log('🔧 Creating default category before import...');
@@ -115,20 +117,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           data: {
             name: 'Default',
             description: 'Default category for products',
-            merchantId: merchantCuid,
+            merchantId: merchantPublicId, // Use number (publicId), not CUID
             isActive: true
           }
         });
-        defaultCategoryCuid = String(newCategory.id); // Use CUID (string)
+        defaultCategoryId = newCategory.id; // number
         // Add to map for later use
-        categoryMap.set('default', String(newCategory.id));
+        categoryMap.set('default', newCategory.id);
         console.log('✅ Default category created:', newCategory.id);
       }
     }
 
-    // Get or return default category CUID (now guaranteed to exist)
-    const getDefaultCategoryCuid = (): string => {
-      return defaultCategoryCuid!; // Already ensured to exist above
+    // Get or return default category ID (now guaranteed to exist)
+    const getDefaultCategoryId = (): number => {
+      return defaultCategoryId!; // Already ensured to exist above
     };
 
     // Import products with transaction
@@ -141,15 +143,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         const rowNumber = i + 1; // Start from 1 (matching UI display)
 
         try {
-          // Map categoryName to categoryCUID
-          let categoryCuid: string | undefined;
+          // Map categoryName to categoryId (number)
+          let categoryId: number | undefined;
           const categoryName = (productData.categoryName || '').trim().toLowerCase();
           
           if (categoryName && categoryName !== 'default') {
             // Try to find category by name
-            categoryCuid = categoryMap.get(categoryName);
+            categoryId = categoryMap.get(categoryName);
             
-            if (!categoryCuid) {
+            if (!categoryId) {
               errors.push({ 
                 row: rowNumber, 
                 error: `Category "${productData.categoryName}" not found` 
@@ -158,20 +160,16 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             }
           } else {
             // Use default category (already created before transaction)
-            categoryCuid = getDefaultCategoryCuid();
+            categoryId = getDefaultCategoryId();
           }
 
-          // Validate product data (use publicId for categoryId in validation, but we'll use CUID when creating)
-          // First, get category publicId for validation
-          let categoryPublicId: number | undefined;
-          if (categoryCuid) {
-            const category = await tx.category.findUnique({
-              where: { id: categoryCuid },
-              select: { publicId: true }
+          // Ensure categoryId is valid
+          if (!categoryId || typeof categoryId !== 'number') {
+            errors.push({ 
+              row: rowNumber, 
+              error: 'Category not found. Please check category name or use default category.' 
             });
-            if (category) {
-              categoryPublicId = category.publicId;
-            }
+            continue;
           }
 
           // Validate product data
@@ -179,7 +177,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             name: productData.name,
             description: productData.description || '',
             barcode: productData.barcode || '',
-            categoryId: categoryPublicId,
+            categoryId: categoryId, // Use number (publicId) directly
             rentPrice: productData.rentPrice || 0,
             salePrice: productData.salePrice || 0,
             costPrice: productData.costPrice || 0,
@@ -204,6 +202,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           }
 
           // Create product
+          // All IDs are numbers (publicId) in schema: merchantId, categoryId, outletId
           const product = await tx.product.create({
             data: {
               name: validated.data.name,
@@ -216,11 +215,11 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               deposit: validated.data.deposit || 0,
               pricingType: validated.data.pricingType || null,
               durationConfig: validated.data.durationConfig || null,
-              merchantId: merchant.id,
-              categoryId: categoryCuid,
+              merchantId: merchant.id, // number (publicId)
+              categoryId: categoryId, // number (publicId)
               outletStock: {
                 create: [{
-                  outletId: outlet.id,
+                  outletId: outlet.id, // number (publicId)
                   stock: validated.data.totalStock || 0,
                   available: validated.data.totalStock || 0,
                   renting: 0
@@ -235,9 +234,48 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
           imported.push(product);
         } catch (error: any) {
+          // Format user-friendly error message
+          let errorMessage = 'Failed to import product';
+          
+          if (error.code === 'P2002') {
+            // Unique constraint violation
+            errorMessage = 'Product name or barcode already exists';
+          } else if (error.code === 'P2003') {
+            // Foreign key constraint violation
+            errorMessage = 'Invalid category or merchant reference';
+          } else if (error.message) {
+            // Check if it's a technical error or user-friendly
+            const technicalErrors = [
+              'Invalid value provided',
+              'Expected Int',
+              'Expected String',
+              'prisma',
+              'Prisma',
+              'invocation',
+              'route.js'
+            ];
+            
+            const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+            
+            if (isTechnicalError) {
+              // Technical error - use generic message
+              errorMessage = 'Invalid data format or missing required information';
+            } else {
+              // User-friendly error - use as is
+              errorMessage = error.message;
+            }
+          }
+          
           errors.push({ 
             row: rowNumber, 
-            error: error.message || 'Failed to import product' 
+            error: errorMessage
+          });
+          
+          // Log technical details for debugging
+          console.error(`Error importing product at row ${rowNumber}:`, {
+            message: error.message,
+            code: error.code,
+            stack: error.stack
           });
         }
       }
@@ -253,10 +291,34 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         errors: results.errors
       })
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in bulk import:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    
+    // Format user-friendly error message
+    let errorMessage = 'Failed to import products. Please check your file format and try again.';
+    
+    if (error.message) {
+      const technicalErrors = [
+        'Invalid value provided',
+        'Expected Int',
+        'Expected String',
+        'prisma',
+        'Prisma',
+        'invocation',
+        'route.js'
+      ];
+      
+      const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+      
+      if (!isTechnicalError) {
+        errorMessage = error.message;
+      }
+    }
+    
+    return NextResponse.json(
+      ResponseBuilder.error('IMPORT_FAILED'),
+      { status: 500 }
+    );
   }
 });
 
