@@ -77,12 +77,59 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Get all categories for mapping
-    const categories = await db.categories.search({ merchantId });
-    const categoryMap = new Map<string, number>();
+    // Get all categories for mapping (by name to CUID)
+    const categories = await db.categories.search({ merchantId, limit: 1000 });
+    const categoryMap = new Map<string, string>(); // Map: name -> CUID
     categories.data?.forEach((cat: any) => {
-      categoryMap.set(cat.name.toLowerCase().trim(), cat.id);
+      // cat.id from db.categories.search is CUID (string)
+      categoryMap.set(cat.name.toLowerCase().trim(), String(cat.id));
     });
+
+    // Ensure default category exists BEFORE import (create if not exists)
+    const merchantCuid = merchant.id;
+    let defaultCategoryCuid: string | undefined;
+    
+    // Check if default category exists in map
+    const defaultCategoryName = 'default';
+    const generalCategoryName = 'general';
+    defaultCategoryCuid = categoryMap.get(defaultCategoryName) || categoryMap.get(generalCategoryName);
+    
+    if (!defaultCategoryCuid) {
+      // Find in database
+      const existingCategory = await prisma.category.findFirst({
+        where: {
+          merchantId: merchantCuid,
+          name: { in: ['Default', 'default', 'General', 'general'] },
+          isActive: true
+        }
+      });
+      
+      if (existingCategory) {
+        defaultCategoryCuid = String(existingCategory.id); // Use CUID (string)
+        // Add to map for later use
+        categoryMap.set(existingCategory.name.toLowerCase().trim(), String(existingCategory.id));
+      } else {
+        // Create default category BEFORE import transaction
+        console.log('🔧 Creating default category before import...');
+        const newCategory = await prisma.category.create({
+          data: {
+            name: 'Default',
+            description: 'Default category for products',
+            merchantId: merchantCuid,
+            isActive: true
+          }
+        });
+        defaultCategoryCuid = String(newCategory.id); // Use CUID (string)
+        // Add to map for later use
+        categoryMap.set('default', String(newCategory.id));
+        console.log('✅ Default category created:', newCategory.id);
+      }
+    }
+
+    // Get or return default category CUID (now guaranteed to exist)
+    const getDefaultCategoryCuid = (): string => {
+      return defaultCategoryCuid!; // Already ensured to exist above
+    };
 
     // Import products with transaction
     const results = await prisma.$transaction(async (tx: any) => {
@@ -94,31 +141,49 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         const rowNumber = i + 1; // Start from 1 (matching UI display)
 
         try {
-          // Map categoryName to categoryId
-          let categoryId: number | undefined;
-          if (productData.categoryName) {
-            const categoryNameLower = String(productData.categoryName).toLowerCase().trim();
-            categoryId = categoryMap.get(categoryNameLower);
+          // Map categoryName to categoryCUID
+          let categoryCuid: string | undefined;
+          const categoryName = (productData.categoryName || '').trim().toLowerCase();
+          
+          if (categoryName && categoryName !== 'default') {
+            // Try to find category by name
+            categoryCuid = categoryMap.get(categoryName);
             
-            if (!categoryId) {
+            if (!categoryCuid) {
               errors.push({ 
                 row: rowNumber, 
                 error: `Category "${productData.categoryName}" not found` 
               });
               continue;
             }
+          } else {
+            // Use default category (already created before transaction)
+            categoryCuid = getDefaultCategoryCuid();
+          }
+
+          // Validate product data (use publicId for categoryId in validation, but we'll use CUID when creating)
+          // First, get category publicId for validation
+          let categoryPublicId: number | undefined;
+          if (categoryCuid) {
+            const category = await tx.category.findUnique({
+              where: { id: categoryCuid },
+              select: { publicId: true }
+            });
+            if (category) {
+              categoryPublicId = category.publicId;
+            }
           }
 
           // Validate product data
           const productInput = {
             name: productData.name,
-            description: productData.description,
-            barcode: productData.barcode,
-            categoryId,
-            rentPrice: productData.rentPrice,
-            salePrice: productData.salePrice,
-            costPrice: productData.costPrice,
-            deposit: productData.deposit,
+            description: productData.description || '',
+            barcode: productData.barcode || '',
+            categoryId: categoryPublicId,
+            rentPrice: productData.rentPrice || 0,
+            salePrice: productData.salePrice || 0,
+            costPrice: productData.costPrice || 0,
+            deposit: productData.deposit || 0,
             totalStock: productData.stock || 0,
             pricingType: productData.pricingType || null,
             durationConfig: productData.durationConfig || null,
@@ -136,17 +201,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               error: validated.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
             });
             continue;
-          }
-
-          // Get category CUID
-          let categoryCuid: string | undefined;
-          if (categoryId) {
-            const category = await tx.category.findUnique({
-              where: { id: categoryId }
-            });
-            if (category) {
-              categoryCuid = category.id;
-            }
           }
 
           // Create product

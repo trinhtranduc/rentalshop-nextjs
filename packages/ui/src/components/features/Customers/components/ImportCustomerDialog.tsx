@@ -15,7 +15,7 @@ import {
   FileUploadZone,
   CSVPreviewTable
 } from '@rentalshop/ui';
-import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { 
   parseCSVFile, 
   normalizeCSVHeaders, 
@@ -59,7 +59,9 @@ export function ImportCustomerDialog({
     imported: number;
     failed: number;
     total: number;
+    errors?: Array<{ row: number; error: string }>;
   } | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   // Field mapping for CSV headers to customer fields
   const customerFieldMapping: Record<string, string[]> = {
@@ -300,7 +302,8 @@ export function ImportCustomerDialog({
         setImportResult({
           imported: response.data.imported || 0,
           failed: response.data.failed || 0,
-          total: response.data.total || customers.length
+          total: response.data.total || customers.length,
+          errors: response.data.errors || []
         });
 
         if (response.data.imported > 0) {
@@ -372,7 +375,7 @@ export function ImportCustomerDialog({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {t('description', { maxRows: MAX_ROWS })}
+            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Các bản ghi trùng lặp sẽ được bỏ qua.
           </DialogDescription>
         </DialogHeader>
 
@@ -418,7 +421,7 @@ export function ImportCustomerDialog({
                   <span className="text-sm text-text-primary">
                     {t('clickOrDrag')}
                   </span>
-                  <span className="text-xs text-text-secondary">{t('onlyCsv')}</span>
+                  <span className="text-xs text-text-secondary">CSV hoặc Excel (.csv, .xlsx, .xls)</span>
                 </label>
               </div>
             ) : (
@@ -475,12 +478,31 @@ export function ImportCustomerDialog({
                   </div>
                   <div className="text-2xl font-bold text-green-700 dark:text-green-400">{importResult.imported}</div>
                 </div>
-                <div className="p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
-                  <div className="flex items-center gap-2 mb-1">
-                    <XCircle className="h-5 w-5 text-red-600" />
-                    <span className="text-sm font-medium text-red-900 dark:text-red-100">Thất bại</span>
+                <div 
+                  className={`p-3 rounded-lg border transition-colors ${
+                    importResult.failed > 0 
+                      ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/20' 
+                      : 'bg-gray-50 dark:bg-gray-900/10 border-gray-200 dark:border-gray-800'
+                  }`}
+                  onClick={() => importResult.failed > 0 && setShowErrors(!showErrors)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-5 w-5 text-red-600" />
+                      <span className="text-sm font-medium text-red-900 dark:text-red-100">Thất bại</span>
+                    </div>
+                    {importResult.failed > 0 && (
+                      showErrors ? (
+                        <ChevronUp className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-red-600" />
+                      )
+                    )}
                   </div>
                   <div className="text-2xl font-bold text-red-700 dark:text-red-400">{importResult.failed}</div>
+                  {importResult.failed > 0 && !showErrors && (
+                    <div className="text-xs text-red-600 mt-1">Click để xem chi tiết</div>
+                  )}
                 </div>
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 mb-1">
@@ -492,6 +514,20 @@ export function ImportCustomerDialog({
                   </div>
                 </div>
               </div>
+
+              {/* Error Details */}
+              {showErrors && importResult.errors && importResult.errors.length > 0 && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">Chi tiết lỗi:</h4>
+                  <div className="space-y-2">
+                    {importResult.errors.map((err, index) => (
+                      <div key={index} className="text-sm text-red-800 dark:text-red-200">
+                        <span className="font-medium">Dòng {err.row}:</span> {err.error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

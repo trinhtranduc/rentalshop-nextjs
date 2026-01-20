@@ -14,7 +14,7 @@ import {
   LoadingIndicator,
   CSVPreviewTable
 } from '@rentalshop/ui';
-import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Download, FileText, X, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { 
   parseCSVFile, 
   normalizeCSVHeaders, 
@@ -57,7 +57,9 @@ export function ImportProductDialog({
     imported: number;
     failed: number;
     total: number;
+    errors?: Array<{ row: number; error: string }>;
   } | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   // Field mapping for CSV headers to product fields
   const productFieldMapping: Record<string, string[]> = {
@@ -264,21 +266,26 @@ export function ImportProductDialog({
       const products: any[] = validData.map((row) => {
         const product: any = {
           name: row.name || '',
-          description: row.description,
-          barcode: row.barcode,
-          categoryName: row.categoryname || row.categoryName,
+          description: row.description || '',
+          barcode: row.barcode || '',
+          // Nếu không có danh mục thì dùng "default"
+          categoryName: (row.categoryname || row.categoryName || '').trim() || 'default',
+          // Giá nếu không có thì để 0
           rentPrice: row.rentprice || row.rentPrice ? parseFloat(String(row.rentprice || row.rentPrice)) : 0,
-          salePrice: row.saleprice || row.salePrice ? parseFloat(String(row.saleprice || row.salePrice)) : undefined,
-          costPrice: row.costprice || row.costPrice ? parseFloat(String(row.costprice || row.costPrice)) : undefined,
+          salePrice: row.saleprice || row.salePrice ? parseFloat(String(row.saleprice || row.salePrice)) : 0,
+          costPrice: row.costprice || row.costPrice ? parseFloat(String(row.costprice || row.costPrice)) : 0,
           deposit: row.deposit ? parseFloat(String(row.deposit)) : 0,
           stock: row.stock ? parseInt(String(row.stock)) : 0,
           // pricingType and durationConfig use default values (not included in import)
         };
 
-        // Remove empty fields
+        // Remove empty string fields (but keep 0 values for prices)
         Object.keys(product).forEach(key => {
-          if (product[key] === '' || product[key] === null || product[key] === undefined) {
-            delete product[key];
+          if (key !== 'rentPrice' && key !== 'salePrice' && key !== 'costPrice' && key !== 'deposit' && key !== 'stock') {
+            // For non-numeric fields, remove empty strings
+            if (product[key] === '' || product[key] === null || product[key] === undefined) {
+              delete product[key];
+            }
           }
         });
 
@@ -292,7 +299,8 @@ export function ImportProductDialog({
         setImportResult({
           imported: response.data.imported || 0,
           failed: response.data.failed || 0,
-          total: response.data.total || products.length
+          total: response.data.total || products.length,
+          errors: response.data.errors || []
         });
 
         if (response.data.imported > 0) {
@@ -367,7 +375,7 @@ export function ImportProductDialog({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {t('description', { maxRows: MAX_ROWS })}
+            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Các bản ghi trùng lặp sẽ được bỏ qua.
           </DialogDescription>
         </DialogHeader>
 
@@ -394,7 +402,7 @@ export function ImportProductDialog({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   onChange={(e) => {
                     const selectedFile = e.target.files?.[0];
                     if (selectedFile) {
@@ -413,7 +421,7 @@ export function ImportProductDialog({
                   <span className="text-sm text-text-primary">
                     {t('clickOrDrag')}
                   </span>
-                  <span className="text-xs text-text-secondary">{t('onlyCsv')}</span>
+                  <span className="text-xs text-text-secondary">CSV hoặc Excel (.csv, .xlsx, .xls)</span>
                 </label>
               </div>
             ) : (
@@ -461,17 +469,65 @@ export function ImportProductDialog({
 
           {/* Import Result */}
           {importResult && (
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50/50 dark:bg-green-900/10 border border-green-200/50 dark:border-green-800/50">
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                  {t('completed', { 
-                    imported: importResult.imported, 
-                    failed: importResult.failed, 
-                    skipped: duplicates.length 
-                  })}
-                </p>
+            <div className="space-y-4 border-t pt-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <span className="text-sm font-medium text-green-900 dark:text-green-100">Thành công</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-400">{importResult.imported}</div>
+                </div>
+                <div 
+                  className={`p-3 rounded-lg border transition-colors ${
+                    importResult.failed > 0 
+                      ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/20' 
+                      : 'bg-gray-50 dark:bg-gray-900/10 border-gray-200 dark:border-gray-800'
+                  }`}
+                  onClick={() => importResult.failed > 0 && setShowErrors(!showErrors)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-5 w-5 text-red-600" />
+                      <span className="text-sm font-medium text-red-900 dark:text-red-100">Thất bại</span>
+                    </div>
+                    {importResult.failed > 0 && (
+                      showErrors ? (
+                        <ChevronUp className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-red-600" />
+                      )
+                    )}
+                  </div>
+                  <div className="text-2xl font-bold text-red-700 dark:text-red-400">{importResult.failed}</div>
+                  {importResult.failed > 0 && !showErrors && (
+                    <div className="text-xs text-red-600 mt-1">Click để xem chi tiết</div>
+                  )}
+                </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Tổng cộng</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                    {importResult.imported + importResult.failed}
+                  </div>
+                </div>
               </div>
+
+              {/* Error Details */}
+              {showErrors && importResult.errors && importResult.errors.length > 0 && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">Chi tiết lỗi:</h4>
+                  <div className="space-y-2">
+                    {importResult.errors.map((err, index) => (
+                      <div key={index} className="text-sm text-red-800 dark:text-red-200">
+                        <span className="font-medium">Dòng {err.row}:</span> {err.error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
