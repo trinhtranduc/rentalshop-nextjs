@@ -444,11 +444,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // STEP 3: Import non-duplicate products in a single transaction
     // ========================================================================
     try {
+      // Calculate timeout based on number of products (60 seconds per 1000 products, min 30s)
+      const estimatedTimeout = Math.max(30000, Math.ceil((productsToImport.length / 1000) * 60000));
+      
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
 
         for (const validatedProduct of productsToImport) {
           try {
+            // Create product without include to improve performance
             const product = await tx.product.create({
               data: {
                 name: validatedProduct.data.name,
@@ -472,9 +476,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                   }]
                 }
               },
-              include: {
-                category: { select: { id: true, name: true } },
-                merchant: { select: { id: true, name: true } }
+              select: {
+                id: true,
+                name: true
               }
             });
 
@@ -494,6 +498,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }
 
         return { imported };
+      }, {
+        maxWait: 10000, // Wait up to 10 seconds to acquire transaction lock
+        timeout: estimatedTimeout // Dynamic timeout based on product count
       });
 
       return NextResponse.json(
