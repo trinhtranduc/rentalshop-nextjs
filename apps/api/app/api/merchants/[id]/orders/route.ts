@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, ordersQuerySchema } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -34,10 +34,49 @@ export async function GET(
       }
       const merchant = validation.merchant!;
 
+      // Parse query parameters for pagination and filtering
+      const { searchParams } = new URL(request.url);
+      const parsed = ordersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+      
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
+      const { 
+        page,
+        limit,
+        q, 
+        orderType,
+        status,
+        outletId: queryOutletId,
+        customerId,
+        productId,
+        startDate,
+        endDate,
+        sortBy,
+        sortOrder
+      } = parsed.data;
+
       // Build search filters with role-based access control
       const searchFilters: any = {
-        merchantId: merchantPublicId
+        merchantId: merchantPublicId,
+        page: page || 1,
+        limit: limit || 20,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: sortOrder || 'desc'
       };
+
+      // Add optional filters
+      if (q) searchFilters.search = q;
+      if (orderType) searchFilters.orderType = orderType;
+      if (status) searchFilters.status = status;
+      if (customerId) searchFilters.customerId = customerId;
+      if (productId) searchFilters.productId = productId;
+      if (startDate) searchFilters.startDate = new Date(startDate);
+      if (endDate) searchFilters.endDate = new Date(endDate);
 
       // Role-based outlet filtering:
       // - ADMIN role: Can see orders from all outlets
@@ -46,26 +85,49 @@ export async function GET(
       if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users can only see orders from their assigned outlet
         searchFilters.outletId = userScope.outletId;
+      } else if (queryOutletId) {
+        // ADMIN and MERCHANT: can filter by specific outlet if provided
+        searchFilters.outletId = queryOutletId;
       }
-      // ADMIN and MERCHANT: no outlet filtering (can see all outlets)
+      // ADMIN and MERCHANT: no outlet filtering (can see all outlets) if queryOutletId not provided
 
       console.log(`🔍 Role-based filtering for merchant orders (${user.role}):`, {
         merchantPublicId,
         'userScope.merchantId': userScope.merchantId,
         'userScope.outletId': userScope.outletId,
         'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId
+        'final outletId filter': searchFilters.outletId,
+        page: searchFilters.page,
+        limit: searchFilters.limit
       });
 
-      // Get orders for this merchant with role-based filtering
-      const orders = await db.orders.search(searchFilters);
+      // Get orders for this merchant with role-based filtering and pagination
+      const result = await db.orders.search(searchFilters);
+
+      // Normalize date fields in order list to UTC ISO strings
+      const normalizedOrders = (result.data || []).map((order: any) => ({
+        ...order,
+        createdAt: order.createdAt?.toISOString() || null,
+        updatedAt: order.updatedAt?.toISOString() || null,
+        pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+        returnPlanAt: order.returnPlanAt?.toISOString() || null,
+        pickedUpAt: order.pickedUpAt?.toISOString() || null,
+        returnedAt: order.returnedAt?.toISOString() || null,
+      }));
 
       return NextResponse.json({
         success: true,
-        data: orders.data || [],
-        total: orders.total || 0,
+        data: {
+          orders: normalizedOrders,
+          total: result.total || 0,
+          page: result.page || searchFilters.page,
+          limit: result.limit || searchFilters.limit,
+          offset: ((result.page || searchFilters.page) - 1) * (result.limit || searchFilters.limit),
+          hasMore: (result.page || searchFilters.page) * (result.limit || searchFilters.limit) < (result.total || 0),
+          totalPages: Math.ceil((result.total || 0) / (result.limit || searchFilters.limit))
+        },
         code: 'MERCHANT_ORDERS_FOUND',
-        message: `Found ${orders.total || 0} orders for merchant`
+        message: `Found ${result.total || 0} orders for merchant`
       });
 
     } catch (error) {

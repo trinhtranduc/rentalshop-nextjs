@@ -12,7 +12,7 @@ import { PageWrapper,
   type BreadcrumbItem,
   useToast } from '@rentalshop/ui';
 import { ShoppingCart, Plus } from 'lucide-react';
-import type { Order, OrderFilters } from '@rentalshop/types';
+import type { OrderListItem, OrderFilters, OrdersData } from '@rentalshop/types';
 
 /**
  * ✅ MODERN MERCHANT ORDERS PAGE (URL State Pattern)
@@ -47,7 +47,7 @@ export default function MerchantOrdersPage() {
   // LOCAL STATE
   // ============================================================================
   
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,19 +55,20 @@ export default function MerchantOrdersPage() {
   const [totalPages, setTotalPages] = useState(0);
 
   // ============================================================================
-  // MEMOIZED FILTERS - For API calls
+  // MEMOIZED QUERY PARAMS - For API calls
   // ============================================================================
   
-  const apiFilters: OrderFilters = useMemo(() => ({
-    search: search || undefined,
-    status: (status as any) || undefined,
-    orderType: (orderType as any) || undefined,
-    merchantId: parseInt(merchantId),
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  }), [merchantId, search, status, orderType, page, limit, sortBy, sortOrder]);
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (page) params.set('page', page.toString());
+    if (limit) params.set('limit', limit.toString());
+    if (search) params.set('q', search);
+    if (status && status !== 'all') params.set('status', status);
+    if (orderType && orderType !== 'all') params.set('orderType', orderType);
+    if (sortBy) params.set('sortBy', sortBy);
+    if (sortOrder) params.set('sortOrder', sortOrder);
+    return params.toString();
+  }, [merchantId, search, status, orderType, page, limit, sortBy, sortOrder]);
 
   // ============================================================================
   // DATA FETCHING - Server-side pagination and search
@@ -76,7 +77,7 @@ export default function MerchantOrdersPage() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merchantId, search, status, orderType, page, limit, sortBy, sortOrder]);
+  }, [merchantId, queryParams]);
 
   const fetchData = async () => {
     try {
@@ -91,15 +92,25 @@ export default function MerchantOrdersPage() {
         }
       }
 
-      // Fetch orders with server-side pagination and search
-      const ordersResponse = await ordersApi.searchOrders(apiFilters);
-      console.log('📦 Orders API response:', ordersResponse);
+      // Fetch orders with server-side pagination and search using merchant-specific endpoint
+      const ordersResponse = await merchantsApi.orders.list(parseInt(merchantId), queryParams);
+      const ordersData = await ordersResponse.json();
+      console.log('📦 Merchant Orders API response:', ordersData);
 
-      if (ordersResponse.success && ordersResponse.data) {
-        const ordersData = ordersResponse.data;
-        const ordersArray = ordersData.orders || [];
+      if (ordersData.success && ordersData.data) {
+        const ordersResponseData = ordersData.data;
+        const ordersArray = ordersResponseData.orders || [];
         
-        const transformedOrders = ordersArray.map((order: any) => ({
+        console.log('📦 Orders Data:', {
+          ordersCount: ordersArray.length,
+          total: ordersResponseData.total,
+          totalPages: ordersResponseData.totalPages,
+          page: ordersResponseData.page,
+          limit: ordersResponseData.limit,
+          hasMore: ordersResponseData.hasMore
+        });
+        
+        const transformedOrders: OrderListItem[] = ordersArray.map((order: any) => ({
           id: order.id,
           orderNumber: order.orderNumber,
           orderType: order.orderType,
@@ -110,13 +121,13 @@ export default function MerchantOrdersPage() {
           returnPlanAt: order.returnPlanAt,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
-          customerId: order.customerId,
-          customerName: order.customerName || 'Unknown Customer',
-          customerPhone: order.customerPhone || '',
-          outletId: order.outletId,
-          outletName: order.outletName || 'Unknown Outlet',
-          merchantName: order.merchantName || merchantName || `Merchant ${merchantId}`,
-          createdById: order.createdById,
+          customerId: order.customer?.id || order.customerId,
+          customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 'Unknown Customer',
+          customerPhone: order.customer?.phone || '',
+          outletId: order.outlet?.id || order.outletId || 0,
+          outletName: order.outlet?.name || 'Unknown Outlet',
+          merchantName: merchantName || `Merchant ${merchantId}`,
+          createdById: order.createdById || 0,
           createdByName: order.createdByName,
           orderItems: order.orderItems || [],
           itemCount: order.itemCount || 0,
@@ -124,11 +135,21 @@ export default function MerchantOrdersPage() {
           totalPaid: order.totalPaid || 0
         }));
         
+        const totalValue = ordersResponseData.total || 0;
+        const totalPagesValue = ordersResponseData.totalPages || Math.ceil(totalValue / (ordersResponseData.limit || limit));
+        
+        console.log('📦 Setting state:', {
+          orders: transformedOrders.length,
+          total: totalValue,
+          totalPages: totalPagesValue,
+          currentPage: ordersResponseData.page || page
+        });
+        
         setOrders(transformedOrders);
-        setTotal(ordersData.total || 0);
-        setTotalPages(ordersData.totalPages || Math.ceil((ordersData.total || 0) / limit));
+        setTotal(totalValue);
+        setTotalPages(totalPagesValue);
       } else {
-        setError(ordersResponse.message || 'Failed to fetch orders');
+        setError(ordersData.message || 'Failed to fetch orders');
         setOrders([]);
         setTotal(0);
         setTotalPages(0);
@@ -148,7 +169,7 @@ export default function MerchantOrdersPage() {
   // ORDER DATA - Server-side paginated data
   // ============================================================================
   
-  const orderData = useMemo(() => ({
+  const orderData: OrdersData = useMemo(() => ({
     orders,
     total,
     currentPage: page,
@@ -194,8 +215,14 @@ export default function MerchantOrdersPage() {
 
   const handleFiltersChange = useCallback((newFilters: OrderFilters) => {
     const updates: Record<string, string | number | undefined> = { page: 1 };
-    if ('status' in newFilters) updates.status = newFilters.status;
-    if ('orderType' in newFilters) updates.type = newFilters.orderType;
+    if ('status' in newFilters && newFilters.status) {
+      updates.status = Array.isArray(newFilters.status) 
+        ? newFilters.status.join(',') 
+        : String(newFilters.status);
+    }
+    if ('orderType' in newFilters && newFilters.orderType) {
+      updates.type = String(newFilters.orderType);
+    }
     updateURL(updates);
   }, [updateURL]);
 
@@ -255,7 +282,13 @@ export default function MerchantOrdersPage() {
     );
   }
 
-  const uiFilters = { search, status, orderType, sortBy, sortOrder };
+  const uiFilters: OrderFilters = { 
+    search: search || undefined, 
+    status: (status as any) || undefined, 
+    orderType: (orderType as any) || undefined, 
+    sortBy, 
+    sortOrder 
+  };
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">

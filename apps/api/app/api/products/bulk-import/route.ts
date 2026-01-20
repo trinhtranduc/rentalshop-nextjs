@@ -13,6 +13,227 @@ const bulkImportSchema = z.object({
   products: z.array(z.any()).min(1, 'At least one product is required')
 });
 
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Type mapping for user-friendly error messages
+ */
+const TYPE_MAP: Record<string, string> = {
+  'Int': 'number',
+  'String': 'text',
+  'Float': 'decimal number',
+  'Boolean': 'true/false',
+  'DateTime': 'date/time'
+};
+
+/**
+ * Technical error keywords to filter out
+ */
+const TECHNICAL_ERROR_KEYWORDS = [
+  'prisma', 'Prisma', 'invocation', 'route.js', 
+  'Invalid value provided', 'Expected Int', 'Expected String'
+];
+
+/**
+ * Check if error message is technical (should be hidden from users)
+ */
+function isTechnicalError(message: string): boolean {
+  return TECHNICAL_ERROR_KEYWORDS.some(keyword => message.includes(keyword));
+}
+
+/**
+ * Format Zod validation errors with detailed field information
+ */
+function formatZodError(error: z.ZodError, productInput: any): string {
+  return error.errors.map(e => {
+    const fieldPath = e.path.join('.');
+    const fieldName = fieldPath || 'unknown field';
+    const receivedValue = e.path.reduce((obj: any, key) => obj?.[key], productInput);
+    
+    let errorMsg = `${fieldName}: ${e.message}`;
+    
+    // Add received value if available and not too long
+    if (receivedValue !== undefined && receivedValue !== null) {
+      const valueType = typeof receivedValue;
+      const valueStr = valueType === 'object' ? JSON.stringify(receivedValue) : String(receivedValue);
+      if (valueStr.length < 50) {
+        errorMsg += ` (received: ${valueStr})`;
+      }
+    }
+    
+    return errorMsg;
+  }).join('; ');
+}
+
+/**
+ * Format Prisma/validation errors to user-friendly messages
+ */
+function formatPrismaError(error: any, productData?: any): string {
+  if (!error.message) {
+    return 'Invalid data format or missing required information';
+  }
+
+  const message = error.message;
+
+  // Handle Prisma error codes
+  if (error.code === 'P2002') {
+    return 'Product name or barcode already exists';
+  }
+  if (error.code === 'P2003') {
+    return 'Invalid category or merchant reference';
+  }
+
+  // Handle ZodError
+  if (error.name === 'ZodError' && error.errors) {
+    return error.errors.map((e: any) => {
+      const fieldPath = e.path.join('.');
+      return `${fieldPath || 'unknown field'}: ${e.message}`;
+    }).join('; ');
+  }
+
+  // Parse Prisma type errors
+  if (message.includes('Expected')) {
+    const expectedMatch = message.match(/Expected (\w+), provided (\w+)/i);
+    const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+    
+    if (expectedMatch && fieldMatch) {
+      const field = fieldMatch[1];
+      const expected = expectedMatch[1];
+      const provided = expectedMatch[2];
+      const expectedType = TYPE_MAP[expected] || expected.toLowerCase();
+      const providedType = TYPE_MAP[provided] || provided.toLowerCase();
+      return `${field}: Expected ${expectedType}, but received ${providedType}`;
+    }
+    
+    if (expectedMatch) {
+      const expected = expectedMatch[1];
+      const provided = expectedMatch[2];
+      const expectedType = TYPE_MAP[expected] || expected.toLowerCase();
+      const providedType = TYPE_MAP[provided] || provided.toLowerCase();
+      return `Invalid data type: Expected ${expectedType}, but received ${providedType}`;
+    }
+    
+    const fieldMatch2 = message.match(/`(\w+)`/);
+    if (fieldMatch2) {
+      return `${fieldMatch2[1]}: Invalid data format`;
+    }
+  }
+
+  // Handle "Invalid value provided" errors
+  if (message.includes('Invalid value provided')) {
+    const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
+    if (fieldMatch) {
+      return `${fieldMatch[1]}: Invalid value provided`;
+    }
+    return 'Invalid value provided for one or more fields';
+  }
+
+  // Use user-friendly errors as-is, filter technical errors
+  if (isTechnicalError(message)) {
+    // For technical errors, try to show data summary if available
+    if (productData) {
+      const dataSummary = Object.keys(productData)
+        .map(key => {
+          const value = productData[key as keyof typeof productData];
+          const valueType = typeof value;
+          const valueStr = valueType === 'object' ? JSON.stringify(value) : String(value);
+          return `${key}=${valueStr.length > 30 ? valueStr.substring(0, 30) + '...' : valueStr}`;
+        })
+        .join(', ');
+      return `Invalid data format or missing required information. Provided data: ${dataSummary}`;
+    }
+    return 'Invalid data format or missing required information';
+  }
+
+  return message;
+}
+
+/**
+ * Normalize product data before validation
+ */
+function normalizeProductData(productData: any, merchantId: number, outletId: number) {
+  // Convert barcode: number -> string
+  let barcode = productData.barcode || '';
+  if (typeof barcode === 'number') {
+    barcode = String(barcode);
+  }
+  
+  // Convert stock: ensure non-negative (if < 0 then = 0)
+  let stock = productData.stock ? parseInt(String(productData.stock)) : 0;
+  if (stock < 0) {
+    stock = 0;
+  }
+
+  return {
+    name: productData.name,
+    description: productData.description || '',
+    barcode,
+    rentPrice: productData.rentPrice || 0,
+    salePrice: productData.salePrice || 0,
+    costPrice: productData.costPrice || 0,
+    deposit: productData.deposit || 0,
+    totalStock: stock,
+    pricingType: productData.pricingType || null,
+    durationConfig: productData.durationConfig || null,
+    merchantId,
+    outletStock: [{
+      outletId,
+      stock
+    }]
+  };
+}
+
+/**
+ * Ensure default category exists, return its ID
+ */
+async function ensureDefaultCategory(merchantPublicId: number, categoryMap: Map<string, number>): Promise<number> {
+  const defaultCategoryName = 'default';
+  const generalCategoryName = 'general';
+  
+  // Check if default category exists in map
+  let defaultCategoryId = categoryMap.get(defaultCategoryName) || categoryMap.get(generalCategoryName);
+  
+  if (defaultCategoryId) {
+    return defaultCategoryId;
+  }
+
+  // Find in database
+  const existingCategory = await prisma.category.findFirst({
+    where: {
+      merchantId: merchantPublicId,
+      name: { in: ['Default', 'default', 'General', 'general'] },
+      isActive: true
+    }
+  });
+  
+  if (existingCategory) {
+    categoryMap.set(existingCategory.name.toLowerCase().trim(), existingCategory.id);
+    return existingCategory.id;
+  }
+
+  // Create default category
+  console.log('🔧 Creating default category before import...');
+  const newCategory = await prisma.category.create({
+    data: {
+      name: 'Default',
+      description: 'Default category for products',
+      merchantId: merchantPublicId,
+      isActive: true
+    }
+  });
+  
+  categoryMap.set('default', newCategory.id);
+  console.log('✅ Default category created:', newCategory.id);
+  
+  return newCategory.id;
+}
+
+// ============================================================================
+// MAIN API HANDLER
+// ============================================================================
+
 /**
  * POST /api/products/bulk-import
  * Bulk import products from Excel file
@@ -46,7 +267,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Get merchant CUID
+    // Get merchant
     const merchant = await db.merchants.findById(merchantId);
     if (!merchant) {
       return NextResponse.json(
@@ -68,7 +289,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       outletId = outlets.data[0].id;
     }
 
-    // Get outlet CUID
+    // Get outlet
     const outlet = await db.outlets.findById(outletId);
     if (!outlet) {
       return NextResponse.json(
@@ -77,92 +298,38 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Get all categories for mapping (by name to categoryId - number)
+    // Build category map
     const categories = await db.categories.search({ merchantId, limit: 1000 });
-    const categoryMap = new Map<string, number>(); // Map: name -> categoryId (number)
+    const categoryMap = new Map<string, number>();
     categories.data?.forEach((cat: any) => {
-      // cat.id from db.categories.search is number (publicId) - Category.id is Int in schema
       categoryMap.set(cat.name.toLowerCase().trim(), Number(cat.id));
     });
 
-    // Ensure default category exists BEFORE import (create if not exists)
-    // merchant.id is number (publicId), not CUID
+    // Ensure default category exists
     const merchantPublicId = merchant.id;
-    let defaultCategoryId: number | undefined;
-    
-    // Check if default category exists in map
-    const defaultCategoryName = 'default';
-    const generalCategoryName = 'general';
-    defaultCategoryId = categoryMap.get(defaultCategoryName) || categoryMap.get(generalCategoryName);
-    
-    if (!defaultCategoryId) {
-      // Find in database - merchantId is Int (number) in schema
-      const existingCategory = await prisma.category.findFirst({
-        where: {
-          merchantId: merchantPublicId, // Use number (publicId), not CUID
-          name: { in: ['Default', 'default', 'General', 'general'] },
-          isActive: true
-        }
-      });
-      
-      if (existingCategory) {
-        // category.id is Int (number) in schema
-        defaultCategoryId = existingCategory.id;
-        // Add to map for later use
-        categoryMap.set(existingCategory.name.toLowerCase().trim(), existingCategory.id);
-      } else {
-        // Create default category BEFORE import transaction
-        console.log('🔧 Creating default category before import...');
-        const newCategory = await prisma.category.create({
-          data: {
-            name: 'Default',
-            description: 'Default category for products',
-            merchantId: merchantPublicId, // Use number (publicId), not CUID
-            isActive: true
-          }
-        });
-        defaultCategoryId = newCategory.id; // number
-        // Add to map for later use
-        categoryMap.set('default', newCategory.id);
-        console.log('✅ Default category created:', newCategory.id);
-      }
-    }
+    const defaultCategoryId = await ensureDefaultCategory(merchantPublicId, categoryMap);
 
-    // Get or return default category ID (now guaranteed to exist)
-    const getDefaultCategoryId = (): number => {
-      return defaultCategoryId!; // Already ensured to exist above
-    };
-
-    // Step 1: Validate ALL products BEFORE transaction (all-or-nothing)
+    // ========================================================================
+    // STEP 1: Validate ALL products BEFORE transaction (all-or-nothing)
+    // ========================================================================
     const validationErrors: Array<{ row: number; error: string }> = [];
-    const validatedProducts: any[] = [];
+    const validatedProducts: Array<{ rowNumber: number; data: any; categoryId: number }> = [];
 
     for (let i = 0; i < products.length; i++) {
       const productData = products[i];
-      const rowNumber = i + 1; // Start from 1 (matching UI display)
+      const rowNumber = i + 1;
 
       try {
-        // Convert barcode: number -> string
-        let barcode = productData.barcode || '';
-        if (typeof barcode === 'number') {
-          barcode = String(barcode);
-        }
-        
-        // Convert stock: ensure non-negative (if < 0 then = 0)
-        let stock = productData.stock ? parseInt(String(productData.stock)) : 0;
-        if (stock < 0) {
-          stock = 0;
-        }
+        // Normalize product data
+        const normalizedData = normalizeProductData(productData, merchantId, outletId);
 
-        // Map categoryName to categoryId (number)
-        let categoryId: number | undefined;
+        // Map categoryName to categoryId
+        let categoryId: number;
         const categoryName = (productData.categoryName || '').trim().toLowerCase();
         
         if (categoryName && categoryName !== 'default') {
-          // Try to find category by name
-          categoryId = categoryMap.get(categoryName);
-          
-          if (!categoryId) {
+          categoryId = categoryMap.get(categoryName) || defaultCategoryId;
+          if (!categoryMap.has(categoryName)) {
             validationErrors.push({ 
               row: rowNumber, 
               error: `Category "${productData.categoryName}" not found` 
@@ -170,44 +337,24 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             continue;
           }
         } else {
-          // Use default category (already created before transaction)
-          categoryId = getDefaultCategoryId();
+          categoryId = defaultCategoryId;
         }
 
-        // Ensure categoryId is valid
-        if (!categoryId || typeof categoryId !== 'number') {
-          validationErrors.push({ 
-            row: rowNumber, 
-            error: 'Category not found. Please check category name or use default category.' 
-          });
-          continue;
-        }
-
-        // Validate product data with converted values
+        // Validate with schema
         const productInput = {
-          name: productData.name,
-          description: productData.description || '',
-          barcode: barcode, // Converted to string
-          categoryId: categoryId, // Use number (publicId) directly
-          rentPrice: productData.rentPrice || 0,
-          salePrice: productData.salePrice || 0,
-          costPrice: productData.costPrice || 0,
-          deposit: productData.deposit || 0,
-          totalStock: stock, // Converted to non-negative
-          pricingType: productData.pricingType || null,
-          durationConfig: productData.durationConfig || null,
-          merchantId,
-          outletStock: [{
-            outletId,
-            stock: stock // Converted to non-negative
-          }]
+          ...normalizedData,
+          categoryId
         };
 
         const validated = productCreateSchema.safeParse(productInput);
         if (!validated.success) {
-          validationErrors.push({ 
-            row: rowNumber, 
-            error: validated.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          const errorMessage = formatZodError(validated.error, productInput);
+          validationErrors.push({ row: rowNumber, error: errorMessage });
+          
+          console.error(`Zod validation error at row ${rowNumber}:`, {
+            errors: validated.error.errors,
+            productInput,
+            productData
           });
           continue;
         }
@@ -218,85 +365,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           categoryId
         });
       } catch (error: any) {
-        // Format user-friendly error message with details
-        let errorMessage = 'Failed to validate product';
+        const errorMessage = formatPrismaError(error, productData);
+        validationErrors.push({ row: rowNumber, error: errorMessage });
         
-        // Convert type names to user-friendly messages
-        const typeMap: Record<string, string> = {
-          'Int': 'number',
-          'String': 'text',
-          'Float': 'decimal number',
-          'Boolean': 'true/false',
-          'DateTime': 'date/time'
-        };
-        
-        if (error.message) {
-          // Try to extract useful information from Prisma/validation errors
-          const message = error.message;
-          
-          // Check for Prisma type errors and extract details
-          if (message.includes('Expected Int') || message.includes('Expected String') || message.includes('Expected')) {
-            // Parse Prisma validation errors
-            const expectedMatch = message.match(/Expected (\w+), provided (\w+)/i);
-            const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
-            
-            if (expectedMatch && fieldMatch) {
-              const field = fieldMatch[1];
-              const expected = expectedMatch[1];
-              const provided = expectedMatch[2];
-              
-              const expectedType = typeMap[expected] || expected.toLowerCase();
-              const providedType = typeMap[provided] || provided.toLowerCase();
-              
-              errorMessage = `${field}: Expected ${expectedType}, but received ${providedType}`;
-            } else if (expectedMatch) {
-              const expected = expectedMatch[1];
-              const provided = expectedMatch[2];
-              const expectedType = typeMap[expected] || expected.toLowerCase();
-              const providedType = typeMap[provided] || provided.toLowerCase();
-              errorMessage = `Invalid data type: Expected ${expectedType}, but received ${providedType}`;
-            } else {
-              // Try to extract field name from error message
-              const fieldMatch2 = message.match(/`(\w+)`/);
-              if (fieldMatch2) {
-                errorMessage = `${fieldMatch2[1]}: Invalid data format`;
-              } else {
-                errorMessage = 'Invalid data format or missing required information';
-              }
-            }
-          } else if (message.includes('Invalid value provided')) {
-            // Try to extract field name
-            const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
-            if (fieldMatch) {
-              errorMessage = `${fieldMatch[1]}: Invalid value provided`;
-            } else {
-              errorMessage = 'Invalid value provided for one or more fields';
-            }
-          } else if (!message.includes('prisma') && !message.includes('Prisma') && !message.includes('invocation') && !message.includes('route.js')) {
-            // User-friendly error - use as is
-            errorMessage = message;
-          } else {
-            // Generic technical error
-            errorMessage = 'Invalid data format or missing required information';
-          }
-        }
-        
-        validationErrors.push({ 
-          row: rowNumber, 
-          error: errorMessage
-        });
-        
-        // Log technical details for debugging
         console.error(`Error validating product at row ${rowNumber}:`, {
           message: error.message,
           code: error.code,
+          name: error.name,
           stack: error.stack,
-          productData: productData
+          productData
         });
       }
     }
 
-    // Step 2: If ANY validation errors, return errors WITHOUT importing anything (all-or-nothing)
+    // If ANY validation errors, return errors WITHOUT importing (all-or-nothing)
     if (validationErrors.length > 0) {
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
@@ -308,12 +390,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Step 3: Check for duplicates and filter them out
-    const productsToImport: any[] = [];
+    // ========================================================================
+    // STEP 2: Check for duplicates and filter them out
+    // ========================================================================
+    const productsToImport: typeof validatedProducts = [];
     const skipped: Array<{ row: number; reason: string }> = [];
 
-    // Check duplicates before transaction
-    // Only check by barcode - allow duplicate product names
     for (const validatedProduct of validatedProducts) {
       try {
         // Only check duplicate by barcode (if barcode exists)
@@ -337,7 +419,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
         productsToImport.push(validatedProduct);
       } catch (error: any) {
-        // If error checking duplicate, skip this product
         skipped.push({
           row: validatedProduct.rowNumber,
           reason: 'Failed to check duplicate'
@@ -346,7 +427,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       }
     }
 
-    // Step 4: Import non-duplicate products in a single transaction
+    // If all products are duplicates, return early
     if (productsToImport.length === 0) {
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
@@ -359,14 +440,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
+    // ========================================================================
+    // STEP 3: Import non-duplicate products in a single transaction
+    // ========================================================================
     try {
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
 
         for (const validatedProduct of productsToImport) {
           try {
-            // Create product
-            // All IDs are numbers (publicId) in schema: merchantId, categoryId, outletId
             const product = await tx.product.create({
               data: {
                 name: validatedProduct.data.name,
@@ -379,11 +461,11 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                 deposit: validatedProduct.data.deposit || 0,
                 pricingType: validatedProduct.data.pricingType || null,
                 durationConfig: validatedProduct.data.durationConfig || null,
-                merchantId: merchant.id, // number (publicId)
-                categoryId: validatedProduct.categoryId, // number (publicId)
+                merchantId: merchant.id,
+                categoryId: validatedProduct.categoryId,
                 outletStock: {
                   create: [{
-                    outletId: outlet.id, // number (publicId)
+                    outletId: outlet.id,
                     stock: validatedProduct.data.totalStock || 0,
                     available: validatedProduct.data.totalStock || 0,
                     renting: 0
@@ -398,74 +480,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
             imported.push(product);
           } catch (error: any) {
-            // If ANY error during transaction, throw to rollback entire transaction
-            // Format user-friendly error message with details
-            let errorMessage = 'Failed to import product';
-            
-            if (error.code === 'P2002') {
-              // Unique constraint violation (should not happen as we checked, but handle just in case)
-              errorMessage = 'Product name or barcode already exists';
-            } else if (error.code === 'P2003') {
-              // Foreign key constraint violation
-              errorMessage = 'Invalid category or merchant reference';
-            } else if (error.message) {
-              const message = error.message;
-              
-              // Convert type names to user-friendly messages
-              const typeMap: Record<string, string> = {
-                'Int': 'number',
-                'String': 'text',
-                'Float': 'decimal number',
-                'Boolean': 'true/false',
-                'DateTime': 'date/time'
-              };
-              
-              // Try to extract useful information from Prisma/validation errors
-              if (message.includes('Expected Int') || message.includes('Expected String') || message.includes('Expected')) {
-                // Parse Prisma validation errors
-                const expectedMatch = message.match(/Expected (\w+), provided (\w+)/i);
-                const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
-                
-                if (expectedMatch && fieldMatch) {
-                  const field = fieldMatch[1];
-                  const expected = expectedMatch[1];
-                  const provided = expectedMatch[2];
-                  
-                  const expectedType = typeMap[expected] || expected.toLowerCase();
-                  const providedType = typeMap[provided] || provided.toLowerCase();
-                  
-                  errorMessage = `${field}: Expected ${expectedType}, but received ${providedType}`;
-                } else if (expectedMatch) {
-                  const expected = expectedMatch[1];
-                  const provided = expectedMatch[2];
-                  const expectedType = typeMap[expected] || expected.toLowerCase();
-                  const providedType = typeMap[provided] || provided.toLowerCase();
-                  errorMessage = `Invalid data type: Expected ${expectedType}, but received ${providedType}`;
-                } else {
-                  const fieldMatch2 = message.match(/`(\w+)`/);
-                  if (fieldMatch2) {
-                    errorMessage = `${fieldMatch2[1]}: Invalid data format`;
-                  } else {
-                    errorMessage = 'Invalid data format or missing required information';
-                  }
-                }
-              } else if (message.includes('Invalid value provided')) {
-                const fieldMatch = message.match(/Argument `(\w+)`/i) || message.match(/Field `(\w+)`/i);
-                if (fieldMatch) {
-                  errorMessage = `${fieldMatch[1]}: Invalid value provided`;
-                } else {
-                  errorMessage = 'Invalid value provided for one or more fields';
-                }
-              } else if (!message.includes('prisma') && !message.includes('Prisma') && !message.includes('invocation') && !message.includes('route.js')) {
-                // User-friendly error - use as is
-                errorMessage = message;
-              } else {
-                // Generic technical error
-                errorMessage = 'Invalid data format or missing required information';
-              }
-            }
-            
-            // Log technical details for debugging
+            // Format error and throw to rollback entire transaction (all-or-nothing)
+            const errorMessage = formatPrismaError(error);
             console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
               message: error.message,
               code: error.code,
@@ -473,7 +489,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               productData: validatedProduct.data
             });
             
-            // Throw error with row number to rollback entire transaction (all-or-nothing)
             throw new Error(`Row ${validatedProduct.rowNumber}: ${errorMessage}`);
           }
         }
@@ -492,13 +507,11 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     } catch (transactionError: any) {
       // Transaction failed - rollback occurred automatically
-      // Format user-friendly error message
       let errorMessage = 'Failed to import products. Transaction rolled back.';
       
       if (transactionError.message) {
-        // Check if error message contains row number
+        // Extract row number and error from transaction error
         if (transactionError.message.includes('Row ')) {
-          // Extract row number and error
           const match = transactionError.message.match(/Row (\d+): (.+)/);
           if (match) {
             const rowNumber = parseInt(match[1]);
@@ -515,25 +528,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           }
         }
         
-        // Check if it's a technical error or user-friendly
-        const technicalErrors = [
-          'Invalid value provided',
-          'Expected Int',
-          'Expected String',
-          'prisma',
-          'Prisma',
-          'invocation',
-          'route.js'
-        ];
-        
-        const isTechnicalError = technicalErrors.some(tech => transactionError.message.includes(tech));
-        
-        if (!isTechnicalError) {
+        // Use user-friendly error if not technical
+        if (!isTechnicalError(transactionError.message)) {
           errorMessage = transactionError.message;
         }
       }
       
-      // Log technical details for debugging
       console.error('Transaction error in bulk import:', {
         message: transactionError.message,
         code: transactionError.code,
@@ -552,31 +552,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
   } catch (error: any) {
     console.error('Error in bulk import:', error);
     
-    // Format user-friendly error message
-    let errorMessage = 'Failed to import products. Please check your file format and try again.';
-    
-    if (error.message) {
-      const technicalErrors = [
-        'Invalid value provided',
-        'Expected Int',
-        'Expected String',
-        'prisma',
-        'Prisma',
-        'invocation',
-        'route.js'
-      ];
-      
-      const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-      
-      if (!isTechnicalError) {
-        errorMessage = error.message;
-      }
-    }
-    
-    return NextResponse.json(
-      ResponseBuilder.error('IMPORT_FAILED'),
-      { status: 500 }
-    );
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
-
