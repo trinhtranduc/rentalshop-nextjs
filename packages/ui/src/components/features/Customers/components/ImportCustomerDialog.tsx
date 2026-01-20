@@ -503,7 +503,6 @@ export function ImportCustomerDialog({
                 headers={headers}
                 errors={errors}
                 duplicates={duplicates}
-                maxRows={50}
               />
             </div>
           )}

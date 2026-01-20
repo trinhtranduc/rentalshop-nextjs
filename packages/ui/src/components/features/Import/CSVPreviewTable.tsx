@@ -25,13 +25,14 @@ export function CSVPreviewTable({
   headers,
   errors = [],
   duplicates = [],
-  maxRows = 50,
+  maxRows,
   className
 }: CSVPreviewTableProps) {
   const errorRows = new Set(errors.map(e => e.row));
   const duplicateRows = new Set(duplicates.map(d => d.row));
-  const displayData = data.slice(0, maxRows);
-  const hasMore = data.length > maxRows;
+  // If maxRows is not provided, show all rows
+  const displayData = maxRows ? data.slice(0, maxRows) : data;
+  const hasMore = maxRows ? data.length > maxRows : false;
   const validCount = data.length - errors.length - duplicates.length;
   const skippedCount = duplicates.length;
 

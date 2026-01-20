@@ -492,7 +492,6 @@ export function ImportProductDialog({
                 headers={headers}
                 errors={errors}
                 duplicates={duplicates}
-                maxRows={50}
               />
             </div>
           )}
