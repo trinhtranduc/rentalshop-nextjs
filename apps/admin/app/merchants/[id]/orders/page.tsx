@@ -10,8 +10,10 @@ import { PageWrapper,
   Button,
   Breadcrumb,
   type BreadcrumbItem,
-  useToast } from '@rentalshop/ui';
+  useToast,
+  ConfirmationDialog } from '@rentalshop/ui';
 import { ShoppingCart, Plus } from 'lucide-react';
+import { useAuth } from '@rentalshop/hooks';
 import type { OrderListItem, OrderFilters, OrdersData } from '@rentalshop/types';
 
 /**
@@ -28,7 +30,8 @@ export default function MerchantOrdersPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { toastInfo } = useToast();
+  const { toastInfo, toastSuccess, toastError } = useToast();
+  const { user } = useAuth();
   const merchantId = params.id as string;
   
   // ============================================================================
@@ -53,6 +56,9 @@ export default function MerchantOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+  const [showBatchDeleteConfirmDialog, setShowBatchDeleteConfirmDialog] = useState(false);
+  const [ordersToDeleteBatch, setOrdersToDeleteBatch] = useState<number[]>([]);
 
   // ============================================================================
   // MEMOIZED QUERY PARAMS - For API calls
@@ -254,6 +260,54 @@ export default function MerchantOrdersPage() {
     }
   }, [router, merchantId]);
 
+  // Handle batch delete
+  const handleBatchDelete = useCallback(async (orderIds: number[]) => {
+    // Validate all selected orders are CANCELLED
+    const selectedOrders = orders.filter(o => orderIds.includes(o.id));
+    const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
+    
+    if (!allCancelled) {
+      toastError('Error', 'Only CANCELLED orders can be deleted');
+      return;
+    }
+
+    // Set orders to delete and show confirmation dialog
+    setOrdersToDeleteBatch(orderIds);
+    setShowBatchDeleteConfirmDialog(true);
+  }, [orders, toastError]);
+
+  // Confirm batch delete
+  const confirmBatchDelete = useCallback(async () => {
+    if (ordersToDeleteBatch.length === 0) return;
+
+    try {
+      const response = await ordersApi.batchDeleteOrders(ordersToDeleteBatch);
+      
+      if (response.success) {
+        toastSuccess(
+          'Success',
+          `${response.data?.deleted || ordersToDeleteBatch.length} orders deleted successfully`
+        );
+        
+        // Clear selection
+        setSelectedOrderIds([]);
+        setOrdersToDeleteBatch([]);
+        setShowBatchDeleteConfirmDialog(false);
+        
+        // Refetch data
+        fetchData();
+      } else {
+        toastError('Error', response.message || 'Failed to delete orders');
+      }
+    } catch (error: any) {
+      console.error('Error deleting orders:', error);
+      toastError('Error', error.message || 'Failed to delete orders');
+    }
+  }, [ordersToDeleteBatch, toastSuccess, toastError]);
+
+  // Get user role (default to ADMIN for merchant orders page)
+  const userRole = (user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF') || 'ADMIN';
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -326,10 +380,31 @@ export default function MerchantOrdersPage() {
             onOrderAction={handleOrderAction}
             onPageChange={handlePageChange}
             onSort={handleSort}
+            onSelectionChange={setSelectedOrderIds}
+            onBatchDelete={handleBatchDelete}
             showStats={false}
+            userRole={userRole}
           />
         )}
       </div>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showBatchDeleteConfirmDialog}
+        onOpenChange={setShowBatchDeleteConfirmDialog}
+        type="danger"
+        title="Delete Selected Orders"
+        description={
+          `Are you sure you want to delete the selected orders?\n\n📋 ${ordersToDeleteBatch.length} orders selected\n\nThis action cannot be undone. Only CANCELLED orders can be deleted.`
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmBatchDelete}
+        onCancel={() => {
+          setShowBatchDeleteConfirmDialog(false);
+          setOrdersToDeleteBatch([]);
+        }}
+      />
     </PageWrapper>
   );
 }
