@@ -1,0 +1,369 @@
+/**
+ * Vector Store Service
+ * Wrapper để tương tác với Qdrant vector database
+ * 
+ * Collection: product-images
+ * Vector dimension: 512 (CLIP standard)
+ * Distance metric: Cosine
+ */
+
+import { QdrantClient } from '@qdrant/js-client-rest';
+
+export interface ProductEmbeddingMetadata {
+  productId: string;
+  imageUrl: string;
+  merchantId: string;
+  outletId?: string;
+  categoryId?: string;
+  productName?: string;
+}
+
+/**
+ * ProductVectorStore
+ * Quản lý embeddings trong Qdrant database
+ */
+export class ProductVectorStore {
+  private client: QdrantClient;
+  private collectionName = 'product-images';
+
+  constructor() {
+    // Sanitize QDRANT_URL and QDRANT_API_KEY to avoid Unicode issues
+    const qdrantUrl = (process.env.QDRANT_URL || 'http://localhost:6333')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x00-\x7F]/g, '');
+    const qdrantApiKey = process.env.QDRANT_API_KEY
+      ? process.env.QDRANT_API_KEY
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^\x00-\x7F]/g, '')
+      : undefined;
+
+    this.client = new QdrantClient({
+      url: qdrantUrl,
+      apiKey: qdrantApiKey
+    });
+  }
+
+  /**
+   * Initialize collection
+   * Tạo collection và indexes nếu chưa tồn tại
+   */
+  async initialize(): Promise<void> {
+    try {
+      const collection = await this.client.getCollection(this.collectionName);
+      console.log(`✅ Collection ${this.collectionName} already exists`);
+      return;
+    } catch {
+      // Collection không tồn tại, tạo mới
+    }
+
+    try {
+      await this.client.createCollection(this.collectionName, {
+        vectors: {
+          size: 512, // CLIP embedding dimension
+          distance: 'Cosine' // Cosine similarity
+        },
+        optimizers_config: {
+          default_segment_number: 2
+        },
+        replication_factor: 1
+      });
+
+      console.log(`✅ Created collection ${this.collectionName}`);
+
+      // Create indexes cho filtering
+      try {
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'merchantId',
+          field_schema: 'keyword'
+        });
+
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'categoryId',
+          field_schema: 'keyword'
+        });
+
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'outletId',
+          field_schema: 'keyword'
+        });
+
+        console.log('✅ Created payload indexes');
+      } catch (indexError) {
+        // Indexes có thể đã tồn tại hoặc không hỗ trợ
+        console.warn('⚠️ Could not create indexes (may already exist):', indexError);
+      }
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Store product embedding
+   * 
+   * @param productId - Product ID (sẽ convert thành string)
+   * @param embedding - Embedding vector (512 dimensions)
+   * @param metadata - Metadata kèm theo
+   */
+  async storeEmbedding(
+    productId: string | number,
+    embedding: number[],
+    metadata: ProductEmbeddingMetadata
+  ): Promise<void> {
+    // Convert productId to string for Qdrant
+    const pointId = String(productId);
+
+    try {
+      await this.client.upsert(this.collectionName, {
+        points: [{
+          id: pointId,
+          vector: embedding,
+          payload: {
+            productId: String(metadata.productId),
+            imageUrl: metadata.imageUrl,
+            merchantId: String(metadata.merchantId),
+            outletId: metadata.outletId ? String(metadata.outletId) : undefined,
+            categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
+            productName: metadata.productName,
+            updatedAt: new Date().toISOString()
+          }
+        }]
+      });
+    } catch (error) {
+      console.error(`Error storing embedding for product ${productId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search similar products
+   * 
+   * @param queryEmbedding - Embedding của ảnh tìm kiếm
+   * @param filters - Filters (merchantId, outletId, categoryId, minSimilarity, limit)
+   * @returns Array các sản phẩm với similarity scores
+   */
+  async search(
+    queryEmbedding: number[],
+    filters: {
+      merchantId?: string | number;
+      outletId?: string | number;
+      categoryId?: string | number;
+      minSimilarity?: number;
+      limit?: number;
+    } = {}
+  ): Promise<Array<{
+    productId: string;
+    similarity: number;
+    metadata: any;
+  }>> {
+    const {
+      merchantId,
+      outletId,
+      categoryId,
+      minSimilarity = parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.7'),
+      limit = 20
+    } = filters;
+
+    // Build filter
+    const must: any[] = [];
+    
+    if (merchantId) {
+      must.push({
+        key: 'merchantId',
+        match: { value: String(merchantId) }
+      });
+    }
+
+    if (outletId) {
+      must.push({
+        key: 'outletId',
+        match: { value: String(outletId) }
+      });
+    }
+
+    if (categoryId) {
+      must.push({
+        key: 'categoryId',
+        match: { value: String(categoryId) }
+      });
+    }
+
+    const filter = must.length > 0 ? { must } : undefined;
+
+    try {
+      // Search
+      const results = await this.client.search(this.collectionName, {
+        vector: queryEmbedding,
+        limit,
+        filter,
+        score_threshold: minSimilarity,
+        with_payload: true
+      });
+
+      return results.map((result: any) => ({
+        productId: result.payload.productId,
+        similarity: result.score,
+        metadata: result.payload
+      }));
+    } catch (error) {
+      console.error('Error searching in Qdrant:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete product embedding (legacy - dùng productId làm point ID)
+   * 
+   * @param productId - Product ID
+   */
+  async deleteEmbedding(productId: string | number): Promise<void> {
+    try {
+      await this.client.delete(this.collectionName, {
+        points: [String(productId)]
+      });
+    } catch (error) {
+      console.error(`Error deleting embedding for product ${productId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete all embeddings của một product (dùng filter theo productId trong payload)
+   * Dùng khi product có nhiều images (mỗi image có UUID riêng)
+   * 
+   * @param productId - Product ID
+   */
+  async deleteProductEmbeddings(productId: string | number): Promise<void> {
+    try {
+      await this.client.delete(this.collectionName, {
+        filter: {
+          must: [{
+            key: 'productId',
+            match: { value: String(productId) }
+          }]
+        }
+      });
+      console.log(`✅ Deleted all embeddings for product ${productId}`);
+    } catch (error) {
+      console.error(`Error deleting embeddings for product ${productId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update embedding (delete + insert)
+   * 
+   * @param productId - Product ID
+   * @param embedding - New embedding
+   * @param metadata - New metadata
+   */
+  async updateEmbedding(
+    productId: string | number,
+    embedding: number[],
+    metadata: ProductEmbeddingMetadata
+  ): Promise<void> {
+    // Qdrant upsert sẽ tự động update nếu point ID đã tồn tại
+    await this.storeEmbedding(productId, embedding, metadata);
+  }
+
+  /**
+   * Batch store embeddings
+   * 
+   * @param embeddings - Array các embeddings với metadata
+   */
+  async storeEmbeddingsBatch(
+    embeddings: Array<{
+      productId: string | number;
+      embedding: number[];
+      metadata: ProductEmbeddingMetadata;
+    }>
+  ): Promise<void> {
+    const points = embeddings.map(({ productId, embedding, metadata }) => ({
+      id: String(productId),
+      vector: embedding,
+      payload: {
+        productId: String(metadata.productId),
+        imageUrl: metadata.imageUrl,
+        merchantId: String(metadata.merchantId),
+        outletId: metadata.outletId ? String(metadata.outletId) : undefined,
+        categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
+        productName: metadata.productName,
+        updatedAt: new Date().toISOString()
+      }
+    }));
+
+    try {
+      await this.client.upsert(this.collectionName, {
+        points
+      });
+    } catch (error) {
+      console.error('Error in batch store embeddings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Store multiple product images embeddings (mỗi image có UUID riêng)
+   * Dùng cho product có nhiều images
+   * 
+   * @param embeddings - Array các embeddings với imageId (UUID) và metadata
+   */
+  async storeProductImagesEmbeddings(
+    embeddings: Array<{
+      imageId: string; // UUID
+      embedding: number[];
+      metadata: ProductEmbeddingMetadata;
+    }>
+  ): Promise<void> {
+    // Sanitize all strings to avoid Unicode issues with Qdrant
+    const points = embeddings.map(({ imageId, embedding, metadata }) => ({
+      id: imageId, // UUID is already ASCII-safe
+      vector: embedding,
+      payload: {
+        productId: String(metadata.productId).replace(/[^\x00-\x7F]/g, ''),
+        imageUrl: String(metadata.imageUrl).replace(/[^\x00-\x7F]/g, ''),
+        merchantId: String(metadata.merchantId),
+        outletId: metadata.outletId ? String(metadata.outletId) : undefined,
+        categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
+        productName: metadata.productName ? String(metadata.productName).replace(/[^\x00-\x7F]/g, '') : undefined,
+        updatedAt: new Date().toISOString()
+      }
+    }));
+
+    try {
+      await this.client.upsert(this.collectionName, {
+        points
+      });
+    } catch (error) {
+      console.error('Error storing product images embeddings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get collection info (for debugging)
+   */
+  async getCollectionInfo(): Promise<any> {
+    try {
+      return await this.client.getCollection(this.collectionName);
+    } catch (error) {
+      console.error('Error getting collection info:', error);
+      throw error;
+    }
+  }
+}
+
+// Singleton instance
+let vectorStore: ProductVectorStore | null = null;
+
+/**
+ * Get singleton instance của vector store
+ */
+export function getVectorStore(): ProductVectorStore {
+  if (!vectorStore) {
+    vectorStore = new ProductVectorStore();
+  }
+  return vectorStore;
+}

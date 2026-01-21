@@ -43,7 +43,19 @@
     "db:fix-sequences:dev": "NODE_ENV=development tsx scripts/fix-database-sequences.ts --env development",
     "db:fix-sequences:prod": "NODE_ENV=production tsx scripts/fix-database-sequences.ts --env production",
     "db:update-tenant-keys": "tsx scripts/update-merchant-tenant-keys.ts",
-    "audit:error-translations": "node scripts/audit-error-translations.js"
+    "audit:error-translations": "node scripts/audit-error-translations.js",
+    "qdrant:start": "docker-compose -f docker-compose.local.yml up -d qdrant",
+    "qdrant:stop": "docker-compose -f docker-compose.local.yml stop qdrant",
+    "qdrant:restart": "docker-compose -f docker-compose.local.yml restart qdrant",
+    "qdrant:status": "docker-compose -f docker-compose.local.yml ps qdrant && curl -s http://localhost:6333/health",
+    "qdrant:logs": "docker-compose -f docker-compose.local.yml logs -f qdrant",
+    "qdrant:clean": "docker-compose -f docker-compose.local.yml down -v && rm -rf ./qdrant_storage",
+    "setup:image-search": "tsx scripts/setup-image-search.ts",
+    "generate:embeddings": "tsx scripts/setup-image-search.ts",
+    "generate:embeddings-only": "tsx scripts/generate-embeddings-only.ts",
+    "generate:test-images": "tsx scripts/generate-test-images-embeddings.ts",
+    "test:image-search-local": "tsx scripts/test-image-search-local.ts",
+    "test:image-search": "tsx scripts/test-image-search.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

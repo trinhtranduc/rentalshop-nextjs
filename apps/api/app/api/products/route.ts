@@ -504,6 +504,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       console.error('Error syncing totalStock:', error);
     }
 
+    // Generate embedding for image search (background job)
+    if (committedImageUrls.length > 0) {
+      try {
+        const { generateProductEmbedding } = await import('@rentalshop/database/server');
+        // Run in background (don't block response)
+        generateProductEmbedding(product.id).catch((error) => {
+          console.error(`Error generating embedding for product ${product.id}:`, error);
+        });
+      } catch (error) {
+        console.error('Error starting embedding generation:', error);
+        // Don't fail the request if embedding generation fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
