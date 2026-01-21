@@ -565,6 +565,29 @@ export async function PUT(
         }
       }
 
+      // Regenerate embeddings for image search if images were updated (background job)
+      // Delete old embeddings first, then generate new ones
+      if (imageFiles.length > 0 || productUpdateData.images !== undefined) {
+        try {
+          const { generateProductEmbedding } = await import('@rentalshop/database/server');
+          const { getVectorStore } = await import('@rentalshop/database/server');
+          
+          // Delete old embeddings first (run in background)
+          const vectorStore = getVectorStore();
+          vectorStore.deleteProductEmbeddings(productId).catch((error: any) => {
+            console.error(`Error deleting old embeddings for product ${productId}:`, error);
+          });
+          
+          // Generate new embeddings (run in background, don't block response)
+          generateProductEmbedding(productId).catch((error) => {
+            console.error(`Error generating embedding for product ${productId}:`, error);
+          });
+        } catch (error) {
+          console.error('Error starting embedding regeneration:', error);
+          // Don't fail the request if embedding generation fails
+        }
+      }
+
       // Check if user has products.manage permission to view cost price
       const canViewCostPrice = await hasPermission(user, 'products.manage');
 
@@ -737,6 +760,18 @@ export async function DELETE(
         }
       } else {
         console.log('ℹ️ No images to delete for product', productId);
+      }
+
+      // Delete embeddings from Qdrant (background job)
+      try {
+        const { getVectorStore } = await import('@rentalshop/database/server');
+        const vectorStore = getVectorStore();
+        vectorStore.deleteProductEmbeddings(productId).catch((error: any) => {
+          console.error(`Error deleting embeddings for product ${productId}:`, error);
+        });
+      } catch (error) {
+        console.error('Error starting embedding deletion:', error);
+        // Don't fail the request if embedding deletion fails
       }
 
       // Soft delete by setting isActive to false
