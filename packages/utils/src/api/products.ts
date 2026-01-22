@@ -373,7 +373,71 @@ export const productsApi = {
     return await response.blob();
   },
 
+  /**
+   * Search products by image
+   * 
+   * @param formData - FormData containing:
+   *   - image: File - Image file to search
+   *   - limit?: number - Number of results (default: 20)
+   *   - minSimilarity?: number - Minimum similarity threshold (default: 0.7)
+   *   - categoryId?: number - Filter by category
+   * 
+   * @returns Products with similarity scores
+   */
+  async searchByImage(formData: FormData): Promise<ApiResponse<{
+    products: Array<Product & { similarity: number; _debug?: any }>;
+    total: number;
+    queryImage: string;
+  }>> {
+    const response = await authenticatedFetch('/api/products/search-by-image', {
+      method: 'POST',
+      body: formData,
+    });
+    return await parseApiResponse<{
+      products: Array<Product & { similarity: number; _debug?: any }>;
+      total: number;
+      queryImage: string;
+    }>(response);
+  },
+
 };
+
+/**
+ * Search products by image (standalone function)
+ * 
+ * @param imageFile - Image file to search
+ * @param options - Search options
+ * @returns Products with similarity scores
+ */
+export async function searchProductsByImage(
+  imageFile: File,
+  options: {
+    limit?: number;
+    minSimilarity?: number;
+    categoryId?: number;
+  } = {}
+): Promise<ApiResponse<{
+  products: Array<Product & { similarity: number; _debug?: any }>;
+  total: number;
+  queryImage: string;
+}>> {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  
+  if (options.limit) {
+    formData.append('limit', options.limit.toString());
+  }
+  
+  if (options.minSimilarity) {
+    formData.append('minSimilarity', options.minSimilarity.toString());
+  }
+  
+  if (options.categoryId) {
+    formData.append('categoryId', options.categoryId.toString());
+  }
+
+  return productsApi.searchByImage(formData);
+}
 
 
 

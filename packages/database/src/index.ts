@@ -271,6 +271,18 @@ export * from './query-builder';
 export { cleanupOldRequestLogs } from './cleanup-request-logs';
 
 // ============================================================================
+// MACHINE LEARNING SERVICES (Image Search) - REMOVED FROM MAIN EXPORTS
+// ============================================================================
+// NOTE: These exports have been moved to a separate server-only file to prevent
+// client-side bundling issues with native dependencies (sharp, @xenova/transformers)
+// 
+// To use ML services, import from '@rentalshop/database/server' instead:
+// import { getEmbeddingService } from '@rentalshop/database/server';
+//
+// DO NOT import these in client-side code (components, hooks, etc.)
+// They will cause build errors due to native dependencies
+
+// ============================================================================
 // MIGRATION GUIDE
 // ============================================================================
 /*

@@ -336,9 +336,25 @@ export class ProductVectorStore {
       await this.client.upsert(this.collectionName, {
         points
       });
-    } catch (error) {
-      console.error('Error storing product images embeddings:', error);
-      throw error;
+    } catch (error: any) {
+      // If collection doesn't exist, try to initialize and retry
+      if (error?.status === 404 || error?.message?.includes('not found')) {
+        console.log('⚠️ Collection not found, initializing...');
+        try {
+          await this.initialize();
+          // Retry upsert after initialization
+          await this.client.upsert(this.collectionName, {
+            points
+          });
+          console.log('✅ Successfully stored embeddings after initialization');
+        } catch (initError) {
+          console.error('Error initializing collection:', initError);
+          throw initError;
+        }
+      } else {
+        console.error('Error storing product images embeddings:', error);
+        throw error;
+      }
     }
   }
 

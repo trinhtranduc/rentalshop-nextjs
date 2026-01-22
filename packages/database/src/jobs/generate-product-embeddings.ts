@@ -58,6 +58,14 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
 
+    // Initialize collection if needed (creates collection and indexes)
+    try {
+      await vectorStore.initialize();
+    } catch (error) {
+      console.error(`⚠️ Failed to initialize Qdrant collection:`, error);
+      // Continue anyway - collection might already exist
+    }
+
     // Generate embeddings for all images
     const embeddings = await Promise.all(
       images.map(async (imageUrl, index) => {
@@ -162,6 +170,14 @@ export async function generateAllProductEmbeddings(
     // Process in batches
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
+
+    // Initialize collection if needed (creates collection and indexes)
+    try {
+      await vectorStore.initialize();
+    } catch (error) {
+      console.error(`⚠️ Failed to initialize Qdrant collection:`, error);
+      // Continue anyway - collection might already exist
+    }
 
     let processed = 0;
     let errors = 0;

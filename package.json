@@ -55,7 +55,10 @@
     "generate:embeddings-only": "tsx scripts/generate-embeddings-only.ts",
     "generate:test-images": "tsx scripts/generate-test-images-embeddings.ts",
     "test:image-search-local": "tsx scripts/test-image-search-local.ts",
-    "test:image-search": "tsx scripts/test-image-search.ts"
+    "test:image-search": "tsx scripts/test-image-search.ts",
+    "test:qdrant": "tsx scripts/test-qdrant-connection.ts",
+    "test:qdrant-railway": "tsx scripts/test-qdrant-railway.ts",
+    "verify:railway-setup": "tsx scripts/verify-railway-setup.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
