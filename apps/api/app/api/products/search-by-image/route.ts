@@ -19,7 +19,7 @@ import {
   generateStagingKey, 
   splitKeyIntoParts 
 } from '@rentalshop/utils';
-import { compressImageTo1MB } from '../../../../../lib/image-compression';
+import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
 
 // Allowed image types

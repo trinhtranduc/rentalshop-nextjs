@@ -58,6 +58,8 @@ const nextConfig = {
         '.prisma/client': 'commonjs .prisma/client',
         '@prisma/engines': 'commonjs @prisma/engines',
         'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
+        '@xenova/transformers': 'commonjs @xenova/transformers', // Externalize transformers (ML model)
+        'onnxruntime-node': 'commonjs onnxruntime-node', // Externalize ONNX runtime (native binary)
       };
       
       // Add to externals array (handle both array and function formats)

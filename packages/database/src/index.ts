@@ -247,6 +247,9 @@ export { simplifiedSubscriptionActivities } from './subscription-activity';
 
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
+
+// Export product functions
+export { syncProductTotalStock, updateOutletStockForOrder } from './product';
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';

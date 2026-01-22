@@ -496,7 +496,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     // Sync totalStock
     try {
-      const { syncProductTotalStock } = await import('@rentalshop/database/src/product');
+      const { syncProductTotalStock } = await import('@rentalshop/database');
       if (syncProductTotalStock) {
         await syncProductTotalStock(product.id);
       }

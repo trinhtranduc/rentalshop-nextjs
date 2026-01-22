@@ -485,8 +485,7 @@ export async function PUT(
       // This ensures totalStock always equals the sum of all outlet stocks
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         try {
-          const productModule = await import('@rentalshop/database/src/product');
-          const { syncProductTotalStock } = productModule;
+          const { syncProductTotalStock } = await import('@rentalshop/database');
           if (syncProductTotalStock) {
             await syncProductTotalStock(productId);
             // Re-fetch product to get updated totalStock
