@@ -39,7 +39,7 @@
     "tsup": "^7.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
-    "@rentalshop/env": "file:../env"
+    "@rentalshop/env": "workspace:*"
   },
   "peerDependencies": {
     "@prisma/client": "6.16.2"
