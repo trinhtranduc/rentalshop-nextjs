@@ -10,7 +10,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { getEmbeddingService, getVectorStore } from '@rentalshop/database/server';
 import { 
   handleApiError, 
   ResponseBuilder, 
@@ -21,6 +20,11 @@ import {
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
+
+// Force dynamic rendering to prevent Next.js from collecting page data
+// This prevents Next.js from trying to load native dependencies (onnxruntime-node) during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Allowed image types
 const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
@@ -161,14 +165,16 @@ export const POST = withPermissions(['products.view'])(
       const imageUrl = uploadResult.data.url;
       console.log('✅ Image uploaded to S3:', imageUrl);
 
-      // Step 2: Generate embedding
+      // Step 2: Generate embedding (lazy load to avoid loading native deps during build)
       console.log('🔄 Generating embedding...');
+      const { getEmbeddingService } = await import('@rentalshop/database/server');
       const embeddingService = getEmbeddingService();
       const queryEmbedding = await embeddingService.generateEmbedding(imageUrl);
       console.log('✅ Embedding generated (dimension:', queryEmbedding.length, ')');
 
-      // Step 3: Search in Qdrant
+      // Step 3: Search in Qdrant (lazy load to avoid loading native deps during build)
       console.log('🔍 Searching in Qdrant...');
+      const { getVectorStore } = await import('@rentalshop/database/server');
       const vectorStore = getVectorStore();
       
       // Build filters from userScope
