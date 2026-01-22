@@ -38,8 +38,7 @@
     "eslint": "^8.0.0",
     "tsup": "^7.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0",
-    "@rentalshop/env": "workspace:*"
+    "typescript": "^5.0.0"
   },
   "peerDependencies": {
     "@prisma/client": "6.16.2"
