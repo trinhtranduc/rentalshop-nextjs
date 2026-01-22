@@ -25,8 +25,7 @@
       "@rentalshop/utils/client": ["./packages/utils/src/client"],
       "@rentalshop/types": ["./packages/types/src"],
       "@rentalshop/hooks": ["./packages/hooks/src"],
-      "@rentalshop/constants": ["./packages/constants/src"],
-      "@rentalshop/env": ["./packages/env/src"]
+      "@rentalshop/constants": ["./packages/constants/src"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "**/node_modules"]
