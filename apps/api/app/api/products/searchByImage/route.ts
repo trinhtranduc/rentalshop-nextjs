@@ -12,11 +12,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { 
   handleApiError, 
-  ResponseBuilder, 
-  uploadToS3, 
-  generateFileName, 
-  generateStagingKey, 
-  splitKeyIntoParts 
+  ResponseBuilder
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
@@ -112,7 +108,7 @@ export const POST = withPermissions(['products.view'])(
       const limit = limitParam ? parseInt(String(limitParam)) : 20;
       const minSimilarity = minSimilarityParam 
         ? parseFloat(String(minSimilarityParam)) 
-        : parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.7');
+        : parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.5');
       const categoryId = categoryIdParam ? parseInt(String(categoryIdParam)) : undefined;
 
       // Validate parameters
@@ -138,38 +134,17 @@ export const POST = withPermissions(['products.view'])(
         categoryId
       });
 
-      // Step 1: Upload image to S3 (temp folder for processing)
+      // Step 1: Convert file to buffer and compress
       const bytes = await file.arrayBuffer();
       const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+      console.log(`✅ Image compressed: ${(buffer.length / 1024).toFixed(2)} KB`);
 
-      const fileName = generateFileName('search-query');
-      const stagingKey = generateStagingKey(fileName);
-      const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
-
-      // Upload to temp folder
-      const uploadResult = await uploadToS3(buffer, {
-        folder: `temp/search/${folder}`,
-        fileName: finalFileName,
-        contentType: 'image/jpeg',
-        preserveOriginalName: false
-      });
-
-      if (!uploadResult.success || !uploadResult.data) {
-        console.error('❌ Failed to upload image:', uploadResult.error);
-        return NextResponse.json(
-          ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
-          { status: 500 }
-        );
-      }
-
-      const imageUrl = uploadResult.data.url;
-      console.log('✅ Image uploaded to S3:', imageUrl);
-
-      // Step 2: Generate embedding (lazy load to avoid loading native deps during build)
-      console.log('🔄 Generating embedding...');
+      // Step 2: Generate embedding directly from buffer (OPTIMIZED: no S3 upload needed)
+      // This is the fastest approach: no network calls, no S3 storage cost
+      console.log('🔄 Generating embedding from buffer...');
       const { getEmbeddingService } = await import('@rentalshop/database/server');
       const embeddingService = getEmbeddingService();
-      const queryEmbedding = await embeddingService.generateEmbedding(imageUrl);
+      const queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(buffer);
       console.log('✅ Embedding generated (dimension:', queryEmbedding.length, ')');
 
       // Step 3: Search in Qdrant (lazy load to avoid loading native deps during build)
@@ -196,16 +171,33 @@ export const POST = withPermissions(['products.view'])(
         filters.categoryId = categoryId;
       }
 
+      console.log('🔍 Search filters:', {
+        merchantId: filters.merchantId,
+        outletId: filters.outletId,
+        categoryId: filters.categoryId,
+        limit: filters.limit,
+        minSimilarity: filters.minSimilarity,
+        userRole: user.role,
+        userScope
+      });
+
       const searchResults = await vectorStore.search(queryEmbedding, filters);
-      console.log(`✅ Found ${searchResults.length} similar products`);
+      console.log(`✅ Found ${searchResults.length} similar products (similarity >= ${filters.minSimilarity})`);
+      
+      if (searchResults.length === 0) {
+        console.warn('⚠️ No products found. Possible reasons:');
+        console.warn('   1. No embeddings in Qdrant for this merchant/outlet');
+        console.warn('   2. Similarity threshold too high (current:', filters.minSimilarity, ')');
+        console.warn('   3. Filters too strict (merchantId:', filters.merchantId, ', outletId:', filters.outletId, ')');
+        console.warn('   4. Try reducing minSimilarity to 0.5 or lower');
+      }
 
       // Step 4: Get product details
       if (searchResults.length === 0) {
         return NextResponse.json(
           ResponseBuilder.success('NO_PRODUCTS_FOUND', {
             products: [],
-            total: 0,
-            queryImage: imageUrl
+            total: 0
           })
         );
       }
@@ -245,8 +237,7 @@ export const POST = withPermissions(['products.view'])(
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_FOUND', {
           products: productsWithSimilarity,
-          total: productsWithSimilarity.length,
-          queryImage: imageUrl
+          total: productsWithSimilarity.length
         })
       );
 
