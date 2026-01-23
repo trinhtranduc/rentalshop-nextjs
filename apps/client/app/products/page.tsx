@@ -82,6 +82,7 @@ export default function ProductsPage() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [imageSearchResults, setImageSearchResults] = useState<Product[] | null>(null);
   
   // ============================================================================
   // FETCH CATEGORIES & OUTLETS - Using Official Hooks
@@ -192,6 +193,7 @@ export default function ProductsPage() {
 
   const handleClearFilters = useCallback(() => {
     // Clear all params except page
+    setImageSearchResults(null); // Clear image search results
     router.push(pathname, { scroll: false });
   }, [pathname, router]);
 
@@ -207,6 +209,13 @@ export default function ProductsPage() {
 
   const handleLimitChange = useCallback((newLimit: number) => {
     updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
+  }, [updateURL]);
+
+  // Handle image search results
+  const handleImageSearchResult = useCallback((products: Product[]) => {
+    setImageSearchResults(products);
+    // Clear text search when using image search
+    updateURL({ q: undefined, page: 1 });
   }, [updateURL]);
 
   // ============================================================================
@@ -344,7 +353,21 @@ export default function ProductsPage() {
   // TRANSFORM DATA FOR UI
   // ============================================================================
   
+  // Filter products based on image search results if available
   const productData = useMemo(() => {
+    // If we have image search results, use those instead of regular data
+    if (imageSearchResults && imageSearchResults.length > 0) {
+      return {
+        items: imageSearchResults,
+        products: imageSearchResults,
+        total: imageSearchResults.length,
+        page: 1,
+        totalPages: 1,
+        limit: imageSearchResults.length,
+        hasMore: false
+      };
+    }
+
     if (!data) {
       return {
         items: [],
@@ -366,7 +389,7 @@ export default function ProductsPage() {
       limit: data.limit,
       hasMore: data.hasMore
     };
-  }, [data]);
+  }, [data, imageSearchResults]);
 
   // ============================================================================
   // RENDER - Page renders immediately, show loading indicator
@@ -449,6 +472,7 @@ export default function ProductsPage() {
             onSort={handleSort}
             onSelectionChange={setSelectedProductIds}
             onLimitChange={handleLimitChange}
+            onImageSearchResult={handleImageSearchResult}
           />
         )}
       </div>

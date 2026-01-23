@@ -165,6 +165,26 @@
     "priceRange": "Khoảng giá",
     "clear": "Xóa"
   },
+  "imageSearch": {
+    "title": "Tìm kiếm sản phẩm bằng hình ảnh",
+    "description": "Tải lên hình ảnh để tìm các sản phẩm tương tự trong danh mục",
+    "uploadPlaceholder": "Kéo thả hình ảnh vào đây, hoặc click để chọn",
+    "uploadHint": "Hỗ trợ JPEG, PNG, WebP (tối đa 10MB)",
+    "searchButton": "Tìm sản phẩm tương tự",
+    "searching": "Đang tìm kiếm sản phẩm tương tự...",
+    "foundResults": "Tìm thấy {count} sản phẩm tương tự",
+    "noResults": "Không tìm thấy sản phẩm tương tự",
+    "noResultsHint": "Thử tải lên hình ảnh khác hoặc điều chỉnh tiêu chí tìm kiếm",
+    "searchAnother": "Tìm kiếm hình ảnh khác",
+    "similarity": "{percent}% khớp",
+    "error": "Lỗi",
+    "errorNoImage": "Vui lòng chọn hình ảnh trước",
+    "errorInvalidFile": "Vui lòng chọn file hình ảnh",
+    "errorFileSize": "Kích thước hình ảnh phải nhỏ hơn 10MB",
+    "errorSearchFailed": "Không thể tìm kiếm sản phẩm",
+    "success": "Thành công",
+    "successFound": "Tìm thấy {count} sản phẩm tương tự"
+  },
   "search": {
     "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",
     "noResults": "Không tìm thấy sản phẩm phù hợp"
@@ -180,6 +200,7 @@
   "productInformationNotAvailable": "Thông tin sản phẩm không có sẵn",
   "productId": "ID sản phẩm",
   "showingProducts": "Hiển thị {count} trong tổng số {total} sản phẩm",
+  "noProducts": "Không có sản phẩm",
   "noProductsFound": "Không tìm thấy sản phẩm",
   "tryDifferentSearch": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
   "checkBackLater": "Cửa hàng này hiện không có sản phẩm nào. Vui lòng quay lại sau.",

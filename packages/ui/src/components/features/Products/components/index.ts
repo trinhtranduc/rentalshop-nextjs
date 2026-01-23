@@ -14,3 +14,4 @@ export { ImportProductDialog } from './ImportProductDialog';
 export { ProductCard } from './ProductCard';
 export { ProductOrdersView } from './ProductOrdersView';
 export { ProductOrdersDialog } from './ProductOrdersDialog';
+export { ImageSearchDialog } from './ImageSearchDialog';

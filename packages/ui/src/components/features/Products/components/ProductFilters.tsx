@@ -6,13 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { Search } from 'lucide-react';
+import { Search, Image as ImageIcon } from 'lucide-react';
+import { ImageSearchDialog } from './ImageSearchDialog';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
   onFiltersChange: (filters: ProductFiltersType) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
+  onImageSearchResult?: (products: any[]) => void;
 }
 
 /**
@@ -28,10 +30,13 @@ interface ProductFiltersProps {
  * - Clean and minimal UI
  * - Responsive grid layout
  */
-export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: ProductFiltersProps) {
+export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters, onImageSearchResult }: ProductFiltersProps) {
   // Get translations
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+  
+  // Image search dialog state
+  const [showImageSearch, setShowImageSearch] = React.useState(false);
   
   // ✅ MODERN: Use deduplicated hooks for filter data
   const { outlets, loading: loadingOutlets } = useOutletsData();
@@ -139,7 +144,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
             value={localSearch}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            className="pl-9 h-10"
+            className="pl-9 pr-9 h-10"
           />
           <svg 
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
@@ -154,8 +159,32 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
             />
           </svg>
+          {/* Image Search Button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+            onClick={() => setShowImageSearch(true)}
+            title="Search by image"
+          >
+            <ImageIcon className="w-4 h-4" />
+          </Button>
         </div>
       </div>
+
+      {/* Image Search Dialog */}
+      <ImageSearchDialog
+        open={showImageSearch}
+        onOpenChange={setShowImageSearch}
+        onSearchResult={(products) => {
+          if (onImageSearchResult) {
+            onImageSearchResult(products);
+          }
+          setShowImageSearch(false);
+        }}
+        categoryId={filters.categoryId}
+      />
 
       {/* Category Filter - SearchableSelect for better UX with many categories */}
       {categoryOptions.length > 0 && (

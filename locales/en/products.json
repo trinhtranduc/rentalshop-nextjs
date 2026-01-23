@@ -166,6 +166,26 @@
     "priceRange": "Price Range",
     "clear": "Clear"
   },
+  "imageSearch": {
+    "title": "Search Products by Image",
+    "description": "Upload an image to find similar products in your catalog",
+    "uploadPlaceholder": "Drag and drop an image here, or click to browse",
+    "uploadHint": "Supports JPEG, PNG, WebP (max 10MB)",
+    "searchButton": "Search Similar Products",
+    "searching": "Searching for similar products...",
+    "foundResults": "Found {count} similar products",
+    "noResults": "No similar products found",
+    "noResultsHint": "Try uploading a different image or adjust your search criteria",
+    "searchAnother": "Search Another Image",
+    "similarity": "{percent}% match",
+    "error": "Error",
+    "errorNoImage": "Please select an image first",
+    "errorInvalidFile": "Please select an image file",
+    "errorFileSize": "Image size must be less than 10MB",
+    "errorSearchFailed": "Failed to search products",
+    "success": "Success",
+    "successFound": "Found {count} similar products"
+  },
   "search": {
     "placeholder": "Search products by name, barcode, or SKU...",
     "noResults": "No products found matching your search"
@@ -181,6 +201,7 @@
   "productInformationNotAvailable": "Product information not available",
   "productId": "Product ID",
   "showingProducts": "Showing {count} of {total} products",
+  "noProducts": "No products",
   "noProductsFound": "No products found",
   "tryDifferentSearch": "Try adjusting your search or filters",
   "checkBackLater": "This store does not have any products available at the moment. Please check back later.",

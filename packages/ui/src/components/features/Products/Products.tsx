@@ -37,6 +37,7 @@ interface ProductsProps {
   onSort?: (column: string) => void;
   onSelectionChange?: (selectedIds: number[]) => void;
   onLimitChange?: (limit: number) => void;
+  onImageSearchResult?: (products: any[]) => void;
   
   // Display props
   title?: string;
@@ -72,6 +73,7 @@ export function Products({
   onSort = () => {},
   onSelectionChange,
   onLimitChange,
+  onImageSearchResult,
   
   // Display props
   title = "Products",
@@ -159,6 +161,7 @@ export function Products({
                 onFiltersChange={memoizedOnFiltersChange}
                 onSearchChange={memoizedOnSearchChange}
                 onClearFilters={memoizedOnClearFilters}
+                onImageSearchResult={onImageSearchResult}
               />
             </div>
           </CardContent>
