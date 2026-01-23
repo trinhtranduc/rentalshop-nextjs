@@ -389,7 +389,7 @@ export const productsApi = {
     total: number;
     queryImage: string;
   }>> {
-    const response = await authenticatedFetch('/api/products/search-by-image', {
+    const response = await authenticatedFetch('/api/products/searchByImage', {
       method: 'POST',
       body: formData,
     });

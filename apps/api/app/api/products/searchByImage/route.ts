@@ -1,5 +1,5 @@
 /**
- * POST /api/products/search-by-image
+ * POST /api/products/searchByImage
  * Search products by uploading an image
  * 
  * Uses FashionCLIP model to generate embedding and search in Qdrant vector database
@@ -71,7 +71,7 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 }
 
 /**
- * POST /api/products/search-by-image
+ * POST /api/products/searchByImage
  * Search products by image
  * 
  * Request (FormData):
@@ -83,7 +83,7 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 export const POST = withPermissions(['products.view'])(
   async (request: NextRequest, { user, userScope }) => {
     try {
-      console.log(`🔍 POST /api/products/search-by-image - User: ${user.email} (${user.role})`);
+      console.log(`🔍 POST /api/products/searchByImage - User: ${user.email} (${user.role})`);
 
       // Parse form data
       const formData = await request.formData();
