@@ -28,41 +28,31 @@ if (typeof process !== 'undefined') {
   });
 }
 
-// CRITICAL: Try to prevent onnxruntime-node from being loaded
-// This must happen before importing @xenova/transformers
-try {
-  // Try to delete onnxruntime-node from require cache if it exists
-  if (typeof require !== 'undefined' && require.cache) {
-    const onnxPaths = Object.keys(require.cache).filter(path => 
-      path.includes('onnxruntime-node')
-    );
-    onnxPaths.forEach(path => {
-      delete require.cache[path];
-    });
-  }
-} catch (e) {
-  // Ignore errors
-}
-
-import { pipeline, env, RawImage } from '@xenova/transformers';
 import sharp from 'sharp';
 
-// Disable local model files (use remote models)
-env.allowLocalModels = false;
-env.allowRemoteModels = true;
+// LAZY LOAD: Import @xenova/transformers only when needed
+// This prevents onnxruntime-node from being loaded at module initialization
+let transformersModule: any = null;
 
-// CRITICAL: Force pure JavaScript mode via env object
-// This is an additional safeguard to prevent onnxruntime-node from loading
-try {
-  // Try to set backend to null to force pure JavaScript mode
-  // @xenova/transformers will fall back to WebAssembly if native backend is unavailable
-  if (env.backends && typeof env.backends === 'object') {
-    // Force use of WebAssembly backend instead of native ONNX Runtime
-    console.log('🔧 Configuring @xenova/transformers to use WebAssembly backend');
+async function loadTransformers() {
+  if (!transformersModule) {
+    // Set environment variables again before dynamic import
+    if (typeof process !== 'undefined') {
+      process.env.USE_ONNXRUNTIME = 'false';
+      process.env.USE_BROWSER = 'false';
+      process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+    }
+    
+    console.log('🔄 Lazy loading @xenova/transformers...');
+    transformersModule = await import('@xenova/transformers');
+    
+    // Configure transformers
+    transformersModule.env.allowLocalModels = false;
+    transformersModule.env.allowRemoteModels = true;
+    
+    console.log('✅ @xenova/transformers loaded successfully');
   }
-} catch (e) {
-  // Ignore errors if backends object is not accessible
-  console.warn('⚠️ Could not configure backends, relying on environment variables');
+  return transformersModule;
 }
 
 /**
@@ -95,6 +85,10 @@ export class FashionImageEmbedding {
       });
       
       try {
+        // LAZY LOAD: Load @xenova/transformers only when needed
+        const transformers = await loadTransformers();
+        const { pipeline } = transformers;
+        
         this.model = await pipeline(
           'image-feature-extraction',
           this.modelName
@@ -221,6 +215,8 @@ export class FashionImageEmbedding {
       // RawImage constructor: new RawImage(data, width, height, channels)
       // data must be Uint8Array or Uint8ClampedArray
       // channels = 3 for RGB
+      const transformers = await loadTransformers();
+      const { RawImage } = transformers;
       const uint8Array = new Uint8Array(buffer);
       const rawImage = new RawImage(uint8Array, width, height, 3);
 
