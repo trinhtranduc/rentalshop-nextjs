@@ -69,20 +69,79 @@ async function loadTransformers() {
     console.log('🔄 Lazy loading @xenova/transformers...');
     
     // CRITICAL: Check if onnxruntime-node exists in node_modules
-    // This helps verify if Dockerfile removal worked
+    // This helps verify if Dockerfile removal and mock module creation worked
     if (typeof require !== 'undefined') {
       try {
         const fs = require('fs');
         const path = require('path');
-        const onnxPath = path.join(process.cwd(), 'node_modules', 'onnxruntime-node');
-        if (fs.existsSync(onnxPath)) {
-          console.warn('⚠️ WARNING: onnxruntime-node still exists in node_modules!');
-          console.warn('⚠️ This means Dockerfile removal step may have failed');
-        } else {
-          console.log('✅ Verified: onnxruntime-node not found in node_modules');
+        
+        // Check multiple possible paths (monorepo structure)
+        const possiblePaths = [
+          path.join(process.cwd(), 'node_modules', 'onnxruntime-node'),
+          path.join(process.cwd(), '..', 'node_modules', 'onnxruntime-node'),
+          path.join(process.cwd(), '../..', 'node_modules', 'onnxruntime-node'),
+          path.join(__dirname, '..', '..', '..', '..', 'node_modules', 'onnxruntime-node'),
+        ];
+        
+        let foundPath: string | null = null;
+        let isMockModule = false;
+        
+        for (const onnxPath of possiblePaths) {
+          if (fs.existsSync(onnxPath)) {
+            foundPath = onnxPath;
+            // Check if it's a mock module (has index.js but no package.json)
+            const hasPackageJson = fs.existsSync(path.join(onnxPath, 'package.json'));
+            const hasIndexJs = fs.existsSync(path.join(onnxPath, 'index.js'));
+            
+            if (hasIndexJs && !hasPackageJson) {
+              isMockModule = true;
+              console.log(`✅ Found mock onnxruntime-node module at: ${onnxPath}`);
+              // Read and log first line of mock module
+              try {
+                const mockContent = fs.readFileSync(path.join(onnxPath, 'index.js'), 'utf8');
+                console.log(`📄 Mock module content preview: ${mockContent.substring(0, 100)}...`);
+              } catch (e) {
+                // Ignore read errors
+              }
+            } else if (hasPackageJson) {
+              console.warn(`⚠️ WARNING: Real onnxruntime-node package found at: ${onnxPath}`);
+              console.warn('⚠️ This means Dockerfile removal step may have failed');
+            }
+            break;
+          }
+        }
+        
+        if (!foundPath) {
+          console.log('✅ Verified: onnxruntime-node not found in any checked paths');
+          console.log('ℹ️ This is expected if mock module was not created or is in a different location');
+        } else if (!isMockModule) {
+          console.warn('⚠️ WARNING: onnxruntime-node found but may not be a mock module');
+        }
+        
+        // Also try to resolve using require.resolve to see what Node.js finds
+        try {
+          const resolvedPath = require.resolve('onnxruntime-node');
+          console.log(`🔍 Node.js would resolve onnxruntime-node to: ${resolvedPath}`);
+          
+          // Check if resolved path is mock module
+          if (fs.existsSync(resolvedPath)) {
+            const resolvedDir = path.dirname(resolvedPath);
+            const hasPackageJson = fs.existsSync(path.join(resolvedDir, 'package.json'));
+            if (!hasPackageJson) {
+              console.log('✅ Resolved path appears to be mock module (no package.json)');
+            } else {
+              console.warn('⚠️ WARNING: Resolved path appears to be real package (has package.json)');
+            }
+          }
+        } catch (e: any) {
+          if (e.code === 'MODULE_NOT_FOUND') {
+            console.log('✅ require.resolve("onnxruntime-node") returns MODULE_NOT_FOUND (expected)');
+          } else {
+            console.log(`ℹ️ require.resolve check: ${e.message}`);
+          }
         }
       } catch (e) {
-        // Ignore errors checking file system
+        console.warn('⚠️ Could not check onnxruntime-node paths:', e);
       }
     }
     
