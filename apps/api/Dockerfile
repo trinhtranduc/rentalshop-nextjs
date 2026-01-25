@@ -38,6 +38,17 @@ RUN yarn config set network-timeout 300000 && \
       yarn cache clean && \
       yarn install --frozen-lockfile --network-timeout 300000))
 
+# CRITICAL: Remove onnxruntime-node to prevent it from being loaded
+# onnxruntime-node requires glibc which Alpine Linux doesn't have
+# @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
+RUN if [ -d "node_modules/onnxruntime-node" ]; then \
+      echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
+      rm -rf node_modules/onnxruntime-node && \
+      echo "✅ onnxruntime-node removed successfully"; \
+    else \
+      echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
+    fi
+
 # ===================================
 # STAGE 2: Builder
 # ===================================
@@ -111,7 +122,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 
 # Copy node_modules (includes Prisma binaries)
+# Note: onnxruntime-node should have been removed in builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# CRITICAL: Ensure onnxruntime-node is not present in production image
+# Double-check and remove if it somehow got copied
+RUN if [ -d "node_modules/onnxruntime-node" ]; then \
+      echo "⚠️ WARNING: onnxruntime-node found in production image, removing..." && \
+      rm -rf node_modules/onnxruntime-node && \
+      echo "✅ onnxruntime-node removed from production image"; \
+    else \
+      echo "✅ onnxruntime-node not present (as expected)"; \
+    fi
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages

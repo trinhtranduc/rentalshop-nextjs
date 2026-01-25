@@ -43,14 +43,72 @@ async function loadTransformers() {
       process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
     }
     
+    // CRITICAL: Install require interceptor BEFORE dynamic import
+    // This prevents onnxruntime-node from being loaded even if @xenova/transformers tries to require it
+    if (typeof require !== 'undefined') {
+      try {
+        const Module = require('module');
+        const originalRequire = Module.prototype.require;
+        
+        // Intercept require calls to block onnxruntime-node
+        Module.prototype.require = function(id: string) {
+          if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
+            console.warn('⚠️ Blocked require of onnxruntime-node, forcing pure JavaScript mode');
+            // Throw error to force @xenova/transformers to use WebAssembly fallback
+            throw new Error('onnxruntime-node is disabled. Use pure JavaScript mode.');
+          }
+          return originalRequire.apply(this, arguments as any);
+        };
+        
+        console.log('🔧 onnxruntime-node require interceptor installed');
+      } catch (e) {
+        console.warn('⚠️ Could not install require interceptor:', e);
+      }
+    }
+    
     console.log('🔄 Lazy loading @xenova/transformers...');
-    transformersModule = await import('@xenova/transformers');
     
-    // Configure transformers
-    transformersModule.env.allowLocalModels = false;
-    transformersModule.env.allowRemoteModels = true;
-    
-    console.log('✅ @xenova/transformers loaded successfully');
+    try {
+      transformersModule = await import('@xenova/transformers');
+      
+      // Configure transformers
+      transformersModule.env.allowLocalModels = false;
+      transformersModule.env.allowRemoteModels = true;
+      
+      console.log('✅ @xenova/transformers loaded successfully');
+    } catch (error: any) {
+      // If import fails due to onnxruntime-node, try to restore require and throw
+      if (typeof require !== 'undefined') {
+        try {
+          const Module = require('module');
+          // Restore original require (though it may not help at this point)
+          if (Module.prototype.require && typeof Module.prototype.require === 'function') {
+            // Already intercepted, error should have been thrown
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      
+      // Check if it's an onnxruntime-node error
+      if (
+        error?.code === 'ERR_DLOPEN_FAILED' ||
+        error?.message?.includes('ERR_DLOPEN_FAILED') ||
+        error?.message?.includes('onnxruntime-node') ||
+        error?.message?.includes('ld-linux-x86-64.so.2')
+      ) {
+        throw new Error(
+          `ERR_DLOPEN_FAILED: Cannot load native module (onnxruntime-node). ` +
+          `Platform: ${process.platform}-${process.arch}, Node: ${process.version}. ` +
+          `Environment variables: USE_ONNXRUNTIME=${process.env.USE_ONNXRUNTIME}, ` +
+          `USE_BROWSER=${process.env.USE_BROWSER}, ONNXRUNTIME_NODE_DISABLE=${process.env.ONNXRUNTIME_NODE_DISABLE}. ` +
+          `@xenova/transformers is still trying to load onnxruntime-node despite environment variables and require interceptor. ` +
+          `This may require removing onnxruntime-node from node_modules in Dockerfile.`
+        );
+      }
+      
+      throw error;
+    }
   }
   return transformersModule;
 }
