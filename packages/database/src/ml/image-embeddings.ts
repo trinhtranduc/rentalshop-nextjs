@@ -410,12 +410,12 @@ export class FashionImageEmbedding {
         // CRITICAL: Wrap pipeline() to catch onnxruntime errors and retry
         // constructSession may access onnxruntime from closure/internal module
         // If it fails, we need to catch and ensure WebAssembly fallback works
-        try {
-          this.model = await pipeline(
-            'image-feature-extraction',
-            this.modelName
-          );
-          console.log('✅ Model loaded successfully');
+      try {
+        this.model = await pipeline(
+          'image-feature-extraction',
+          this.modelName
+        );
+        console.log('✅ Model loaded successfully');
         } catch (pipelineError: any) {
           // Check if it's an onnxruntime error
           if (
@@ -490,26 +490,22 @@ export class FashionImageEmbedding {
   /**
    * Preprocess image cho AI model
    * - Resize về 224x224 (CLIP standard)
-   * - Normalize pixel values
-   * - Convert to RGB format
-   * Returns both buffer and metadata for RawImage creation
+   * - Convert to JPEG format (model can decode JPEG directly)
+   * In WebAssembly mode, model accepts JPEG/PNG buffer, not raw pixel data
    */
-  private async preprocessImage(imageBuffer: Buffer): Promise<{ buffer: Buffer; width: number; height: number }> {
+  private async preprocessImage(imageBuffer: Buffer): Promise<Buffer> {
     try {
-      // Resize và normalize
+      // Resize và convert to JPEG format
+      // Model can decode JPEG/PNG directly in WebAssembly mode
       const processed = await sharp(imageBuffer)
         .resize(224, 224, {
           fit: 'cover',
           position: 'center'
         })
-        .raw() // Get raw pixel data for RawImage
-        .toBuffer({ resolveWithObject: true });
+        .jpeg({ quality: 90 }) // Convert to JPEG format
+        .toBuffer();
 
-      return {
-        buffer: processed.data,
-        width: processed.info.width,
-        height: processed.info.height
-      };
+      return processed;
     } catch (error) {
       console.error('Error preprocessing image:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -570,10 +566,30 @@ export class FashionImageEmbedding {
       // Get model
       const model = await this.getModel();
 
-      // CRITICAL: In WebAssembly mode, pass image buffer directly to model
-      // RawImage causes 'instanceof' errors in WebAssembly mode
-      // The model can accept Buffer directly and will handle preprocessing internally
-      const output = await model(imageBuffer);
+      // Preprocess image: resize to 224x224 and convert to JPEG
+      // In WebAssembly mode, model can decode JPEG/PNG buffer directly
+      const processedBuffer = await this.preprocessImage(imageBuffer);
+
+      // Load transformers to get RawImage class
+      const transformers = await loadTransformers();
+      const { RawImage } = transformers;
+
+      // Create RawImage from JPEG buffer
+      // Try RawImage.read() first (async method for decoding image formats)
+      // If that doesn't work, fallback to passing buffer directly
+      let rawImage;
+      try {
+        // RawImage.read() can decode JPEG/PNG buffer in WebAssembly mode
+        rawImage = await RawImage.read(processedBuffer);
+      } catch (readError) {
+        // Fallback: try creating RawImage from buffer directly
+        // Some versions may accept Buffer directly
+        console.warn('⚠️ RawImage.read() failed, trying direct buffer:', readError);
+        rawImage = processedBuffer;
+      }
+
+      // Generate embedding
+      const output = await model(rawImage);
       
       // Extract embedding vector
       let embedding: number[];
@@ -618,8 +634,12 @@ export class FashionImageEmbedding {
     try {
       const model = await this.getModel();
       
+      // Load transformers for RawImage
+      const transformers = await loadTransformers();
+      const { RawImage } = transformers;
+
       // Download và preprocess tất cả images
-      const processedImages = await Promise.all(
+      const processedBuffers = await Promise.all(
         imageUrls.map(async (url) => {
           const response = await fetch(url);
           if (!response.ok) {
@@ -631,9 +651,21 @@ export class FashionImageEmbedding {
         })
       );
 
+      // Convert buffers to RawImage objects
+      const rawImages = await Promise.all(
+        processedBuffers.map(async (buffer) => {
+          try {
+            return await RawImage.read(buffer);
+          } catch (readError) {
+            console.warn('⚠️ RawImage.read() failed in batch, using buffer directly:', readError);
+            return buffer;
+          }
+        })
+      );
+
       // Generate embeddings
       const embeddings = await Promise.all(
-        processedImages.map(async (image) => {
+        rawImages.map(async (image) => {
           const output = await model(image);
           
           // Extract embedding
