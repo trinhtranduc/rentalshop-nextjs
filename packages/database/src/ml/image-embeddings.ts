@@ -658,16 +658,35 @@ export class FashionImageEmbedding {
         }
       }
 
-      // Method 3: Try passing JPEG buffer directly to model (model may auto-decode)
-      // This is the fallback if Method 2 creates RawImage but model can't process it
+      // Method 3: Try passing JPEG buffer as Uint8Array to model
+      // Model may accept Uint8Array better than Buffer in WebAssembly mode
       if (!rawImage) {
         try {
-          console.log('🔄 Method 3: Trying direct JPEG buffer to model...');
+          console.log('🔄 Method 3: Trying Uint8Array from JPEG buffer to model...');
+          // Convert Buffer to Uint8Array - model may accept this better
+          const uint8Array = new Uint8Array(jpegBuffer);
+          rawImage = uint8Array;
+          methodUsed = 'Uint8Array from jpegBuffer';
+          console.log('✅ Method 3: Using Uint8Array from buffer', {
+            bufferSize: jpegBuffer.length,
+            uint8ArrayLength: uint8Array.length
+          });
+        } catch (directError: any) {
+          console.warn('⚠️ Method 3 failed (Uint8Array):', {
+            error: directError?.message
+          });
+        }
+      }
+
+      // Method 4: Try passing JPEG buffer directly (last resort)
+      if (!rawImage) {
+        try {
+          console.log('🔄 Method 4: Trying direct JPEG buffer to model...');
           rawImage = jpegBuffer;
           methodUsed = 'direct jpegBuffer';
-          console.log('✅ Method 3: Using direct buffer');
+          console.log('✅ Method 4: Using direct buffer');
         } catch (directError: any) {
-          console.warn('⚠️ Method 3 failed (direct buffer):', {
+          console.warn('⚠️ Method 4 failed (direct buffer):', {
             error: directError?.message
           });
         }
@@ -689,37 +708,54 @@ export class FashionImageEmbedding {
         rawImageIsUint8Array: rawImage instanceof Uint8Array
       });
 
-      // Generate embedding - try with current rawImage, fallback to direct buffer if fails
+      // Generate embedding - try with current rawImage, fallback to Uint8Array if fails
       let output: any;
       try {
         output = await model(rawImage);
         console.log('✅ Model call succeeded with', methodUsed);
       } catch (modelError: any) {
-        // If Method 2 succeeded but model fails, try Method 3 (direct buffer)
+        // If Method 2 succeeded but model fails, try fallback methods
         if (methodUsed === 'new RawImage(uint8Array, width, height, 3)') {
-          console.warn('⚠️ Model failed with RawImage object, trying direct JPEG buffer fallback:', {
+          console.warn('⚠️ Model failed with RawImage object, trying fallback methods:', {
             error: modelError?.message,
             errorName: modelError?.name
           });
+          
+          // Fallback 1: Try Uint8Array from JPEG buffer
           try {
-            console.log('🔄 Fallback: Trying direct JPEG buffer to model...');
-            output = await model(jpegBuffer);
-            methodUsed = 'direct jpegBuffer (fallback)';
-            console.log('✅ Fallback succeeded with direct buffer');
-          } catch (fallbackError: any) {
-            console.error('❌ Fallback also failed:', {
-              error: fallbackError?.message,
-              errorName: fallbackError?.name,
-              errorStack: fallbackError?.stack?.substring(0, 300)
+            console.log('🔄 Fallback 1: Trying Uint8Array from JPEG buffer...');
+            const uint8Array = new Uint8Array(jpegBuffer);
+            output = await model(uint8Array);
+            methodUsed = 'Uint8Array from jpegBuffer (fallback)';
+            console.log('✅ Fallback 1 succeeded with Uint8Array');
+          } catch (fallback1Error: any) {
+            console.warn('⚠️ Fallback 1 failed, trying Fallback 2:', {
+              error: fallback1Error?.message
             });
-            throw new Error(
-              `Model failed with both RawImage object and direct buffer. ` +
-              `RawImage error: ${modelError?.message}. ` +
-              `Direct buffer error: ${fallbackError?.message}`
-            );
+            
+            // Fallback 2: Try direct JPEG buffer
+            try {
+              console.log('🔄 Fallback 2: Trying direct JPEG buffer...');
+              output = await model(jpegBuffer);
+              methodUsed = 'direct jpegBuffer (fallback)';
+              console.log('✅ Fallback 2 succeeded with direct buffer');
+            } catch (fallback2Error: any) {
+              console.error('❌ All fallbacks failed:', {
+                rawImageError: modelError?.message,
+                uint8ArrayError: fallback1Error?.message,
+                directBufferError: fallback2Error?.message,
+                errorStack: fallback2Error?.stack?.substring(0, 300)
+              });
+              throw new Error(
+                `Model failed with all methods. ` +
+                `RawImage error: ${modelError?.message}. ` +
+                `Uint8Array error: ${fallback1Error?.message}. ` +
+                `Direct buffer error: ${fallback2Error?.message}`
+              );
+            }
           }
         } else {
-          // If already using Method 3 or other, just throw
+          // If already using Method 3/4 or other, just throw
           throw modelError;
         }
       }
