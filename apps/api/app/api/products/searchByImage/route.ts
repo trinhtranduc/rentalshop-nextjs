@@ -142,10 +142,33 @@ export const POST = withPermissions(['products.view'])(
       // Step 2: Generate embedding directly from buffer (OPTIMIZED: no S3 upload needed)
       // This is the fastest approach: no network calls, no S3 storage cost
       console.log('🔄 Generating embedding from buffer...');
-      const { getEmbeddingService } = await import('@rentalshop/database/server');
-      const embeddingService = getEmbeddingService();
-      const queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(buffer);
-      console.log('✅ Embedding generated (dimension:', queryEmbedding.length, ')');
+      let queryEmbedding: number[];
+      try {
+        const { getEmbeddingService } = await import('@rentalshop/database/server');
+        const embeddingService = getEmbeddingService();
+        queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(buffer);
+        console.log('✅ Embedding generated (dimension:', queryEmbedding.length, ')');
+      } catch (embeddingError: any) {
+        console.error('❌ Error generating embedding:', {
+          errorCode: embeddingError.code,
+          errorMessage: embeddingError.message,
+          errorName: embeddingError.name,
+          platform: process.platform,
+          arch: process.arch,
+          nodeVersion: process.version,
+        });
+        
+        // Re-throw with more context
+        if (embeddingError.code === 'ERR_DLOPEN_FAILED' || embeddingError.message?.includes('ERR_DLOPEN_FAILED')) {
+          throw new Error(
+            `ERR_DLOPEN_FAILED: Cannot load native module (onnxruntime-node). ` +
+            `Platform: ${process.platform}-${process.arch}, Node: ${process.version}. ` +
+            `This usually means the native binaries are missing or incompatible. ` +
+            `Please ensure onnxruntime-node is properly installed for this platform.`
+          );
+        }
+        throw embeddingError;
+      }
 
       // Step 3: Search in Qdrant (lazy load to avoid loading native deps during build)
       console.log('🔍 Searching in Qdrant...');
@@ -184,12 +207,37 @@ export const POST = withPermissions(['products.view'])(
       const searchResults = await vectorStore.search(queryEmbedding, filters);
       console.log(`✅ Found ${searchResults.length} similar products (similarity >= ${filters.minSimilarity})`);
       
-      if (searchResults.length === 0) {
+      // Log top results for debugging
+      if (searchResults.length > 0) {
+        console.log('📊 Top search results:');
+        searchResults.slice(0, 5).forEach((result, index) => {
+          console.log(`   ${index + 1}. Product ${result.productId}: ${(result.similarity * 100).toFixed(2)}% similarity`);
+        });
+      } else {
         console.warn('⚠️ No products found. Possible reasons:');
         console.warn('   1. No embeddings in Qdrant for this merchant/outlet');
         console.warn('   2. Similarity threshold too high (current:', filters.minSimilarity, ')');
         console.warn('   3. Filters too strict (merchantId:', filters.merchantId, ', outletId:', filters.outletId, ')');
-        console.warn('   4. Try reducing minSimilarity to 0.5 or lower');
+        console.warn('   4. Query image is too different from product images');
+        console.warn('   5. Try reducing minSimilarity to 0.3-0.5');
+        
+        // Try search without filters to see if it's a filter issue
+        console.log('🔍 Testing search without filters...');
+        try {
+          const testResults = await vectorStore.search(queryEmbedding, {
+            limit: 10,
+            minSimilarity: 0.3
+          });
+          console.log(`   Found ${testResults.length} products without filters (threshold: 0.3)`);
+          if (testResults.length > 0) {
+            console.log('   💡 Issue: Filters are too strict or threshold too high');
+            testResults.slice(0, 3).forEach((r, i) => {
+              console.log(`      ${i + 1}. Product ${r.productId}: ${(r.similarity * 100).toFixed(2)}% (merchantId: ${r.metadata?.merchantId})`);
+            });
+          }
+        } catch (testError: any) {
+          console.error('   Error in test search:', testError.message);
+        }
       }
 
       // Step 4: Get product details
