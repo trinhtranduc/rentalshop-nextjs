@@ -51,9 +51,21 @@ import * as path from 'path';
 
 // Get API base URL from environment
 function getApiBaseUrl(): string {
+  // Allow override via command line argument or environment variable
+  const apiUrlArg = process.argv.find(arg => arg.startsWith('--api-url='));
+  if (apiUrlArg) {
+    const url = apiUrlArg.split('=')[1].trim();
+    return url.endsWith('/api') ? url : `${url}/api`;
+  }
+  
   if (process.env.NEXT_PUBLIC_API_URL) {
     const url = process.env.NEXT_PUBLIC_API_URL.trim();
     return url.endsWith('/api') ? url : `${url}/api`;
+  }
+  
+  // Check for local development
+  if (process.env.TEST_LOCAL === 'true' || process.argv.includes('--local')) {
+    return 'http://localhost:3002/api';
   }
   
   const env = process.env.NODE_ENV || process.env.APP_ENV || 'local';
@@ -245,9 +257,15 @@ async function main() {
   if (!imagePath) {
     console.error('❌ Please provide image path');
     console.log('\nUsage:');
-    console.log('  yarn tsx scripts/test-image-search-api.ts <imagePath> [token]');
+    console.log('  yarn tsx scripts/test-image-search-api.ts <imagePath> [token] [--local] [--api-url=<url>]');
     console.log('\nExample:');
+    console.log('  # Test with local dev server');
+    console.log('  yarn tsx scripts/test-image-search-api.ts "./image-test-input/IMG_8298 2.JPG" --local');
+    console.log('  # Test with dev server');
     console.log('  yarn tsx scripts/test-image-search-api.ts "./image-test-input/IMG_8298 2.JPG"');
+    console.log('  # Test with custom API URL');
+    console.log('  yarn tsx scripts/test-image-search-api.ts "./image-test-input/IMG_8298 2.JPG" --api-url=http://localhost:3002');
+    console.log('  # Test with provided token');
     console.log('  yarn tsx scripts/test-image-search-api.ts "./image-test-input/IMG_8298 2.JPG" "eyJhbGci..."');
     process.exit(1);
   }
