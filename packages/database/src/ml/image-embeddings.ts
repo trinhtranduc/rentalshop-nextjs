@@ -153,6 +153,45 @@ async function loadTransformers() {
     try {
       transformersModule = await import('@xenova/transformers');
       
+      // CRITICAL: Patch @xenova/transformers to use mock onnxruntime-node
+      // @xenova/transformers may access onnxruntime from global scope or cached module
+      // We need to patch it directly in the transformers module
+      try {
+        // Create mock onnxruntime object with create() method
+        const mockOnnxRuntime = {
+          create: function() {
+            throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
+          }
+        };
+        
+        // Try to patch onnxruntime in transformers module if it exists
+        if (transformersModule.env) {
+          // Set environment to force WebAssembly
+          transformersModule.env.useBrowser = true;
+          transformersModule.env.useRemoteModels = true;
+        }
+        
+        // Patch global onnxruntime if it exists
+        if (typeof global !== 'undefined') {
+          (global as any).onnxruntime = mockOnnxRuntime;
+        }
+        
+        // Patch in transformers module's internal state if accessible
+        // @xenova/transformers may cache onnxruntime in its internal state
+        if (transformersModule.env && typeof (transformersModule.env as any).onnxruntime === 'undefined') {
+          // Try to set it if the property exists
+          try {
+            (transformersModule.env as any).onnxruntime = mockOnnxRuntime;
+          } catch (e) {
+            // Ignore if we can't set it
+          }
+        }
+        
+        console.log('🔧 Patched @xenova/transformers with mock onnxruntime-node');
+      } catch (patchError) {
+        console.warn('⚠️ Could not patch @xenova/transformers:', patchError);
+      }
+      
       // Configure transformers
       transformersModule.env.allowLocalModels = false;
       transformersModule.env.allowRemoteModels = true;
