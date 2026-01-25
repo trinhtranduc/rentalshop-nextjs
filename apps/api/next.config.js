@@ -78,13 +78,15 @@ const nextConfig = {
       }
       
       // Ensure Prisma Client resolves to root node_modules (fallback)
+      const path = require('path');
       config.resolve.alias = {
         ...config.resolve.alias,
-        '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
-        '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
-        // CRITICAL: Prevent onnxruntime-node from being loaded
-        // This forces @xenova/transformers to use pure JavaScript/WebAssembly mode
-        'onnxruntime-node': false,
+        '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
+        '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
+        // CRITICAL: Alias onnxruntime-node to a mock module
+        // This prevents @xenova/transformers from loading the native module
+        // and forces it to use pure JavaScript/WebAssembly mode
+        'onnxruntime-node': path.join(__dirname, 'lib/mock-onnxruntime-node.ts'),
       };
       
       // Also add to resolve.fallback to prevent loading
