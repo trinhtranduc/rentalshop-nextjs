@@ -53,7 +53,7 @@ NEXTAUTH_SECRET=test-secret-for-local-testing-only
 QDRANT_URL=http://localhost:6333
 QDRANT_API_KEY=
 USE_ONNXRUNTIME=false
-USE_BROWSER=false
+USE_BROWSER=true
 ONNXRUNTIME_NODE_DISABLE=true
 EOF
   ENV_FILE=/tmp/test-env
@@ -81,7 +81,7 @@ docker run -d \
   -p 3002:3002 \
   --env-file $ENV_FILE \
   -e USE_ONNXRUNTIME=false \
-  -e USE_BROWSER=false \
+  -e USE_BROWSER=true \
   -e ONNXRUNTIME_NODE_DISABLE=true \
   $IMAGE_NAME
 

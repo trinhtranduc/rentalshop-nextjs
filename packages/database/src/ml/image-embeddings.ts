@@ -336,11 +336,55 @@ export class FashionImageEmbedding {
         
         const { pipeline } = transformers;
         
-        this.model = await pipeline(
-          'image-feature-extraction',
-          this.modelName
-        );
-        console.log('✅ Model loaded successfully');
+        // CRITICAL: Wrap pipeline() to catch onnxruntime errors and retry
+        // constructSession may access onnxruntime from closure/internal module
+        // If it fails, we need to catch and ensure WebAssembly fallback works
+        try {
+          this.model = await pipeline(
+            'image-feature-extraction',
+            this.modelName
+          );
+          console.log('✅ Model loaded successfully');
+        } catch (pipelineError: any) {
+          // Check if it's an onnxruntime error
+          if (
+            pipelineError?.message?.includes('Cannot read properties of undefined (reading \'create\')') ||
+            pipelineError?.message?.includes('onnxruntime') ||
+            pipelineError?.message?.includes('constructSession')
+          ) {
+            console.warn('⚠️ Pipeline failed with onnxruntime error, attempting WebAssembly fallback...');
+            
+            // Force WebAssembly mode more aggressively
+            if (transformers.env) {
+              transformers.env.useBrowser = true;
+              transformers.env.useOnnxRuntime = false;
+              // Try to clear any cached onnxruntime references
+              try {
+                delete (transformers.env as any).onnxruntime;
+              } catch (e) {
+                // Ignore
+              }
+            }
+            
+            // Retry pipeline with WebAssembly mode
+            try {
+              this.model = await pipeline(
+                'image-feature-extraction',
+                this.modelName
+              );
+              console.log('✅ Model loaded successfully with WebAssembly fallback');
+            } catch (retryError: any) {
+              // If retry also fails, throw original error
+              throw new Error(
+                `Failed to load model ${this.modelName} with WebAssembly fallback: ${retryError.message}. ` +
+                `Original error: ${pipelineError.message}`
+              );
+            }
+          } else {
+            // Not an onnxruntime error, throw original error
+            throw pipelineError;
+          }
+        }
       } catch (error: any) {
         console.error('❌ Failed to load model:', {
           errorName: error?.name,
