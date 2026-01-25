@@ -781,15 +781,16 @@ export class FashionImageEmbedding {
                   dataUrlError: fallback1Error?.message,
                   uint8ArrayError: fallback2Error?.message,
                   directBufferError: fallback3Error?.message,
-                errorStack: fallback3Error?.stack?.substring(0, 300)
-              });
-              throw new Error(
-                `Model failed with all methods. ` +
-                `RawImage error: ${modelError?.message}. ` +
-                `Data URL error: ${fallback1Error?.message}. ` +
-                `Uint8Array error: ${fallback2Error?.message}. ` +
-                `Direct buffer error: ${fallback3Error?.message}`
-              );
+                  errorStack: fallback3Error?.stack?.substring(0, 300)
+                });
+                throw new Error(
+                  `Model failed with all methods. ` +
+                  `RawImage error: ${modelError?.message}. ` +
+                  `Data URL error: ${fallback1Error?.message}. ` +
+                  `Uint8Array error: ${fallback2Error?.message}. ` +
+                  `Direct buffer error: ${fallback3Error?.message}`
+                );
+              }
             }
           }
         } else {
