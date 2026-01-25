@@ -490,22 +490,47 @@ export class FashionImageEmbedding {
   /**
    * Preprocess image cho AI model
    * - Resize về 224x224 (CLIP standard)
-   * - Convert to JPEG format (model can decode JPEG directly)
-   * In WebAssembly mode, model accepts JPEG/PNG buffer, not raw pixel data
+   * - Returns both JPEG buffer and raw pixel data for different RawImage creation methods
    */
-  private async preprocessImage(imageBuffer: Buffer): Promise<Buffer> {
+  private async preprocessImage(imageBuffer: Buffer): Promise<{ 
+    jpegBuffer: Buffer; 
+    rawData: { buffer: Buffer; width: number; height: number } 
+  }> {
     try {
-      // Resize và convert to JPEG format
-      // Model can decode JPEG/PNG directly in WebAssembly mode
-      const processed = await sharp(imageBuffer)
+      // Method 1: JPEG format (for RawImage.read() or direct model input)
+      const jpegBuffer = await sharp(imageBuffer)
         .resize(224, 224, {
           fit: 'cover',
           position: 'center'
         })
-        .jpeg({ quality: 90 }) // Convert to JPEG format
+        .jpeg({ quality: 90 })
         .toBuffer();
 
-      return processed;
+      // Method 2: Raw pixel data (for new RawImage() constructor)
+      const rawProcessed = await sharp(imageBuffer)
+        .resize(224, 224, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      console.log('📸 Image preprocessing completed:', {
+        jpegSize: jpegBuffer.length,
+        rawDataSize: rawProcessed.data.length,
+        width: rawProcessed.info.width,
+        height: rawProcessed.info.height,
+        channels: rawProcessed.info.channels
+      });
+
+      return {
+        jpegBuffer,
+        rawData: {
+          buffer: rawProcessed.data,
+          width: rawProcessed.info.width,
+          height: rawProcessed.info.height
+        }
+      };
     } catch (error) {
       console.error('Error preprocessing image:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -563,45 +588,131 @@ export class FashionImageEmbedding {
    */
   async generateEmbeddingFromBuffer(imageBuffer: Buffer): Promise<number[]> {
     try {
+      console.log('🔄 generateEmbeddingFromBuffer: Starting...', {
+        inputBufferSize: imageBuffer.length,
+        inputBufferType: imageBuffer.constructor.name
+      });
+
       // Get model
       const model = await this.getModel();
+      console.log('✅ Model loaded');
 
-      // Preprocess image: resize to 224x224 and convert to JPEG
-      // In WebAssembly mode, model can decode JPEG/PNG buffer directly
-      const processedBuffer = await this.preprocessImage(imageBuffer);
+      // Preprocess image: get both JPEG and raw pixel data
+      const { jpegBuffer, rawData } = await this.preprocessImage(imageBuffer);
+      console.log('✅ Image preprocessed:', {
+        jpegSize: jpegBuffer.length,
+        rawDataSize: rawData.buffer.length,
+        dimensions: `${rawData.width}x${rawData.height}`
+      });
 
       // Load transformers to get RawImage class
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
+      console.log('✅ Transformers loaded, RawImage available:', {
+        hasRawImage: !!RawImage,
+        rawImageType: typeof RawImage,
+        hasReadMethod: typeof RawImage?.read === 'function',
+        hasConstructor: typeof RawImage === 'function'
+      });
 
-      // Create RawImage from JPEG buffer
-      // Try RawImage.read() first (async method for decoding image formats)
-      // If that doesn't work, fallback to passing buffer directly
-      let rawImage;
-      try {
-        // RawImage.read() can decode JPEG/PNG buffer in WebAssembly mode
-        rawImage = await RawImage.read(processedBuffer);
-      } catch (readError) {
-        // Fallback: try creating RawImage from buffer directly
-        // Some versions may accept Buffer directly
-        console.warn('⚠️ RawImage.read() failed, trying direct buffer:', readError);
-        rawImage = processedBuffer;
+      // Try multiple methods to create RawImage
+      let rawImage: any = null;
+      let methodUsed = '';
+
+      // Method 1: Try RawImage.read() with JPEG buffer (async method)
+      if (RawImage && typeof RawImage.read === 'function') {
+        try {
+          console.log('🔄 Method 1: Trying RawImage.read() with JPEG buffer...');
+          rawImage = await RawImage.read(jpegBuffer);
+          methodUsed = 'RawImage.read(jpegBuffer)';
+          console.log('✅ Method 1 succeeded:', {
+            rawImageType: rawImage?.constructor?.name,
+            rawImageKeys: rawImage ? Object.keys(rawImage) : []
+          });
+        } catch (readError: any) {
+          console.warn('⚠️ Method 1 failed (RawImage.read):', {
+            error: readError?.message,
+            errorName: readError?.name,
+            errorStack: readError?.stack?.substring(0, 200)
+          });
+        }
       }
+
+      // Method 2: Try new RawImage() with raw pixel data (constructor)
+      if (!rawImage && RawImage && typeof RawImage === 'function') {
+        try {
+          console.log('🔄 Method 2: Trying new RawImage() with raw pixel data...');
+          const uint8Array = new Uint8Array(rawData.buffer);
+          rawImage = new RawImage(uint8Array, rawData.width, rawData.height, 3);
+          methodUsed = 'new RawImage(uint8Array, width, height, 3)';
+          console.log('✅ Method 2 succeeded:', {
+            rawImageType: rawImage?.constructor?.name,
+            rawImageKeys: rawImage ? Object.keys(rawImage) : []
+          });
+        } catch (constructorError: any) {
+          console.warn('⚠️ Method 2 failed (new RawImage):', {
+            error: constructorError?.message,
+            errorName: constructorError?.name,
+            errorStack: constructorError?.stack?.substring(0, 200)
+          });
+        }
+      }
+
+      // Method 3: Try passing JPEG buffer directly to model (model may auto-decode)
+      if (!rawImage) {
+        try {
+          console.log('🔄 Method 3: Trying direct JPEG buffer to model...');
+          rawImage = jpegBuffer;
+          methodUsed = 'direct jpegBuffer';
+          console.log('✅ Method 3: Using direct buffer');
+        } catch (directError: any) {
+          console.warn('⚠️ Method 3 failed (direct buffer):', {
+            error: directError?.message
+          });
+        }
+      }
+
+      // If all methods failed, throw error
+      if (!rawImage) {
+        throw new Error(
+          'All RawImage creation methods failed. ' +
+          'Tried: RawImage.read(), new RawImage(), and direct buffer. ' +
+          'Check logs above for details.'
+        );
+      }
+
+      console.log('✅ RawImage created successfully using:', methodUsed);
+      console.log('🔄 Calling model with RawImage...', {
+        rawImageType: rawImage?.constructor?.name,
+        rawImageIsBuffer: Buffer.isBuffer(rawImage),
+        rawImageIsUint8Array: rawImage instanceof Uint8Array
+      });
 
       // Generate embedding
       const output = await model(rawImage);
+      console.log('✅ Model output received:', {
+        outputType: output?.constructor?.name,
+        isArray: Array.isArray(output),
+        hasData: !!output?.data,
+        outputKeys: output && typeof output === 'object' ? Object.keys(output) : []
+      });
       
       // Extract embedding vector
+      console.log('🔄 Extracting embedding vector from output...');
       let embedding: number[];
       if (Array.isArray(output)) {
         embedding = output.flat();
+        console.log('✅ Extracted from Array, length:', embedding.length);
       } else if (output.data) {
         embedding = Array.isArray(output.data) ? output.data : Array.from(output.data);
+        console.log('✅ Extracted from output.data, length:', embedding.length);
       } else if (output instanceof Float32Array || output instanceof Float64Array) {
         embedding = Array.from(output);
+        console.log('✅ Extracted from Float32Array/Float64Array, length:', embedding.length);
       } else {
         // Try to extract from tensor-like object
         embedding = Array.isArray(output) ? output.flat() : [output];
+        console.log('⚠️ Extracted using fallback method, length:', embedding.length);
       }
 
       // Ensure we have the right dimension (512 for CLIP)
@@ -610,13 +721,19 @@ export class FashionImageEmbedding {
         // Truncate or pad if needed
         if (embedding.length > 512) {
           embedding = embedding.slice(0, 512);
+          console.log('✅ Truncated to 512 dimensions');
         } else {
           embedding = [...embedding, ...new Array(512 - embedding.length).fill(0)];
+          console.log('✅ Padded to 512 dimensions');
         }
+      } else {
+        console.log('✅ Embedding dimension correct: 512');
       }
 
       // Normalize vector (important for cosine similarity)
-      return this.normalizeVector(embedding);
+      const normalized = this.normalizeVector(embedding);
+      console.log('✅ Embedding normalized, final length:', normalized.length);
+      return normalized;
     } catch (error) {
       console.error('Error generating embedding from buffer:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -637,9 +754,9 @@ export class FashionImageEmbedding {
       // Load transformers for RawImage
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
-
+      
       // Download và preprocess tất cả images
-      const processedBuffers = await Promise.all(
+      const processedImages = await Promise.all(
         imageUrls.map(async (url) => {
           const response = await fetch(url);
           if (!response.ok) {
@@ -651,15 +768,40 @@ export class FashionImageEmbedding {
         })
       );
 
-      // Convert buffers to RawImage objects
+      // Convert to RawImage objects using same logic as generateEmbeddingFromBuffer
       const rawImages = await Promise.all(
-        processedBuffers.map(async (buffer) => {
-          try {
-            return await RawImage.read(buffer);
-          } catch (readError) {
-            console.warn('⚠️ RawImage.read() failed in batch, using buffer directly:', readError);
-            return buffer;
+        processedImages.map(async ({ jpegBuffer, rawData }, index) => {
+          let rawImage: any = null;
+
+          // Method 1: RawImage.read()
+          if (RawImage && typeof RawImage.read === 'function') {
+            try {
+              rawImage = await RawImage.read(jpegBuffer);
+            } catch (e) {
+              // Try next method
+            }
           }
+
+          // Method 2: new RawImage()
+          if (!rawImage && RawImage && typeof RawImage === 'function') {
+            try {
+              const uint8Array = new Uint8Array(rawData.buffer);
+              rawImage = new RawImage(uint8Array, rawData.width, rawData.height, 3);
+            } catch (e) {
+              // Try next method
+            }
+          }
+
+          // Method 3: Direct buffer
+          if (!rawImage) {
+            rawImage = jpegBuffer;
+          }
+
+          if (!rawImage) {
+            throw new Error(`Failed to create RawImage for image ${index}`);
+          }
+
+          return rawImage;
         })
       );
 
