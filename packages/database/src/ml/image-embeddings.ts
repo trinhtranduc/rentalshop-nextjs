@@ -19,16 +19,11 @@ env.allowRemoteModels = true;
 // @xenova/transformers can work in pure JavaScript mode without native binaries
 // Set environment variables BEFORE importing to prevent onnxruntime-node from being loaded
 if (typeof process !== 'undefined') {
+  // Force pure JavaScript/WebAssembly mode (no native ONNX Runtime)
   process.env.USE_ONNXRUNTIME = 'false';
   process.env.USE_BROWSER = 'false';
   // Disable onnxruntime-node explicitly
   process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-}
-env.useBrowser = false; // Don't use browser APIs
-env.useCustomBackend = false; // Don't use custom backend
-// Disable ONNX Runtime backend (force WebAssembly/JavaScript)
-if (env.backends) {
-  env.backends.onnx = null; // Disable ONNX Runtime backend
 }
 
 /**
