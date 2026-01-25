@@ -230,6 +230,24 @@ async function loadTransformers() {
           transformersModule.onnxruntime = undefined;
         }
         
+        // CRITICAL: Patch internal onnxruntime reference that constructSession uses
+        // constructSession may access onnxruntime from env.onnxruntime or a cached reference
+        // @ts-ignore
+        if (transformersModule.env) {
+          // @ts-ignore
+          transformersModule.env.onnxruntime = mockOnnxRuntime;
+          // Also try to patch any cached references
+          // @ts-ignore
+          if (transformersModule.env.backends) {
+            // @ts-ignore
+            transformersModule.env.backends.onnxruntime = mockOnnxRuntime;
+          }
+        }
+        
+        // Patch module-level onnxruntime if it exists
+        // @ts-ignore
+        transformersModule.onnxruntime = mockOnnxRuntime;
+        
         // Patch require cache for onnxruntime-node (if it exists)
         if (typeof require !== 'undefined' && require.cache) {
           // Mark onnxruntime-node as unavailable in require cache
@@ -327,18 +345,39 @@ export class FashionImageEmbedding {
         process.env.USE_BROWSER = 'true';
         process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
         
-        // Re-patch transformers module
+        // Create mock onnxruntime object that throws errors
+        const mockOnnxRuntime = {
+          InferenceSession: {
+            create: () => {
+              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+            }
+          },
+          create: () => {
+            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+          }
+        };
+        
+        // Re-patch transformers module with mock object
         if (transformers && transformers.env) {
           transformers.env.useBrowser = true;
           transformers.env.useOnnxruntime = false;
+          // @ts-ignore - Set mock object so constructSession can access it
+          transformers.env.onnxruntime = mockOnnxRuntime;
           // @ts-ignore
-          transformers.env.onnxruntime = undefined;
+          if (transformers.env.backends) {
+            // @ts-ignore
+            transformers.env.backends.onnxruntime = mockOnnxRuntime;
+          }
         }
+        
+        // Re-patch module-level onnxruntime
+        // @ts-ignore
+        transformers.onnxruntime = mockOnnxRuntime;
         
         // Re-patch global references
         if (typeof global !== 'undefined') {
           // @ts-ignore
-          global.onnxruntime = undefined;
+          global.onnxruntime = mockOnnxRuntime;
         }
         
         console.log('✅ Re-patching completed before model load');
