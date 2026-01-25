@@ -28,6 +28,22 @@ if (typeof process !== 'undefined') {
   });
 }
 
+// CRITICAL: Try to prevent onnxruntime-node from being loaded
+// This must happen before importing @xenova/transformers
+try {
+  // Try to delete onnxruntime-node from require cache if it exists
+  if (typeof require !== 'undefined' && require.cache) {
+    const onnxPaths = Object.keys(require.cache).filter(path => 
+      path.includes('onnxruntime-node')
+    );
+    onnxPaths.forEach(path => {
+      delete require.cache[path];
+    });
+  }
+} catch (e) {
+  // Ignore errors
+}
+
 import { pipeline, env, RawImage } from '@xenova/transformers';
 import sharp from 'sharp';
 

@@ -82,6 +82,15 @@ const nextConfig = {
         ...config.resolve.alias,
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
+        // CRITICAL: Prevent onnxruntime-node from being loaded
+        // This forces @xenova/transformers to use pure JavaScript/WebAssembly mode
+        'onnxruntime-node': false,
+      };
+      
+      // Also add to resolve.fallback to prevent loading
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'onnxruntime-node': false,
       };
     }
     return config;
