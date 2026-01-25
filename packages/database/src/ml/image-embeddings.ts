@@ -13,8 +13,9 @@
 if (typeof process !== 'undefined') {
   // Force pure JavaScript/WebAssembly mode (no native ONNX Runtime)
   // These must be set before @xenova/transformers is imported
+  // USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
   process.env.USE_ONNXRUNTIME = 'false';
-  process.env.USE_BROWSER = 'false';
+  process.env.USE_BROWSER = 'true'; // CRITICAL: Set to true to force WebAssembly mode
   process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
   
   // Log environment variables for debugging
@@ -39,7 +40,7 @@ async function loadTransformers() {
     // Set environment variables again before dynamic import
     if (typeof process !== 'undefined') {
       process.env.USE_ONNXRUNTIME = 'false';
-      process.env.USE_BROWSER = 'false';
+      process.env.USE_BROWSER = 'true'; // CRITICAL: Set to true to force WebAssembly mode
       process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
     }
     
@@ -166,9 +167,12 @@ async function loadTransformers() {
         
         // Try to patch onnxruntime in transformers module if it exists
         if (transformersModule.env) {
-          // Set environment to force WebAssembly
+          // CRITICAL: Force WebAssembly mode by setting useBrowser=true
+          // This tells @xenova/transformers to use browser-compatible runtime (WebAssembly)
           transformersModule.env.useBrowser = true;
           transformersModule.env.useRemoteModels = true;
+          // Disable ONNX Runtime explicitly
+          transformersModule.env.useOnnxRuntime = false;
         }
         
         // Patch global onnxruntime if it exists
