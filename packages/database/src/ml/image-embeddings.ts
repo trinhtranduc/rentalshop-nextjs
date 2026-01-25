@@ -137,11 +137,69 @@ async function loadTransformers() {
         USE_BROWSER: process.env.USE_BROWSER,
         ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
       });
+      
+      // CRITICAL: Block onnxruntime-node import BEFORE importing @xenova/transformers
+      // This prevents @xenova/transformers from trying to use native onnxruntime-node
+      // which fails on Alpine Linux (musl libc) with ERR_DLOPEN_FAILED
+      try {
+        // Method 1: Try CommonJS require interceptor (for Node.js)
+        if (typeof require !== 'undefined') {
+          const Module = require('module');
+          const originalRequire = Module.prototype.require;
+          
+          // Intercept require calls for onnxruntime-node
+          Module.prototype.require = function(id: string) {
+            if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
+              console.log('🚫 Blocking onnxruntime-node import - forcing WebAssembly mode');
+              // Return mock module that signals WebAssembly should be used
+              return {
+                InferenceSession: {
+                  create: () => {
+                    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+                  }
+                },
+                create: () => {
+                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+                }
+              };
+            }
+            return originalRequire.apply(this, arguments);
+          };
+          
+          console.log('🔒 Require interceptor installed to block onnxruntime-node');
+        }
+      } catch (e) {
+        console.warn('⚠️ Could not install require interceptor (may be ESM context):', e);
+      }
     }
     
     console.log('🔄 Loading @xenova/transformers...');
     transformersModule = await import('@xenova/transformers');
     console.log('✅ @xenova/transformers loaded successfully');
+    
+    // CRITICAL: Patch @xenova/transformers module to force WebAssembly mode
+    // This ensures onnxruntime-node is never used, even if it's imported
+    if (useWebAssembly && transformersModule && transformersModule.env) {
+      console.log('🔧 Patching @xenova/transformers to force WebAssembly mode...');
+      
+      // Force environment variables in transformers module
+      transformersModule.env.useBrowser = true;
+      transformersModule.env.useOnnxruntime = false;
+      
+      // Patch global onnxruntime reference if it exists
+      if (typeof global !== 'undefined') {
+        // @ts-ignore
+        global.onnxruntime = undefined;
+      }
+      
+      // Patch module's internal onnxruntime reference
+      if (transformersModule.env) {
+        // @ts-ignore
+        transformersModule.env.onnxruntime = undefined;
+      }
+      
+      console.log('✅ @xenova/transformers patched for WebAssembly mode');
+    }
   }
   return transformersModule;
 }
@@ -255,9 +313,9 @@ export class FashionImageEmbedding {
       try {
         // STANDARD APPROACH: Create RawImage from raw pixel data
         // This works with native onnxruntime-node (local development)
-        const uint8Array = new Uint8Array(buffer);
-        const rawImage = new RawImage(uint8Array, width, height, 3);
-        
+      const uint8Array = new Uint8Array(buffer);
+      const rawImage = new RawImage(uint8Array, width, height, 3);
+
         console.log('🔄 Calling model with RawImage...');
         output = await model(rawImage);
         console.log('✅ Model call succeeded with RawImage');
@@ -383,27 +441,27 @@ export class FashionImageEmbedding {
 
       // Extract and normalize embeddings
       return outputs.map(output => {
-        let embedding: number[];
-        if (Array.isArray(output)) {
-          embedding = output.flat();
-        } else if (output.data) {
-          embedding = Array.isArray(output.data) ? output.data : Array.from(output.data);
-        } else if (output instanceof Float32Array || output instanceof Float64Array) {
-          embedding = Array.from(output);
-        } else {
-          embedding = Array.isArray(output) ? output.flat() : [output];
-        }
-
-        // Ensure 512 dimensions
-        if (embedding.length !== 512) {
-          if (embedding.length > 512) {
-            embedding = embedding.slice(0, 512);
+          let embedding: number[];
+          if (Array.isArray(output)) {
+            embedding = output.flat();
+          } else if (output.data) {
+            embedding = Array.isArray(output.data) ? output.data : Array.from(output.data);
+          } else if (output instanceof Float32Array || output instanceof Float64Array) {
+            embedding = Array.from(output);
           } else {
-            embedding = [...embedding, ...new Array(512 - embedding.length).fill(0)];
+            embedding = Array.isArray(output) ? output.flat() : [output];
           }
-        }
 
-        return this.normalizeVector(embedding);
+          // Ensure 512 dimensions
+          if (embedding.length !== 512) {
+            if (embedding.length > 512) {
+              embedding = embedding.slice(0, 512);
+            } else {
+              embedding = [...embedding, ...new Array(512 - embedding.length).fill(0)];
+            }
+          }
+
+          return this.normalizeVector(embedding);
       });
     } catch (error) {
       console.error('Error generating embeddings in batch:', error);
