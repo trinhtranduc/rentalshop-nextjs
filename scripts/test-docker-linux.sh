@@ -45,6 +45,15 @@ echo -e "${BLUE}Step 2: Starting container (Alpine Linux)...${NC}"
 docker stop $CONTAINER_NAME 2>/dev/null || true
 docker rm $CONTAINER_NAME 2>/dev/null || true
 
+# Stop any container using port 3002
+echo "   Checking for containers using port 3002..."
+EXISTING_CONTAINER=$(docker ps -a --filter "publish=3002" --format "{{.ID}}" | head -1)
+if [ ! -z "$EXISTING_CONTAINER" ]; then
+  echo "   Stopping existing container on port 3002: $EXISTING_CONTAINER"
+  docker stop $EXISTING_CONTAINER 2>/dev/null || true
+  docker rm $EXISTING_CONTAINER 2>/dev/null || true
+fi
+
 # Run container with Linux environment variables
 docker run -d \
   --name $CONTAINER_NAME \
