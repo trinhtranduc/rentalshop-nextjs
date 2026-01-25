@@ -50,14 +50,17 @@ async function loadTransformers() {
         const Module = require('module');
         const originalRequire = Module.prototype.require;
         
-        // Intercept require calls to return empty object for onnxruntime-node
-        // Official approach: Return empty object so @xenova/transformers can detect
-        // that native module is unavailable and automatically fallback to WebAssembly
+        // Intercept require calls to return mock object with create() method for onnxruntime-node
+        // @xenova/transformers will call onnxruntime.create() and catch the error to fallback to WebAssembly
         Module.prototype.require = function(id: string) {
           if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-            console.log('ℹ️ onnxruntime-node requested, returning empty object for WebAssembly fallback');
-            // Return empty object to allow graceful fallback to WebAssembly
-            return {};
+            console.log('ℹ️ onnxruntime-node requested, returning mock object with create() method for WebAssembly fallback');
+            // Return mock object with create() method that throws to force WebAssembly fallback
+            return {
+              create: function() {
+                throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
+              }
+            };
           }
           return originalRequire.apply(this, arguments as any);
         };

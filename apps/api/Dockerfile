@@ -49,13 +49,17 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
     fi && \
     # Create mock module directory and file
-    # Official approach: Return empty object to allow @xenova/transformers to detect
-    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
+    # Mock module with create() method that throws to force WebAssembly fallback
+    # @xenova/transformers will catch this error and automatically use WebAssembly
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (empty object for WebAssembly fallback)"
+    echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
+    echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (with create() method for WebAssembly fallback)"
 
 # ===================================
 # STAGE 2: Builder
@@ -81,13 +85,17 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
     fi && \
     # Create mock module directory and file
-    # Official approach: Return empty object to allow @xenova/transformers to detect
-    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
+    # Mock module with create() method that throws to force WebAssembly fallback
+    # @xenova/transformers will catch this error and automatically use WebAssembly
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (empty object for WebAssembly fallback)"
+    echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
+    echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (with create() method for WebAssembly fallback)"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
@@ -165,8 +173,12 @@ RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module ensured in production image (empty object for WebAssembly fallback)"
+    echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
+    echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module ensured in production image (with create() method for WebAssembly fallback)"
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
