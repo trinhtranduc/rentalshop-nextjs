@@ -13,41 +13,106 @@
 
 import sharp from 'sharp';
 
-// Detect if running on Alpine Linux (Docker)
-function isAlpineLinux(): boolean {
+// Detect if we should use WebAssembly mode (Alpine Linux, Docker, Railway, or when onnxruntime-node unavailable)
+function shouldUseWebAssembly(): boolean {
   if (typeof process === 'undefined') return false;
   
-  // Check for Alpine-specific indicators
-  if (process.env.ALPINE === 'true') return true;
+  // Log detection details for debugging
+  const detectionInfo = {
+    platform: process.platform,
+    arch: process.arch,
+    cwd: process.cwd(),
+    USE_BROWSER: process.env.USE_BROWSER,
+    USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
+    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
+    RAILWAY_SERVICE_NAME: process.env.RAILWAY_SERVICE_NAME,
+    ALPINE: process.env.ALPINE,
+    DOCKER: process.env.DOCKER
+  };
   
-  // Check if running in Docker (common indicators)
-  if (process.env.DOCKER === 'true') return true;
+  // Check for explicit flags (highest priority)
+  if (process.env.USE_BROWSER === 'true') {
+    console.log('🔧 WebAssembly mode: USE_BROWSER=true detected');
+    return true;
+  }
+  if (process.env.USE_ONNXRUNTIME === 'false') {
+    console.log('🔧 WebAssembly mode: USE_ONNXRUNTIME=false detected');
+    return true;
+  }
+  if (process.env.ALPINE === 'true') {
+    console.log('🔧 WebAssembly mode: ALPINE=true detected');
+    return true;
+  }
+  if (process.env.DOCKER === 'true') {
+    console.log('🔧 WebAssembly mode: DOCKER=true detected');
+    return true;
+  }
   
-  // Check platform and try to detect Alpine
+  // Check for Railway environment (Railway uses containers that may not have full glibc)
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log('🔧 WebAssembly mode: Railway environment detected');
+    return true;
+  }
+  if (process.env.RAILWAY_ENVIRONMENT_NAME) {
+    console.log('🔧 WebAssembly mode: Railway environment name detected');
+    return true;
+  }
+  if (process.env.RAILWAY_SERVICE_NAME) {
+    console.log('🔧 WebAssembly mode: Railway service name detected');
+    return true;
+  }
+  
+  // Check platform - if Linux and not darwin/win32, likely containerized
   if (process.platform === 'linux') {
+    // Check if we're in a container (common indicators)
     try {
-      // Alpine uses musl libc, not glibc
-      // If dlopen is not available or fails, likely Alpine
-      if (typeof process.dlopen === 'undefined') return true;
+      const fs = require('fs');
+      // Docker containers often have /.dockerenv
+      if (fs.existsSync('/.dockerenv')) {
+        console.log('🔧 WebAssembly mode: /.dockerenv detected (Docker container)');
+        return true;
+      }
+      // Check if running in Railway (has specific paths)
+      if (fs.existsSync('/app') && process.cwd().includes('/app')) {
+        console.log('🔧 WebAssembly mode: /app path detected (likely Railway/Docker)');
+        return true;
+      }
     } catch (e) {
-      // If we can't check, assume not Alpine for safety
+      // If we can't check filesystem, continue with other checks
+      console.log('ℹ️ Could not check filesystem for container detection:', e);
+    }
+    
+    // If dlopen is not available, likely musl libc (Alpine)
+    if (typeof process.dlopen === 'undefined') {
+      console.log('🔧 WebAssembly mode: process.dlopen undefined (likely Alpine/musl)');
+      return true;
+    }
+    
+    // CRITICAL: On Linux, if USE_ONNXRUNTIME is not explicitly 'true', use WebAssembly
+    // This is the safest default for Railway/Docker deployments
+    // Railway/Docker containers often don't have full glibc support for onnxruntime-node
+    if (!process.env.USE_ONNXRUNTIME || process.env.USE_ONNXRUNTIME !== 'true') {
+      console.log('🔧 WebAssembly mode: Linux platform without explicit USE_ONNXRUNTIME=true (defaulting to WebAssembly for safety)');
+      return true;
     }
   }
   
+  console.log('ℹ️ Native mode: Platform detection details:', detectionInfo);
   return false;
 }
 
-// Set environment variables ONLY on Alpine Linux
-if (typeof process !== 'undefined' && isAlpineLinux()) {
-  // Force WebAssembly mode on Alpine Linux (Docker)
+// Set environment variables based on platform detection
+if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
+  // Force WebAssembly mode on Alpine Linux, Docker, Railway, or when onnxruntime-node unavailable
   // This prevents ERR_DLOPEN_FAILED error
   process.env.USE_ONNXRUNTIME = 'false';
   process.env.USE_BROWSER = 'true';
   process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
   
-  console.log('🔧 Alpine Linux detected - forcing WebAssembly mode');
+  console.log('🔧 WebAssembly mode forced (Alpine/Docker/Railway detected)');
 } else {
-  // Local development: Let @xenova/transformers choose backend automatically
+  // Local development (darwin/win32): Let @xenova/transformers choose backend automatically
   // Native onnxruntime-node will work and RawImage will function properly
   console.log('🔧 Local development - using native onnxruntime-node');
 }
@@ -57,11 +122,21 @@ let transformersModule: any = null;
 
 async function loadTransformers() {
   if (!transformersModule) {
-    // Set environment variables again before dynamic import (only on Alpine)
-    if (typeof process !== 'undefined' && isAlpineLinux()) {
+    // CRITICAL: Re-check detection every time (runtime, not compile-time)
+    // This ensures environment variables set in start.sh are detected
+    const useWebAssembly = shouldUseWebAssembly();
+    
+    // Set environment variables again before dynamic import (if WebAssembly needed)
+    if (typeof process !== 'undefined' && useWebAssembly) {
       process.env.USE_ONNXRUNTIME = 'false';
       process.env.USE_BROWSER = 'true';
       process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+      
+      console.log('🔧 Setting WebAssembly environment variables before import:', {
+        USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
+        USE_BROWSER: process.env.USE_BROWSER,
+        ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
+      });
     }
     
     console.log('🔄 Loading @xenova/transformers...');
@@ -172,14 +247,51 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // STANDARD APPROACH: Create RawImage from raw pixel data
-      // This is the approach that worked before (commit 10e15756e)
-      const uint8Array = new Uint8Array(buffer);
-      const rawImage = new RawImage(uint8Array, width, height, 3);
+      // Try to create RawImage and call model
+      // In WebAssembly mode, RawImage constructor may fail, so we need fallback
+      let output: any;
+      const isWebAssemblyMode = shouldUseWebAssembly();
       
-      console.log('🔄 Calling model with RawImage...');
-      const output = await model(rawImage);
-      console.log('✅ Model call succeeded');
+      try {
+        // STANDARD APPROACH: Create RawImage from raw pixel data
+        // This works with native onnxruntime-node (local development)
+        const uint8Array = new Uint8Array(buffer);
+        const rawImage = new RawImage(uint8Array, width, height, 3);
+        
+        console.log('🔄 Calling model with RawImage...');
+        output = await model(rawImage);
+        console.log('✅ Model call succeeded with RawImage');
+      } catch (rawImageError: any) {
+        // If RawImage fails (common in WebAssembly mode), try alternative approaches
+        if (isWebAssemblyMode || rawImageError?.message?.includes('instanceof') || rawImageError?.message?.includes('RawImage')) {
+          console.warn('⚠️ RawImage failed, trying alternative approach for WebAssembly mode:', {
+            error: rawImageError?.message
+          });
+          
+          // Fallback: Try passing raw pixel data as Uint8Array directly
+          // Some WebAssembly implementations may accept this
+          try {
+            console.log('🔄 Fallback: Trying Uint8Array directly...');
+            const uint8Array = new Uint8Array(buffer);
+            output = await model(uint8Array);
+            console.log('✅ Model call succeeded with Uint8Array (fallback)');
+          } catch (fallbackError: any) {
+            console.error('❌ All methods failed:', {
+              rawImageError: rawImageError?.message,
+              fallbackError: fallbackError?.message
+            });
+            throw new Error(
+              `Model failed with all input methods. ` +
+              `RawImage error: ${rawImageError?.message}. ` +
+              `Uint8Array error: ${fallbackError?.message}. ` +
+              `This may indicate a compatibility issue with WebAssembly mode.`
+            );
+          }
+        } else {
+          // Not a RawImage issue, re-throw original error
+          throw rawImageError;
+        }
+      }
       
       // Extract embedding vector
       let embedding: number[];
