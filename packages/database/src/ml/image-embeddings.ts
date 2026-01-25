@@ -177,25 +177,79 @@ async function loadTransformers() {
     transformersModule = await import('@xenova/transformers');
     console.log('✅ @xenova/transformers loaded successfully');
     
-    // CRITICAL: Patch @xenova/transformers module to force WebAssembly mode
+    // CRITICAL: Deep patch @xenova/transformers module to force WebAssembly mode
     // This ensures onnxruntime-node is never used, even if it's imported
-    if (useWebAssembly && transformersModule && transformersModule.env) {
-      console.log('🔧 Patching @xenova/transformers to force WebAssembly mode...');
+    if (useWebAssembly && transformersModule) {
+      console.log('🔧 Deep patching @xenova/transformers to force WebAssembly mode...');
       
-      // Force environment variables in transformers module
-      transformersModule.env.useBrowser = true;
-      transformersModule.env.useOnnxruntime = false;
+      // Patch environment variables
+      if (transformersModule.env) {
+        transformersModule.env.useBrowser = true;
+        transformersModule.env.useOnnxruntime = false;
+        // @ts-ignore
+        transformersModule.env.onnxruntime = undefined;
+      }
       
-      // Patch global onnxruntime reference if it exists
+      // Patch global onnxruntime references
       if (typeof global !== 'undefined') {
         // @ts-ignore
         global.onnxruntime = undefined;
+        // @ts-ignore
+        if (global.window) {
+          // @ts-ignore
+          global.window.onnxruntime = undefined;
+        }
       }
       
-      // Patch module's internal onnxruntime reference
-      if (transformersModule.env) {
+      // CRITICAL: Patch internal onnxruntime references in transformers module
+      // @xenova/transformers may cache onnxruntime in various places
+      try {
+        // Patch any cached onnxruntime references
+        const mockOnnxRuntime = {
+          InferenceSession: {
+            create: () => {
+              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+            }
+          },
+          create: () => {
+            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+          }
+        };
+        
+        // Try to patch internal state
         // @ts-ignore
-        transformersModule.env.onnxruntime = undefined;
+        if (transformersModule.env && transformersModule.env.backends) {
+          // @ts-ignore
+          transformersModule.env.backends.onnxruntime = undefined;
+        }
+        
+        // Patch any direct onnxruntime property
+        // @ts-ignore
+        if (transformersModule.onnxruntime !== undefined) {
+          // @ts-ignore
+          transformersModule.onnxruntime = undefined;
+        }
+        
+        // Patch require cache for onnxruntime-node (if it exists)
+        if (typeof require !== 'undefined' && require.cache) {
+          // Mark onnxruntime-node as unavailable in require cache
+          const onnxCacheKey = Object.keys(require.cache).find(key => 
+            key.includes('onnxruntime-node')
+          );
+          if (onnxCacheKey) {
+            // @ts-ignore - We're intentionally patching the cache
+            require.cache[onnxCacheKey] = {
+              id: onnxCacheKey,
+              exports: mockOnnxRuntime,
+              loaded: true
+            } as any;
+            console.log('🔧 Patched onnxruntime-node in require cache');
+          }
+        }
+        
+        console.log('✅ Deep patching completed');
+      } catch (e) {
+        console.warn('⚠️ Could not complete deep patching:', e);
       }
       
       console.log('✅ @xenova/transformers patched for WebAssembly mode');
@@ -262,6 +316,34 @@ export class FashionImageEmbedding {
       console.log(`🔄 Loading FashionCLIP model: ${this.modelName}...`);
       
       const transformers = await loadTransformers();
+      
+      // CRITICAL: Re-patch transformers module right before loading model
+      // This ensures onnxruntime is blocked even if it was re-imported
+      if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
+        console.log('🔧 Re-patching transformers before model load...');
+        
+        // Re-set environment variables
+        process.env.USE_ONNXRUNTIME = 'false';
+        process.env.USE_BROWSER = 'true';
+        process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+        
+        // Re-patch transformers module
+        if (transformers && transformers.env) {
+          transformers.env.useBrowser = true;
+          transformers.env.useOnnxruntime = false;
+          // @ts-ignore
+          transformers.env.onnxruntime = undefined;
+        }
+        
+        // Re-patch global references
+        if (typeof global !== 'undefined') {
+          // @ts-ignore
+          global.onnxruntime = undefined;
+        }
+        
+        console.log('✅ Re-patching completed before model load');
+      }
+      
       const { pipeline } = transformers;
       
       this.model = await pipeline(
