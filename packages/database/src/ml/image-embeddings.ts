@@ -174,7 +174,12 @@ async function loadTransformers() {
     }
     
     console.log('🔄 Loading @xenova/transformers...');
-    transformersModule = await import('@xenova/transformers');
+    // CRITICAL: Use Function constructor to ensure true dynamic import
+    // TypeScript may convert import() to require() during compilation
+    // This delays the import to after compilation, ensuring dynamic import works correctly
+    // Official solution from Transformers.js creator
+    const TransformersApi = Function('return import("@xenova/transformers")')();
+    transformersModule = await TransformersApi;
     console.log('✅ @xenova/transformers loaded successfully');
     
     // CRITICAL: Deep patch @xenova/transformers module to force WebAssembly mode
@@ -385,12 +390,48 @@ export class FashionImageEmbedding {
       
       const { pipeline } = transformers;
       
-      this.model = await pipeline(
-        'image-feature-extraction',
-        this.modelName
-      );
-      
-      console.log('✅ Model loaded successfully');
+      // CRITICAL: Wrap pipeline call in try-catch to handle onnxruntime errors
+      // @xenova/transformers may retry with onnxruntime-node even after WASM fallback
+      try {
+        this.model = await pipeline(
+          'image-feature-extraction',
+          this.modelName
+        );
+        console.log('✅ Model loaded successfully');
+      } catch (pipelineError: any) {
+        // If pipeline fails due to onnxruntime-node error, retry with forced WebAssembly
+        if (pipelineError?.message?.includes('onnxruntime-node is disabled') || 
+            pipelineError?.message?.includes('onnxruntime') ||
+            pipelineError?.message?.includes('Cannot read properties of undefined')) {
+          console.warn('⚠️ Pipeline failed with onnxruntime error, retrying with forced WebAssembly mode...');
+          
+          // Force WebAssembly mode more aggressively
+          if (typeof process !== 'undefined') {
+            process.env.USE_ONNXRUNTIME = 'false';
+            process.env.USE_BROWSER = 'true';
+            process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+          }
+          
+          // Patch transformers module again
+          if (transformers && transformers.env) {
+            transformers.env.useBrowser = true;
+            transformers.env.useOnnxruntime = false;
+            // @ts-ignore
+            transformers.env.onnxruntime = undefined;
+          }
+          
+          // Retry pipeline call
+          console.log('🔄 Retrying pipeline with forced WebAssembly mode...');
+          this.model = await pipeline(
+            'image-feature-extraction',
+            this.modelName
+          );
+          console.log('✅ Model loaded successfully (after retry with WebAssembly)');
+        } else {
+          // Re-throw if it's not an onnxruntime error
+          throw pipelineError;
+        }
+      }
     }
     return this.model;
   }
