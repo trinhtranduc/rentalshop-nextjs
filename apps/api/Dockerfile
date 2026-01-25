@@ -55,7 +55,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma Client with all binary targets
+# Generate at root level first
 RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# CRITICAL: Copy Prisma Client to apps/api/node_modules for Next.js build
+# Next.js collects page data during build and needs Prisma Client accessible
+RUN mkdir -p apps/api/node_modules/.prisma && \
+    mkdir -p apps/api/node_modules/@prisma && \
+    cp -r node_modules/.prisma/client apps/api/node_modules/.prisma/ && \
+    cp -r node_modules/@prisma/client apps/api/node_modules/@prisma/
 
 # ============================================================================
 # MIGRATION STRATEGY
@@ -71,6 +79,11 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
+# CRITICAL: Set environment variables for @xenova/transformers to use pure JavaScript mode
+# This prevents onnxruntime-node from being loaded (which requires glibc on Alpine)
+ENV USE_ONNXRUNTIME=false
+ENV USE_BROWSER=false
+ENV ONNXRUNTIME_NODE_DISABLE=true
 RUN yarn build
 
 # ===================================
@@ -84,6 +97,10 @@ RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3002
+# CRITICAL: Set environment variables for @xenova/transformers to use pure JavaScript mode
+ENV USE_ONNXRUNTIME=false
+ENV USE_BROWSER=false
+ENV ONNXRUNTIME_NODE_DISABLE=true
 
 # Create nextjs user for security
 RUN addgroup --system --gid 1001 nodejs

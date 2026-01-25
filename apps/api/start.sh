@@ -12,6 +12,12 @@
 
 set -e
 
+# CRITICAL: Set environment variables for @xenova/transformers BEFORE any imports
+# Force pure JavaScript mode to avoid onnxruntime-node dependency on Alpine Linux
+export USE_ONNXRUNTIME=false
+export USE_BROWSER=false
+export ONNXRUNTIME_NODE_DISABLE=true
+
 echo "🚀 Starting API server with automatic migrations..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
 echo ""

@@ -7,24 +7,30 @@
  * Vector dimension: 512
  */
 
+// CRITICAL: Set environment variables BEFORE importing @xenova/transformers
+// This must happen before the import statement to prevent onnxruntime-node from loading
+// onnxruntime-node requires glibc (ld-linux-x86-64.so.2) which Alpine Linux doesn't have
+if (typeof process !== 'undefined') {
+  // Force pure JavaScript/WebAssembly mode (no native ONNX Runtime)
+  // These must be set before @xenova/transformers is imported
+  if (!process.env.USE_ONNXRUNTIME) {
+    process.env.USE_ONNXRUNTIME = 'false';
+  }
+  if (!process.env.USE_BROWSER) {
+    process.env.USE_BROWSER = 'false';
+  }
+  // Disable onnxruntime-node explicitly
+  if (!process.env.ONNXRUNTIME_NODE_DISABLE) {
+    process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+  }
+}
+
 import { pipeline, env, RawImage } from '@xenova/transformers';
 import sharp from 'sharp';
 
 // Disable local model files (use remote models)
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
-
-// CRITICAL: Force pure JavaScript mode to avoid onnxruntime-node dependency
-// onnxruntime-node requires glibc (ld-linux-x86-64.so.2) which Alpine Linux doesn't have
-// @xenova/transformers can work in pure JavaScript mode without native binaries
-// Set environment variables BEFORE importing to prevent onnxruntime-node from being loaded
-if (typeof process !== 'undefined') {
-  // Force pure JavaScript/WebAssembly mode (no native ONNX Runtime)
-  process.env.USE_ONNXRUNTIME = 'false';
-  process.env.USE_BROWSER = 'false';
-  // Disable onnxruntime-node explicitly
-  process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-}
 
 /**
  * FashionImageEmbedding Service
