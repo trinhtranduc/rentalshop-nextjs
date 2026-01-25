@@ -125,10 +125,11 @@ RUN mkdir -p apps/api/node_modules/.prisma && \
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
-# CRITICAL: Set environment variables for @xenova/transformers to use pure JavaScript mode
+# CRITICAL: Set environment variables for @xenova/transformers to use WebAssembly mode
+# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
 # This prevents onnxruntime-node from being loaded (which requires glibc on Alpine)
 ENV USE_ONNXRUNTIME=false
-ENV USE_BROWSER=false
+ENV USE_BROWSER=true
 ENV ONNXRUNTIME_NODE_DISABLE=true
 RUN yarn build
 
@@ -143,9 +144,10 @@ RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3002
-# CRITICAL: Set environment variables for @xenova/transformers to use pure JavaScript mode
+# CRITICAL: Set environment variables for @xenova/transformers to use WebAssembly mode
+# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
 ENV USE_ONNXRUNTIME=false
-ENV USE_BROWSER=false
+ENV USE_BROWSER=true
 ENV ONNXRUNTIME_NODE_DISABLE=true
 
 # Create nextjs user for security

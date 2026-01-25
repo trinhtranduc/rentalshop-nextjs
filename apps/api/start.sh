@@ -13,9 +13,10 @@
 set -e
 
 # CRITICAL: Set environment variables for @xenova/transformers BEFORE any imports
-# Force pure JavaScript mode to avoid onnxruntime-node dependency on Alpine Linux
+# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
+# This avoids onnxruntime-node dependency on Alpine Linux
 export USE_ONNXRUNTIME=false
-export USE_BROWSER=false
+export USE_BROWSER=true
 export ONNXRUNTIME_NODE_DISABLE=true
 
 echo "🚀 Starting API server with automatic migrations..."
