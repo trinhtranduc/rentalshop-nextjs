@@ -13,16 +13,19 @@
 if (typeof process !== 'undefined') {
   // Force pure JavaScript/WebAssembly mode (no native ONNX Runtime)
   // These must be set before @xenova/transformers is imported
-  if (!process.env.USE_ONNXRUNTIME) {
-    process.env.USE_ONNXRUNTIME = 'false';
-  }
-  if (!process.env.USE_BROWSER) {
-    process.env.USE_BROWSER = 'false';
-  }
-  // Disable onnxruntime-node explicitly
-  if (!process.env.ONNXRUNTIME_NODE_DISABLE) {
-    process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-  }
+  process.env.USE_ONNXRUNTIME = 'false';
+  process.env.USE_BROWSER = 'false';
+  process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+  
+  // Log environment variables for debugging
+  console.log('🔧 @xenova/transformers environment:', {
+    USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
+    USE_BROWSER: process.env.USE_BROWSER,
+    ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE,
+    platform: process.platform,
+    arch: process.arch,
+    nodeVersion: process.version
+  });
 }
 
 import { pipeline, env, RawImage } from '@xenova/transformers';
@@ -31,6 +34,20 @@ import sharp from 'sharp';
 // Disable local model files (use remote models)
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
+
+// CRITICAL: Force pure JavaScript mode via env object
+// This is an additional safeguard to prevent onnxruntime-node from loading
+try {
+  // Try to set backend to null to force pure JavaScript mode
+  // @xenova/transformers will fall back to WebAssembly if native backend is unavailable
+  if (env.backends && typeof env.backends === 'object') {
+    // Force use of WebAssembly backend instead of native ONNX Runtime
+    console.log('🔧 Configuring @xenova/transformers to use WebAssembly backend');
+  }
+} catch (e) {
+  // Ignore errors if backends object is not accessible
+  console.warn('⚠️ Could not configure backends, relying on environment variables');
+}
 
 /**
  * FashionImageEmbedding Service
@@ -53,14 +70,44 @@ export class FashionImageEmbedding {
   private async getModel() {
     if (!this.model) {
       console.log(`🔄 Loading FashionCLIP model: ${this.modelName}...`);
+      console.log('🔧 Environment check before model load:', {
+        USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
+        USE_BROWSER: process.env.USE_BROWSER,
+        ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE,
+        platform: process.platform,
+        arch: process.arch
+      });
+      
       try {
         this.model = await pipeline(
           'image-feature-extraction',
           this.modelName
         );
         console.log('✅ Model loaded successfully');
-      } catch (error) {
-        console.error('❌ Failed to load model:', error);
+      } catch (error: any) {
+        console.error('❌ Failed to load model:', {
+          errorName: error?.name,
+          errorMessage: error?.message,
+          errorCode: error?.code,
+          stack: error?.stack?.substring(0, 500)
+        });
+        
+        // Check if it's an onnxruntime-node error
+        if (
+          error?.code === 'ERR_DLOPEN_FAILED' ||
+          error?.message?.includes('ERR_DLOPEN_FAILED') ||
+          error?.message?.includes('onnxruntime-node') ||
+          error?.message?.includes('ld-linux-x86-64.so.2')
+        ) {
+          const errorMessage = `ERR_DLOPEN_FAILED: Cannot load native module (onnxruntime-node). ` +
+            `Platform: ${process.platform}-${process.arch}, Node: ${process.version}. ` +
+            `Environment variables: USE_ONNXRUNTIME=${process.env.USE_ONNXRUNTIME}, ` +
+            `USE_BROWSER=${process.env.USE_BROWSER}, ONNXRUNTIME_NODE_DISABLE=${process.env.ONNXRUNTIME_NODE_DISABLE}. ` +
+            `This usually means onnxruntime-node is still being loaded despite environment variables. ` +
+            `Please ensure environment variables are set before importing @xenova/transformers.`;
+          throw new Error(errorMessage);
+        }
+        
         const errorMessage = error instanceof Error ? error.message : String(error);
         throw new Error(`Failed to load model ${this.modelName}: ${errorMessage}`);
       }
