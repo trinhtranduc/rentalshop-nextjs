@@ -567,23 +567,52 @@ export class FashionImageEmbedding {
    */
   async generateEmbeddingFromBuffer(imageBuffer: Buffer): Promise<number[]> {
     try {
-      // Preprocess (resize về 224x224, optimize)
-      const { buffer, width, height } = await this.preprocessImage(imageBuffer);
-
       // Get model
       const model = await this.getModel();
 
-      // Convert buffer to RawImage for @xenova/transformers
-      // RawImage constructor: new RawImage(data, width, height, channels)
-      // data must be Uint8Array or Uint8ClampedArray
-      // channels = 3 for RGB
+      // CRITICAL: In WebAssembly mode, RawImage may cause 'instanceof' errors
+      // Try to use ImageData or pass buffer directly, or create RawImage with proper checks
       const transformers = await loadTransformers();
-      const { RawImage } = transformers;
-      const uint8Array = new Uint8Array(buffer);
-      const rawImage = new RawImage(uint8Array, width, height, 3);
-
-      // Generate embedding
-      const output = await model(rawImage);
+      
+      // Try multiple approaches for WebAssembly compatibility
+      let output: any;
+      
+      try {
+        // Approach 1: Try to create RawImage with proper error handling
+        const { RawImage } = transformers;
+        
+        // Preprocess image to get raw pixel data
+        const { buffer, width, height } = await this.preprocessImage(imageBuffer);
+        const uint8Array = new Uint8Array(buffer);
+        
+        // Check if RawImage is available and is a constructor
+        if (RawImage && typeof RawImage === 'function') {
+          try {
+            const rawImage = new RawImage(uint8Array, width, height, 3);
+            output = await model(rawImage);
+          } catch (rawImageError: any) {
+            // If RawImage fails with instanceof error, try alternative approach
+            if (rawImageError?.message?.includes('instanceof') || rawImageError?.message?.includes('Right-hand side')) {
+              console.warn('⚠️ RawImage failed with instanceof error, trying alternative approach...');
+              // Approach 2: Pass image buffer directly (model may auto-convert)
+              output = await model(imageBuffer);
+            } else {
+              throw rawImageError;
+            }
+          }
+        } else {
+          // RawImage not available, pass buffer directly
+          output = await model(imageBuffer);
+        }
+      } catch (error: any) {
+        // Fallback: Pass original image buffer directly
+        if (error?.message?.includes('instanceof') || error?.message?.includes('Right-hand side')) {
+          console.warn('⚠️ Image processing failed, trying direct buffer approach...');
+          output = await model(imageBuffer);
+        } else {
+          throw error;
+        }
+      }
       
       // Extract embedding vector
       let embedding: number[];
