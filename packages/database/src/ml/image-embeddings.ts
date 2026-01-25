@@ -658,35 +658,58 @@ export class FashionImageEmbedding {
         }
       }
 
-      // Method 3: Try passing JPEG buffer as Uint8Array to model
+      // Method 3: Try creating data URL from JPEG buffer
+      // Model may accept data URL and auto-decode it in WebAssembly mode
+      if (!rawImage) {
+        try {
+          console.log('🔄 Method 3: Trying data URL from JPEG buffer...');
+          // Create data URL from JPEG buffer
+          // Format: data:image/jpeg;base64,<base64-encoded-data>
+          const base64 = jpegBuffer.toString('base64');
+          const dataUrl = `data:image/jpeg;base64,${base64}`;
+          rawImage = dataUrl;
+          methodUsed = 'data URL from jpegBuffer';
+          console.log('✅ Method 3: Using data URL', {
+            bufferSize: jpegBuffer.length,
+            dataUrlLength: dataUrl.length,
+            dataUrlPreview: dataUrl.substring(0, 50) + '...'
+          });
+        } catch (dataUrlError: any) {
+          console.warn('⚠️ Method 3 failed (data URL):', {
+            error: dataUrlError?.message
+          });
+        }
+      }
+
+      // Method 4: Try passing JPEG buffer as Uint8Array to model
       // Model may accept Uint8Array better than Buffer in WebAssembly mode
       if (!rawImage) {
         try {
-          console.log('🔄 Method 3: Trying Uint8Array from JPEG buffer to model...');
+          console.log('🔄 Method 4: Trying Uint8Array from JPEG buffer to model...');
           // Convert Buffer to Uint8Array - model may accept this better
           const uint8Array = new Uint8Array(jpegBuffer);
           rawImage = uint8Array;
           methodUsed = 'Uint8Array from jpegBuffer';
-          console.log('✅ Method 3: Using Uint8Array from buffer', {
+          console.log('✅ Method 4: Using Uint8Array from buffer', {
             bufferSize: jpegBuffer.length,
             uint8ArrayLength: uint8Array.length
           });
         } catch (directError: any) {
-          console.warn('⚠️ Method 3 failed (Uint8Array):', {
+          console.warn('⚠️ Method 4 failed (Uint8Array):', {
             error: directError?.message
           });
         }
       }
 
-      // Method 4: Try passing JPEG buffer directly (last resort)
+      // Method 5: Try passing JPEG buffer directly (last resort)
       if (!rawImage) {
         try {
-          console.log('🔄 Method 4: Trying direct JPEG buffer to model...');
+          console.log('🔄 Method 5: Trying direct JPEG buffer to model...');
           rawImage = jpegBuffer;
           methodUsed = 'direct jpegBuffer';
-          console.log('✅ Method 4: Using direct buffer');
+          console.log('✅ Method 5: Using direct buffer');
         } catch (directError: any) {
-          console.warn('⚠️ Method 4 failed (direct buffer):', {
+          console.warn('⚠️ Method 5 failed (direct buffer):', {
             error: directError?.message
           });
         }
@@ -721,36 +744,51 @@ export class FashionImageEmbedding {
             errorName: modelError?.name
           });
           
-          // Fallback 1: Try Uint8Array from JPEG buffer
+          // Fallback 1: Try data URL from JPEG buffer
           try {
-            console.log('🔄 Fallback 1: Trying Uint8Array from JPEG buffer...');
-            const uint8Array = new Uint8Array(jpegBuffer);
-            output = await model(uint8Array);
-            methodUsed = 'Uint8Array from jpegBuffer (fallback)';
-            console.log('✅ Fallback 1 succeeded with Uint8Array');
+            console.log('🔄 Fallback 1: Trying data URL from JPEG buffer...');
+            const base64 = jpegBuffer.toString('base64');
+            const dataUrl = `data:image/jpeg;base64,${base64}`;
+            output = await model(dataUrl);
+            methodUsed = 'data URL from jpegBuffer (fallback)';
+            console.log('✅ Fallback 1 succeeded with data URL');
           } catch (fallback1Error: any) {
             console.warn('⚠️ Fallback 1 failed, trying Fallback 2:', {
               error: fallback1Error?.message
             });
             
-            // Fallback 2: Try direct JPEG buffer
+            // Fallback 2: Try Uint8Array from JPEG buffer
             try {
-              console.log('🔄 Fallback 2: Trying direct JPEG buffer...');
-              output = await model(jpegBuffer);
-              methodUsed = 'direct jpegBuffer (fallback)';
-              console.log('✅ Fallback 2 succeeded with direct buffer');
+              console.log('🔄 Fallback 2: Trying Uint8Array from JPEG buffer...');
+              const uint8Array = new Uint8Array(jpegBuffer);
+              output = await model(uint8Array);
+              methodUsed = 'Uint8Array from jpegBuffer (fallback)';
+              console.log('✅ Fallback 2 succeeded with Uint8Array');
             } catch (fallback2Error: any) {
-              console.error('❌ All fallbacks failed:', {
-                rawImageError: modelError?.message,
-                uint8ArrayError: fallback1Error?.message,
-                directBufferError: fallback2Error?.message,
-                errorStack: fallback2Error?.stack?.substring(0, 300)
+              console.warn('⚠️ Fallback 2 failed, trying Fallback 3:', {
+                error: fallback2Error?.message
+              });
+              
+              // Fallback 3: Try direct JPEG buffer
+              try {
+                console.log('🔄 Fallback 3: Trying direct JPEG buffer...');
+                output = await model(jpegBuffer);
+                methodUsed = 'direct jpegBuffer (fallback)';
+                console.log('✅ Fallback 3 succeeded with direct buffer');
+              } catch (fallback3Error: any) {
+                console.error('❌ All fallbacks failed:', {
+                  rawImageError: modelError?.message,
+                  dataUrlError: fallback1Error?.message,
+                  uint8ArrayError: fallback2Error?.message,
+                  directBufferError: fallback3Error?.message,
+                errorStack: fallback3Error?.stack?.substring(0, 300)
               });
               throw new Error(
                 `Model failed with all methods. ` +
                 `RawImage error: ${modelError?.message}. ` +
-                `Uint8Array error: ${fallback1Error?.message}. ` +
-                `Direct buffer error: ${fallback2Error?.message}`
+                `Data URL error: ${fallback1Error?.message}. ` +
+                `Uint8Array error: ${fallback2Error?.message}. ` +
+                `Direct buffer error: ${fallback3Error?.message}`
               );
             }
           }
