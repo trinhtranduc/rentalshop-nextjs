@@ -165,7 +165,7 @@ async function loadTransformers() {
           }
         };
         
-        // Try to patch onnxruntime in transformers module if it exists
+        // CRITICAL: Patch transformersModule.env first to force WebAssembly mode
         if (transformersModule.env) {
           // CRITICAL: Force WebAssembly mode by setting useBrowser=true
           // This tells @xenova/transformers to use browser-compatible runtime (WebAssembly)
@@ -173,22 +173,58 @@ async function loadTransformers() {
           transformersModule.env.useRemoteModels = true;
           // Disable ONNX Runtime explicitly
           transformersModule.env.useOnnxRuntime = false;
-        }
-        
-        // Patch global onnxruntime if it exists
-        if (typeof global !== 'undefined') {
-          (global as any).onnxruntime = mockOnnxRuntime;
-        }
-        
-        // Patch in transformers module's internal state if accessible
-        // @xenova/transformers may cache onnxruntime in its internal state
-        if (transformersModule.env && typeof (transformersModule.env as any).onnxruntime === 'undefined') {
-          // Try to set it if the property exists
+          
+          // CRITICAL: Patch onnxruntime in env object if it exists
+          // @xenova/transformers may check env.onnxruntime before trying to use it
           try {
             (transformersModule.env as any).onnxruntime = mockOnnxRuntime;
+            console.log('✅ Patched transformersModule.env.onnxruntime');
           } catch (e) {
-            // Ignore if we can't set it
+            console.warn('⚠️ Could not patch env.onnxruntime:', e);
           }
+        }
+        
+        // CRITICAL: Patch global onnxruntime if it exists
+        if (typeof global !== 'undefined') {
+          (global as any).onnxruntime = mockOnnxRuntime;
+          console.log('✅ Patched global.onnxruntime');
+        }
+        
+        // CRITICAL: Try to patch internal modules that @xenova/transformers uses
+        // @xenova/transformers may cache onnxruntime in internal modules
+        try {
+          // Try to access internal modules if they exist
+          if (transformersModule.backends) {
+            // Patch backends if accessible
+            console.log('ℹ️ Found transformersModule.backends, attempting to patch...');
+          }
+          
+          // Try to patch any internal onnxruntime references
+          // This is a deep patch attempt - may not work but worth trying
+          const patchInternalState = (obj: any, depth = 0): void => {
+            if (depth > 3 || !obj || typeof obj !== 'object') return;
+            
+            try {
+              if ('onnxruntime' in obj && obj.onnxruntime === undefined) {
+                obj.onnxruntime = mockOnnxRuntime;
+                console.log(`✅ Patched onnxruntime at depth ${depth}`);
+              }
+              
+              // Recursively patch nested objects (limited depth)
+              for (const key in obj) {
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                  patchInternalState(obj[key], depth + 1);
+                }
+              }
+            } catch (e) {
+              // Ignore errors during deep patching
+            }
+          };
+          
+          // Try to patch transformersModule itself
+          patchInternalState(transformersModule);
+        } catch (e) {
+          console.warn('⚠️ Could not patch internal state:', e);
         }
         
         console.log('🔧 Patched @xenova/transformers with mock onnxruntime-node');
