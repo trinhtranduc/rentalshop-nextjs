@@ -306,6 +306,34 @@ export class FashionImageEmbedding {
       try {
         // LAZY LOAD: Load @xenova/transformers only when needed
         const transformers = await loadTransformers();
+        
+        // CRITICAL: Patch onnxruntime AGAIN before calling pipeline()
+        // constructSession is called during pipeline() and may access onnxruntime from cached state
+        // We need to ensure onnxruntime is patched right before model loading
+        try {
+          const mockOnnxRuntime = {
+            create: function() {
+              throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
+            }
+          };
+          
+          // Patch global onnxruntime again (in case it was reset)
+          if (typeof global !== 'undefined') {
+            (global as any).onnxruntime = mockOnnxRuntime;
+          }
+          
+          // Patch transformers.env.onnxruntime again
+          if (transformers.env) {
+            (transformers.env as any).onnxruntime = mockOnnxRuntime;
+            transformers.env.useBrowser = true;
+            transformers.env.useOnnxRuntime = false;
+          }
+          
+          console.log('🔧 Re-patched onnxruntime before model loading');
+        } catch (e) {
+          console.warn('⚠️ Could not re-patch onnxruntime:', e);
+        }
+        
         const { pipeline } = transformers;
         
         this.model = await pipeline(
