@@ -14,6 +14,23 @@ import sharp from 'sharp';
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
 
+// CRITICAL: Force pure JavaScript mode to avoid onnxruntime-node dependency
+// onnxruntime-node requires glibc (ld-linux-x86-64.so.2) which Alpine Linux doesn't have
+// @xenova/transformers can work in pure JavaScript mode without native binaries
+// Set environment variables BEFORE importing to prevent onnxruntime-node from being loaded
+if (typeof process !== 'undefined') {
+  process.env.USE_ONNXRUNTIME = 'false';
+  process.env.USE_BROWSER = 'false';
+  // Disable onnxruntime-node explicitly
+  process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+}
+env.useBrowser = false; // Don't use browser APIs
+env.useCustomBackend = false; // Don't use custom backend
+// Disable ONNX Runtime backend (force WebAssembly/JavaScript)
+if (env.backends) {
+  env.backends.onnx = null; // Disable ONNX Runtime backend
+}
+
 /**
  * FashionImageEmbedding Service
  * Tạo embeddings từ hình ảnh sử dụng FashionCLIP model

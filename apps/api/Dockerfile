@@ -4,9 +4,10 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Install system dependencies for Prisma and native modules
-# onnxruntime-node needs these for Alpine Linux
-RUN apk add --no-cache libc6-compat openssl python3 make g++
+# Install system dependencies for Prisma
+# Note: We use pure JavaScript mode for @xenova/transformers (no onnxruntime-node needed)
+# This avoids glibc dependency issues on Alpine Linux
+RUN apk add --no-cache libc6-compat openssl
 
 # Copy root package files
 COPY package.json yarn.lock ./
@@ -43,9 +44,9 @@ RUN yarn config set network-timeout 300000 && \
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Install OpenSSL, postgresql-client, and build tools for native modules
-# Note: python3, make, g++ are needed for onnxruntime-node on Alpine (if used)
-RUN apk add --no-cache openssl postgresql-client python3 make g++
+# Install OpenSSL for Prisma
+# Note: We use pure JavaScript mode for @xenova/transformers (no native modules needed)
+RUN apk add --no-cache openssl
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
