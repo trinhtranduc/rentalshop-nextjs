@@ -659,6 +659,7 @@ export class FashionImageEmbedding {
       }
 
       // Method 3: Try passing JPEG buffer directly to model (model may auto-decode)
+      // This is the fallback if Method 2 creates RawImage but model can't process it
       if (!rawImage) {
         try {
           console.log('🔄 Method 3: Trying direct JPEG buffer to model...');
@@ -688,9 +689,43 @@ export class FashionImageEmbedding {
         rawImageIsUint8Array: rawImage instanceof Uint8Array
       });
 
-      // Generate embedding
-      const output = await model(rawImage);
+      // Generate embedding - try with current rawImage, fallback to direct buffer if fails
+      let output: any;
+      try {
+        output = await model(rawImage);
+        console.log('✅ Model call succeeded with', methodUsed);
+      } catch (modelError: any) {
+        // If Method 2 succeeded but model fails, try Method 3 (direct buffer)
+        if (methodUsed === 'new RawImage(uint8Array, width, height, 3)') {
+          console.warn('⚠️ Model failed with RawImage object, trying direct JPEG buffer fallback:', {
+            error: modelError?.message,
+            errorName: modelError?.name
+          });
+          try {
+            console.log('🔄 Fallback: Trying direct JPEG buffer to model...');
+            output = await model(jpegBuffer);
+            methodUsed = 'direct jpegBuffer (fallback)';
+            console.log('✅ Fallback succeeded with direct buffer');
+          } catch (fallbackError: any) {
+            console.error('❌ Fallback also failed:', {
+              error: fallbackError?.message,
+              errorName: fallbackError?.name,
+              errorStack: fallbackError?.stack?.substring(0, 300)
+            });
+            throw new Error(
+              `Model failed with both RawImage object and direct buffer. ` +
+              `RawImage error: ${modelError?.message}. ` +
+              `Direct buffer error: ${fallbackError?.message}`
+            );
+          }
+        } else {
+          // If already using Method 3 or other, just throw
+          throw modelError;
+        }
+      }
+
       console.log('✅ Model output received:', {
+        methodUsed,
         outputType: output?.constructor?.name,
         isArray: Array.isArray(output),
         hasData: !!output?.data,
