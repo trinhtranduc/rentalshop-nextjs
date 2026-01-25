@@ -62,6 +62,17 @@ RUN apk add --no-cache openssl
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
+# CRITICAL: Remove onnxruntime-node before building
+# onnxruntime-node requires glibc which Alpine Linux doesn't have
+# @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
+RUN if [ -d "node_modules/onnxruntime-node" ]; then \
+      echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
+      rm -rf node_modules/onnxruntime-node && \
+      echo "✅ onnxruntime-node removed successfully"; \
+    else \
+      echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
+    fi
+
 # Copy entire source code (needed for monorepo build)
 COPY . .
 
