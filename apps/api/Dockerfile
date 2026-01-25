@@ -38,7 +38,7 @@ RUN yarn config set network-timeout 300000 && \
       yarn cache clean && \
       yarn install --frozen-lockfile --network-timeout 300000))
 
-# CRITICAL: Remove onnxruntime-node to prevent it from being loaded
+# CRITICAL: Remove onnxruntime-node and create mock module
 # onnxruntime-node requires glibc which Alpine Linux doesn't have
 # @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
 RUN if [ -d "node_modules/onnxruntime-node" ]; then \
@@ -47,7 +47,15 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "✅ onnxruntime-node removed successfully"; \
     else \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
-    fi
+    fi && \
+    # Create mock module directory and file
+    mkdir -p node_modules/onnxruntime-node && \
+    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
+    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "});" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created"
 
 # ===================================
 # STAGE 2: Builder
@@ -62,7 +70,7 @@ RUN apk add --no-cache openssl
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# CRITICAL: Remove onnxruntime-node before building
+# CRITICAL: Remove onnxruntime-node and create mock module before building
 # onnxruntime-node requires glibc which Alpine Linux doesn't have
 # @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
 RUN if [ -d "node_modules/onnxruntime-node" ]; then \
@@ -71,7 +79,15 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "✅ onnxruntime-node removed successfully"; \
     else \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
-    fi
+    fi && \
+    # Create mock module directory and file
+    mkdir -p node_modules/onnxruntime-node && \
+    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
+    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "});" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
@@ -136,15 +152,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 # Note: onnxruntime-node should have been removed in builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# CRITICAL: Ensure onnxruntime-node is not present in production image
-# Double-check and remove if it somehow got copied
-RUN if [ -d "node_modules/onnxruntime-node" ]; then \
-      echo "⚠️ WARNING: onnxruntime-node found in production image, removing..." && \
+# CRITICAL: Ensure onnxruntime-node mock module exists in production image
+# If real package exists, remove it and create mock
+RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-node/package.json" ]; then \
+      echo "⚠️ WARNING: Real onnxruntime-node found in production image, removing..." && \
       rm -rf node_modules/onnxruntime-node && \
-      echo "✅ onnxruntime-node removed from production image"; \
-    else \
-      echo "✅ onnxruntime-node not present (as expected)"; \
-    fi
+      echo "✅ Real onnxruntime-node removed from production image"; \
+    fi && \
+    # Ensure mock module exists
+    mkdir -p node_modules/onnxruntime-node && \
+    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
+    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
+    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
+    echo "  }" >> node_modules/onnxruntime-node/index.js && \
+    echo "});" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module ensured in production image"
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
