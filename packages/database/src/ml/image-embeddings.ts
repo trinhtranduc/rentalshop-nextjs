@@ -51,20 +51,23 @@ async function loadTransformers() {
         const Module = require('module');
         const originalRequire = Module.prototype.require;
         
-        // Intercept require calls to return mock object with create() method for onnxruntime-node
-        // @xenova/transformers will call onnxruntime.create() and catch the error to fallback to WebAssembly
-        Module.prototype.require = function(id: string) {
-          if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-            console.log('ℹ️ onnxruntime-node requested, returning mock object with create() method for WebAssembly fallback');
-            // Return mock object with create() method that throws to force WebAssembly fallback
-            return {
-              create: function() {
-                throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
-              }
-            };
-          }
-          return originalRequire.apply(this, arguments as any);
-        };
+              // Intercept require calls to return mock object with create() method for onnxruntime-node
+              // @xenova/transformers will call onnxruntime.create() and detect undefined to fallback to WebAssembly
+              Module.prototype.require = function(id: string) {
+                if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
+                  console.log('ℹ️ onnxruntime-node requested, returning mock object with create() method for WebAssembly fallback');
+                  // Return mock object with create() method that returns undefined
+                  // @xenova/transformers will detect undefined and automatically use WebAssembly
+                  return {
+                    create: function() {
+                      // Return undefined to signal that onnxruntime-node is not available
+                      // @xenova/transformers will detect this and automatically use WebAssembly
+                      return undefined;
+                    }
+                  };
+                }
+                return originalRequire.apply(this, arguments as any);
+              };
         
         console.log('🔧 onnxruntime-node require interceptor installed');
       } catch (e) {
@@ -152,16 +155,82 @@ async function loadTransformers() {
     }
     
     try {
+          // CRITICAL: Patch Node.js module cache BEFORE importing @xenova/transformers
+          // This ensures that if @xenova/transformers tries to require onnxruntime-node,
+          // it will get our mock module from the cache
+          if (typeof require !== 'undefined') {
+            try {
+              const Module = require('module');
+              const path = require('path');
+              
+              // Create a proper mock module that matches what @xenova/transformers expects
+              const mockOnnxRuntimeModule = {
+                id: require.resolve('onnxruntime-node'),
+                exports: {
+                  create: function() {
+                    // Return undefined to force WebAssembly fallback
+                    // @xenova/transformers will catch this and use WebAssembly
+                    return undefined;
+                  },
+                  InferenceSession: class {
+                    static create() {
+                      return undefined;
+                    }
+                  }
+                },
+                loaded: true,
+                parent: null,
+                children: [],
+                paths: []
+              };
+              
+              // Try to resolve onnxruntime-node and patch cache
+              try {
+                const onnxCacheKey = require.resolve('onnxruntime-node');
+                // Force patch module cache
+                Module._cache[onnxCacheKey] = mockOnnxRuntimeModule;
+                console.log('✅ Patched onnxruntime-node in Module._cache before import');
+              } catch (resolveError: any) {
+                // If resolve fails, try to find it in node_modules and patch
+                const possiblePaths = [
+                  path.join(process.cwd(), 'node_modules', 'onnxruntime-node'),
+                  path.join(process.cwd(), '..', 'node_modules', 'onnxruntime-node'),
+                  path.join(process.cwd(), '../..', 'node_modules', 'onnxruntime-node'),
+                ];
+                
+                for (const onnxPath of possiblePaths) {
+                  const indexPath = path.join(onnxPath, 'index.js');
+                  if (require('fs').existsSync(indexPath)) {
+                    try {
+                      const cacheKey = path.resolve(indexPath);
+                      Module._cache[cacheKey] = mockOnnxRuntimeModule;
+                      console.log(`✅ Patched onnxruntime-node at ${cacheKey}`);
+                      break;
+                    } catch (e) {
+                      // Continue to next path
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              // Module cache patching may fail, but continue anyway
+              console.log('ℹ️ Could not patch Module._cache:', e);
+            }
+          }
+      
       transformersModule = await import('@xenova/transformers');
       
       // CRITICAL: Patch @xenova/transformers to use mock onnxruntime-node
       // @xenova/transformers may access onnxruntime from global scope or cached module
       // We need to patch it directly in the transformers module
       try {
-        // Create mock onnxruntime object with create() method
+        // Create mock onnxruntime object with create() method that returns undefined
+        // @xenova/transformers will detect undefined and automatically use WebAssembly
         const mockOnnxRuntime = {
           create: function() {
-            throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
+            // Return undefined to signal that onnxruntime-node is not available
+            // @xenova/transformers will detect this and automatically use WebAssembly
+            return undefined;
           }
         };
         
@@ -313,7 +382,9 @@ export class FashionImageEmbedding {
         try {
           const mockOnnxRuntime = {
             create: function() {
-              throw new Error('onnxruntime-node is not available, using WebAssembly fallback');
+              // Return undefined to signal that onnxruntime-node is not available
+              // @xenova/transformers will detect this and automatically use WebAssembly
+              return undefined;
             }
           };
           

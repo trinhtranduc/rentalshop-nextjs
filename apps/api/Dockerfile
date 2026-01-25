@@ -54,9 +54,12 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "// Return undefined to force WebAssembly fallback" >> node_modules/onnxruntime-node/index.js && \
     echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
     echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // Return undefined to signal that onnxruntime-node is not available" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // @xenova/transformers will detect this and automatically use WebAssembly" >> node_modules/onnxruntime-node/index.js && \
+    echo "    return undefined;" >> node_modules/onnxruntime-node/index.js && \
     echo "  }" >> node_modules/onnxruntime-node/index.js && \
     echo "};" >> node_modules/onnxruntime-node/index.js && \
     echo "✅ Mock onnxruntime-node module created (with create() method for WebAssembly fallback)"
@@ -90,9 +93,12 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "// Return undefined to force WebAssembly fallback" >> node_modules/onnxruntime-node/index.js && \
     echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
     echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // Return undefined to signal that onnxruntime-node is not available" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // @xenova/transformers will detect this and automatically use WebAssembly" >> node_modules/onnxruntime-node/index.js && \
+    echo "    return undefined;" >> node_modules/onnxruntime-node/index.js && \
     echo "  }" >> node_modules/onnxruntime-node/index.js && \
     echo "};" >> node_modules/onnxruntime-node/index.js && \
     echo "✅ Mock onnxruntime-node module created (with create() method for WebAssembly fallback)"
@@ -175,9 +181,12 @@ RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "// Return undefined to force WebAssembly fallback" >> node_modules/onnxruntime-node/index.js && \
     echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
     echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is not available, using WebAssembly fallback');" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // Return undefined to signal that onnxruntime-node is not available" >> node_modules/onnxruntime-node/index.js && \
+    echo "    // @xenova/transformers will detect this and automatically use WebAssembly" >> node_modules/onnxruntime-node/index.js && \
+    echo "    return undefined;" >> node_modules/onnxruntime-node/index.js && \
     echo "  }" >> node_modules/onnxruntime-node/index.js && \
     echo "};" >> node_modules/onnxruntime-node/index.js && \
     echo "✅ Mock onnxruntime-node module ensured in production image (with create() method for WebAssembly fallback)"
