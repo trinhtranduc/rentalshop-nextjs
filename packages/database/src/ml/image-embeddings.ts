@@ -50,12 +50,14 @@ async function loadTransformers() {
         const Module = require('module');
         const originalRequire = Module.prototype.require;
         
-        // Intercept require calls to block onnxruntime-node
+        // Intercept require calls to return empty object for onnxruntime-node
+        // Official approach: Return empty object so @xenova/transformers can detect
+        // that native module is unavailable and automatically fallback to WebAssembly
         Module.prototype.require = function(id: string) {
           if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-            console.warn('⚠️ Blocked require of onnxruntime-node, forcing pure JavaScript mode');
-            // Throw error to force @xenova/transformers to use WebAssembly fallback
-            throw new Error('onnxruntime-node is disabled. Use pure JavaScript mode.');
+            console.log('ℹ️ onnxruntime-node requested, returning empty object for WebAssembly fallback');
+            // Return empty object to allow graceful fallback to WebAssembly
+            return {};
           }
           return originalRequire.apply(this, arguments as any);
         };

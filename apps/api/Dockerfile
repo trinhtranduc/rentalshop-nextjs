@@ -49,13 +49,13 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
     fi && \
     # Create mock module directory and file
+    # Official approach: Return empty object to allow @xenova/transformers to detect
+    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
     mkdir -p node_modules/onnxruntime-node && \
-    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
-    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
-    echo "  }" >> node_modules/onnxruntime-node/index.js && \
-    echo "});" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created"
+    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
+    echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (empty object for WebAssembly fallback)"
 
 # ===================================
 # STAGE 2: Builder
@@ -81,13 +81,13 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
     fi && \
     # Create mock module directory and file
+    # Official approach: Return empty object to allow @xenova/transformers to detect
+    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
     mkdir -p node_modules/onnxruntime-node && \
-    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
-    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
-    echo "  }" >> node_modules/onnxruntime-node/index.js && \
-    echo "});" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created"
+    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
+    echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (empty object for WebAssembly fallback)"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
@@ -160,13 +160,13 @@ RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-
       echo "✅ Real onnxruntime-node removed from production image"; \
     fi && \
     # Ensure mock module exists
+    # Official approach: Return empty object to allow @xenova/transformers to detect
+    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
     mkdir -p node_modules/onnxruntime-node && \
-    echo "module.exports = new Proxy({}, {" > node_modules/onnxruntime-node/index.js && \
-    echo "  get(target, prop) {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is disabled. Use pure JavaScript/WebAssembly mode.');" >> node_modules/onnxruntime-node/index.js && \
-    echo "  }" >> node_modules/onnxruntime-node/index.js && \
-    echo "});" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module ensured in production image"
+    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
+    echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module ensured in production image (empty object for WebAssembly fallback)"
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
