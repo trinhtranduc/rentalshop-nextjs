@@ -68,6 +68,24 @@ async function loadTransformers() {
     
     console.log('🔄 Lazy loading @xenova/transformers...');
     
+    // CRITICAL: Check if onnxruntime-node exists in node_modules
+    // This helps verify if Dockerfile removal worked
+    if (typeof require !== 'undefined') {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const onnxPath = path.join(process.cwd(), 'node_modules', 'onnxruntime-node');
+        if (fs.existsSync(onnxPath)) {
+          console.warn('⚠️ WARNING: onnxruntime-node still exists in node_modules!');
+          console.warn('⚠️ This means Dockerfile removal step may have failed');
+        } else {
+          console.log('✅ Verified: onnxruntime-node not found in node_modules');
+        }
+      } catch (e) {
+        // Ignore errors checking file system
+      }
+    }
+    
     try {
       transformersModule = await import('@xenova/transformers');
       
