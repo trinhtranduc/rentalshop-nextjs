@@ -76,7 +76,9 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * - minSimilarity: number (optional, default: 0.7) - Minimum similarity threshold
  * - categoryId: number (optional) - Filter by category
  */
-export const POST = withPermissions(['products.view'])(
+// Disable subscription check for search by image - allow all authenticated users
+// This is a read-only operation that should be available to all users
+export const POST = withPermissions(['products.view'], { requireActiveSubscription: false })(
   async (request: NextRequest, { user, userScope }) => {
     try {
       console.log(`🔍 POST /api/products/searchByImage - User: ${user.email} (${user.role})`);
