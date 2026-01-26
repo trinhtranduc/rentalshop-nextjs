@@ -409,6 +409,20 @@ export class FashionImageEmbedding {
   }
 
   /**
+   * Warm-up model (public method to pre-load model)
+   * Based on GitHub issue #1135: pipeline promise may never resolve on first call
+   */
+  async warmUp(): Promise<void> {
+    try {
+      await this.getModel();
+      console.log('✅ Model warm-up successful');
+    } catch (error: any) {
+      console.error('❌ Model warm-up failed:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
    * Get or load the model (singleton pattern)
    */
   private async getModel(): Promise<any> {
@@ -592,17 +606,15 @@ export class FashionImageEmbedding {
             // Only catch errors after the library has exhausted all its internal retries (timeout).
 
             try {
-              // CRITICAL: Wrap pipeline() in a retry wrapper that ignores onnxruntime errors
-              // The library's internal retry mechanism may throw errors during retry
-              // We need to catch these and retry until WASM backend is ready or timeout
+              // CRITICAL: Based on GitHub issue #1135 - pipeline promise may never resolve
+              // SOLUTION: Use Promise.race with timeout to ensure promise doesn't hang forever
+              // Also implement retry mechanism for onnxruntime errors
               
-              // Increased timeout to 120 seconds to allow WASM backend to fully initialize
-              // Library needs to retry for multiple components (vision, text, etc.)
-              // WASM backend initialization can take 30-60 seconds on first load
-              const MAX_RETRY_TIME = 120000; // 120 seconds
+              const MAX_RETRY_TIME = 120000; // 120 seconds total timeout
               const RETRY_DELAY = 2000; // 2 seconds between retries
-              const startTime = Date.now();
+              const PIPELINE_TIMEOUT = 60000; // 60 seconds per pipeline() call
               
+              const startTime = Date.now();
               let lastError: any = null;
               let retryCount = 0;
               
@@ -610,11 +622,21 @@ export class FashionImageEmbedding {
                 try {
                   console.log(`🔄 Attempt ${retryCount + 1}: Loading model with WASM backend...`);
                   
-                  // Try to load model - library will handle WASM fallback internally
-                  this.model = await pipeline(
+                  // CRITICAL FIX for issue #1135: Use Promise.race to prevent hanging
+                  // If pipeline() promise never resolves, timeout will reject it
+                  const pipelinePromise = pipeline(
                     'image-feature-extraction',
                     this.modelName
-                  ) as any;
+                  ) as Promise<any>;
+                  
+                  const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => {
+                      reject(new Error(`Pipeline timeout: Model loading took longer than ${PIPELINE_TIMEOUT/1000}s. This may indicate the promise is hanging (issue #1135).`));
+                    }, PIPELINE_TIMEOUT);
+                  });
+                  
+                  // Race between pipeline and timeout
+                  this.model = await Promise.race([pipelinePromise, timeoutPromise]) as any;
                   
                   console.log('✅ Model loaded successfully with WASM backend');
                   break; // Success - exit retry loop
@@ -626,6 +648,11 @@ export class FashionImageEmbedding {
                   const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') ||
                                      errorMessage.includes('onnxruntime') ||
                                      errorMessage.includes('Using `wasm` as a fallback');
+                  
+                  // Check if it's a timeout (promise hanging issue)
+                  const isTimeout = errorMessage.includes('timeout') || 
+                                   errorMessage.includes('took longer than') ||
+                                   errorMessage.includes('hanging');
                   
                   // If it's an onnxruntime error, it's expected - continue retrying
                   if (isOnnxError) {
@@ -644,8 +671,26 @@ export class FashionImageEmbedding {
                         `Library retried ${retryCount} times but WASM backend failed to initialize.`
                       );
                     }
+                  } else if (isTimeout) {
+                    // Promise hanging issue (issue #1135) - retry with fresh promise
+                    retryCount++;
+                    const elapsed = Date.now() - startTime;
+                    const remaining = MAX_RETRY_TIME - elapsed;
+                    
+                    console.warn(`⚠️ Pipeline promise timeout (issue #1135 pattern) - retrying in ${RETRY_DELAY}ms... (${Math.round(remaining/1000)}s remaining)`);
+                    
+                    if (remaining > RETRY_DELAY) {
+                      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                      continue; // Retry with fresh promise
+                    } else {
+                      throw new Error(
+                        `Model loading failed: Pipeline promise kept timing out (issue #1135). ` +
+                        `Tried ${retryCount} times but promise never resolved. ` +
+                        `This may indicate WASM backend cannot initialize properly.`
+                      );
+                    }
                   } else {
-                    // Non-onnxruntime error - throw immediately
+                    // Non-onnxruntime, non-timeout error - throw immediately
                     throw attemptError;
                   }
                 }
@@ -904,4 +949,51 @@ export function getEmbeddingService(): FashionImageEmbedding {
     embeddingServiceInstance = new FashionImageEmbedding();
   }
   return embeddingServiceInstance;
+}
+
+/**
+ * Warm-up function to pre-load model when server starts
+ * Based on GitHub issue #1135: pipeline promise may never resolve on first call
+ * 
+ * SOLUTION: Pre-load model during server startup to avoid promise hanging on first request
+ * 
+ * @param timeout - Maximum time to wait for model loading (default: 120 seconds)
+ * @returns Promise that resolves when model is loaded, or rejects on timeout
+ */
+/**
+ * Warm-up function to pre-load model when server starts
+ * Based on GitHub issue #1135: pipeline promise may never resolve on first call
+ * 
+ * SOLUTION: Pre-load model during server startup to avoid promise hanging on first request
+ * 
+ * @param timeout - Maximum time to wait for model loading (default: 120 seconds)
+ * @returns Promise that resolves when model is loaded, or rejects on timeout
+ */
+export async function warmUpModel(timeout: number = 120000): Promise<void> {
+  console.log('🔥 Starting model warm-up (pre-loading model to avoid issue #1135)...');
+  const startTime = Date.now();
+  
+  try {
+    const service = getEmbeddingService();
+    
+    // Use Promise.race to ensure we don't wait forever
+    const warmUpPromise = service.warmUp();
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Model warm-up timeout: Model loading took longer than ${timeout/1000}s. This may indicate the promise is hanging (issue #1135).`));
+      }, timeout);
+    });
+    
+    await Promise.race([warmUpPromise, timeoutPromise]);
+    
+    const elapsed = Date.now() - startTime;
+    console.log(`✅ Model warm-up completed in ${(elapsed/1000).toFixed(2)}s`);
+  } catch (error: any) {
+    const elapsed = Date.now() - startTime;
+    console.error(`❌ Model warm-up failed after ${(elapsed/1000).toFixed(2)}s:`, error?.message);
+    console.error('⚠️  Server will continue, but first image search request may be slow or fail');
+    // Don't throw - allow server to start even if warm-up fails
+    // The model will be loaded on first request (with retry logic)
+  }
 }

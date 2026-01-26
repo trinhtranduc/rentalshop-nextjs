@@ -105,11 +105,59 @@ fi
 echo ""
 
 # ============================================================================
-# Step 6: Start Next.js Server
+# Step 6: Start Next.js Server (in background for warm-up)
 # ============================================================================
 echo "🌐 Step 6: Starting Next.js server on port 3002..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
 echo ""
+
+# Start Next.js server in background
+echo "🚀 Starting Next.js application in background..."
+../../node_modules/.bin/next start -p 3002 &
+NEXTJS_PID=$!
+
+# Wait for server to be ready
+echo "⏳ Waiting for server to be ready..."
+MAX_WAIT=30
+WAITED=0
+while [ $WAITED -lt $MAX_WAIT ]; do
+  if curl -s http://localhost:3002/api/health > /dev/null 2>&1; then
+    echo "✅ Server is ready!"
+    break
+  fi
+  sleep 1
+  WAITED=$((WAITED + 1))
+  if [ $((WAITED % 5)) -eq 0 ]; then
+    echo "   Still waiting... ($WAITED/$MAX_WAIT seconds)"
+  fi
+done
+
+# ============================================================================
+# Step 7: Warm-up ML Model (Pre-load to avoid issue #1135)
+# ============================================================================
+if curl -s http://localhost:3002/api/health > /dev/null 2>&1; then
+  echo ""
+  echo "🔥 Step 7: Warming up ML model (pre-loading to avoid promise hanging issue #1135)..."
+  echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
+  
+  # Call warm-up endpoint (with timeout)
+  WARMUP_TIMEOUT=120
+  if timeout $WARMUP_TIMEOUT curl -s -X POST http://localhost:3002/api/test/warmup-model > /dev/null 2>&1; then
+    echo "✅ Model warm-up completed successfully"
+  else
+    echo "⚠️  Model warm-up timed out or failed (this is OK - model will load on first request)"
+    echo "⚠️  Server will continue running normally"
+  fi
+  echo ""
+else
+  echo "⚠️  Server did not start in time - skipping model warm-up"
+  echo "⚠️  Model will be loaded on first image search request"
+  echo ""
+fi
+
 echo "✅ Server is ready to accept requests"
-echo "🚀 Starting Next.js application..."
-exec ../../node_modules/.bin/next start -p 3002
+echo "🚀 Next.js application is running (PID: $NEXTJS_PID)"
+echo ""
+
+# Wait for Next.js process (keep container running)
+wait $NEXTJS_PID
