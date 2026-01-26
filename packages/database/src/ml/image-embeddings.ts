@@ -192,15 +192,29 @@ async function loadTransformers() {
         
         // Use /tmp for cache in Docker/Railway (writable location)
         // Or use node_modules/@xenova/transformers/.cache if available
-        const cacheDir = process.env.TRANSFORMERS_CACHE_DIR || 
-          (typeof process !== 'undefined' && process.cwd() 
-            ? path.join(process.cwd(), 'node_modules', '@xenova', 'transformers', '.cache')
-            : '/tmp/transformers-cache');
+        const cacheDir = process.env.TRANSFORMERS_CACHE_DIR || '/tmp/transformers-cache';
         
         // Ensure cache directory exists and is writable
         if (!fs.existsSync(cacheDir)) {
           fs.mkdirSync(cacheDir, { recursive: true });
           console.log(`📁 Created transformers cache directory: ${cacheDir}`);
+        }
+        
+        // Check if WASM files are accessible
+        try {
+          const transformersPath = require.resolve('@xenova/transformers/package.json');
+          const transformersDir = path.dirname(transformersPath);
+          const wasmPath = path.join(transformersDir, 'dist');
+          const wasmExists = fs.existsSync(wasmPath);
+          console.log(`🔍 WASM files check:`, {
+            transformersPath,
+            transformersDir,
+            wasmPath,
+            wasmExists,
+            cacheDir
+          });
+        } catch (e) {
+          console.warn('⚠️ Could not check WASM files location:', e);
         }
         
         // Configure transformers.js to use this cache directory
@@ -510,39 +524,139 @@ export class FashionImageEmbedding {
         }
       }
       
-      // CRITICAL: The library will automatically fallback to WASM when onnxruntime-node fails
-      // We've already set environment variables and patched the module
-      // The error messages in logs show it's trying WASM fallback, but then retrying
-      // This is expected behavior - the library tries multiple backends
-      // We just need to wait for it to complete the WASM fallback
-      try {
-        this.model = await pipeline(
-          'image-feature-extraction',
-          this.modelName
-        );
-        console.log('✅ Model loaded successfully');
-      } catch (pipelineError: any) {
-        // Check if error is related to onnxruntime retry
-        const isOnnxError = pipelineError?.message?.includes('onnxruntime-node is disabled') || 
-            pipelineError?.message?.includes('onnxruntime') ||
-            pipelineError?.message?.includes('Cannot read properties of undefined');
-        
-        if (isOnnxError && shouldUseWebAssembly()) {
-          // The library should have already tried WASM fallback
-          // If it's still failing, the issue is that WASM fallback itself is failing
-          // This could be due to missing WASM files or other issues
-          console.error('❌ Model loading failed even after WASM fallback');
-          console.error('❌ This suggests the WASM backend itself is not working');
-          console.error('❌ Error:', pipelineError?.message);
-          throw new Error(
-            `Model loading failed: WASM fallback did not work. ` +
-            `This may indicate missing WASM files or other WASM-related issues. ` +
-            `Original error: ${pipelineError?.message}`
-          );
-        } else {
-          throw pipelineError; // Re-throw other errors
+      // CRITICAL: The library has internal retry logic that tries onnxruntime-node for EACH component
+      // (vision encoder, text encoder, etc.). Each component triggers a retry.
+      // The WASM fallback message appears, but the library still retries for other components.
+      // 
+      // SOLUTION: Let the library complete its internal retry cycle naturally.
+      // Don't catch errors too early - the library will handle retries internally.
+      // Only catch errors after the library has exhausted all its internal retries.
+      
+      // Verify WASM files are accessible before calling pipeline
+      const useWebAssembly = shouldUseWebAssembly();
+      if (useWebAssembly) {
+        try {
+          const path = require('path');
+          const fs = require('fs');
+          
+          // Check if transformers module is accessible
+          const transformersPath = require.resolve('@xenova/transformers/package.json');
+          const transformersDir = path.dirname(transformersPath);
+          const wasmPath = path.join(transformersDir, 'dist');
+          const wasmExists = fs.existsSync(wasmPath);
+          
+          console.log('🔍 WASM files verification before pipeline call:', {
+            transformersPath,
+            transformersDir,
+            wasmPath,
+            wasmExists,
+            env: {
+              USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
+              USE_BROWSER: process.env.USE_BROWSER,
+              ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
+            }
+          });
+          
+          if (!wasmExists) {
+            console.warn('⚠️ WASM files directory not found at:', wasmPath);
+            console.warn('⚠️ This may cause WASM backend initialization to fail');
+            console.warn('⚠️ Library will attempt to download WASM files if needed');
+          }
+        } catch (e) {
+          console.warn('⚠️ Could not verify WASM files location:', e);
+          // Continue anyway - library may download WASM files if needed
         }
       }
+      
+      // CRITICAL: Let the library complete its internal retry cycle
+      // The library will:
+      // 1. Try onnxruntime-node for vision component → fail → WASM fallback
+      // 2. Try onnxruntime-node for text component → fail → WASM fallback
+      // 3. Eventually use WASM backend for all components
+      // 
+      // We should NOT catch errors during this process - let it complete naturally.
+      // Only catch errors if the library truly fails after all internal retries.
+      
+            console.log('🔄 Calling pipeline() - library will handle internal retries automatically...');
+            console.log('🔄 Expected behavior: Library will try onnxruntime-node for each component,');
+            console.log('🔄 then fallback to WASM. This may take 30-90 seconds...');
+            console.log('🔄 NOTE: You will see "onnxruntime-node is disabled" errors - this is EXPECTED');
+            console.log('🔄 The library will automatically retry with WASM backend for each component');
+
+            // CRITICAL: The library has internal retry logic that tries onnxruntime-node for EACH component
+            // (vision encoder, text encoder, etc.). Each component triggers a retry.
+            // The WASM fallback message appears in console.log, but the library still retries for other components.
+            //
+            // SOLUTION: Let the library complete its internal retry cycle naturally.
+            // Don't catch errors too early - the library will handle retries internally.
+            // Only catch errors after the library has exhausted all its internal retries (timeout).
+
+            try {
+              // Use Promise.race to add timeout for WASM initialization
+              // Increased to 90 seconds to allow WASM backend to fully initialize
+              // Library needs to retry for multiple components (vision, text, etc.)
+              const pipelinePromise = pipeline(
+                'image-feature-extraction',
+                this.modelName
+              );
+
+              // Add timeout of 90 seconds for WASM backend initialization
+              // WASM backend can take time to initialize, especially on first load
+              // Library needs to retry for multiple components, so we need more time
+              const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Model loading timeout: WASM backend took too long to initialize (90s timeout)')), 90000);
+              });
+
+              this.model = await Promise.race([pipelinePromise, timeoutPromise]) as any;
+              console.log('✅ Model loaded successfully with WASM backend');
+            } catch (pipelineError: any) {
+              // CRITICAL: Only catch errors after timeout or final failure
+              // The library's internal retry mechanism will throw errors during retry
+              // These errors are expected and the library will continue retrying
+              // We should NOT catch onnxruntime errors during retry - let the library handle it
+              
+              const errorMessage = pipelineError?.message || '';
+              const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took too long');
+              
+              // If it's a timeout, that's a real error
+              if (isTimeout) {
+                console.error('❌ Model loading timeout - WASM backend took too long to initialize');
+                console.error('❌ This may indicate:');
+                console.error('   1. WASM files are missing or not accessible');
+                console.error('   2. Network issue downloading WASM files');
+                console.error('   3. Insufficient memory for WASM backend');
+                console.error('   4. Library retry cycle took longer than 90 seconds');
+                throw new Error(
+                  `Model loading timeout: WASM backend took too long to initialize (90s timeout). ` +
+                  `This may indicate missing WASM files or other WASM-related issues.`
+                );
+              }
+              
+              // For all other errors, check if it's a final failure or just a retry
+              // If error message includes "onnxruntime-node is disabled", it's likely a retry error
+              // The library should handle this internally, but if it reaches here, it's a final failure
+              const isOnnxRetryError = errorMessage.includes('onnxruntime-node is disabled') ||
+                  errorMessage.includes('onnxruntime');
+              
+              if (isOnnxRetryError) {
+                console.error('❌ Model loading failed - onnxruntime error persisted after library retries');
+                console.error('❌ This may indicate:');
+                console.error('   1. Library exhausted all retry attempts');
+                console.error('   2. WASM backend failed to initialize');
+                console.error('   3. Configuration issue preventing WASM fallback');
+                console.error('❌ Error details:', {
+                  message: pipelineError?.message,
+                  name: pipelineError?.name
+                });
+                throw new Error(
+                  `Model loading failed: ${pipelineError?.message}. ` +
+                  `Library retried with WASM but still failed. This may indicate a WASM backend issue.`
+                );
+              }
+              
+              // For all other errors, throw immediately
+              throw pipelineError;
+            }
     }
     return this.model;
   }

@@ -158,17 +158,33 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           platform: process.platform,
           arch: process.arch,
           nodeVersion: process.version,
+          stack: embeddingError.stack?.split('\n').slice(0, 10).join('\n')
         });
         
-        // Re-throw with more context
-        if (embeddingError.code === 'ERR_DLOPEN_FAILED' || embeddingError.message?.includes('ERR_DLOPEN_FAILED')) {
-          throw new Error(
-            `ERR_DLOPEN_FAILED: Cannot load native module (onnxruntime-node). ` +
-            `Platform: ${process.platform}-${process.arch}, Node: ${process.version}. ` +
-            `This usually means the native binaries are missing or incompatible. ` +
-            `Please ensure onnxruntime-node is properly installed for this platform.`
-          );
+        // Return SERVICE_UNAVAILABLE for embedding/model errors
+        // This indicates the ML service is temporarily unavailable
+        const isModelError = 
+          embeddingError.code === 'ERR_DLOPEN_FAILED' ||
+          embeddingError.message?.includes('ERR_DLOPEN_FAILED') ||
+          embeddingError.message?.includes('Model loading failed') ||
+          embeddingError.message?.includes('onnxruntime') ||
+          embeddingError.message?.includes('WASM') ||
+          embeddingError.message?.includes('WebAssembly');
+        
+        if (isModelError) {
+          console.error('❌ ML Model service unavailable - returning SERVICE_UNAVAILABLE');
+          const errorResponse = ResponseBuilder.error('SERVICE_UNAVAILABLE');
+          // Add detailed error information for debugging
+          errorResponse.error = {
+            message: 'Dịch vụ tìm kiếm hình ảnh tạm thời không khả dụng. Mô hình ML không thể tải. Vui lòng liên hệ hỗ trợ.',
+            details: embeddingError.message,
+            platform: `${process.platform}-${process.arch}`,
+            nodeVersion: process.version
+          };
+          return NextResponse.json(errorResponse, { status: 503 });
         }
+        
+        // For other errors, re-throw to be handled by handleApiError
         throw embeddingError;
       }
 
