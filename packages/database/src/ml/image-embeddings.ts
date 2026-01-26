@@ -150,18 +150,11 @@ async function loadTransformers() {
           // Intercept require calls for onnxruntime-node
           Module.prototype.require = function(id: string) {
             if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-              console.log('🚫 Blocking onnxruntime-node import - forcing WebAssembly mode');
-              // Return mock module that signals WebAssembly should be used
-              return {
-                InferenceSession: {
-                  create: () => {
-                    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                  }
-                },
-                create: () => {
-                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                }
-              };
+              console.log('🚫 Blocking onnxruntime-node import - returning undefined to allow WASM fallback');
+              // ROOT CAUSE FIX: Return undefined instead of throwing errors
+              // This allows @xenova/transformers to detect that onnxruntime-node is unavailable
+              // and automatically fallback to WASM backend without throwing errors
+              return undefined;
             }
             return originalRequire.apply(this, arguments);
           };
@@ -253,21 +246,10 @@ async function loadTransformers() {
         }
       }
       
-      // CRITICAL: Patch internal onnxruntime references in transformers module
-      // @xenova/transformers may cache onnxruntime in various places
-      // Use safe patching that handles non-extensible objects
-      try {
-        // Patch any cached onnxruntime references
-        const mockOnnxRuntime = {
-          InferenceSession: {
-            create: () => {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: () => {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
+        // CRITICAL: Patch internal onnxruntime references in transformers module
+        // ROOT CAUSE FIX: Set to undefined instead of mock object that throws errors
+        // This allows library to gracefully detect unavailability and fallback to WASM
+        try {
         
         // Helper function to safely set property (handles non-extensible objects)
         const safeSetProperty = (obj: any, prop: string, value: any) => {
@@ -300,7 +282,7 @@ async function loadTransformers() {
         if (transformersModule.env && transformersModule.env.backends) {
           try {
             // @ts-ignore
-            safeSetProperty(transformersModule.env.backends, 'onnxruntime', mockOnnxRuntime);
+            safeSetProperty(transformersModule.env.backends, 'onnxruntime', undefined);
           } catch (e) {
             console.warn('⚠️ Could not patch env.backends.onnxruntime:', e);
           }
@@ -312,7 +294,7 @@ async function loadTransformers() {
         if (transformersModule.env) {
           try {
             // @ts-ignore
-            safeSetProperty(transformersModule.env, 'onnxruntime', mockOnnxRuntime);
+            safeSetProperty(transformersModule.env, 'onnxruntime', undefined);
           } catch (e) {
             console.warn('⚠️ Could not patch env.onnxruntime:', e);
           }
@@ -321,7 +303,7 @@ async function loadTransformers() {
         // Patch module-level onnxruntime if it exists (may be non-extensible)
         try {
           // @ts-ignore
-          safeSetProperty(transformersModule, 'onnxruntime', mockOnnxRuntime);
+          safeSetProperty(transformersModule, 'onnxruntime', undefined);
         } catch (e) {
           console.warn('⚠️ Could not patch module-level onnxruntime (object may be non-extensible):', e);
         }
@@ -337,10 +319,10 @@ async function loadTransformers() {
               // @ts-ignore - We're intentionally patching the cache
               require.cache[onnxCacheKey] = {
                 id: onnxCacheKey,
-                exports: mockOnnxRuntime,
+                exports: undefined,
                 loaded: true
               } as any;
-              console.log('🔧 Patched onnxruntime-node in require cache');
+              console.log('🔧 Patched onnxruntime-node in require cache (set to undefined)');
             } catch (e) {
               console.warn('⚠️ Could not patch require cache:', e);
             }
@@ -441,17 +423,8 @@ export class FashionImageEmbedding {
         process.env.USE_BROWSER = 'true';
         process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
         
-        // Create mock onnxruntime object that throws errors
-        const mockOnnxRuntime = {
-          InferenceSession: {
-            create: () => {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: () => {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
+        // ROOT CAUSE FIX: Set to undefined instead of mock object that throws errors
+        // This allows library to gracefully detect unavailability and fallback to WASM
         
         // Helper function to safely set property (handles non-extensible objects)
         const safeSetProperty = (obj: any, prop: string, value: any) => {
@@ -485,11 +458,11 @@ export class FashionImageEmbedding {
             transformers.env.useBrowser = true;
             transformers.env.useOnnxruntime = false;
             // @ts-ignore - Set mock object so constructSession can access it
-            safeSetProperty(transformers.env, 'onnxruntime', mockOnnxRuntime);
+            safeSetProperty(transformers.env, 'onnxruntime', undefined);
             // @ts-ignore
             if (transformers.env.backends) {
               // @ts-ignore
-              safeSetProperty(transformers.env.backends, 'onnxruntime', mockOnnxRuntime);
+              safeSetProperty(transformers.env.backends, 'onnxruntime', undefined);
             }
           } catch (e) {
             console.warn('⚠️ Could not re-patch transformers.env:', e);
@@ -499,7 +472,7 @@ export class FashionImageEmbedding {
         // Re-patch module-level onnxruntime (may be non-extensible)
         try {
           // @ts-ignore
-          safeSetProperty(transformers, 'onnxruntime', mockOnnxRuntime);
+          safeSetProperty(transformers, 'onnxruntime', undefined);
         } catch (e) {
           console.warn('⚠️ Could not re-patch module-level onnxruntime (object may be non-extensible):', e);
         }
@@ -508,7 +481,7 @@ export class FashionImageEmbedding {
         if (typeof global !== 'undefined') {
           try {
             // @ts-ignore
-            safeSetProperty(global, 'onnxruntime', mockOnnxRuntime);
+            safeSetProperty(global, 'onnxruntime', undefined);
           } catch (e) {
             console.warn('⚠️ Could not re-patch global.onnxruntime:', e);
           }
