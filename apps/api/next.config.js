@@ -5,17 +5,19 @@ const nextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
   // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
-  experimental: {
-    // Point to monorepo root for file tracing
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      '@prisma/engines',
-      'prisma',
-      '.prisma/client',
-      'sharp', // Externalize Sharp (Node.js native module)
-    ],
-  },
+    experimental: {
+      // Point to monorepo root for file tracing
+      outputFileTracingRoot: require('path').join(__dirname, '../../'),
+      serverComponentsExternalPackages: [
+        '@prisma/client',
+        '@prisma/engines',
+        'prisma',
+        '.prisma/client',
+        'sharp', // Externalize Sharp (Node.js native module)
+        '@xenova/transformers', // Externalize transformers (ML model, needs runtime env vars)
+        'onnxruntime-node', // Externalize ONNX runtime (prevent bundling)
+      ],
+    },
   
   // Include Prisma binaries in file tracing (for production builds)
   outputFileTracingIncludes: {
@@ -86,7 +88,8 @@ const nextConfig = {
         // CRITICAL: Alias onnxruntime-node to a mock module
         // This prevents @xenova/transformers from loading the native module
         // and forces it to use pure JavaScript/WebAssembly mode
-        'onnxruntime-node': path.join(__dirname, 'lib/mock-onnxruntime-node.ts'),
+        // Based on: https://github.com/huggingface/transformers.js/issues/1275
+        'onnxruntime-node': path.join(__dirname, 'lib/mock-onnxruntime-node.js'),
       };
       
       // Also add to resolve.fallback to prevent loading

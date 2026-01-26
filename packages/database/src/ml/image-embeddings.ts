@@ -458,8 +458,30 @@ export class FashionImageEmbedding {
       
       const { pipeline } = transformers;
       
-      // CRITICAL: Wrap pipeline call in try-catch to handle onnxruntime errors
+      // CRITICAL: Based on GitHub issues #1275 and #17
       // @xenova/transformers may retry with onnxruntime-node even after WASM fallback
+      // The library has internal retry logic that tries onnxruntime-node multiple times
+      // Solution: Ensure environment variables are set BEFORE pipeline call
+      // and let the library's WASM fallback handle it automatically
+      
+      // Ensure environment variables are set (in case they were reset)
+      if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
+        process.env.USE_ONNXRUNTIME = 'false';
+        process.env.USE_BROWSER = 'true';
+        process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+        
+        // Ensure transformers module is patched
+        if (transformers && transformers.env) {
+          transformers.env.useBrowser = true;
+          transformers.env.useOnnxruntime = false;
+        }
+      }
+      
+      // CRITICAL: The library will automatically fallback to WASM when onnxruntime-node fails
+      // We've already set environment variables and patched the module
+      // The error messages in logs show it's trying WASM fallback, but then retrying
+      // This is expected behavior - the library tries multiple backends
+      // We just need to wait for it to complete the WASM fallback
       try {
         this.model = await pipeline(
           'image-feature-extraction',
@@ -467,37 +489,25 @@ export class FashionImageEmbedding {
         );
         console.log('✅ Model loaded successfully');
       } catch (pipelineError: any) {
-        // If pipeline fails due to onnxruntime-node error, retry with forced WebAssembly
-        if (pipelineError?.message?.includes('onnxruntime-node is disabled') || 
+        // Check if error is related to onnxruntime retry
+        const isOnnxError = pipelineError?.message?.includes('onnxruntime-node is disabled') || 
             pipelineError?.message?.includes('onnxruntime') ||
-            pipelineError?.message?.includes('Cannot read properties of undefined')) {
-          console.warn('⚠️ Pipeline failed with onnxruntime error, retrying with forced WebAssembly mode...');
-          
-          // Force WebAssembly mode more aggressively
-          if (typeof process !== 'undefined') {
-            process.env.USE_ONNXRUNTIME = 'false';
-            process.env.USE_BROWSER = 'true';
-            process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-          }
-          
-          // Patch transformers module again
-          if (transformers && transformers.env) {
-            transformers.env.useBrowser = true;
-            transformers.env.useOnnxruntime = false;
-            // @ts-ignore
-            transformers.env.onnxruntime = undefined;
-          }
-          
-          // Retry pipeline call
-          console.log('🔄 Retrying pipeline with forced WebAssembly mode...');
-          this.model = await pipeline(
-            'image-feature-extraction',
-            this.modelName
+            pipelineError?.message?.includes('Cannot read properties of undefined');
+        
+        if (isOnnxError && shouldUseWebAssembly()) {
+          // The library should have already tried WASM fallback
+          // If it's still failing, the issue is that WASM fallback itself is failing
+          // This could be due to missing WASM files or other issues
+          console.error('❌ Model loading failed even after WASM fallback');
+          console.error('❌ This suggests the WASM backend itself is not working');
+          console.error('❌ Error:', pipelineError?.message);
+          throw new Error(
+            `Model loading failed: WASM fallback did not work. ` +
+            `This may indicate missing WASM files or other WASM-related issues. ` +
+            `Original error: ${pipelineError?.message}`
           );
-          console.log('✅ Model loaded successfully (after retry with WebAssembly)');
         } else {
-          // Re-throw if it's not an onnxruntime error
-          throw pipelineError;
+          throw pipelineError; // Re-throw other errors
         }
       }
     }
