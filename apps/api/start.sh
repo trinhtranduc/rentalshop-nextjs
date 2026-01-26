@@ -116,18 +116,24 @@ echo "🚀 Starting Next.js application in background..."
 ../../node_modules/.bin/next start -p 3002 &
 NEXTJS_PID=$!
 
-# Wait for server to be ready
+# Wait for server to be ready (increased timeout for Railway)
 echo "⏳ Waiting for server to be ready..."
-MAX_WAIT=30
+MAX_WAIT=60  # Increased from 30 to 60 seconds for Railway
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
-  if curl -s http://localhost:3002/api/health > /dev/null 2>&1; then
-    echo "✅ Server is ready!"
+  # Try health endpoint
+  if curl -s -f http://localhost:3002/api/health > /dev/null 2>&1; then
+    echo "✅ Server is ready (health check passed)!"
     break
   fi
-  sleep 1
-  WAITED=$((WAITED + 1))
-  if [ $((WAITED % 5)) -eq 0 ]; then
+  # Also check if Next.js process is still running
+  if ! kill -0 $NEXTJS_PID 2>/dev/null; then
+    echo "❌ Next.js process died - check logs above"
+    exit 1
+  fi
+  sleep 2
+  WAITED=$((WAITED + 2))
+  if [ $((WAITED % 10)) -eq 0 ]; then
     echo "   Still waiting... ($WAITED/$MAX_WAIT seconds)"
   fi
 done
@@ -135,22 +141,36 @@ done
 # ============================================================================
 # Step 7: Warm-up ML Model (Pre-load to avoid issue #1135)
 # ============================================================================
-if curl -s http://localhost:3002/api/health > /dev/null 2>&1; then
+# Give server a bit more time to fully initialize before warm-up
+if [ $WAITED -lt $MAX_WAIT ]; then
+  echo ""
+  echo "⏳ Waiting additional 5 seconds for server to fully initialize..."
+  sleep 5
+  
   echo ""
   echo "🔥 Step 7: Warming up ML model (pre-loading to avoid promise hanging issue #1135)..."
   echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
+  echo "   This may take 30-120 seconds..."
   
-  # Call warm-up endpoint (with timeout)
-  WARMUP_TIMEOUT=120
-  if timeout $WARMUP_TIMEOUT curl -s -X POST http://localhost:3002/api/test/warmup-model > /dev/null 2>&1; then
-    echo "✅ Model warm-up completed successfully"
+  # Call warm-up endpoint (with timeout) - run in background with timeout
+  WARMUP_TIMEOUT=180  # Increased to 180 seconds (3 minutes) for WASM initialization
+  WARMUP_START=$(date +%s)
+  
+  # Use curl with timeout instead of timeout command (more reliable)
+  if curl -s -X POST --max-time $WARMUP_TIMEOUT http://localhost:3002/api/test/warmup-model > /dev/null 2>&1; then
+    WARMUP_END=$(date +%s)
+    WARMUP_DURATION=$((WARMUP_END - WARMUP_START))
+    echo "✅ Model warm-up completed successfully (took ${WARMUP_DURATION}s)"
   else
-    echo "⚠️  Model warm-up timed out or failed (this is OK - model will load on first request)"
+    WARMUP_END=$(date +%s)
+    WARMUP_DURATION=$((WARMUP_END - WARMUP_START))
+    echo "⚠️  Model warm-up timed out or failed after ${WARMUP_DURATION}s"
+    echo "⚠️  This is OK - model will load on first image search request"
     echo "⚠️  Server will continue running normally"
   fi
   echo ""
 else
-  echo "⚠️  Server did not start in time - skipping model warm-up"
+  echo "⚠️  Server did not start in time (${MAX_WAIT}s timeout) - skipping model warm-up"
   echo "⚠️  Model will be loaded on first image search request"
   echo ""
 fi
