@@ -591,151 +591,55 @@ export class FashionImageEmbedding {
       // We should NOT catch errors during this process - let it complete naturally.
       // Only catch errors if the library truly fails after all internal retries.
       
-            console.log('🔄 Calling pipeline() - library will handle internal retries automatically...');
-            console.log('🔄 Expected behavior: Library will try onnxruntime-node for each component,');
-            console.log('🔄 then fallback to WASM. This may take 30-90 seconds...');
+            console.log('🔄 Calling pipeline() with timeout protection (issue #1135 fix)...');
+            console.log('🔄 Library will handle WASM fallback internally - this may take 30-90 seconds...');
             console.log('🔄 NOTE: You will see "onnxruntime-node is disabled" errors - this is EXPECTED');
-            console.log('🔄 The library will automatically retry with WASM backend for each component');
 
-            // CRITICAL: The library has internal retry logic that tries onnxruntime-node for EACH component
-            // (vision encoder, text encoder, etc.). Each component triggers a retry.
-            // The WASM fallback message appears in console.log, but the library still retries for other components.
-            //
-            // SOLUTION: Let the library complete its internal retry cycle naturally.
-            // Don't catch errors too early - the library will handle retries internally.
-            // Only catch errors after the library has exhausted all its internal retries (timeout).
-
+            // SIMPLIFIED: Based on GitHub issue #1135 - pipeline promise may never resolve
+            // SOLUTION: Use Promise.race with a single long timeout
+            // Let the library handle its internal retry logic naturally
+            // Don't interfere with multiple retry loops
+            
+            const PIPELINE_TIMEOUT = 180000; // 180 seconds (3 minutes) - enough for WASM initialization
+            
             try {
-              // CRITICAL: Based on GitHub issue #1135 - pipeline promise may never resolve
-              // SOLUTION: Use Promise.race with timeout to ensure promise doesn't hang forever
-              // Also implement retry mechanism for onnxruntime errors
+              const pipelinePromise = pipeline(
+                'image-feature-extraction',
+                this.modelName
+              ) as Promise<any>;
               
-              const MAX_RETRY_TIME = 120000; // 120 seconds total timeout
-              const RETRY_DELAY = 2000; // 2 seconds between retries
-              const PIPELINE_TIMEOUT = 60000; // 60 seconds per pipeline() call
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => {
+                  reject(new Error(
+                    `Model loading timeout: Pipeline took longer than ${PIPELINE_TIMEOUT/1000}s. ` +
+                    `This may indicate the promise is hanging (issue #1135) or WASM backend cannot initialize.`
+                  ));
+                }, PIPELINE_TIMEOUT);
+              });
               
-              const startTime = Date.now();
-              let lastError: any = null;
-              let retryCount = 0;
+              // Race between pipeline and timeout - let library handle internal retries
+              this.model = await Promise.race([pipelinePromise, timeoutPromise]);
               
-              while (Date.now() - startTime < MAX_RETRY_TIME) {
-                try {
-                  console.log(`🔄 Attempt ${retryCount + 1}: Loading model with WASM backend...`);
-                  
-                  // CRITICAL FIX for issue #1135: Use Promise.race to prevent hanging
-                  // If pipeline() promise never resolves, timeout will reject it
-                  const pipelinePromise = pipeline(
-                    'image-feature-extraction',
-                    this.modelName
-                  ) as Promise<any>;
-                  
-                  const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => {
-                      reject(new Error(`Pipeline timeout: Model loading took longer than ${PIPELINE_TIMEOUT/1000}s. This may indicate the promise is hanging (issue #1135).`));
-                    }, PIPELINE_TIMEOUT);
-                  });
-                  
-                  // Race between pipeline and timeout
-                  this.model = await Promise.race([pipelinePromise, timeoutPromise]) as any;
-                  
-                  console.log('✅ Model loaded successfully with WASM backend');
-                  break; // Success - exit retry loop
-                } catch (attemptError: any) {
-                  lastError = attemptError;
-                  const errorMessage = attemptError?.message || '';
-                  
-                  // Check if error is related to onnxruntime (expected during retry)
-                  const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') ||
-                                     errorMessage.includes('onnxruntime') ||
-                                     errorMessage.includes('Using `wasm` as a fallback');
-                  
-                  // Check if it's a timeout (promise hanging issue)
-                  const isTimeout = errorMessage.includes('timeout') || 
-                                   errorMessage.includes('took longer than') ||
-                                   errorMessage.includes('hanging');
-                  
-                  // If it's an onnxruntime error, it's expected - continue retrying
-                  if (isOnnxError) {
-                    retryCount++;
-                    const elapsed = Date.now() - startTime;
-                    const remaining = MAX_RETRY_TIME - elapsed;
-                    
-                    if (remaining > RETRY_DELAY) {
-                      console.log(`⚠️ onnxruntime error (expected during WASM initialization) - retrying in ${RETRY_DELAY}ms... (${Math.round(remaining/1000)}s remaining)`);
-                      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-                      continue; // Retry
-                    } else {
-                      // Timeout approaching, throw error
-                      throw new Error(
-                        `Model loading timeout: WASM backend took too long to initialize (${MAX_RETRY_TIME/1000}s timeout). ` +
-                        `Library retried ${retryCount} times but WASM backend failed to initialize.`
-                      );
-                    }
-                  } else if (isTimeout) {
-                    // Promise hanging issue (issue #1135) - retry with fresh promise
-                    retryCount++;
-                    const elapsed = Date.now() - startTime;
-                    const remaining = MAX_RETRY_TIME - elapsed;
-                    
-                    console.warn(`⚠️ Pipeline promise timeout (issue #1135 pattern) - retrying in ${RETRY_DELAY}ms... (${Math.round(remaining/1000)}s remaining)`);
-                    
-                    if (remaining > RETRY_DELAY) {
-                      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-                      continue; // Retry with fresh promise
-                    } else {
-                      throw new Error(
-                        `Model loading failed: Pipeline promise kept timing out (issue #1135). ` +
-                        `Tried ${retryCount} times but promise never resolved. ` +
-                        `This may indicate WASM backend cannot initialize properly.`
-                      );
-                    }
-                  } else {
-                    // Non-onnxruntime, non-timeout error - throw immediately
-                    throw attemptError;
-                  }
-                }
-              }
-              
-              // If we exit loop without success, check if we timed out
-              if (!this.model) {
-                if (lastError) {
-                  const errorMessage = lastError?.message || '';
-                  const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took too long');
-                  
-                  if (isTimeout) {
-                    throw lastError;
-                  }
-                  
-                  // Final error after all retries
-                  throw new Error(
-                    `Model loading failed after ${retryCount} retries: ${lastError?.message}. ` +
-                    `WASM backend may not be properly initialized.`
-                  );
-                } else {
-                  throw new Error(
-                    `Model loading timeout: WASM backend took too long to initialize (${MAX_RETRY_TIME/1000}s timeout)`
-                  );
-                }
-              }
+              console.log('✅ Model loaded successfully with WASM backend');
             } catch (pipelineError: any) {
-              // Final error handling - log and throw
+              // Simplified error handling
               const errorMessage = pipelineError?.message || '';
-              const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took too long');
+              const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took longer than');
+              
+              console.error('❌ Model loading failed:', {
+                error: errorMessage,
+                isTimeout,
+                platform: process.platform,
+                arch: process.arch,
+                nodeVersion: process.version
+              });
               
               if (isTimeout) {
-                console.error('❌ Model loading timeout - WASM backend took too long to initialize');
-                console.error('❌ This may indicate:');
-                console.error('   1. WASM files are missing or not accessible');
-                console.error('   2. Network issue downloading WASM files');
-                console.error('   3. Insufficient memory for WASM backend');
-                console.error('   4. Library retry cycle took longer than 120 seconds');
-              } else {
-                console.error('❌ Model loading failed - final error after retries');
-                console.error('❌ Error details:', {
-                  message: pipelineError?.message,
-                  name: pipelineError?.name,
-                  stack: pipelineError?.stack?.substring(0, 500)
-                });
+                console.error('❌ Possible causes:');
+                console.error('   1. WASM files missing or not accessible');
+                console.error('   2. WASM backend cannot initialize in this environment');
+                console.error('   3. Insufficient memory/resources');
+                console.error('   4. Pipeline promise hanging (issue #1135)');
               }
               
               throw pipelineError;

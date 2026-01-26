@@ -65,6 +65,7 @@
     "test:docker:embedding-simple": "./scripts/test-docker-embedding-simple.sh",
     "test:warmup:local": "./scripts/test-warmup-local.sh",
     "test:warmup:docker": "./scripts/test-docker-warmup.sh",
+    "test:embedding:simple": "./scripts/test-embedding-simple.sh",
     "test:qdrant-search": "tsx scripts/test-qdrant-search.ts",
     "check:embedding": "tsx scripts/check-product-embedding.ts",
     "check:qdrant-collections": "tsx scripts/check-qdrant-collections.ts",
