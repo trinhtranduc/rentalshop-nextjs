@@ -16,10 +16,11 @@ const batchDeleteSchema = z.object({
 
 /**
  * POST /api/orders/batch-delete
- * Soft delete multiple CANCELLED orders in batch
+ * Soft delete multiple orders in batch
  * 
  * Authorization: Users with 'orders.manage' permission can delete orders
- * - ADMIN, MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+ * - ADMIN: can delete any orders regardless of status
+ * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
  * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
  */
 export const POST = withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
@@ -79,20 +80,23 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
       );
     }
 
-    // Validate all orders are CANCELLED
-    const nonCancelledOrders = orders.filter(o => o.status !== ORDER_STATUS.CANCELLED);
-    if (nonCancelledOrders.length > 0) {
-      const errorResponse = ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER');
-      return NextResponse.json(
-        {
-          ...errorResponse,
-          data: {
-            nonCancelledOrderIds: nonCancelledOrders.map(o => o.id),
-            nonCancelledOrderNumbers: nonCancelledOrders.map(o => o.orderNumber),
+    // Validate all orders are CANCELLED (only for non-ADMIN users)
+    // ADMIN can delete any orders regardless of status
+    if (user.role !== USER_ROLE.ADMIN) {
+      const nonCancelledOrders = orders.filter(o => o.status !== ORDER_STATUS.CANCELLED);
+      if (nonCancelledOrders.length > 0) {
+        const errorResponse = ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER');
+        return NextResponse.json(
+          {
+            ...errorResponse,
+            data: {
+              nonCancelledOrderIds: nonCancelledOrders.map(o => o.id),
+              nonCancelledOrderNumbers: nonCancelledOrders.map(o => o.orderNumber),
+            },
           },
-        },
-        { status: API.STATUS.FORBIDDEN }
-      );
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
     }
 
     // Authorization checks based on user role

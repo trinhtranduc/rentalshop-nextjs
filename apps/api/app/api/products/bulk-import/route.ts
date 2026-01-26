@@ -315,15 +315,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const validationErrors: Array<{ row: number; error: string }> = [];
     const validatedProducts: Array<{ rowNumber: number; data: any; categoryId: number }> = [];
 
-    for (let i = 0; i < products.length; i++) {
-      const productData = products[i];
+      for (let i = 0; i < products.length; i++) {
+        const productData = products[i];
       const rowNumber = i + 1;
 
-      try {
+        try {
         // Normalize product data
         const normalizedData = normalizeProductData(productData, merchantId, outletId);
 
-        // Map categoryName to categoryId
+          // Map categoryName to categoryId
         let categoryId: number;
         const categoryName = (productData.categoryName || '').trim().toLowerCase();
         
@@ -331,23 +331,23 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           categoryId = categoryMap.get(categoryName) || defaultCategoryId;
           if (!categoryMap.has(categoryName)) {
             validationErrors.push({ 
-              row: rowNumber, 
-              error: `Category "${productData.categoryName}" not found` 
-            });
-            continue;
-          }
+                row: rowNumber, 
+                error: `Category "${productData.categoryName}" not found` 
+              });
+              continue;
+            }
         } else {
           categoryId = defaultCategoryId;
-        }
+          }
 
         // Validate with schema
-        const productInput = {
+          const productInput = {
           ...normalizedData,
           categoryId
-        };
+          };
 
-        const validated = productCreateSchema.safeParse(productInput);
-        if (!validated.success) {
+          const validated = productCreateSchema.safeParse(productInput);
+          if (!validated.success) {
           const errorMessage = formatZodError(validated.error, productInput);
           validationErrors.push({ row: rowNumber, error: errorMessage });
           
@@ -453,8 +453,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         for (const validatedProduct of productsToImport) {
           try {
             // Create product without include to improve performance
-            const product = await tx.product.create({
-              data: {
+          const product = await tx.product.create({
+            data: {
                 name: validatedProduct.data.name,
                 description: validatedProduct.data.description || null,
                 barcode: validatedProduct.data.barcode || null,
@@ -465,25 +465,25 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                 deposit: validatedProduct.data.deposit || 0,
                 pricingType: validatedProduct.data.pricingType || null,
                 durationConfig: validatedProduct.data.durationConfig || null,
-                merchantId: merchant.id,
+              merchantId: merchant.id,
                 categoryId: validatedProduct.categoryId,
-                outletStock: {
-                  create: [{
-                    outletId: outlet.id,
+              outletStock: {
+                create: [{
+                  outletId: outlet.id,
                     stock: validatedProduct.data.totalStock || 0,
                     available: validatedProduct.data.totalStock || 0,
-                    renting: 0
-                  }]
-                }
-              },
+                  renting: 0
+                }]
+              }
+            },
               select: {
                 id: true,
                 name: true
-              }
-            });
+            }
+          });
 
-            imported.push(product);
-          } catch (error: any) {
+          imported.push(product);
+        } catch (error: any) {
             // Format error and throw to rollback entire transaction (all-or-nothing)
             const errorMessage = formatPrismaError(error);
             console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
@@ -545,16 +545,16 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         message: transactionError.message,
         code: transactionError.code,
         stack: transactionError.stack
-      });
-      
-      return NextResponse.json(
-        ResponseBuilder.success('PRODUCTS_IMPORTED', {
+    });
+
+    return NextResponse.json(
+      ResponseBuilder.success('PRODUCTS_IMPORTED', {
           imported: 0,
           failed: products.length,
-          total: products.length,
+        total: products.length,
           errors: [{ row: 1, error: errorMessage }]
-        })
-      );
+      })
+    );
     }
   } catch (error: any) {
     console.error('Error in bulk import:', error);

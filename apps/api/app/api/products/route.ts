@@ -506,16 +506,25 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     // Generate embedding for image search (background job)
     if (committedImageUrls.length > 0) {
+      console.log(`🔄 Triggering embedding generation for product ${product.id} (${committedImageUrls.length} image(s))...`);
       try {
         const { generateProductEmbedding } = await import('@rentalshop/database/server');
         // Run in background (don't block response)
-        generateProductEmbedding(product.id).catch((error) => {
-          console.error(`Error generating embedding for product ${product.id}:`, error);
-        });
-      } catch (error) {
-        console.error('Error starting embedding generation:', error);
+        generateProductEmbedding(product.id)
+          .then(() => {
+            console.log(`✅ Embedding generation completed for product ${product.id}`);
+          })
+          .catch((error) => {
+            console.error(`❌ Error generating embedding for product ${product.id}:`, error);
+            console.error('Stack:', error.stack);
+          });
+      } catch (error: any) {
+        console.error('❌ Error starting embedding generation:', error);
+        console.error('Stack:', error.stack);
         // Don't fail the request if embedding generation fails
       }
+    } else {
+      console.log(`⚠️ Product ${product.id} has no images, skipping embedding generation`);
     }
 
     return NextResponse.json({

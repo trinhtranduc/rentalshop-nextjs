@@ -394,7 +394,8 @@ export const PUT = async (
  * Soft delete order by ID
  * 
  * Authorization: Users with 'orders.manage' permission can delete orders
- * - ADMIN, MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+ * - ADMIN: can delete any order regardless of status
+ * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
  * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
  */
 export const DELETE = async (
@@ -429,14 +430,15 @@ export const DELETE = async (
         );
       }
 
-      // Only allow deleting CANCELLED orders for all roles (ADMIN, MERCHANT, OUTLET_ADMIN)
+      // Only allow deleting CANCELLED orders for MERCHANT and OUTLET_ADMIN
+      // ADMIN can delete any order regardless of status
       // OUTLET_STAFF cannot delete orders (no orders.manage permission)
-      if (existingOrder.status !== ORDER_STATUS.CANCELLED) {
-        return NextResponse.json(
-          ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
+      if (user.role !== USER_ROLE.ADMIN && existingOrder.status !== ORDER_STATUS.CANCELLED) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
 
       // Authorization checks based on user role
       // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)

@@ -176,6 +176,22 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 # Note: onnxruntime-node should have been removed in builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# CRITICAL: Explicitly verify and ensure @xenova/transformers is accessible
+# In Next.js standalone output, node_modules may not be fully copied
+# We need to ensure WASM files are accessible at runtime
+RUN if [ -d "node_modules/@xenova/transformers" ]; then \
+      echo "✅ @xenova/transformers found in node_modules"; \
+      if [ -d "node_modules/@xenova/transformers/dist" ]; then \
+        echo "✅ WASM files directory found: node_modules/@xenova/transformers/dist"; \
+        ls -la node_modules/@xenova/transformers/dist/ | head -10 || true; \
+      else \
+        echo "⚠️ WASM files directory not found - library will download if needed"; \
+      fi; \
+    else \
+      echo "⚠️ WARNING: @xenova/transformers not found in node_modules"; \
+      echo "⚠️ This may cause WASM backend initialization to fail"; \
+    fi
+
 # CRITICAL: Create writable cache directory for @xenova/transformers
 # Based on: https://github.com/huggingface/transformers.js/issues/295
 # The library needs a writable cache directory for model files and WASM files
