@@ -208,6 +208,7 @@ async function loadTransformers() {
       
       // CRITICAL: Patch internal onnxruntime references in transformers module
       // @xenova/transformers may cache onnxruntime in various places
+      // Use safe patching that handles non-extensible objects
       try {
         // Patch any cached onnxruntime references
         const mockOnnxRuntime = {
@@ -221,37 +222,62 @@ async function loadTransformers() {
           }
         };
         
+        // Helper function to safely set property (handles non-extensible objects)
+        const safeSetProperty = (obj: any, prop: string, value: any) => {
+          try {
+            // Try direct assignment first
+            obj[prop] = value;
+          } catch (e) {
+            try {
+              // If direct assignment fails, try Object.defineProperty
+              Object.defineProperty(obj, prop, {
+                value: value,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            } catch (e2) {
+              try {
+                // If Object.defineProperty fails, try Reflect.set
+                Reflect.set(obj, prop, value);
+              } catch (e3: any) {
+                // If all methods fail, log and continue
+                console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
+              }
+            }
+          }
+        };
+        
         // Try to patch internal state
         // @ts-ignore
         if (transformersModule.env && transformersModule.env.backends) {
-          // @ts-ignore
-          transformersModule.env.backends.onnxruntime = undefined;
-        }
-        
-        // Patch any direct onnxruntime property
-        // @ts-ignore
-        if (transformersModule.onnxruntime !== undefined) {
-          // @ts-ignore
-          transformersModule.onnxruntime = undefined;
+          try {
+            // @ts-ignore
+            safeSetProperty(transformersModule.env.backends, 'onnxruntime', mockOnnxRuntime);
+          } catch (e) {
+            console.warn('⚠️ Could not patch env.backends.onnxruntime:', e);
+          }
         }
         
         // CRITICAL: Patch internal onnxruntime reference that constructSession uses
         // constructSession may access onnxruntime from env.onnxruntime or a cached reference
         // @ts-ignore
         if (transformersModule.env) {
-          // @ts-ignore
-          transformersModule.env.onnxruntime = mockOnnxRuntime;
-          // Also try to patch any cached references
-          // @ts-ignore
-          if (transformersModule.env.backends) {
+          try {
             // @ts-ignore
-            transformersModule.env.backends.onnxruntime = mockOnnxRuntime;
+            safeSetProperty(transformersModule.env, 'onnxruntime', mockOnnxRuntime);
+          } catch (e) {
+            console.warn('⚠️ Could not patch env.onnxruntime:', e);
           }
         }
         
-        // Patch module-level onnxruntime if it exists
-        // @ts-ignore
-        transformersModule.onnxruntime = mockOnnxRuntime;
+        // Patch module-level onnxruntime if it exists (may be non-extensible)
+        try {
+          // @ts-ignore
+          safeSetProperty(transformersModule, 'onnxruntime', mockOnnxRuntime);
+        } catch (e) {
+          console.warn('⚠️ Could not patch module-level onnxruntime (object may be non-extensible):', e);
+        }
         
         // Patch require cache for onnxruntime-node (if it exists)
         if (typeof require !== 'undefined' && require.cache) {
@@ -260,13 +286,17 @@ async function loadTransformers() {
             key.includes('onnxruntime-node')
           );
           if (onnxCacheKey) {
-            // @ts-ignore - We're intentionally patching the cache
-            require.cache[onnxCacheKey] = {
-              id: onnxCacheKey,
-              exports: mockOnnxRuntime,
-              loaded: true
-            } as any;
-            console.log('🔧 Patched onnxruntime-node in require cache');
+            try {
+              // @ts-ignore - We're intentionally patching the cache
+              require.cache[onnxCacheKey] = {
+                id: onnxCacheKey,
+                exports: mockOnnxRuntime,
+                loaded: true
+              } as any;
+              console.log('🔧 Patched onnxruntime-node in require cache');
+            } catch (e) {
+              console.warn('⚠️ Could not patch require cache:', e);
+            }
           }
         }
         
@@ -362,27 +392,65 @@ export class FashionImageEmbedding {
           }
         };
         
+        // Helper function to safely set property (handles non-extensible objects)
+        const safeSetProperty = (obj: any, prop: string, value: any) => {
+          try {
+            // Try direct assignment first
+            obj[prop] = value;
+          } catch (e) {
+            try {
+              // If direct assignment fails, try Object.defineProperty
+              Object.defineProperty(obj, prop, {
+                value: value,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            } catch (e2) {
+              try {
+                // If Object.defineProperty fails, try Reflect.set
+                Reflect.set(obj, prop, value);
+              } catch (e3: any) {
+                // If all methods fail, log and continue
+                console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
+              }
+            }
+          }
+        };
+        
         // Re-patch transformers module with mock object
         if (transformers && transformers.env) {
-          transformers.env.useBrowser = true;
-          transformers.env.useOnnxruntime = false;
-          // @ts-ignore - Set mock object so constructSession can access it
-          transformers.env.onnxruntime = mockOnnxRuntime;
-          // @ts-ignore
-          if (transformers.env.backends) {
+          try {
+            transformers.env.useBrowser = true;
+            transformers.env.useOnnxruntime = false;
+            // @ts-ignore - Set mock object so constructSession can access it
+            safeSetProperty(transformers.env, 'onnxruntime', mockOnnxRuntime);
             // @ts-ignore
-            transformers.env.backends.onnxruntime = mockOnnxRuntime;
+            if (transformers.env.backends) {
+              // @ts-ignore
+              safeSetProperty(transformers.env.backends, 'onnxruntime', mockOnnxRuntime);
+            }
+          } catch (e) {
+            console.warn('⚠️ Could not re-patch transformers.env:', e);
           }
         }
         
-        // Re-patch module-level onnxruntime
-        // @ts-ignore
-        transformers.onnxruntime = mockOnnxRuntime;
+        // Re-patch module-level onnxruntime (may be non-extensible)
+        try {
+          // @ts-ignore
+          safeSetProperty(transformers, 'onnxruntime', mockOnnxRuntime);
+        } catch (e) {
+          console.warn('⚠️ Could not re-patch module-level onnxruntime (object may be non-extensible):', e);
+        }
         
         // Re-patch global references
         if (typeof global !== 'undefined') {
-          // @ts-ignore
-          global.onnxruntime = mockOnnxRuntime;
+          try {
+            // @ts-ignore
+            safeSetProperty(global, 'onnxruntime', mockOnnxRuntime);
+          } catch (e) {
+            console.warn('⚠️ Could not re-patch global.onnxruntime:', e);
+          }
         }
         
         console.log('✅ Re-patching completed before model load');
