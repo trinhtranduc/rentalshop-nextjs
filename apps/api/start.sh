@@ -10,7 +10,8 @@
 # 5. Starts the Next.js server
 # ============================================================================
 
-set -e
+# Don't exit on error - we want to start server even if migrations fail
+# set -e
 
 # CRITICAL: Set environment variables for @xenova/transformers BEFORE any imports
 # USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)

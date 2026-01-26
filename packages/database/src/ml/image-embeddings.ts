@@ -592,69 +592,107 @@ export class FashionImageEmbedding {
             // Only catch errors after the library has exhausted all its internal retries (timeout).
 
             try {
-              // Use Promise.race to add timeout for WASM initialization
-              // Increased to 90 seconds to allow WASM backend to fully initialize
-              // Library needs to retry for multiple components (vision, text, etc.)
-              const pipelinePromise = pipeline(
-                'image-feature-extraction',
-                this.modelName
-              );
-
-              // Add timeout of 90 seconds for WASM backend initialization
-              // WASM backend can take time to initialize, especially on first load
-              // Library needs to retry for multiple components, so we need more time
-              const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Model loading timeout: WASM backend took too long to initialize (90s timeout)')), 90000);
-              });
-
-              this.model = await Promise.race([pipelinePromise, timeoutPromise]) as any;
-              console.log('✅ Model loaded successfully with WASM backend');
-            } catch (pipelineError: any) {
-              // CRITICAL: Only catch errors after timeout or final failure
-              // The library's internal retry mechanism will throw errors during retry
-              // These errors are expected and the library will continue retrying
-              // We should NOT catch onnxruntime errors during retry - let the library handle it
+              // CRITICAL: Wrap pipeline() in a retry wrapper that ignores onnxruntime errors
+              // The library's internal retry mechanism may throw errors during retry
+              // We need to catch these and retry until WASM backend is ready or timeout
               
+              // Increased timeout to 120 seconds to allow WASM backend to fully initialize
+              // Library needs to retry for multiple components (vision, text, etc.)
+              // WASM backend initialization can take 30-60 seconds on first load
+              const MAX_RETRY_TIME = 120000; // 120 seconds
+              const RETRY_DELAY = 2000; // 2 seconds between retries
+              const startTime = Date.now();
+              
+              let lastError: any = null;
+              let retryCount = 0;
+              
+              while (Date.now() - startTime < MAX_RETRY_TIME) {
+                try {
+                  console.log(`🔄 Attempt ${retryCount + 1}: Loading model with WASM backend...`);
+                  
+                  // Try to load model - library will handle WASM fallback internally
+                  this.model = await pipeline(
+                    'image-feature-extraction',
+                    this.modelName
+                  ) as any;
+                  
+                  console.log('✅ Model loaded successfully with WASM backend');
+                  break; // Success - exit retry loop
+                } catch (attemptError: any) {
+                  lastError = attemptError;
+                  const errorMessage = attemptError?.message || '';
+                  
+                  // Check if error is related to onnxruntime (expected during retry)
+                  const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') ||
+                                     errorMessage.includes('onnxruntime') ||
+                                     errorMessage.includes('Using `wasm` as a fallback');
+                  
+                  // If it's an onnxruntime error, it's expected - continue retrying
+                  if (isOnnxError) {
+                    retryCount++;
+                    const elapsed = Date.now() - startTime;
+                    const remaining = MAX_RETRY_TIME - elapsed;
+                    
+                    if (remaining > RETRY_DELAY) {
+                      console.log(`⚠️ onnxruntime error (expected during WASM initialization) - retrying in ${RETRY_DELAY}ms... (${Math.round(remaining/1000)}s remaining)`);
+                      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                      continue; // Retry
+                    } else {
+                      // Timeout approaching, throw error
+                      throw new Error(
+                        `Model loading timeout: WASM backend took too long to initialize (${MAX_RETRY_TIME/1000}s timeout). ` +
+                        `Library retried ${retryCount} times but WASM backend failed to initialize.`
+                      );
+                    }
+                  } else {
+                    // Non-onnxruntime error - throw immediately
+                    throw attemptError;
+                  }
+                }
+              }
+              
+              // If we exit loop without success, check if we timed out
+              if (!this.model) {
+                if (lastError) {
+                  const errorMessage = lastError?.message || '';
+                  const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took too long');
+                  
+                  if (isTimeout) {
+                    throw lastError;
+                  }
+                  
+                  // Final error after all retries
+                  throw new Error(
+                    `Model loading failed after ${retryCount} retries: ${lastError?.message}. ` +
+                    `WASM backend may not be properly initialized.`
+                  );
+                } else {
+                  throw new Error(
+                    `Model loading timeout: WASM backend took too long to initialize (${MAX_RETRY_TIME/1000}s timeout)`
+                  );
+                }
+              }
+            } catch (pipelineError: any) {
+              // Final error handling - log and throw
               const errorMessage = pipelineError?.message || '';
               const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took too long');
               
-              // If it's a timeout, that's a real error
               if (isTimeout) {
                 console.error('❌ Model loading timeout - WASM backend took too long to initialize');
                 console.error('❌ This may indicate:');
                 console.error('   1. WASM files are missing or not accessible');
                 console.error('   2. Network issue downloading WASM files');
                 console.error('   3. Insufficient memory for WASM backend');
-                console.error('   4. Library retry cycle took longer than 90 seconds');
-                throw new Error(
-                  `Model loading timeout: WASM backend took too long to initialize (90s timeout). ` +
-                  `This may indicate missing WASM files or other WASM-related issues.`
-                );
-              }
-              
-              // For all other errors, check if it's a final failure or just a retry
-              // If error message includes "onnxruntime-node is disabled", it's likely a retry error
-              // The library should handle this internally, but if it reaches here, it's a final failure
-              const isOnnxRetryError = errorMessage.includes('onnxruntime-node is disabled') ||
-                  errorMessage.includes('onnxruntime');
-              
-              if (isOnnxRetryError) {
-                console.error('❌ Model loading failed - onnxruntime error persisted after library retries');
-                console.error('❌ This may indicate:');
-                console.error('   1. Library exhausted all retry attempts');
-                console.error('   2. WASM backend failed to initialize');
-                console.error('   3. Configuration issue preventing WASM fallback');
+                console.error('   4. Library retry cycle took longer than 120 seconds');
+              } else {
+                console.error('❌ Model loading failed - final error after retries');
                 console.error('❌ Error details:', {
                   message: pipelineError?.message,
-                  name: pipelineError?.name
+                  name: pipelineError?.name,
+                  stack: pipelineError?.stack?.substring(0, 500)
                 });
-                throw new Error(
-                  `Model loading failed: ${pipelineError?.message}. ` +
-                  `Library retried with WASM but still failed. This may indicate a WASM backend issue.`
-                );
               }
               
-              // For all other errors, throw immediately
               throw pipelineError;
             }
     }
