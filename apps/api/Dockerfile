@@ -176,6 +176,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 # Note: onnxruntime-node should have been removed in builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# CRITICAL: Create writable cache directory for @xenova/transformers
+# Based on: https://github.com/huggingface/transformers.js/issues/295
+# The library needs a writable cache directory for model files and WASM files
+RUN mkdir -p /tmp/transformers-cache && \
+    chown -R nextjs:nodejs /tmp/transformers-cache && \
+    echo "✅ Created transformers cache directory: /tmp/transformers-cache"
+
 # CRITICAL: Ensure onnxruntime-node mock module exists in production image
 # If real package exists, remove it and create mock
 RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-node/package.json" ]; then \

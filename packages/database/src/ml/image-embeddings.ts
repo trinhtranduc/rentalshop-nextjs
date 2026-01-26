@@ -182,6 +182,39 @@ async function loadTransformers() {
     transformersModule = await TransformersApi;
     console.log('✅ @xenova/transformers loaded successfully');
     
+    // CRITICAL: Configure cache directory for transformers.js
+    // Based on: https://github.com/huggingface/transformers.js/issues/295
+    // The library needs a writable cache directory for model files and WASM files
+    if (useWebAssembly && transformersModule && transformersModule.env) {
+      try {
+        const path = require('path');
+        const fs = require('fs');
+        
+        // Use /tmp for cache in Docker/Railway (writable location)
+        // Or use node_modules/@xenova/transformers/.cache if available
+        const cacheDir = process.env.TRANSFORMERS_CACHE_DIR || 
+          (typeof process !== 'undefined' && process.cwd() 
+            ? path.join(process.cwd(), 'node_modules', '@xenova', 'transformers', '.cache')
+            : '/tmp/transformers-cache');
+        
+        // Ensure cache directory exists and is writable
+        if (!fs.existsSync(cacheDir)) {
+          fs.mkdirSync(cacheDir, { recursive: true });
+          console.log(`📁 Created transformers cache directory: ${cacheDir}`);
+        }
+        
+        // Configure transformers.js to use this cache directory
+        transformersModule.env.cacheDir = cacheDir;
+        transformersModule.env.useFSCache = true;
+        transformersModule.env.useBrowserCache = false; // Disable browser cache in Node.js
+        
+        console.log(`📁 Configured transformers cache directory: ${cacheDir}`);
+      } catch (cacheError: any) {
+        console.warn('⚠️ Could not configure transformers cache directory:', cacheError?.message);
+        // Continue anyway - library will use default cache location
+      }
+    }
+    
     // CRITICAL: Deep patch @xenova/transformers module to force WebAssembly mode
     // This ensures onnxruntime-node is never used, even if it's imported
     if (useWebAssembly && transformersModule) {

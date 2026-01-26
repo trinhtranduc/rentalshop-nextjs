@@ -19,10 +19,15 @@ const nextConfig = {
       ],
     },
   
-  // Include Prisma binaries in file tracing (for production builds)
+  // Include Prisma binaries and transformers WASM files in file tracing (for production builds)
   outputFileTracingIncludes: {
     '/api/**': [
       '../../node_modules/.prisma/client/**/*',
+      // CRITICAL: Include @xenova/transformers WASM files for WebAssembly backend
+      // Based on: https://github.com/huggingface/transformers.js/issues/295
+      '../../node_modules/@xenova/transformers/dist/**/*.wasm',
+      '../../node_modules/@xenova/transformers/dist/**/*.js',
+      '../../node_modules/@xenova/transformers/.cache/**/*',
     ],
   },
   
