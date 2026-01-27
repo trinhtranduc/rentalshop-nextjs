@@ -197,19 +197,40 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // OFFICIAL APPROACH: Pass Blob directly to pipeline (avoids instanceof check issue)
-      // Problem: RawImage created from dynamic import doesn't pass instanceof check in Next.js standalone
-      // Solution: Pass Blob directly, pipeline will convert via RawImage.read() → RawImage.fromBlob()
-      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob() handles Blob correctly
-      // In Node.js, RawImage.fromBlob() uses: sharp(await blob.arrayBuffer())
-      console.log('🔄 Creating Blob from buffer (pipeline will handle conversion)...');
-      const { Blob } = await import('buffer');
-      const blob = new Blob([imageBuffer], { type: 'image/png' });
+      // SOLUTION: Create Blob-like object from Buffer that passes instanceof check
+      // Problem: Blob from Node.js 'buffer' module doesn't pass instanceof Blob check in Next.js standalone
+      // Solution: Use global Blob (Node.js 18+) or create Blob-like object with arrayBuffer() method
+      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob() uses blob.arrayBuffer()
+      console.log('🔄 Creating Blob-like object from Buffer...');
       
-      // Pipeline will call prepareImages() → RawImage.read(blob) → RawImage.fromBlob(blob)
-      // This avoids instanceof check issue with dynamic imports
-      console.log('🔄 Calling model with Blob (pipeline will auto-convert to RawImage)...');
-      const output = await model(blob);
+      // In Node.js 18+, global Blob is available and should work
+      // If not available, create a Blob-like object
+      let blob: Blob;
+      if (typeof Blob !== 'undefined' && Blob !== null) {
+        // Use global Blob (Node.js 18+)
+        // Convert Buffer to Uint8Array for Blob constructor
+        const uint8Array = new Uint8Array(imageBuffer);
+        blob = new Blob([uint8Array], { type: 'image/png' });
+        } else {
+        // Fallback: Create Blob-like object with arrayBuffer() method
+        // This mimics the Blob interface that RawImage.fromBlob() expects
+        blob = {
+          arrayBuffer: async () => imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength),
+          size: imageBuffer.length,
+          type: 'image/png'
+        } as Blob;
+      }
+      
+      // Use RawImage.read() which will call RawImage.fromBlob() internally
+      // This ensures we use the same RawImage class that pipeline uses
+      console.log('🔄 Creating RawImage from Blob using RawImage.read()...');
+      const rawImage = await RawImage.read(blob);
+      
+      // Pass RawImage directly to pipeline
+      // Pipeline's prepareImages() will check: if (input instanceof RawImage) return input
+      // Since we use RawImage.read() from same module, instanceof should work
+      console.log('🔄 Calling model with RawImage...');
+      const output = await model(rawImage);
       console.log('✅ Model call succeeded');
       
       // Extract embedding vector
