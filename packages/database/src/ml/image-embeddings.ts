@@ -197,24 +197,20 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // OFFICIAL APPROACH: Use sharp directly (matches transformers.js internal implementation)
-      // Reference: transformers.js-main/src/utils/image.js - loadImageFunction uses sharp
-      // In Node.js, RawImage.fromBlob() uses: sharp(await blob.arrayBuffer())
-      // We can use sharp directly with buffer to match the internal implementation
+      // OFFICIAL APPROACH: Create RawImage from sharp (matches test file approach)
+      // Test file: transformers.js-main/tests/pipelines/test_pipelines_image_feature_extraction.js
+      // They create RawImage from URL and pass directly to pipeline
+      // We create RawImage from sharp (same as transformers.js internal loadImageFunction)
+      // Then pass RawImage directly to pipeline (pipeline will recognize it via instanceof check)
       console.log('🔄 Creating RawImage using sharp (matches transformers.js internal)...');
       const sharpImage = sharp(imageBuffer);
       const rawImage = await this.createRawImageFromSharp(sharpImage);
       
-      // Resize to 224x224 if needed (transformers.js will handle this internally)
-      let finalImage = rawImage;
-      if (rawImage.width !== 224 || rawImage.height !== 224) {
-        console.log(`🔄 Resizing RawImage from ${rawImage.width}x${rawImage.height} to 224x224...`);
-        finalImage = rawImage.resize(224, 224);
-      }
-      
-      console.log('🔄 Calling model with RawImage...');
-      const output = await model(finalImage);
-      console.log('✅ Model call succeeded with RawImage');
+      // Pass RawImage directly to pipeline (matches test file approach)
+      // Pipeline's prepareImages() will check: if (input instanceof RawImage) return input
+      console.log('🔄 Calling model with RawImage (pipeline will recognize it)...');
+      const output = await model(rawImage);
+        console.log('✅ Model call succeeded with RawImage');
       
       // Extract embedding vector
       let embedding: number[];
