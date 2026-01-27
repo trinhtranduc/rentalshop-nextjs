@@ -3,16 +3,23 @@
  * This prevents @huggingface/transformers from loading the native module
  * and forces it to use pure JavaScript/WebAssembly mode
  * 
- * ROOT CAUSE FIX: Return undefined so library detects unavailability
- * Based on logs analysis:
- * - Library tries to import onnxruntime-node
- * - If module is undefined, library automatically falls back to WASM
- * - Solution: Return undefined (library detects and uses WASM backend)
- * 
- * CRITICAL: Return undefined (not an object) so library detects unavailability
- * Library will check if module exists, and if undefined, uses WASM automatically
+ * CRITICAL: Library checks for onnxruntime-node and tries to call create()
+ * If we return undefined, library may still try to access properties
+ * Solution: Return object with proper structure, but throw error on access
+ * Library will catch error and fallback to WASM
  */
 
-// Return undefined so library detects unavailability and uses WASM
-// Library will check: if (onnxruntime === undefined) { use WASM }
-module.exports = undefined;
+// Return object with InferenceSession structure
+// When library tries to call create(), it throws error and library falls back to WASM
+const mockInferenceSession = {
+  create: function() {
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};
+
+module.exports = {
+  InferenceSession: mockInferenceSession,
+  create: function() {
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};
