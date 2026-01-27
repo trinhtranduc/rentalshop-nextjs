@@ -3,12 +3,23 @@
  * This prevents @xenova/transformers from loading the native module
  * and forces it to use pure JavaScript/WebAssembly mode
  * 
- * ROOT CAUSE FIX: Return empty object instead of undefined or throwing errors
- * Library checks for onnxruntime-node existence, and if methods don't work,
- * it will automatically fallback to WASM backend
+ * ROOT CAUSE FIX: Return object with InferenceSession structure
+ * Library checks for onnxruntime-node.InferenceSession.create()
+ * If method throws or returns undefined, library will fallback to WASM
  */
 
-// Return empty object - library will detect methods don't work and fallback to WASM
-// This is safer than undefined (which causes "Cannot read property" errors)
-// and better than throwing errors (which library may not catch properly)
-module.exports = {};
+// Return object with InferenceSession structure
+// Library will try to call create() which throws, triggering WASM fallback
+const mockInferenceSession = {
+  create: function() {
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};
+
+module.exports = {
+  InferenceSession: mockInferenceSession,
+  // Also export create directly (some code paths may use this)
+  create: function() {
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};

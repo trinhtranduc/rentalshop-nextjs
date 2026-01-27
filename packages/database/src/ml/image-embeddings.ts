@@ -608,37 +608,61 @@ export class FashionImageEmbedding {
               const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') || 
                                  errorMessage.includes('onnxruntime');
               
-              console.error('❌ Model loading failed:', {
-                error: errorMessage,
-                isTimeout,
-                isOnnxError,
-                platform: process.platform,
-                arch: process.arch,
-                nodeVersion: process.version,
-                // COMMENTED: Full error details for debugging
-                // stack: pipelineError?.stack?.substring(0, 500)
-              });
-              
-              // COMMENTED: If it's an onnxruntime error, library should have fallback to WASM
-              // But it seems library's fallback is not working. Need to investigate further.
-              if (isOnnxError) {
-                console.error('⚠️ onnxruntime error detected - library should have fallback to WASM');
-                console.error('⚠️ This suggests library\'s internal WASM fallback mechanism is not working');
-                console.error('⚠️ Possible causes:');
-                console.error('   1. WASM backend cannot initialize');
-                console.error('   2. WASM files are missing or not accessible');
-                console.error('   3. Library\'s fallback logic has a bug');
+              // CRITICAL: If it's an onnxruntime error, library is trying to fallback to WASM
+              // The error "onnxruntime-node is disabled" is EXPECTED during fallback process
+              // Library may retry multiple times for different components (vision, text, etc.)
+              // We should NOT throw immediately - library needs time to complete fallback
+              if (isOnnxError && !isTimeout) {
+                console.warn('⚠️ onnxruntime error during model loading (EXPECTED during WASM fallback)');
+                console.warn('⚠️ Library is attempting WASM fallback - this may take 30-90 seconds...');
+                console.warn('⚠️ Error message:', errorMessage.substring(0, 200));
+                
+                // CRITICAL: Don't throw error immediately - library needs to complete fallback
+                // Instead, retry pipeline call to allow library to complete WASM initialization
+                console.log('🔄 Retrying pipeline call to allow library to complete WASM fallback...');
+                
+                // Wait a bit for library to initialize WASM backend
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Retry pipeline call - library should have initialized WASM by now
+                try {
+                  console.log('🔄 Retrying pipeline() call after WASM fallback...');
+                  const retryPromise = pipeline('image-feature-extraction', this.modelName, {
+                    device: 'cpu',
+                    dtype: 'fp32'
+                  });
+                  const retryTimeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Retry timeout after 120 seconds')), 120000)
+                  );
+                  
+                  this.model = await Promise.race([retryPromise, retryTimeout]);
+                  console.log('✅ Model loaded successfully after WASM fallback retry');
+                } catch (retryError: any) {
+                  // If retry also fails, then WASM backend truly cannot initialize
+                  console.error('❌ WASM fallback retry also failed:', retryError?.message);
+                  throw new Error(`Failed to load model ${this.modelName}: WASM backend cannot initialize. Original error: ${errorMessage}`);
+                }
+              } else {
+                // For timeout or other errors, throw immediately
+                console.error('❌ Model loading failed:', {
+                  error: errorMessage,
+                  isTimeout,
+                  isOnnxError,
+                  platform: process.platform,
+                  arch: process.arch,
+                  nodeVersion: process.version,
+                });
+                
+                if (isTimeout) {
+                  console.error('❌ Possible causes:');
+                  console.error('   1. WASM files missing or not accessible');
+                  console.error('   2. WASM backend cannot initialize in this environment');
+                  console.error('   3. Insufficient memory/resources');
+                  console.error('   4. Pipeline promise hanging (issue #1135)');
+                }
+                
+                throw pipelineError;
               }
-              
-              if (isTimeout) {
-                console.error('❌ Possible causes:');
-                console.error('   1. WASM files missing or not accessible');
-                console.error('   2. WASM backend cannot initialize in this environment');
-                console.error('   3. Insufficient memory/resources');
-                console.error('   4. Pipeline promise hanging (issue #1135)');
-              }
-              
-              throw pipelineError;
             }
     }
     return this.model;

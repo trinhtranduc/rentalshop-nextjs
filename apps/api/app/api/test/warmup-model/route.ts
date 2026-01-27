@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { warmUpModel } from '@rentalshop/database/server';
 import { ResponseBuilder } from '@rentalshop/utils';
+
+// Force dynamic rendering to prevent Next.js from collecting page data during build
+// This prevents Next.js from trying to load native dependencies (onnxruntime-node) during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * POST /api/test/warmup-model
@@ -14,6 +18,9 @@ import { ResponseBuilder } from '@rentalshop/utils';
 export const POST = async (request: NextRequest) => {
   try {
     console.log('🔥 API: Starting model warm-up...');
+    
+    // Lazy import to prevent Next.js from loading during build
+    const { warmUpModel } = await import('@rentalshop/database/server');
     
     // Warm-up model with 120 second timeout
     await warmUpModel(120000);
@@ -63,6 +70,3 @@ export const GET = async (request: NextRequest) => {
     );
   }
 };
-
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
