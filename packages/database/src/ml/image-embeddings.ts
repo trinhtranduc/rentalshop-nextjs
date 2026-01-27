@@ -13,108 +13,15 @@
 
 import sharp from 'sharp';
 
-// Detect if we should use WebAssembly mode (Alpine Linux, Docker, Railway, or when onnxruntime-node unavailable)
+// OFFICIAL TUTORIAL APPROACH: Simple detection
+// Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+// Just check env variables - library will auto-detect and use WASM if needed
 function shouldUseWebAssembly(): boolean {
   if (typeof process === 'undefined') return false;
   
-  // Log detection details for debugging
-  const detectionInfo = {
-    platform: process.platform,
-    arch: process.arch,
-    cwd: process.cwd(),
-    USE_BROWSER: process.env.USE_BROWSER,
-    USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
-    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
-    RAILWAY_SERVICE_NAME: process.env.RAILWAY_SERVICE_NAME,
-    ALPINE: process.env.ALPINE,
-    DOCKER: process.env.DOCKER
-  };
-  
-  // Check for explicit flags (highest priority)
-  if (process.env.USE_BROWSER === 'true') {
-    console.log('🔧 WebAssembly mode: USE_BROWSER=true detected');
-    return true;
-  }
-  if (process.env.USE_ONNXRUNTIME === 'false') {
-    console.log('🔧 WebAssembly mode: USE_ONNXRUNTIME=false detected');
-    return true;
-  }
-  if (process.env.ALPINE === 'true') {
-    console.log('🔧 WebAssembly mode: ALPINE=true detected');
-    return true;
-  }
-  if (process.env.DOCKER === 'true') {
-    console.log('🔧 WebAssembly mode: DOCKER=true detected');
-    return true;
-  }
-  
-  // Check for Railway environment (Railway uses containers that may not have full glibc)
-  if (process.env.RAILWAY_ENVIRONMENT) {
-    console.log('🔧 WebAssembly mode: Railway environment detected');
-    return true;
-  }
-  if (process.env.RAILWAY_ENVIRONMENT_NAME) {
-    console.log('🔧 WebAssembly mode: Railway environment name detected');
-    return true;
-  }
-  if (process.env.RAILWAY_SERVICE_NAME) {
-    console.log('🔧 WebAssembly mode: Railway service name detected');
-    return true;
-  }
-  
-  // Check platform - if Linux and not darwin/win32, likely containerized
-  if (process.platform === 'linux') {
-    // Check if we're in a container (common indicators)
-    try {
-      const fs = require('fs');
-      // Docker containers often have /.dockerenv
-      if (fs.existsSync('/.dockerenv')) {
-        console.log('🔧 WebAssembly mode: /.dockerenv detected (Docker container)');
-        return true;
-      }
-      // Check if running in Railway (has specific paths)
-      if (fs.existsSync('/app') && process.cwd().includes('/app')) {
-        console.log('🔧 WebAssembly mode: /app path detected (likely Railway/Docker)');
-        return true;
-      }
-    } catch (e) {
-      // If we can't check filesystem, continue with other checks
-      console.log('ℹ️ Could not check filesystem for container detection:', e);
-    }
-    
-    // If dlopen is not available, likely musl libc (Alpine)
-    if (typeof process.dlopen === 'undefined') {
-      console.log('🔧 WebAssembly mode: process.dlopen undefined (likely Alpine/musl)');
-      return true;
-    }
-    
-    // CRITICAL: On Linux, if USE_ONNXRUNTIME is not explicitly 'true', use WebAssembly
-    // This is the safest default for Railway/Docker deployments
-    // Railway/Docker containers often don't have full glibc support for onnxruntime-node
-    if (!process.env.USE_ONNXRUNTIME || process.env.USE_ONNXRUNTIME !== 'true') {
-      console.log('🔧 WebAssembly mode: Linux platform without explicit USE_ONNXRUNTIME=true (defaulting to WebAssembly for safety)');
-      return true;
-    }
-  }
-  
-  console.log('ℹ️ Native mode: Platform detection details:', detectionInfo);
-  return false;
-}
-
-// Set environment variables based on platform detection
-if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
-  // Force WebAssembly mode on Alpine Linux, Docker, Railway, or when onnxruntime-node unavailable
-  // This prevents ERR_DLOPEN_FAILED error
-  process.env.USE_ONNXRUNTIME = 'false';
-  process.env.USE_BROWSER = 'true';
-  process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-  
-  console.log('🔧 WebAssembly mode forced (Alpine/Docker/Railway detected)');
-} else {
-  // Local development (darwin/win32): Let @huggingface/transformers choose backend automatically
-  // Native onnxruntime-node will work and RawImage will function properly
-  console.log('🔧 Local development - using native onnxruntime-node');
+  // Check explicit env variables (set in Dockerfile/start.sh)
+  return process.env.USE_BROWSER === 'true' || 
+         process.env.USE_ONNXRUNTIME === 'false';
 }
 
 // LAZY LOAD: Import @huggingface/transformers only when needed
@@ -122,33 +29,20 @@ let transformersModule: any = null;
 
 async function loadTransformers() {
   if (!transformersModule) {
-    // OFFICIAL TUTORIAL APPROACH: Simple and clean
+    // OFFICIAL TUTORIAL APPROACH: Exactly like tutorial
     // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-    // 1. Set env variables (already set in start.sh, but ensure they're set)
-    // 2. Import library
-    // 3. Set transformers.env
-    // 4. Done - library will auto-detect and use WASM
-    
-    const useWebAssembly = shouldUseWebAssembly();
-    
-    if (typeof process !== 'undefined' && useWebAssembly) {
-      process.env.USE_ONNXRUNTIME = 'false';
-      process.env.USE_BROWSER = 'true';
-      process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-    }
+    // Just import and use - env variables are set in Dockerfile/start.sh
+    // Library will auto-detect and use WASM based on env variables
     
     console.log('🔄 Loading @huggingface/transformers...');
     const TransformersApi = Function('return import("@huggingface/transformers")')();
     transformersModule = await TransformersApi;
     console.log('✅ @huggingface/transformers loaded successfully');
     
-    // Set transformers.env (official tutorial approach)
-    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-    // Just set env variables and transformers.env - library will auto-detect WASM
-    if (useWebAssembly && transformersModule?.env) {
+    // Set transformers.env if needed (optional, env variables should be enough)
+    if (shouldUseWebAssembly() && transformersModule?.env) {
       transformersModule.env.useBrowser = true;
       transformersModule.env.useOnnxruntime = false;
-      console.log('✅ Set transformers.env.useBrowser=true and useOnnxruntime=false');
     }
   }
   return transformersModule;
