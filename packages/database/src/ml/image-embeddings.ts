@@ -143,6 +143,8 @@ async function loadTransformers() {
     console.log('✅ @huggingface/transformers loaded successfully');
     
     // Set transformers.env (official tutorial approach)
+    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+    // Just set env variables and transformers.env - library will auto-detect WASM
     if (useWebAssembly && transformersModule?.env) {
       transformersModule.env.useBrowser = true;
       transformersModule.env.useOnnxruntime = false;
