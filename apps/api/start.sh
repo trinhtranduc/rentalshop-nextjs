@@ -13,12 +13,9 @@
 # Don't exit on error - we want to start server even if migrations fail
 # set -e
 
-# CRITICAL: Set environment variables for @huggingface/transformers BEFORE any imports
-# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
-# This avoids onnxruntime-node dependency on Alpine Linux
-export USE_ONNXRUNTIME=false
-export USE_BROWSER=true
-export ONNXRUNTIME_NODE_DISABLE=true
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
 
 echo "🚀 Starting API server with automatic migrations..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"

@@ -1,13 +1,14 @@
 # ===================================
 # STAGE 1: Dependencies
 # ===================================
-FROM node:22-alpine AS deps
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+# Tutorial: transformers.js-main/examples/next-server/Dockerfile
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work
+FROM node:18 AS deps
 WORKDIR /app
 
 # Install system dependencies for Prisma
-# Note: We use pure JavaScript mode for @huggingface/transformers (no onnxruntime-node needed)
-# This avoids glibc dependency issues on Alpine Linux
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy root package files
 COPY package.json yarn.lock ./
@@ -38,58 +39,26 @@ RUN yarn config set network-timeout 300000 && \
       yarn cache clean && \
       yarn install --frozen-lockfile --network-timeout 300000))
 
-# CRITICAL: Remove onnxruntime-node and create mock module
-# onnxruntime-node requires glibc which Alpine Linux doesn't have
-# @huggingface/transformers will fall back to pure JavaScript/WebAssembly mode
-RUN if [ -d "node_modules/onnxruntime-node" ]; then \
-      echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
-      rm -rf node_modules/onnxruntime-node && \
-      echo "✅ onnxruntime-node removed successfully"; \
-    else \
-      echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
-    fi && \
-    # Create mock module directory and file
-    # ROOT CAUSE FIX: Return undefined instead of throwing errors
-    # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
-    # and automatically fallback to WASM backend without throwing errors
-    mkdir -p node_modules/onnxruntime-node && \
-    echo "// Mock onnxruntime-node module - throw error to force WASM fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (throws error for WASM fallback)"
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
 
 # ===================================
 # STAGE 2: Builder
 # ===================================
-FROM node:22-alpine AS builder
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+FROM node:18 AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-# Note: We use pure JavaScript mode for @huggingface/transformers (no native modules needed)
-RUN apk add --no-cache openssl
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# CRITICAL: Remove onnxruntime-node and create mock module before building
-# onnxruntime-node requires glibc which Alpine Linux doesn't have
-# @huggingface/transformers will fall back to pure JavaScript/WebAssembly mode
-RUN if [ -d "node_modules/onnxruntime-node" ]; then \
-      echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
-      rm -rf node_modules/onnxruntime-node && \
-      echo "✅ onnxruntime-node removed successfully"; \
-    else \
-      echo "ℹ️ onnxruntime-node not found (already removed or not installed)"; \
-    fi && \
-    # Create mock module directory and file
-    # ROOT CAUSE FIX: Return undefined instead of throwing errors
-    # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
-    # and automatically fallback to WASM backend without throwing errors
-    mkdir -p node_modules/onnxruntime-node && \
-    echo "// Mock onnxruntime-node module - throw error to force WASM fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (throws error for WASM fallback)"
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
@@ -119,32 +88,26 @@ RUN mkdir -p apps/api/node_modules/.prisma && \
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
-# CRITICAL: Set environment variables for @huggingface/transformers to use WebAssembly mode
-# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
-# This prevents onnxruntime-node from being loaded (which requires glibc on Alpine)
-ENV USE_ONNXRUNTIME=false
-ENV USE_BROWSER=true
-ENV ONNXRUNTIME_NODE_DISABLE=true
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
 RUN yarn build
 
 # ===================================
 # STAGE 3: Production Runner
 # ===================================
-FROM node:22-alpine AS runner
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+FROM node:18 AS runner
 WORKDIR /app
 
 # Install OpenSSL for Prisma AND postgresql-client for migrations
-RUN apk add --no-cache openssl postgresql-client
+RUN apt-get update && apt-get install -y openssl postgresql-client && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3002
-# CRITICAL: Set environment variables for @huggingface/transformers to use WebAssembly mode
-# USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
-# Based on: https://huggingface.co/docs/transformers.js/tutorials/next
-# and https://github.com/huggingface/transformers.js/blob/main/examples/next-server/Dockerfile
-ENV USE_ONNXRUNTIME=false
-ENV USE_BROWSER=true
-ENV ONNXRUNTIME_NODE_DISABLE=true
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
 ENV TRANSFORMERS_CACHE_DIR=/tmp/transformers-cache
 
 # Create nextjs user for security
@@ -155,8 +118,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 
-# Copy node_modules (includes Prisma binaries)
-# Note: onnxruntime-node should have been removed in builder stage
+# Copy node_modules (includes Prisma binaries and onnxruntime-node)
+# Note: onnxruntime-node will work with node:18 (has glibc)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # CRITICAL: Explicitly verify and ensure @huggingface/transformers is accessible
@@ -190,24 +153,9 @@ RUN mkdir -p /tmp/transformers-cache && \
     chmod 777 -R /app/node_modules/@xenova 2>/dev/null || true && \
     echo "✅ Created transformers cache directories: /tmp/transformers-cache and /app/node_modules/@xenova/.cache"
 
-# CRITICAL: Ensure onnxruntime-node mock module exists in production image
-# If real package exists, remove it and create mock
-RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-node/package.json" ]; then \
-      echo "⚠️ WARNING: Real onnxruntime-node found in production image, removing..." && \
-      rm -rf node_modules/onnxruntime-node && \
-      echo "✅ Real onnxruntime-node removed from production image"; \
-    fi && \
-    # Ensure mock module exists
-    # ROOT CAUSE FIX: Return object with InferenceSession structure that throws on create()
-    # Based on logs: Library tries to access onnxruntime.InferenceSession.create()
-    # If module is undefined, library throws "Cannot read properties of undefined"
-    # Solution: Return object with proper structure, but create() throws error
-    # Library will catch error and immediately fallback to WASM
-    mkdir -p node_modules/onnxruntime-node && \
-    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module ensured in production image (with InferenceSession structure for WASM fallback)"
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages

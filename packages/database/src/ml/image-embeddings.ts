@@ -126,8 +126,9 @@ export class FashionImageEmbedding {
       
       // OFFICIAL TUTORIAL APPROACH: Just call pipeline()
       // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-      // Library will auto-detect env variables and use WASM automatically
-      console.log('🔄 Calling pipeline() - library will auto-detect WASM mode...');
+      // Library will use CPU backend (onnxruntime-node) by default in Node.js
+      // node:18 has glibc, so onnxruntime-node will work correctly
+      console.log('🔄 Calling pipeline() - library will use CPU backend (onnxruntime-node)...');
       
       // Simple timeout to prevent hanging (3 minutes)
       const timeoutPromise = new Promise<never>((_, reject) => {

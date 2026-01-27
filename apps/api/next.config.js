@@ -114,17 +114,8 @@ const nextConfig = {
         ...config.resolve.alias,
         '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
-        // CRITICAL: Alias onnxruntime-node to a mock module
-        // This prevents @xenova/transformers from loading the native module
-        // and forces it to use pure JavaScript/WebAssembly mode
-        // Based on: https://github.com/huggingface/transformers.js/issues/1275
-        'onnxruntime-node': path.join(__dirname, 'lib/mock-onnxruntime-node.js'),
-      };
-      
-      // Also add to resolve.fallback to prevent loading
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'onnxruntime-node': false,
+        // OFFICIAL TUTORIAL APPROACH: No need to alias onnxruntime-node
+        // node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
       };
     }
     return config;
