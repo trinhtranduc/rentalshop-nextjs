@@ -2,7 +2,7 @@
  * Image Embedding Service
  * Sử dụng CLIP model để tạo embeddings từ hình ảnh
  * 
- * Default Model: Xenova/clip-vit-base-patch32 (tương thích 100% với @huggingface/transformers)
+ * Default Model: Xenova/clip-vit-base-patch32 (tương thích 100% với @xenova/transformers)
  * Alternative: patrickjohncyh/fashion-clip (fashion-specific, cần test compatibility)
  * Vector dimension: 512
  * 
@@ -24,25 +24,27 @@ function shouldUseWebAssembly(): boolean {
          process.env.USE_ONNXRUNTIME === 'false';
 }
 
-// LAZY LOAD: Import @huggingface/transformers only when needed
+// LAZY LOAD: Import @xenova/transformers only when needed
+// OFFICIAL TUTORIAL APPROACH: Use @xenova/transformers like tutorial
+// Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
 let transformersModule: any = null;
 
 async function loadTransformers() {
   if (!transformersModule) {
     // OFFICIAL TUTORIAL APPROACH: Exactly like tutorial
-    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+    // Tutorial uses @xenova/transformers, not @huggingface/transformers
     // Just import and use - env variables are set in Dockerfile/start.sh
     // Library will auto-detect and use WASM based on env variables
     
-    console.log('🔄 Loading @huggingface/transformers...');
-    const TransformersApi = Function('return import("@huggingface/transformers")')();
+    console.log('🔄 Loading @xenova/transformers...');
+    const TransformersApi = Function('return import("@xenova/transformers")')();
     transformersModule = await TransformersApi;
-    console.log('✅ @huggingface/transformers loaded successfully');
+    console.log('✅ @xenova/transformers loaded successfully');
     
     // Set transformers.env if needed (optional, env variables should be enough)
     if (shouldUseWebAssembly() && transformersModule?.env) {
-      transformersModule.env.useBrowser = true;
-      transformersModule.env.useOnnxruntime = false;
+        transformersModule.env.useBrowser = true;
+        transformersModule.env.useOnnxruntime = false;
     }
   }
   return transformersModule;
