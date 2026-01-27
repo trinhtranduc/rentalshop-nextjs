@@ -150,11 +150,11 @@ async function loadTransformers() {
           // Intercept require calls for onnxruntime-node
           Module.prototype.require = function(id: string) {
             if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-              console.log('🚫 Blocking onnxruntime-node import - returning undefined to allow WASM fallback');
-              // ROOT CAUSE FIX: Return undefined instead of throwing errors
-              // This allows @xenova/transformers to detect that onnxruntime-node is unavailable
-              // and automatically fallback to WASM backend without throwing errors
-              return undefined;
+              console.log('🚫 Blocking onnxruntime-node import - returning empty object to allow WASM fallback');
+              // ROOT CAUSE FIX: Return empty object instead of undefined or throwing errors
+              // Library will detect that methods don't work and automatically fallback to WASM
+              // Empty object is safer than undefined (avoids "Cannot read property" errors)
+              return {};
             }
             return originalRequire.apply(this, arguments);
           };
@@ -232,23 +232,24 @@ async function loadTransformers() {
         transformersModule.env.useBrowser = true;
         transformersModule.env.useOnnxruntime = false;
         // @ts-ignore
-        transformersModule.env.onnxruntime = undefined;
+        transformersModule.env.onnxruntime = {}; // Empty object instead of undefined
       }
       
       // Patch global onnxruntime references
       if (typeof global !== 'undefined') {
         // @ts-ignore
-        global.onnxruntime = undefined;
+        global.onnxruntime = {}; // Empty object instead of undefined
         // @ts-ignore
         if (global.window) {
           // @ts-ignore
-          global.window.onnxruntime = undefined;
+          global.window.onnxruntime = {}; // Empty object instead of undefined
         }
       }
       
         // CRITICAL: Patch internal onnxruntime references in transformers module
-        // ROOT CAUSE FIX: Set to undefined instead of mock object that throws errors
-        // This allows library to gracefully detect unavailability and fallback to WASM
+        // ROOT CAUSE FIX: Set to empty object instead of undefined or throwing errors
+        // Empty object allows library to check for methods without throwing "Cannot read property" errors
+        // Library will detect methods don't work and automatically fallback to WASM
         try {
         
         // Helper function to safely set property (handles non-extensible objects)
@@ -277,12 +278,15 @@ async function loadTransformers() {
           }
         };
         
+        // Empty object for onnxruntime - library will detect methods don't work
+        const emptyOnnxRuntime = {};
+        
         // Try to patch internal state
         // @ts-ignore
         if (transformersModule.env && transformersModule.env.backends) {
           try {
             // @ts-ignore
-            safeSetProperty(transformersModule.env.backends, 'onnxruntime', undefined);
+            safeSetProperty(transformersModule.env.backends, 'onnxruntime', emptyOnnxRuntime);
           } catch (e) {
             console.warn('⚠️ Could not patch env.backends.onnxruntime:', e);
           }
@@ -294,7 +298,7 @@ async function loadTransformers() {
         if (transformersModule.env) {
           try {
             // @ts-ignore
-            safeSetProperty(transformersModule.env, 'onnxruntime', undefined);
+            safeSetProperty(transformersModule.env, 'onnxruntime', emptyOnnxRuntime);
           } catch (e) {
             console.warn('⚠️ Could not patch env.onnxruntime:', e);
           }
@@ -303,7 +307,7 @@ async function loadTransformers() {
         // Patch module-level onnxruntime if it exists (may be non-extensible)
         try {
           // @ts-ignore
-          safeSetProperty(transformersModule, 'onnxruntime', undefined);
+          safeSetProperty(transformersModule, 'onnxruntime', emptyOnnxRuntime);
         } catch (e) {
           console.warn('⚠️ Could not patch module-level onnxruntime (object may be non-extensible):', e);
         }
@@ -319,10 +323,10 @@ async function loadTransformers() {
               // @ts-ignore - We're intentionally patching the cache
               require.cache[onnxCacheKey] = {
                 id: onnxCacheKey,
-                exports: undefined,
+                exports: {}, // Empty object instead of undefined
                 loaded: true
               } as any;
-              console.log('🔧 Patched onnxruntime-node in require cache (set to undefined)');
+              console.log('🔧 Patched onnxruntime-node in require cache (set to empty object)');
             } catch (e) {
               console.warn('⚠️ Could not patch require cache:', e);
             }
@@ -457,12 +461,12 @@ export class FashionImageEmbedding {
           try {
             transformers.env.useBrowser = true;
             transformers.env.useOnnxruntime = false;
-            // @ts-ignore - Set mock object so constructSession can access it
-            safeSetProperty(transformers.env, 'onnxruntime', undefined);
+            // @ts-ignore - Set empty object so constructSession can access it without errors
+            safeSetProperty(transformers.env, 'onnxruntime', {});
             // @ts-ignore
             if (transformers.env.backends) {
               // @ts-ignore
-              safeSetProperty(transformers.env.backends, 'onnxruntime', undefined);
+              safeSetProperty(transformers.env.backends, 'onnxruntime', {});
             }
           } catch (e) {
             console.warn('⚠️ Could not re-patch transformers.env:', e);
@@ -472,7 +476,7 @@ export class FashionImageEmbedding {
         // Re-patch module-level onnxruntime (may be non-extensible)
         try {
           // @ts-ignore
-          safeSetProperty(transformers, 'onnxruntime', undefined);
+          safeSetProperty(transformers, 'onnxruntime', {});
         } catch (e) {
           console.warn('⚠️ Could not re-patch module-level onnxruntime (object may be non-extensible):', e);
         }
@@ -481,7 +485,7 @@ export class FashionImageEmbedding {
         if (typeof global !== 'undefined') {
           try {
             // @ts-ignore
-            safeSetProperty(global, 'onnxruntime', undefined);
+            safeSetProperty(global, 'onnxruntime', {});
           } catch (e) {
             console.warn('⚠️ Could not re-patch global.onnxruntime:', e);
           }
@@ -595,17 +599,36 @@ export class FashionImageEmbedding {
               
               console.log('✅ Model loaded successfully with WASM backend');
             } catch (pipelineError: any) {
-              // Simplified error handling
+              // COMMENTED: Error handling - investigating root cause
+              // From logs: Library says "Using wasm as a fallback" but still throws error
+              // This suggests library's internal WASM fallback is not working properly
+              
               const errorMessage = pipelineError?.message || '';
               const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took longer than');
+              const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') || 
+                                 errorMessage.includes('onnxruntime');
               
               console.error('❌ Model loading failed:', {
                 error: errorMessage,
                 isTimeout,
+                isOnnxError,
                 platform: process.platform,
                 arch: process.arch,
-                nodeVersion: process.version
+                nodeVersion: process.version,
+                // COMMENTED: Full error details for debugging
+                // stack: pipelineError?.stack?.substring(0, 500)
               });
+              
+              // COMMENTED: If it's an onnxruntime error, library should have fallback to WASM
+              // But it seems library's fallback is not working. Need to investigate further.
+              if (isOnnxError) {
+                console.error('⚠️ onnxruntime error detected - library should have fallback to WASM');
+                console.error('⚠️ This suggests library\'s internal WASM fallback mechanism is not working');
+                console.error('⚠️ Possible causes:');
+                console.error('   1. WASM backend cannot initialize');
+                console.error('   2. WASM files are missing or not accessible');
+                console.error('   3. Library\'s fallback logic has a bug');
+              }
               
               if (isTimeout) {
                 console.error('❌ Possible causes:');

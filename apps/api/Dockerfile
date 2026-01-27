@@ -55,10 +55,10 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is undefined and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "// ROOT CAUSE FIX: Return undefined instead of throwing errors" >> node_modules/onnxruntime-node/index.js && \
-    echo "// This allows library to gracefully detect unavailability and fallback to WASM" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (returns undefined to allow WASM fallback)"
+    echo "// ROOT CAUSE FIX: Return empty object instead of undefined or throwing errors" >> node_modules/onnxruntime-node/index.js && \
+    echo "// Library will detect methods don't work and automatically fallback to WASM" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (returns empty object to allow WASM fallback)"
 
 # ===================================
 # STAGE 2: Builder
@@ -90,10 +90,10 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
     echo "// @xenova/transformers will detect this is undefined and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "// ROOT CAUSE FIX: Return undefined instead of throwing errors" >> node_modules/onnxruntime-node/index.js && \
-    echo "// This allows library to gracefully detect unavailability and fallback to WASM" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (returns undefined to allow WASM fallback)"
+    echo "// ROOT CAUSE FIX: Return empty object instead of undefined or throwing errors" >> node_modules/onnxruntime-node/index.js && \
+    echo "// Library will detect methods don't work and automatically fallback to WASM" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = {};" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (returns empty object to allow WASM fallback)"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
@@ -191,24 +191,16 @@ RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-
       echo "✅ Real onnxruntime-node removed from production image"; \
     fi && \
     # Ensure mock module exists
-    # Official approach: Return empty object to allow @xenova/transformers to detect
-    # that onnxruntime-node is unavailable and automatically fallback to WebAssembly
+    # ROOT CAUSE FIX: Return undefined instead of throwing errors
+    # This allows @xenova/transformers to detect that onnxruntime-node is unavailable
+    # and automatically fallback to WASM backend without throwing errors
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "// @xenova/transformers will detect this is not a real module and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
-    echo "// This mock throws errors to force WebAssembly fallback" >> node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = {" >> node_modules/onnxruntime-node/index.js && \
-    echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');" >> node_modules/onnxruntime-node/index.js && \
-    echo "  }" >> node_modules/onnxruntime-node/index.js && \
-    echo "};" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = {" >> node_modules/onnxruntime-node/index.js && \
-    echo "  InferenceSession: mockInferenceSession," >> node_modules/onnxruntime-node/index.js && \
-    echo "  create: function() {" >> node_modules/onnxruntime-node/index.js && \
-    echo "    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');" >> node_modules/onnxruntime-node/index.js && \
-    echo "  }" >> node_modules/onnxruntime-node/index.js && \
-    echo "};" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module ensured in production image (throws errors to force WebAssembly fallback)"
+    echo "// @xenova/transformers will detect this is undefined and use WebAssembly instead" >> node_modules/onnxruntime-node/index.js && \
+    echo "// ROOT CAUSE FIX: Return undefined instead of throwing errors" >> node_modules/onnxruntime-node/index.js && \
+    echo "// This allows library to gracefully detect unavailability and fallback to WASM" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module ensured in production image (returns undefined to allow WASM fallback)"
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
