@@ -3,10 +3,37 @@
 # Start Docker Container (Simulating Railway Environment)
 # ============================================================================
 # This script starts a Docker container exactly as it would run on Railway
-# Usage: ./scripts/start-docker-railway.sh
+# 
+# REQUIRES: Remote DATABASE_URL and QDRANT_URL (like Railway)
+# 
+# Usage:
+#   1. Set environment variables:
+#      export DATABASE_URL='postgresql://...'
+#      export QDRANT_URL='https://...'
+#      ./scripts/start-docker-railway.sh
+#
+#   2. Or use .env.local file (Next.js convention):
+#      # Create .env.local with DATABASE_URL and QDRANT_URL
+#      # Script will automatically load it
+#      ./scripts/start-docker-railway.sh
+#
+#   3. Or create .env.local from env.example:
+#      cp env.example .env.local
+#      # Edit .env.local with your values (DATABASE_URL, QDRANT_URL)
+#      ./scripts/start-docker-railway.sh
 # ============================================================================
 
 set -euo pipefail
+
+# Load .env.local if it exists (Next.js convention)
+if [ -f .env.local ]; then
+  echo "📋 Loading environment variables from .env.local..."
+  set -a
+  source .env.local
+  set +a
+  echo "✅ Environment variables loaded from .env.local"
+  echo ""
+fi
 
 # Colors
 GREEN='\033[0;32m'
@@ -49,20 +76,73 @@ docker rm "${CONTAINER_NAME}" > /dev/null 2>&1 || true
 echo -e "${GREEN}✅ Cleanup completed${NC}"
 echo ""
 
-# Step 3: Start container (Railway-like configuration)
-echo -e "${BLUE}🚀 Step 3: Starting container (Railway configuration)...${NC}"
+# Step 3: Check environment variables (require remote database and Qdrant)
+echo -e "${BLUE}🔍 Step 3: Checking environment variables...${NC}"
+
+# Check DATABASE_URL
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo -e "${RED}❌ DATABASE_URL is not set!${NC}"
+  echo ""
+  echo -e "${YELLOW}💡 To use remote database (like Railway):${NC}"
+  echo "   export DATABASE_URL='postgresql://user:password@host:port/database'"
+  echo "   Or create .env.local file with DATABASE_URL"
+  echo ""
+  echo -e "${YELLOW}   Example (Railway PostgreSQL):${NC}"
+  echo "   export DATABASE_URL='postgresql://postgres:password@containers-us-west-xxx.railway.app:5432/railway'"
+  echo ""
+  exit 1
+fi
+
+# Check QDRANT_URL
+if [ -z "${QDRANT_URL:-}" ]; then
+  echo -e "${RED}❌ QDRANT_URL is not set!${NC}"
+  echo ""
+  echo -e "${YELLOW}💡 To use remote Qdrant (like Railway):${NC}"
+  echo "   export QDRANT_URL='https://your-qdrant.railway.app'"
+  echo "   Or: export QDRANT_URL='https://your-cluster.cloud.qdrant.io' (Qdrant Cloud)"
+  echo "   Or create .env.local file with QDRANT_URL"
+  echo ""
+  exit 1
+fi
+
+# Display configuration
+echo -e "${GREEN}✅ DATABASE_URL: ${DATABASE_URL:0:50}...${NC}"
+if [[ "$DATABASE_URL" == *"localhost"* ]] || [[ "$DATABASE_URL" == *"127.0.0.1"* ]]; then
+  echo -e "${YELLOW}   ⚠️  Using LOCAL database (not like Railway)${NC}"
+else
+  echo -e "${GREEN}   ✅ Using REMOTE database (like Railway)${NC}"
+fi
+
+echo -e "${GREEN}✅ QDRANT_URL: ${QDRANT_URL}${NC}"
+if [[ "$QDRANT_URL" == *"localhost"* ]] || [[ "$QDRANT_URL" == *"127.0.0.1"* ]]; then
+  echo -e "${YELLOW}   ⚠️  Using LOCAL Qdrant (not like Railway)${NC}"
+else
+  echo -e "${GREEN}   ✅ Using REMOTE Qdrant (like Railway)${NC}"
+fi
+
+if [ -n "${QDRANT_API_KEY:-}" ]; then
+  echo -e "${GREEN}✅ QDRANT_API_KEY: ***SET***${NC}"
+else
+  echo -e "${YELLOW}   ⚠️  QDRANT_API_KEY not set (may be optional)${NC}"
+fi
+echo ""
+
+# Step 4: Start container (Railway-like configuration)
+echo -e "${BLUE}🚀 Step 4: Starting container (Railway configuration)...${NC}"
 echo "   Port: ${API_PORT}"
 echo "   Environment: Production (Alpine Linux)"
 echo "   ML Model: WebAssembly mode (no onnxruntime-node)"
+echo "   Database: Remote (like Railway)"
+echo "   Qdrant: Remote (like Railway)"
 echo ""
 
 docker run -d \
   --name "${CONTAINER_NAME}" \
   -p "${API_PORT}:${API_PORT}" \
   -e NODE_ENV=production \
-  -e DATABASE_URL="${DATABASE_URL:-postgresql://user:password@host:port/database}" \
+  -e DATABASE_URL="${DATABASE_URL}" \
   -e JWT_SECRET="${JWT_SECRET:-supersecretjwtkeythatisatleast32characterslong}" \
-  -e QDRANT_URL="${QDRANT_URL:-http://localhost:6333}" \
+  -e QDRANT_URL="${QDRANT_URL}" \
   -e QDRANT_API_KEY="${QDRANT_API_KEY:-}" \
   -e NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-http://localhost:3000}" \
   -e NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:${API_PORT}}" \
@@ -79,8 +159,8 @@ fi
 echo -e "${GREEN}✅ Container started: ${CONTAINER_NAME}${NC}"
 echo ""
 
-# Step 4: Wait for server to be ready
-echo -e "${BLUE}⏳ Step 4: Waiting for server to be ready...${NC}"
+# Step 5: Wait for server to be ready
+echo -e "${BLUE}⏳ Step 5: Waiting for server to be ready...${NC}"
 MAX_WAIT=180
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
