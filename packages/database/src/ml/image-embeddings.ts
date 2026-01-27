@@ -189,48 +189,142 @@ export class FashionImageEmbedding {
         inputBufferSize: imageBuffer.length
       });
 
-      // Get model
+      // Get model (this also loads transformers module)
       const model = await this.getModel();
       console.log('✅ Model loaded');
 
-      // Load transformers to get RawImage class
+      // CRITICAL: Get RawImage class from the SAME module instance that created the model
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // SOLUTION: Create Blob-like object from Buffer that passes instanceof check
-      // Problem: Blob from Node.js 'buffer' module doesn't pass instanceof Blob check in Next.js standalone
-      // Solution: Use global Blob (Node.js 18+) or create Blob-like object with arrayBuffer() method
-      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob() uses blob.arrayBuffer()
-      console.log('🔄 Creating Blob-like object from Buffer...');
+      // MULTIPLE FALLBACK STRATEGIES: Try different approaches to see which one works
+      // In Next.js standalone build, instanceof checks can fail due to module bundling
+      // We'll try multiple strategies and use the first one that works
       
-      // In Node.js 18+, global Blob is available and should work
-      // If not available, create a Blob-like object
-      let blob: Blob;
-      if (typeof Blob !== 'undefined' && Blob !== null) {
-        // Use global Blob (Node.js 18+)
-        // Convert Buffer to Uint8Array for Blob constructor
-        const uint8Array = new Uint8Array(imageBuffer);
-        blob = new Blob([uint8Array], { type: 'image/png' });
-        } else {
-        // Fallback: Create Blob-like object with arrayBuffer() method
-        // This mimics the Blob interface that RawImage.fromBlob() expects
-        blob = {
-          arrayBuffer: async () => imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength),
-          size: imageBuffer.length,
-          type: 'image/png'
-        } as Blob;
+      let output: any;
+      let lastError: Error | null = null;
+      
+      // Strategy 1: Create RawImage from sharp + fix prototype chain
+      try {
+        console.log('🔄 Strategy 1: Creating RawImage from sharp + prototype fix...');
+        const sharpImage = sharp(imageBuffer);
+        const metadata = await sharpImage.metadata();
+        const rawChannels = metadata.channels;
+        const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+        
+        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+        
+        if (rawChannels !== undefined && rawChannels !== info.channels) {
+          rawImage.convert(rawChannels);
+        }
+        
+        // Fix prototype chain for instanceof check
+        Object.setPrototypeOf(rawImage, RawImage.prototype);
+        rawImage.constructor = RawImage;
+        
+        const isInstance = rawImage instanceof RawImage;
+        console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
+        
+        output = await model(rawImage);
+        console.log('   ✅ Strategy 1 SUCCESS: RawImage from sharp + prototype fix');
+      } catch (error: any) {
+        console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
+        lastError = error;
       }
       
-      // Use RawImage.read() which will call RawImage.fromBlob() internally
-      // This ensures we use the same RawImage class that pipeline uses
-      console.log('🔄 Creating RawImage from Blob using RawImage.read()...');
-      const rawImage = await RawImage.read(blob);
+      // Strategy 2: Create RawImage from sharp (no prototype fix)
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 2: Creating RawImage from sharp (no prototype fix)...');
+          const sharpImage = sharp(imageBuffer);
+          const metadata = await sharpImage.metadata();
+          const rawChannels = metadata.channels;
+          const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+          
+          const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+          
+          if (rawChannels !== undefined && rawChannels !== info.channels) {
+            rawImage.convert(rawChannels);
+          }
+          
+          const isInstance = rawImage instanceof RawImage;
+          console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
+          
+          output = await model(rawImage);
+          console.log('   ✅ Strategy 2 SUCCESS: RawImage from sharp (no prototype fix)');
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 2 FAILED: ${error?.message}`);
+          lastError = error;
+        }
+      }
       
-      // Pass RawImage directly to pipeline
-      // Pipeline's prepareImages() will check: if (input instanceof RawImage) return input
-      // Since we use RawImage.read() from same module, instanceof should work
-      console.log('🔄 Calling model with RawImage...');
-      const output = await model(rawImage);
+      // Strategy 3: Use RawImage.read() with Blob (global Blob)
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 3: Using RawImage.read() with global Blob...');
+          if (typeof Blob !== 'undefined' && Blob !== null) {
+            const uint8Array = new Uint8Array(imageBuffer);
+            const blob = new Blob([uint8Array], { type: 'image/png' });
+            const isBlob = blob instanceof Blob;
+            console.log(`   ✅ Blob instanceof check: ${isBlob}`);
+            
+            const rawImage = await RawImage.read(blob);
+            output = await model(rawImage);
+            console.log('   ✅ Strategy 3 SUCCESS: RawImage.read() with global Blob');
+          } else {
+            console.log('   ⚠️ Strategy 3 SKIPPED: Global Blob not available');
+          }
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 3 FAILED: ${error?.message}`);
+          lastError = error;
+        }
+      }
+      
+      // Strategy 4: Use RawImage.read() with Blob-like object
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 4: Using RawImage.read() with Blob-like object...');
+          const blobLike = {
+            arrayBuffer: async () => imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength),
+            size: imageBuffer.length,
+            type: 'image/png'
+          } as Blob;
+          
+          const rawImage = await RawImage.read(blobLike);
+          output = await model(rawImage);
+          console.log('   ✅ Strategy 4 SUCCESS: RawImage.read() with Blob-like object');
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 4 FAILED: ${error?.message}`);
+          lastError = error;
+        }
+      }
+      
+      // Strategy 5: Use RawImage.fromBlob() directly with Blob
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 5: Using RawImage.fromBlob() directly...');
+          if (typeof Blob !== 'undefined' && Blob !== null) {
+            const uint8Array = new Uint8Array(imageBuffer);
+            const blob = new Blob([uint8Array], { type: 'image/png' });
+            const rawImage = await RawImage.fromBlob(blob);
+            output = await model(rawImage);
+            console.log('   ✅ Strategy 5 SUCCESS: RawImage.fromBlob() directly');
+        } else {
+            console.log('   ⚠️ Strategy 5 SKIPPED: Global Blob not available');
+          }
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 5 FAILED: ${error?.message}`);
+          lastError = error;
+        }
+      }
+      
+      // If all strategies failed, throw the last error
+      if (!output) {
+        console.error('❌ All strategies failed!');
+        throw lastError || new Error('All RawImage creation strategies failed');
+      }
+      
+      console.log('✅ Model call succeeded');
       console.log('✅ Model call succeeded');
       
       // Extract embedding vector
