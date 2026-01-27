@@ -150,11 +150,11 @@ async function loadTransformers() {
           // Intercept require calls for onnxruntime-node
           Module.prototype.require = function(id: string) {
             if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-              console.log('🚫 Blocking onnxruntime-node import - returning empty object to allow WASM fallback');
-              // ROOT CAUSE FIX: Return empty object instead of undefined or throwing errors
-              // Library will detect that methods don't work and automatically fallback to WASM
-              // Empty object is safer than undefined (avoids "Cannot read property" errors)
-              return {};
+              console.log('🚫 Blocking onnxruntime-node import - returning undefined for immediate WASM fallback');
+              // ROOT CAUSE FIX: Return undefined to signal that onnxruntime-node is not available
+              // Library will immediately use WASM backend without trying onnxruntime-node first
+              // This is cleaner than returning empty object or throwing errors
+              return undefined;
             }
             return originalRequire.apply(this, arguments);
           };
