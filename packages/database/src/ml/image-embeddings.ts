@@ -86,6 +86,34 @@ export class FashionImageEmbedding {
   }
 
   /**
+   * Create RawImage from sharp image (matches transformers.js internal implementation)
+   * Reference: transformers.js-main/src/utils/image.js - loadImageFunction
+   */
+  private async createRawImageFromSharp(sharpImage: sharp.Sharp): Promise<any> {
+    const transformers = await loadTransformers();
+    const { RawImage } = transformers;
+    
+    // Match transformers.js implementation exactly:
+    // const metadata = await img.metadata();
+    // const rawChannels = metadata.channels;
+    // const { data, info } = await img.rotate().raw().toBuffer({ resolveWithObject: true });
+    // const newImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+    const metadata = await sharpImage.metadata();
+    const rawChannels = metadata.channels;
+    
+    const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+    
+    const newImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+    
+    // Match transformers.js: convert channels if needed
+    if (rawChannels !== undefined && rawChannels !== info.channels) {
+      newImage.convert(rawChannels);
+    }
+    
+    return newImage;
+  }
+
+  /**
    * Normalize vector để dùng cosine similarity
    */
   private normalizeVector(vector: number[]): number[] {
@@ -161,13 +189,6 @@ export class FashionImageEmbedding {
         inputBufferSize: imageBuffer.length
       });
 
-      // Preprocess image: resize to 224x224 and get raw pixel data
-      const { buffer, width, height } = await this.preprocessImage(imageBuffer);
-      console.log('✅ Image preprocessed:', {
-        dimensions: `${width}x${height}`,
-        bufferSize: buffer.length
-      });
-
       // Get model
       const model = await this.getModel();
       console.log('✅ Model loaded');
@@ -176,17 +197,15 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // OFFICIAL APPROACH: Use RawImage.read() with Blob
-      // This ensures proper image processing through transformers.js internal pipeline
-      // The library handles sharp processing internally with proper memory management
-      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob()
-      // Convert Buffer to Uint8Array then to Blob (TypeScript-safe)
-      const uint8Array = new Uint8Array(buffer);
-      const blob = new Blob([uint8Array], { type: 'image/png' });
-      console.log('🔄 Creating RawImage from Blob using RawImage.read()...');
-      const rawImage = await RawImage.read(blob);
+      // OFFICIAL APPROACH: Use sharp directly (matches transformers.js internal implementation)
+      // Reference: transformers.js-main/src/utils/image.js - loadImageFunction uses sharp
+      // In Node.js, RawImage.fromBlob() uses: sharp(await blob.arrayBuffer())
+      // We can use sharp directly with buffer to match the internal implementation
+      console.log('🔄 Creating RawImage using sharp (matches transformers.js internal)...');
+      const sharpImage = sharp(imageBuffer);
+      const rawImage = await this.createRawImageFromSharp(sharpImage);
       
-      // Resize to 224x224 if needed (RawImage.read() may not resize)
+      // Resize to 224x224 if needed (transformers.js will handle this internally)
       let finalImage = rawImage;
       if (rawImage.width !== 224 || rawImage.height !== 224) {
         console.log(`🔄 Resizing RawImage from ${rawImage.width}x${rawImage.height} to 224x224...`);
@@ -277,18 +296,18 @@ export class FashionImageEmbedding {
       // Convert to RawImage objects
       // CRITICAL: Use Uint8ClampedArray (not Uint8Array) to match transformers.js implementation
       // This prevents "corrupted size vs. prev_size" memory corruption error in onnxruntime-node
-      const rawImages = processedImages.map(({ buffer, width, height }) => {
+      const rawImages = processedImages.map(({ buffer, width, height }: { buffer: Buffer; width: number; height: number }) => {
         const uint8ClampedArray = new Uint8ClampedArray(buffer);
         return new RawImage(uint8ClampedArray, width, height, 3);
       });
 
       // Generate embeddings in batch
       const outputs = await Promise.all(
-        rawImages.map(rawImage => model(rawImage))
+        rawImages.map((rawImage: any) => model(rawImage))
       );
 
       // Extract and normalize embeddings
-      return outputs.map(output => {
+      return outputs.map((output: any) => {
           let embedding: number[];
           if (Array.isArray(output)) {
             embedding = output.flat();
