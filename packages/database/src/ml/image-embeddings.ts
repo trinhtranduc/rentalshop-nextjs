@@ -510,22 +510,25 @@ export class FashionImageEmbedding {
           }
         };
         
+        // CRITICAL: Define mock object at function scope (not inside try block)
+        // This ensures it's accessible in all try/catch blocks below
+        const mockOnnxRuntimeForRepatch = {
+          InferenceSession: {
+            create: function() {
+              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+            }
+          },
+          create: function() {
+            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+          }
+        };
+        
         // Re-patch transformers module with mock object
         if (transformers && transformers.env) {
           try {
             transformers.env.useBrowser = true;
             transformers.env.useOnnxruntime = false;
             // @ts-ignore - Set mock object with InferenceSession structure
-            const mockOnnxRuntimeForRepatch = {
-              InferenceSession: {
-                create: function() {
-                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                }
-              },
-              create: function() {
-                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-              }
-            };
             safeSetProperty(transformers.env, 'onnxruntime', mockOnnxRuntimeForRepatch);
             // @ts-ignore
             if (transformers.env.backends) {
@@ -550,6 +553,11 @@ export class FashionImageEmbedding {
           try {
             // @ts-ignore
             safeSetProperty(global, 'onnxruntime', mockOnnxRuntimeForRepatch);
+            // @ts-ignore
+            if (global.window) {
+              // @ts-ignore
+              safeSetProperty(global.window, 'onnxruntime', mockOnnxRuntimeForRepatch);
+            }
           } catch (e) {
             console.warn('⚠️ Could not re-patch global.onnxruntime:', e);
           }
@@ -572,10 +580,53 @@ export class FashionImageEmbedding {
         process.env.USE_BROWSER = 'true';
         process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
         
-        // Ensure transformers module is patched
+        // CRITICAL: Ensure transformers module is patched with mock onnxruntime
+        // Library's constructSession may access onnxruntime from multiple places
         if (transformers && transformers.env) {
           transformers.env.useBrowser = true;
           transformers.env.useOnnxruntime = false;
+          
+          // Ensure mock onnxruntime is set in env (constructSession may access this)
+          const mockOnnxRuntimeForPipeline = {
+            InferenceSession: {
+              create: function() {
+                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+              }
+            },
+            create: function() {
+              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+            }
+          };
+          
+          // @ts-ignore
+          if (!transformers.env.onnxruntime) {
+            // @ts-ignore
+            transformers.env.onnxruntime = mockOnnxRuntimeForPipeline;
+          }
+          
+          // @ts-ignore
+          if (transformers.env.backends && !transformers.env.backends.onnxruntime) {
+            // @ts-ignore
+            transformers.env.backends.onnxruntime = mockOnnxRuntimeForPipeline;
+          }
+        }
+        
+        // Also ensure global onnxruntime is set
+        if (typeof global !== 'undefined') {
+          // @ts-ignore
+          if (!global.onnxruntime) {
+            // @ts-ignore
+            global.onnxruntime = {
+              InferenceSession: {
+                create: function() {
+                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+                }
+              },
+              create: function() {
+                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+              }
+            };
+          }
         }
       }
       
