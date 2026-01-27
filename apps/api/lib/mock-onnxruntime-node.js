@@ -3,33 +3,16 @@
  * This prevents @huggingface/transformers from loading the native module
  * and forces it to use pure JavaScript/WebAssembly mode
  * 
- * ROOT CAUSE FIX: Return object with InferenceSession structure that throws on create()
+ * ROOT CAUSE FIX: Return undefined so library detects unavailability
  * Based on logs analysis:
- * - Library tries to access onnxruntime.InferenceSession.create()
- * - If module is undefined, library throws "Cannot read properties of undefined"
- * - Solution: Return object with proper structure, but create() throws error
- * - Library will catch error and immediately fallback to WASM
+ * - Library tries to import onnxruntime-node
+ * - If module is undefined, library automatically falls back to WASM
+ * - Solution: Return undefined (library detects and uses WASM backend)
  * 
- * CRITICAL: The object structure must match what library expects:
- * - Must have InferenceSession property
- * - InferenceSession must have create() method
- * - create() should throw error (library catches and fallbacks to WASM)
+ * CRITICAL: Return undefined (not an object) so library detects unavailability
+ * Library will check if module exists, and if undefined, uses WASM automatically
  */
 
-// Return object with InferenceSession structure
-// Library will try to call create() which throws, triggering immediate WASM fallback
-const mockInferenceSession = {
-  create: function() {
-    // Throw error so library immediately falls back to WASM
-    // Library catches this error and uses WASM backend
-    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-  }
-};
-
-module.exports = {
-  InferenceSession: mockInferenceSession,
-  // Also export create directly (some code paths may use this)
-  create: function() {
-    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-  }
-};
+// Return undefined so library detects unavailability and uses WASM
+// Library will check: if (onnxruntime === undefined) { use WASM }
+module.exports = undefined;

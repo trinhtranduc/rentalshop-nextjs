@@ -53,10 +53,10 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
     # and automatically fallback to WASM backend without throwing errors
     mkdir -p node_modules/onnxruntime-node && \
-    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (with InferenceSession structure for WASM fallback)"
+    echo "// Mock onnxruntime-node module - return undefined to force WASM fallback" > node_modules/onnxruntime-node/index.js && \
+    echo "// Library will detect undefined and automatically use WASM backend" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (returns undefined for WASM fallback)"
 
 # ===================================
 # STAGE 2: Builder
@@ -86,10 +86,10 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
     # and automatically fallback to WASM backend without throwing errors
     mkdir -p node_modules/onnxruntime-node && \
-    echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module created (with InferenceSession structure for WASM fallback)"
+    echo "// Mock onnxruntime-node module - return undefined to force WASM fallback" > node_modules/onnxruntime-node/index.js && \
+    echo "// Library will detect undefined and automatically use WASM backend" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module created (returns undefined for WASM fallback)"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .

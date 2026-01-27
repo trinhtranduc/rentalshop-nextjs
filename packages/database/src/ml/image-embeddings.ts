@@ -122,93 +122,32 @@ let transformersModule: any = null;
 
 async function loadTransformers() {
   if (!transformersModule) {
-    // CRITICAL: Re-check detection every time (runtime, not compile-time)
-    // This ensures environment variables set in start.sh are detected
+    // OFFICIAL TUTORIAL APPROACH: Simple and clean
+    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+    // 1. Set env variables (already set in start.sh, but ensure they're set)
+    // 2. Import library
+    // 3. Set transformers.env
+    // 4. Done - library will auto-detect and use WASM
+    
     const useWebAssembly = shouldUseWebAssembly();
     
-    // OFFICIAL TUTORIAL APPROACH: Set environment variables before import
-    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-    // Just set env variables, library will auto-detect and use WASM
     if (typeof process !== 'undefined' && useWebAssembly) {
       process.env.USE_ONNXRUNTIME = 'false';
       process.env.USE_BROWSER = 'true';
       process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-      
-      console.log('🔧 Setting WebAssembly environment variables (official tutorial approach):', {
-        USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
-        USE_BROWSER: process.env.USE_BROWSER,
-        ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
-      });
     }
     
     console.log('🔄 Loading @huggingface/transformers...');
-    // CRITICAL: Use Function constructor to ensure true dynamic import
-    // TypeScript may convert import() to require() during compilation
-    // This delays the import to after compilation, ensuring dynamic import works correctly
-    // Official solution from Transformers.js creator
     const TransformersApi = Function('return import("@huggingface/transformers")')();
     transformersModule = await TransformersApi;
     console.log('✅ @huggingface/transformers loaded successfully');
     
-    // OFFICIAL TUTORIAL APPROACH: Set transformers.env properties
-    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-    // Just set env variables and transformers.env, library will auto-detect and use WASM
-    if (useWebAssembly && transformersModule && transformersModule.env) {
+    // Set transformers.env (official tutorial approach)
+    if (useWebAssembly && transformersModule?.env) {
       transformersModule.env.useBrowser = true;
       transformersModule.env.useOnnxruntime = false;
-      console.log('✅ Set transformers.env.useBrowser=true and useOnnxruntime=false (official tutorial approach)');
+      console.log('✅ Set transformers.env.useBrowser=true and useOnnxruntime=false');
     }
-    
-    // Configure cache directory for transformers.js (official tutorial approach)
-    // Based on: https://github.com/huggingface/transformers.js/issues/295
-    // The library needs a writable cache directory for model files and WASM files
-    if (useWebAssembly && transformersModule && transformersModule.env) {
-      try {
-        const path = require('path');
-        const fs = require('fs');
-        
-        // Use /tmp for cache in Docker/Railway (writable location)
-        // Or use node_modules/@huggingface/transformers/.cache if available
-        const cacheDir = process.env.TRANSFORMERS_CACHE_DIR || '/tmp/transformers-cache';
-        
-        // Ensure cache directory exists and is writable
-        if (!fs.existsSync(cacheDir)) {
-          fs.mkdirSync(cacheDir, { recursive: true });
-          console.log(`📁 Created transformers cache directory: ${cacheDir}`);
-        }
-        
-        // Check if WASM files are accessible
-        try {
-          const transformersPath = require.resolve('@huggingface/transformers/package.json');
-          const transformersDir = path.dirname(transformersPath);
-          const wasmPath = path.join(transformersDir, 'dist');
-          const wasmExists = fs.existsSync(wasmPath);
-          console.log(`🔍 WASM files check:`, {
-            transformersPath,
-            transformersDir,
-            wasmPath,
-            wasmExists,
-            cacheDir
-          });
-        } catch (e) {
-          console.warn('⚠️ Could not check WASM files location:', e);
-        }
-        
-        // Configure transformers.js to use this cache directory
-        transformersModule.env.cacheDir = cacheDir;
-        transformersModule.env.useFSCache = true;
-        transformersModule.env.useBrowserCache = false; // Disable browser cache in Node.js
-        
-        console.log(`📁 Configured transformers cache directory: ${cacheDir}`);
-      } catch (cacheError: any) {
-        console.warn('⚠️ Could not configure transformers cache directory:', cacheError?.message);
-        // Continue anyway - library will use default cache location
-      }
-    }
-    
-    // NOTE: Official tutorial recommends ONLY setting env variables and transformers.env
-    // Deep patching should NOT be needed if env variables are set correctly
-    // Removed deep patching section to align with official tutorial approach
   }
   return transformersModule;
 }
@@ -285,76 +224,24 @@ export class FashionImageEmbedding {
       console.log(`🔄 Loading FashionCLIP model: ${this.modelName}...`);
       
       const transformers = await loadTransformers();
-      
-      // OFFICIAL TUTORIAL APPROACH: Just ensure env variables are set, then call pipeline()
-      // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
-      // Library will auto-detect env variables and use WASM automatically
-      if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
-        // Re-set environment variables
-        process.env.USE_ONNXRUNTIME = 'false';
-        process.env.USE_BROWSER = 'true';
-        process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
-        
-        // Ensure transformers.env is set (official tutorial approach)
-        if (transformers && transformers.env) {
-          transformers.env.useBrowser = true;
-          transformers.env.useOnnxruntime = false;
-        }
-        
-        console.log('✅ Environment variables and transformers.env set (official tutorial approach)');
-      }
-      
       const { pipeline } = transformers;
       
+      // OFFICIAL TUTORIAL APPROACH: Just call pipeline()
+      // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+      // Library will auto-detect env variables and use WASM automatically
       console.log('🔄 Calling pipeline() - library will auto-detect WASM mode...');
       
-      // SIMPLIFIED: Based on GitHub issue #1135 - pipeline promise may never resolve
-      // SOLUTION: Use Promise.race with a single long timeout
-      // Let the library handle its internal retry logic naturally
-      // Don't interfere with multiple retry loops
+      // Simple timeout to prevent hanging (3 minutes)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Model loading timeout')), 180000);
+      });
       
-      const PIPELINE_TIMEOUT = 180000; // 180 seconds (3 minutes) - enough for WASM initialization
+      this.model = await Promise.race([
+        pipeline('image-feature-extraction', this.modelName),
+        timeoutPromise
+      ]);
       
-      try {
-        const pipelinePromise = pipeline(
-          'image-feature-extraction',
-          this.modelName
-        ) as Promise<any>;
-        
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error(
-              `Model loading timeout: Pipeline took longer than ${PIPELINE_TIMEOUT/1000}s. ` +
-              `This may indicate the promise is hanging (issue #1135) or WASM backend cannot initialize.`
-            ));
-          }, PIPELINE_TIMEOUT);
-        });
-        
-        // Race between pipeline and timeout - let library handle internal retries
-        this.model = await Promise.race([pipelinePromise, timeoutPromise]);
-        
-        console.log('✅ Model loaded successfully with WASM backend');
-      } catch (pipelineError: any) {
-        const errorMessage = pipelineError?.message || '';
-        const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took longer than');
-        
-        if (isTimeout) {
-          console.error('❌ Model loading timeout:', {
-            error: errorMessage,
-            platform: process.platform,
-            arch: process.arch,
-            nodeVersion: process.version,
-          });
-          
-          console.error('❌ Possible causes:');
-          console.error('   1. WASM files missing or not accessible');
-          console.error('   2. WASM backend cannot initialize in this environment');
-          console.error('   3. Insufficient memory/resources');
-          console.error('   4. Pipeline promise hanging (issue #1135)');
-        }
-        
-        throw pipelineError;
-      }
+      console.log('✅ Model loaded successfully');
     }
     return this.model;
   }
