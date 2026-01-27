@@ -197,20 +197,20 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // OFFICIAL APPROACH: Create RawImage from sharp (matches test file approach)
-      // Test file: transformers.js-main/tests/pipelines/test_pipelines_image_feature_extraction.js
-      // They create RawImage from URL and pass directly to pipeline
-      // We create RawImage from sharp (same as transformers.js internal loadImageFunction)
-      // Then pass RawImage directly to pipeline (pipeline will recognize it via instanceof check)
-      console.log('🔄 Creating RawImage using sharp (matches transformers.js internal)...');
-      const sharpImage = sharp(imageBuffer);
-      const rawImage = await this.createRawImageFromSharp(sharpImage);
+      // OFFICIAL APPROACH: Pass Blob directly to pipeline (avoids instanceof check issue)
+      // Problem: RawImage created from dynamic import doesn't pass instanceof check in Next.js standalone
+      // Solution: Pass Blob directly, pipeline will convert via RawImage.read() → RawImage.fromBlob()
+      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob() handles Blob correctly
+      // In Node.js, RawImage.fromBlob() uses: sharp(await blob.arrayBuffer())
+      console.log('🔄 Creating Blob from buffer (pipeline will handle conversion)...');
+      const { Blob } = await import('buffer');
+      const blob = new Blob([imageBuffer], { type: 'image/png' });
       
-      // Pass RawImage directly to pipeline (matches test file approach)
-      // Pipeline's prepareImages() will check: if (input instanceof RawImage) return input
-      console.log('🔄 Calling model with RawImage (pipeline will recognize it)...');
-      const output = await model(rawImage);
-        console.log('✅ Model call succeeded with RawImage');
+      // Pipeline will call prepareImages() → RawImage.read(blob) → RawImage.fromBlob(blob)
+      // This avoids instanceof check issue with dynamic imports
+      console.log('🔄 Calling model with Blob (pipeline will auto-convert to RawImage)...');
+      const output = await model(blob);
+      console.log('✅ Model call succeeded');
       
       // Extract embedding vector
       let embedding: number[];
