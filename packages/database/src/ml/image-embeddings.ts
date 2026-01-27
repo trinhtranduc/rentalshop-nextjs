@@ -176,53 +176,26 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // Try to create RawImage and call model
-      // In WebAssembly mode, RawImage constructor may fail, so we need fallback
-      let output: any;
-      const isWebAssemblyMode = shouldUseWebAssembly();
+      // OFFICIAL APPROACH: Use RawImage.read() with Blob
+      // This ensures proper image processing through transformers.js internal pipeline
+      // The library handles sharp processing internally with proper memory management
+      // Reference: transformers.js-main/src/utils/image.js - RawImage.fromBlob()
+      // Convert Buffer to Uint8Array then to Blob (TypeScript-safe)
+      const uint8Array = new Uint8Array(buffer);
+      const blob = new Blob([uint8Array], { type: 'image/png' });
+      console.log('🔄 Creating RawImage from Blob using RawImage.read()...');
+      const rawImage = await RawImage.read(blob);
       
-      try {
-        // STANDARD APPROACH: Create RawImage from raw pixel data
-        // CRITICAL: Use Uint8ClampedArray (not Uint8Array) to match transformers.js implementation
-        // This prevents "corrupted size vs. prev_size" memory corruption error in onnxruntime-node
-        // Reference: transformers.js-main/src/utils/image.js line 43
-        const uint8ClampedArray = new Uint8ClampedArray(buffer);
-        const rawImage = new RawImage(uint8ClampedArray, width, height, 3);
-
-        console.log('🔄 Calling model with RawImage...');
-        output = await model(rawImage);
-        console.log('✅ Model call succeeded with RawImage');
-      } catch (rawImageError: any) {
-        // If RawImage fails (common in WebAssembly mode), try alternative approaches
-        if (isWebAssemblyMode || rawImageError?.message?.includes('instanceof') || rawImageError?.message?.includes('RawImage')) {
-          console.warn('⚠️ RawImage failed, trying alternative approach for WebAssembly mode:', {
-            error: rawImageError?.message
-          });
-          
-          // Fallback: Try passing raw pixel data as Uint8ClampedArray directly
-          // Some WebAssembly implementations may accept this
-          try {
-            console.log('🔄 Fallback: Trying Uint8ClampedArray directly...');
-            const uint8ClampedArray = new Uint8ClampedArray(buffer);
-            output = await model(uint8ClampedArray);
-            console.log('✅ Model call succeeded with Uint8ClampedArray (fallback)');
-          } catch (fallbackError: any) {
-            console.error('❌ All methods failed:', {
-              rawImageError: rawImageError?.message,
-              fallbackError: fallbackError?.message
-            });
-            throw new Error(
-              `Model failed with all input methods. ` +
-              `RawImage error: ${rawImageError?.message}. ` +
-              `Uint8Array error: ${fallbackError?.message}. ` +
-              `This may indicate a compatibility issue with WebAssembly mode.`
-            );
-          }
-        } else {
-          // Not a RawImage issue, re-throw original error
-          throw rawImageError;
-        }
+      // Resize to 224x224 if needed (RawImage.read() may not resize)
+      let finalImage = rawImage;
+      if (rawImage.width !== 224 || rawImage.height !== 224) {
+        console.log(`🔄 Resizing RawImage from ${rawImage.width}x${rawImage.height} to 224x224...`);
+        finalImage = rawImage.resize(224, 224);
       }
+      
+      console.log('🔄 Calling model with RawImage...');
+      const output = await model(finalImage);
+      console.log('✅ Model call succeeded with RawImage');
       
       // Extract embedding vector
       let embedding: number[];
