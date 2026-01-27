@@ -183,9 +183,11 @@ export class FashionImageEmbedding {
       
       try {
         // STANDARD APPROACH: Create RawImage from raw pixel data
-        // This works with native onnxruntime-node (local development)
-      const uint8Array = new Uint8Array(buffer);
-      const rawImage = new RawImage(uint8Array, width, height, 3);
+        // CRITICAL: Use Uint8ClampedArray (not Uint8Array) to match transformers.js implementation
+        // This prevents "corrupted size vs. prev_size" memory corruption error in onnxruntime-node
+        // Reference: transformers.js-main/src/utils/image.js line 43
+        const uint8ClampedArray = new Uint8ClampedArray(buffer);
+        const rawImage = new RawImage(uint8ClampedArray, width, height, 3);
 
         console.log('🔄 Calling model with RawImage...');
         output = await model(rawImage);
@@ -197,13 +199,13 @@ export class FashionImageEmbedding {
             error: rawImageError?.message
           });
           
-          // Fallback: Try passing raw pixel data as Uint8Array directly
+          // Fallback: Try passing raw pixel data as Uint8ClampedArray directly
           // Some WebAssembly implementations may accept this
           try {
-            console.log('🔄 Fallback: Trying Uint8Array directly...');
-            const uint8Array = new Uint8Array(buffer);
-            output = await model(uint8Array);
-            console.log('✅ Model call succeeded with Uint8Array (fallback)');
+            console.log('🔄 Fallback: Trying Uint8ClampedArray directly...');
+            const uint8ClampedArray = new Uint8ClampedArray(buffer);
+            output = await model(uint8ClampedArray);
+            console.log('✅ Model call succeeded with Uint8ClampedArray (fallback)');
           } catch (fallbackError: any) {
             console.error('❌ All methods failed:', {
               rawImageError: rawImageError?.message,
@@ -300,9 +302,11 @@ export class FashionImageEmbedding {
       );
 
       // Convert to RawImage objects
+      // CRITICAL: Use Uint8ClampedArray (not Uint8Array) to match transformers.js implementation
+      // This prevents "corrupted size vs. prev_size" memory corruption error in onnxruntime-node
       const rawImages = processedImages.map(({ buffer, width, height }) => {
-        const uint8Array = new Uint8Array(buffer);
-        return new RawImage(uint8Array, width, height, 3);
+        const uint8ClampedArray = new Uint8ClampedArray(buffer);
+        return new RawImage(uint8ClampedArray, width, height, 3);
       });
 
       // Generate embeddings in batch
