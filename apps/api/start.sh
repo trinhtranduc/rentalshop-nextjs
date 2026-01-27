@@ -13,7 +13,7 @@
 # Don't exit on error - we want to start server even if migrations fail
 # set -e
 
-# CRITICAL: Set environment variables for @xenova/transformers BEFORE any imports
+# CRITICAL: Set environment variables for @huggingface/transformers BEFORE any imports
 # USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
 # This avoids onnxruntime-node dependency on Alpine Linux
 export USE_ONNXRUNTIME=false

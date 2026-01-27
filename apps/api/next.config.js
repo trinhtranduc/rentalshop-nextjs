@@ -14,7 +14,7 @@ const nextConfig = {
         'prisma',
         '.prisma/client',
         'sharp', // Externalize Sharp (Node.js native module)
-        '@xenova/transformers', // Externalize transformers (ML model, needs runtime env vars)
+        '@huggingface/transformers', // Externalize transformers (ML model, needs runtime env vars)
         'onnxruntime-node', // Externalize ONNX runtime (prevent bundling)
       ],
     },
@@ -23,19 +23,20 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/**': [
       '../../node_modules/.prisma/client/**/*',
-      // CRITICAL: Include entire @xenova/transformers directory for WebAssembly backend
+      // CRITICAL: Include entire @huggingface/transformers directory for WebAssembly backend
       // Based on: https://github.com/huggingface/transformers.js/issues/295
       // Include all WASM files, JS files, and package structure
-      '../../node_modules/@xenova/transformers/**/*',
+      '../../node_modules/@huggingface/transformers/**/*',
       // Explicitly include WASM files (may be in dist/ or other locations)
-      '../../node_modules/@xenova/transformers/dist/**/*.wasm',
-      '../../node_modules/@xenova/transformers/dist/**/*.js',
-      '../../node_modules/@xenova/transformers/dist/**/*.mjs',
-      // Include cache directory (for model files)
-      '../../node_modules/@xenova/transformers/.cache/**/*',
+      '../../node_modules/@huggingface/transformers/dist/**/*.wasm',
+      '../../node_modules/@huggingface/transformers/dist/**/*.js',
+      '../../node_modules/@huggingface/transformers/dist/**/*.mjs',
+      // Include cache directory (for model files) - may be @xenova/.cache internally
+      '../../node_modules/@xenova/.cache/**/*',
+      '../../node_modules/@huggingface/transformers/.cache/**/*',
       // Include package.json and other config files
-      '../../node_modules/@xenova/transformers/package.json',
-      '../../node_modules/@xenova/transformers/**/package.json',
+      '../../node_modules/@huggingface/transformers/package.json',
+      '../../node_modules/@huggingface/transformers/**/package.json',
     ],
   },
   
@@ -79,7 +80,7 @@ const nextConfig = {
         '.prisma/client': 'commonjs .prisma/client',
         '@prisma/engines': 'commonjs @prisma/engines',
         'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
-        '@xenova/transformers': 'commonjs @xenova/transformers', // Externalize transformers (ML model)
+        '@huggingface/transformers': 'commonjs @huggingface/transformers', // Externalize transformers (ML model)
         'onnxruntime-node': 'commonjs onnxruntime-node', // CRITICAL: Externalize ONNX runtime (prevents webpack bundling)
       };
       
@@ -115,7 +116,7 @@ const nextConfig = {
         '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
         // CRITICAL: Alias onnxruntime-node to a mock module
-        // This prevents @xenova/transformers from loading the native module
+        // This prevents @huggingface/transformers from loading the native module
         // and forces it to use pure JavaScript/WebAssembly mode
         // Based on: https://github.com/huggingface/transformers.js/issues/1275
         'onnxruntime-node': path.join(__dirname, 'lib/mock-onnxruntime-node.js'),

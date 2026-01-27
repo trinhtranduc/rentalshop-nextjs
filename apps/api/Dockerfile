@@ -5,7 +5,7 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Install system dependencies for Prisma
-# Note: We use pure JavaScript mode for @xenova/transformers (no onnxruntime-node needed)
+# Note: We use pure JavaScript mode for @huggingface/transformers (no onnxruntime-node needed)
 # This avoids glibc dependency issues on Alpine Linux
 RUN apk add --no-cache libc6-compat openssl
 
@@ -40,7 +40,7 @@ RUN yarn config set network-timeout 300000 && \
 
 # CRITICAL: Remove onnxruntime-node and create mock module
 # onnxruntime-node requires glibc which Alpine Linux doesn't have
-# @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
+# @huggingface/transformers will fall back to pure JavaScript/WebAssembly mode
 RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
       rm -rf node_modules/onnxruntime-node && \
@@ -50,7 +50,7 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     fi && \
     # Create mock module directory and file
     # ROOT CAUSE FIX: Return undefined instead of throwing errors
-    # This allows @xenova/transformers to detect that onnxruntime-node is unavailable
+    # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
     # and automatically fallback to WASM backend without throwing errors
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
@@ -65,7 +65,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-# Note: We use pure JavaScript mode for @xenova/transformers (no native modules needed)
+# Note: We use pure JavaScript mode for @huggingface/transformers (no native modules needed)
 RUN apk add --no-cache openssl
 
 # Copy node_modules from deps stage
@@ -73,7 +73,7 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # CRITICAL: Remove onnxruntime-node and create mock module before building
 # onnxruntime-node requires glibc which Alpine Linux doesn't have
-# @xenova/transformers will fall back to pure JavaScript/WebAssembly mode
+# @huggingface/transformers will fall back to pure JavaScript/WebAssembly mode
 RUN if [ -d "node_modules/onnxruntime-node" ]; then \
       echo "🗑️ Removing onnxruntime-node to force pure JavaScript mode..." && \
       rm -rf node_modules/onnxruntime-node && \
@@ -83,7 +83,7 @@ RUN if [ -d "node_modules/onnxruntime-node" ]; then \
     fi && \
     # Create mock module directory and file
     # ROOT CAUSE FIX: Return undefined instead of throwing errors
-    # This allows @xenova/transformers to detect that onnxruntime-node is unavailable
+    # This allows @huggingface/transformers to detect that onnxruntime-node is unavailable
     # and automatically fallback to WASM backend without throwing errors
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
@@ -119,7 +119,7 @@ RUN mkdir -p apps/api/node_modules/.prisma && \
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
-# CRITICAL: Set environment variables for @xenova/transformers to use WebAssembly mode
+# CRITICAL: Set environment variables for @huggingface/transformers to use WebAssembly mode
 # USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
 # This prevents onnxruntime-node from being loaded (which requires glibc on Alpine)
 ENV USE_ONNXRUNTIME=false
@@ -138,11 +138,14 @@ RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3002
-# CRITICAL: Set environment variables for @xenova/transformers to use WebAssembly mode
+# CRITICAL: Set environment variables for @huggingface/transformers to use WebAssembly mode
 # USE_BROWSER=true forces WebAssembly mode (browser-compatible runtime)
+# Based on: https://huggingface.co/docs/transformers.js/tutorials/next
+# and https://github.com/huggingface/transformers.js/blob/main/examples/next-server/Dockerfile
 ENV USE_ONNXRUNTIME=false
 ENV USE_BROWSER=true
 ENV ONNXRUNTIME_NODE_DISABLE=true
+ENV TRANSFORMERS_CACHE_DIR=/tmp/transformers-cache
 
 # Create nextjs user for security
 RUN addgroup --system --gid 1001 nodejs
@@ -156,28 +159,36 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 # Note: onnxruntime-node should have been removed in builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# CRITICAL: Explicitly verify and ensure @xenova/transformers is accessible
+# CRITICAL: Explicitly verify and ensure @huggingface/transformers is accessible
 # In Next.js standalone output, node_modules may not be fully copied
 # We need to ensure WASM files are accessible at runtime
-RUN if [ -d "node_modules/@xenova/transformers" ]; then \
-      echo "✅ @xenova/transformers found in node_modules"; \
-      if [ -d "node_modules/@xenova/transformers/dist" ]; then \
-        echo "✅ WASM files directory found: node_modules/@xenova/transformers/dist"; \
-        ls -la node_modules/@xenova/transformers/dist/ | head -10 || true; \
+# Note: @huggingface/transformers may use @xenova/transformers internally
+RUN if [ -d "node_modules/@huggingface/transformers" ]; then \
+      echo "✅ @huggingface/transformers found in node_modules"; \
+      if [ -d "node_modules/@huggingface/transformers/dist" ]; then \
+        echo "✅ WASM files directory found: node_modules/@huggingface/transformers/dist"; \
+        ls -la node_modules/@huggingface/transformers/dist/ | head -10 || true; \
       else \
         echo "⚠️ WASM files directory not found - library will download if needed"; \
       fi; \
+    elif [ -d "node_modules/@xenova/transformers" ]; then \
+      echo "✅ @xenova/transformers found (may be internal dependency)"; \
     else \
-      echo "⚠️ WARNING: @xenova/transformers not found in node_modules"; \
+      echo "⚠️ WARNING: @huggingface/transformers not found in node_modules"; \
       echo "⚠️ This may cause WASM backend initialization to fail"; \
     fi
 
-# CRITICAL: Create writable cache directory for @xenova/transformers
-# Based on: https://github.com/huggingface/transformers.js/issues/295
+# CRITICAL: Create writable cache directory for @huggingface/transformers
+# Based on: https://huggingface.co/docs/transformers.js/tutorials/next
+# and https://github.com/huggingface/transformers.js/blob/main/examples/next-server/Dockerfile
 # The library needs a writable cache directory for model files and WASM files
+# Use both locations: /tmp for runtime cache and node_modules/@xenova/.cache for persistent cache
+# Note: @huggingface/transformers may use @xenova/.cache internally (as shown in official Dockerfile)
 RUN mkdir -p /tmp/transformers-cache && \
     chown -R nextjs:nodejs /tmp/transformers-cache && \
-    echo "✅ Created transformers cache directory: /tmp/transformers-cache"
+    mkdir -p /app/node_modules/@xenova/.cache && \
+    chmod 777 -R /app/node_modules/@xenova 2>/dev/null || true && \
+    echo "✅ Created transformers cache directories: /tmp/transformers-cache and /app/node_modules/@xenova/.cache"
 
 # CRITICAL: Ensure onnxruntime-node mock module exists in production image
 # If real package exists, remove it and create mock
@@ -187,16 +198,16 @@ RUN if [ -d "node_modules/onnxruntime-node" ] && [ -f "node_modules/onnxruntime-
       echo "✅ Real onnxruntime-node removed from production image"; \
     fi && \
     # Ensure mock module exists
-    # ROOT CAUSE FIX: Return undefined instead of throwing errors
-    # This allows @xenova/transformers to detect that onnxruntime-node is unavailable
-    # and immediately use WASM backend without trying onnxruntime-node first
-    # Returning undefined is cleaner than throwing errors, which can interfere with WASM initialization
+    # ROOT CAUSE FIX: Return object with InferenceSession structure that throws on create()
+    # Based on logs: Library tries to access onnxruntime.InferenceSession.create()
+    # If module is undefined, library throws "Cannot read properties of undefined"
+    # Solution: Return object with proper structure, but create() throws error
+    # Library will catch error and immediately fallback to WASM
     mkdir -p node_modules/onnxruntime-node && \
     echo "// Mock onnxruntime-node module for WebAssembly fallback" > node_modules/onnxruntime-node/index.js && \
-    echo "// Return undefined to signal that onnxruntime-node is not available" >> node_modules/onnxruntime-node/index.js && \
-    echo "// Library will immediately use WASM backend without trying onnxruntime-node" >> node_modules/onnxruntime-node/index.js && \
-    echo "module.exports = undefined;" >> node_modules/onnxruntime-node/index.js && \
-    echo "✅ Mock onnxruntime-node module ensured in production image (returns undefined for immediate WASM fallback)"
+    echo "const mockInferenceSession = { create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
+    echo "module.exports = { InferenceSession: mockInferenceSession, create: function() { throw new Error('onnxruntime-node is disabled - using WebAssembly mode'); } };" >> node_modules/onnxruntime-node/index.js && \
+    echo "✅ Mock onnxruntime-node module ensured in production image (with InferenceSession structure for WASM fallback)"
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages

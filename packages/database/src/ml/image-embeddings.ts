@@ -2,7 +2,7 @@
  * Image Embedding Service
  * Sử dụng CLIP model để tạo embeddings từ hình ảnh
  * 
- * Default Model: Xenova/clip-vit-base-patch32 (tương thích 100% với @xenova/transformers)
+ * Default Model: Xenova/clip-vit-base-patch32 (tương thích 100% với @huggingface/transformers)
  * Alternative: patrickjohncyh/fashion-clip (fashion-specific, cần test compatibility)
  * Vector dimension: 512
  * 
@@ -112,12 +112,12 @@ if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
   
   console.log('🔧 WebAssembly mode forced (Alpine/Docker/Railway detected)');
 } else {
-  // Local development (darwin/win32): Let @xenova/transformers choose backend automatically
+  // Local development (darwin/win32): Let @huggingface/transformers choose backend automatically
   // Native onnxruntime-node will work and RawImage will function properly
   console.log('🔧 Local development - using native onnxruntime-node');
 }
 
-// LAZY LOAD: Import @xenova/transformers only when needed
+// LAZY LOAD: Import @huggingface/transformers only when needed
 let transformersModule: any = null;
 
 async function loadTransformers() {
@@ -126,164 +126,40 @@ async function loadTransformers() {
     // This ensures environment variables set in start.sh are detected
     const useWebAssembly = shouldUseWebAssembly();
     
-    // Set environment variables again before dynamic import (if WebAssembly needed)
+    // OFFICIAL TUTORIAL APPROACH: Set environment variables before import
+    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+    // Just set env variables, library will auto-detect and use WASM
     if (typeof process !== 'undefined' && useWebAssembly) {
       process.env.USE_ONNXRUNTIME = 'false';
       process.env.USE_BROWSER = 'true';
       process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
       
-      console.log('🔧 Setting WebAssembly environment variables before import:', {
+      console.log('🔧 Setting WebAssembly environment variables (official tutorial approach):', {
         USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
         USE_BROWSER: process.env.USE_BROWSER,
         ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
       });
-      
-      // CRITICAL: Block onnxruntime-node import BEFORE importing @xenova/transformers
-      // This prevents @xenova/transformers from trying to use native onnxruntime-node
-      // which fails on Alpine Linux (musl libc) with ERR_DLOPEN_FAILED
-      try {
-        // Method 1: Try CommonJS require interceptor (for Node.js)
-        if (typeof require !== 'undefined') {
-          const Module = require('module');
-          const originalRequire = Module.prototype.require;
-          
-          // Intercept require calls for onnxruntime-node
-          Module.prototype.require = function(id: string) {
-            if (id === 'onnxruntime-node' || id.includes('onnxruntime-node')) {
-              console.log('🚫 Blocking onnxruntime-node import - returning mock object for WASM fallback');
-              // ROOT CAUSE FIX: Return object with InferenceSession structure
-              // Library tries to access onnxruntime.InferenceSession.create()
-              // If we return undefined, library throws "Cannot read properties of undefined"
-              // Solution: Return object with structure, but create() throws error
-              // Library will catch error and immediately fallback to WASM
-              return {
-                InferenceSession: {
-                  create: function() {
-                    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                  }
-                },
-                create: function() {
-                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                }
-              };
-            }
-            return originalRequire.apply(this, arguments);
-          };
-          
-          console.log('🔒 Require interceptor installed to block onnxruntime-node');
-        }
-      } catch (e) {
-        console.warn('⚠️ Could not install require interceptor (may be ESM context):', e);
-      }
     }
     
-    console.log('🔄 Loading @xenova/transformers...');
+    console.log('🔄 Loading @huggingface/transformers...');
     // CRITICAL: Use Function constructor to ensure true dynamic import
     // TypeScript may convert import() to require() during compilation
     // This delays the import to after compilation, ensuring dynamic import works correctly
     // Official solution from Transformers.js creator
-    const TransformersApi = Function('return import("@xenova/transformers")')();
+    const TransformersApi = Function('return import("@huggingface/transformers")')();
     transformersModule = await TransformersApi;
-    console.log('✅ @xenova/transformers loaded successfully');
+    console.log('✅ @huggingface/transformers loaded successfully');
     
-    // CRITICAL: Patch onnxruntime IMMEDIATELY after library loads
-    // This must happen BEFORE any other operations (cache config, etc.)
-    // Library's constructSession may access onnxruntime during module initialization
-    if (useWebAssembly && transformersModule) {
-      // Create mock onnxruntime object with InferenceSession structure
-      // Library tries to access onnxruntime.InferenceSession.create()
-      // Must have proper structure to avoid "Cannot read properties of undefined"
-      const mockOnnxRuntime = {
-        InferenceSession: {
-          create: function() {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        },
-        create: function() {
-          throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-        }
-      };
-      
-      // Helper function to safely set property (handles non-extensible objects)
-      const safeSetProperty = (obj: any, prop: string, value: any) => {
-        try {
-          obj[prop] = value;
-        } catch (e) {
-          try {
-            Object.defineProperty(obj, prop, {
-              value: value,
-              writable: true,
-              enumerable: true,
-              configurable: true
-            });
-          } catch (e2) {
-            try {
-              Reflect.set(obj, prop, value);
-            } catch (e3: any) {
-              console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
-            }
-          }
-        }
-      };
-      
-      // STEP 1: Patch transformers.env.onnxruntime (most common location)
-      if (transformersModule.env) {
-        transformersModule.env.useBrowser = true;
-        transformersModule.env.useOnnxruntime = false;
-        // @ts-ignore
-        safeSetProperty(transformersModule.env, 'onnxruntime', mockOnnxRuntime);
-        console.log('✅ Step 1: Patched transformers.env.onnxruntime');
-        
-        // @ts-ignore
-        if (transformersModule.env.backends) {
-          // @ts-ignore
-          safeSetProperty(transformersModule.env.backends, 'onnxruntime', mockOnnxRuntime);
-          console.log('✅ Step 1.1: Patched transformers.env.backends.onnxruntime');
-        }
-        
-        // VERIFY: Check if patch was successful
-        // @ts-ignore
-        const envOnnx = transformersModule.env.onnxruntime;
-        if (envOnnx && envOnnx.InferenceSession && typeof envOnnx.InferenceSession.create === 'function') {
-          console.log('✅ Step 1 VERIFIED: transformers.env.onnxruntime has InferenceSession.create');
-        } else {
-          console.warn('⚠️ Step 1 WARNING: transformers.env.onnxruntime patch may have failed');
-        }
-      }
-      
-      // STEP 2: Patch module-level onnxruntime
-      // @ts-ignore
-      safeSetProperty(transformersModule, 'onnxruntime', mockOnnxRuntime);
-      // @ts-ignore
-      const moduleOnnx = transformersModule.onnxruntime;
-      if (moduleOnnx && moduleOnnx.InferenceSession && typeof moduleOnnx.InferenceSession.create === 'function') {
-        console.log('✅ Step 2 VERIFIED: transformersModule.onnxruntime has InferenceSession.create');
-      } else {
-        console.warn('⚠️ Step 2 WARNING: transformersModule.onnxruntime patch may have failed');
-      }
-      
-      // STEP 3: Patch global onnxruntime
-      if (typeof global !== 'undefined') {
-        // @ts-ignore
-        safeSetProperty(global, 'onnxruntime', mockOnnxRuntime);
-        // @ts-ignore
-        if ((global as any).window) {
-          // @ts-ignore
-          safeSetProperty((global as any).window, 'onnxruntime', mockOnnxRuntime);
-        }
-        // @ts-ignore
-        const globalOnnx = global.onnxruntime;
-        if (globalOnnx && globalOnnx.InferenceSession && typeof globalOnnx.InferenceSession.create === 'function') {
-          console.log('✅ Step 3 VERIFIED: global.onnxruntime has InferenceSession.create');
-        } else {
-          console.warn('⚠️ Step 3 WARNING: global.onnxruntime patch may have failed');
-        }
-      }
-      
-      console.log('🔧 IMMEDIATELY patched onnxruntime after library load (before any operations)');
+    // OFFICIAL TUTORIAL APPROACH: Set transformers.env properties
+    // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+    // Just set env variables and transformers.env, library will auto-detect and use WASM
+    if (useWebAssembly && transformersModule && transformersModule.env) {
+      transformersModule.env.useBrowser = true;
+      transformersModule.env.useOnnxruntime = false;
+      console.log('✅ Set transformers.env.useBrowser=true and useOnnxruntime=false (official tutorial approach)');
     }
     
-    // CRITICAL: Configure cache directory for transformers.js
+    // Configure cache directory for transformers.js (official tutorial approach)
     // Based on: https://github.com/huggingface/transformers.js/issues/295
     // The library needs a writable cache directory for model files and WASM files
     if (useWebAssembly && transformersModule && transformersModule.env) {
@@ -292,7 +168,7 @@ async function loadTransformers() {
         const fs = require('fs');
         
         // Use /tmp for cache in Docker/Railway (writable location)
-        // Or use node_modules/@xenova/transformers/.cache if available
+        // Or use node_modules/@huggingface/transformers/.cache if available
         const cacheDir = process.env.TRANSFORMERS_CACHE_DIR || '/tmp/transformers-cache';
         
         // Ensure cache directory exists and is writable
@@ -303,7 +179,7 @@ async function loadTransformers() {
         
         // Check if WASM files are accessible
         try {
-          const transformersPath = require.resolve('@xenova/transformers/package.json');
+          const transformersPath = require.resolve('@huggingface/transformers/package.json');
           const transformersDir = path.dirname(transformersPath);
           const wasmPath = path.join(transformersDir, 'dist');
           const wasmExists = fs.existsSync(wasmPath);
@@ -330,167 +206,9 @@ async function loadTransformers() {
       }
     }
     
-    // CRITICAL: Deep patch @xenova/transformers module to force WebAssembly mode
-    // This ensures onnxruntime-node is never used, even if it's imported
-    if (useWebAssembly && transformersModule) {
-      console.log('🔧 Deep patching @xenova/transformers to force WebAssembly mode...');
-      
-      // Patch environment variables
-      if (transformersModule.env) {
-        transformersModule.env.useBrowser = true;
-        transformersModule.env.useOnnxruntime = false;
-        // @ts-ignore
-        // Set mock onnxruntime with InferenceSession structure
-        const mockOnnxRuntimeForEnv = {
-          InferenceSession: {
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: function() {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
-        transformersModule.env.onnxruntime = mockOnnxRuntimeForEnv;
-      }
-      
-      // Patch global onnxruntime references
-      if (typeof global !== 'undefined') {
-        // @ts-ignore
-        // Set mock onnxruntime with InferenceSession structure
-        const mockOnnxRuntimeForGlobal = {
-          InferenceSession: {
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: function() {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
-        // @ts-ignore
-        (global as any).onnxruntime = mockOnnxRuntimeForGlobal;
-        // @ts-ignore
-        if ((global as any).window) {
-          // @ts-ignore
-          (global as any).window.onnxruntime = mockOnnxRuntimeForGlobal;
-        }
-      }
-      
-        // CRITICAL: Patch internal onnxruntime references in transformers module
-        // ROOT CAUSE FIX: Set to empty object instead of undefined or throwing errors
-        // Empty object allows library to check for methods without throwing "Cannot read property" errors
-        // Library will detect methods don't work and automatically fallback to WASM
-        try {
-        
-        // Helper function to safely set property (handles non-extensible objects)
-        const safeSetProperty = (obj: any, prop: string, value: any) => {
-          try {
-            // Try direct assignment first
-            obj[prop] = value;
-          } catch (e) {
-            try {
-              // If direct assignment fails, try Object.defineProperty
-              Object.defineProperty(obj, prop, {
-                value: value,
-                writable: true,
-                enumerable: true,
-                configurable: true
-              });
-            } catch (e2) {
-              try {
-                // If Object.defineProperty fails, try Reflect.set
-                Reflect.set(obj, prop, value);
-              } catch (e3: any) {
-                // If all methods fail, log and continue
-                console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
-              }
-            }
-          }
-        };
-        
-        // Mock onnxruntime object with InferenceSession structure
-        // Library tries to access onnxruntime.InferenceSession.create()
-        // Must have proper structure to avoid "Cannot read properties of undefined"
-        const mockOnnxRuntime = {
-          InferenceSession: {
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: function() {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
-        
-        // Try to patch internal state
-        // @ts-ignore
-        if (transformersModule.env && transformersModule.env.backends) {
-          try {
-            // @ts-ignore
-            safeSetProperty(transformersModule.env.backends, 'onnxruntime', mockOnnxRuntime);
-          } catch (e) {
-            console.warn('⚠️ Could not patch env.backends.onnxruntime:', e);
-          }
-        }
-        
-        // CRITICAL: Patch internal onnxruntime reference that constructSession uses
-        // constructSession may access onnxruntime from env.onnxruntime or a cached reference
-        // @ts-ignore
-        if (transformersModule.env) {
-          try {
-            // @ts-ignore
-            safeSetProperty(transformersModule.env, 'onnxruntime', mockOnnxRuntime);
-          } catch (e) {
-            console.warn('⚠️ Could not patch env.onnxruntime:', e);
-          }
-        }
-        
-        // Patch module-level onnxruntime if it exists (may be non-extensible)
-        try {
-          // @ts-ignore
-          safeSetProperty(transformersModule, 'onnxruntime', mockOnnxRuntime);
-        } catch (e) {
-          console.warn('⚠️ Could not patch module-level onnxruntime (object may be non-extensible):', e);
-        }
-        
-        // Patch require cache for onnxruntime-node (if it exists)
-        if (typeof require !== 'undefined' && require.cache) {
-          // Mark onnxruntime-node as unavailable in require cache
-          const onnxCacheKey = Object.keys(require.cache).find(key => 
-            key.includes('onnxruntime-node')
-          );
-          if (onnxCacheKey) {
-            try {
-              // @ts-ignore - We're intentionally patching the cache
-              require.cache[onnxCacheKey] = {
-                id: onnxCacheKey,
-                exports: {
-                  InferenceSession: {
-                    create: function() {
-                      throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                    }
-                  },
-                  create: function() {
-                    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                  }
-                },
-                loaded: true
-              } as any;
-              console.log('🔧 Patched onnxruntime-node in require cache (set to empty object)');
-            } catch (e) {
-              console.warn('⚠️ Could not patch require cache:', e);
-            }
-          }
-        }
-        
-        console.log('✅ Deep patching completed');
-      } catch (e) {
-        console.warn('⚠️ Could not complete deep patching:', e);
-      }
-      
-      console.log('✅ @xenova/transformers patched for WebAssembly mode');
-    }
+    // NOTE: Official tutorial recommends ONLY setting env variables and transformers.env
+    // Deep patching should NOT be needed if env variables are set correctly
+    // Removed deep patching section to align with official tutorial approach
   }
   return transformersModule;
 }
@@ -568,341 +286,75 @@ export class FashionImageEmbedding {
       
       const transformers = await loadTransformers();
       
-      // CRITICAL: Re-patch transformers module right before loading model
-      // This ensures onnxruntime is blocked even if it was re-imported
+      // OFFICIAL TUTORIAL APPROACH: Just ensure env variables are set, then call pipeline()
+      // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
+      // Library will auto-detect env variables and use WASM automatically
       if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
-        console.log('🔧 Re-patching transformers before model load...');
-        
         // Re-set environment variables
         process.env.USE_ONNXRUNTIME = 'false';
         process.env.USE_BROWSER = 'true';
         process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
         
-        // ROOT CAUSE FIX: Set to undefined instead of mock object that throws errors
-        // This allows library to gracefully detect unavailability and fallback to WASM
-        
-        // Helper function to safely set property (handles non-extensible objects)
-        const safeSetProperty = (obj: any, prop: string, value: any) => {
-          try {
-            // Try direct assignment first
-            obj[prop] = value;
-          } catch (e) {
-            try {
-              // If direct assignment fails, try Object.defineProperty
-              Object.defineProperty(obj, prop, {
-                value: value,
-                writable: true,
-                enumerable: true,
-                configurable: true
-              });
-            } catch (e2) {
-              try {
-                // If Object.defineProperty fails, try Reflect.set
-                Reflect.set(obj, prop, value);
-              } catch (e3: any) {
-                // If all methods fail, log and continue
-                console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
-              }
-            }
-          }
-        };
-        
-        // CRITICAL: Define mock object at function scope (not inside try block)
-        // This ensures it's accessible in all try/catch blocks below
-        const mockOnnxRuntimeForRepatch = {
-          InferenceSession: {
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          },
-          create: function() {
-            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-          }
-        };
-        
-        // Re-patch transformers module with mock object
+        // Ensure transformers.env is set (official tutorial approach)
         if (transformers && transformers.env) {
-          try {
-            transformers.env.useBrowser = true;
-            transformers.env.useOnnxruntime = false;
-            // @ts-ignore - Set mock object with InferenceSession structure
-            safeSetProperty(transformers.env, 'onnxruntime', mockOnnxRuntimeForRepatch);
-            // @ts-ignore
-            if (transformers.env.backends) {
-              // @ts-ignore
-              safeSetProperty(transformers.env.backends, 'onnxruntime', mockOnnxRuntimeForRepatch);
-            }
-          } catch (e) {
-            console.warn('⚠️ Could not re-patch transformers.env:', e);
-          }
+          transformers.env.useBrowser = true;
+          transformers.env.useOnnxruntime = false;
         }
         
-        // Re-patch module-level onnxruntime (may be non-extensible)
-        try {
-          // @ts-ignore
-          safeSetProperty(transformers, 'onnxruntime', mockOnnxRuntimeForRepatch);
-        } catch (e) {
-          console.warn('⚠️ Could not re-patch module-level onnxruntime (object may be non-extensible):', e);
-        }
-        
-        // Re-patch global references
-        if (typeof global !== 'undefined') {
-          try {
-            // @ts-ignore
-            safeSetProperty(global, 'onnxruntime', mockOnnxRuntimeForRepatch);
-            // @ts-ignore
-            if (global.window) {
-              // @ts-ignore
-              safeSetProperty(global.window, 'onnxruntime', mockOnnxRuntimeForRepatch);
-            }
-          } catch (e) {
-            console.warn('⚠️ Could not re-patch global.onnxruntime:', e);
-          }
-        }
-        
-        console.log('✅ Re-patching completed before model load');
+        console.log('✅ Environment variables and transformers.env set (official tutorial approach)');
       }
       
       const { pipeline } = transformers;
       
-      // STEP 4: Verify onnxruntime is patched BEFORE pipeline call
-      // This is critical - constructSession will access onnxruntime during pipeline()
-      if (shouldUseWebAssembly() && transformers.env) {
-        // @ts-ignore
-        const envOnnx = transformers.env.onnxruntime;
-        if (!envOnnx || !envOnnx.InferenceSession || typeof envOnnx.InferenceSession.create !== 'function') {
-          console.error('❌ CRITICAL: transformers.env.onnxruntime is NOT properly patched before pipeline call!');
-          console.error('   This will cause "Cannot read properties of undefined (reading \'create\')" error');
-          // Re-patch immediately
-          const mockOnnxRuntime = {
-            InferenceSession: {
-              create: function() {
-                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-              }
-            },
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          };
-          // @ts-ignore
-          transformers.env.onnxruntime = mockOnnxRuntime;
-          console.log('✅ Emergency patch applied before pipeline call');
-        } else {
-          console.log('✅ Step 4 VERIFIED: onnxruntime is properly patched before pipeline call');
-        }
-      }
+      console.log('🔄 Calling pipeline() - library will auto-detect WASM mode...');
       
-      // CRITICAL: Based on GitHub issues #1275 and #17
-      // @xenova/transformers may retry with onnxruntime-node even after WASM fallback
-      // The library has internal retry logic that tries onnxruntime-node multiple times
-      // Solution: Ensure environment variables are set BEFORE pipeline call
-      // and let the library's WASM fallback handle it automatically
+      // SIMPLIFIED: Based on GitHub issue #1135 - pipeline promise may never resolve
+      // SOLUTION: Use Promise.race with a single long timeout
+      // Let the library handle its internal retry logic naturally
+      // Don't interfere with multiple retry loops
       
-      // Ensure environment variables are set (in case they were reset)
-      if (typeof process !== 'undefined' && shouldUseWebAssembly()) {
-        process.env.USE_ONNXRUNTIME = 'false';
-        process.env.USE_BROWSER = 'true';
-        process.env.ONNXRUNTIME_NODE_DISABLE = 'true';
+      const PIPELINE_TIMEOUT = 180000; // 180 seconds (3 minutes) - enough for WASM initialization
+      
+      try {
+        const pipelinePromise = pipeline(
+          'image-feature-extraction',
+          this.modelName
+        ) as Promise<any>;
         
-        // CRITICAL: Ensure transformers module is patched with mock onnxruntime
-        // Library's constructSession may access onnxruntime from multiple places
-        if (transformers && transformers.env) {
-          transformers.env.useBrowser = true;
-          transformers.env.useOnnxruntime = false;
-          
-          // Ensure mock onnxruntime is set in env (constructSession may access this)
-          const mockOnnxRuntimeForPipeline = {
-            InferenceSession: {
-              create: function() {
-                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-              }
-            },
-            create: function() {
-              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-            }
-          };
-          
-          // @ts-ignore
-          if (!transformers.env.onnxruntime) {
-            // @ts-ignore
-            transformers.env.onnxruntime = mockOnnxRuntimeForPipeline;
-          }
-          
-          // @ts-ignore
-          if (transformers.env.backends && !transformers.env.backends.onnxruntime) {
-            // @ts-ignore
-            transformers.env.backends.onnxruntime = mockOnnxRuntimeForPipeline;
-          }
-        }
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(
+              `Model loading timeout: Pipeline took longer than ${PIPELINE_TIMEOUT/1000}s. ` +
+              `This may indicate the promise is hanging (issue #1135) or WASM backend cannot initialize.`
+            ));
+          }, PIPELINE_TIMEOUT);
+        });
         
-        // Also ensure global onnxruntime is set
-        if (typeof global !== 'undefined') {
-          // @ts-ignore
-          if (!global.onnxruntime) {
-            // @ts-ignore
-            global.onnxruntime = {
-              InferenceSession: {
-                create: function() {
-                  throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-                }
-              },
-              create: function() {
-                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
-              }
-            };
-          }
-        }
-      }
-      
-      // CRITICAL: The library has internal retry logic that tries onnxruntime-node for EACH component
-      // (vision encoder, text encoder, etc.). Each component triggers a retry.
-      // The WASM fallback message appears, but the library still retries for other components.
-      // 
-      // SOLUTION: Let the library complete its internal retry cycle naturally.
-      // Don't catch errors too early - the library will handle retries internally.
-      // Only catch errors after the library has exhausted all its internal retries.
-      
-      // Verify WASM files are accessible before calling pipeline
-      const useWebAssembly = shouldUseWebAssembly();
-      if (useWebAssembly) {
-        try {
-          const path = require('path');
-          const fs = require('fs');
-          
-          // Check if transformers module is accessible
-          const transformersPath = require.resolve('@xenova/transformers/package.json');
-          const transformersDir = path.dirname(transformersPath);
-          const wasmPath = path.join(transformersDir, 'dist');
-          const wasmExists = fs.existsSync(wasmPath);
-          
-          console.log('🔍 WASM files verification before pipeline call:', {
-            transformersPath,
-            transformersDir,
-            wasmPath,
-            wasmExists,
-            env: {
-              USE_ONNXRUNTIME: process.env.USE_ONNXRUNTIME,
-              USE_BROWSER: process.env.USE_BROWSER,
-              ONNXRUNTIME_NODE_DISABLE: process.env.ONNXRUNTIME_NODE_DISABLE
-            }
+        // Race between pipeline and timeout - let library handle internal retries
+        this.model = await Promise.race([pipelinePromise, timeoutPromise]);
+        
+        console.log('✅ Model loaded successfully with WASM backend');
+      } catch (pipelineError: any) {
+        const errorMessage = pipelineError?.message || '';
+        const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took longer than');
+        
+        if (isTimeout) {
+          console.error('❌ Model loading timeout:', {
+            error: errorMessage,
+            platform: process.platform,
+            arch: process.arch,
+            nodeVersion: process.version,
           });
           
-          if (!wasmExists) {
-            console.warn('⚠️ WASM files directory not found at:', wasmPath);
-            console.warn('⚠️ This may cause WASM backend initialization to fail');
-            console.warn('⚠️ Library will attempt to download WASM files if needed');
-          }
-        } catch (e) {
-          console.warn('⚠️ Could not verify WASM files location:', e);
-          // Continue anyway - library may download WASM files if needed
+          console.error('❌ Possible causes:');
+          console.error('   1. WASM files missing or not accessible');
+          console.error('   2. WASM backend cannot initialize in this environment');
+          console.error('   3. Insufficient memory/resources');
+          console.error('   4. Pipeline promise hanging (issue #1135)');
         }
+        
+        throw pipelineError;
       }
-      
-      // CRITICAL: Let the library complete its internal retry cycle
-      // The library will:
-      // 1. Try onnxruntime-node for vision component → fail → WASM fallback
-      // 2. Try onnxruntime-node for text component → fail → WASM fallback
-      // 3. Eventually use WASM backend for all components
-      // 
-      // We should NOT catch errors during this process - let it complete naturally.
-      // Only catch errors if the library truly fails after all internal retries.
-      
-            console.log('🔄 Calling pipeline() with timeout protection (issue #1135 fix)...');
-            console.log('🔄 Library will handle WASM fallback internally - this may take 30-90 seconds...');
-            console.log('🔄 NOTE: You will see "onnxruntime-node is disabled" errors - this is EXPECTED');
-
-            // SIMPLIFIED: Based on GitHub issue #1135 - pipeline promise may never resolve
-            // SOLUTION: Use Promise.race with a single long timeout
-            // Let the library handle its internal retry logic naturally
-            // Don't interfere with multiple retry loops
-            
-            const PIPELINE_TIMEOUT = 180000; // 180 seconds (3 minutes) - enough for WASM initialization
-            
-            try {
-              const pipelinePromise = pipeline(
-                'image-feature-extraction',
-                this.modelName
-              ) as Promise<any>;
-              
-              const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => {
-                  reject(new Error(
-                    `Model loading timeout: Pipeline took longer than ${PIPELINE_TIMEOUT/1000}s. ` +
-                    `This may indicate the promise is hanging (issue #1135) or WASM backend cannot initialize.`
-                  ));
-                }, PIPELINE_TIMEOUT);
-              });
-              
-              // Race between pipeline and timeout - let library handle internal retries
-              this.model = await Promise.race([pipelinePromise, timeoutPromise]);
-              
-              console.log('✅ Model loaded successfully with WASM backend');
-            } catch (pipelineError: any) {
-              // COMMENTED: Error handling - investigating root cause
-              // From logs: Library says "Using wasm as a fallback" but still throws error
-              // This suggests library's internal WASM fallback is not working properly
-              
-              const errorMessage = pipelineError?.message || '';
-              const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('took longer than');
-              const isOnnxError = errorMessage.includes('onnxruntime-node is disabled') || 
-                                 errorMessage.includes('onnxruntime');
-              
-              // CRITICAL: If it's an onnxruntime error, library is trying to fallback to WASM
-              // The error "onnxruntime-node is disabled" is EXPECTED during fallback process
-              // Library may retry multiple times for different components (vision, text, etc.)
-              // We should NOT throw immediately - library needs time to complete fallback
-              if (isOnnxError && !isTimeout) {
-                console.warn('⚠️ onnxruntime error during model loading (EXPECTED during WASM fallback)');
-                console.warn('⚠️ Library is attempting WASM fallback - this may take 30-90 seconds...');
-                console.warn('⚠️ Error message:', errorMessage.substring(0, 200));
-                
-                // CRITICAL: Don't throw error immediately - library needs to complete fallback
-                // Instead, retry pipeline call to allow library to complete WASM initialization
-                console.log('🔄 Retrying pipeline call to allow library to complete WASM fallback...');
-                
-                // Wait a bit for library to initialize WASM backend
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Retry pipeline call - library should have initialized WASM by now
-                try {
-                  console.log('🔄 Retrying pipeline() call after WASM fallback...');
-                  const retryPromise = pipeline('image-feature-extraction', this.modelName, {
-                    device: 'cpu',
-                    dtype: 'fp32'
-                  });
-                  const retryTimeout = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Retry timeout after 120 seconds')), 120000)
-                  );
-                  
-                  this.model = await Promise.race([retryPromise, retryTimeout]);
-                  console.log('✅ Model loaded successfully after WASM fallback retry');
-                } catch (retryError: any) {
-                  // If retry also fails, then WASM backend truly cannot initialize
-                  console.error('❌ WASM fallback retry also failed:', retryError?.message);
-                  throw new Error(`Failed to load model ${this.modelName}: WASM backend cannot initialize. Original error: ${errorMessage}`);
-                }
-              } else {
-                // For timeout or other errors, throw immediately
-                console.error('❌ Model loading failed:', {
-                  error: errorMessage,
-                  isTimeout,
-                  isOnnxError,
-                  platform: process.platform,
-                  arch: process.arch,
-                  nodeVersion: process.version,
-                });
-                
-                if (isTimeout) {
-                  console.error('❌ Possible causes:');
-                  console.error('   1. WASM files missing or not accessible');
-                  console.error('   2. WASM backend cannot initialize in this environment');
-                  console.error('   3. Insufficient memory/resources');
-                  console.error('   4. Pipeline promise hanging (issue #1135)');
-                }
-                
-                throw pipelineError;
-              }
-            }
     }
     return this.model;
   }

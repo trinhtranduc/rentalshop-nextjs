@@ -1,20 +1,35 @@
 /**
  * Mock module for onnxruntime-node (CommonJS version)
- * This prevents @xenova/transformers from loading the native module
+ * This prevents @huggingface/transformers from loading the native module
  * and forces it to use pure JavaScript/WebAssembly mode
  * 
- * ROOT CAUSE FIX: Return undefined instead of throwing errors
- * Based on @xenova/transformers source code analysis:
- * - Library checks if onnxruntime-node exists and has InferenceSession.create()
- * - If create() throws, library catches error and tries WASM fallback
- * - However, if WASM backend also fails, the error message is confusing
- * - Better approach: Return undefined so library immediately uses WASM
+ * ROOT CAUSE FIX: Return object with InferenceSession structure that throws on create()
+ * Based on logs analysis:
+ * - Library tries to access onnxruntime.InferenceSession.create()
+ * - If module is undefined, library throws "Cannot read properties of undefined"
+ * - Solution: Return object with proper structure, but create() throws error
+ * - Library will catch error and immediately fallback to WASM
  * 
- * CRITICAL: In WebAssembly mode, the library needs WASM files to be accessible.
- * If WASM files are missing, the library will try to download them.
- * Ensure cache directory is writable and network access is available.
+ * CRITICAL: The object structure must match what library expects:
+ * - Must have InferenceSession property
+ * - InferenceSession must have create() method
+ * - create() should throw error (library catches and fallbacks to WASM)
  */
 
-// Return undefined to signal that onnxruntime-node is not available
-// Library will immediately use WASM backend without trying onnxruntime-node first
-module.exports = undefined;
+// Return object with InferenceSession structure
+// Library will try to call create() which throws, triggering immediate WASM fallback
+const mockInferenceSession = {
+  create: function() {
+    // Throw error so library immediately falls back to WASM
+    // Library catches this error and uses WASM backend
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};
+
+module.exports = {
+  InferenceSession: mockInferenceSession,
+  // Also export create directly (some code paths may use this)
+  create: function() {
+    throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+  }
+};
