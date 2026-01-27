@@ -186,6 +186,103 @@ async function loadTransformers() {
     transformersModule = await TransformersApi;
     console.log('✅ @xenova/transformers loaded successfully');
     
+    // CRITICAL: Patch onnxruntime IMMEDIATELY after library loads
+    // This must happen BEFORE any other operations (cache config, etc.)
+    // Library's constructSession may access onnxruntime during module initialization
+    if (useWebAssembly && transformersModule) {
+      // Create mock onnxruntime object with InferenceSession structure
+      // Library tries to access onnxruntime.InferenceSession.create()
+      // Must have proper structure to avoid "Cannot read properties of undefined"
+      const mockOnnxRuntime = {
+        InferenceSession: {
+          create: function() {
+            throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+          }
+        },
+        create: function() {
+          throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+        }
+      };
+      
+      // Helper function to safely set property (handles non-extensible objects)
+      const safeSetProperty = (obj: any, prop: string, value: any) => {
+        try {
+          obj[prop] = value;
+        } catch (e) {
+          try {
+            Object.defineProperty(obj, prop, {
+              value: value,
+              writable: true,
+              enumerable: true,
+              configurable: true
+            });
+          } catch (e2) {
+            try {
+              Reflect.set(obj, prop, value);
+            } catch (e3: any) {
+              console.warn(`⚠️ Could not set property ${prop}:`, e3?.message || String(e3));
+            }
+          }
+        }
+      };
+      
+      // STEP 1: Patch transformers.env.onnxruntime (most common location)
+      if (transformersModule.env) {
+        transformersModule.env.useBrowser = true;
+        transformersModule.env.useOnnxruntime = false;
+        // @ts-ignore
+        safeSetProperty(transformersModule.env, 'onnxruntime', mockOnnxRuntime);
+        console.log('✅ Step 1: Patched transformers.env.onnxruntime');
+        
+        // @ts-ignore
+        if (transformersModule.env.backends) {
+          // @ts-ignore
+          safeSetProperty(transformersModule.env.backends, 'onnxruntime', mockOnnxRuntime);
+          console.log('✅ Step 1.1: Patched transformers.env.backends.onnxruntime');
+        }
+        
+        // VERIFY: Check if patch was successful
+        // @ts-ignore
+        const envOnnx = transformersModule.env.onnxruntime;
+        if (envOnnx && envOnnx.InferenceSession && typeof envOnnx.InferenceSession.create === 'function') {
+          console.log('✅ Step 1 VERIFIED: transformers.env.onnxruntime has InferenceSession.create');
+        } else {
+          console.warn('⚠️ Step 1 WARNING: transformers.env.onnxruntime patch may have failed');
+        }
+      }
+      
+      // STEP 2: Patch module-level onnxruntime
+      // @ts-ignore
+      safeSetProperty(transformersModule, 'onnxruntime', mockOnnxRuntime);
+      // @ts-ignore
+      const moduleOnnx = transformersModule.onnxruntime;
+      if (moduleOnnx && moduleOnnx.InferenceSession && typeof moduleOnnx.InferenceSession.create === 'function') {
+        console.log('✅ Step 2 VERIFIED: transformersModule.onnxruntime has InferenceSession.create');
+      } else {
+        console.warn('⚠️ Step 2 WARNING: transformersModule.onnxruntime patch may have failed');
+      }
+      
+      // STEP 3: Patch global onnxruntime
+      if (typeof global !== 'undefined') {
+        // @ts-ignore
+        safeSetProperty(global, 'onnxruntime', mockOnnxRuntime);
+        // @ts-ignore
+        if ((global as any).window) {
+          // @ts-ignore
+          safeSetProperty((global as any).window, 'onnxruntime', mockOnnxRuntime);
+        }
+        // @ts-ignore
+        const globalOnnx = global.onnxruntime;
+        if (globalOnnx && globalOnnx.InferenceSession && typeof globalOnnx.InferenceSession.create === 'function') {
+          console.log('✅ Step 3 VERIFIED: global.onnxruntime has InferenceSession.create');
+        } else {
+          console.warn('⚠️ Step 3 WARNING: global.onnxruntime patch may have failed');
+        }
+      }
+      
+      console.log('🔧 IMMEDIATELY patched onnxruntime after library load (before any operations)');
+    }
+    
     // CRITICAL: Configure cache directory for transformers.js
     // Based on: https://github.com/huggingface/transformers.js/issues/295
     // The library needs a writable cache directory for model files and WASM files
@@ -567,6 +664,33 @@ export class FashionImageEmbedding {
       }
       
       const { pipeline } = transformers;
+      
+      // STEP 4: Verify onnxruntime is patched BEFORE pipeline call
+      // This is critical - constructSession will access onnxruntime during pipeline()
+      if (shouldUseWebAssembly() && transformers.env) {
+        // @ts-ignore
+        const envOnnx = transformers.env.onnxruntime;
+        if (!envOnnx || !envOnnx.InferenceSession || typeof envOnnx.InferenceSession.create !== 'function') {
+          console.error('❌ CRITICAL: transformers.env.onnxruntime is NOT properly patched before pipeline call!');
+          console.error('   This will cause "Cannot read properties of undefined (reading \'create\')" error');
+          // Re-patch immediately
+          const mockOnnxRuntime = {
+            InferenceSession: {
+              create: function() {
+                throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+              }
+            },
+            create: function() {
+              throw new Error('onnxruntime-node is disabled - using WebAssembly mode');
+            }
+          };
+          // @ts-ignore
+          transformers.env.onnxruntime = mockOnnxRuntime;
+          console.log('✅ Emergency patch applied before pipeline call');
+        } else {
+          console.log('✅ Step 4 VERIFIED: onnxruntime is properly patched before pipeline call');
+        }
+      }
       
       // CRITICAL: Based on GitHub issues #1275 and #17
       // @xenova/transformers may retry with onnxruntime-node even after WASM fallback
