@@ -221,9 +221,11 @@ export class FashionImageEmbedding {
         fs.writeFileSync(tempFilePath, imageBuffer);
         console.log(`   ✅ Temp file created: ${tempFilePath}`);
         
-        // Use RawImage.read() with file:// URL - transformers.js supports file:// URLs in Node.js
-        const fileUrl = `file://${tempFilePath}`;
-        const rawImage = await RawImage.read(fileUrl);
+        // Use RawImage.fromBlob() with file data - this is the most reliable approach
+        // Read file and create Blob from Buffer, then use RawImage.fromBlob()
+        const fileData = fs.readFileSync(tempFilePath);
+        const blob = new Blob([fileData], { type: 'image/png' });
+        const rawImage = await RawImage.fromBlob(blob);
         console.log(`   ✅ RawImage loaded from file: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
