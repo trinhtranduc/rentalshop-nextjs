@@ -221,22 +221,19 @@ export class FashionImageEmbedding {
         fs.writeFileSync(tempFilePath, imageBuffer);
         console.log(`   ✅ Temp file created: ${tempFilePath}`);
         
-        // Use sharp directly with file path - this matches transformers.js internal loadImageFunction
-        // In Node.js, RawImage.fromBlob() calls sharp(await blob.arrayBuffer()) which can cause memory issues
-        // Solution: Use sharp directly with file path, matching transformers.js internal implementation
+        // HARD CODE TEST: Use sharp directly with file path - EXACTLY like transformers.js internal loadImageFunction
+        // Line 37-49 in transformers.js-main/src/utils/image.js
+        // This is the EXACT implementation transformers.js uses internally
         const sharpImage = sharp(tempFilePath);
         const metadata = await sharpImage.metadata();
         const rawChannels = metadata.channels;
         const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
         
-        // CRITICAL: Create new ArrayBuffer and copy data to avoid memory corruption
-        // This matches transformers.js internal loadImageFunction exactly
-        const arrayBuffer = new ArrayBuffer(data.length);
-        const uint8View = new Uint8Array(arrayBuffer);
-        uint8View.set(data);
-        const clampedData = new Uint8ClampedArray(arrayBuffer);
+        // EXACT transformers.js implementation (line 43):
+        // const newImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+        // NO copying, NO ArrayBuffer creation - use data directly
+        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
         
-        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
         if (rawChannels !== undefined && rawChannels !== info.channels) {
           rawImage.convert(rawChannels);
         }
