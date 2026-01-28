@@ -296,16 +296,42 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       try {
         const { db } = await import('@rentalshop/database');
         
-        // Fetch products in parallel by their IDs
-        const productPromises = searchResults.map(async (result) => {
-          const productId = parseInt(result.productId);
-          if (isNaN(productId)) {
-            console.warn(`⚠️ Invalid productId in search result: ${result.productId}`);
-            return null;
-          }
-          
-          try {
-            const product = await db.products.findById(productId);
+        // OPTIMIZATION: Batch fetch products instead of individual queries
+        const productIds = searchResults
+          .map(result => {
+            const productId = parseInt(result.productId);
+            return isNaN(productId) ? null : productId;
+          })
+          .filter((id): id is number => id !== null);
+
+        if (productIds.length === 0) {
+          console.warn('⚠️ No valid product IDs found in search results');
+          return NextResponse.json(
+            ResponseBuilder.success('NO_PRODUCTS_FOUND', {
+              products: [],
+              total: 0,
+              message: 'Không tìm thấy sản phẩm tương tự.'
+            })
+          );
+        }
+
+        // Batch fetch all products in one query (much faster than individual queries)
+        const fetchStartTime = Date.now();
+        const products = await db.products.findByIds(productIds);
+        const fetchDuration = Date.now() - fetchStartTime;
+        
+        console.log(`✅ Batch fetched ${products.length} products in ${fetchDuration}ms`);
+
+        // Create a map for quick lookup
+        const productMap = new Map(products.map(p => [p.id, p]));
+        
+        // Combine products with similarity scores
+        const productsWithDetails = searchResults
+          .map(result => {
+            const productId = parseInt(result.productId);
+            if (isNaN(productId)) return null;
+            
+            const product = productMap.get(productId);
             if (!product) {
               console.warn(`⚠️ Product not found: ${productId}`);
               return null;
@@ -316,13 +342,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
               similarity: result.similarity,
               similarityPercent: Math.round(result.similarity * 100)
             };
-          } catch (error: any) {
-            console.error(`❌ Error fetching product ${productId}:`, error?.message);
-            return null;
-          }
-        });
-
-        const productsWithDetails = (await Promise.all(productPromises))
+          })
           .filter((p): p is NonNullable<typeof p> => p !== null)
           .sort((a, b) => b.similarity - a.similarity); // Sort by similarity (highest first)
 

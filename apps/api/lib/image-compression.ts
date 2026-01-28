@@ -19,17 +19,23 @@ const DEFAULT_QUALITY = VALIDATION.IMAGE_QUALITY.PRODUCT; // 75
 export async function compressImageTo1MB(buffer: Buffer | Uint8Array): Promise<Buffer> {
   // Ensure buffer is a proper Buffer instance
   const bufferData = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const originalSize = bufferData.length;
+  
+  // OPTIMIZATION: Skip compression if already small enough (saves time)
+  if (originalSize <= MAX_IMAGE_SIZE) {
+    console.log(`✅ Image already small enough: ${(originalSize / 1024).toFixed(1)}KB <= ${(MAX_IMAGE_SIZE / 1024).toFixed(0)}KB, skipping compression`);
+    return bufferData;
+  }
   
   try {
     const sharp = (await import('sharp')).default as any;
-    const originalSize = bufferData.length;
     
     // Progressive compression strategy: quality -> resize -> lower quality
     let quality: number = DEFAULT_QUALITY; // Start at 75
     let currentWidth: number = MAX_WIDTH; // Start at 1920px
     let compressedBuffer: Buffer = bufferData;
     let attempts = 0;
-    const MAX_ATTEMPTS = 25; // Prevent infinite loops
+    const MAX_ATTEMPTS = 10; // OPTIMIZATION: Reduced from 25 to 10 (faster, still effective)
     
     console.log(`🔄 Starting compression: ${(originalSize / 1024).toFixed(1)}KB, target: ${(MAX_IMAGE_SIZE / 1024).toFixed(0)}KB`);
     
