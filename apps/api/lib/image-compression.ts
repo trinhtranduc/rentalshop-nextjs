@@ -10,6 +10,80 @@ const MAX_WIDTH = VALIDATION.IMAGE_DIMENSIONS.PRODUCT; // 1920px
 const DEFAULT_QUALITY = VALIDATION.IMAGE_QUALITY.PRODUCT; // 75
 
 /**
+ * Compress image for embedding generation (optimized for ML models)
+ * Uses smaller size (100KB) and lower resolution (800px) since CLIP only needs 224x224
+ * This significantly reduces Python API processing time
+ */
+export async function compressImageForEmbedding(buffer: Buffer | Uint8Array): Promise<Buffer> {
+  const EMBEDDING_MAX_SIZE = 100 * 1024; // 100KB - smaller for faster processing
+  const EMBEDDING_MAX_WIDTH = 800; // 800px - CLIP only needs 224x224 anyway
+  const EMBEDDING_QUALITY = 70; // Lower quality is fine for ML models
+  
+  const bufferData = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const originalSize = bufferData.length;
+  
+  // Skip if already small enough
+  if (originalSize <= EMBEDDING_MAX_SIZE) {
+    console.log(`✅ Image already small enough for embedding: ${(originalSize / 1024).toFixed(1)}KB <= ${(EMBEDDING_MAX_SIZE / 1024).toFixed(0)}KB`);
+    return bufferData;
+  }
+  
+  try {
+    const sharp = (await import('sharp')).default as any;
+    
+    // Progressive compression strategy to ensure we get under 100KB
+    let quality = EMBEDDING_QUALITY;
+    let width = EMBEDDING_MAX_WIDTH;
+    let compressedBuffer: Buffer = bufferData;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    
+    while (compressedBuffer.length > EMBEDDING_MAX_SIZE && attempts < MAX_ATTEMPTS) {
+      attempts++;
+      
+      compressedBuffer = await sharp(bufferData)
+        .resize(width, null, {
+          withoutEnlargement: true,
+          fit: 'inside'
+        })
+        .jpeg({ 
+          quality,
+          progressive: true,
+          mozjpeg: true
+        })
+        .toBuffer();
+      
+      const currentSize = compressedBuffer.length;
+      
+      if (currentSize <= EMBEDDING_MAX_SIZE) {
+        console.log(`✅ Image compressed for embedding (attempt ${attempts}): ${(originalSize / 1024).toFixed(1)}KB -> ${(currentSize / 1024).toFixed(1)}KB (${Math.round((1 - currentSize / originalSize) * 100)}% reduction, width: ${width}px, quality: ${quality})`);
+        return compressedBuffer;
+      }
+      
+      // Progressive reduction strategy
+      if (quality > 50) {
+        quality -= 10; // Reduce quality first
+      } else if (width > 400) {
+        width = Math.max(400, Math.floor(width * 0.75)); // Then reduce width
+        quality = 50; // Reset quality
+      } else {
+        quality = Math.max(40, quality - 5); // Last resort: lower quality more
+      }
+      
+      console.log(`  ⬇️ Attempt ${attempts}: ${(currentSize / 1024).toFixed(1)}KB > ${(EMBEDDING_MAX_SIZE / 1024).toFixed(0)}KB, reducing to width: ${width}px, quality: ${quality}`);
+    }
+    
+    // Final result (may still be slightly over 100KB but much smaller than original)
+    const finalSize = compressedBuffer.length;
+    console.log(`✅ Image compressed for embedding (final): ${(originalSize / 1024).toFixed(1)}KB -> ${(finalSize / 1024).toFixed(1)}KB (${Math.round((1 - finalSize / originalSize) * 100)}% reduction, width: ${width}px, quality: ${quality})`);
+    return compressedBuffer;
+  } catch (error) {
+    console.warn('⚠️ Embedding compression failed, using original:', error);
+    return bufferData;
+  }
+}
+
+/**
  * Compress image to ensure it's under the configured size limit
  * Uses VALIDATION.IMAGE_SIZES.PRODUCT (200KB) for optimal web/mobile performance
  * 

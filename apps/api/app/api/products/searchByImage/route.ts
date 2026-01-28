@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
-import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { compressImageTo1MB, compressImageForEmbedding } from '../../../../lib/image-compression';
 
 // Force dynamic rendering to prevent Next.js from collecting page data
 export const dynamic = 'force-dynamic';
@@ -143,16 +143,18 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       });
 
       // ============================================================
-      // STEP 2: Compress image (không load transformers)
+      // STEP 2: Compress image for embedding (optimized for ML models)
       // ============================================================
       const bytes = await file.arrayBuffer();
       const originalBuffer = Buffer.from(new Uint8Array(bytes));
       
-      console.log(`🔄 Step 2: Compressing image... (original: ${(originalBuffer.length / 1024).toFixed(2)} KB)`);
+      console.log(`🔄 Step 2: Compressing image for embedding... (original: ${(originalBuffer.length / 1024).toFixed(2)} KB)`);
       
-      const compressedBuffer = await compressImageTo1MB(originalBuffer);
+      // OPTIMIZATION: Use aggressive compression for embedding (100KB, 800px)
+      // CLIP model only needs 224x224, so smaller images = faster processing
+      const compressedBuffer = await compressImageForEmbedding(originalBuffer);
       
-      console.log(`✅ Step 2: Image compressed successfully: ${(compressedBuffer.length / 1024).toFixed(2)} KB (${Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)}% reduction)`);
+      console.log(`✅ Step 2: Image compressed for embedding: ${(compressedBuffer.length / 1024).toFixed(2)} KB (${Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)}% reduction)`);
 
       // ============================================================
       // STEP 3: Generate embedding (with error handling)

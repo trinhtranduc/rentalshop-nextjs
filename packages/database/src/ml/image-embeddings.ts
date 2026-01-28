@@ -97,29 +97,44 @@ export class FashionImageEmbedding {
     // OPTIMIZATION: Node.js 18+ fetch API automatically uses connection pooling
     // For additional optimization, we can set keepAlive headers
     // Connection pooling is handled automatically by the runtime
-    const response = await fetch(`${baseUrl}/embed`, {
-      method: 'POST',
-      body: formData,
-      // Keep connection alive for better performance (Node.js handles this automatically)
-      headers: {
-        'Connection': 'keep-alive',
-      },
-    });
+    // Add timeout to prevent hanging (30 seconds max)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
+    try {
+      const response = await fetch(`${baseUrl}/embed`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+        // Keep connection alive for better performance (Node.js handles this automatically)
+        headers: {
+          'Connection': 'keep-alive',
+        },
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Python Embedding API error (${response.status}): ${text}`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Python Embedding API error (${response.status}): ${text}`);
+      }
+
+      const data: any = await response.json();
+      const embedding: unknown = data?.embedding;
+      if (!data?.success || !Array.isArray(embedding)) {
+        throw new Error('Invalid response from Python Embedding API');
+      }
+
+      // Ensure number[] and normalize defensively
+      const vector: number[] = (embedding as unknown[]).map((v) => Number(v));
+      return this.normalizeVector(vector);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Python Embedding API timeout: Request took longer than 30 seconds');
+      }
+      throw error;
     }
-
-    const data: any = await response.json();
-    const embedding: unknown = data?.embedding;
-    if (!data?.success || !Array.isArray(embedding)) {
-      throw new Error('Invalid response from Python Embedding API');
-    }
-
-    // Ensure number[] and normalize defensively
-    const vector: number[] = (embedding as unknown[]).map((v) => Number(v));
-    return this.normalizeVector(vector);
   }
 
   /**
