@@ -204,21 +204,18 @@ export class FashionImageEmbedding {
       let output: any;
       let lastError: Error | null = null;
       
-      // Strategy 1: Create RawImage from sharp + fix prototype chain
+      // Strategy 1: Create RawImage from sharp (NO prototype fix - try simplest approach first)
       try {
-        console.log('🔄 Strategy 1: Creating RawImage from sharp + prototype fix...');
+        console.log('🔄 Strategy 1: Creating RawImage from sharp (no prototype fix)...');
         const sharpImage = sharp(imageBuffer);
         const metadata = await sharpImage.metadata();
         const rawChannels = metadata.channels;
         const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
         
-        // CRITICAL: Create Uint8ClampedArray from ArrayBuffer to avoid memory corruption
-        // Direct use of Buffer or copying can cause "corrupted size vs. prev_size" error
-        // Solution: Create new ArrayBuffer and copy data, then create Uint8ClampedArray
-        const arrayBuffer = new ArrayBuffer(data.length);
-        const uint8View = new Uint8Array(arrayBuffer);
-        uint8View.set(data);
-        const clampedData = new Uint8ClampedArray(arrayBuffer);
+        // CRITICAL: Match transformers.js exactly - use Uint8ClampedArray directly from data
+        // transformers.js uses: new RawImage(new Uint8ClampedArray(data), ...)
+        // This is the exact same approach as transformers.js internal loadImageFunction
+        const clampedData = new Uint8ClampedArray(data);
         
         const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
         
@@ -226,34 +223,27 @@ export class FashionImageEmbedding {
           rawImage.convert(rawChannels);
         }
         
-        // Fix prototype chain for instanceof check
-        Object.setPrototypeOf(rawImage, RawImage.prototype);
-        rawImage.constructor = RawImage;
-        
         const isInstance = rawImage instanceof RawImage;
         console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: RawImage from sharp + prototype fix');
+        console.log('   ✅ Strategy 1 SUCCESS: RawImage from sharp (no prototype fix)');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
       }
       
-      // Strategy 2: Create RawImage from sharp (no prototype fix)
+      // Strategy 2: Create RawImage from sharp + fix prototype chain (if Strategy 1 fails)
       if (!output) {
         try {
-          console.log('🔄 Strategy 2: Creating RawImage from sharp (no prototype fix)...');
+          console.log('🔄 Strategy 2: Creating RawImage from sharp + prototype fix...');
           const sharpImage = sharp(imageBuffer);
           const metadata = await sharpImage.metadata();
           const rawChannels = metadata.channels;
           const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
           
-          // CRITICAL: Create Uint8ClampedArray from ArrayBuffer to avoid memory corruption
-          const arrayBuffer = new ArrayBuffer(data.length);
-          const uint8View = new Uint8Array(arrayBuffer);
-          uint8View.set(data);
-          const clampedData = new Uint8ClampedArray(arrayBuffer);
+          // CRITICAL: Match transformers.js exactly - use Uint8ClampedArray directly from data
+          const clampedData = new Uint8ClampedArray(data);
           
           const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
           
@@ -261,11 +251,20 @@ export class FashionImageEmbedding {
             rawImage.convert(rawChannels);
           }
           
-          const isInstance = rawImage instanceof RawImage;
-          console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
+          const isInstanceBefore = rawImage instanceof RawImage;
+          console.log(`   ✅ RawImage instanceof check (before fix): ${isInstanceBefore}`);
+          
+          // Fix prototype chain if instanceof check fails
+          if (!isInstanceBefore) {
+            console.log('   ⚠️ instanceof check failed - attempting prototype fix...');
+            Object.setPrototypeOf(rawImage, RawImage.prototype);
+            rawImage.constructor = RawImage;
+            const isInstanceAfter = rawImage instanceof RawImage;
+            console.log(`   ✅ RawImage instanceof check (after fix): ${isInstanceAfter}`);
+          }
           
           output = await model(rawImage);
-          console.log('   ✅ Strategy 2 SUCCESS: RawImage from sharp (no prototype fix)');
+          console.log('   ✅ Strategy 2 SUCCESS: RawImage from sharp + prototype fix');
         } catch (error: any) {
           console.log(`   ❌ Strategy 2 FAILED: ${error?.message}`);
           lastError = error;
