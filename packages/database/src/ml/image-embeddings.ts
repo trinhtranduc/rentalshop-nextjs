@@ -86,7 +86,8 @@ export class FashionImageEmbedding {
    */
   private async generateEmbeddingViaPythonApi(imageBuffer: Buffer): Promise<number[]> {
     const baseUrl = getPythonEmbeddingApiUrl();
-    console.log(`🔄 Using Python Embedding API: ${baseUrl}`);
+    const imageSizeKB = (imageBuffer.length / 1024).toFixed(1);
+    console.log(`🔄 Using Python Embedding API: ${baseUrl} (image: ${imageSizeKB}KB)`);
 
     const formData = new FormData();
     // Convert Buffer -> Uint8Array for Blob (avoids TS/SharedArrayBuffer issues)
@@ -101,7 +102,11 @@ export class FashionImageEmbedding {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
     
+    // Measure network + processing time
+    const apiCallStartTime = Date.now();
+    
     try {
+      const networkStartTime = Date.now();
       const response = await fetch(`${baseUrl}/embed`, {
         method: 'POST',
         body: formData,
@@ -112,14 +117,20 @@ export class FashionImageEmbedding {
         },
       });
       
+      const networkDuration = Date.now() - networkStartTime;
       clearTimeout(timeoutId);
+      
+      console.log(`  📡 Network time (request sent): ${networkDuration}ms`);
 
       if (!response.ok) {
         const text = await response.text();
         throw new Error(`Python Embedding API error (${response.status}): ${text}`);
       }
 
+      const parseStartTime = Date.now();
       const data: any = await response.json();
+      const parseDuration = Date.now() - parseStartTime;
+      
       const embedding: unknown = data?.embedding;
       if (!data?.success || !Array.isArray(embedding)) {
         throw new Error('Invalid response from Python Embedding API');
@@ -127,9 +138,23 @@ export class FashionImageEmbedding {
 
       // Ensure number[] and normalize defensively
       const vector: number[] = (embedding as unknown[]).map((v) => Number(v));
-      return this.normalizeVector(vector);
+      const normalized = this.normalizeVector(vector);
+      
+      const totalApiDuration = Date.now() - apiCallStartTime;
+      const processingTime = totalApiDuration - networkDuration - parseDuration;
+      
+      console.log(`  ⏱️ Python API timing breakdown:`);
+      console.log(`     - Network (request): ${networkDuration}ms`);
+      console.log(`     - Processing (Python): ~${processingTime}ms`);
+      console.log(`     - Parse response: ${parseDuration}ms`);
+      console.log(`     - Total API call: ${totalApiDuration}ms`);
+      
+      return normalized;
     } catch (error: any) {
       clearTimeout(timeoutId);
+      const failedDuration = Date.now() - apiCallStartTime;
+      console.error(`  ❌ Python API failed after ${failedDuration}ms`);
+      
       if (error.name === 'AbortError') {
         throw new Error('Python Embedding API timeout: Request took longer than 30 seconds');
       }

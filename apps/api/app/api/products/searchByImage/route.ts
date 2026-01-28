@@ -84,6 +84,7 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  */
 export const POST = withPermissions(['products.view'], { requireActiveSubscription: false })(
   async (request: NextRequest, { user, userScope }) => {
+    const requestStartTime = Date.now();
     try {
       console.log(`🔍 POST /api/products/searchByImage - User: ${user.email} (${user.role})`);
 
@@ -353,6 +354,9 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         // ============================================================
         // STEP 6: Return results
         // ============================================================
+        const totalDuration = Date.now() - requestStartTime;
+        console.log(`⏱️ Total request time: ${totalDuration}ms`);
+        
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
             products: productsWithDetails,
@@ -370,7 +374,8 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
                 categoryId: searchFilters.categoryId
               },
               vectorSearchResults: searchResults.length,
-              productsFetched: productsWithDetails.length
+              productsFetched: productsWithDetails.length,
+              totalDuration: `${totalDuration}ms`
             }
           })
         );
