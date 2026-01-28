@@ -230,13 +230,10 @@ export class FashionImageEmbedding {
         const rawChannels = metadata.channels;
         const { data, info } = await sharpImage.raw().toBuffer({ resolveWithObject: true });
         
-        // CRITICAL: Copy data to new ArrayBuffer to avoid memory corruption
-        const arrayBuffer = new ArrayBuffer(data.length);
-        const uint8View = new Uint8Array(arrayBuffer);
-        uint8View.set(data, 0);
-        const clampedData = new Uint8ClampedArray(arrayBuffer);
-        
-        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
+        // EXACT transformers.js implementation (line 43): Use Uint8ClampedArray directly
+        // No ArrayBuffer copy - transformers.js uses new Uint8ClampedArray(data) directly
+        // This matches the exact implementation that works in transformers.js
+        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
         if (rawChannels !== undefined && rawChannels !== info.channels) {
           rawImage.convert(rawChannels);
         }
