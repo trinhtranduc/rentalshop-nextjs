@@ -388,9 +388,11 @@ export class ProductVectorStore {
     }));
 
     try {
+      console.log(`📤 Upserting ${points.length} point(s) to Qdrant collection: ${this.collectionName}`);
       await this.client.upsert(this.collectionName, {
         points
       });
+      console.log(`✅ Successfully upserted ${points.length} point(s) to Qdrant`);
     } catch (error: any) {
       // If collection doesn't exist, try to initialize and retry
       if (error?.status === 404 || error?.message?.includes('not found')) {
