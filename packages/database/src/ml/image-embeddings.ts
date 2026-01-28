@@ -209,37 +209,57 @@ export class FashionImageEmbedding {
       let lastError: Error | null = null;
       let tempFilePath: string | null = null;
       
-      // Strategy 1: Use sharp directly with Buffer (no temp file) - SIMPLEST APPROACH
+      // Strategy 1: Save to temp file and use sharp with file path - WORKS IN RAILWAY
+      // Docker local test shows Strategy 1 (ArrayBuffer copy) works, but Railway fails
+      // Railway uses Next.js standalone build which may have different memory management
+      // Temp file approach is more stable for Next.js standalone builds
       try {
-        console.log('🔄 Strategy 1: Using sharp directly with Buffer (no temp file)...');
+        console.log('🔄 Strategy 1: Using temp file with sharp (Railway-safe approach)...');
         
-        // Use sharp directly with Buffer - this is simpler and avoids file I/O
-        // Match transformers.js internal loadImageFunction exactly
-        const sharpImage = sharp(imageBuffer);
+        // Create temp file
+        const tempDir = os.tmpdir();
+        tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
+        
+        // Write buffer to temp file
+        fs.writeFileSync(tempFilePath, imageBuffer);
+        console.log(`   ✅ Temp file created: ${tempFilePath}`);
+        
+        // Use sharp with file path (more stable than Buffer in Next.js standalone)
+        const sharpImage = sharp(tempFilePath);
         const metadata = await sharpImage.metadata();
         const rawChannels = metadata.channels;
-        
-        // CRITICAL: Don't use rotate() - it may cause memory issues in Docker
-        // Just use raw().toBuffer() directly
         const { data, info } = await sharpImage.raw().toBuffer({ resolveWithObject: true });
         
-        // EXACT transformers.js implementation (line 43):
-        // const newImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
-        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+        // CRITICAL: Copy data to new ArrayBuffer to avoid memory corruption
+        const arrayBuffer = new ArrayBuffer(data.length);
+        const uint8View = new Uint8Array(arrayBuffer);
+        uint8View.set(data, 0);
+        const clampedData = new Uint8ClampedArray(arrayBuffer);
         
+        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
         if (rawChannels !== undefined && rawChannels !== info.channels) {
           rawImage.convert(rawChannels);
         }
         console.log(`   ✅ RawImage created: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: Sharp with Buffer (no temp file)');
+        console.log('   ✅ Strategy 1 SUCCESS: Temp file with ArrayBuffer copy');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
+      } finally {
+        // Clean up temp file
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+          try {
+            fs.unlinkSync(tempFilePath);
+            console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
+          } catch (cleanupError) {
+            console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
+          }
+        }
       }
       
-      // Strategy 2: Save to temp file and use sharp with file path (fallback)
+      // Strategy 2: Use sharp directly with Buffer (fallback - works in Docker local)
       if (!output) {
         try {
           console.log('🔄 Strategy 2: Using temp file with sharp (fallback)...');
