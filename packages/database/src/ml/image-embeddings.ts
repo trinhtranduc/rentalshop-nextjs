@@ -209,29 +209,46 @@ export class FashionImageEmbedding {
       let lastError: Error | null = null;
       let tempFilePath: string | null = null;
       
-      // Strategy 1: Use RawImage.fromBlob() with Blob from Buffer - NO SHARP
-      // This avoids all sharp-related memory issues in Next.js standalone
-      // RawImage.fromBlob() uses sharp internally but handles memory correctly
+      // Strategy 1: Save to temp file, read file, create Blob from file data
+      // This avoids blob.arrayBuffer() memory corruption in Next.js standalone
+      // RawImage.fromBlob() with file-based Blob is more stable
       try {
-        console.log('🔄 Strategy 1: Using RawImage.fromBlob() with Buffer (no sharp direct)...');
+        console.log('🔄 Strategy 1: Using temp file + Blob from file data...');
         
-        // Create Blob from Buffer - convert to Uint8Array first for TypeScript compatibility
-        // RawImage.fromBlob() will use sharp internally but handle memory correctly
-        const uint8Array = new Uint8Array(imageBuffer);
+        // Create temp file
+        const tempDir = os.tmpdir();
+        tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
+        
+        // Write buffer to temp file
+        fs.writeFileSync(tempFilePath, imageBuffer);
+        console.log(`   ✅ Temp file created: ${tempFilePath}`);
+        
+        // Read file and create Blob from file data (not from Buffer)
+        // This avoids memory sharing issues between Buffer and Blob
+        const fileData = fs.readFileSync(tempFilePath);
+        const uint8Array = new Uint8Array(fileData);
         const blob = new Blob([uint8Array], { type: 'image/png' });
-        console.log(`   ✅ Blob created: ${blob.size} bytes`);
+        console.log(`   ✅ Blob created from file: ${blob.size} bytes`);
         
-        // Use RawImage.fromBlob() - this is the official transformers.js way
-        // In Node.js, it calls sharp(await blob.arrayBuffer()) internally
-        // But transformers.js handles the memory management correctly
+        // Use RawImage.fromBlob() - file-based Blob is more stable
         const rawImage = await RawImage.fromBlob(blob);
         console.log(`   ✅ RawImage created: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: RawImage.fromBlob() approach');
+        console.log('   ✅ Strategy 1 SUCCESS: Temp file + Blob from file data');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
+      } finally {
+        // Clean up temp file
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+          try {
+            fs.unlinkSync(tempFilePath);
+            console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
+          } catch (cleanupError) {
+            console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
+          }
+        }
       }
       
       // Strategy 2: Save to temp file and use sharp with file path (fallback)
