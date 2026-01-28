@@ -79,8 +79,8 @@ function getApiBaseUrl(): string {
 const API_BASE_URL = getApiBaseUrl();
 
 // Test credentials
-const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@rentalshop.com';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || 'admin123';
+const TEST_EMAIL = 'admin.outlet1@example.com';
+const TEST_PASSWORD = '123456';
 
 /**
  * Login để lấy JWT token
