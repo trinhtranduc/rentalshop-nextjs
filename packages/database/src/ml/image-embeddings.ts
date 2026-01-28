@@ -209,52 +209,32 @@ export class FashionImageEmbedding {
       let lastError: Error | null = null;
       let tempFilePath: string | null = null;
       
-      // Strategy 1: Save to temp file and use sharp with file path - WORKS IN RAILWAY
-      // Docker local test shows Strategy 1 (ArrayBuffer copy) works, but Railway fails
-      // Railway uses Next.js standalone build which may have different memory management
-      // Temp file approach is more stable for Next.js standalone builds
+      // Strategy 1: Use RawImage.fromBlob() with Blob from Buffer - NO SHARP
+      // This avoids all sharp-related memory issues in Next.js standalone
+      // RawImage.fromBlob() uses sharp internally but handles memory correctly
       try {
-        console.log('🔄 Strategy 1: Using temp file with sharp (Railway-safe approach)...');
+        console.log('🔄 Strategy 1: Using RawImage.fromBlob() with Buffer (no sharp direct)...');
         
-        // Create temp file
-        const tempDir = os.tmpdir();
-        tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
+        // Create Blob from Buffer - convert to Uint8Array first for TypeScript compatibility
+        // RawImage.fromBlob() will use sharp internally but handle memory correctly
+        const uint8Array = new Uint8Array(imageBuffer);
+        const blob = new Blob([uint8Array], { type: 'image/png' });
+        console.log(`   ✅ Blob created: ${blob.size} bytes`);
         
-        // Write buffer to temp file
-        fs.writeFileSync(tempFilePath, imageBuffer);
-        console.log(`   ✅ Temp file created: ${tempFilePath}`);
-        
-        // Use sharp with file path (more stable than Buffer in Next.js standalone)
-        const sharpImage = sharp(tempFilePath);
-        const metadata = await sharpImage.metadata();
-        const rawChannels = metadata.channels;
-        const { data, info } = await sharpImage.raw().toBuffer({ resolveWithObject: true });
-        
-        // EXACT transformers.js implementation (line 43): Use Uint8ClampedArray directly
-        // No ArrayBuffer copy - transformers.js uses new Uint8ClampedArray(data) directly
-        // This matches the exact implementation that works in transformers.js
-        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
-        if (rawChannels !== undefined && rawChannels !== info.channels) {
-          rawImage.convert(rawChannels);
-        }
+        // Use RawImage.fromBlob() - this is the official transformers.js way
+        // In Node.js, it calls sharp(await blob.arrayBuffer()) internally
+        // But transformers.js handles the memory management correctly
+        const rawImage = await RawImage.fromBlob(blob);
         console.log(`   ✅ RawImage created: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: Temp file with ArrayBuffer copy');
+        console.log('   ✅ Strategy 1 SUCCESS: RawImage.fromBlob() approach');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
-      } finally {
-        // Clean up temp file
-        if (tempFilePath && fs.existsSync(tempFilePath)) {
-          try {
-            fs.unlinkSync(tempFilePath);
-            console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
-          } catch (cleanupError) {
-            console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
-          }
-        }
       }
+      
+      // Strategy 2: Save to temp file and use sharp with file path (fallback)
       
       // Strategy 2: Use sharp directly with Buffer (fallback - works in Docker local)
       if (!output) {
