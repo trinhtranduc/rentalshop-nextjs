@@ -125,15 +125,27 @@ class SearchService:
                 "fetchDuration": 0
             }
         
-        # Extract product IDs
+        # Extract product IDs and metadata from Qdrant payload
         product_ids = []
         similarity_map = {}
+        metadata_map = {}  # Store metadata (merchantId, outletId, etc.) from Qdrant
+        
         for result in search_results[:limit]:  # Take top N
             product_id = result.payload.get("productId") or result.payload.get("product_id")
             if product_id:
                 try:
-                    product_ids.append(int(product_id))
-                    similarity_map[int(product_id)] = result.score
+                    product_id_int = int(product_id)
+                    product_ids.append(product_id_int)
+                    similarity_map[product_id_int] = result.score
+                    
+                    # Store metadata from Qdrant payload
+                    metadata_map[product_id_int] = {
+                        "merchantId": result.payload.get("merchantId"),
+                        "outletId": result.payload.get("outletId"),
+                        "categoryId": result.payload.get("categoryId"),
+                        "productName": result.payload.get("productName"),
+                        "imageUrl": result.payload.get("imageUrl")
+                    }
                 except (ValueError, TypeError):
                     continue
         
@@ -148,6 +160,9 @@ class SearchService:
         # Fetch products from PostgreSQL
         fetch_start = time.time()
         products = []
+        
+        print(f"🔍 Checking database connection: {'✅ Connected' if self.db_pool else '❌ No connection (DATABASE_URL not set)'}")
+        print(f"📊 Product IDs to fetch: {product_ids}")
         
         if self.db_pool:
             try:
@@ -183,51 +198,87 @@ class SearchService:
                     
                     rows = await conn.fetch(query, product_ids)
                     
-                    for row in rows:
-                        product = {
-                            "id": row["id"],
-                            "name": row["name"],
-                            "description": row["description"],
-                            "barcode": row["barcode"],
-                            "rentPrice": float(row["rentPrice"]) if row["rentPrice"] else None,
-                            "salePrice": float(row["salePrice"]) if row["salePrice"] else None,
-                            "deposit": float(row["deposit"]) if row["deposit"] else None,
-                            "images": row["images"] if row["images"] else [],
-                            "totalStock": row["totalStock"],
-                            "isActive": row["isActive"],
-                            "createdAt": row["createdAt"].isoformat() if row["createdAt"] else None,
-                            "updatedAt": row["updatedAt"].isoformat() if row["updatedAt"] else None,
-                            "category": {
-                                "id": row["categoryId"],
-                                "name": row["categoryName"]
-                            } if row["categoryId"] else None,
-                            "merchant": {
-                                "id": row["merchantId"],
-                                "name": row["merchantName"]
-                            } if row["merchantId"] else None,
-                            "similarity": similarity_map.get(row["id"], 0.0),
-                            "similarityPercent": int(similarity_map.get(row["id"], 0.0) * 100)
-                        }
-                        products.append(product)
+                    print(f"📊 Fetched {len(rows)} rows from database for {len(product_ids)} product IDs")
+                    
+                    if len(rows) == 0:
+                        print(f"⚠️ No products found in database for IDs: {product_ids}")
+                        # Return product IDs with similarity and metadata from Qdrant if no rows found
+                        products = [
+                            {
+                                "id": pid,
+                                "similarity": similarity_map.get(pid, 0.0),
+                                "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
+                                "merchantId": metadata_map.get(pid, {}).get("merchantId"),
+                                "outletId": metadata_map.get(pid, {}).get("outletId"),
+                                "categoryId": metadata_map.get(pid, {}).get("categoryId"),
+                                "name": metadata_map.get(pid, {}).get("productName"),
+                                "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
+                            }
+                            for pid in product_ids
+                        ]
+                    else:
+                        for row in rows:
+                            # Get metadata from Qdrant if available (fallback to database)
+                            metadata = metadata_map.get(row["id"], {})
+                            product = {
+                                "id": row["id"],
+                                "name": row["name"],
+                                "description": row["description"],
+                                "barcode": row["barcode"],
+                                "rentPrice": float(row["rentPrice"]) if row["rentPrice"] else None,
+                                "salePrice": float(row["salePrice"]) if row["salePrice"] else None,
+                                "deposit": float(row["deposit"]) if row["deposit"] else None,
+                                "images": row["images"] if row["images"] else [],
+                                "totalStock": row["totalStock"],
+                                "isActive": row["isActive"],
+                                "createdAt": row["createdAt"].isoformat() if row["createdAt"] else None,
+                                "updatedAt": row["updatedAt"].isoformat() if row["updatedAt"] else None,
+                                "merchantId": row["merchantId"] or metadata.get("merchantId"),
+                                "outletId": metadata.get("outletId"),
+                                "categoryId": row["categoryId"] or metadata.get("categoryId"),
+                                "category": {
+                                    "id": row["categoryId"],
+                                    "name": row["categoryName"]
+                                } if row["categoryId"] else None,
+                                "merchant": {
+                                    "id": row["merchantId"],
+                                    "name": row["merchantName"]
+                                } if row["merchantId"] else None,
+                                "similarity": similarity_map.get(row["id"], 0.0),
+                                "similarityPercent": int(similarity_map.get(row["id"], 0.0) * 100)
+                            }
+                            products.append(product)
                     
             except Exception as e:
                 print(f"❌ Error fetching products: {e}")
-                # Return product IDs with similarity if fetch fails
+                import traceback
+                traceback.print_exc()
+                # Return product IDs with similarity and metadata from Qdrant if fetch fails
                 products = [
                     {
                         "id": pid,
                         "similarity": similarity_map.get(pid, 0.0),
-                        "similarityPercent": int(similarity_map.get(pid, 0.0) * 100)
+                        "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
+                        "merchantId": metadata_map.get(pid, {}).get("merchantId"),
+                        "outletId": metadata_map.get(pid, {}).get("outletId"),
+                        "categoryId": metadata_map.get(pid, {}).get("categoryId"),
+                        "name": metadata_map.get(pid, {}).get("productName"),
+                        "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
                     }
                     for pid in product_ids
                 ]
         else:
-            # No database connection, return IDs only
+            # No database connection, return IDs with metadata from Qdrant
             products = [
                 {
                     "id": pid,
                     "similarity": similarity_map.get(pid, 0.0),
-                    "similarityPercent": int(similarity_map.get(pid, 0.0) * 100)
+                    "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
+                    "merchantId": metadata_map.get(pid, {}).get("merchantId"),
+                    "outletId": metadata_map.get(pid, {}).get("outletId"),
+                    "categoryId": metadata_map.get(pid, {}).get("categoryId"),
+                    "name": metadata_map.get(pid, {}).get("productName"),
+                    "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
                 }
                 for pid in product_ids
             ]

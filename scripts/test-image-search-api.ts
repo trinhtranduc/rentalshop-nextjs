@@ -214,6 +214,12 @@ async function testImageSearchAPI(imagePath: string, token: string) {
     console.log(`   Code: ${data.code || 'N/A'}`);
     console.log(`   Message: ${data.message || 'N/A'}`);
     
+    // Show full response structure (for debugging)
+    if (process.argv.includes('--verbose') || process.env.VERBOSE === 'true') {
+      console.log('\n📋 Full Response JSON:');
+      console.log(JSON.stringify(data, null, 2));
+    }
+    
     if (data.data) {
       const products = data.data.products || [];
       const total = data.data.total || 0;
@@ -228,8 +234,62 @@ async function testImageSearchAPI(imagePath: string, token: string) {
           const similarity = product.similarity 
             ? `${(product.similarity * 100).toFixed(2)}%` 
             : 'N/A';
-          console.log(`      ${index + 1}. Product ${product.id || product.productId}: ${product.name || 'N/A'} (${similarity} similarity)`);
+          const similarityPercent = product.similarityPercent 
+            ? `${product.similarityPercent}%` 
+            : similarity;
+          console.log(`\n      ${index + 1}. Product Details:`);
+          console.log(`         ID: ${product.id || product.productId || 'N/A'}`);
+          console.log(`         Name: ${product.name || 'N/A'}`);
+          console.log(`         Barcode: ${product.barcode || 'N/A'}`);
+          console.log(`         Similarity: ${similarityPercent}`);
+          if (product.merchantId) {
+            console.log(`         Merchant ID: ${product.merchantId}`);
+          }
+          if (product.merchant) {
+            console.log(`         Merchant: ${product.merchant.name || product.merchant.id || 'N/A'} (ID: ${product.merchant.id || product.merchantId || 'N/A'})`);
+          } else if (product.merchantId) {
+            console.log(`         Merchant ID: ${product.merchantId}`);
+          }
+          if (product.rentPrice) {
+            console.log(`         Rent Price: ${product.rentPrice}`);
+          }
+          if (product.salePrice) {
+            console.log(`         Sale Price: ${product.salePrice}`);
+          }
+          if (product.category) {
+            console.log(`         Category: ${product.category.name || product.category.id || 'N/A'} (ID: ${product.category.id || 'N/A'})`);
+          }
+          if (product.categoryId) {
+            console.log(`         Category ID: ${product.categoryId}`);
+          }
+          if (product.images && product.images.length > 0) {
+            const firstImage = Array.isArray(product.images) ? product.images[0] : product.images;
+            console.log(`         Image: ${firstImage?.substring(0, 80)}${firstImage?.length > 80 ? '...' : ''}`);
+          }
         });
+        
+        // Show debug info if available
+        if (data.data?.debug) {
+          console.log(`\n   📊 Debug Info:`);
+          const debug = data.data.debug;
+          if (debug.timing) {
+            console.log(`      Total request: ${debug.timing.totalRequest || debug.timing.totalDuration || 'N/A'}ms`);
+            if (debug.timing.pythonTiming) {
+              console.log(`      Python embedding: ${debug.timing.pythonTiming.embedding || 'N/A'}ms`);
+              console.log(`      Python search: ${debug.timing.pythonTiming.search || 'N/A'}ms`);
+              console.log(`      Python fetch: ${debug.timing.pythonTiming.fetch || 'N/A'}ms`);
+              console.log(`      Python total: ${debug.timing.pythonTiming.total || 'N/A'}ms`);
+            } else {
+              console.log(`      Image compression: ${debug.timing.imageCompression || 'N/A'}ms`);
+              console.log(`      Embedding generation: ${debug.timing.embeddingGeneration || 'N/A'}ms`);
+              console.log(`      Vector search: ${debug.timing.vectorSearch || 'N/A'}ms`);
+              console.log(`      Product fetch: ${debug.timing.productDetailsFetch || 'N/A'}ms`);
+            }
+          }
+          if (debug.compressionRatio) {
+            console.log(`      Compression: ${debug.compressionRatio}% reduction`);
+          }
+        }
       } else {
         console.log(`\n   ⚠️  No products found`);
         console.log(`   Possible reasons:`);
