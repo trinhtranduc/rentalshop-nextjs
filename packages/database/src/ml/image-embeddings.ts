@@ -14,7 +14,16 @@ function shouldUsePythonEmbeddingApi(): boolean {
 }
 
 function getPythonEmbeddingApiUrl(): string {
-  return process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
+  const url = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
+  
+  // Ensure URL has a protocol (https:// or http://)
+  // This fixes issues where env var might be set without protocol (e.g., Railway public domain)
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    // Default to https:// for production URLs (Railway, etc.)
+    return `https://${url}`;
+  }
+  
+  return url;
 }
 
 export class FashionImageEmbedding {

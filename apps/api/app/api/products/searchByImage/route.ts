@@ -199,31 +199,166 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       }
 
       // ============================================================
-      // TEMPORARY: Return empty results until Step 4 is ready
+      // STEP 4: Vector search in Qdrant
       // ============================================================
-      console.log('⚠️ Step 4 not yet implemented - returning empty results');
-      
-      return NextResponse.json(
-        ResponseBuilder.success('NO_PRODUCTS_FOUND', {
-          products: [],
-          total: 0,
-          message: 'Tính năng tìm kiếm hình ảnh đang được tích hợp từng bước. Bước 1-3 (validation, compression, embedding) đã hoàn thành.',
-          debug: {
-            originalSize: originalBuffer.length,
-            compressedSize: compressedBuffer.length,
-            compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
-            embeddingDimension: queryEmbedding?.length || null,
-            embeddingGenerated: queryEmbedding !== null
-          }
-        })
-      );
+      if (!queryEmbedding) {
+        return NextResponse.json(
+          ResponseBuilder.error('EMBEDDING_GENERATION_FAILED'),
+          { status: 503 }
+        );
+      }
 
-      /* TODO: Step 4 - Vector search
-      // Step 4: Search in Qdrant
-      const { getVectorStore } = await import('@rentalshop/database/server');
-      const vectorStore = getVectorStore();
-      const searchResults = await vectorStore.search(queryEmbedding, { ... });
-      */
+      console.log('🔄 Step 4: Searching in Qdrant vector database...');
+      
+      // Build filters from user scope (role-based access control)
+      const searchFilters: {
+        merchantId?: number;
+        outletId?: number;
+        categoryId?: number;
+        minSimilarity?: number;
+        limit?: number;
+      } = {
+        minSimilarity,
+        limit
+      };
+
+      // Apply role-based filtering (security: backend-only)
+      if (userScope.merchantId) {
+        searchFilters.merchantId = userScope.merchantId;
+      }
+      
+      if (userScope.outletId) {
+        searchFilters.outletId = userScope.outletId;
+      }
+      
+      if (categoryId) {
+        searchFilters.categoryId = categoryId;
+      }
+
+      let searchResults: Array<{
+        productId: string;
+        similarity: number;
+        metadata: any;
+      }> = [];
+
+      try {
+        const { getVectorStore } = await import('@rentalshop/database/server');
+        const vectorStore = getVectorStore();
+
+        const searchStartTime = Date.now();
+        searchResults = await vectorStore.search(queryEmbedding, searchFilters);
+        const searchDuration = Date.now() - searchStartTime;
+        
+        console.log(`✅ Step 4: Vector search completed (${searchDuration}ms, found ${searchResults.length} results)`);
+      } catch (error: any) {
+        console.error('❌ Step 4: Vector search failed:', error?.message);
+        console.error('   Error details:', {
+          name: error?.name,
+          message: error?.message,
+          stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+        });
+        
+        // Return graceful error response
+        return NextResponse.json(
+          ResponseBuilder.error('VECTOR_SEARCH_FAILED'),
+          { status: 503 }
+        );
+      }
+
+      // ============================================================
+      // STEP 5: Fetch product details from database
+      // ============================================================
+      console.log('🔄 Step 5: Fetching product details...');
+      
+      if (searchResults.length === 0) {
+        console.log('⚠️ No similar products found in vector search');
+        return NextResponse.json(
+          ResponseBuilder.success('NO_PRODUCTS_FOUND', {
+            products: [],
+            total: 0,
+            message: 'Không tìm thấy sản phẩm tương tự. Thử tải lên hình ảnh khác hoặc điều chỉnh tiêu chí tìm kiếm.',
+            debug: {
+              originalSize: originalBuffer.length,
+              compressedSize: compressedBuffer.length,
+              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
+              embeddingDimension: queryEmbedding.length,
+              minSimilarity,
+              searchFilters: {
+                merchantId: searchFilters.merchantId,
+                outletId: searchFilters.outletId,
+                categoryId: searchFilters.categoryId
+              }
+            }
+          })
+        );
+      }
+
+      try {
+        const { db } = await import('@rentalshop/database');
+        
+        // Fetch products in parallel by their IDs
+        const productPromises = searchResults.map(async (result) => {
+          const productId = parseInt(result.productId);
+          if (isNaN(productId)) {
+            console.warn(`⚠️ Invalid productId in search result: ${result.productId}`);
+            return null;
+          }
+          
+          try {
+            const product = await db.products.findById(productId);
+            if (!product) {
+              console.warn(`⚠️ Product not found: ${productId}`);
+              return null;
+            }
+            
+            return {
+              ...product,
+              similarity: result.similarity,
+              similarityPercent: Math.round(result.similarity * 100)
+            };
+          } catch (error: any) {
+            console.error(`❌ Error fetching product ${productId}:`, error?.message);
+            return null;
+          }
+        });
+
+        const productsWithDetails = (await Promise.all(productPromises))
+          .filter((p): p is NonNullable<typeof p> => p !== null)
+          .sort((a, b) => b.similarity - a.similarity); // Sort by similarity (highest first)
+
+        console.log(`✅ Step 5: Fetched ${productsWithDetails.length} product details`);
+
+        // ============================================================
+        // STEP 6: Return results
+        // ============================================================
+        return NextResponse.json(
+          ResponseBuilder.success('PRODUCTS_FOUND', {
+            products: productsWithDetails,
+            total: productsWithDetails.length,
+            message: `Tìm thấy ${productsWithDetails.length} sản phẩm tương tự`,
+            debug: {
+              originalSize: originalBuffer.length,
+              compressedSize: compressedBuffer.length,
+              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
+              embeddingDimension: queryEmbedding.length,
+              minSimilarity,
+              searchFilters: {
+                merchantId: searchFilters.merchantId,
+                outletId: searchFilters.outletId,
+                categoryId: searchFilters.categoryId
+              },
+              vectorSearchResults: searchResults.length,
+              productsFetched: productsWithDetails.length
+            }
+          })
+        );
+      } catch (error: any) {
+        console.error('❌ Step 5: Error fetching product details:', error?.message);
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_FETCH_FAILED'),
+          { status: 503 }
+        );
+      }
 
     } catch (error: any) {
       console.error('❌ Error in image search:', error?.message);
