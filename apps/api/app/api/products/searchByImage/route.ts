@@ -158,231 +158,160 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       console.log(`✅ Step 2: Image compressed for embedding: ${(compressedBuffer.length / 1024).toFixed(2)} KB (${Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)}% reduction)`);
 
       // ============================================================
-      // STEP 3: Generate embedding (with error handling)
+      // STEP 3: Complete search in Python service (OPTIMIZED)
       // ============================================================
-      console.log('🔄 Step 3: Generating embedding...');
+      // OPTIMIZATION: Move all processing to Python service to minimize network round-trips
+      // Python service handles: embedding + vector search + product fetching
+      // This reduces network latency from 3 calls to 1 call
+      console.log('🔄 Step 3: Processing complete search in Python service...');
       
-      let queryEmbedding: number[] | null = null;
-      let embeddingError: string | null = null;
-
       try {
-        // Always use centralized embedding service (DRY).
-        // The service is Python-only when USE_PYTHON_EMBEDDING_API=true.
-        const { getEmbeddingService } = await import('@rentalshop/database/server');
-        const embeddingService = getEmbeddingService();
+        const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
+        const baseUrl = pythonApiUrl.startsWith('http') 
+          ? pythonApiUrl 
+          : `https://${pythonApiUrl}`;
         
-        const embeddingStartTime = Date.now();
-        queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(compressedBuffer);
-        const embeddingDuration = Date.now() - embeddingStartTime;
+        // Build filters from user scope (role-based access control)
+        const searchFilters: {
+          merchantId?: number;
+          outletId?: number;
+          categoryId?: number;
+        } = {};
+
+        // Apply role-based filtering (security: backend-only)
+        if (userScope.merchantId) {
+          searchFilters.merchantId = userScope.merchantId;
+        }
         
-        console.log(`✅ Step 3: Embedding generated successfully (dimension: ${queryEmbedding.length}, duration: ${embeddingDuration}ms)`);
-      } catch (error: any) {
-        embeddingError = error?.message || 'Unknown error';
-        console.error('❌ Step 3: Embedding generation failed:', embeddingError);
-        console.error('   Error details:', {
-          name: error?.name,
-          message: error?.message,
-          stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+        if (userScope.outletId) {
+          searchFilters.outletId = userScope.outletId;
+        }
+        
+        if (categoryId) {
+          searchFilters.categoryId = categoryId;
+        }
+
+        // Create form data for Python service
+        const formData = new FormData();
+        const uint8Array = new Uint8Array(compressedBuffer);
+        const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+        formData.append('file', blob, 'image.jpg');
+        
+        if (searchFilters.merchantId) {
+          formData.append('merchantId', String(searchFilters.merchantId));
+        }
+        if (searchFilters.outletId) {
+          formData.append('outletId', String(searchFilters.outletId));
+        }
+        if (searchFilters.categoryId) {
+          formData.append('categoryId', String(searchFilters.categoryId));
+        }
+        formData.append('limit', String(limit));
+        formData.append('minSimilarity', String(minSimilarity));
+
+        // Call Python /search endpoint (handles everything)
+        const searchStartTime = Date.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        const response = await fetch(`${baseUrl}/search`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+          headers: {
+            'Connection': 'keep-alive',
+          },
         });
         
-        // Return graceful error response instead of crashing
-        const errorResponse = ResponseBuilder.error('EMBEDDING_GENERATION_FAILED');
-        return NextResponse.json(
-          {
-            ...errorResponse,
-            error: embeddingError, // Include detailed error for debugging
-            debug: {
-              originalSize: originalBuffer.length,
-              compressedSize: compressedBuffer.length,
-              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)
-            }
-          },
-          { status: 503 }
-        );
-      }
-
-      // ============================================================
-      // STEP 4: Vector search in Qdrant
-      // ============================================================
-      if (!queryEmbedding) {
-        return NextResponse.json(
-          ResponseBuilder.error('EMBEDDING_GENERATION_FAILED'),
-          { status: 503 }
-        );
-      }
-
-      console.log('🔄 Step 4: Searching in Qdrant vector database...');
-      
-      // Build filters from user scope (role-based access control)
-      const searchFilters: {
-        merchantId?: number;
-        outletId?: number;
-        categoryId?: number;
-        minSimilarity?: number;
-        limit?: number;
-      } = {
-        minSimilarity,
-        limit
-      };
-
-      // Apply role-based filtering (security: backend-only)
-      if (userScope.merchantId) {
-        searchFilters.merchantId = userScope.merchantId;
-      }
-      
-      if (userScope.outletId) {
-        searchFilters.outletId = userScope.outletId;
-      }
-      
-      if (categoryId) {
-        searchFilters.categoryId = categoryId;
-      }
-
-      let searchResults: Array<{
-        productId: string;
-        similarity: number;
-        metadata: any;
-      }> = [];
-
-      try {
-        const { getVectorStore } = await import('@rentalshop/database/server');
-        const vectorStore = getVectorStore();
-
-        const searchStartTime = Date.now();
-        searchResults = await vectorStore.search(queryEmbedding, searchFilters);
+        clearTimeout(timeoutId);
         const searchDuration = Date.now() - searchStartTime;
         
-        console.log(`✅ Step 4: Vector search completed (${searchDuration}ms, found ${searchResults.length} results)`);
-      } catch (error: any) {
-        console.error('❌ Step 4: Vector search failed:', error?.message);
-        console.error('   Error details:', {
-          name: error?.name,
-          message: error?.message,
-          stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Python Search API error (${response.status}): ${text}`);
+        }
+
+        const data: any = await response.json();
         
-        // Return graceful error response
-        return NextResponse.json(
-          ResponseBuilder.error('VECTOR_SEARCH_FAILED'),
-          { status: 503 }
-        );
-      }
+        if (!data?.success) {
+          throw new Error('Invalid response from Python Search API');
+        }
 
-      // ============================================================
-      // STEP 5: Fetch product details from database
-      // ============================================================
-      console.log('🔄 Step 5: Fetching product details...');
-      
-      if (searchResults.length === 0) {
-        console.log('⚠️ No similar products found in vector search');
-        return NextResponse.json(
-          ResponseBuilder.success('NO_PRODUCTS_FOUND', {
-            products: [],
-            total: 0,
-            message: 'Không tìm thấy sản phẩm tương tự. Thử tải lên hình ảnh khác hoặc điều chỉnh tiêu chí tìm kiếm.',
-            debug: {
-              originalSize: originalBuffer.length,
-              compressedSize: compressedBuffer.length,
-              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
-              embeddingDimension: queryEmbedding.length,
-              minSimilarity,
-              searchFilters: {
-                merchantId: searchFilters.merchantId,
-                outletId: searchFilters.outletId,
-                categoryId: searchFilters.categoryId
-              }
-            }
-          })
-        );
-      }
-
-      try {
-        const { db } = await import('@rentalshop/database');
+        const products = data.products || [];
+        const totalDuration = Date.now() - requestStartTime;
         
-        // OPTIMIZATION: Batch fetch products instead of individual queries
-        const productIds = searchResults
-          .map(result => {
-            const productId = parseInt(result.productId);
-            return isNaN(productId) ? null : productId;
-          })
-          .filter((id): id is number => id !== null);
+        console.log(`✅ Step 3: Complete search completed in ${searchDuration}ms`);
+        console.log(`   - Embedding: ${data.embeddingDuration || 0}ms`);
+        console.log(`   - Vector search: ${data.searchDuration || 0}ms`);
+        console.log(`   - Product fetch: ${data.fetchDuration || 0}ms`);
+        console.log(`   - Total Python: ${data.totalDuration || 0}ms`);
+        console.log(`⏱️ Total request time: ${totalDuration}ms`);
 
-        if (productIds.length === 0) {
-          console.warn('⚠️ No valid product IDs found in search results');
+        if (products.length === 0) {
           return NextResponse.json(
             ResponseBuilder.success('NO_PRODUCTS_FOUND', {
               products: [],
               total: 0,
-              message: 'Không tìm thấy sản phẩm tương tự.'
+              message: 'Không tìm thấy sản phẩm tương tự. Thử tải lên hình ảnh khác hoặc điều chỉnh tiêu chí tìm kiếm.',
+              debug: {
+                originalSize: originalBuffer.length,
+                compressedSize: compressedBuffer.length,
+                compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
+                minSimilarity,
+                searchFilters,
+                totalDuration: `${totalDuration}ms`,
+                pythonTiming: {
+                  embedding: data.embeddingDuration,
+                  search: data.searchDuration,
+                  fetch: data.fetchDuration,
+                  total: data.totalDuration
+                }
+              }
             })
           );
         }
 
-        // Batch fetch all products in one query (much faster than individual queries)
-        const fetchStartTime = Date.now();
-        const products = await db.products.findByIds(productIds);
-        const fetchDuration = Date.now() - fetchStartTime;
-        
-        console.log(`✅ Batch fetched ${products.length} products in ${fetchDuration}ms`);
-
-        // Create a map for quick lookup
-        const productMap = new Map(products.map(p => [p.id, p]));
-        
-        // Combine products with similarity scores
-        const productsWithDetails = searchResults
-          .map(result => {
-            const productId = parseInt(result.productId);
-            if (isNaN(productId)) return null;
-            
-            const product = productMap.get(productId);
-            if (!product) {
-              console.warn(`⚠️ Product not found: ${productId}`);
-              return null;
-            }
-            
-            return {
-              ...product,
-              similarity: result.similarity,
-              similarityPercent: Math.round(result.similarity * 100)
-            };
-          })
-          .filter((p): p is NonNullable<typeof p> => p !== null)
-          .sort((a, b) => b.similarity - a.similarity); // Sort by similarity (highest first)
-
-        console.log(`✅ Step 5: Fetched ${productsWithDetails.length} product details`);
-
         // ============================================================
-        // STEP 6: Return results
+        // STEP 4: Return results
         // ============================================================
-        const totalDuration = Date.now() - requestStartTime;
-        console.log(`⏱️ Total request time: ${totalDuration}ms`);
-        
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
-            products: productsWithDetails,
-            total: productsWithDetails.length,
-            message: `Tìm thấy ${productsWithDetails.length} sản phẩm tương tự`,
+            products,
+            total: products.length,
+            message: `Tìm thấy ${products.length} sản phẩm tương tự`,
             debug: {
               originalSize: originalBuffer.length,
               compressedSize: compressedBuffer.length,
               compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
-              embeddingDimension: queryEmbedding.length,
               minSimilarity,
-              searchFilters: {
-                merchantId: searchFilters.merchantId,
-                outletId: searchFilters.outletId,
-                categoryId: searchFilters.categoryId
-              },
-              vectorSearchResults: searchResults.length,
-              productsFetched: productsWithDetails.length,
-              totalDuration: `${totalDuration}ms`
+              searchFilters,
+              totalDuration: `${totalDuration}ms`,
+              pythonTiming: {
+                embedding: data.embeddingDuration,
+                search: data.searchDuration,
+                fetch: data.fetchDuration,
+                total: data.totalDuration
+              }
             }
           })
         );
       } catch (error: any) {
-        console.error('❌ Step 5: Error fetching product details:', error?.message);
+        console.error('❌ Step 3: Complete search failed:', error?.message);
+        console.error('   Error details:', {
+          name: error?.name,
+          message: error?.message,
+          stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+        });
+        
+        if (error.name === 'AbortError') {
+          return NextResponse.json(
+            ResponseBuilder.error('SEARCH_TIMEOUT'),
+            { status: 503 }
+          );
+        }
+        
         return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_FETCH_FAILED'),
+          ResponseBuilder.error('SEARCH_FAILED'),
           { status: 503 }
         );
       }
