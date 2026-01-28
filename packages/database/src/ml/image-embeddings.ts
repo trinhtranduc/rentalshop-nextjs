@@ -221,11 +221,25 @@ export class FashionImageEmbedding {
         fs.writeFileSync(tempFilePath, imageBuffer);
         console.log(`   ✅ Temp file created: ${tempFilePath}`);
         
-        // Use RawImage.fromBlob() with file data - this is the most reliable approach
-        // Read file and create Blob from Buffer, then use RawImage.fromBlob()
-        const fileData = fs.readFileSync(tempFilePath);
-        const blob = new Blob([fileData], { type: 'image/png' });
-        const rawImage = await RawImage.fromBlob(blob);
+        // Use sharp directly with file path - this matches transformers.js internal loadImageFunction
+        // In Node.js, RawImage.fromBlob() calls sharp(await blob.arrayBuffer()) which can cause memory issues
+        // Solution: Use sharp directly with file path, matching transformers.js internal implementation
+        const sharpImage = sharp(tempFilePath);
+        const metadata = await sharpImage.metadata();
+        const rawChannels = metadata.channels;
+        const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+        
+        // CRITICAL: Create new ArrayBuffer and copy data to avoid memory corruption
+        // This matches transformers.js internal loadImageFunction exactly
+        const arrayBuffer = new ArrayBuffer(data.length);
+        const uint8View = new Uint8Array(arrayBuffer);
+        uint8View.set(data);
+        const clampedData = new Uint8ClampedArray(arrayBuffer);
+        
+        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
+        if (rawChannels !== undefined && rawChannels !== info.channels) {
+          rawImage.convert(rawChannels);
+        }
         console.log(`   ✅ RawImage loaded from file: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
