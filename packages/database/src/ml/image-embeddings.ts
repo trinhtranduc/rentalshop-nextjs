@@ -212,10 +212,13 @@ export class FashionImageEmbedding {
         const rawChannels = metadata.channels;
         const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
         
-        // CRITICAL: Copy data to new Uint8ClampedArray to avoid memory corruption
-        // Direct use of data buffer can cause "corrupted size vs. prev_size" error in onnxruntime-node
-        const clampedData = new Uint8ClampedArray(data.length);
-        clampedData.set(data);
+        // CRITICAL: Create Uint8ClampedArray from ArrayBuffer to avoid memory corruption
+        // Direct use of Buffer or copying can cause "corrupted size vs. prev_size" error
+        // Solution: Create new ArrayBuffer and copy data, then create Uint8ClampedArray
+        const arrayBuffer = new ArrayBuffer(data.length);
+        const uint8View = new Uint8Array(arrayBuffer);
+        uint8View.set(data);
+        const clampedData = new Uint8ClampedArray(arrayBuffer);
         
         const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
         
@@ -246,9 +249,11 @@ export class FashionImageEmbedding {
           const rawChannels = metadata.channels;
           const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
           
-          // CRITICAL: Copy data to new Uint8ClampedArray to avoid memory corruption
-          const clampedData = new Uint8ClampedArray(data.length);
-          clampedData.set(data);
+          // CRITICAL: Create Uint8ClampedArray from ArrayBuffer to avoid memory corruption
+          const arrayBuffer = new ArrayBuffer(data.length);
+          const uint8View = new Uint8Array(arrayBuffer);
+          uint8View.set(data);
+          const clampedData = new Uint8ClampedArray(arrayBuffer);
           
           const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
           
