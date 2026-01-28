@@ -209,49 +209,75 @@ export class FashionImageEmbedding {
       let lastError: Error | null = null;
       let tempFilePath: string | null = null;
       
-      // Strategy 1: Save to temp file and use RawImage.read(filePath) - REAL SOLUTION
+      // Strategy 1: Use sharp directly with Buffer (no temp file) - SIMPLEST APPROACH
       try {
-        console.log('🔄 Strategy 1: Saving buffer to temp file and using RawImage.read(filePath)...');
+        console.log('🔄 Strategy 1: Using sharp directly with Buffer (no temp file)...');
         
-        // Create temp file
-        const tempDir = os.tmpdir();
-        tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
-        
-        // Write buffer to temp file
-        fs.writeFileSync(tempFilePath, imageBuffer);
-        console.log(`   ✅ Temp file created: ${tempFilePath}`);
-        
-        // HARD CODE TEST: Use sharp directly with file path - EXACTLY like transformers.js internal loadImageFunction
-        // Line 37-49 in transformers.js-main/src/utils/image.js
-        // This is the EXACT implementation transformers.js uses internally
-        const sharpImage = sharp(tempFilePath);
+        // Use sharp directly with Buffer - this is simpler and avoids file I/O
+        // Match transformers.js internal loadImageFunction exactly
+        const sharpImage = sharp(imageBuffer);
         const metadata = await sharpImage.metadata();
         const rawChannels = metadata.channels;
-        const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+        
+        // CRITICAL: Don't use rotate() - it may cause memory issues in Docker
+        // Just use raw().toBuffer() directly
+        const { data, info } = await sharpImage.raw().toBuffer({ resolveWithObject: true });
         
         // EXACT transformers.js implementation (line 43):
         // const newImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
-        // NO copying, NO ArrayBuffer creation - use data directly
         const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
         
         if (rawChannels !== undefined && rawChannels !== info.channels) {
           rawImage.convert(rawChannels);
         }
-        console.log(`   ✅ RawImage loaded from file: ${rawImage.width}x${rawImage.height}`);
+        console.log(`   ✅ RawImage created: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: RawImage.read() with temp file');
+        console.log('   ✅ Strategy 1 SUCCESS: Sharp with Buffer (no temp file)');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
-      } finally {
-        // Clean up temp file
-        if (tempFilePath && fs.existsSync(tempFilePath)) {
-          try {
-            fs.unlinkSync(tempFilePath);
-            console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
-          } catch (cleanupError) {
-            console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
+      }
+      
+      // Strategy 2: Save to temp file and use sharp with file path (fallback)
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 2: Using temp file with sharp (fallback)...');
+          
+          // Create temp file
+          const tempDir = os.tmpdir();
+          tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
+          
+          // Write buffer to temp file
+          fs.writeFileSync(tempFilePath, imageBuffer);
+          console.log(`   ✅ Temp file created: ${tempFilePath}`);
+          
+          // Use sharp with file path
+          const sharpImage = sharp(tempFilePath);
+          const metadata = await sharpImage.metadata();
+          const rawChannels = metadata.channels;
+          const { data, info } = await sharpImage.raw().toBuffer({ resolveWithObject: true });
+          
+          const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+          if (rawChannels !== undefined && rawChannels !== info.channels) {
+            rawImage.convert(rawChannels);
+          }
+          console.log(`   ✅ RawImage loaded from file: ${rawImage.width}x${rawImage.height}`);
+          
+          output = await model(rawImage);
+          console.log('   ✅ Strategy 2 SUCCESS: Temp file with sharp');
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 2 FAILED: ${error?.message}`);
+          lastError = error;
+        } finally {
+          // Clean up temp file
+          if (tempFilePath && fs.existsSync(tempFilePath)) {
+            try {
+              fs.unlinkSync(tempFilePath);
+              console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
+            } catch (cleanupError) {
+              console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
+            }
           }
         }
       }
