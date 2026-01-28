@@ -161,62 +161,18 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       
       let queryEmbedding: number[] | null = null;
       let embeddingError: string | null = null;
-      
-      // Check if Python API is enabled
-      const usePythonAPI = process.env.USE_PYTHON_EMBEDDING_API === 'true';
-      const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
-      
+
       try {
-        if (usePythonAPI) {
-          // Use Python FastAPI service (recommended - no memory issues)
-          console.log(`🔄 Step 3: Using Python API: ${pythonApiUrl}`);
-          
-          // Create FormData for Python API
-          const formData = new FormData();
-          // Convert Buffer to Uint8Array for Blob
-          const uint8Array = new Uint8Array(compressedBuffer);
-          const blob = new Blob([uint8Array], { type: 'image/png' });
-          formData.append('file', blob, 'image.png');
-          
-          const embeddingStartTime = Date.now();
-          const embeddingResponse = await fetch(`${pythonApiUrl}/embed`, {
-            method: 'POST',
-            body: formData,
-          });
-          
-          if (!embeddingResponse.ok) {
-            const errorText = await embeddingResponse.text();
-            throw new Error(`Python API error (${embeddingResponse.status}): ${errorText}`);
-          }
-          
-          const embeddingData = await embeddingResponse.json();
-          
-          if (!embeddingData.success || !embeddingData.embedding) {
-            throw new Error('Invalid response from Python API');
-          }
-          
-          queryEmbedding = embeddingData.embedding as number[];
-          const embeddingDuration = Date.now() - embeddingStartTime;
-          
-          if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
-            throw new Error('Invalid embedding format from Python API');
-          }
-          
-          console.log(`✅ Step 3: Embedding generated via Python API (dimension: ${queryEmbedding.length}, duration: ${embeddingDuration}ms)`);
-        } else {
-          // Use local transformers.js (fallback - may have memory issues)
-          console.log('🔄 Step 3: Using local transformers.js (fallback)');
-          
-          // Lazy load embedding service to avoid loading native deps during build
-          const { getEmbeddingService } = await import('@rentalshop/database/server');
-          const embeddingService = getEmbeddingService();
-          
-          const embeddingStartTime = Date.now();
-          queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(compressedBuffer);
-          const embeddingDuration = Date.now() - embeddingStartTime;
-          
-          console.log(`✅ Step 3: Embedding generated successfully (dimension: ${queryEmbedding.length}, duration: ${embeddingDuration}ms)`);
-        }
+        // Always use centralized embedding service (DRY).
+        // The service is Python-only when USE_PYTHON_EMBEDDING_API=true.
+        const { getEmbeddingService } = await import('@rentalshop/database/server');
+        const embeddingService = getEmbeddingService();
+        
+        const embeddingStartTime = Date.now();
+        queryEmbedding = await embeddingService.generateEmbeddingFromBuffer(compressedBuffer);
+        const embeddingDuration = Date.now() - embeddingStartTime;
+        
+        console.log(`✅ Step 3: Embedding generated successfully (dimension: ${queryEmbedding.length}, duration: ${embeddingDuration}ms)`);
       } catch (error: any) {
         embeddingError = error?.message || 'Unknown error';
         console.error('❌ Step 3: Embedding generation failed:', embeddingError);
@@ -235,9 +191,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
             debug: {
               originalSize: originalBuffer.length,
               compressedSize: compressedBuffer.length,
-              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100),
-              usePythonAPI,
-              pythonApiUrl: usePythonAPI ? pythonApiUrl : undefined
+              compressionRatio: Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)
             }
           },
           { status: 503 }
