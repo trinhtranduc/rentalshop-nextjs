@@ -11,13 +11,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Use CPU-only PyTorch wheels to avoid pulling CUDA/NVIDIA packages during build.
+# See: https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway will set PORT env var)
+EXPOSE 8080
 
-# Run application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run application (use PORT from environment, Railway sets this automatically)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
