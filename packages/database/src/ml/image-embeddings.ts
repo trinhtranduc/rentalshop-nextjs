@@ -12,6 +12,9 @@
  */
 
 import sharp from 'sharp';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 // OFFICIAL TUTORIAL APPROACH: Simple detection
 // Tutorial: https://huggingface.co/docs/transformers.js/tutorials/next
@@ -197,40 +200,77 @@ export class FashionImageEmbedding {
       const transformers = await loadTransformers();
       const { RawImage } = transformers;
 
-      // MULTIPLE FALLBACK STRATEGIES: Try different approaches to see which one works
-      // In Next.js standalone build, instanceof checks can fail due to module bundling
-      // We'll try multiple strategies and use the first one that works
+      // REAL SOLUTION: Save buffer to temp file and use RawImage.read(filePath)
+      // This is how transformers.js is designed to work in Node.js
+      // Examples show: RawImage.read() with URL/file path, NOT with Buffer directly
+      // This avoids all memory corruption and instanceof issues
       
       let output: any;
       let lastError: Error | null = null;
+      let tempFilePath: string | null = null;
       
-      // Strategy 1: Create RawImage from sharp (NO prototype fix - try simplest approach first)
+      // Strategy 1: Save to temp file and use RawImage.read(filePath) - REAL SOLUTION
       try {
-        console.log('🔄 Strategy 1: Creating RawImage from sharp (no prototype fix)...');
-        const sharpImage = sharp(imageBuffer);
-        const metadata = await sharpImage.metadata();
-        const rawChannels = metadata.channels;
-        const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+        console.log('🔄 Strategy 1: Saving buffer to temp file and using RawImage.read(filePath)...');
         
-        // CRITICAL: Match transformers.js exactly - use Uint8ClampedArray directly from data
-        // transformers.js uses: new RawImage(new Uint8ClampedArray(data), ...)
-        // This is the exact same approach as transformers.js internal loadImageFunction
-        const clampedData = new Uint8ClampedArray(data);
+        // Create temp file
+        const tempDir = os.tmpdir();
+        tempFilePath = path.join(tempDir, `image-${Date.now()}-${Math.random().toString(36).substring(7)}.png`);
         
-        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
+        // Write buffer to temp file
+        fs.writeFileSync(tempFilePath, imageBuffer);
+        console.log(`   ✅ Temp file created: ${tempFilePath}`);
         
-        if (rawChannels !== undefined && rawChannels !== info.channels) {
-          rawImage.convert(rawChannels);
-        }
-        
-        const isInstance = rawImage instanceof RawImage;
-        console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
+        // Use RawImage.read() with file:// URL - transformers.js supports file:// URLs in Node.js
+        const fileUrl = `file://${tempFilePath}`;
+        const rawImage = await RawImage.read(fileUrl);
+        console.log(`   ✅ RawImage loaded from file: ${rawImage.width}x${rawImage.height}`);
         
         output = await model(rawImage);
-        console.log('   ✅ Strategy 1 SUCCESS: RawImage from sharp (no prototype fix)');
+        console.log('   ✅ Strategy 1 SUCCESS: RawImage.read() with temp file');
       } catch (error: any) {
         console.log(`   ❌ Strategy 1 FAILED: ${error?.message}`);
         lastError = error;
+      } finally {
+        // Clean up temp file
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+          try {
+            fs.unlinkSync(tempFilePath);
+            console.log(`   🗑️ Temp file cleaned up: ${tempFilePath}`);
+          } catch (cleanupError) {
+            console.warn(`   ⚠️ Failed to cleanup temp file: ${cleanupError}`);
+          }
+        }
+      }
+      
+      // Strategy 2: Create RawImage from sharp (fallback if file approach fails)
+      if (!output) {
+        try {
+          console.log('🔄 Strategy 2: Creating RawImage from sharp (fallback)...');
+          const sharpImage = sharp(imageBuffer);
+          const metadata = await sharpImage.metadata();
+          const rawChannels = metadata.channels;
+          const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
+          
+          // CRITICAL: Create new Buffer copy first to avoid memory corruption
+          const dataCopy = Buffer.from(data);
+          const clampedData = new Uint8ClampedArray(dataCopy);
+          
+          const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
+          
+          if (rawChannels !== undefined && rawChannels !== info.channels) {
+            rawImage.convert(rawChannels);
+          }
+          
+          const isInstance = rawImage instanceof RawImage;
+          console.log(`   ✅ RawImage instanceof check: ${isInstance}`);
+          
+          output = await model(rawImage);
+          console.log('   ✅ Strategy 2 SUCCESS: RawImage from sharp');
+        } catch (error: any) {
+          console.log(`   ❌ Strategy 2 FAILED: ${error?.message}`);
+          lastError = error;
+        }
       }
       
       // Strategy 2: Create RawImage from sharp + fix prototype chain (if Strategy 1 fails)
@@ -242,8 +282,9 @@ export class FashionImageEmbedding {
           const rawChannels = metadata.channels;
           const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
           
-          // CRITICAL: Match transformers.js exactly - use Uint8ClampedArray directly from data
-          const clampedData = new Uint8ClampedArray(data);
+          // CRITICAL: Create new Buffer copy first to avoid memory corruption
+          const dataCopy = Buffer.from(data);
+          const clampedData = new Uint8ClampedArray(dataCopy);
           
           const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
           
