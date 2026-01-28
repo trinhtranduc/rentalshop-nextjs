@@ -26,6 +26,15 @@ function getPythonEmbeddingApiUrl(): string {
   return url;
 }
 
+/**
+ * OPTIMIZATION: Connection pooling via global fetch with keepAlive
+ * Node.js 18+ fetch API automatically uses connection pooling when available
+ * For better performance, we can set keepAlive via environment variable or use undici
+ * 
+ * Note: Native fetch in Node.js 18+ already has connection pooling built-in,
+ * but we can optimize further by ensuring proper configuration
+ */
+
 export class FashionImageEmbedding {
   /**
    * Normalize vector để dùng cosine similarity
@@ -85,9 +94,16 @@ export class FashionImageEmbedding {
     const blob = new Blob([uint8Array], { type: 'image/png' });
     formData.append('file', blob, 'image.png');
 
+    // OPTIMIZATION: Node.js 18+ fetch API automatically uses connection pooling
+    // For additional optimization, we can set keepAlive headers
+    // Connection pooling is handled automatically by the runtime
     const response = await fetch(`${baseUrl}/embed`, {
       method: 'POST',
       body: formData,
+      // Keep connection alive for better performance (Node.js handles this automatically)
+      headers: {
+        'Connection': 'keep-alive',
+      },
     });
 
     if (!response.ok) {
