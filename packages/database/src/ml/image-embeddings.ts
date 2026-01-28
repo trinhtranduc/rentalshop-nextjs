@@ -212,7 +212,12 @@ export class FashionImageEmbedding {
         const rawChannels = metadata.channels;
         const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
         
-        const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+        // CRITICAL: Copy data to new Uint8ClampedArray to avoid memory corruption
+        // Direct use of data buffer can cause "corrupted size vs. prev_size" error in onnxruntime-node
+        const clampedData = new Uint8ClampedArray(data.length);
+        clampedData.set(data);
+        
+        const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
         
         if (rawChannels !== undefined && rawChannels !== info.channels) {
           rawImage.convert(rawChannels);
@@ -241,7 +246,11 @@ export class FashionImageEmbedding {
           const rawChannels = metadata.channels;
           const { data, info } = await sharpImage.rotate().raw().toBuffer({ resolveWithObject: true });
           
-          const rawImage = new RawImage(new Uint8ClampedArray(data), info.width, info.height, info.channels);
+          // CRITICAL: Copy data to new Uint8ClampedArray to avoid memory corruption
+          const clampedData = new Uint8ClampedArray(data.length);
+          clampedData.set(data);
+          
+          const rawImage = new RawImage(clampedData, info.width, info.height, info.channels);
           
           if (rawChannels !== undefined && rawChannels !== info.channels) {
             rawImage.convert(rawChannels);
