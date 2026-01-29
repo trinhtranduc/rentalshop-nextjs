@@ -13,7 +13,7 @@ import {
   Badge,
   LoadingIndicator,
 } from '@rentalshop/ui';
-import { Image as ImageIcon, Upload, X, Search, AlertCircle } from 'lucide-react';
+import { Image as ImageIcon, Upload, X, Search, AlertCircle, ShoppingCart, Eye, Edit } from 'lucide-react';
 import { searchProductsByImage } from '@rentalshop/utils';
 import { useProductTranslations } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
@@ -23,6 +23,9 @@ interface ImageSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSearchResult: (products: Product[]) => void;
+  onAddToCart?: (product: Product) => void;
+  onViewProduct?: (product: Product) => void;
+  onEditProduct?: (product: Product) => void;
   categoryId?: number;
 }
 
@@ -35,6 +38,9 @@ export function ImageSearchDialog({
   open,
   onOpenChange,
   onSearchResult,
+  onAddToCart,
+  onViewProduct,
+  onEditProduct,
   categoryId,
 }: ImageSearchDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -104,21 +110,22 @@ export function ImageSearchDialog({
     try {
       const response = await searchProductsByImage(selectedFile, {
         limit: 20,
-        minSimilarity: 0.7,
+        minSimilarity: 0.5, // Reduced from 0.7 to 0.5 for better results
         categoryId,
       });
 
       if (response.success && response.data) {
-        setSearchResults(response.data.products);
+        const products = response.data.products || [];
+        setSearchResults(products);
         setQueryImageUrl(response.data.queryImage);
         
-        if (response.data.products.length > 0) {
+        if (products.length > 0) {
           toastSuccess(
             t('imageSearch.success'), 
             t('imageSearch.successFound', { count: response.data.products.length })
           );
           // Call callback with results
-          onSearchResult(response.data.products);
+          onSearchResult(products);
         } else {
           toastError(t('imageSearch.noResults'), t('imageSearch.noResultsHint'));
         }
@@ -164,7 +171,7 @@ export function ImageSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />
@@ -222,7 +229,7 @@ export function ImageSearchDialog({
               </div>
 
               {/* Search Button */}
-              {searchResults.length === 0 && !isSearching && (
+              {(!searchResults || searchResults.length === 0) && !isSearching && (
                 <Button
                   onClick={handleSearch}
                   className="w-full"
@@ -244,7 +251,7 @@ export function ImageSearchDialog({
               )}
 
               {/* Search Results */}
-              {searchResults.length > 0 && (
+              {searchResults && searchResults.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">
@@ -259,21 +266,17 @@ export function ImageSearchDialog({
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {searchResults.map((product) => (
                       <Card
                         key={product.id}
-                        className="hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => {
-                          // Handle product click - could navigate to product detail
-                          console.log('Product clicked:', product.id);
-                        }}
+                        className="hover:shadow-md transition-shadow"
                       >
                         <CardContent className="p-4">
-                          <div className="space-y-3">
+                          <div className="flex gap-4">
                             {/* Product Image */}
                             {product.images && (
-                              <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                              <div className="relative w-32 h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
                                 <img
                                   src={Array.isArray(product.images) 
                                     ? product.images[0] 
@@ -288,27 +291,82 @@ export function ImageSearchDialog({
                                 />
                                 {/* Similarity Badge */}
                                 <Badge
-                                  className="absolute top-2 right-2"
+                                  className="absolute top-2 right-2 text-xs"
                                   variant="default"
                                 >
-                                  {t('imageSearch.similarity', { percent: Math.round(product.similarity * 100) })}
+                                  {Math.round(product.similarity * 100)}%
                                 </Badge>
                               </div>
                             )}
 
-                            {/* Product Info */}
-                            <div>
-                              <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                                {product.name}
-                              </h4>
-                              {product.rentPrice && (
-                                <p className="text-xs text-text-tertiary">
-                                  {new Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                  }).format(product.rentPrice)}
-                                </p>
-                              )}
+                            {/* Product Info and Actions */}
+                            <div className="flex-1 flex flex-col justify-between min-w-0">
+                              {/* Product Details */}
+                              <div className="space-y-1">
+                                <h4 className="font-medium text-sm line-clamp-2">
+                                  {product.name}
+                                </h4>
+                                {product.barcode && (
+                                  <p className="text-xs text-text-tertiary">
+                                    {product.barcode}
+                                  </p>
+                                )}
+                                {product.rentPrice && (
+                                  <p className="text-sm font-semibold text-primary">
+                                    {new Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(product.rentPrice)}
+                                  </p>
+                                )}
+                                {product.description && (
+                                  <p className="text-xs text-text-tertiary line-clamp-2">
+                                    {product.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2 mt-3">
+                                {onAddToCart && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAddToCart(product);
+                                    }}
+                                    className="flex-1"
+                                  >
+                                    <ShoppingCart className="w-4 h-4 mr-1" />
+                                    Add to Cart
+                                  </Button>
+                                )}
+                                {onViewProduct && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onViewProduct(product);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {onEditProduct && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEditProduct(product);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -319,7 +377,7 @@ export function ImageSearchDialog({
               )}
 
               {/* No Results */}
-              {!isSearching && searchResults.length === 0 && queryImageUrl && (
+              {!isSearching && (!searchResults || searchResults.length === 0) && queryImageUrl && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <AlertCircle className="w-12 h-12 text-text-tertiary mb-4" />
                   <p className="text-sm font-medium mb-2">{t('imageSearch.noResults')}</p>
