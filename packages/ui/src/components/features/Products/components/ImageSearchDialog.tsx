@@ -9,13 +9,14 @@ import {
   DialogDescription,
   Button,
   LoadingIndicator,
+  Badge,
 } from '@rentalshop/ui';
 import { Image as ImageIcon, Upload, X, Search, AlertCircle, Loader2 } from 'lucide-react';
 import { searchProductsByImage } from '@rentalshop/utils';
 import { useProductTranslations } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
 import type { Product } from '@rentalshop/types';
-import { ProductCard } from './ProductCard';
+import { SearchResultsTable } from './SearchResultsTable';
 
 interface ImageSearchDialogProps {
   open: boolean;
@@ -274,13 +275,19 @@ export function ImageSearchDialog({
                 </div>
               )}
 
-              {/* Search Results */}
+              {/* Search Results - Table View (matches /products page) */}
               {searchResults && searchResults.length > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">
-                      {t('imageSearch.foundResults', { count: searchResults.length })}
-                    </h3>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold">
+                        {t('imageSearch.foundResults', { count: searchResults.length })}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs">
+                        Similarity Search
+                      </Badge>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -290,48 +297,25 @@ export function ImageSearchDialog({
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {searchResults.map((product) => {
-                      // Convert search result to ProductCard props
-                      const similarityPercent = Math.round(product.similarity * 100);
+                  {/* Search Results Table - Same style as ProductTable */}
+                  <SearchResultsTable
+                    products={searchResults}
+                    onProductAction={(action, productId) => {
+                      const product = searchResults.find(p => p.id === productId);
+                      if (!product) return;
                       
-                      // Get outlet name from first outletStock if available
-                      const outletName = product.outletStock && product.outletStock.length > 0 
-                        ? product.outletStock[0].outlet?.name || 'N/A' 
-                        : 'N/A';
-                      
-                      return (
-                        <div key={product.id} className="relative">
-                          {/* Similarity Badge */}
-                          <div className="absolute -top-2 -right-2 z-10">
-                            <div className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                              {similarityPercent}%
-                            </div>
-                          </div>
-                          
-                          <ProductCard
-                            id={product.id}
-                            name={product.name}
-                            description={product.description}
-                            stock={product.stock || 0}
-                            renting={product.renting || 0}
-                            available={product.available || product.stock || 0}
-                            rentPrice={product.rentPrice}
-                            salePrice={product.salePrice}
-                            deposit={product.deposit || 0}
-                            images={product.images || []}
-                            category={{ name: product.category?.name || 'N/A' }}
-                            outlet={{ name: outletName }}
-                            pricingType={product.pricingType}
-                            onRent={onAddToCart ? () => onAddToCart(product) : undefined}
-                            onView={onViewProduct ? () => onViewProduct(product) : undefined}
-                            onEdit={onEditProduct ? () => onEditProduct(product) : undefined}
-                            variant="admin"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+                      if (action === 'view' && onViewProduct) {
+                        onViewProduct(product);
+                      } else if (action === 'edit' && onEditProduct) {
+                        onEditProduct(product);
+                      } else if (action === 'rent' && onAddToCart) {
+                        onAddToCart(product);
+                      }
+                    }}
+                    onAddToCart={onAddToCart}
+                    onViewProduct={onViewProduct}
+                    onEditProduct={onEditProduct}
+                  />
                 </div>
               )}
 
