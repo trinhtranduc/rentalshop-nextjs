@@ -77,6 +77,8 @@ class SearchService:
         search_start = time.time()
         
         # Build Qdrant filter
+        # NOTE: Products belong to MERCHANT, not specific outlets
+        # So we only filter by merchantId, not outletId
         must_conditions = []
         if filters.get("merchantId"):
             must_conditions.append(
@@ -85,13 +87,9 @@ class SearchService:
                     match=MatchValue(value=str(filters["merchantId"]))
                 )
             )
-        if filters.get("outletId"):
-            must_conditions.append(
-                FieldCondition(
-                    key="outletId",
-                    match=MatchValue(value=str(filters["outletId"]))
-                )
-            )
+        # Don't filter by outletId - products belong to merchant, not outlet
+        # Outlet-level access control is handled by merchantId filter
+        
         if filters.get("categoryId"):
             must_conditions.append(
                 FieldCondition(
