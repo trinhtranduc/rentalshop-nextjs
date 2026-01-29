@@ -102,9 +102,31 @@ class SearchService:
         
         qdrant_filter = Filter(must=must_conditions) if must_conditions else None
         
+        # Debug: Log search parameters
+        print(f"🔍 Qdrant search parameters:")
+        print(f"   - Collection: {self.collection_name}")
+        print(f"   - Filters: {filters}")
+        print(f"   - Min similarity: {min_similarity}")
+        print(f"   - Limit: {limit}")
+        print(f"   - Must conditions: {len(must_conditions)}")
+        
         # Vector search in Qdrant
         search_limit = max(limit * 2, 30)  # Get more results to filter
         
+        # First, try without score threshold to see all results
+        all_results = self.qdrant_client.search(
+            collection_name=self.collection_name,
+            query_vector=embedding,
+            limit=10,  # Just get top 10 to check
+            query_filter=qdrant_filter,
+            with_payload=True
+        )
+        
+        print(f"🔍 Debug - Top 10 results (no threshold):")
+        for i, result in enumerate(all_results[:5], 1):
+            print(f"   {i}. Product {result.payload.get('productId')}: {result.score:.4f} (threshold: {min_similarity})")
+        
+        # Now get filtered results with threshold
         search_results = self.qdrant_client.search(
             collection_name=self.collection_name,
             query_vector=embedding,
@@ -115,7 +137,7 @@ class SearchService:
         )
         
         search_duration = int((time.time() - search_start) * 1000)
-        print(f"📊 Qdrant search: {len(search_results)} results in {search_duration}ms")
+        print(f"📊 Qdrant search: {len(search_results)} results (above threshold {min_similarity}) in {search_duration}ms")
         
         if not search_results:
             return {
