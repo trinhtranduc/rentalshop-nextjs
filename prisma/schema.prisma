@@ -34,6 +34,7 @@ model User {
   createdOrders          Order[]
   passwordResets         PasswordReset[]
   subscriptionActivities SubscriptionActivity[]
+  posts                  Post[]                 @relation("PostAuthor")
   customRole             MerchantRole?          @relation(fields: [customRoleId], references: [id])
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
@@ -619,4 +620,91 @@ enum UserRole {
   MERCHANT
   OUTLET_ADMIN
   OUTLET_STAFF
+}
+
+model Post {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  content     String   // Rich text content stored as JSON string (TipTap format)
+  excerpt     String?  // Short description for previews
+  
+  // SEO Fields
+  seoTitle    String?
+  seoDescription String?
+  seoKeywords String?  // Comma-separated
+  
+  // Status & Publishing
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Author
+  authorId    Int
+  author      User      @relation("PostAuthor", fields: [authorId], references: [id])
+  
+  // Relationships
+  categories  PostCategoryRelation[]
+  tags        PostTagRelation[]
+  
+  // Featured image
+  featuredImage String?
+  
+  @@index([status, publishedAt])
+  @@index([slug])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model PostCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  posts       PostCategoryRelation[]
+  
+  @@index([slug])
+  @@index([isActive])
+}
+
+model PostTag {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  
+  posts       PostTagRelation[]
+  
+  @@index([slug])
+}
+
+model PostCategoryRelation {
+  postId     Int
+  categoryId Int
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category   PostCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([postId, categoryId])
+  @@index([categoryId])
+}
+
+model PostTagRelation {
+  postId Int
+  tagId  Int
+  post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    PostTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

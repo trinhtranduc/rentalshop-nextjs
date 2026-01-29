@@ -27,6 +27,10 @@ const publicRoutes = [
   '/api/docs',
   '/api/plans/public',
   '/api/public', // Public product pages for merchants to share with customers
+  '/api/posts/public', // Public blog posts for landing page
+  '/api/posts/slug/', // Public post by slug (for client app) - note: trailing slash for pattern matching
+  '/api/posts/categories/public', // Public post categories
+  '/api/posts/tags/public', // Public post tags
   '/api/test',
   '/api/debug', // Debug endpoints for troubleshooting
   '/api/sync-proxy', // Sync proxy endpoint (no authentication required)
@@ -152,7 +156,9 @@ export async function middleware(request: NextRequest) {
     });
 
   // Check if route is public or not an API route
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  // Special handling for /api/posts/[slug] - public endpoint for individual posts
+  const isPostSlugRoute = pathname.match(/^\/api\/posts\/[^\/]+$/); // Matches /api/posts/slug but not /api/posts/123/edit
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isPostSlugRoute;
   const isApiRoute = pathname.startsWith('/api/');
 
   console.log('🔍 MIDDLEWARE: Route analysis:', {

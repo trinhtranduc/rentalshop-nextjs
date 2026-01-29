@@ -22,6 +22,9 @@ import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
 import { simplifiedSync } from './sync';
+import { simplifiedPosts } from './post';
+import { simplifiedPostCategories } from './post-category';
+import { simplifiedPostTags } from './post-tag';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -164,7 +167,22 @@ const db = {
   // ============================================================================
   // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
   // ============================================================================
-  sync: simplifiedSync
+  sync: simplifiedSync,
+
+  // ============================================================================
+  // POST OPERATIONS
+  // ============================================================================
+  posts: simplifiedPosts,
+
+  // ============================================================================
+  // POST CATEGORY OPERATIONS
+  // ============================================================================
+  postCategories: simplifiedPostCategories,
+
+  // ============================================================================
+  // POST TAG OPERATIONS
+  // ============================================================================
+  postTags: simplifiedPostTags,
 };
 
 // ============================================================================

@@ -32,3 +32,4 @@ export * from './aws-s3';
 export * from './response-builder';
 export * from './route-helpers';
 export * from './referrals';
+export * from './posts';

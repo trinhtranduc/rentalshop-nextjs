@@ -17,7 +17,8 @@ import {
   LogOut,
   Clock,
   UserPlus,
-  TrendingUp
+  TrendingUp,
+  FileText
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -103,6 +104,12 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       current: pathname.startsWith('/calendar')
     },
     {
+      name: 'Blog',
+      href: '/posts',
+      icon: FileText,
+      current: pathname.startsWith('/posts')
+    },
+    {
       name: 'Settings',
       href: '/settings',
       icon: Settings,
@@ -116,24 +123,30 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
     
     // Hide specific tabs based on user role
     if (userRole === 'OUTLET_ADMIN') {
-      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments, blog
       return items.filter(item => 
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
-        item.href !== '/payments'
+        item.href !== '/payments' &&
+        item.href !== '/posts'
       );
     } else if (userRole === 'OUTLET_STAFF') {
-      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments, blog (limited permissions)
       return items.filter(item => 
         item.href !== '/users' && 
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
-        item.href !== '/payments'
+        item.href !== '/payments' &&
+        item.href !== '/posts'
       );
+    } else if (userRole === 'MERCHANT') {
+      // MERCHANT cannot see blog (ADMIN only)
+      return items.filter(item => item.href !== '/posts');
     }
     
+    // ADMIN can see all items including Blog
     return items;
   };
 

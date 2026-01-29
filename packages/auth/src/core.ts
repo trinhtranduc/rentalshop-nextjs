@@ -195,6 +195,10 @@ export type Permission =
   | 'products.view'
   | 'products.export'
   
+  // Post Management (Blog CMS)
+  | 'posts.manage'
+  | 'posts.view'
+  
   // Order Management (Granular Permissions)
   | 'orders.create'
   | 'orders.view'
@@ -292,6 +296,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'outlet.manage', 'outlet.view',
     'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
+    'posts.manage', 'posts.view',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access (backward compatibility)

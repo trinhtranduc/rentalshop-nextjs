@@ -1,5 +1,17 @@
 export * from './product';
+export * from './post';
 export * from './common';
+
+// Export post schemas explicitly
+export {
+  postCreateSchema,
+  postUpdateSchema,
+  postCategoryCreateSchema,
+  postCategoryUpdateSchema,
+  postTagCreateSchema,
+  postTagUpdateSchema,
+  postSearchSchema,
+} from './post';
 
 // Validation utilities
 export { z } from 'zod';

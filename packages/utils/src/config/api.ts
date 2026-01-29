@@ -297,6 +297,25 @@ export interface ApiUrls {
       stats: string;
       referredMerchants: string;
     };
+    posts: {
+      list: string;
+      public: string;
+      create: string;
+      get: (id: number) => string;
+      getBySlug: (slug: string) => string; // /api/posts/slug/[slug]
+      update: (id: number) => string;
+      delete: (id: number) => string;
+      categories: {
+        list: string;
+        public: string;
+        create: string;
+      };
+      tags: {
+        list: string;
+        public: string;
+        create: string;
+      };
+    };
   }
 
 /**
@@ -792,6 +811,25 @@ function createApiUrls(): ApiUrls {
     affiliate: {
       stats: `${base}/api/affiliate/stats`,
       referredMerchants: `${base}/api/affiliate/referred-merchants`,
+    },
+    posts: {
+      list: `${base}/api/posts`,
+      public: `${base}/api/posts/public`,
+      create: `${base}/api/posts`,
+      get: (id: number) => `${base}/api/posts/${id}`,
+      getBySlug: (slug: string) => `${base}/api/posts/slug/${slug}`,
+      update: (id: number) => `${base}/api/posts/${id}`,
+      delete: (id: number) => `${base}/api/posts/${id}`,
+      categories: {
+        list: `${base}/api/posts/categories`,
+        public: `${base}/api/posts/categories/public`,
+        create: `${base}/api/posts/categories`,
+      },
+      tags: {
+        list: `${base}/api/posts/tags`,
+        public: `${base}/api/posts/tags/public`,
+        create: `${base}/api/posts/tags`,
+      },
     },
   };
 }

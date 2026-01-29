@@ -24,8 +24,16 @@ __export(index_exports, {
   PaginationSchema: () => PaginationSchema,
   ProductCreateSchema: () => ProductCreateSchema,
   ProductUpdateSchema: () => ProductUpdateSchema,
+  postCategoryCreateSchema: () => postCategoryCreateSchema,
+  postCategoryUpdateSchema: () => postCategoryUpdateSchema,
+  postCreateSchema: () => postCreateSchema,
+  postSearchSchema: () => postSearchSchema,
+  postTagCreateSchema: () => postTagCreateSchema,
+  postTagUpdateSchema: () => postTagUpdateSchema,
+  postUpdateSchema: () => postUpdateSchema,
+  slugRegex: () => slugRegex,
   validateRequest: () => validateRequest,
-  z: () => import_zod3.z
+  z: () => import_zod4.z
 });
 module.exports = __toCommonJS(index_exports);
 
@@ -54,16 +62,59 @@ var ProductCreateSchema = ProductUpdateSchema.required({
   totalStock: true
 });
 
-// src/common.ts
+// src/post.ts
 var import_zod2 = require("zod");
-var IdSchema = import_zod2.z.number().int().positive();
-var PaginationSchema = import_zod2.z.object({
-  page: import_zod2.z.number().int().min(1).default(1),
-  limit: import_zod2.z.number().int().min(1).max(100).default(20)
+var slugRegex = /^[a-z0-9-]+$/;
+var postCreateSchema = import_zod2.z.object({
+  title: import_zod2.z.string().min(1).max(255),
+  slug: import_zod2.z.string().min(1).max(255).regex(slugRegex, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  content: import_zod2.z.string().min(1, "Content is required"),
+  excerpt: import_zod2.z.string().max(500).optional(),
+  seoTitle: import_zod2.z.string().max(60).optional(),
+  seoDescription: import_zod2.z.string().max(160).optional(),
+  seoKeywords: import_zod2.z.string().max(255).optional(),
+  status: import_zod2.z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
+  categoryIds: import_zod2.z.array(import_zod2.z.number().int().positive()).optional(),
+  tagIds: import_zod2.z.array(import_zod2.z.number().int().positive()).optional(),
+  featuredImage: import_zod2.z.string().url().optional().or(import_zod2.z.literal(""))
+});
+var postUpdateSchema = postCreateSchema.partial().extend({
+  status: import_zod2.z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional()
+});
+var postCategoryCreateSchema = import_zod2.z.object({
+  name: import_zod2.z.string().min(1).max(255),
+  slug: import_zod2.z.string().min(1).max(255).regex(slugRegex, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: import_zod2.z.string().max(500).optional(),
+  isActive: import_zod2.z.boolean().default(true)
+});
+var postCategoryUpdateSchema = postCategoryCreateSchema.partial();
+var postTagCreateSchema = import_zod2.z.object({
+  name: import_zod2.z.string().min(1).max(255),
+  slug: import_zod2.z.string().min(1).max(255).regex(slugRegex, "Slug must contain only lowercase letters, numbers, and hyphens")
+});
+var postTagUpdateSchema = postTagCreateSchema.partial();
+var postSearchSchema = import_zod2.z.object({
+  status: import_zod2.z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+  categoryId: import_zod2.z.number().int().positive().optional(),
+  tagId: import_zod2.z.number().int().positive().optional(),
+  authorId: import_zod2.z.number().int().positive().optional(),
+  search: import_zod2.z.string().optional(),
+  page: import_zod2.z.number().int().positive().default(1),
+  limit: import_zod2.z.number().int().positive().max(100).default(20),
+  sortBy: import_zod2.z.enum(["createdAt", "updatedAt", "publishedAt", "title"]).default("createdAt"),
+  sortOrder: import_zod2.z.enum(["asc", "desc"]).default("desc")
+});
+
+// src/common.ts
+var import_zod3 = require("zod");
+var IdSchema = import_zod3.z.number().int().positive();
+var PaginationSchema = import_zod3.z.object({
+  page: import_zod3.z.number().int().min(1).default(1),
+  limit: import_zod3.z.number().int().min(1).max(100).default(20)
 });
 
 // src/index.ts
-var import_zod3 = require("zod");
+var import_zod4 = require("zod");
 var validateRequest = (schema, data) => {
   const result = schema.safeParse(data);
   if (result.success) {
@@ -80,6 +131,14 @@ var validateRequest = (schema, data) => {
   PaginationSchema,
   ProductCreateSchema,
   ProductUpdateSchema,
+  postCategoryCreateSchema,
+  postCategoryUpdateSchema,
+  postCreateSchema,
+  postSearchSchema,
+  postTagCreateSchema,
+  postTagUpdateSchema,
+  postUpdateSchema,
+  slugRegex,
   validateRequest,
   z
 });

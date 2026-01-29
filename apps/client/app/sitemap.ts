@@ -45,6 +45,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
+    {
+      path: '/blog',
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    },
   ]
   
   const sitemapEntries: MetadataRoute.Sitemap = []
