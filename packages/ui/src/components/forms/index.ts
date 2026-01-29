@@ -6,6 +6,7 @@ export { ProductForm } from './ProductForm';
 export { OrderForm } from './OrderForm';
 export { CreateOrderForm, TestEqualHeightColumns } from './CreateOrderForm';
 export { PlanForm } from './PlanForm';
+export { PostForm } from './PostForm';
 export { default as LoginForm } from './LoginForm';
 export { default as RegisterForm } from './RegisterForm';
 export { default as ForgetPasswordForm } from './ForgetPasswordForm';

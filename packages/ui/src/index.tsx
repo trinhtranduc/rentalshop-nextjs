@@ -22,6 +22,7 @@ export * from './components/features/Calendars';
 export * from './components/features/Users';
 export * from './components/features/Outlets';
 export * from './components/features/Categories';
+export * from './components/features/Posts';
 export * from './components/features/Plans';
 export * from './components/features/BillingCycles';
 export * from './components/features/Payments';
