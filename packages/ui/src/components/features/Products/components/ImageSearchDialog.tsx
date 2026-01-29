@@ -8,16 +8,14 @@ import {
   DialogTitle,
   DialogDescription,
   Button,
-  Card,
-  CardContent,
-  Badge,
   LoadingIndicator,
 } from '@rentalshop/ui';
-import { Image as ImageIcon, Upload, X, Search, AlertCircle, ShoppingCart, Eye, Edit } from 'lucide-react';
+import { Image as ImageIcon, Upload, X, Search, AlertCircle, Loader2 } from 'lucide-react';
 import { searchProductsByImage } from '@rentalshop/utils';
 import { useProductTranslations } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
 import type { Product } from '@rentalshop/types';
+import { ProductCard } from './ProductCard';
 
 interface ImageSearchDialogProps {
   open: boolean;
@@ -48,6 +46,10 @@ export function ImageSearchDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Array<Product & { similarity: number }>>([]);
   const [queryImageUrl, setQueryImageUrl] = useState<string | null>(null);
+  const [searchProgress, setSearchProgress] = useState<{
+    stage: 'compressing' | 'searching' | 'loading';
+    percentage: number;
+  }>({ stage: 'compressing', percentage: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
@@ -106,13 +108,20 @@ export function ImageSearchDialog({
 
     setIsSearching(true);
     setSearchResults([]);
+    setSearchProgress({ stage: 'compressing', percentage: 0 });
 
     try {
       const response = await searchProductsByImage(selectedFile, {
         limit: 20,
         minSimilarity: 0.5, // Reduced from 0.7 to 0.5 for better results
         categoryId,
-      });
+        onProgress: (progress: { stage: string; percentage: number }) => {
+          setSearchProgress({
+            stage: progress.stage as 'compressing' | 'searching' | 'loading',
+            percentage: progress.percentage
+          });
+        }
+      } as any);
 
       if (response.success && response.data) {
         const products = response.data.products || [];
@@ -240,12 +249,27 @@ export function ImageSearchDialog({
                 </Button>
               )}
 
-              {/* Loading State */}
+              {/* Loading State with Progress */}
               {isSearching && (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <LoadingIndicator size="lg" />
-                  <p className="mt-4 text-sm text-text-tertiary">
-                    {t('imageSearch.searching')}
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <div className="flex items-center gap-3 w-full max-w-md">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium mb-2">
+                        {searchProgress.stage === 'compressing' && '🗜️ Compressing image...'}
+                        {searchProgress.stage === 'searching' && '🔍 Searching similar products...'}
+                        {searchProgress.stage === 'loading' && '📦 Loading results...'}
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${searchProgress.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-text-tertiary">
+                    This may take a few seconds... Please wait.
                   </p>
                 </div>
               )}
@@ -266,112 +290,47 @@ export function ImageSearchDialog({
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {searchResults.map((product) => (
-                      <Card
-                        key={product.id}
-                        className="hover:shadow-md transition-shadow"
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex gap-4">
-                            {/* Product Image */}
-                            {product.images && (
-                              <div className="relative w-32 h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                <img
-                                  src={Array.isArray(product.images) 
-                                    ? product.images[0] 
-                                    : typeof product.images === 'string'
-                                    ? product.images
-                                    : ''}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/placeholder-product.png';
-                                  }}
-                                />
-                                {/* Similarity Badge */}
-                                <Badge
-                                  className="absolute top-2 right-2 text-xs"
-                                  variant="default"
-                                >
-                                  {Math.round(product.similarity * 100)}%
-                                </Badge>
-                              </div>
-                            )}
-
-                            {/* Product Info and Actions */}
-                            <div className="flex-1 flex flex-col justify-between min-w-0">
-                              {/* Product Details */}
-                              <div className="space-y-1">
-                                <h4 className="font-medium text-sm line-clamp-2">
-                                  {product.name}
-                                </h4>
-                                {product.barcode && (
-                                  <p className="text-xs text-text-tertiary">
-                                    {product.barcode}
-                                  </p>
-                                )}
-                                {product.rentPrice && (
-                                  <p className="text-sm font-semibold text-primary">
-                                    {new Intl.NumberFormat('vi-VN', {
-                                      style: 'currency',
-                                      currency: 'VND',
-                                    }).format(product.rentPrice)}
-                                  </p>
-                                )}
-                                {product.description && (
-                                  <p className="text-xs text-text-tertiary line-clamp-2">
-                                    {product.description}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex gap-2 mt-3">
-                                {onAddToCart && (
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onAddToCart(product);
-                                    }}
-                                    className="flex-1"
-                                  >
-                                    <ShoppingCart className="w-4 h-4 mr-1" />
-                                    Add to Cart
-                                  </Button>
-                                )}
-                                {onViewProduct && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onViewProduct(product);
-                                    }}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                {onEditProduct && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEditProduct(product);
-                                    }}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {searchResults.map((product) => {
+                      // Convert search result to ProductCard props
+                      const similarityPercent = Math.round(product.similarity * 100);
+                      
+                      // Get outlet name from first outletStock if available
+                      const outletName = product.outletStock && product.outletStock.length > 0 
+                        ? product.outletStock[0].outlet?.name || 'N/A' 
+                        : 'N/A';
+                      
+                      return (
+                        <div key={product.id} className="relative">
+                          {/* Similarity Badge */}
+                          <div className="absolute -top-2 -right-2 z-10">
+                            <div className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                              {similarityPercent}%
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          
+                          <ProductCard
+                            id={product.id}
+                            name={product.name}
+                            description={product.description}
+                            stock={product.stock || 0}
+                            renting={product.renting || 0}
+                            available={product.available || product.stock || 0}
+                            rentPrice={product.rentPrice}
+                            salePrice={product.salePrice}
+                            deposit={product.deposit || 0}
+                            images={product.images || []}
+                            category={{ name: product.category?.name || 'N/A' }}
+                            outlet={{ name: outletName }}
+                            pricingType={product.pricingType}
+                            onRent={onAddToCart ? () => onAddToCart(product) : undefined}
+                            onView={onViewProduct ? () => onViewProduct(product) : undefined}
+                            onEdit={onEditProduct ? () => onEditProduct(product) : undefined}
+                            variant="admin"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

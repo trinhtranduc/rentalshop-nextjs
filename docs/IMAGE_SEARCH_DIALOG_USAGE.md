@@ -4,10 +4,11 @@
 
 ImageSearchDialog hiện đã có đầy đủ actions cho products:
 
-1. ✅ **Hiển thị danh sách products** với similarity scores
-2. ✅ **Add to Cart** - Thêm vào giỏ hàng
+1. ✅ **Hiển thị danh sách products** với similarity scores (uses ProductCard component)
+2. ✅ **Add to Cart** - Thêm vào giỏ hàng (order creation)
 3. ✅ **View Product** - Xem chi tiết sản phẩm
 4. ✅ **Edit Product** - Chỉnh sửa sản phẩm
+5. ✅ **Integrated in Order Creation** - Available in ProductsSection for adding products to orders
 
 ## 📦 Component Props
 
@@ -170,30 +171,54 @@ function CreateOrderPage() {
 
 ## 🎨 UI Layout
 
-### Product Card Layout
+### Product Card Layout (Uses Standard ProductCard Component) ✨
 
 ```
-┌─────────────────────────────────────────────┐
-│  ┌────────┐  Product Name                   │
-│  │        │  Barcode: 123456                │
-│  │ Image  │  500,000 VND                    │
-│  │  85%   │  Description...                 │
-│  │        │                                  │
-│  └────────┘  [Add to Cart] [👁] [✏]        │
-└─────────────────────────────────────────────┘
+┌────────────────────────────────┐
+│  ╔═══════════════════════╗ 85% │ ← Similarity Badge (top-right)
+│  ║                       ║     │
+│  ║   Product Image       ║     │
+│  ║   (Square, Full)      ║     │
+│  ║                       ║     │
+│  ╚═══════════════════════╝     │
+│                                 │
+│  Product Name                   │
+│  Outlet Name                    │
+│  Description (2 lines max)      │
+│                                 │
+│  Total Stock: 100               │
+│  Renting: 20                    │
+│  Available: 80                  │
+│                                 │
+│  Rent Price: 500,000 VND        │
+│  Sale Price: 450,000 VND        │
+│                                 │
+│  [Rent] [View] [Edit]           │ ← Action Buttons
+└────────────────────────────────┘
 ```
 
-- **Image**: 128x128px with similarity badge
-- **Info**: Product name, barcode, price, description
-- **Actions**: 
-  - Primary button: Add to Cart (full width)
-  - Secondary buttons: View (eye icon), Edit (pencil icon)
+**Key Changes from Custom Cards:**
+- ✅ **Uses ProductCard component** - same as product grid
+- ✅ **Square image** (aspect-square) instead of 128x128
+- ✅ **Full product info** - stock, pricing, outlet
+- ✅ **Similarity badge** positioned top-right, outside card
+- ✅ **Consistent styling** with rest of the application
+
+**Benefits:**
+- 🎨 **Consistent UI** across all product displays
+- 🔧 **Easy maintenance** - one component to update
+- 📱 **Responsive** - works on all screen sizes
+- ♿ **Accessible** - proper ARIA labels and keyboard navigation
 
 ### Dialog Size
 
 - **Width**: `max-w-6xl` (increased from 4xl for better product display)
 - **Height**: `max-h-[90vh]` with scroll
-- **Grid**: 2 columns on desktop (better than 3 for detailed cards)
+- **Grid**: 1-4 columns responsive:
+  - Mobile: 1 column
+  - Tablet: 2 columns
+  - Desktop: 3 columns
+  - Wide: 4 columns
 
 ## 📊 Features
 
@@ -271,14 +296,27 @@ This allows different roles to see different actions:
 />
 ```
 
-### 2. Order Creation
+### 2. Order Creation (Built-in Integration) ✨
+**ImageSearchDialog is now integrated into ProductsSection** - used in order creation pages.
+
 ```tsx
-<ImageSearchDialog
-  onAddToCart={addToOrder}  // Add to order
-  onViewProduct={quickView}  // Quick view details
-  // No onEditProduct - focus on adding to order
+// ProductsSection.tsx already includes ImageSearchDialog
+<ProductsSection
+  orderItems={orderItems}
+  products={products}
+  onAddProduct={addProductToOrder}
+  // ... other props
 />
 ```
+
+**Features:**
+- 📸 **"Search by Image" button** next to text search
+- 🎴 **Uses ProductCard component** - consistent UI with product grid
+- 🛒 **"Rent" button** automatically adds product to order
+- 📊 **Shows similarity %** on each product card
+- 🔍 **Auto-converts Product to ProductWithStock** for order compatibility
+
+**Location:** Order creation forms (`/orders/create`)
 
 ### 3. Customer Service
 ```tsx
@@ -392,7 +430,86 @@ export function ProductsPageWithImageSearch() {
 }
 ```
 
+## 🔗 Integration in ProductsSection
+
+### Component Structure
+
+```
+ProductsSection (Order Creation)
+├─ Text Search (SearchableSelect)
+├─ Image Search Button ← NEW ✨
+└─ ImageSearchDialog
+   └─ ProductCard (x N results)
+      └─ Actions: Rent, View, Edit
+```
+
+### Implementation Details
+
+```tsx
+// packages/ui/src/components/forms/CreateOrderForm/components/ProductsSection.tsx
+
+export const ProductsSection = ({ onAddProduct, ... }) => {
+  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
+
+  const handleAddProductFromImage = (product: Product) => {
+    // Auto-convert Product → ProductWithStock
+    const productWithStock: ProductWithStock = {
+      ...product,
+      stock: product.stock || 0,
+      renting: product.renting || 0,
+      available: product.available || product.stock || 0,
+      outletStock: product.outletStock || []
+    };
+    onAddProduct(productWithStock);
+  };
+
+  return (
+    <Card>
+      {/* Search Bar */}
+      <div className="flex gap-2">
+        <SearchableSelect ... />
+        <Button onClick={() => setIsImageSearchOpen(true)}>
+          <ImageIcon /> Search by Image
+        </Button>
+      </div>
+
+      {/* Image Search Dialog */}
+      <ImageSearchDialog
+        open={isImageSearchOpen}
+        onOpenChange={setIsImageSearchOpen}
+        onAddToCart={handleAddProductFromImage}
+      />
+    </Card>
+  );
+};
+```
+
+### Type Conversion
+
+**Problem:** SearchProductsByImage returns `Product`, but order creation needs `ProductWithStock`.
+
+**Solution:** Auto-conversion in `handleAddProductFromImage`:
+```tsx
+const productWithStock: ProductWithStock = {
+  ...product,
+  stock: product.stock || 0,
+  renting: product.renting || 0,
+  available: product.available || product.stock || 0,
+  outletStock: product.outletStock || []
+};
+```
+
+### User Flow
+
+1. User clicks "Search by Image" button
+2. ImageSearchDialog opens
+3. User uploads/drags image
+4. Results displayed as ProductCard grid
+5. User clicks "Rent" button on desired product
+6. Product automatically added to order items
+7. Dialog remains open for adding more products
+
 ---
 
 **Updated:** 2026-01-29
-**Version:** 2.0 (with actions support)
+**Version:** 3.0 (ProductCard integration + ProductsSection integration)
