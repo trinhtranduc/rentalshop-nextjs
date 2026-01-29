@@ -309,11 +309,17 @@ export interface ApiUrls {
         list: string;
         public: string;
         create: string;
+        get: (id: number) => string;
+        update: (id: number) => string;
+        delete: (id: number) => string;
       };
       tags: {
         list: string;
         public: string;
         create: string;
+        get: (id: number) => string;
+        update: (id: number) => string;
+        delete: (id: number) => string;
       };
     };
   }
