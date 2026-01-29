@@ -824,11 +824,17 @@ function createApiUrls(): ApiUrls {
         list: `${base}/api/posts/categories`,
         public: `${base}/api/posts/categories/public`,
         create: `${base}/api/posts/categories`,
+        get: (id: number) => `${base}/api/posts/categories/${id}`,
+        update: (id: number) => `${base}/api/posts/categories/${id}`,
+        delete: (id: number) => `${base}/api/posts/categories/${id}`,
       },
       tags: {
         list: `${base}/api/posts/tags`,
         public: `${base}/api/posts/tags/public`,
         create: `${base}/api/posts/tags`,
+        get: (id: number) => `${base}/api/posts/tags/${id}`,
+        update: (id: number) => `${base}/api/posts/tags/${id}`,
+        delete: (id: number) => `${base}/api/posts/tags/${id}`,
       },
     },
   };

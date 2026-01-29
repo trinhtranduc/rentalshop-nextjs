@@ -4,7 +4,7 @@
 
 import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { Post, PostCreateInput, PostUpdateInput, PostSearchFilter, PostCategory, PostTag } from '@rentalshop/types';
+import type { Post, PostCreateInput, PostUpdateInput, PostSearchFilter, PostCategory, PostTag, PostCategoryUpdateInput, PostTagUpdateInput } from '@rentalshop/types';
 
 export interface PostsResponse {
   data: Post[];
@@ -143,6 +143,14 @@ export const postsApi = {
   },
 
   /**
+   * Get category by ID
+   */
+  async getCategory(id: number): Promise<ApiResponse<PostCategory>> {
+    const response = await authenticatedFetch(apiUrls.posts.categories.get(id));
+    return await parseApiResponse<PostCategory>(response);
+  },
+
+  /**
    * Create category
    */
   async createCategory(data: { name: string; slug: string; description?: string }): Promise<ApiResponse<PostCategory>> {
@@ -151,6 +159,27 @@ export const postsApi = {
       body: JSON.stringify(data),
     });
     return await parseApiResponse<PostCategory>(response);
+  },
+
+  /**
+   * Update category
+   */
+  async updateCategory(id: number, data: PostCategoryUpdateInput): Promise<ApiResponse<PostCategory>> {
+    const response = await authenticatedFetch(apiUrls.posts.categories.update(id), {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return await parseApiResponse<PostCategory>(response);
+  },
+
+  /**
+   * Delete category
+   */
+  async deleteCategory(id: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.posts.categories.delete(id), {
+      method: 'DELETE',
+    });
+    return await parseApiResponse<void>(response);
   },
 
   /**
@@ -176,6 +205,14 @@ export const postsApi = {
   },
 
   /**
+   * Get tag by ID
+   */
+  async getTag(id: number): Promise<ApiResponse<PostTag>> {
+    const response = await authenticatedFetch(apiUrls.posts.tags.get(id));
+    return await parseApiResponse<PostTag>(response);
+  },
+
+  /**
    * Create tag
    */
   async createTag(data: { name: string; slug: string }): Promise<ApiResponse<PostTag>> {
@@ -184,5 +221,26 @@ export const postsApi = {
       body: JSON.stringify(data),
     });
     return await parseApiResponse<PostTag>(response);
+  },
+
+  /**
+   * Update tag
+   */
+  async updateTag(id: number, data: PostTagUpdateInput): Promise<ApiResponse<PostTag>> {
+    const response = await authenticatedFetch(apiUrls.posts.tags.update(id), {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return await parseApiResponse<PostTag>(response);
+  },
+
+  /**
+   * Delete tag
+   */
+  async deleteTag(id: number): Promise<ApiResponse<void>> {
+    const response = await authenticatedFetch(apiUrls.posts.tags.delete(id), {
+      method: 'DELETE',
+    });
+    return await parseApiResponse<void>(response);
   },
 };

@@ -26,7 +26,9 @@ import {
   LogOut,
   User,
   Bell,
-  RefreshCw
+  RefreshCw,
+  FolderTree,
+  Tag
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -85,6 +87,28 @@ const adminMenuItems: MenuItem[] = [
     label: 'Users',
     href: '/users',
     icon: Users,
+  },
+  {
+    label: 'Blog',
+    href: '/posts',
+    icon: FileText,
+    subItems: [
+      { 
+        label: 'Posts', 
+        href: '/posts', 
+        icon: FileText 
+      },
+      { 
+        label: 'Categories', 
+        href: '/posts/categories', 
+        icon: FolderTree 
+      },
+      { 
+        label: 'Tags', 
+        href: '/posts/tags', 
+        icon: Tag 
+      }
+    ]
   },
   {
     label: 'Settings',
