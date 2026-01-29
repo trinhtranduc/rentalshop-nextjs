@@ -53,10 +53,39 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     }
 
     console.log(`🔄 Generating embeddings for product ${productId} (${images.length} image(s))...`);
+    console.log(`   Product details:`, {
+      id: product.id,
+      name: product.name,
+      merchantId: product.merchantId,
+      categoryId: product.categoryId,
+      imagesCount: images.length
+    });
+
+    // Check Python API configuration
+    const usePythonApi = process.env.USE_PYTHON_EMBEDDING_API === 'true';
+    const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
+    console.log(`   Python API config:`, {
+      USE_PYTHON_EMBEDDING_API: usePythonApi,
+      PYTHON_EMBEDDING_API_URL: pythonApiUrl || 'NOT SET'
+    });
+
+    if (!usePythonApi) {
+      console.error(`❌ USE_PYTHON_EMBEDDING_API is not set to 'true'!`);
+      console.error(`   Current value: ${process.env.USE_PYTHON_EMBEDDING_API || 'undefined'}`);
+      throw new Error('USE_PYTHON_EMBEDDING_API must be set to "true" to generate embeddings');
+    }
 
     // Initialize services
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
+
+    // Initialize collection if needed (creates collection and indexes)
+    try {
+      await vectorStore.initialize();
+    } catch (error) {
+      console.error(`⚠️ Failed to initialize Qdrant collection:`, error);
+      // Continue anyway - collection might already exist
+    }
 
     // Generate embeddings for all images
     const embeddings = await Promise.all(
@@ -67,8 +96,12 @@ export async function generateProductEmbedding(productId: number): Promise<void>
             return null;
           }
 
-          // Generate embedding
+          // Generate embedding via Python API
+          console.log(`   🔄 Generating embedding for image ${index + 1}/${images.length}: ${imageUrl.substring(0, 60)}...`);
+          const embeddingStartTime = Date.now();
           const embedding = await embeddingService.generateEmbedding(imageUrl);
+          const embeddingDuration = Date.now() - embeddingStartTime;
+          console.log(`   ✅ Embedding generated for image ${index + 1} (${embeddingDuration}ms, dimension: ${embedding.length})`);
 
           return {
             imageId: randomUUID(), // UUID cho mỗi image
@@ -101,9 +134,32 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     }
 
     // Store all embeddings in batch
-    await vectorStore.storeProductImagesEmbeddings(validEmbeddings);
-
-    console.log(`✅ Generated and stored ${validEmbeddings.length} embedding(s) for product ${productId}`);
+    console.log(`💾 Storing ${validEmbeddings.length} embedding(s) to Qdrant...`);
+    console.log(`   Collection: ${(vectorStore as any).collectionName}`);
+    console.log(`   Product ID: ${product.id} (publicId)`);
+    console.log(`   Embeddings to store:`, validEmbeddings.map(e => ({
+      imageId: e.imageId,
+      productId: e.metadata.productId,
+      imageUrl: e.metadata.imageUrl?.substring(0, 60) + '...'
+    })));
+    
+    try {
+      await vectorStore.storeProductImagesEmbeddings(validEmbeddings);
+      console.log(`✅ Successfully stored ${validEmbeddings.length} embedding(s) to Qdrant for product ${productId}`);
+      
+      // Verify by checking collection info
+      try {
+        const collectionInfo = await vectorStore.getCollectionInfo();
+        console.log(`📊 Qdrant collection now has ${collectionInfo.points_count || 0} total points`);
+      } catch (verifyError) {
+        console.warn(`⚠️ Could not verify collection info:`, verifyError);
+      }
+    } catch (storeError: any) {
+      console.error(`❌ Error storing embeddings to Qdrant:`, storeError);
+      console.error(`   Error message:`, storeError?.message);
+      console.error(`   Error stack:`, storeError?.stack);
+      throw storeError; // Re-throw to be caught by caller
+    }
   } catch (error) {
     console.error(`❌ Error generating embedding for product ${productId}:`, error);
     throw error;
@@ -162,6 +218,14 @@ export async function generateAllProductEmbeddings(
     // Process in batches
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
+
+    // Initialize collection if needed (creates collection and indexes)
+    try {
+      await vectorStore.initialize();
+    } catch (error) {
+      console.error(`⚠️ Failed to initialize Qdrant collection:`, error);
+      // Continue anyway - collection might already exist
+    }
 
     let processed = 0;
     let errors = 0;

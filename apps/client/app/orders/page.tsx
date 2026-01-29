@@ -231,6 +231,14 @@ export default function OrdersPage() {
     updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
   }, [updateURL, limit]);
 
+  // Handle image search results (for finding products to add to orders)
+  const handleImageSearchResult = useCallback((products: any[]) => {
+    // TODO: Navigate to create order page with selected products
+    // Or show products in a dialog to add to new order
+    console.log('Image search results in orders page:', products);
+    // For now, just log - can be extended to navigate to create order with products
+  }, []);
+
   const handleSort = useCallback((column: string) => {
     console.log('🔀 Page: Sort changed:', column);
     const newSortBy = column;
@@ -460,7 +468,7 @@ export default function OrdersPage() {
             <PageTitle>{t('title')}</PageTitle>
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             {/* Export button - only show when orders are selected */}
             {canExport && selectedOrderIds.length > 0 && (
               <Button
@@ -513,6 +521,7 @@ export default function OrdersPage() {
             filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
             showStats={false}
             userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+            onImageSearchResult={handleImageSearchResult}   // 🆕 AI Image Search for products
           />
         )}
       </div>

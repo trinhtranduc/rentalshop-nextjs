@@ -12,6 +12,12 @@ export default defineConfig({
     'sharp',
     '@xenova/transformers',
     '@qdrant/js-client-rest',
+    // Workspace packages - mark as external so types resolve correctly
+    '@rentalshop/env',
+    '@rentalshop/utils',
+    '@rentalshop/types',
+    '@rentalshop/constants',
+    '@rentalshop/auth',
   ],
   outDir: 'dist',
   sourcemap: true,

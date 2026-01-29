@@ -2,7 +2,7 @@
  * ProductsSection - Component for product search and selected products
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -20,14 +20,17 @@ import {
   Package, 
   Trash2,
   Plus,
-  Minus
+  Minus,
+  Sparkles
 } from 'lucide-react';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
+import { ImageSearchDialog } from '../../../features/Products/components/ImageSearchDialog';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
   ProductAvailabilityStatus 
 } from '../types';
+import type { Product } from '@rentalshop/types';
 
 // ============================================================================
 // NUMBER INPUT WITH THOUSAND SEPARATOR
@@ -217,41 +220,83 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 }) => {
   const t = useOrderTranslations();
   const tp = useProductTranslations();
+  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
+
+  const handleImageSearchResult = (searchedProducts: Product[]) => {
+    console.log('📸 Image search found products:', searchedProducts);
+    // Don't auto-add products, just show them in the dialog
+    // Users can click "Add to Cart" button on each product
+  };
+
+  const handleAddProductFromImage = (product: Product) => {
+    console.log('📸 Adding product from image search:', product);
+    // Convert Product to ProductWithStock format
+    const productWithStock: ProductWithStock = {
+      ...product,
+      stock: product.totalStock || 0,
+      renting: product.renting || 0,
+      available: product.available || product.totalStock || 0,
+      outletStock: product.outletStock || []
+    };
+    onAddProduct(productWithStock);
+  };
+
   return (
     <Card className="flex flex-col h-full w-full">
       <CardContent className="flex flex-col flex-1 p-6">
         {/* Search and Filter Bar */}
         <div className="space-y-3 flex-shrink-0 mb-4">
-          <div className="relative">
-            <SearchableSelect
-              placeholder={t('messages.searchProducts')}
-              value={undefined}
-              onChange={(productId: number) => {
-                console.log('🔍 SearchableSelect onChange called with productId:', productId);
-                console.log('🔍 Available products:', products);
-                // Find the product and add it to order
-                const product = products.find(p => p.id === productId);
-                console.log('🔍 Found product:', product);
-                if (product) {
-                  console.log('🔍 Calling onAddProduct with product:', product);
-                  onAddProduct(product);
-                } else {
-                  console.error('❌ Product not found for ID:', productId);
-                }
-              }}
-              onSearch={onSearchProducts}
-              searchPlaceholder="Type to search products..."
-              emptyText="No products found. Try a different search term."
-              showAddNew={false}
-              productRowStyle="default" // Options: 'default' (with blue border) | 'compact' | 'minimal'
-            />
-            {isLoadingProducts && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <Skeleton className="w-4 h-4 rounded-full" />
-              </div>
-            )}
+          <div className="flex gap-2">
+            {/* Text Search */}
+            <div className="relative flex-1">
+              <SearchableSelect
+                placeholder={t('messages.searchProducts')}
+                value={undefined}
+                onChange={(productId: number) => {
+                  console.log('🔍 SearchableSelect onChange called with productId:', productId);
+                  console.log('🔍 Available products:', products);
+                  // Find the product and add it to order
+                  const product = products.find(p => p.id === productId);
+                  console.log('🔍 Found product:', product);
+                  if (product) {
+                    console.log('🔍 Calling onAddProduct with product:', product);
+                    onAddProduct(product);
+                  } else {
+                    console.error('❌ Product not found for ID:', productId);
+                  }
+                }}
+                onSearch={onSearchProducts}
+                searchPlaceholder="Type to search products..."
+                emptyText="No products found. Try a different search term."
+                showAddNew={false}
+                productRowStyle="default" // Options: 'default' (with blue border) | 'compact' | 'minimal'
+              />
+              {isLoadingProducts && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Skeleton className="w-4 h-4 rounded-full" />
+                </div>
+              )}
+            </div>
+
+            {/* AI Image Search Button */}
+            <Button
+              variant="outline"
+              onClick={() => setIsImageSearchOpen(true)}
+              className="flex items-center justify-center w-10 h-10 p-0"
+              title="AI Image Search"
+            >
+              <Sparkles className="w-5 h-5 text-purple-600" />
+            </Button>
           </div>
         </div>
+
+        {/* Image Search Dialog */}
+        <ImageSearchDialog
+          open={isImageSearchOpen}
+          onOpenChange={setIsImageSearchOpen}
+          onSearchResult={handleImageSearchResult}
+          onAddToCart={handleAddProductFromImage}
+        />
 
         {/* Selected Products Section - Takes remaining space */}
         <div className="flex-1 flex flex-col min-h-0">

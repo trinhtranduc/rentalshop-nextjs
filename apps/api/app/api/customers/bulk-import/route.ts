@@ -56,11 +56,11 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const validationErrors: Array<{ row: number; error: string }> = [];
     const validatedCustomers: any[] = [];
 
-    for (let i = 0; i < customers.length; i++) {
-      const customerData = customers[i];
-      const rowNumber = i + 1; // Start from 1 (matching UI display)
+      for (let i = 0; i < customers.length; i++) {
+        const customerData = customers[i];
+        const rowNumber = i + 1; // Start from 1 (matching UI display)
 
-      try {
+        try {
         // Validate firstName (required)
         const firstName = (customerData.firstName || '').trim();
         if (!firstName || firstName === '') {
@@ -78,8 +78,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             row: rowNumber, 
             error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
           });
-          continue;
-        }
+            continue;
+          }
 
         // Ensure merchantId is set
         const customerInput = {
@@ -87,34 +87,34 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           merchantId
         };
 
-        // Convert dateOfBirth string to Date object if provided
-        // Prisma DateTime requires Date object or ISO-8601 string with time
-        let dateOfBirth: Date | null = null;
-        if (customerInput.dateOfBirth) {
-          const dateValue = customerInput.dateOfBirth;
-          if (typeof dateValue === 'string') {
-            // If it's a date string (e.g., "1990-01-15"), convert to Date
-            // Add time component if missing to make it valid ISO-8601
-            const dateStr = dateValue.trim();
-            if (dateStr) {
-              // If it's just a date (YYYY-MM-DD), add time to make it valid
-              const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})$/);
-              if (dateMatch) {
-                dateOfBirth = new Date(`${dateMatch[1]}T00:00:00.000Z`);
-              } else {
-                // Try parsing as-is (might already be ISO-8601)
-                dateOfBirth = new Date(dateStr);
+          // Convert dateOfBirth string to Date object if provided
+          // Prisma DateTime requires Date object or ISO-8601 string with time
+          let dateOfBirth: Date | null = null;
+          if (customerInput.dateOfBirth) {
+            const dateValue = customerInput.dateOfBirth;
+            if (typeof dateValue === 'string') {
+              // If it's a date string (e.g., "1990-01-15"), convert to Date
+              // Add time component if missing to make it valid ISO-8601
+              const dateStr = dateValue.trim();
+              if (dateStr) {
+                // If it's just a date (YYYY-MM-DD), add time to make it valid
+                const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})$/);
+                if (dateMatch) {
+                  dateOfBirth = new Date(`${dateMatch[1]}T00:00:00.000Z`);
+                } else {
+                  // Try parsing as-is (might already be ISO-8601)
+                  dateOfBirth = new Date(dateStr);
+                }
+                // Validate the date
+                if (isNaN(dateOfBirth.getTime())) {
+                  dateOfBirth = null;
+                }
               }
-              // Validate the date
-              if (isNaN(dateOfBirth.getTime())) {
-                dateOfBirth = null;
-              }
+            } else if (dateValue && typeof dateValue === 'object' && 'getTime' in dateValue) {
+              // It's already a Date object
+              dateOfBirth = dateValue as Date;
             }
-          } else if (dateValue && typeof dateValue === 'object' && 'getTime' in dateValue) {
-            // It's already a Date object
-            dateOfBirth = dateValue as Date;
           }
-        }
 
         validatedCustomers.push({
           rowNumber,
@@ -239,8 +239,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
         for (const validatedCustomer of customersToImport) {
           try {
-            const customer = await tx.customer.create({
-              data: {
+          const customer = await tx.customer.create({
+            data: {
                 firstName: validatedCustomer.data.firstName || '',
                 lastName: validatedCustomer.data.lastName && validatedCustomer.data.lastName.trim() !== '' ? validatedCustomer.data.lastName.trim() : null,
                 phone: validatedCustomer.data.phone && validatedCustomer.data.phone.trim() !== '' ? validatedCustomer.data.phone.trim() : null,
@@ -254,13 +254,13 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
                 notes: validatedCustomer.data.notes && validatedCustomer.data.notes.trim() !== '' ? validatedCustomer.data.notes.trim() : null,
                 dateOfBirth: validatedCustomer.dateOfBirth,
                 idType: validatedCustomer.data.idType || null,
-                isActive: true,
+              isActive: true,
                 merchantId: merchant.id // Use merchant.id (number/publicId)
-              }
-            });
+            }
+          });
 
-            imported.push(customer);
-          } catch (error: any) {
+          imported.push(customer);
+        } catch (error: any) {
             // If ANY error during transaction, throw to rollback entire transaction
             // Format user-friendly error message
             let errorMessage = 'Failed to import customer';
@@ -364,16 +364,16 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         message: transactionError.message,
         code: transactionError.code,
         stack: transactionError.stack
-      });
-      
-      return NextResponse.json(
-        ResponseBuilder.success('CUSTOMERS_IMPORTED', {
+    });
+
+    return NextResponse.json(
+      ResponseBuilder.success('CUSTOMERS_IMPORTED', {
           imported: 0,
           failed: customers.length,
-          total: customers.length,
+        total: customers.length,
           errors: [{ row: 1, error: errorMessage }]
-        })
-      );
+      })
+    );
     }
   } catch (error) {
     console.error('Error in bulk import:', error);

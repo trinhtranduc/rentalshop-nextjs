@@ -496,7 +496,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     // Sync totalStock
     try {
-      const { syncProductTotalStock } = await import('@rentalshop/database/src/product');
+      const { syncProductTotalStock } = await import('@rentalshop/database');
       if (syncProductTotalStock) {
         await syncProductTotalStock(product.id);
       }
@@ -506,16 +506,33 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     // Generate embedding for image search (background job)
     if (committedImageUrls.length > 0) {
+      console.log(`🔄 Triggering embedding generation for product ${product.id} (${committedImageUrls.length} image(s))...`);
+      console.log(`   Product ID (publicId): ${product.id}`);
+      console.log(`   Image URLs:`, committedImageUrls.map((url: string) => url.substring(0, 60) + '...'));
+      
       try {
         const { generateProductEmbedding } = await import('@rentalshop/database/server');
         // Run in background (don't block response)
-        generateProductEmbedding(product.id).catch((error) => {
-          console.error(`Error generating embedding for product ${product.id}:`, error);
-        });
-      } catch (error) {
-        console.error('Error starting embedding generation:', error);
+        generateProductEmbedding(product.id)
+          .then(() => {
+            console.log(`✅ Embedding generation completed for product ${product.id}`);
+          })
+          .catch((error: any) => {
+            console.error(`❌ Error generating embedding for product ${product.id}:`, error);
+            console.error('   Error message:', error?.message);
+            console.error('   Error name:', error?.name);
+            console.error('   Stack:', error?.stack);
+          });
+      } catch (error: any) {
+        console.error('❌ Error starting embedding generation:', error);
+        console.error('   Error message:', error?.message);
+        console.error('   Error name:', error?.name);
+        console.error('   Stack:', error?.stack);
         // Don't fail the request if embedding generation fails
       }
+    } else {
+      console.log(`⚠️ Product ${product.id} has no images, skipping embedding generation`);
+      console.log(`   committedImageUrls length: ${committedImageUrls.length}`);
     }
 
     return NextResponse.json({

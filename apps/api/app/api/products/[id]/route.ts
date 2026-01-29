@@ -485,8 +485,7 @@ export async function PUT(
       // This ensures totalStock always equals the sum of all outlet stocks
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         try {
-          const productModule = await import('@rentalshop/database/src/product');
-          const { syncProductTotalStock } = productModule;
+          const { syncProductTotalStock } = await import('@rentalshop/database');
           if (syncProductTotalStock) {
             await syncProductTotalStock(productId);
             // Re-fetch product to get updated totalStock
@@ -567,25 +566,63 @@ export async function PUT(
 
       // Regenerate embeddings for image search if images were updated (background job)
       // Delete old embeddings first, then generate new ones
-      if (imageFiles.length > 0 || productUpdateData.images !== undefined) {
+      // Check if images actually changed by comparing existing vs new
+      const existingImageUrls = parseProductImages(existingProduct.images);
+      const newImageUrls = productUpdateData.images !== undefined 
+        ? parseProductImages(productUpdateData.images)
+        : imageFiles.length > 0
+          ? parseProductImages(updatedProduct.images) // Use updated product images if files were uploaded
+          : existingImageUrls;
+      
+      // Normalize URLs for comparison (remove query params, trailing slashes)
+      const normalizeUrl = (url: string) => url.split('?')[0].replace(/\/$/, '').toLowerCase();
+      const existingNormalized = existingImageUrls.map(normalizeUrl).sort().join(',');
+      const newNormalized = newImageUrls.map(normalizeUrl).sort().join(',');
+      const imagesChanged = existingNormalized !== newNormalized;
+      
+      console.log(`🔍 Embedding regeneration check for product ${productId}:`, {
+        imageFilesCount: imageFiles.length,
+        productUpdateDataImages: productUpdateData.images !== undefined ? 'provided' : 'not provided',
+        existingImagesCount: existingImageUrls.length,
+        newImagesCount: newImageUrls.length,
+        imagesChanged,
+        existingNormalized: existingNormalized.substring(0, 100),
+        newNormalized: newNormalized.substring(0, 100)
+      });
+      
+      if (imageFiles.length > 0 || imagesChanged) {
+        console.log(`🔄 Triggering embedding regeneration for product ${productId}...`);
         try {
           const { generateProductEmbedding } = await import('@rentalshop/database/server');
           const { getVectorStore } = await import('@rentalshop/database/server');
           
           // Delete old embeddings first (run in background)
           const vectorStore = getVectorStore();
-          vectorStore.deleteProductEmbeddings(productId).catch((error: any) => {
-            console.error(`Error deleting old embeddings for product ${productId}:`, error);
-          });
+          vectorStore.deleteProductEmbeddings(productId)
+            .then(() => {
+              console.log(`✅ Deleted old embeddings for product ${productId}`);
+            })
+            .catch((error: any) => {
+              console.error(`❌ Error deleting old embeddings for product ${productId}:`, error);
+              console.error('Stack:', error.stack);
+            });
           
           // Generate new embeddings (run in background, don't block response)
-          generateProductEmbedding(productId).catch((error) => {
-            console.error(`Error generating embedding for product ${productId}:`, error);
-          });
-        } catch (error) {
-          console.error('Error starting embedding regeneration:', error);
+          generateProductEmbedding(productId)
+            .then(() => {
+              console.log(`✅ Embedding regeneration completed for product ${productId}`);
+            })
+            .catch((error: any) => {
+              console.error(`❌ Error generating embedding for product ${productId}:`, error);
+              console.error('Stack:', error.stack);
+            });
+        } catch (error: any) {
+          console.error('❌ Error starting embedding regeneration:', error);
+          console.error('Stack:', error.stack);
           // Don't fail the request if embedding generation fails
         }
+      } else {
+        console.log(`ℹ️ Images unchanged for product ${productId}, skipping embedding regeneration`);
       }
 
       // Check if user has products.manage permission to view cost price

@@ -2,7 +2,10 @@
  * Vector Store Service
  * Wrapper để tương tác với Qdrant vector database
  * 
- * Collection: product-images
+ * Collection names:
+ * - Development: product-images-dev
+ * - Production: product-images-pro
+ * 
  * Vector dimension: 512 (CLIP standard)
  * Distance metric: Cosine
  */
@@ -24,9 +27,16 @@ export interface ProductEmbeddingMetadata {
  */
 export class ProductVectorStore {
   private client: QdrantClient;
-  private collectionName = 'product-images';
+  private collectionName: string;
 
   constructor() {
+    // Determine collection name based on environment
+    const env = process.env.NODE_ENV || process.env.APP_ENV || 'development';
+    const isProduction = env === 'production' || env === 'prod';
+    
+    this.collectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
+    console.log(`📦 Using Qdrant collection: ${this.collectionName} (environment: ${env})`);
+    
     // Sanitize QDRANT_URL and QDRANT_API_KEY to avoid Unicode issues
     const qdrantUrl = (process.env.QDRANT_URL || 'http://localhost:6333')
       .normalize('NFD')
@@ -162,7 +172,7 @@ export class ProductVectorStore {
       merchantId,
       outletId,
       categoryId,
-      minSimilarity = parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.7'),
+      minSimilarity = parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.5'),
       limit = 20
     } = filters;
 
@@ -193,22 +203,67 @@ export class ProductVectorStore {
     const filter = must.length > 0 ? { must } : undefined;
 
     try {
-      // Search
+      console.log('🔍 VectorStore.search - Parameters:', {
+        collectionName: this.collectionName,
+        embeddingLength: queryEmbedding.length,
+        limit,
+        minSimilarity,
+        filter: filter ? JSON.stringify(filter) : 'none',
+        merchantId,
+        outletId,
+        categoryId
+      });
+
+      // OPTIMIZATION: Use score_threshold at database level (faster than filtering in code)
+      // Also reduce search limit multiplier from 3x to 2x for better performance
+      const searchLimit = Math.max(limit * 2, 30); // Reduced from limit * 3 to limit * 2
+      
       const results = await this.client.search(this.collectionName, {
         vector: queryEmbedding,
-        limit,
+        limit: searchLimit,
         filter,
+        // OPTIMIZATION: Filter at database level (Qdrant) instead of in code
         score_threshold: minSimilarity,
         with_payload: true
       });
 
-      return results.map((result: any) => ({
-        productId: result.payload.productId,
-        similarity: result.score,
-        metadata: result.payload
-      }));
+      console.log(`📊 Qdrant returned ${results.length} results (filtered by score_threshold >= ${minSimilarity})`);
+      
+      // Log first few results for debugging
+      if (results.length > 0) {
+        console.log('📊 Sample results (first 5):', results.slice(0, 5).map((r: any) => ({
+          productId: r.payload?.productId,
+          score: r.score,
+          merchantId: r.payload?.merchantId,
+          outletId: r.payload?.outletId,
+          categoryId: r.payload?.categoryId
+        })));
+      } else {
+        console.warn('⚠️ No results from Qdrant! Possible issues:');
+        console.warn('   1. No embeddings in collection');
+        console.warn('   2. Filters too strict (merchantId/outletId mismatch)');
+        console.warn('   3. Collection name mismatch');
+        console.warn(`   4. Collection: ${this.collectionName}`);
+        console.warn(`   5. minSimilarity (${minSimilarity}) too high`);
+      }
+
+      // OPTIMIZATION: No need to filter by similarity in code (already filtered by Qdrant)
+      // Just slice to limit and map results
+      const filteredResults = results
+        .slice(0, limit)
+        .map((result: any) => ({
+          productId: result.payload?.productId || result.payload?.product_id,
+          similarity: result.score,
+          metadata: result.payload
+        }));
+
+      console.log(`✅ Final results (top ${filteredResults.length}): ${filteredResults.length} products`);
+
+      return filteredResults;
     } catch (error) {
-      console.error('Error searching in Qdrant:', error);
+      console.error('❌ Error searching in Qdrant:', error);
+      console.error('   Collection:', this.collectionName);
+      console.error('   Filter:', filter);
       throw error;
     }
   }
@@ -333,13 +388,38 @@ export class ProductVectorStore {
     }));
 
     try {
+      console.log(`📤 Upserting ${points.length} point(s) to Qdrant collection: ${this.collectionName}`);
       await this.client.upsert(this.collectionName, {
         points
       });
-    } catch (error) {
-      console.error('Error storing product images embeddings:', error);
-      throw error;
+      console.log(`✅ Successfully upserted ${points.length} point(s) to Qdrant`);
+    } catch (error: any) {
+      // If collection doesn't exist, try to initialize and retry
+      if (error?.status === 404 || error?.message?.includes('not found')) {
+        console.log('⚠️ Collection not found, initializing...');
+        try {
+          await this.initialize();
+          // Retry upsert after initialization
+          await this.client.upsert(this.collectionName, {
+            points
+          });
+          console.log('✅ Successfully stored embeddings after initialization');
+        } catch (initError) {
+          console.error('Error initializing collection:', initError);
+          throw initError;
+        }
+      } else {
+        console.error('Error storing product images embeddings:', error);
+        throw error;
+      }
     }
+  }
+
+  /**
+   * Get collection name (for debugging)
+   */
+  getCollectionName(): string {
+    return this.collectionName;
   }
 
   /**

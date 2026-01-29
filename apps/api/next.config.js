@@ -5,22 +5,37 @@ const nextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
   // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
-  experimental: {
-    // Point to monorepo root for file tracing
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      '@prisma/engines',
-      'prisma',
-      '.prisma/client',
-      'sharp', // Externalize Sharp (Node.js native module)
-    ],
-  },
+    experimental: {
+      // Point to monorepo root for file tracing
+      outputFileTracingRoot: require('path').join(__dirname, '../../'),
+      serverComponentsExternalPackages: [
+        '@prisma/client',
+        '@prisma/engines',
+        'prisma',
+        '.prisma/client',
+        'sharp', // Externalize Sharp (Node.js native module)
+        '@xenova/transformers', // Externalize transformers (ML model, needs runtime env vars)
+        'onnxruntime-node', // Externalize ONNX runtime (prevent bundling)
+      ],
+    },
   
-  // Include Prisma binaries in file tracing (for production builds)
+  // Include Prisma binaries and transformers WASM files in file tracing (for production builds)
   outputFileTracingIncludes: {
     '/api/**': [
       '../../node_modules/.prisma/client/**/*',
+      // CRITICAL: Include entire @xenova/transformers directory for WebAssembly backend
+      // Based on: https://github.com/huggingface/transformers.js/issues/295
+      // Include all WASM files, JS files, and package structure
+      '../../node_modules/@xenova/transformers/**/*',
+      // Explicitly include WASM files (may be in dist/ or other locations)
+      '../../node_modules/@xenova/transformers/dist/**/*.wasm',
+      '../../node_modules/@xenova/transformers/dist/**/*.js',
+      '../../node_modules/@xenova/transformers/dist/**/*.mjs',
+      // Include cache directory (for model files) - @xenova/.cache
+      '../../node_modules/@xenova/.cache/**/*',
+      // Include package.json and other config files
+      '../../node_modules/@xenova/transformers/package.json',
+      '../../node_modules/@xenova/transformers/**/package.json',
     ],
   },
   
@@ -44,12 +59,18 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
-  // Webpack config for Prisma in monorepo  
+  // Webpack config for Prisma and transformers
+  // Based on: https://stackoverflow.com/questions/79315656/nextjs-transformers-module-parse-failed-unexpected-character
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // CRITICAL: External Prisma completely to prevent bundling (native binaries needed)
-      // This ensures Prisma is loaded from node_modules at runtime, not bundled
-      config.externals = config.externals || [];
+      // CRITICAL: External native modules to prevent bundling
+      // This ensures native binaries are loaded from node_modules at runtime, not bundled
+      // Based on Stack Overflow solution for transformers.js
+      
+      // Initialize externals if not already set
+      if (!config.externals) {
+        config.externals = [];
+      }
       
       // External native Node.js packages as CommonJS modules
       // These cannot be bundled by webpack (they need native binaries)
@@ -58,12 +79,17 @@ const nextConfig = {
         '.prisma/client': 'commonjs .prisma/client',
         '@prisma/engines': 'commonjs @prisma/engines',
         'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
+        '@xenova/transformers': 'commonjs @xenova/transformers', // Externalize transformers (ML model)
+        'onnxruntime-node': 'commonjs onnxruntime-node', // CRITICAL: Externalize ONNX runtime (prevents webpack bundling)
       };
       
-      // Add to externals array (handle both array and function formats)
+      // Merge with existing externals
+      // Handle both array and object formats
       if (Array.isArray(config.externals)) {
+        // If externals is an array, add our object to it
         config.externals.push(nativeExternals);
       } else if (typeof config.externals === 'function') {
+        // If externals is a function, wrap it
         const originalExternals = config.externals;
         config.externals = (context, request, callback) => {
           if (nativeExternals[request]) {
@@ -71,15 +97,25 @@ const nextConfig = {
           }
           return originalExternals(context, request, callback);
         };
+      } else if (typeof config.externals === 'object') {
+        // If externals is an object, merge it
+        config.externals = {
+          ...config.externals,
+          ...nativeExternals
+        };
       } else {
-        config.externals = [config.externals, nativeExternals];
+        // Default: create array with our externals
+        config.externals = [nativeExternals];
       }
       
       // Ensure Prisma Client resolves to root node_modules (fallback)
+      const path = require('path');
       config.resolve.alias = {
         ...config.resolve.alias,
-        '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
-        '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
+        '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
+        '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
+        // OFFICIAL TUTORIAL APPROACH: No need to alias onnxruntime-node
+        // node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
       };
     }
     return config;

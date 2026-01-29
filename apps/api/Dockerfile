@@ -1,11 +1,14 @@
 # ===================================
 # STAGE 1: Dependencies
 # ===================================
-FROM node:22-alpine AS deps
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+# Tutorial: transformers.js-main/examples/next-server/Dockerfile
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work
+FROM node:18 AS deps
 WORKDIR /app
 
 # Install system dependencies for Prisma
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy root package files
 COPY package.json yarn.lock ./
@@ -36,23 +39,40 @@ RUN yarn config set network-timeout 300000 && \
       yarn cache clean && \
       yarn install --frozen-lockfile --network-timeout 300000))
 
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
+
 # ===================================
 # STAGE 2: Builder
 # ===================================
-FROM node:22-alpine AS builder
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+FROM node:18 AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
 
 # Generate Prisma Client with all binary targets
+# Generate at root level first
 RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# CRITICAL: Copy Prisma Client to apps/api/node_modules for Next.js build
+# Next.js collects page data during build and needs Prisma Client accessible
+RUN mkdir -p apps/api/node_modules/.prisma && \
+    mkdir -p apps/api/node_modules/@prisma && \
+    cp -r node_modules/.prisma/client apps/api/node_modules/.prisma/ && \
+    cp -r node_modules/@prisma/client apps/api/node_modules/@prisma/
 
 # ============================================================================
 # MIGRATION STRATEGY
@@ -68,19 +88,27 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
 RUN yarn build
 
 # ===================================
 # STAGE 3: Production Runner
 # ===================================
-FROM node:22-alpine AS runner
+# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
+FROM node:18 AS runner
 WORKDIR /app
 
 # Install OpenSSL for Prisma AND postgresql-client for migrations
-RUN apk add --no-cache openssl postgresql-client
+RUN apt-get update && apt-get install -y openssl postgresql-client && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3002
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
+ENV TRANSFORMERS_CACHE_DIR=/tmp/transformers-cache
 
 # Create nextjs user for security
 RUN addgroup --system --gid 1001 nodejs
@@ -90,8 +118,44 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 
-# Copy node_modules (includes Prisma binaries)
+# Copy node_modules (includes Prisma binaries and onnxruntime-node)
+# Note: onnxruntime-node will work with node:18 (has glibc)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# CRITICAL: Explicitly verify and ensure @huggingface/transformers is accessible
+# In Next.js standalone output, node_modules may not be fully copied
+# We need to ensure WASM files are accessible at runtime
+# Note: @huggingface/transformers may use @xenova/transformers internally
+RUN if [ -d "node_modules/@huggingface/transformers" ]; then \
+      echo "✅ @huggingface/transformers found in node_modules"; \
+      if [ -d "node_modules/@huggingface/transformers/dist" ]; then \
+        echo "✅ WASM files directory found: node_modules/@huggingface/transformers/dist"; \
+        ls -la node_modules/@huggingface/transformers/dist/ | head -10 || true; \
+      else \
+        echo "⚠️ WASM files directory not found - library will download if needed"; \
+      fi; \
+    elif [ -d "node_modules/@xenova/transformers" ]; then \
+      echo "✅ @xenova/transformers found (may be internal dependency)"; \
+    else \
+      echo "⚠️ WARNING: @huggingface/transformers not found in node_modules"; \
+      echo "⚠️ This may cause WASM backend initialization to fail"; \
+    fi
+
+# CRITICAL: Create writable cache directory for @huggingface/transformers
+# Based on: https://huggingface.co/docs/transformers.js/tutorials/next
+# and https://github.com/huggingface/transformers.js/blob/main/examples/next-server/Dockerfile
+# The library needs a writable cache directory for model files and WASM files
+# Use both locations: /tmp for runtime cache and node_modules/@xenova/.cache for persistent cache
+# Note: @huggingface/transformers may use @xenova/.cache internally (as shown in official Dockerfile)
+RUN mkdir -p /tmp/transformers-cache && \
+    chown -R nextjs:nodejs /tmp/transformers-cache && \
+    mkdir -p /app/node_modules/@xenova/.cache && \
+    chmod 777 -R /app/node_modules/@xenova 2>/dev/null || true && \
+    echo "✅ Created transformers cache directories: /tmp/transformers-cache and /app/node_modules/@xenova/.cache"
+
+# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# No need to remove or mock onnxruntime-node
 
 # Copy built packages
 COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages

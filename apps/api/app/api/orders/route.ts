@@ -473,8 +473,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         // Import the function from product module (same pattern as updateOrder in order.ts)
         // Use dynamic import - order.ts uses './product' from same package
         // From API route, we need to use absolute path from workspace root
-        const productModule = await import('@rentalshop/database/src/product');
-        const { updateOutletStockForOrder } = productModule;
+        const { updateOutletStockForOrder } = await import('@rentalshop/database');
         
         if (updateOutletStockForOrder) {
           // For SALE orders with COMPLETED status: decrease stock permanently

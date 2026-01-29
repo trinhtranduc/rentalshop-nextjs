@@ -1,88 +1,43 @@
 /**
  * Image Embedding Service
- * Sử dụng CLIP model để tạo embeddings từ hình ảnh
- * 
- * Default Model: Xenova/clip-vit-base-patch32 (tương thích 100% với @xenova/transformers)
- * Alternative: patrickjohncyh/fashion-clip (fashion-specific, cần test compatibility)
- * Vector dimension: 512
+ * Python-first implementation:
+ * - ONLY uses external Python FastAPI service to generate embeddings
+ * - Avoids Node.js native memory corruption issues on Railway (free(): invalid size)
+ *
+ * Required env:
+ * - USE_PYTHON_EMBEDDING_API=true
+ * - PYTHON_EMBEDDING_API_URL=https://python-embedding-service-*.up.railway.app
  */
 
-import { pipeline, env, RawImage } from '@xenova/transformers';
-import sharp from 'sharp';
+function shouldUsePythonEmbeddingApi(): boolean {
+  return process.env.USE_PYTHON_EMBEDDING_API === 'true';
+}
 
-// Disable local model files (use remote models)
-env.allowLocalModels = false;
-env.allowRemoteModels = true;
+function getPythonEmbeddingApiUrl(): string {
+  const url = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
+  
+  // Ensure URL has a protocol (https:// or http://)
+  // This fixes issues where env var might be set without protocol (e.g., Railway public domain)
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    // Default to https:// for production URLs (Railway, etc.)
+    return `https://${url}`;
+  }
+  
+  return url;
+}
 
 /**
- * FashionImageEmbedding Service
- * Tạo embeddings từ hình ảnh sử dụng FashionCLIP model
+ * OPTIMIZATION: Connection pooling via global fetch with keepAlive
+ * Node.js 18+ fetch API automatically uses connection pooling when available
+ * For better performance, we can set keepAlive via environment variable or use undici
+ * 
+ * Note: Native fetch in Node.js 18+ already has connection pooling built-in,
+ * but we can optimize further by ensuring proper configuration
  */
+
 export class FashionImageEmbedding {
-  private model: any = null;
-  private modelName: string;
-
-  constructor(modelName?: string) {
-    // Default model: Xenova CLIP (tương thích 100% với @xenova/transformers)
-    // Alternative: 'patrickjohncyh/fashion-clip' (fashion-specific, nhưng có thể không tương thích)
-    this.modelName = modelName || process.env.IMAGE_SEARCH_MODEL || 'Xenova/clip-vit-base-patch32';
-  }
-
-  /**
-   * Initialize model (lazy loading)
-   * Model sẽ được download lần đầu sử dụng (~500MB)
-   */
-  private async getModel() {
-    if (!this.model) {
-      console.log(`🔄 Loading FashionCLIP model: ${this.modelName}...`);
-      try {
-        this.model = await pipeline(
-          'image-feature-extraction',
-          this.modelName
-        );
-        console.log('✅ Model loaded successfully');
-      } catch (error) {
-        console.error('❌ Failed to load model:', error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        throw new Error(`Failed to load model ${this.modelName}: ${errorMessage}`);
-      }
-    }
-    return this.model;
-  }
-
-  /**
-   * Preprocess image cho AI model
-   * - Resize về 224x224 (CLIP standard)
-   * - Normalize pixel values
-   * - Convert to RGB format
-   * Returns both buffer and metadata for RawImage creation
-   */
-  private async preprocessImage(imageBuffer: Buffer): Promise<{ buffer: Buffer; width: number; height: number }> {
-    try {
-      // Resize và normalize
-      const processed = await sharp(imageBuffer)
-        .resize(224, 224, {
-          fit: 'cover',
-          position: 'center'
-        })
-        .raw() // Get raw pixel data for RawImage
-        .toBuffer({ resolveWithObject: true });
-
-      return {
-        buffer: processed.data,
-        width: processed.info.width,
-        height: processed.info.height
-      };
-    } catch (error) {
-      console.error('Error preprocessing image:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Image preprocessing failed: ${errorMessage}`);
-    }
-  }
-
   /**
    * Normalize vector để dùng cosine similarity
-   * Chia tất cả số trong vector cho "độ dài" của vector
    */
   private normalizeVector(vector: number[]): number[] {
     const magnitude = Math.sqrt(
@@ -97,81 +52,139 @@ export class FashionImageEmbedding {
   }
 
   /**
-   * Generate embedding từ image URL
-   * 
-   * @param imageUrl - URL của hình ảnh (từ S3, data URL, hoặc file://)
-   * @returns Embedding vector (512 dimensions, normalized)
+   * Warm-up (Python API)
+   * - Checks /health and ensures model is loaded on the Python service
    */
-  async generateEmbedding(imageUrl: string): Promise<number[]> {
+  async warmUp(): Promise<void> {
+    if (!shouldUsePythonEmbeddingApi()) {
+      throw new Error('USE_PYTHON_EMBEDDING_API must be true (Python embedding service is required).');
+    }
+
+    const baseUrl = getPythonEmbeddingApiUrl();
+    const response = await fetch(`${baseUrl}/health`, { method: 'GET' });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Python Embedding API health check failed (${response.status}): ${text}`);
+    }
+    const data: any = await response.json();
+    if (data?.status !== 'healthy' || data?.model_loaded !== true) {
+      throw new Error(`Python Embedding API not ready: ${JSON.stringify(data)}`);
+    }
+    console.log('✅ Python Embedding API warm-up successful');
+  }
+
+  /**
+   * Generate embedding via Python FastAPI service
+   *
+   * Why:
+   * - Avoids Node.js native memory corruption issues seen on Railway with transformers.js/sharp/onnxruntime
+   * - Python (transformers + torch) is more stable for this workload
+   *
+   * Env:
+   * - USE_PYTHON_EMBEDDING_API=true
+   * - PYTHON_EMBEDDING_API_URL=https://<your-service>.up.railway.app
+   */
+  private async generateEmbeddingViaPythonApi(imageBuffer: Buffer): Promise<number[]> {
+    const baseUrl = getPythonEmbeddingApiUrl();
+    const imageSizeKB = (imageBuffer.length / 1024).toFixed(1);
+    console.log(`🔄 Using Python Embedding API: ${baseUrl} (image: ${imageSizeKB}KB)`);
+
+    const formData = new FormData();
+    // Convert Buffer -> Uint8Array for Blob (avoids TS/SharedArrayBuffer issues)
+    const uint8Array = new Uint8Array(imageBuffer);
+    const blob = new Blob([uint8Array], { type: 'image/png' });
+    formData.append('file', blob, 'image.png');
+
+    // OPTIMIZATION: Node.js 18+ fetch API automatically uses connection pooling
+    // For additional optimization, we can set keepAlive headers
+    // Connection pooling is handled automatically by the runtime
+    // Add timeout to prevent hanging (30 seconds max)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
+    // Measure network + processing time
+    const apiCallStartTime = Date.now();
+    
     try {
-      // Download image
-      const response = await fetch(imageUrl);
+      const networkStartTime = Date.now();
+      const response = await fetch(`${baseUrl}/embed`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+        // Keep connection alive for better performance (Node.js handles this automatically)
+        headers: {
+          'Connection': 'keep-alive',
+        },
+      });
+      
+      const networkDuration = Date.now() - networkStartTime;
+      clearTimeout(timeoutId);
+      
+      console.log(`  📡 Network time (request sent): ${networkDuration}ms`);
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(`Python Embedding API error (${response.status}): ${text}`);
       }
 
-      const arrayBuffer = await response.arrayBuffer();
-      const imageBuffer = Buffer.from(arrayBuffer);
+      const parseStartTime = Date.now();
+      const data: any = await response.json();
+      const parseDuration = Date.now() - parseStartTime;
+      
+      const embedding: unknown = data?.embedding;
+      if (!data?.success || !Array.isArray(embedding)) {
+        throw new Error('Invalid response from Python Embedding API');
+      }
 
-      // Use generateEmbeddingFromBuffer which handles RawImage conversion
-      return this.generateEmbeddingFromBuffer(imageBuffer);
-    } catch (error) {
-      console.error('Error generating embedding:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Embedding generation failed: ${errorMessage}`);
+      // Ensure number[] and normalize defensively
+      const vector: number[] = (embedding as unknown[]).map((v) => Number(v));
+      const normalized = this.normalizeVector(vector);
+      
+      const totalApiDuration = Date.now() - apiCallStartTime;
+      const processingTime = totalApiDuration - networkDuration - parseDuration;
+      
+      console.log(`  ⏱️ Python API timing breakdown:`);
+      console.log(`     - Network (request): ${networkDuration}ms`);
+      console.log(`     - Processing (Python): ~${processingTime}ms`);
+      console.log(`     - Parse response: ${parseDuration}ms`);
+      console.log(`     - Total API call: ${totalApiDuration}ms`);
+      
+      return normalized;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      const failedDuration = Date.now() - apiCallStartTime;
+      console.error(`  ❌ Python API failed after ${failedDuration}ms`);
+      
+      if (error.name === 'AbortError') {
+        throw new Error('Python Embedding API timeout: Request took longer than 30 seconds');
+      }
+      throw error;
     }
   }
 
   /**
-   * Generate embedding từ image buffer (cách chuẩn cho local files)
+   * Generate embedding từ image buffer
+   * 
+   * STANDARD APPROACH: Sử dụng RawImage constructor như code trước đây
+   * - Works với native onnxruntime-node (local development)
+   * - May need adjustment for WebAssembly mode (Alpine Linux)
    * 
    * @param imageBuffer - Buffer của hình ảnh
    * @returns Embedding vector (512 dimensions, normalized)
    */
   async generateEmbeddingFromBuffer(imageBuffer: Buffer): Promise<number[]> {
     try {
-      // Preprocess (resize về 224x224, optimize)
-      const { buffer, width, height } = await this.preprocessImage(imageBuffer);
+      console.log('🔄 generateEmbeddingFromBuffer: Starting...', {
+        inputBufferSize: imageBuffer.length
+      });
 
-      // Get model
-      const model = await this.getModel();
-
-      // Convert buffer to RawImage for @xenova/transformers
-      // RawImage constructor: new RawImage(data, width, height, channels)
-      // data must be Uint8Array or Uint8ClampedArray
-      // channels = 3 for RGB
-      const uint8Array = new Uint8Array(buffer);
-      const rawImage = new RawImage(uint8Array, width, height, 3);
-
-      // Generate embedding
-      const output = await model(rawImage);
-      
-      // Extract embedding vector
-      let embedding: number[];
-      if (Array.isArray(output)) {
-        embedding = output.flat();
-      } else if (output.data) {
-        embedding = Array.isArray(output.data) ? output.data : Array.from(output.data);
-      } else if (output instanceof Float32Array || output instanceof Float64Array) {
-        embedding = Array.from(output);
-      } else {
-        // Try to extract from tensor-like object
-        embedding = Array.isArray(output) ? output.flat() : [output];
+      if (!shouldUsePythonEmbeddingApi()) {
+        throw new Error('USE_PYTHON_EMBEDDING_API must be true (only Python embedding service is supported).');
       }
 
-      // Ensure we have the right dimension (512 for CLIP)
-      if (embedding.length !== 512) {
-        console.warn(`⚠️ Embedding dimension mismatch: expected 512, got ${embedding.length}`);
-        // Truncate or pad if needed
-        if (embedding.length > 512) {
-          embedding = embedding.slice(0, 512);
-        } else {
-          embedding = [...embedding, ...new Array(512 - embedding.length).fill(0)];
-        }
-      }
-
-      // Normalize vector (important for cosine similarity)
-      return this.normalizeVector(embedding);
+      const embedding = await this.generateEmbeddingViaPythonApi(imageBuffer);
+      console.log('✅ Embedding generated successfully (Python API)');
+      return embedding;
     } catch (error) {
       console.error('Error generating embedding from buffer:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -180,61 +193,40 @@ export class FashionImageEmbedding {
   }
 
   /**
-   * Batch generate embeddings (hiệu quả hơn)
-   * 
-   * @param imageUrls - Array các image URLs
-   * @returns Array các embedding vectors
+   * Generate embedding từ image URL
+   */
+  async generateEmbedding(imageUrl: string): Promise<number[]> {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      return this.generateEmbeddingFromBuffer(buffer);
+    } catch (error) {
+      console.error('Error generating embedding:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Embedding generation failed: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Batch generate embeddings
    */
   async generateEmbeddingsBatch(imageUrls: string[]): Promise<number[][]> {
     try {
-      const model = await this.getModel();
-      
-      // Download và preprocess tất cả images
-      const processedImages = await Promise.all(
-        imageUrls.map(async (url) => {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image ${url}: ${response.statusText}`);
-          }
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          return this.preprocessImage(buffer);
-        })
-      );
+      if (!shouldUsePythonEmbeddingApi()) {
+        throw new Error('USE_PYTHON_EMBEDDING_API must be true (only Python embedding service is supported).');
+      }
 
-      // Generate embeddings
-      const embeddings = await Promise.all(
-        processedImages.map(async (image) => {
-          const output = await model(image);
-          
-          // Extract embedding
-          let embedding: number[];
-          if (Array.isArray(output)) {
-            embedding = output.flat();
-          } else if (output.data) {
-            embedding = Array.isArray(output.data) ? output.data : Array.from(output.data);
-          } else if (output instanceof Float32Array || output instanceof Float64Array) {
-            embedding = Array.from(output);
-          } else {
-            embedding = Array.isArray(output) ? output.flat() : [output];
-          }
-
-          // Ensure 512 dimensions
-          if (embedding.length !== 512) {
-            if (embedding.length > 512) {
-              embedding = embedding.slice(0, 512);
-            } else {
-              embedding = [...embedding, ...new Array(512 - embedding.length).fill(0)];
-            }
-          }
-
-          return this.normalizeVector(embedding);
-        })
-      );
-
-      return embeddings;
+      // Python service currently supports single image per request.
+      // Batch = parallel calls (kept simple; can be optimized later).
+      return await Promise.all(imageUrls.map((url) => this.generateEmbedding(url)));
     } catch (error) {
-      console.error('Error in batch embedding generation:', error);
+      console.error('Error generating embeddings in batch:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Batch embedding generation failed: ${errorMessage}`);
     }
@@ -242,14 +234,58 @@ export class FashionImageEmbedding {
 }
 
 // Singleton instance
-let embeddingService: FashionImageEmbedding | null = null;
+let embeddingServiceInstance: FashionImageEmbedding | null = null;
+
+export function getEmbeddingService(): FashionImageEmbedding {
+  if (!embeddingServiceInstance) {
+    embeddingServiceInstance = new FashionImageEmbedding();
+  }
+  return embeddingServiceInstance;
+}
 
 /**
- * Get singleton instance của embedding service
+ * Warm-up function to pre-load model when server starts
+ * Based on GitHub issue #1135: pipeline promise may never resolve on first call
+ * 
+ * SOLUTION: Pre-load model during server startup to avoid promise hanging on first request
+ * 
+ * @param timeout - Maximum time to wait for model loading (default: 120 seconds)
+ * @returns Promise that resolves when model is loaded, or rejects on timeout
  */
-export function getEmbeddingService(): FashionImageEmbedding {
-  if (!embeddingService) {
-    embeddingService = new FashionImageEmbedding();
+/**
+ * Warm-up function to pre-load model when server starts
+ * Based on GitHub issue #1135: pipeline promise may never resolve on first call
+ * 
+ * SOLUTION: Pre-load model during server startup to avoid promise hanging on first request
+ * 
+ * @param timeout - Maximum time to wait for model loading (default: 120 seconds)
+ * @returns Promise that resolves when model is loaded, or rejects on timeout
+ */
+export async function warmUpModel(timeout: number = 120000): Promise<void> {
+  console.log('🔥 Starting model warm-up (pre-loading model to avoid issue #1135)...');
+  const startTime = Date.now();
+  
+  try {
+    const service = getEmbeddingService();
+    
+    // Use Promise.race to ensure we don't wait forever
+    const warmUpPromise = service.warmUp();
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Model warm-up timeout: Model loading took longer than ${timeout/1000}s. This may indicate the promise is hanging (issue #1135).`));
+      }, timeout);
+    });
+    
+    await Promise.race([warmUpPromise, timeoutPromise]);
+    
+    const elapsed = Date.now() - startTime;
+    console.log(`✅ Model warm-up completed in ${(elapsed/1000).toFixed(2)}s`);
+  } catch (error: any) {
+    const elapsed = Date.now() - startTime;
+    console.error(`❌ Model warm-up failed after ${(elapsed/1000).toFixed(2)}s:`, error?.message);
+    console.error('⚠️  Server will continue, but first image search request may be slow or fail');
+    // Don't throw - allow server to start even if warm-up fails
+    // The model will be loaded on first request (with retry logic)
   }
-  return embeddingService;
 }

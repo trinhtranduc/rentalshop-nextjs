@@ -1046,6 +1046,26 @@ export const simplifiedProducts = {
   },
 
   /**
+   * Find multiple products by IDs (batch fetch - optimized for performance)
+   */
+  findByIds: async (ids: number[]) => {
+    if (ids.length === 0) return [];
+    
+    return await prisma.product.findMany({
+      where: { id: { in: ids } },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true, address: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
    * Create new product (simplified API)
    */
   create: async (data: any) => {

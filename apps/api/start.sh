@@ -10,7 +10,12 @@
 # 5. Starts the Next.js server
 # ============================================================================
 
-set -e
+# Don't exit on error - we want to start server even if migrations fail
+# set -e
+
+# OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
+# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Library will use CPU backend by default in Node.js environment
 
 echo "🚀 Starting API server with automatic migrations..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
@@ -104,4 +109,10 @@ echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
 echo ""
 echo "✅ Server is ready to accept requests"
 echo "🚀 Starting Next.js application..."
+echo ""
+echo "ℹ️  Note: ML model will be loaded on first image search request"
+echo "ℹ️  This is normal and expected behavior"
+echo ""
+
+# Start Next.js server (foreground - Railway will handle health checks)
 exec ../../node_modules/.bin/next start -p 3002

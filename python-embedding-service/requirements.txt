@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pillow==10.1.0
+# IMPORTANT: CPU-only PyTorch.
+# The plain "torch==2.1.0" can pull CUDA/NVIDIA wheels (hundreds of MBs) and often fails on Railway builds.
+torch==2.1.0+cpu
+transformers==4.35.0
+numpy==1.24.3
+# Qdrant client for vector search
+qdrant-client==1.7.0
+# PostgreSQL client for fetching products
+asyncpg==0.29.0

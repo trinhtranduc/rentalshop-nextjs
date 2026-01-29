@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui'
+import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
@@ -40,7 +40,10 @@ import {
   Loader2,
   MessageCircle,
   Briefcase,
-  ArrowRight
+  ArrowRight,
+  Info,
+  HelpCircle,
+  Send
 } from 'lucide-react'
 
 const LandingPage = () => {
@@ -569,6 +572,59 @@ const LandingPage = () => {
                     </div>
                     <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
                   </a>
+                  
+                  {/* Zalo with QR Code */}
+                  <div className="flex items-start space-x-4 p-4 bg-white/10 rounded-xl border border-white/20">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white/70 mb-1">Zalo</div>
+                      <div className="text-white font-semibold text-sm mb-3">0764774647</div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0">
+                          <Image
+                            src="/image/qrcode-0764774647.jpeg"
+                            alt="Zalo QR Code"
+                            width={100}
+                            height={100}
+                            className="rounded-lg border border-white/20"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-white/70 mb-2">
+                            Quét mã QR để liên hệ Zalo
+                          </p>
+                          <a
+                            href="https://zalo.me/0764774647"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0068FF] text-white rounded-lg hover:bg-[#0052CC] transition-colors text-xs font-medium"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            Mở Zalo
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Telegram */}
+                  <a
+                    href="https://t.me/0764774647"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                  >
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                      <Send className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-white/70 mb-1">Telegram</div>
+                      <div className="text-white font-semibold text-sm">0764774647</div>
+                    </div>
+                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                  </a>
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-white/20">
@@ -664,16 +720,16 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section - Below the fold, lazy loaded */}
       <Stats />
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section - Below the fold, lazy loaded */}
       <Testimonials />
 
-        {/* CTA Section */}
+      {/* CTA Section - Below the fold, lazy loaded */}
       <CTA />
 
-      {/* FAQ Section */}
+      {/* FAQ Section - Below the fold, lazy loaded */}
       <FAQ />
 
       {/* Blog Section */}
@@ -682,19 +738,21 @@ const LandingPage = () => {
         subtitle={t('blog.subtitle')}
       /> */}
 
-      {/* Pricing Section */}
+      {/* Pricing Section - Below the fold, heavy component with API calls */}
       <Pricing />
 
-      {/* Footer */}
+      {/* Footer - Below the fold */}
       <Footer />
+      
+      {/* FloatingButtons */}
       <FloatingButtons />
     </div>
     </>
   );
 };
 
-// Simple component implementations for the landing page
-const Stats = () => {
+// Lazy load heavy components to reduce initial bundle size
+const Stats = React.memo(() => {
   return (
     <section className="py-20 bg-gray-900" aria-label="Statistics section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -719,9 +777,9 @@ const Stats = () => {
       </div>
     </section>
   );
-};
+});
 
-const Testimonials = () => {
+const Testimonials = React.memo(() => {
   const t = useTranslations('landing.testimonials')
   const tItems = useTranslations('landing.testimonials.items')
   
@@ -809,9 +867,9 @@ const Testimonials = () => {
       </div>
     </section>
   );
-};
+});
 
-const CTA = () => {
+const CTA = React.memo(() => {
   const t = useTranslations('landing.cta')
   const tHero = useTranslations('landing.hero')
   return (
@@ -853,9 +911,9 @@ const CTA = () => {
         </div>
     </section>
   );
-};
+});
 
-const FAQ = () => {
+const FAQ = React.memo(() => {
   const t = useTranslations('landing.faq')
   const [openItems, setOpenItems] = React.useState(new Set());
   
@@ -948,15 +1006,16 @@ const FAQ = () => {
     </section>
     </>
   );
-};
+});
 
-const Pricing = () => {
+const Pricing = React.memo(() => {
   const tPricing = useTranslations('landing.pricing')
   const tPlans = usePlansTranslations()
   const [selectedDuration, setSelectedDuration] = useState<'3' | '6' | '12'>('3'); // '3', '6', '12'
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAdditionalPricingDialog, setShowAdditionalPricingDialog] = useState(false);
 
   // Fetch plans from public API
   useEffect(() => {
@@ -1369,12 +1428,81 @@ const Pricing = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Additional Pricing Note */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setShowAdditionalPricingDialog(true)}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+            title={tPricing('additionalPricingNote')}
+          >
+            <Info className="w-4 h-4" />
+            <span>{tPricing('additionalPricingNote')}</span>
+          </button>
+        </div>
+
+        {/* Additional Pricing Dialog */}
+        <Dialog open={showAdditionalPricingDialog} onOpenChange={setShowAdditionalPricingDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{tPricing('additionalPricingTitle')}</DialogTitle>
+              <DialogDescription>
+                Information about additional pricing for accounts and addons
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 mt-4">
+              {/* Additional Account Pricing */}
+              <Card className="border border-gray-200">
+                <CardContent className="p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    {tPricing('additionalAccountPrice')}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {tPricing('additionalAccountDescription')}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Price:</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {tPricing('additionalAccountPriceValue')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Addon Pricing */}
+              <Card className="border border-gray-200">
+                <CardContent className="p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    {tPricing('addonPrice')}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {tPricing('addonDescription')}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Price:</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {tPricing('addonPriceValue')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowAdditionalPricingDialog(false)}
+              >
+                {tPricing('close')}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );
-};
+});
 
-const Footer = () => {
+const Footer = React.memo(() => {
   const tf = useTranslations('landing.footer')
   return (
     <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
@@ -1436,43 +1564,136 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
 
-const FloatingButtons = () => {
+// FloatingButtons component with CSS transitions (no framer-motion)
+const FloatingButtons = React.memo(() => {
   // Số điện thoại: 0764774647
   // Format cho WhatsApp: 840764774647 (thêm 84 đầu)
   // Format cho Zalo: 0764774647
+  // Format cho Telegram: 0764774647
   const phoneNumber = '840764774647';
   const zaloNumber = '0764774647';
+  const telegramNumber = '0764774647';
   const whatsappMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
+  const telegramMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
+  
+  const [showZaloQR, setShowZaloQR] = useState(false);
+  const zaloButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Handle click outside to close
+  useEffect(() => {
+    if (!showZaloQR) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (zaloButtonRef.current && !zaloButtonRef.current.contains(event.target as Node)) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.zalo-qr-popover')) {
+          setShowZaloQR(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showZaloQR]);
   
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <div className="flex flex-col space-y-3">
-        {/* Zalo Button */}
-        <a 
-          href={`https://zalo.me/${zaloNumber}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#0068FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0052CC] transition-colors"
-          title="Liên hệ Zalo"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </a>
-        
-        {/* WhatsApp Button */}
-        <a 
-          href={`https://wa.me/${phoneNumber}?text=${whatsappMessage}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#25D366] text-white p-3 rounded-full shadow-lg hover:bg-[#20BA5A] transition-colors"
-          title="Liên hệ WhatsApp"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </a>
+    <>
+      <div className="fixed bottom-6 right-6 z-50">
+        <div className="flex flex-col space-y-3 relative">
+          {/* Zalo Button */}
+          <button
+            ref={zaloButtonRef}
+            onClick={(e) => {
+              e.preventDefault();
+              setShowZaloQR(!showZaloQR);
+            }}
+            className="bg-[#0068FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0052CC] transition-colors"
+            title="Liên hệ Zalo"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+          
+          {/* WhatsApp Button */}
+          <a 
+            href={`https://wa.me/${phoneNumber}?text=${whatsappMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#25D366] text-white p-3 rounded-full shadow-lg hover:bg-[#20BA5A] transition-colors"
+            title="Liên hệ WhatsApp"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </a>
+          
+          {/* Telegram Button */}
+          <a 
+            href={`https://t.me/${telegramNumber}?text=${telegramMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#0088cc] text-white p-3 rounded-full shadow-lg hover:bg-[#006ba3] transition-colors"
+            title="Liên hệ Telegram"
+          >
+            <Send className="w-6 h-6" />
+          </a>
+        </div>
       </div>
-    </div>
+      
+      {/* Zalo QR Code Modal with CSS transitions */}
+      {showZaloQR && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-200 ease-out"
+            onClick={() => setShowZaloQR(false)}
+            style={{
+              animation: 'fadeIn 0.2s ease-out'
+            }}
+          />
+          {/* QR Code Popup - positioned next to button */}
+          <div
+            className="zalo-qr-popover fixed bottom-24 right-6 z-50 bg-white rounded-lg shadow-2xl p-6 max-w-sm transition-all duration-300 ease-out"
+            style={{
+              animation: 'slideUpFadeIn 0.3s ease-out'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Quét mã QR để liên hệ Zalo</h3>
+              <button
+                onClick={() => setShowZaloQR(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-4 mb-4">
+              <div className="relative w-48 h-48 bg-white rounded-lg p-2">
+                <Image
+                  src="/image/qrcode-0764774647.jpeg"
+                  alt="Zalo QR Code"
+                  fill
+                  className="object-contain rounded-lg"
+                />
+              </div>
+              <p className="text-sm text-gray-600 text-center">
+                Mở ứng dụng Zalo và quét mã QR code bên trên để kết nối với chúng tôi
+              </p>
+            </div>
+            <a
+              href={`https://zalo.me/${zaloNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center px-4 py-2 bg-[#0068FF] text-white rounded-lg hover:bg-[#0052CC] transition-colors text-sm font-medium"
+            >
+              <MessageCircle className="w-4 h-4 inline mr-2" />
+              Mở Zalo
+            </a>
+          </div>
+        </>
+      )}
+    </>
   );
-};
+});
 
 export default LandingPage; 

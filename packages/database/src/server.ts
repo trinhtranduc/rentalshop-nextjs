@@ -13,7 +13,11 @@
 // DO NOT import this file in client-side code!
 
 // Image embedding service
-export { getEmbeddingService, FashionImageEmbedding } from './ml/image-embeddings';
+export { 
+  getEmbeddingService, 
+  FashionImageEmbedding,
+  warmUpModel 
+} from './ml/image-embeddings';
 
 // Vector store service
 export { getVectorStore, ProductVectorStore } from './ml/vector-store';

@@ -588,6 +588,27 @@ export function handleApiError(error: any): {
       'Không thể kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra lại kết nối.'
     );
   } else if (
+    error.code === 'ERR_DLOPEN_FAILED' ||
+    error.message?.includes('ERR_DLOPEN_FAILED') ||
+    error.message?.includes('Cannot load native module') ||
+    error.message?.includes('onnxruntime-node')
+  ) {
+    // Native module loading errors (onnxruntime-node, sharp, etc.)
+    console.error('❌ NATIVE MODULE LOADING ERROR:', {
+      errorCode: error.code,
+      errorMessage: error.message,
+      errorName: error.name,
+      platform: process.platform,
+      arch: process.arch,
+      nodeVersion: process.version,
+    });
+    
+    apiError = new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'Image search service is temporarily unavailable. The ML model cannot be loaded. Please contact support.',
+      'Dịch vụ tìm kiếm hình ảnh tạm thời không khả dụng. Mô hình ML không thể tải. Vui lòng liên hệ hỗ trợ.'
+    );
+  } else if (
     error.message?.includes('timeout') ||
     error.message?.includes('TIMEOUT') ||
     error.code === 'ETIMEDOUT'

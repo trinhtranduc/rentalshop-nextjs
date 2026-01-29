@@ -373,7 +373,203 @@ export const productsApi = {
     return await response.blob();
   },
 
+  /**
+   * Search products by image
+   * 
+   * @param formData - FormData containing:
+   *   - image: File - Image file to search
+   *   - limit?: number - Number of results (default: 20)
+   *   - minSimilarity?: number - Minimum similarity threshold (default: 0.7)
+   *   - categoryId?: number - Filter by category
+   * 
+   * @returns Products with similarity scores
+   */
+  async searchByImage(formData: FormData): Promise<ApiResponse<{
+    products: Array<Product & { similarity: number; _debug?: any }>;
+    total: number;
+    queryImage: string;
+  }>> {
+    const response = await authenticatedFetch('/api/products/searchByImage', {
+      method: 'POST',
+      body: formData,
+    });
+    return await parseApiResponse<{
+      products: Array<Product & { similarity: number; _debug?: any }>;
+      total: number;
+      queryImage: string;
+    }>(response);
+  },
+
 };
+
+/**
+ * Search products by image (standalone function)
+ * 
+ * @param imageFile - Image file to search
+ * @param options - Search options
+ * @returns Products with similarity scores
+ */
+export async function searchProductsByImage(
+  imageFile: File,
+  options: {
+    limit?: number;
+    minSimilarity?: number;
+    categoryId?: number;
+    onProgress?: (progress: { stage: string; percentage: number }) => void;
+  } = {}
+): Promise<ApiResponse<{
+  products: Array<Product & { similarity: number; _debug?: any }>;
+  total: number;
+  queryImage: string;
+}>> {
+  const perfStart = performance.now();
+  const { onProgress } = options;
+  
+  console.log('\n🚀 ========================================');
+  console.log('📊 IMAGE SEARCH PERFORMANCE ANALYSIS');
+  console.log('========================================');
+  console.log(`📂 Original file:`);
+  console.log(`   - Name: ${imageFile.name}`);
+  console.log(`   - Type: ${imageFile.type}`);
+  console.log(`   - Size: ${(imageFile.size/1024).toFixed(1)}KB (${(imageFile.size/1024/1024).toFixed(2)}MB)`);
+  
+  // Stage 1: Compression (0-30%)
+  console.log('\n🗜️  STAGE 1: Image Compression');
+  console.log('─────────────────────────────');
+  if (onProgress) {
+    onProgress({ stage: 'compressing', percentage: 0 });
+  }
+  
+  const compStart = performance.now();
+  
+  // Import compressImage dynamically to avoid issues
+  let compressedFile = imageFile;
+  try {
+    const { compressImage } = await import('../api/upload');
+    compressedFile = await compressImage(imageFile, {
+      maxSizeMB: 0.1,          // 100KB max (enough for CLIP model)
+      maxWidthOrHeight: 512,   // CLIP uses 224x224, so 512 is safe
+      useWebWorker: true,      // Don't block UI
+      quality: 0.8,           // Good quality
+      onProgress: (p) => {
+        if (onProgress) {
+          onProgress({ stage: 'compressing', percentage: Math.round(p * 0.3) });
+        }
+        console.log(`   ⏳ Compressing... ${Math.round(p)}%`);
+      }
+    });
+    
+    const compDuration = performance.now() - compStart;
+    const reductionPercent = Math.round((1 - compressedFile.size / imageFile.size) * 100);
+    const savedKB = (imageFile.size - compressedFile.size) / 1024;
+    
+    console.log(`   ✅ Compression completed!`);
+    console.log(`   ⏱️  Duration: ${compDuration.toFixed(0)}ms`);
+    console.log(`   📦 Compressed size: ${(compressedFile.size/1024).toFixed(1)}KB`);
+    console.log(`   💾 Saved: ${savedKB.toFixed(1)}KB (${reductionPercent}% reduction)`);
+    console.log(`   🎯 Compression ratio: ${(imageFile.size / compressedFile.size).toFixed(2)}x`);
+  } catch (error) {
+    const compDuration = performance.now() - compStart;
+    console.log(`   ❌ Compression failed after ${compDuration.toFixed(0)}ms`);
+    console.warn('   ⚠️  Error:', error);
+    console.log(`   📤 Using original file (${(imageFile.size/1024).toFixed(1)}KB)`);
+    compressedFile = imageFile;
+  }
+  
+  // Stage 2: API Call (30-90%)
+  console.log('\n🌐 STAGE 2: API Upload & Processing');
+  console.log('─────────────────────────────────────');
+  if (onProgress) {
+    onProgress({ stage: 'searching', percentage: 30 });
+  }
+  
+  const formData = new FormData();
+  formData.append('image', compressedFile);
+  
+  if (options.limit) {
+    formData.append('limit', options.limit.toString());
+  }
+  
+  if (options.minSimilarity) {
+    formData.append('minSimilarity', options.minSimilarity.toString());
+  }
+  
+  if (options.categoryId) {
+    formData.append('categoryId', options.categoryId.toString());
+  }
+
+  console.log(`   📤 Uploading ${(compressedFile.size/1024).toFixed(1)}KB to Python API...`);
+  console.log(`   🔍 Search params: limit=${options.limit || 20}, minSimilarity=${options.minSimilarity || 0.5}`);
+  
+  const apiStart = performance.now();
+  const response = await productsApi.searchByImage(formData);
+  const apiDuration = performance.now() - apiStart;
+  
+  console.log(`   ✅ API response received!`);
+  console.log(`   ⏱️  API duration: ${apiDuration.toFixed(0)}ms`);
+  
+  // Parse response details if available
+  if (response.success && response.data) {
+    console.log(`   📊 Results: ${response.data.total || 0} products found`);
+    
+    // Log Python API performance if available
+    const debugData = (response.data as any);
+    if (debugData.embeddingDuration) {
+      console.log(`   └─ Embedding generation: ${debugData.embeddingDuration}ms`);
+    }
+    if (debugData.searchDuration) {
+      console.log(`   └─ Vector search: ${debugData.searchDuration}ms`);
+    }
+    if (debugData.fetchDuration) {
+      console.log(`   └─ Database fetch: ${debugData.fetchDuration}ms`);
+    }
+    if (debugData.totalDuration) {
+      console.log(`   └─ Python API total: ${debugData.totalDuration}ms`);
+    }
+  }
+  
+  // Stage 3: Results Processing (90-100%)
+  console.log('\n📦 STAGE 3: Results Processing');
+  console.log('─────────────────────────────────');
+  if (onProgress) {
+    onProgress({ stage: 'loading', percentage: 90 });
+  }
+  
+  const processingStart = performance.now();
+  
+  // Results are already processed in response
+  const processingDuration = performance.now() - processingStart;
+  console.log(`   ⏱️  Processing: ${processingDuration.toFixed(0)}ms`);
+  
+  if (onProgress) {
+    onProgress({ stage: 'loading', percentage: 100 });
+  }
+  
+  // Final Summary
+  const totalDuration = performance.now() - perfStart;
+  const compDuration = compStart ? performance.now() - compStart : 0;
+  
+  console.log('\n⚡ PERFORMANCE SUMMARY');
+  console.log('═════════════════════════════════════');
+  console.log(`   1️⃣  Compression:     ${compDuration.toFixed(0)}ms (${((compDuration/totalDuration)*100).toFixed(1)}%)`);
+  console.log(`   2️⃣  API Call:        ${apiDuration.toFixed(0)}ms (${((apiDuration/totalDuration)*100).toFixed(1)}%)`);
+  console.log(`   3️⃣  Processing:      ${processingDuration.toFixed(0)}ms (${((processingDuration/totalDuration)*100).toFixed(1)}%)`);
+  console.log(`   ⏱️  TOTAL:           ${totalDuration.toFixed(0)}ms`);
+  console.log('═════════════════════════════════════\n');
+  
+  // Performance rating
+  if (totalDuration < 2000) {
+    console.log('   ⚡ Excellent performance!');
+  } else if (totalDuration < 4000) {
+    console.log('   ✅ Good performance');
+  } else if (totalDuration < 6000) {
+    console.log('   ⚠️  Slow performance - consider optimization');
+  } else {
+    console.log('   ❌ Very slow - needs optimization!');
+  }
+  
+  return response;
+}
 
 
 

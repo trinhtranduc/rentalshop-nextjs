@@ -247,6 +247,9 @@ export { simplifiedSubscriptionActivities } from './subscription-activity';
 
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
+
+// Export product functions
+export { syncProductTotalStock, updateOutletStockForOrder } from './product';
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
@@ -269,6 +272,18 @@ export * from './query-builder';
 
 // Cleanup utilities
 export { cleanupOldRequestLogs } from './cleanup-request-logs';
+
+// ============================================================================
+// MACHINE LEARNING SERVICES (Image Search) - REMOVED FROM MAIN EXPORTS
+// ============================================================================
+// NOTE: These exports have been moved to a separate server-only file to prevent
+// client-side bundling issues with native dependencies (sharp, @xenova/transformers)
+// 
+// To use ML services, import from '@rentalshop/database/server' instead:
+// import { getEmbeddingService } from '@rentalshop/database/server';
+//
+// DO NOT import these in client-side code (components, hooks, etc.)
+// They will cause build errors due to native dependencies
 
 // ============================================================================
 // MIGRATION GUIDE
