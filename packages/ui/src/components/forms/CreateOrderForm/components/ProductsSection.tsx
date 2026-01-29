@@ -21,7 +21,7 @@ import {
   Trash2,
   Plus,
   Minus,
-  Image as ImageIcon
+  Sparkles
 } from 'lucide-react';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
 import { ImageSearchDialog } from '../../../features/Products/components/ImageSearchDialog';
@@ -278,14 +278,14 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               )}
             </div>
 
-            {/* Image Search Button */}
+            {/* AI Image Search Button */}
             <Button
               variant="outline"
               onClick={() => setIsImageSearchOpen(true)}
-              className="flex items-center gap-2 whitespace-nowrap"
+              className="flex items-center justify-center w-10 h-10 p-0"
+              title="AI Image Search"
             >
-              <ImageIcon className="w-4 h-4" />
-              Search by Image
+              <Sparkles className="w-5 h-5 text-purple-600" />
             </Button>
           </div>
         </div>

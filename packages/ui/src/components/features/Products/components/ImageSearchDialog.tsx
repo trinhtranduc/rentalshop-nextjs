@@ -181,7 +181,7 @@ export function ImageSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[90vw] max-w-5xl h-[85vh] max-h-[800px] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />
@@ -192,7 +192,7 @@ export function ImageSearchDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-1 space-y-4">
           {/* Upload Area */}
           {!previewUrl && (
             <div
