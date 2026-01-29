@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
 import { compressImageTo1MB, compressImageForEmbedding } from '../../../../lib/image-compression';
 
@@ -237,7 +237,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           throw new Error('Invalid response from Python Search API');
         }
 
-        const products = data.products || [];
+        const rawProducts = data.products || [];
         const totalDuration = Date.now() - requestStartTime;
         
         console.log(`✅ Step 3: Complete search completed in ${searchDuration}ms`);
@@ -247,7 +247,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         console.log(`   - Total Python: ${data.totalDuration || 0}ms`);
         console.log(`⏱️ Total request time: ${totalDuration}ms`);
 
-        if (products.length === 0) {
+        if (rawProducts.length === 0) {
           return NextResponse.json(
             ResponseBuilder.success('NO_PRODUCTS_FOUND', {
               products: [],
@@ -272,8 +272,16 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         }
 
         // ============================================================
-        // STEP 4: Return results
+        // STEP 4: Normalize images and return results
         // ============================================================
+        // Parse images to ensure consistent format (array of strings)
+        const products = rawProducts.map((product: any) => ({
+          ...product,
+          images: parseProductImages(product.images)
+        }));
+
+        console.log(`🖼️  Normalized images for ${products.length} products`);
+
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
             products,

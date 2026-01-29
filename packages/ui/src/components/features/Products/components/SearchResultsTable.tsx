@@ -109,6 +109,7 @@ export function SearchResultsTable({
           </thead>
           <tbody className="divide-y divide-gray-200">
             {products.map((product) => {
+              // Images are already parsed by backend API as array of strings
               const mainImage = product.images && product.images.length > 0
                 ? (Array.isArray(product.images) ? product.images[0] : product.images)
                 : null;
