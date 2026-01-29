@@ -8,12 +8,42 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       path: '',
       changeFrequency: 'weekly' as const,
-      priority: 1,
+      priority: 1.0,
+    },
+    {
+      path: '/features',
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
+      path: '/pricing',
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
     },
     {
       path: '/login',
       changeFrequency: 'monthly' as const,
-      priority: 0.8,
+      priority: 0.7,
+    },
+    {
+      path: '/register',
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    },
+    {
+      path: '/terms',
+      changeFrequency: 'yearly' as const,
+      priority: 0.5,
+    },
+    {
+      path: '/privacy',
+      changeFrequency: 'yearly' as const,
+      priority: 0.5,
+    },
+    {
+      path: '/affiliate',
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     },
   ]
   

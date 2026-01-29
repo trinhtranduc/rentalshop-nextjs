@@ -91,7 +91,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (locale === 'vi') {
     return {
       title: {
-        default: 'AnyRent - Ứng dụng & Phần mềm Quản lý Cửa hàng Cho thuê Áo dài, Áo cưới',
+        default: 'AnyRent - Phần mềm Quản lý Cho thuê Áo dài, Áo cưới',
         template: '%s | AnyRent',
       },
         description: 'Ứng dụng và phần mềm quản lý cửa hàng cho thuê áo dài, áo cưới hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng. Hỗ trợ đa nền tảng iOS và Web.',
@@ -220,7 +220,7 @@ export async function generateMetadata(): Promise<Metadata> {
         alternateLocale: ['en_US', 'zh_CN', 'ko_KR', 'ja_JP'],
         url: '/',
         siteName: 'AnyRent',
-        title: 'AnyRent - Ứng dụng & Phần mềm Quản lý Cửa hàng Cho thuê Áo dài, Áo cưới',
+        title: 'AnyRent - Phần mềm Quản lý Cho thuê Áo dài, Áo cưới',
         description: 'Ứng dụng và phần mềm quản lý cửa hàng cho thuê áo dài, áo cưới hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng.',
         images: [
           {
@@ -233,7 +233,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: 'AnyRent - Ứng dụng & Phần mềm Quản lý Cửa hàng Cho thuê Áo dài, Áo cưới',
+        title: 'AnyRent - Phần mềm Quản lý Cho thuê Áo dài, Áo cưới',
         description: 'Ứng dụng và phần mềm quản lý cửa hàng cho thuê áo dài, áo cưới hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện.',
         images: ['/anyrent-logo-light.svg'],
         creator: '@anyrent',
@@ -827,6 +827,26 @@ export default async function RootLayout({
   return (
     <html lang={locale} className="overflow-x-hidden">
       <body className={`${inter.variable} font-sans overflow-x-hidden`}>
+        {/* Google Analytics 4 */}
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                  page_path: window.location.pathname,
+                });
+              `}
+            </Script>
+          </>
+        )}
+        
         <NextIntlClientProvider locale={locale} messages={messages[locale]}>
           <ToastProvider>
             <ClientLayout>

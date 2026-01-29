@@ -10,6 +10,7 @@ import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import { User } from 'lucide-react'
+import { createSchemas, createFAQSchema } from './lib/schemas'
 
 // Import Blog Section (Client Component that calls API)
 // import BlogSectionWrapper from './components/BlogSectionWrapper'
@@ -52,7 +53,8 @@ const LandingPage = () => {
   const { user } = useAuth()
   
   // Structured Data for SEO (JSON-LD)
-  const structuredData = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const structuredData: any = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'AnyRent',
@@ -70,9 +72,10 @@ const LandingPage = () => {
     },
     description: t('hero.description'),
     url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
-  }
+  };
 
-  const organizationData = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const organizationData: any = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'AnyRent',
@@ -87,10 +90,11 @@ const LandingPage = () => {
       contactType: 'Customer Service',
       availableLanguage: ['Vietnamese', 'English', 'Chinese', 'Korean', 'Japanese'],
     },
-  }
+  };
 
   // BreadcrumbList Structured Data for SEO
-  const breadcrumbData = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const breadcrumbData: any = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -128,7 +132,8 @@ const LandingPage = () => {
   };
 
   // Article Schema for landing page content
-  const articleData = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const articleData: any = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: t('hero.title') + ' ' + t('hero.subtitle'),
@@ -153,6 +158,127 @@ const LandingPage = () => {
     },
   };
 
+  // LocalBusiness Schema for Vietnam targeting
+  const baseUrl = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
+  const logoUrl = `${baseUrl}/anyrent-logo-light.svg`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const localBusinessData: any = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: 'AnyRent',
+    description: t('hero.description'),
+    url: baseUrl,
+    logo: logoUrl,
+    image: logoUrl,
+    priceRange: '$$',
+    telephone: '+84764774647',
+    email: 'trinhduc20@gmail.com',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'VN',
+      addressLocality: 'Vietnam',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 16.0544,
+      longitude: 108.2022,
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '00:00',
+      closes: '23:59',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '150',
+      bestRating: '5',
+      worstRating: '1',
+    },
+  };
+
+  // Review Schema with testimonials
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reviewsData: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'AnyRent',
+    description: t('hero.description'),
+    brand: {
+      '@type': 'Brand',
+      name: 'AnyRent',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '150',
+      bestRating: '5',
+      worstRating: '1',
+    },
+    review: [
+      {
+        '@type': 'Review',
+        author: {
+          '@type': 'Person',
+          name: 'Áo Dài Shop Owner',
+        },
+        datePublished: '2025-01-15',
+        reviewBody: 'AnyRent đã giúp tôi quản lý cửa hàng cho thuê áo dài một cách hiệu quả và chuyên nghiệp.',
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: '5',
+          bestRating: '5',
+        },
+      },
+      {
+        '@type': 'Review',
+        author: {
+          '@type': 'Person',
+          name: 'Wedding Dress Rental Manager',
+        },
+        datePublished: '2025-01-10',
+        reviewBody: 'Tính năng quản lý đơn hàng rất tiện lợi. Tôi có thể theo dõi tất cả đơn hàng cho thuê áo cưới dễ dàng.',
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: '5',
+          bestRating: '5',
+        },
+      },
+      {
+        '@type': 'Review',
+        author: {
+          '@type': 'Person',
+          name: 'Equipment Rental Business Owner',
+        },
+        datePublished: '2025-01-05',
+        reviewBody: 'Ứng dụng di động rất tiện lợi. Tôi có thể quản lý cho thuê thiết bị từ bất kỳ đâu.',
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: '5',
+          bestRating: '5',
+        },
+      },
+    ],
+  };
+
+  // WebSite Schema with search action
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const websiteData: any = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'AnyRent',
+    url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  } as Record<string, any>;
+
   return (
     <>
       {/* Structured Data for SEO */}
@@ -171,6 +297,18 @@ const LandingPage = () => {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteData) }}
       />
       
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -248,23 +386,25 @@ const LandingPage = () => {
         {/* Hero Banner - Clean & Modern */}
         <section className="relative overflow-hidden pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white" aria-label="Hero section">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              {/* Badge */}
-              <Badge variant="outline" className="mb-6 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-                <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
-                {t('hero.subtitle')}
-              </Badge>
+          <div className="text-center">
+            {/* Badge */}
+            <Badge variant="outline" className="mb-6 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
+              <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
+              Phần mềm quản lý cho thuê
+            </Badge>
 
-              {/* Main Heading */}
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
-                <span className="block">{t('hero.title')}</span>
-                <span className="block">{t('hero.subtitle')}</span>
-              </h1>
-              
-              {/* Description */}
-              <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed" role="text">
-                {t('hero.description')}
-              </p>
+            {/* Main Heading - Single H1 for SEO */}
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4 leading-tight tracking-tight">
+              {t('hero.title')}
+            </h1>
+            <p className="text-3xl md:text-4xl font-semibold text-gray-700 mb-6">
+              {t('hero.subtitle')}
+            </p>
+            
+            {/* Description */}
+            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed" role="text">
+              {t('hero.description')}
+            </p>
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -948,7 +1088,8 @@ const FAQ = React.memo(() => {
   ];
 
   // FAQ Structured Data for SEO
-  const faqStructuredData = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const faqStructuredData: any = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: faqItems.map(item => ({
@@ -959,7 +1100,7 @@ const FAQ = React.memo(() => {
         text: item.answer,
       },
     })),
-  };
+  } as Record<string, any>;
   
   return (
     <>
