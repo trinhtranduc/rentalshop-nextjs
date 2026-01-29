@@ -169,11 +169,11 @@ class SearchService:
                 async with self.db_pool.acquire() as conn:
                     # Build query with IN clause
                     placeholders = ','.join([f'${i+1}' for i in range(len(product_ids))])
-                    # Query using publicId (external ID) for products
-                    # Note: product_ids are publicIds from Qdrant payload
+                    # Query using id (primary key) for products
+                    # Note: product_ids are Int IDs from Qdrant payload
                     query = """
                         SELECT 
-                            p."publicId" as id,
+                            p.id,
                             p.name,
                             p.description,
                             p.barcode,
@@ -185,15 +185,15 @@ class SearchService:
                             p."isActive",
                             p."createdAt",
                             p."updatedAt",
-                            c."publicId" as "categoryId",
+                            c.id as "categoryId",
                             c.name as "categoryName",
-                            m."publicId" as "merchantId",
+                            m.id as "merchantId",
                             m.name as "merchantName"
                         FROM "Product" p
                         LEFT JOIN "Category" c ON p."categoryId" = c.id
                         LEFT JOIN "Merchant" m ON p."merchantId" = m.id
-                        WHERE p."publicId" = ANY($1::int[])
-                        ORDER BY array_position($1::int[], p."publicId")
+                        WHERE p.id = ANY($1::int[])
+                        ORDER BY array_position($1::int[], p.id)
                     """
                     
                     rows = await conn.fetch(query, product_ids)
