@@ -208,7 +208,16 @@
     "support24": "24/7サポート",
     "dataBackup": "データバックアップ",
     "freeUpdates": "無料アップデート",
-    "training": "トレーニング"
+    "training": "トレーニング",
+    "additionalPricingTitle": "追加料金情報",
+    "additionalAccountPrice": "追加アカウント料金",
+    "additionalAccountDescription": "プラン制限を超える追加ユーザーアカウントごとの料金",
+    "additionalAccountPriceValue": "月額30,000ドン",
+    "addonPrice": "アドオン料金",
+    "addonDescription": "制限を増やすためのプランアドオンの料金（店舗、ユーザー、製品、顧客、注文）",
+    "addonPriceValue": "料金についてはお問い合わせください",
+    "close": "閉じる",
+    "additionalPricingNote": "追加アカウントおよびアドオン料金の詳細"
   },
   "footer": {
     "description": "AnyRent - ベトナムのトップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。アオザイレンタル、ウェディングドレスレンタル、設備レンタル、車両レンタル、衣装レンタル、プリンターレンタルの専門ソリューション。効率的なレンタル注文管理、レンタル在庫管理、顧客管理。",

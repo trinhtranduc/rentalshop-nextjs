@@ -208,7 +208,16 @@
     "support24": "24/7支持",
     "dataBackup": "数据备份",
     "freeUpdates": "免费更新",
-    "training": "培训"
+    "training": "培训",
+    "additionalPricingTitle": "附加定价信息",
+    "additionalAccountPrice": "附加账户价格",
+    "additionalAccountDescription": "超出计划限制的每个附加用户账户的价格",
+    "additionalAccountPriceValue": "30,000 越南盾/月",
+    "addonPrice": "附加组件价格",
+    "addonDescription": "用于增加限制（门店、用户、产品、客户、订单）的计划附加组件价格",
+    "addonPriceValue": "联系了解价格",
+    "close": "关闭",
+    "additionalPricingNote": "了解更多关于附加账户和附加组件定价的信息"
   },
   "footer": {
     "description": "AnyRent - 越南领先的租赁店管理软件和租赁管理系统。适用于旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁的专业解决方案。高效的租赁订单管理、租赁库存管理和客户管理。",

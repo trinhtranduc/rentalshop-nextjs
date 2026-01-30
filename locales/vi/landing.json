@@ -208,7 +208,16 @@
     "support24": "Hỗ trợ 24/7",
     "dataBackup": "Sao lưu dữ liệu",
     "freeUpdates": "Cập nhật miễn phí",
-    "training": "Đào tạo"
+    "training": "Đào tạo",
+    "additionalPricingTitle": "Thông tin giá bổ sung",
+    "additionalAccountPrice": "Giá tài khoản bổ sung",
+    "additionalAccountDescription": "Giá cho mỗi tài khoản người dùng bổ sung vượt quá giới hạn gói",
+    "additionalAccountPriceValue": "30.000 VNĐ/tháng",
+    "addonPrice": "Giá addon",
+    "addonDescription": "Giá cho các addon gói để tăng giới hạn (cửa hàng, người dùng, sản phẩm, khách hàng, đơn hàng)",
+    "addonPriceValue": "Liên hệ để biết giá",
+    "close": "Đóng",
+    "additionalPricingNote": "Tìm hiểu thêm về giá tài khoản bổ sung và addon"
   },
   "footer": {
     "description": "AnyRent - Phần mềm quản lý cửa hàng cho thuê và hệ thống quản lý cho thuê hàng đầu tại Việt Nam. Giải pháp chuyên nghiệp cho quản lý cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng hiệu quả.",

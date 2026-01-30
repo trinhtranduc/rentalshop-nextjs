@@ -208,7 +208,16 @@
     "support24": "24/7 Support",
     "dataBackup": "Data Backup",
     "freeUpdates": "Free Updates",
-    "training": "Training"
+    "training": "Training",
+    "additionalPricingTitle": "Additional Pricing Information",
+    "additionalAccountPrice": "Additional Account Price",
+    "additionalAccountDescription": "Price for each additional user account beyond the plan limit",
+    "additionalAccountPriceValue": "30,000 VND/month",
+    "addonPrice": "Addon Price",
+    "addonDescription": "Price for plan addons to increase limits (outlets, users, products, customers, orders)",
+    "addonPriceValue": "Contact for pricing",
+    "close": "Close",
+    "additionalPricingNote": "Learn more about additional account and addon pricing"
   },
   "footer": {
     "description": "AnyRent - Leading rental shop management software and rental management system in Vietnam. Professional solution for ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Efficient rental order management, rental inventory management, and customer management.",

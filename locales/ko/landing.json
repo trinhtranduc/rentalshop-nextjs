@@ -208,7 +208,16 @@
     "support24": "24/7 지원",
     "dataBackup": "데이터 백업",
     "freeUpdates": "무료 업데이트",
-    "training": "교육"
+    "training": "교육",
+    "additionalPricingTitle": "추가 가격 정보",
+    "additionalAccountPrice": "추가 계정 가격",
+    "additionalAccountDescription": "플랜 제한을 초과하는 각 추가 사용자 계정의 가격",
+    "additionalAccountPriceValue": "월 30,000 동",
+    "addonPrice": "애드온 가격",
+    "addonDescription": "제한을 늘리기 위한 플랜 애드온 가격 (매장, 사용자, 제품, 고객, 주문)",
+    "addonPriceValue": "가격 문의",
+    "close": "닫기",
+    "additionalPricingNote": "추가 계정 및 애드온 가격에 대해 자세히 알아보기"
   },
   "footer": {
     "description": "AnyRent - 베트남의 선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈을 위한 전문 솔루션. 효율적인 렌탈 주문 관리, 렌탈 재고 관리 및 고객 관리.",
