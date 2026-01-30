@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json yarn.lock ./
 
 # Copy all workspace package.json files (for proper dependency resolution)
+COPY packages/ai-service/package.json ./packages/ai-service/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/constants/package.json ./packages/constants/
 COPY packages/database/package.json ./packages/database/
