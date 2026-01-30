@@ -530,6 +530,14 @@ export async function changePlan(
   
   // Send email notification (non-blocking)
   if (updatedSubscription.merchant?.email) {
+    console.log('📨 [Subscription] Sending plan change email...', {
+      to: updatedSubscription.merchant.email,
+      merchantName: updatedSubscription.merchant.name,
+      oldPlan: oldPlanName,
+      newPlan: plan.name,
+      provider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
     sendPlanChangeEmail({
       merchantName: updatedSubscription.merchant.name || 'Quý khách',
       email: updatedSubscription.merchant.email,
@@ -540,10 +548,21 @@ export async function changePlan(
       billingInterval,
       periodStart: newPeriodStart,
       periodEnd: newPeriodEnd
-    }).catch((error) => {
-      console.error('Failed to send plan change email:', error);
-      // Don't throw - email failure shouldn't break the subscription update
-    });
+    })
+      .then((result) => {
+        console.log('📬 [Subscription] Plan change email result:', {
+          success: result.success,
+          error: result.error,
+          messageId: result.messageId,
+          provider: process.env.EMAIL_PROVIDER
+        });
+      })
+      .catch((error) => {
+        console.error('❌ [Subscription] Failed to send plan change email:', error);
+        // Don't throw - email failure shouldn't break the subscription update
+      });
+  } else {
+    console.warn('⚠️ [Subscription] Cannot send plan change email: merchant email not found');
   }
   
   // Add enhanced subscription period information
@@ -972,6 +991,14 @@ export async function renewSubscription(
 
   // 5. Send email notification (non-blocking)
   if (result.updatedSubscription.merchant?.email) {
+    console.log('📨 [Subscription] Sending renewal email...', {
+      to: result.updatedSubscription.merchant.email,
+      merchantName: result.updatedSubscription.merchant.name,
+      planName: result.updatedSubscription.plan?.name,
+      paymentMethod: result.payment.method,
+      provider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
     sendSubscriptionRenewalEmail({
       merchantName: result.updatedSubscription.merchant.name || 'Quý khách',
       email: result.updatedSubscription.merchant.email,
@@ -982,10 +1009,21 @@ export async function renewSubscription(
       periodEnd: newPeriodEnd,
       paymentMethod: result.payment.method,
       transactionId: result.payment.transactionId || undefined
-    }).catch((error) => {
-      console.error('Failed to send subscription renewal email:', error);
-      // Don't throw - email failure shouldn't break the renewal
-    });
+    })
+      .then((result) => {
+        console.log('📬 [Subscription] Renewal email result:', {
+          success: result.success,
+          error: result.error,
+          messageId: result.messageId,
+          provider: process.env.EMAIL_PROVIDER
+        });
+      })
+      .catch((error) => {
+        console.error('❌ [Subscription] Failed to send renewal email:', error);
+        // Don't throw - email failure shouldn't break the renewal
+      });
+  } else {
+    console.warn('⚠️ [Subscription] Cannot send renewal email: merchant email not found');
   }
 
   // 6. Return formatted response
