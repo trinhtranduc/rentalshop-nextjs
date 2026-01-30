@@ -177,43 +177,51 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
-  // Support word-by-word search: "Áo dài đỏ" matches products with "ao", "dai", or "do"
+  // Support word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
   // Case-insensitive and diacritics-insensitive
+  // AND logic: product must contain ALL words in name or description
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
     
     // Split query into individual words
-    const words = searchTerm.split(/\s+/).filter(word => word.length > 0);
+    const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
     
     if (words.length > 0) {
-      const searchConditions: any[] = [];
+      const andConditions: any[] = [];
       
-      // For each word, create search conditions (OR logic: any word match = product match)
+      // For each word, create condition: word must appear in name OR description
+      // ALL words must be present (AND logic)
       for (const word of words) {
         const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
         const originalWord = word.toLowerCase();
         
-        // Search for original word (with diacritics)
-        searchConditions.push(
+        // Word must be in name OR description (with diacritics)
+        const wordConditions: any[] = [
           { name: { contains: originalWord, mode: 'insensitive' } },
           { description: { contains: originalWord, mode: 'insensitive' } }
-        );
+        ];
         
-        // Search for normalized word (without diacritics) if different
+        // Add normalized word search if different from original
         if (normalizedWord !== originalWord) {
-          searchConditions.push(
+          wordConditions.push(
             { name: { contains: normalizedWord, mode: 'insensitive' } },
             { description: { contains: normalizedWord, mode: 'insensitive' } }
           );
         }
+        
+        // Each word must be found (AND logic)
+        andConditions.push({ OR: wordConditions });
       }
       
-      // Barcode is exact match (not word-by-word)
-      searchConditions.push({ barcode: { equals: searchTerm } });
+      // Barcode is exact match (not word-by-word) - add as OR condition
+      const barcodeCondition = { barcode: { equals: searchTerm } };
       
-      // OR logic: product matches if ANY word is found in name or description
-      where.OR = searchConditions;
+      // Product matches if: (ALL words found) OR (barcode matches)
+      where.OR = [
+        { AND: andConditions },
+        barcodeCondition
+      ];
     }
   }
 
@@ -1297,42 +1305,50 @@ export const simplifiedProducts = {
       }
     }
     
-    // Text search - word-by-word search: "Áo dài đỏ" matches products with "ao", "dai", or "do"
+    // Text search - word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
     // Case-insensitive and diacritics-insensitive
+    // AND logic: product must contain ALL words in name or description
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
       
       // Split query into individual words
-      const words = searchTerm.split(/\s+/).filter(word => word.length > 0);
+      const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
       
       if (words.length > 0) {
-        const searchConditions: any[] = [];
+        const andConditions: any[] = [];
         
-        // For each word, create search conditions (OR logic: any word match = product match)
+        // For each word, create condition: word must appear in name OR description
+        // ALL words must be present (AND logic)
         for (const word of words) {
           const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
           const originalWord = word.toLowerCase();
           
-          // Search for original word (with diacritics)
-          searchConditions.push(
+          // Word must be in name OR description (with diacritics)
+          const wordConditions: any[] = [
             { name: { contains: originalWord, mode: 'insensitive' } },
             { description: { contains: originalWord, mode: 'insensitive' } }
-          );
+          ];
           
-          // Search for normalized word (without diacritics) if different
+          // Add normalized word search if different from original
           if (normalizedWord !== originalWord) {
-            searchConditions.push(
+            wordConditions.push(
               { name: { contains: normalizedWord, mode: 'insensitive' } },
               { description: { contains: normalizedWord, mode: 'insensitive' } }
             );
           }
+          
+          // Each word must be found (AND logic)
+          andConditions.push({ OR: wordConditions });
         }
         
-        // Barcode is exact match (not word-by-word)
-        searchConditions.push({ barcode: { contains: searchTerm, mode: 'insensitive' } });
+        // Barcode is exact match (not word-by-word) - add as OR condition
+        const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
         
-        // OR logic: product matches if ANY word is found in name or description
-        where.OR = searchConditions;
+        // Product matches if: (ALL words found) OR (barcode matches)
+        where.OR = [
+          { AND: andConditions },
+          barcodeCondition
+        ];
       }
     }
 
