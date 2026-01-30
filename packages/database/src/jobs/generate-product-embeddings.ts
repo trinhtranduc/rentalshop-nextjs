@@ -72,12 +72,21 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     if (!pythonApiUrl) {
       console.error(`❌ PYTHON_EMBEDDING_API_URL is not set!`);
       console.error(`   This is required for generating embeddings`);
+      console.error(`   Current environment variables:`);
+      console.error(`     - NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+      console.error(`     - APP_ENV: ${process.env.APP_ENV || 'undefined'}`);
+      console.error(`     - PYTHON_EMBEDDING_API_URL: ${process.env.PYTHON_EMBEDDING_API_URL || 'NOT SET'}`);
+      console.error(`   💡 Fix: Set PYTHON_EMBEDDING_API_URL in your environment variables`);
       throw new Error('PYTHON_EMBEDDING_API_URL must be set to generate embeddings');
     }
 
     // Initialize services
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
+    
+    // Log collection name for debugging
+    console.log(`   🔍 Vector store collection: ${(vectorStore as any).collectionName}`);
+    console.log(`   🔍 Current NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
 
     // Initialize collection if needed (creates collection and indexes)
     try {

@@ -30,12 +30,16 @@ export class ProductVectorStore {
   private collectionName: string;
 
   constructor() {
-    // Determine collection name based on environment
-    const env = process.env.NODE_ENV || process.env.APP_ENV || 'development';
-    const isProduction = env === 'production' || env === 'prod';
+    // Determine collection name based on NODE_ENV
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    const isProduction = nodeEnv === 'production' || nodeEnv === 'prod';
     
     this.collectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
-    console.log(`📦 Using Qdrant collection: ${this.collectionName} (environment: ${env})`);
+    console.log(`📦 Using Qdrant collection: ${this.collectionName}`, {
+      NODE_ENV: nodeEnv,
+      isProduction: isProduction,
+      '⚠️ If this is wrong, check NODE_ENV on server': 'NODE_ENV should be "development" for dev server'
+    });
     
     // Sanitize QDRANT_URL and QDRANT_API_KEY to avoid Unicode issues
     const qdrantUrl = (process.env.QDRANT_URL || 'http://localhost:6333')
@@ -437,13 +441,31 @@ export class ProductVectorStore {
 
 // Singleton instance
 let vectorStore: ProductVectorStore | null = null;
+let cachedCollectionName: string | null = null;
 
 /**
  * Get singleton instance của vector store
+ * Recreates instance if NODE_ENV changed (to use correct collection)
  */
 export function getVectorStore(): ProductVectorStore {
-  if (!vectorStore) {
+  // Determine expected collection name based on current NODE_ENV
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const isProduction = nodeEnv === 'production' || nodeEnv === 'prod';
+  const expectedCollectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
+  
+  // Recreate instance if collection name changed (NODE_ENV changed)
+  if (!vectorStore || cachedCollectionName !== expectedCollectionName) {
+    if (vectorStore && cachedCollectionName !== expectedCollectionName) {
+      console.log(`🔄 NODE_ENV changed, recreating vector store instance`, {
+        oldCollection: cachedCollectionName,
+        newCollection: expectedCollectionName,
+        oldNODE_ENV: cachedCollectionName === 'product-images-pro' ? 'production' : 'development',
+        newNODE_ENV: nodeEnv
+      });
+    }
     vectorStore = new ProductVectorStore();
+    cachedCollectionName = expectedCollectionName;
   }
+  
   return vectorStore;
 }

@@ -510,8 +510,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       console.log(`   Product ID (publicId): ${product.id}`);
       console.log(`   Image URLs:`, committedImageUrls.map((url: string) => url.substring(0, 60) + '...'));
       
+      // Check environment variables before starting
+      const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
+      const qdrantUrl = process.env.QDRANT_URL;
+      console.log(`   Environment check:`, {
+        PYTHON_EMBEDDING_API_URL: pythonApiUrl ? `${pythonApiUrl.substring(0, 50)}...` : '❌ NOT SET',
+        QDRANT_URL: qdrantUrl ? `${qdrantUrl.substring(0, 50)}...` : '❌ NOT SET',
+        NODE_ENV: process.env.NODE_ENV || 'undefined',
+        APP_ENV: process.env.APP_ENV || 'undefined'
+      });
+      
       try {
         const { generateProductEmbedding } = await import('@rentalshop/database/server');
+        console.log(`   ✅ Successfully imported generateProductEmbedding function`);
+        
         // Run in background (don't block response)
         generateProductEmbedding(product.id)
           .then(() => {
@@ -521,13 +533,19 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             console.error(`❌ Error generating embedding for product ${product.id}:`, error);
             console.error('   Error message:', error?.message);
             console.error('   Error name:', error?.name);
+            console.error('   Error code:', error?.code);
             console.error('   Stack:', error?.stack);
+            console.error('   Environment at error time:', {
+              PYTHON_EMBEDDING_API_URL: process.env.PYTHON_EMBEDDING_API_URL ? 'SET' : 'NOT SET',
+              QDRANT_URL: process.env.QDRANT_URL ? 'SET' : 'NOT SET'
+            });
           });
       } catch (error: any) {
         console.error('❌ Error starting embedding generation:', error);
         console.error('   Error message:', error?.message);
         console.error('   Error name:', error?.name);
         console.error('   Stack:', error?.stack);
+        console.error('   This usually means the import failed or environment variables are missing');
         // Don't fail the request if embedding generation fails
       }
     } else {
