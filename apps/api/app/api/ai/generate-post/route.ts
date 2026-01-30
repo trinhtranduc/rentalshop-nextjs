@@ -3,7 +3,6 @@ import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { ContentGenerator } from '@rentalshop/ai-service';
 import { z } from 'zod';
-import { API } from '@rentalshop/constants';
 
 const generatePostSchema = z.object({
   keyword: z.string().min(1).max(100),

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.16.2",
+    "@rentalshop/ai-service": "file:../../packages/ai-service",
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/database": "file:../../packages/database",
     "@rentalshop/errors": "file:../../packages/errors",
