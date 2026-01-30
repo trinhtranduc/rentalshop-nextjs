@@ -57,7 +57,8 @@ export default function PostsPage() {
     };
 
     fetchPosts();
-  }, [search, status, page, limit, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, status, page, limit]);
 
   const updateURL = useCallback((updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());

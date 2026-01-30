@@ -57,7 +57,8 @@ export default function EditPostPage() {
     };
 
     fetchData();
-  }, [postId, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]);
 
   const handleSubmit = async (data: PostUpdateInput) => {
     if (!postId) return;
