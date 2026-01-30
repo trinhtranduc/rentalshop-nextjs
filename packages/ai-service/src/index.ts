@@ -15,5 +15,6 @@ export { generateBlogPostPrompt, generateImproveContentPrompt } from './llm/prom
 export type { BlogPostPromptParams } from './llm/prompt-templates';
 
 // SEO Analysis
-export { analyzeSEO, calculateSEOScore } from './seo/analyzer';
+export { analyzeSEO } from './seo/analyzer';
+export { calculateSEOScore } from './seo/scorer';
 export type { SEOAnalysis, SEOIssue } from './seo/analyzer';
