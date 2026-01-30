@@ -262,19 +262,24 @@ export default function MerchantOrdersPage() {
 
   // Handle batch delete
   const handleBatchDelete = useCallback(async (orderIds: number[]) => {
-    // Validate all selected orders are CANCELLED
-    const selectedOrders = orders.filter(o => orderIds.includes(o.id));
-    const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
+    // ADMIN can delete any orders, others can only delete CANCELLED orders
+    const isAdmin = user?.role === 'ADMIN';
     
-    if (!allCancelled) {
-      toastError('Error', 'Only CANCELLED orders can be deleted');
-      return;
+    if (!isAdmin) {
+      // Validate all selected orders are CANCELLED for non-admin users
+      const selectedOrders = orders.filter(o => orderIds.includes(o.id));
+      const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
+      
+      if (!allCancelled) {
+        toastError('Error', 'Only CANCELLED orders can be deleted');
+        return;
+      }
     }
 
     // Set orders to delete and show confirmation dialog
     setOrdersToDeleteBatch(orderIds);
     setShowBatchDeleteConfirmDialog(true);
-  }, [orders, toastError]);
+  }, [orders, user?.role, toastError]);
 
   // Confirm batch delete
   const confirmBatchDelete = useCallback(async () => {
@@ -395,7 +400,9 @@ export default function MerchantOrdersPage() {
         type="danger"
         title="Delete Selected Orders"
         description={
-          `Are you sure you want to delete the selected orders?\n\n📋 ${ordersToDeleteBatch.length} orders selected\n\nThis action cannot be undone. Only CANCELLED orders can be deleted.`
+          user?.role === 'ADMIN'
+            ? `Are you sure you want to delete the selected orders?\n\n📋 ${ordersToDeleteBatch.length} orders selected\n\nThis action cannot be undone.`
+            : `Are you sure you want to delete the selected orders?\n\n📋 ${ordersToDeleteBatch.length} orders selected\n\nThis action cannot be undone. Only CANCELLED orders can be deleted.`
         }
         confirmText="Delete"
         cancelText="Cancel"
