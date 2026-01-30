@@ -58,7 +58,9 @@ export const PRODUCT_COLUMN_MAPPING: Record<string, string[]> = {
  * Customer validation schema for Excel import
  */
 const customerExcelSchema = z.object({
+  // firstName is required - must be non-empty string
   firstName: z.string().min(1, 'First name is required'),
+  // All other fields are optional
   lastName: z.string().optional(),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
   phone: z.string().optional(),
@@ -103,12 +105,24 @@ export function validateCustomers(
   excelData.forEach((row, index) => {
     const rowNumber = index + 2; // +2 because Excel row 1 is header, data starts at row 2
 
-    // Skip empty rows
-    if (!row.firstName && !row.lastName && !row.email && !row.phone) {
-      return;
+    // Preprocess row: convert all values to strings (Excel parser may return numbers)
+    const processedRow: any = {};
+    Object.keys(row).forEach((key) => {
+      const value = row[key];
+      if (value === null || value === undefined) {
+        processedRow[key] = undefined;
+      } else {
+        // Convert to string and trim
+        processedRow[key] = String(value).trim();
+      }
+    });
+
+    // Skip empty rows (only firstName is required, so check if firstName exists)
+    if (!processedRow.firstName || processedRow.firstName === '') {
+      return; // Skip rows without firstName
     }
 
-    const result = customerExcelSchema.safeParse(row);
+    const result = customerExcelSchema.safeParse(processedRow);
 
     if (!result.success) {
       result.error.errors.forEach((error) => {

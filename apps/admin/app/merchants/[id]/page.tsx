@@ -164,32 +164,39 @@ export default function MerchantDetailPage() {
   };
 
   const handleExtend = async (extendData: any) => {
-    if (!extendData.paymentData) {
-      // Old extend flow (fallback)
-      console.log('Old extend flow');
-      return;
-    }
-
-    // New renewal flow with payment tracking
     try {
-      const subscriptionId = extendData.subscription.id;
-      
-      const response = await fetch(`/api/subscriptions/${subscriptionId}/renew`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(extendData.paymentData)
+      const subscription = extendData.subscription;
+      if (!subscription) {
+        throw new Error('Subscription is required');
+      }
+
+      // Use newEndDate directly if provided, otherwise calculate from duration
+      let newEndDate: Date;
+      if (extendData.newEndDate) {
+        newEndDate = new Date(extendData.newEndDate);
+      } else {
+        // Fallback: Calculate new end date from current period end + duration
+        const currentEnd = subscription.currentPeriodEnd 
+          ? new Date(subscription.currentPeriodEnd)
+          : new Date();
+        const duration = extendData.duration || 1;
+        newEndDate = new Date(currentEnd);
+        newEndDate.setMonth(newEndDate.getMonth() + duration);
+      }
+
+      // Use extend API endpoint (same as subscription page)
+      const result = await subscriptionsApi.extend(subscription.id, {
+        newEndDate: newEndDate,
+        amount: extendData.totalPrice || 0,
+        method: extendData.method || 'MANUAL_EXTENSION',
+        description: extendData.description || `Extended by ${extendData.duration || 1} month(s)`
       });
 
-      const result = await response.json();
-      
       if (result.success) {
-        console.log('Subscription renewed successfully');
+        console.log('Subscription extended successfully');
         fetchMerchantDetails();
       } else {
-        throw new Error(result.message || 'Failed to renew subscription');
+        throw new Error(result.message || 'Failed to extend subscription');
       }
     } catch (error) {
       console.error('Error extending subscription:', error);

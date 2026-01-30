@@ -186,11 +186,17 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         };
 
         const orConditions: any[] = [];
-        if (validatedCustomer.data.phone && validatedCustomer.data.phone.trim() !== '') {
-          orConditions.push({ phone: validatedCustomer.data.phone.trim() });
+        if (validatedCustomer.data.phone) {
+          const phoneStr = String(validatedCustomer.data.phone).trim();
+          if (phoneStr !== '') {
+            orConditions.push({ phone: phoneStr });
+          }
         }
-        if (validatedCustomer.data.email && validatedCustomer.data.email.trim() !== '') {
-          orConditions.push({ email: validatedCustomer.data.email.trim() });
+        if (validatedCustomer.data.email) {
+          const emailStr = String(validatedCustomer.data.email).trim();
+          if (emailStr !== '') {
+            orConditions.push({ email: emailStr });
+          }
         }
 
         if (orConditions.length > 0) {
@@ -242,16 +248,16 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           const customer = await tx.customer.create({
             data: {
                 firstName: validatedCustomer.data.firstName || '',
-                lastName: validatedCustomer.data.lastName && validatedCustomer.data.lastName.trim() !== '' ? validatedCustomer.data.lastName.trim() : null,
-                phone: validatedCustomer.data.phone && validatedCustomer.data.phone.trim() !== '' ? validatedCustomer.data.phone.trim() : null,
-                email: validatedCustomer.data.email && validatedCustomer.data.email.trim() !== '' ? validatedCustomer.data.email.trim() : null,
-                address: validatedCustomer.data.address && validatedCustomer.data.address.trim() !== '' ? validatedCustomer.data.address.trim() : null,
-                city: validatedCustomer.data.city && validatedCustomer.data.city.trim() !== '' ? validatedCustomer.data.city.trim() : null,
-                state: validatedCustomer.data.state && validatedCustomer.data.state.trim() !== '' ? validatedCustomer.data.state.trim() : null,
-                zipCode: validatedCustomer.data.zipCode && validatedCustomer.data.zipCode.trim() !== '' ? validatedCustomer.data.zipCode.trim() : null,
-                country: validatedCustomer.data.country && validatedCustomer.data.country.trim() !== '' ? validatedCustomer.data.country.trim() : null,
-                idNumber: validatedCustomer.data.idNumber && validatedCustomer.data.idNumber.trim() !== '' ? validatedCustomer.data.idNumber.trim() : null,
-                notes: validatedCustomer.data.notes && validatedCustomer.data.notes.trim() !== '' ? validatedCustomer.data.notes.trim() : null,
+                lastName: validatedCustomer.data.lastName ? String(validatedCustomer.data.lastName).trim() || null : null,
+                phone: validatedCustomer.data.phone ? String(validatedCustomer.data.phone).trim() || null : null,
+                email: validatedCustomer.data.email ? String(validatedCustomer.data.email).trim() || null : null,
+                address: validatedCustomer.data.address ? String(validatedCustomer.data.address).trim() || null : null,
+                city: validatedCustomer.data.city ? String(validatedCustomer.data.city).trim() || null : null,
+                state: validatedCustomer.data.state ? String(validatedCustomer.data.state).trim() || null : null,
+                zipCode: validatedCustomer.data.zipCode ? String(validatedCustomer.data.zipCode).trim() || null : null,
+                country: validatedCustomer.data.country ? String(validatedCustomer.data.country).trim() || null : null,
+                idNumber: validatedCustomer.data.idNumber ? String(validatedCustomer.data.idNumber).trim() || null : null,
+                notes: validatedCustomer.data.notes ? String(validatedCustomer.data.notes).trim() || null : null,
                 dateOfBirth: validatedCustomer.dateOfBirth,
                 idType: validatedCustomer.data.idType || null,
               isActive: true,

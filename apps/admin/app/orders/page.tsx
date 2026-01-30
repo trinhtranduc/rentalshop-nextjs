@@ -263,15 +263,15 @@ export default function AdminOrdersPage() {
     
     if (!isAdmin) {
       // Validate all selected orders are CANCELLED for non-admin users
-      const selectedOrders = data?.orders.filter(o => orderIds.includes(o.id)) || [];
-      const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
-      
-      if (!allCancelled) {
-        toastError(
-          'Error',
-          'Only CANCELLED orders can be deleted'
-        );
-        return;
+    const selectedOrders = data?.orders.filter(o => orderIds.includes(o.id)) || [];
+    const allCancelled = selectedOrders.every(o => o.status === 'CANCELLED');
+    
+    if (!allCancelled) {
+      toastError(
+        'Error',
+        'Only CANCELLED orders can be deleted'
+      );
+      return;
       }
     }
 

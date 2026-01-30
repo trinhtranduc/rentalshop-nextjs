@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -453,7 +453,17 @@ export async function changePlan(
   billingInterval: BillingInterval = 'monthly'
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId }
+    where: { id: subscriptionId },
+    include: {
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        }
+      },
+      plan: true
+    }
   });
 
   if (!subscription) {
@@ -467,6 +477,9 @@ export async function changePlan(
   if (!plan) {
     throw new Error('Plan not found');
   }
+
+  // Get old plan name for email
+  const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
   const convertedPlan = convertPrismaPlanToPlan(plan);
   const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
@@ -514,6 +527,24 @@ export async function changePlan(
   // No need to update merchant - subscription.status is the single source of truth
 
   const result = transformSubscriptionFromDb(updatedSubscription);
+  
+  // Send email notification (non-blocking)
+  if (updatedSubscription.merchant?.email) {
+    sendPlanChangeEmail({
+      merchantName: updatedSubscription.merchant.name || 'Quý khách',
+      email: updatedSubscription.merchant.email,
+      oldPlanName,
+      newPlanName: plan.name,
+      amount,
+      currency: updatedSubscription.currency || 'VND',
+      billingInterval,
+      periodStart: newPeriodStart,
+      periodEnd: newPeriodEnd
+    }).catch((error) => {
+      console.error('Failed to send plan change email:', error);
+      // Don't throw - email failure shouldn't break the subscription update
+    });
+  }
   
   // Add enhanced subscription period information
   return {
@@ -939,7 +970,25 @@ export async function renewSubscription(
     return { updatedSubscription, payment };
   });
 
-  // 5. Return formatted response
+  // 5. Send email notification (non-blocking)
+  if (result.updatedSubscription.merchant?.email) {
+    sendSubscriptionRenewalEmail({
+      merchantName: result.updatedSubscription.merchant.name || 'Quý khách',
+      email: result.updatedSubscription.merchant.email,
+      planName: result.updatedSubscription.plan?.name || 'Unknown Plan',
+      amount: result.payment.amount,
+      currency: result.payment.currency || 'VND',
+      periodStart: newPeriodStart,
+      periodEnd: newPeriodEnd,
+      paymentMethod: result.payment.method,
+      transactionId: result.payment.transactionId || undefined
+    }).catch((error) => {
+      console.error('Failed to send subscription renewal email:', error);
+      // Don't throw - email failure shouldn't break the renewal
+    });
+  }
+
+  // 6. Return formatted response
   return {
     subscription: transformSubscriptionFromDb(result.updatedSubscription),
     payment: {

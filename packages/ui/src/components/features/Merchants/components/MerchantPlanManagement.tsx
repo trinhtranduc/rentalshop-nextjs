@@ -225,12 +225,16 @@ export function MerchantPlanManagement({
     const billingInterval: BillingInterval = (cycleConfig?.value || 'monthly') as BillingInterval;
 
     // Convert to MerchantPlanManagement.onExtend format
+    // Include newEndDate for direct use in extend API
     const extendData = {
       subscription,
+      newEndDate: data.newEndDate, // Include newEndDate directly from dialog
       duration: months,
       billingInterval, // Use BillingInterval directly
       discount: 0,
-      totalPrice: data.amount
+      totalPrice: data.amount,
+      method: data.method,
+      description: data.description
     };
 
     onExtend?.(extendData);

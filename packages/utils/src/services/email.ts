@@ -30,6 +30,30 @@ export interface PasswordResetData {
   resetUrl: string;
 }
 
+export interface PlanChangeData {
+  merchantName: string;
+  email: string;
+  oldPlanName: string;
+  newPlanName: string;
+  amount: number;
+  currency: string;
+  billingInterval: string;
+  periodStart: Date;
+  periodEnd: Date;
+}
+
+export interface SubscriptionRenewalData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  periodStart: Date;
+  periodEnd: Date;
+  paymentMethod: string;
+  transactionId?: string;
+}
+
 // ============================================================================
 // EMAIL SERVICE
 // ============================================================================
@@ -449,3 +473,223 @@ export async function sendPasswordResetEmail(
   });
 }
 
+/**
+ * Generate plan change notification email HTML
+ */
+export function generatePlanChangeEmail(data: PlanChangeData): string {
+  const { merchantName, oldPlanName, newPlanName, amount, currency, billingInterval, periodStart, periodEnd } = data;
+  
+  const formatCurrency = (amount: number, currency: string) => {
+    if (currency === 'VND') {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('vi-VN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(new Date(date));
+  };
+
+  const getBillingIntervalText = (interval: string) => {
+    const intervals: Record<string, string> = {
+      'monthly': 'hàng tháng',
+      'quarterly': '3 tháng',
+      'semi_annual': '6 tháng',
+      'annual': 'hàng năm'
+    };
+    return intervals[interval] || interval;
+  };
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thay đổi gói đăng ký</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+    </div>
+    
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Gói đăng ký đã được thay đổi</h2>
+    
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${merchantName}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      Gói đăng ký của bạn đã được thay đổi thành công. Dưới đây là thông tin chi tiết:
+    </p>
+    
+    <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Gói cũ:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${oldPlanName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Gói mới:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #2563eb;">${newPlanName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Chu kỳ thanh toán:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${getBillingIntervalText(billingInterval)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày bắt đầu:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodStart)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày kết thúc:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodEnd)}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="color: #374151; font-size: 16px;">
+      Gói đăng ký mới của bạn đã được kích hoạt và sẽ có hiệu lực ngay lập tức. 
+      Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói mới.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send plan change notification email
+ */
+export async function sendPlanChangeEmail(
+  data: PlanChangeData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generatePlanChangeEmail(data);
+
+  return await sendEmail({
+    to: data.email,
+    subject: `Gói đăng ký đã được thay đổi - ${data.newPlanName}`,
+    html,
+  });
+}
+
+/**
+ * Generate subscription renewal notification email HTML
+ */
+export function generateSubscriptionRenewalEmail(data: SubscriptionRenewalData): string {
+  const { merchantName, planName, amount, currency, periodStart, periodEnd, paymentMethod, transactionId } = data;
+  
+  const formatCurrency = (amount: number, currency: string) => {
+    if (currency === 'VND') {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('vi-VN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(new Date(date));
+  };
+
+  const getPaymentMethodText = (method: string) => {
+    const methods: Record<string, string> = {
+      'STRIPE': 'Thẻ tín dụng/Ghi nợ',
+      'TRANSFER': 'Chuyển khoản ngân hàng',
+      'CASH': 'Tiền mặt'
+    };
+    return methods[method] || method;
+  };
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gia hạn đăng ký thành công</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+    </div>
+    
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Gia hạn đăng ký thành công</h2>
+    
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${merchantName}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      Gói đăng ký của bạn đã được gia hạn thành công. Cảm ơn bạn đã tiếp tục sử dụng dịch vụ của chúng tôi!
+    </p>
+    
+    <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Gói đăng ký:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Phương thức thanh toán:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${getPaymentMethodText(paymentMethod)}</td>
+        </tr>
+        ${transactionId ? `
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Mã giao dịch:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827; font-family: monospace; font-size: 12px;">${transactionId}</td>
+        </tr>
+        ` : ''}
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày bắt đầu:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodStart)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày kết thúc:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodEnd)}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="color: #374151; font-size: 16px;">
+      Gói đăng ký của bạn đã được gia hạn và sẽ tiếp tục hoạt động cho đến ngày ${formatDate(periodEnd)}. 
+      Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói đăng ký.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send subscription renewal notification email
+ */
+export async function sendSubscriptionRenewalEmail(
+  data: SubscriptionRenewalData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generateSubscriptionRenewalEmail(data);
+
+  return await sendEmail({
+    to: data.email,
+    subject: `Gia hạn đăng ký thành công - ${data.planName}`,
+    html,
+  });
+}

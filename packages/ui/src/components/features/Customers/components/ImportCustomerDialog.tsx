@@ -199,7 +199,8 @@ export function ImportCustomerDialog({
           const rowNumber = row._originalRow || 1;
           
           // Validate firstName (required)
-          const firstName = (row.firstname || row.firstName || '').trim();
+          // Convert to string first (Excel parser may return number)
+          const firstName = String(row.firstname || row.firstName || '').trim();
           if (!firstName || firstName === '') {
             validationErrors.push({
               row: rowNumber,
@@ -208,7 +209,8 @@ export function ImportCustomerDialog({
           }
           
           // Check for duplicate phones
-          const phone = (row.phone || '').trim();
+          // Convert to string first (Excel parser may return number for phone)
+          const phone = String(row.phone || '').trim();
           if (phone) {
             if (phoneMap.has(phone)) {
               const existingRows = phoneMap.get(phone)!;
