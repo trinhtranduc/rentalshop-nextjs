@@ -177,29 +177,52 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
-  // Support both with and without Vietnamese diacritics
+  // Support word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
+  // Case-insensitive and diacritics-insensitive
+  // AND logic: product must contain ALL words in name or description
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
-    // Normalize Vietnamese text to support search without diacritics
-    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
     
-    // Search with both original and normalized terms to support diacritics-insensitive search
-    const searchConditions: any[] = [
-      { name: { contains: searchTerm, mode: 'insensitive' } },
-      { description: { contains: searchTerm, mode: 'insensitive' } },
-      { barcode: { equals: searchTerm } } // Barcode is usually exact match
-    ];
+    // Split query into individual words
+    const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
     
-    // Add normalized search if different from original
-    if (normalizedTerm !== searchTerm) {
-      searchConditions.push(
-        { name: { contains: normalizedTerm, mode: 'insensitive' } },
-        { description: { contains: normalizedTerm, mode: 'insensitive' } }
-      );
+    if (words.length > 0) {
+      const andConditions: any[] = [];
+      
+      // For each word, create condition: word must appear in name OR description
+      // ALL words must be present (AND logic)
+      for (const word of words) {
+        const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
+        const originalWord = word.toLowerCase();
+        
+        // Word must be in name OR description (with diacritics)
+        const wordConditions: any[] = [
+          { name: { contains: originalWord, mode: 'insensitive' } },
+          { description: { contains: originalWord, mode: 'insensitive' } }
+        ];
+        
+        // Add normalized word search if different from original
+        if (normalizedWord !== originalWord) {
+          wordConditions.push(
+            { name: { contains: normalizedWord, mode: 'insensitive' } },
+            { description: { contains: normalizedWord, mode: 'insensitive' } }
+          );
+        }
+        
+        // Each word must be found (AND logic)
+        andConditions.push({ OR: wordConditions });
+      }
+      
+      // Barcode is exact match (not word-by-word) - add as OR condition
+      const barcodeCondition = { barcode: { equals: searchTerm } };
+      
+      // Product matches if: (ALL words found) OR (barcode matches)
+      where.OR = [
+        { AND: andConditions },
+        barcodeCondition
+      ];
     }
-    
-    where.OR = searchConditions;
   }
 
   // If outletId is specified, only show products that have stock at that outlet
@@ -1282,26 +1305,51 @@ export const simplifiedProducts = {
       }
     }
     
-    // Text search (case-insensitive and diacritics-insensitive)
+    // Text search - word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
+    // Case-insensitive and diacritics-insensitive
+    // AND logic: product must contain ALL words in name or description
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
-      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
       
-      const searchConditions: any[] = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { barcode: { contains: searchTerm, mode: 'insensitive' } }
-      ];
+      // Split query into individual words
+      const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
       
-      // Add normalized search if different from original
-      if (normalizedTerm !== searchTerm) {
-        searchConditions.push(
-          { name: { contains: normalizedTerm, mode: 'insensitive' } },
-          { description: { contains: normalizedTerm, mode: 'insensitive' } }
-        );
+      if (words.length > 0) {
+        const andConditions: any[] = [];
+        
+        // For each word, create condition: word must appear in name OR description
+        // ALL words must be present (AND logic)
+        for (const word of words) {
+          const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
+          const originalWord = word.toLowerCase();
+          
+          // Word must be in name OR description (with diacritics)
+          const wordConditions: any[] = [
+            { name: { contains: originalWord, mode: 'insensitive' } },
+            { description: { contains: originalWord, mode: 'insensitive' } }
+          ];
+          
+          // Add normalized word search if different from original
+          if (normalizedWord !== originalWord) {
+            wordConditions.push(
+              { name: { contains: normalizedWord, mode: 'insensitive' } },
+              { description: { contains: normalizedWord, mode: 'insensitive' } }
+            );
+          }
+          
+          // Each word must be found (AND logic)
+          andConditions.push({ OR: wordConditions });
+        }
+        
+        // Barcode is exact match (not word-by-word) - add as OR condition
+        const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
+        
+        // Product matches if: (ALL words found) OR (barcode matches)
+        where.OR = [
+          { AND: andConditions },
+          barcodeCondition
+        ];
       }
-      
-      where.OR = searchConditions;
     }
 
     // Price range
