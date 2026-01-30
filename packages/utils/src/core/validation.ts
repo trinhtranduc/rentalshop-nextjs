@@ -695,26 +695,41 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
     // Debug: Get detailed user count info
     const allUsers = await prisma.user.findMany({
       where: { merchantId },
-      select: { id: true, email: true, deletedAt: true, role: true }
+      select: { id: true, email: true, deletedAt: true, role: true, isActive: true }
     });
-    const activeUsers = allUsers.filter(u => !u.deletedAt);
+    const nonDeletedUsers = allUsers.filter(u => !u.deletedAt);
+    const nonDeletedNonAdminUsers = nonDeletedUsers.filter(u => u.role !== USER_ROLE.ADMIN);
+    const adminUsers = allUsers.filter(u => u.role === USER_ROLE.ADMIN);
+    const deletedUsers = allUsers.filter(u => u.deletedAt);
     
     console.log(`🔍 getCurrentEntityCounts - Merchant ${merchantId}:`, {
       totalUsersInDB: allUsers.length,
-      activeUsers: activeUsers.length,
-      deletedUsers: allUsers.length - activeUsers.length,
+      nonDeletedUsers: nonDeletedUsers.length, // Users that are not deleted (active + inactive)
+      nonDeletedNonAdminUsers: nonDeletedNonAdminUsers.length, // Users that count toward limit (active + inactive, excluding ADMIN)
+      adminUsers: adminUsers.length, // ADMIN users (excluded from limit)
+      deletedUsers: deletedUsers.length, // Deleted users (excluded from limit)
       userDetails: allUsers.map(u => ({
         id: u.id,
         email: u.email,
         role: u.role,
-        deletedAt: u.deletedAt ? 'DELETED' : 'ACTIVE'
+        isActive: u.isActive,
+        deletedAt: u.deletedAt ? 'DELETED' : 'NOT_DELETED',
+        countsTowardLimit: u.role !== USER_ROLE.ADMIN && !u.deletedAt // Count both active and inactive, exclude deleted and ADMIN
       }))
     });
 
     const [outlets, users, products, customers, orders] = await Promise.all([
       prisma.outlet.count({ where: { merchantId } }),
-      // Exclude soft-deleted users (deletedAt = null) from count
-      prisma.user.count({ where: { merchantId, deletedAt: null } }),
+      // Exclude soft-deleted users (deletedAt = null) and ADMIN users from count
+      // Count both active and inactive users (isActive = true or false)
+      // ADMIN users are system-wide and should not count toward merchant limits
+      prisma.user.count({ 
+        where: { 
+          merchantId, 
+          deletedAt: null, // Only exclude deleted users
+          role: { not: USER_ROLE.ADMIN } // Exclude ADMIN users from limit count
+        } 
+      }),
       prisma.product.count({ where: { merchantId } }),
       prisma.customer.count({ where: { merchantId } }),
       // ✅ Count ALL orders including CANCELLED for plan limits
@@ -723,7 +738,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
 
     console.log(`📊 Entity counts for merchant ${merchantId}:`, {
       outlets,
-      users, // This should match activeUsers.length
+      users, // This should match nonDeletedNonAdminUsers.length (includes active + inactive, excludes deleted and ADMIN)
       products,
       customers,
       orders // ✅ Includes ALL orders (including CANCELLED) for plan limits
