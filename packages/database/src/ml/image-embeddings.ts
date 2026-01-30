@@ -5,12 +5,19 @@
  * - Avoids Node.js native memory corruption issues on Railway (free(): invalid size)
  *
  * Required env:
- * - USE_PYTHON_EMBEDDING_API=true
  * - PYTHON_EMBEDDING_API_URL=https://python-embedding-service-*.up.railway.app
+ * 
+ * Note: USE_PYTHON_EMBEDDING_API defaults to true (Python embedding service is the default)
  */
 
 function shouldUsePythonEmbeddingApi(): boolean {
-  return process.env.USE_PYTHON_EMBEDDING_API === 'true';
+  // Default to true (Python embedding service is the default and only supported method)
+  // Only return false if explicitly set to 'false'
+  const envValue = process.env.USE_PYTHON_EMBEDDING_API;
+  if (envValue === 'false') {
+    return false;
+  }
+  return true; // Default to true
 }
 
 function getPythonEmbeddingApiUrl(): string {
@@ -56,10 +63,7 @@ export class FashionImageEmbedding {
    * - Checks /health and ensures model is loaded on the Python service
    */
   async warmUp(): Promise<void> {
-    if (!shouldUsePythonEmbeddingApi()) {
-      throw new Error('USE_PYTHON_EMBEDDING_API must be true (Python embedding service is required).');
-    }
-
+    // Python embedding service is the default (shouldUsePythonEmbeddingApi() defaults to true)
     const baseUrl = getPythonEmbeddingApiUrl();
     const response = await fetch(`${baseUrl}/health`, { method: 'GET' });
     if (!response.ok) {
@@ -81,8 +85,9 @@ export class FashionImageEmbedding {
    * - Python (transformers + torch) is more stable for this workload
    *
    * Env:
-   * - USE_PYTHON_EMBEDDING_API=true
-   * - PYTHON_EMBEDDING_API_URL=https://<your-service>.up.railway.app
+   * - PYTHON_EMBEDDING_API_URL=https://<your-service>.up.railway.app (required)
+   * 
+   * Note: Python embedding service is the default (USE_PYTHON_EMBEDDING_API defaults to true)
    */
   private async generateEmbeddingViaPythonApi(imageBuffer: Buffer): Promise<number[]> {
     const baseUrl = getPythonEmbeddingApiUrl();
@@ -178,10 +183,7 @@ export class FashionImageEmbedding {
         inputBufferSize: imageBuffer.length
       });
 
-      if (!shouldUsePythonEmbeddingApi()) {
-        throw new Error('USE_PYTHON_EMBEDDING_API must be true (only Python embedding service is supported).');
-      }
-
+      // Python embedding service is the default (shouldUsePythonEmbeddingApi() defaults to true)
       const embedding = await this.generateEmbeddingViaPythonApi(imageBuffer);
       console.log('✅ Embedding generated successfully (Python API)');
       return embedding;
@@ -218,10 +220,7 @@ export class FashionImageEmbedding {
    */
   async generateEmbeddingsBatch(imageUrls: string[]): Promise<number[][]> {
     try {
-      if (!shouldUsePythonEmbeddingApi()) {
-        throw new Error('USE_PYTHON_EMBEDDING_API must be true (only Python embedding service is supported).');
-      }
-
+      // Python embedding service is the default (shouldUsePythonEmbeddingApi() defaults to true)
       // Python service currently supports single image per request.
       // Batch = parallel calls (kept simple; can be optimized later).
       return await Promise.all(imageUrls.map((url) => this.generateEmbedding(url)));

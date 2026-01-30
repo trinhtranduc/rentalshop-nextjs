@@ -63,17 +63,16 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     });
 
     // Check Python API configuration
-    const usePythonApi = process.env.USE_PYTHON_EMBEDDING_API === 'true';
+    // USE_PYTHON_EMBEDDING_API defaults to true (Python embedding service is the default)
     const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
     console.log(`   Python API config:`, {
-      USE_PYTHON_EMBEDDING_API: usePythonApi,
       PYTHON_EMBEDDING_API_URL: pythonApiUrl || 'NOT SET'
     });
 
-    if (!usePythonApi) {
-      console.error(`❌ USE_PYTHON_EMBEDDING_API is not set to 'true'!`);
-      console.error(`   Current value: ${process.env.USE_PYTHON_EMBEDDING_API || 'undefined'}`);
-      throw new Error('USE_PYTHON_EMBEDDING_API must be set to "true" to generate embeddings');
+    if (!pythonApiUrl) {
+      console.error(`❌ PYTHON_EMBEDDING_API_URL is not set!`);
+      console.error(`   This is required for generating embeddings`);
+      throw new Error('PYTHON_EMBEDDING_API_URL must be set to generate embeddings');
     }
 
     // Initialize services
@@ -150,11 +149,8 @@ export async function generateProductEmbedding(productId: number): Promise<void>
       
       // Update product to mark embedding as generated
       try {
-        await prisma.product.update({
-          where: { id: productId },
-          data: {
-            embeddingGeneratedAt: new Date()
-          }
+        await db.products.update(productId, {
+          embeddingGeneratedAt: new Date()
         });
         console.log(`✅ Updated product ${productId} with embeddingGeneratedAt timestamp`);
       } catch (updateError) {
