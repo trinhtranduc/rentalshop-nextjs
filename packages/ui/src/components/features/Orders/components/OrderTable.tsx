@@ -62,27 +62,31 @@ export const OrderTable = React.memo(function OrderTable({
   // Check if user can delete (not OUTLET_STAFF)
   const canDelete = userRole !== 'OUTLET_STAFF';
   
+  // Check if user is ADMIN (can delete any order)
+  const isAdmin = userRole === 'ADMIN';
+  
   // Show batch delete button if:
   // 1. User can delete (not OUTLET_STAFF)
   // 2. Has selected orders
-  // 3. All selected orders are CANCELLED
-  const showBatchDeleteButton = canDelete && selectedOrders.length > 0 && allSelectedAreCancelled;
+  // 3. ADMIN can delete any orders, others can only delete CANCELLED orders
+  const showBatchDeleteButton = canDelete && selectedOrders.length > 0 && (isAdmin || allSelectedAreCancelled);
   
   // Debug: Log order statuses and delete button visibility
   React.useEffect(() => {
     if (orders.length > 0) {
       console.log('📋 OrderTable - Order statuses:', orders.map(o => {
-        const canDelete = userRole !== 'OUTLET_STAFF' && o.status === 'CANCELLED';
+        const canDelete = userRole !== 'OUTLET_STAFF' && (isAdmin || o.status === 'CANCELLED');
         return { 
           orderNumber: o.orderNumber, 
           status: o.status,
           canEdit: o.status === 'RESERVED',
           canDelete,
-          userRole
+          userRole,
+          isAdmin
         };
       }));
     }
-  }, [orders, userRole]);
+  }, [orders, userRole, isAdmin]);
 
   if (orders.length === 0) {
     return (
@@ -378,11 +382,12 @@ export const OrderTable = React.memo(function OrderTable({
                     </Button>
                     
                     {/* Show Delete button:
-                        - ADMIN, MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+                        - ADMIN: can delete any order regardless of status
+                        - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
                         - OUTLET_STAFF: cannot delete orders */}
                     {(
                       userRole !== 'OUTLET_STAFF' && 
-                      order.status === 'CANCELLED'
+                      (isAdmin || order.status === 'CANCELLED')
                     ) && (
                       <Button
                         variant="outline"
