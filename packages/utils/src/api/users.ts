@@ -70,10 +70,15 @@ export const usersApi = {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.role) params.append('role', filters.role);
+    // Send isActive if provided (takes priority over status)
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
     if (filters.status) params.append('status', filters.status);
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     if (filters.offset) params.append('offset', filters.offset.toString());
     
     const queryString = params.toString();

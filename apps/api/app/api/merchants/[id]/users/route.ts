@@ -66,11 +66,10 @@ export async function GET(
       if (query.role) {
         searchFilters.role = query.role;
       }
+      // Only filter by isActive if explicitly provided
+      // Return both active and inactive users by default (only exclude deleted)
       if (query.isActive !== undefined) {
         searchFilters.isActive = query.isActive;
-      } else {
-        // Default to active users only if not specified
-        searchFilters.isActive = true;
       }
 
       // Role-based outlet filtering:
