@@ -322,6 +322,10 @@ export interface ApiUrls {
         delete: (id: number) => string;
       };
     };
+    ai: {
+      generatePost: string;
+      seoScore: string;
+    };
   }
 
 /**
@@ -560,7 +564,7 @@ function getApiConfig(): ApiConfig {
 function createApiUrls(): ApiUrls {
   const base = getApiBaseUrlInternal();
   
-  return {
+  const result: ApiUrls = {
     base,
     auth: {
       login: `${base}/api/auth/login`,
@@ -843,7 +847,13 @@ function createApiUrls(): ApiUrls {
         delete: (id: number) => `${base}/api/posts/tags/${id}`,
       },
     },
-  };
+    ai: {
+      generatePost: `${base}/api/ai/generate-post`,
+      seoScore: `${base}/api/ai/seo-score`,
+    },
+  } as ApiUrls;
+  
+  return result;
 }
 
 // ============================================================================

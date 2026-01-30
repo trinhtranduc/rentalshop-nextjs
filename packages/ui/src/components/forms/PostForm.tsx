@@ -17,9 +17,9 @@ import {
   Badge,
   useToast,
 } from '../ui';
-import { RichTextEditor } from '../features/Posts';
-import { generateSlug, uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { RichTextEditor, AIContentGenerator, SEOScoreCard } from '../features/Posts';
+import { generateSlug, uploadImage, getAuthToken, type UploadProgress, aiApi } from '@rentalshop/utils';
+import { X, Upload, Image as ImageIcon, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import type { PostCreateInput, PostUpdateInput, PostCategory, PostTag } from '@rentalshop/types';
 
 interface PostFormProps {
@@ -63,6 +63,12 @@ export function PostForm({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // AI features
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showSEOAnalysis, setShowSEOAnalysis] = useState(false);
+  const [seoAnalysis, setSeoAnalysis] = useState<any>(null);
+  const [analyzingSEO, setAnalyzingSEO] = useState(false);
 
   // Auto-generate slug from title
   useEffect(() => {
@@ -342,10 +348,60 @@ export function PostForm({
         </CardContent>
       </Card>
 
+      {/* AI Content Generator Dialog */}
+      {showAIGenerator && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <AIContentGenerator
+                onContentGenerated={(aiContent) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    title: aiContent.title,
+                    slug: aiContent.suggestedSlug,
+                    content: aiContent.content,
+                    excerpt: aiContent.excerpt,
+                    seoTitle: aiContent.seoTitle || aiContent.title,
+                    seoDescription: aiContent.metaDescription,
+                    seoKeywords: aiContent.seoKeywords || aiContent.keywords.join(', '),
+                  }));
+                  setShowAIGenerator(false);
+                  toastSuccess('AI content has been loaded into the form!');
+                }}
+                onCancel={() => setShowAIGenerator(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SEO Section */}
       <Card>
         <CardHeader>
-          <CardTitle>SEO Settings</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>SEO Settings</CardTitle>
+            {formData.content && formData.title && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAnalyzeSEO}
+                disabled={analyzingSEO}
+              >
+                {analyzingSEO ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Analyze SEO
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -392,6 +448,11 @@ export function PostForm({
           </div>
         </CardContent>
       </Card>
+
+      {/* SEO Analysis Results */}
+      {showSEOAnalysis && seoAnalysis && (
+        <SEOScoreCard analysis={seoAnalysis} />
+      )}
 
       {/* Categories & Tags */}
       <Card>
