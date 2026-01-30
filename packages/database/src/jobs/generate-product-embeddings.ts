@@ -6,6 +6,7 @@
 import { getEmbeddingService } from '../ml/image-embeddings';
 import { getVectorStore } from '../ml/vector-store';
 import { db } from '../index';
+import { prisma } from '../client';
 import { randomUUID } from 'crypto';
 
 /**
@@ -146,6 +147,20 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     try {
       await vectorStore.storeProductImagesEmbeddings(validEmbeddings);
       console.log(`✅ Successfully stored ${validEmbeddings.length} embedding(s) to Qdrant for product ${productId}`);
+      
+      // Update product to mark embedding as generated
+      try {
+        await prisma.product.update({
+          where: { id: productId },
+          data: {
+            embeddingGeneratedAt: new Date()
+          }
+        });
+        console.log(`✅ Updated product ${productId} with embeddingGeneratedAt timestamp`);
+      } catch (updateError) {
+        console.warn(`⚠️ Failed to update embeddingGeneratedAt for product ${productId}:`, updateError);
+        // Don't throw - embedding was stored successfully
+      }
       
       // Verify by checking collection info
       try {

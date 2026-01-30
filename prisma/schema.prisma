@@ -159,33 +159,35 @@ model Category {
 }
 
 model Product {
-  id             Int           @id @default(autoincrement())
-  name           String
-  description    String?
-  barcode        String?       @unique
-  totalStock     Int           @default(0)
-  rentPrice      Float
-  salePrice      Float?
-  deposit        Float         @default(0)
-  images         Json?
-  isActive       Boolean       @default(true)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  merchantId     Int
-  categoryId     Int
-  costPrice      Float?
-  pricingType    PricingType?
-  durationConfig String?
-  orderItems     OrderItem[]
-  outletStock    OutletStock[]
-  category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  merchant       Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  id                 Int           @id @default(autoincrement())
+  name               String
+  description        String?
+  barcode            String?       @unique
+  totalStock         Int           @default(0)
+  rentPrice          Float
+  salePrice          Float?
+  deposit            Float         @default(0)
+  images             Json?
+  isActive           Boolean       @default(true)
+  embeddingGeneratedAt DateTime?  // Track when embedding was generated and stored in Qdrant
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  merchantId         Int
+  categoryId         Int
+  costPrice          Float?
+  pricingType        PricingType?
+  durationConfig     String?
+  orderItems         OrderItem[]
+  outletStock        OutletStock[]
+  category           Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant           Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([merchantId])
   @@index([categoryId])
   @@index([barcode])
   @@index([name])
   @@index([pricingType])
+  @@index([embeddingGeneratedAt])
 }
 
 model OutletStock {

@@ -47,6 +47,9 @@ export interface Product extends BaseEntityWithMerchant {
     defaultDuration?: number;
   } | null;
   
+  // Embedding tracking
+  embeddingGeneratedAt?: Date | null; // Track when embedding was generated and stored in Qdrant
+  
   // Related entities (populated when needed)
   category?: CategoryReference;
   merchant?: MerchantReference;
