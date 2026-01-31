@@ -225,13 +225,12 @@ export async function PUT(
         ResponseBuilder.success('BANK_ACCOUNT_UPDATED_SUCCESS', updatedAccount)
       );
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
-    })
-  )(request);
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 
 /**
@@ -298,12 +297,11 @@ export async function DELETE(
         ResponseBuilder.success('BANK_ACCOUNT_DELETED_SUCCESS', deletedAccount)
       );
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
-    })
-  )(request);
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 

@@ -23,7 +23,8 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
@@ -60,12 +61,12 @@ export async function GET(
         totalPages: Math.ceil((outlets.total || 0) / (outlets.limit || 20))
       }, `Found ${outlets.total || 0} outlets`));
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        // Use unified error handling system
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
     })
   )(request);
 }

@@ -177,12 +177,11 @@ export async function POST(
         { status: 201 }
       );
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
-    })
-  )(request);
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 

@@ -11,10 +11,9 @@ import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  console.log('📤 [EXPORT API] POST /api/sync-standalone/export - Request received');
-  
-  try {
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const body = await request.json();
     const { entities, endpoint, token, preview, searchParams } = body;
 
@@ -274,7 +273,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
-    }
+  }
   })
 );
 

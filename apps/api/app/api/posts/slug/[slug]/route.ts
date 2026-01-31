@@ -76,35 +76,36 @@ export async function GET(
   const { slug } = resolvedParams;
   
   return withApiLogging(async (request: NextRequest) => {
-        const post = await db.posts.findBySlug(slug);
+    try {
+      const post = await db.posts.findBySlug(slug);
 
-    if (!post) {
-      return NextResponse.json(
-        ResponseBuilder.error('POST_NOT_FOUND'),
-        { 
-          status: API.STATUS.NOT_FOUND,
-          headers: buildCorsHeaders(request)
-        }
-      );
-    }
-
-    // Only return published posts for public access
-    if (post.status !== 'PUBLISHED') {
-      return NextResponse.json(
-        ResponseBuilder.error('POST_NOT_FOUND'),
-        { 
-          status: API.STATUS.NOT_FOUND,
-          headers: buildCorsHeaders(request)
-        }
-      );
-    }
-
-    return NextResponse.json(
-      ResponseBuilder.success('POST_RETRIEVED_SUCCESS', post),
-      {
-        headers: buildCorsHeaders(request)
+      if (!post) {
+        return NextResponse.json(
+          ResponseBuilder.error('POST_NOT_FOUND'),
+          { 
+            status: API.STATUS.NOT_FOUND,
+            headers: buildCorsHeaders(request)
+          }
+        );
       }
-    );
+
+      // Only return published posts for public access
+      if (post.status !== 'PUBLISHED') {
+        return NextResponse.json(
+          ResponseBuilder.error('POST_NOT_FOUND'),
+          { 
+            status: API.STATUS.NOT_FOUND,
+            headers: buildCorsHeaders(request)
+          }
+        );
+      }
+
+      return NextResponse.json(
+        ResponseBuilder.success('POST_RETRIEVED_SUCCESS', post),
+        {
+          headers: buildCorsHeaders(request)
+        }
+      );
     } catch (error) {
       // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);

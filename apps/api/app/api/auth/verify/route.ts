@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles, getUserPermissions } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/auth/verify - Verify authentication token and return user information
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/auth/verify - User: ${user.email}`);
-  
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
     // Get user permissions (required for UI control)
     const permissions = await getUserPermissions(user);
@@ -36,11 +36,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       message: 'Token is valid'
     });
 
-    } catch (error) {
-      // Error will be automatically logged by withApiLogging wrapper
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
+  } catch (error) {
+    // Error will be automatically logged by withApiLogging wrapper
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
   })
 );

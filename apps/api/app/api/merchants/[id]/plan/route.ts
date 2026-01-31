@@ -153,12 +153,11 @@ export async function PUT(
         message: 'Plan updated successfully'
       });
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        // Use unified error handling system
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
-    })
-  )(request);
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
