@@ -5,7 +5,7 @@ const nextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
   // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
-    experimental: {
+      experimental: {
       // Point to monorepo root for file tracing
       outputFileTracingRoot: require('path').join(__dirname, '../../'),
       serverComponentsExternalPackages: [
@@ -16,6 +16,10 @@ const nextConfig = {
         'sharp', // Externalize Sharp (Node.js native module)
         '@xenova/transformers', // Externalize transformers (ML model, needs runtime env vars)
         'onnxruntime-node', // Externalize ONNX runtime (prevent bundling)
+        'pino', // Externalize Pino (logger)
+        'pino-pretty', // Externalize Pino Pretty (console formatter)
+        'pino-roll', // Externalize Pino Roll (file rotation, uses worker threads)
+        '@axiomhq/js', // Externalize Axiom SDK
       ],
     },
   
@@ -73,7 +77,7 @@ const nextConfig = {
       }
       
       // External native Node.js packages as CommonJS modules
-      // These cannot be bundled by webpack (they need native binaries)
+      // These cannot be bundled by webpack (they need native binaries or worker threads)
       const nativeExternals = {
         '@prisma/client': 'commonjs @prisma/client',
         '.prisma/client': 'commonjs .prisma/client',
@@ -81,6 +85,10 @@ const nextConfig = {
         'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
         '@xenova/transformers': 'commonjs @xenova/transformers', // Externalize transformers (ML model)
         'onnxruntime-node': 'commonjs onnxruntime-node', // CRITICAL: Externalize ONNX runtime (prevents webpack bundling)
+        'pino': 'commonjs pino', // Externalize Pino (logger)
+        'pino-pretty': 'commonjs pino-pretty', // Externalize Pino Pretty (console formatter)
+        'pino-roll': 'commonjs pino-roll', // Externalize Pino Roll (file rotation, uses worker threads)
+        '@axiomhq/js': 'commonjs @axiomhq/js', // Externalize Axiom SDK
       };
       
       // Merge with existing externals
