@@ -64,7 +64,10 @@
     "verify:embeddings-quality": "tsx scripts/verify-embeddings-quality.ts",
     "test:qdrant": "tsx scripts/test-qdrant-connection.ts",
     "test:qdrant-railway": "tsx scripts/test-qdrant-railway.ts",
-    "verify:railway-setup": "tsx scripts/verify-railway-setup.ts"
+    "verify:railway-setup": "tsx scripts/verify-railway-setup.ts",
+    "test:axiom": "./scripts/test-axiom-logging.sh",
+    "test:axiom:dev": "API_URL=https://dev-api.anyrent.shop ./scripts/test-axiom-logging.sh",
+    "test:axiom:local": "API_URL=http://localhost:3002 ./scripts/test-axiom-logging.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
