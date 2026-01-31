@@ -7,6 +7,46 @@ import { API } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
+ * Build CORS headers for response
+ */
+function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://anyrent.shop',
+    'https://www.anyrent.shop',
+    'https://api.anyrent.shop',
+    'https://admin.anyrent.shop',
+    'https://dev.anyrent.shop',
+    'https://dev-api.anyrent.shop',
+    'https://dev-admin.anyrent.shop',
+    ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
+  ];
+  
+  const isAllowedOrigin = allowedOrigins.includes(origin);
+  const allowOrigin = isAllowedOrigin ? origin : 'null';
+  
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+/**
+ * OPTIONS /api/subscriptions/status
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = buildCorsHeaders(request);
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
+/**
  * GET /api/subscriptions/status
  * Get subscription status for the authenticated merchant
  * 
@@ -38,6 +78,7 @@ export async function GET(request: NextRequest) {
       // ADMIN without merchantId: return success with NO_SUBSCRIPTION status
       // Admin users don't have direct subscriptions, but they have full platform access
       if (user.role === USER_ROLE.ADMIN && !merchantId) {
+        const corsHeaders = buildCorsHeaders(request);
         return NextResponse.json(ResponseBuilder.success('ADMIN_NO_MERCHANT_SUBSCRIPTION', {
           status: 'NO_SUBSCRIPTION',
           statusReason: 'Admin user does not have a direct subscription. Query with merchantId to check a specific merchant.',
@@ -63,31 +104,34 @@ export async function GET(request: NextRequest) {
           limits: {},
           usage: {},
           features: []
-        }));
+        }), { headers: corsHeaders });
       }
 
       // Non-ADMIN users must have merchantId
       if (!merchantId) {
+        const corsHeaders = buildCorsHeaders(request);
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       // Get merchant with subscription details
       const merchant = await db.merchants.findById(merchantId);
       if (!merchant) {
+        const corsHeaders = buildCorsHeaders(request);
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: 404 }
+          { status: 404, headers: corsHeaders }
         );
       }
 
       // Check if merchant has a subscription
       if (!merchant.subscription) {
+        const corsHeaders = buildCorsHeaders(request);
         return NextResponse.json(
           ResponseBuilder.error('NO_SUBSCRIPTION_FOUND'),
-          { status: 404 }
+          { status: 404, headers: corsHeaders }
         );
       }
 
@@ -231,13 +275,18 @@ export async function GET(request: NextRequest) {
         features: plan?.features ? JSON.parse(plan.features) : []
       };
 
-      return NextResponse.json(ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus));
+      const corsHeaders = buildCorsHeaders(request);
+      return NextResponse.json(
+        ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus),
+        { headers: corsHeaders }
+      );
 
       } catch (error) {
         // Error will be automatically logged by withApiLogging wrapper
         // Use unified error handling system
         const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
+        const corsHeaders = buildCorsHeaders(request);
+        return NextResponse.json(response, { status: statusCode, headers: corsHeaders });
       }
     })
   )(request);
