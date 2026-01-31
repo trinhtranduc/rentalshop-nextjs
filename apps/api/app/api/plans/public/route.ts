@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -120,7 +121,7 @@ function transformPlan(plan: any): Plan {
       ...(plan.deletedAt && { deletedAt: plan.deletedAt })
     };
   } catch (error) {
-    console.error('Error transforming plan:', error, plan);
+    // Error will be logged by caller's error handler
     throw new Error(`Failed to transform plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -140,14 +141,13 @@ export async function OPTIONS(request: NextRequest) {
  * GET /api/plans/public
  * Get all active plans for public display (no authentication required)
  */
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     // Get active plans using database function
     const result = await db.plans.search({ isActive: true, limit: 50 });
     
     // Validate result structure
     if (!result || !result.data || !Array.isArray(result.data)) {
-      console.error('Invalid result structure from db.plans.search:', result);
       throw new Error('Invalid data structure received from database');
     }
     
@@ -161,14 +161,14 @@ export async function GET(request: NextRequest) {
       }
     );
 
-  } catch (error) {
-    console.error('Error fetching public plans:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
+    }
   }
-}
+);

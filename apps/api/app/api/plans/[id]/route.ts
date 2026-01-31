@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/plans/[id]
@@ -17,9 +18,9 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/plans/[id] - Looking for plan with ID:', id);
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -35,14 +36,11 @@ export async function GET(
       const plan = await db.plans.findById(planId);
 
       if (!plan) {
-        console.log('❌ Plan not found in database for planId:', planId);
         return NextResponse.json(
           ResponseBuilder.error('PLAN_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
-
-      console.log('✅ Plan found:', plan);
 
       // Transform response to match Plan interface
       // Handle limits and features - they may be JSON strings or already parsed
@@ -54,7 +52,6 @@ export async function GET(
           ? JSON.parse(plan.limits) 
           : plan.limits || {};
       } catch (e) {
-        console.error('❌ Error parsing limits:', e);
         limits = {};
       }
 
@@ -63,7 +60,6 @@ export async function GET(
           ? JSON.parse(plan.features || '[]') 
           : (Array.isArray(plan.features) ? plan.features : []);
       } catch (e) {
-        console.error('❌ Error parsing features:', e);
         features = [];
       }
 
@@ -118,14 +114,14 @@ export async function GET(
         message: 'Plan retrieved successfully'
       });
 
-    } catch (error) {
-      console.error('❌ Error fetching plan:', error);
-      
-      // Use unified error handling system (consistent with other APIs)
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system (consistent with other APIs)
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })(request)
+  );
 }
 
 /**
@@ -140,22 +136,22 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN])(async (req: NextRequest, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN])(async (req: NextRequest, { user, userScope }) => {
+      try {
 
-      // Check if the ID is numeric (public ID)
-      if (!/^\d+$/.test(id)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
+        // Check if the ID is numeric (public ID)
+        if (!/^\d+$/.test(id)) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'),
+            { status: 400 }
+          );
+        }
 
-      const planId = parseInt(id);
+        const planId = parseInt(id);
 
-      // Parse and validate request body
-      const body = await req.json();
-      console.log('🔍 PUT /api/plans/[id] - Update request body:', body);
+        // Parse and validate request body
+        const body = await req.json();
 
       // Check if plan exists
       const existingPlan = await db.plans.findById(planId);
@@ -189,7 +185,6 @@ export async function PUT(
             JSON.parse(body.limits);
             updateData.limits = body.limits;
           } catch (e) {
-            console.error('❌ Invalid JSON string for limits:', body.limits);
             return NextResponse.json(
               ResponseBuilder.error('INVALID_LIMITS_FORMAT'),
               { status: 400 }
@@ -212,7 +207,6 @@ export async function PUT(
             JSON.parse(body.features);
             updateData.features = body.features;
           } catch (e) {
-            console.error('❌ Invalid JSON string for features:', body.features);
             return NextResponse.json(
               ResponseBuilder.error('INVALID_FEATURES_FORMAT'),
               { status: 400 }
@@ -220,8 +214,6 @@ export async function PUT(
           }
         }
       }
-
-      console.log('🔍 Transformed update data:', JSON.stringify(updateData, null, 2));
 
       // Validate that we have at least one field to update
       if (Object.keys(updateData).length === 0) {
@@ -245,9 +237,7 @@ export async function PUT(
       let updatedPlan;
       try {
         updatedPlan = await db.plans.update(planId, updateData);
-        console.log('✅ Plan updated successfully:', updatedPlan);
       } catch (dbError: any) {
-        console.error('❌ Database error updating plan:', dbError);
         
         // Handle specific Prisma errors
         if (dbError.code === 'P2002') {
@@ -285,10 +275,10 @@ export async function PUT(
               totalInvalidated += count;
             }
           }
-          console.log(`🔄 Invalidated ${totalInvalidated} sessions for ${subscriptions.subscriptions?.length || 0} merchants due to allowWebAccess change in plan ${planId}`);
+          // Session invalidation logged automatically by withApiLogging
         } catch (error) {
-          console.error('⚠️ Failed to invalidate merchant sessions after plan update:', error);
           // Don't fail the request if session invalidation fails
+          // Error logged automatically by withApiLogging
         }
       }
       
@@ -316,14 +306,14 @@ export async function PUT(
         message: 'Plan updated successfully'
       });
 
-    } catch (error) {
-      console.error('❌ Error updating plan:', error);
-      
-      // Use unified error handling system (consistent with other APIs)
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system (consistent with other APIs)
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })(request)
+  );
 }
 
 /**
@@ -338,8 +328,9 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -367,7 +358,6 @@ export async function DELETE(
       });
 
       if (activeSubscriptions > 0) {
-        console.log('❌ Cannot delete plan with active subscriptions:', activeSubscriptions);
         return NextResponse.json(
           ResponseBuilder.error('PLAN_HAS_ACTIVE_SUBSCRIPTIONS'),
           { status: API.STATUS.CONFLICT }
@@ -376,7 +366,6 @@ export async function DELETE(
 
       // Soft delete by setting isActive to false
       const deletedPlan = await db.plans.update(planId, { isActive: false });
-      console.log('✅ Plan soft deleted successfully:', deletedPlan);
 
       return NextResponse.json({
         success: true,
@@ -385,12 +374,12 @@ export async function DELETE(
         message: 'Plan deleted successfully'
       });
 
-    } catch (error) {
-      console.error('❌ Error deleting plan:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })(request)
+  );
 }

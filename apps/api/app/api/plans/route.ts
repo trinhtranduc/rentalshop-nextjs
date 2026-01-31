@@ -4,8 +4,10 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
     // Get search parameters
     const { searchParams } = new URL(request.url);
@@ -44,16 +46,17 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching plans:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+export const POST = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -69,11 +72,11 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
         message: 'Plan created successfully'
     }, { status: 201 });
 
-  } catch (error: any) {
-    console.error('Error creating plan:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
