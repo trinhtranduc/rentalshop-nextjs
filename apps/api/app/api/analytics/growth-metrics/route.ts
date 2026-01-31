@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/growth-metrics - Get growth metrics
@@ -12,8 +13,9 @@ import { API, ORDER_STATUS } from '@rentalshop/constants';
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
+    try {
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
@@ -186,13 +188,13 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       ResponseBuilder.success('GROWTH_METRICS_SUCCESS', growthMetrics)
     );
 
-  } catch (error) {
-    console.error('❌ Error fetching growth metrics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

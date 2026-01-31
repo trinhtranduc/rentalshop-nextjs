@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
@@ -12,8 +13,9 @@ import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
  * - OUTLET_STAFF: Dashboard only (daily/today metrics)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
@@ -82,18 +84,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
     } else {
       // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
       return NextResponse.json(
         ResponseBuilder.success('NO_DATA_AVAILABLE', {
           today: { orders: 0, revenue: 0 },
@@ -226,17 +218,6 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
 
     // Debug logs to trace the issue
-    console.log('🔍 Enhanced Dashboard Debug:', {
-      dateRange: { start, end },
-      todayOrdersTotal: todayOrders.total,
-      todayOrdersDataLength: todayOrders.data?.length,
-      todayRevenue,
-      thisMonthOrdersTotal: thisMonthOrders.total,
-      thisMonthOrdersDataLength: thisMonthOrders.data?.length,
-      thisMonthRevenue,
-      activeRentalsTotal: activeRentals.total
-    });
-
     const dashboardData = {
       today: {
         orders: todayOrders.total || 0,
@@ -262,13 +243,13 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       ResponseBuilder.success('DASHBOARD_DATA_SUCCESS', dashboardData)
     );
 
-  } catch (error) {
-    console.error('❌ Error fetching enhanced dashboard:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

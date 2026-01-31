@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/system - Get system analytics (Admin only)
@@ -11,10 +12,9 @@ import { API, ORDER_STATUS } from '@rentalshop/constants';
  * - Automatically includes: ADMIN only
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['system.manage'])(async (request, { user, userScope }) => {
-  console.log(`🔧 GET /api/analytics/system - Admin: ${user.email}`);
-  
-  try {
+export const GET = withApiLogging(
+  withPermissions(['system.manage'])(async (request, { user, userScope }) => {
+    try {
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -226,11 +226,10 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       ResponseBuilder.success('SYSTEM_ANALYTICS_SUCCESS', systemMetrics)
     );
 
-  } catch (error) {
-    console.error('Error fetching system analytics:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_SYSTEM_ANALYTICS_FAILED'),
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

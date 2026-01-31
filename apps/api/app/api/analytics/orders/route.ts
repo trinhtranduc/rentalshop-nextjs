@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/orders - Get order analytics
@@ -12,8 +13,9 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
+    try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const groupBy = searchParams.get('groupBy') || 'month'; // month or day
@@ -30,7 +32,6 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
           selectedOutletIds = null;
         }
       } catch (error) {
-        console.error('Error parsing outletIds:', error);
         selectedOutletIds = null;
       }
     }
@@ -45,7 +46,6 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
               const outlet = await db.outlets.findById(outletId);
               return outlet ? { id: outlet.id, publicId: outletId, name: outlet.name } : null;
             } catch (error) {
-              console.error(`Error fetching outlet ${outletId}:`, error);
               return null;
             }
           })
@@ -175,13 +175,13 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       ResponseBuilder.success('ORDER_ANALYTICS_SUCCESS', analyticsData)
     );
 
-  } catch (error) {
-    console.error('❌ Error fetching order analytics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

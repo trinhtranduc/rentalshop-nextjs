@@ -4,6 +4,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, ORDER_STATUS} from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/recent-orders - Get recent orders analytics
@@ -13,8 +14,9 @@ import {API, ORDER_STATUS} from '@rentalshop/constants';
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
+    try {
     // User is already authenticated and authorized to view analytics
 
     // Get query parameters for date filtering
@@ -133,13 +135,13 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     }
     return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
-  } catch (error) {
-    console.error('Error fetching recent orders:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

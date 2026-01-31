@@ -5,6 +5,7 @@ import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -14,8 +15,9 @@ import { API } from '@rentalshop/constants';
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.customers'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.customers'])(async (request, { user, userScope }) => {
+    try {
     // User is already authenticated and authorized to view analytics
 
     // Get query parameters for date filtering
@@ -42,12 +44,6 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       dateStart.setHours(0, 0, 0, 0);
     }
 
-    console.log('📊 Top Customers - Date Range:', {
-      startDate: dateStart.toISOString(),
-      endDate: dateEnd.toISOString(),
-      userRole: user.role,
-      userScope
-    });
 
     // Build where clause based on user role and scope
     // Note: We need to get ALL orders that have events in the date range, not just orders created in the range
@@ -72,11 +68,6 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       }
     } else if (user.role !== USER_ROLE.ADMIN) {
       // New users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
       return NextResponse.json(
         ResponseBuilder.success('NO_DATA_AVAILABLE', [])
       );
@@ -110,11 +101,6 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         returnPlanAt: true  // Add returnPlanAt for future revenue
       },
       take: 10000 // Get enough orders to analyze
-    });
-
-    console.log('📊 Top Customers - Orders Found:', {
-      totalOrders: allOrders.length,
-      ordersWithCustomer: allOrders.filter(o => o.customerId).length
     });
 
     // Group orders by customer and calculate revenue events within date range
@@ -176,20 +162,6 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
           customerData.orderCount += 1;
           customerData.saleCount += 1;
           customerData.totalRevenue += order.totalAmount || 0;
-        }
-        // Debug: Log orders with no revenue events (only for non-SALE or SALE not in range)
-        if (order.orderType !== ORDER_TYPE.SALE || !isCreatedInRange) {
-          console.log('⚠️ Order with no revenue events in range:', {
-            orderId: order.id,
-            customerId: order.customerId,
-            orderType: order.orderType,
-            status: order.status,
-            createdAt: order.createdAt,
-            pickedUpAt: order.pickedUpAt,
-            returnedAt: order.returnedAt,
-            isCreatedInRange,
-            dateRange: { start: dateStart.toISOString(), end: dateEnd.toISOString() }
-          });
         }
         continue;
       }
@@ -257,13 +229,13 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     }
     return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
-  } catch (error) {
-    console.error('Error fetching top customers analytics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

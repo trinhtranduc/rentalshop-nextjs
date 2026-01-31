@@ -3,9 +3,11 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+    try {
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -100,11 +102,11 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       })
     );
 
-  } catch (error) {
-    console.error('Error fetching recent activities:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
