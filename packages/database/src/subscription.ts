@@ -528,6 +528,16 @@ export async function changePlan(
 
   const result = transformSubscriptionFromDb(updatedSubscription);
   
+  // DEBUG: Log merchant email status
+  console.log('🔍 [Subscription] DEBUG - changePlan email check:', {
+    subscriptionId,
+    merchantId: updatedSubscription.merchantId,
+    merchantName: updatedSubscription.merchant?.name,
+    merchantEmail: updatedSubscription.merchant?.email || '❌ NO EMAIL',
+    hasEmail: !!updatedSubscription.merchant?.email,
+    emailProvider: process.env.EMAIL_PROVIDER || 'console'
+  });
+  
   // Send email notification (non-blocking)
   if (updatedSubscription.merchant?.email) {
     console.log('📨 [Subscription] Sending plan change email...', {
@@ -600,6 +610,16 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
 
   const result = transformSubscriptionFromDb(subscription);
   
+  // DEBUG: Log merchant email status
+  console.log('🔍 [Subscription] DEBUG - pauseSubscription email check:', {
+    subscriptionId,
+    merchantId: subscription.merchantId,
+    merchantName: subscription.merchant?.name,
+    merchantEmail: subscription.merchant?.email || '❌ NO EMAIL',
+    hasEmail: !!subscription.merchant?.email,
+    emailProvider: process.env.EMAIL_PROVIDER || 'console'
+  });
+  
   // Send email notification (non-blocking)
   if (subscription.merchant?.email) {
     console.log('📨 [Subscription] Sending pause email...', {
@@ -654,6 +674,16 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
   });
 
   const result = transformSubscriptionFromDb(subscription);
+  
+  // DEBUG: Log merchant email status
+  console.log('🔍 [Subscription] DEBUG - resumeSubscription email check:', {
+    subscriptionId,
+    merchantId: subscription.merchantId,
+    merchantName: subscription.merchant?.name,
+    merchantEmail: subscription.merchant?.email || '❌ NO EMAIL',
+    hasEmail: !!subscription.merchant?.email,
+    emailProvider: process.env.EMAIL_PROVIDER || 'console'
+  });
   
   // Send email notification (non-blocking)
   if (subscription.merchant?.email) {
@@ -712,6 +742,16 @@ export async function cancelSubscription(subscriptionId: number, reason?: string
     });
 
     const result = transformSubscriptionFromDb(subscription);
+    
+    // DEBUG: Log merchant email status
+    console.log('🔍 [Subscription] DEBUG - cancelSubscription email check:', {
+      subscriptionId,
+      merchantId: subscription.merchantId,
+      merchantName: subscription.merchant?.name,
+      merchantEmail: subscription.merchant?.email || '❌ NO EMAIL',
+      hasEmail: !!subscription.merchant?.email,
+      emailProvider: process.env.EMAIL_PROVIDER || 'console'
+    });
     
     // Send email notification (non-blocking)
     if (subscription.merchant?.email) {
@@ -1090,6 +1130,16 @@ export async function renewSubscription(
     return { updatedSubscription, payment };
   });
 
+  // DEBUG: Log merchant email status
+  console.log('🔍 [Subscription] DEBUG - renewSubscription email check:', {
+    subscriptionId: subscription.id,
+    merchantId: subscription.merchantId,
+    merchantName: result.updatedSubscription.merchant?.name,
+    merchantEmail: result.updatedSubscription.merchant?.email || '❌ NO EMAIL',
+    hasEmail: !!result.updatedSubscription.merchant?.email,
+    emailProvider: process.env.EMAIL_PROVIDER || 'console'
+  });
+  
   // 5. Send email notification (non-blocking)
   if (result.updatedSubscription.merchant?.email) {
     console.log('📨 [Subscription] Sending renewal email...', {

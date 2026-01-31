@@ -116,6 +116,16 @@ export async function POST(
         return { updatedSubscription, payment };
       });
 
+      // DEBUG: Log merchant email status
+      console.log('🔍 [Subscription] DEBUG - renew route email check:', {
+        subscriptionId,
+        merchantId: result.updatedSubscription.merchantId,
+        merchantName: result.updatedSubscription.merchant?.name,
+        merchantEmail: result.updatedSubscription.merchant?.email || '❌ NO EMAIL',
+        hasEmail: !!result.updatedSubscription.merchant?.email,
+        emailProvider: process.env.EMAIL_PROVIDER || 'console'
+      });
+      
       // Send email notification (non-blocking)
       if (result.updatedSubscription.merchant?.email) {
         console.log('📨 [Subscription] Sending renewal email...', {

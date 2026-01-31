@@ -123,6 +123,16 @@ async function handleExtendSubscription(
       performedBy: user.userId || user.id
     });
 
+    // DEBUG: Log merchant email status
+    console.log('🔍 [Subscription] DEBUG - extend route email check:', {
+      subscriptionId,
+      merchantId: subscriptionWithDetails?.merchantId,
+      merchantName: subscriptionWithDetails?.merchant?.name,
+      merchantEmail: subscriptionWithDetails?.merchant?.email || '❌ NO EMAIL',
+      hasEmail: !!subscriptionWithDetails?.merchant?.email,
+      emailProvider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
     // Send email notification (non-blocking)
     if (subscriptionWithDetails?.merchant?.email) {
       console.log('📨 [Subscription] Sending extension email...', {
