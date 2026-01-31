@@ -7,7 +7,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions

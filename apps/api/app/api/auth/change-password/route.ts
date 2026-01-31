@@ -4,15 +4,17 @@ import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * POST /api/auth/change-password - Change current user's password
  * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
-  console.log(`🔐 POST /api/auth/change-password - User: ${user.email}`);
-  
-  try {
+export const POST = withApiLogging(
+  withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+    try {
 
     const body = await request.json();
     const { currentPassword, newPassword } = body;
@@ -63,19 +65,17 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       passwordChangedAt: new Date() // Invalidate all existing tokens
     });
 
-    console.log('✅ Password changed successfully for user:', user.email);
-
     return NextResponse.json({
       success: true,
       code: 'PASSWORD_CHANGED_SUCCESS',
         message: 'Password changed successfully'
     });
 
-  } catch (error) {
-    console.error('❌ Error changing password:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

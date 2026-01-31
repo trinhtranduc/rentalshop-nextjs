@@ -4,6 +4,7 @@ import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Bulk permission update schema
@@ -24,10 +25,13 @@ const bulkUpdatePermissionsSchema = z.object({
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['users.manage'])(
-  async (request, { user, userScope }) => {
-    try {
+export const POST = withApiLogging(
+  withPermissions(['users.manage'])(
+    async (request, { user, userScope }) => {
+      try {
       const body = await request.json();
 
       // Validate input
@@ -114,11 +118,12 @@ export const POST = withPermissions(['users.manage'])(
           userIds,
         })
       );
-    } catch (error) {
-      console.error('Error bulk updating user permissions:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
     }
-  }
+  )
 );
 

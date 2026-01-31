@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder, userCreateSchema, checkPlanLimitIfNeeded } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/merchants/[id]/users
@@ -27,92 +28,84 @@ export async function GET(
   const { id } = resolvedParams;
   const merchantPublicId = parseInt(id);
   
-  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
-    try {
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
+  return withApiLogging(
+    withPermissions(['users.view'])(async (request, { user, userScope }) => {
+      try {
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
+
+        // Parse query parameters for pagination and filtering
+        const { searchParams } = new URL(request.url);
+        const { usersQuerySchema } = await import('@rentalshop/utils');
+        
+        const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+        if (!parsed.success) {
+          return NextResponse.json(
+            ResponseBuilder.validationError(parsed.error.flatten()),
+            { status: 400 }
+          );
+        }
+
+        const query = parsed.data;
+
+        // Build search filters with role-based access control
+        const searchFilters: any = {
+          merchantId: merchantPublicId,
+          page: query.page || 1,
+          limit: query.limit || 20,
+          sortBy: query.sortBy || 'createdAt',
+          sortOrder: query.sortOrder || 'desc'
+        };
+
+        // Add optional filters
+        if (query.search) {
+          searchFilters.search = query.search;
+        }
+        if (query.role) {
+          searchFilters.role = query.role;
+        }
+        if (query.isActive !== undefined) {
+          searchFilters.isActive = query.isActive;
+        } else {
+          // Default to active users only if not specified
+          searchFilters.isActive = true;
+        }
+
+        // Role-based outlet filtering:
+        // - OUTLET_ADMIN: Can only see users from their assigned outlet
+        if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+          searchFilters.outletId = userScope.outletId;
+        }
+        // ADMIN and MERCHANT: no outlet filtering (can see all users in merchant)
+
+        // Get users for this merchant with role-based filtering and pagination
+        const users = await db.users.search(searchFilters);
+
+        return NextResponse.json({
+          success: true,
+          data: users.data || [],
+          users: users.data || [], // Alias for compatibility
+          total: users.total || 0,
+          page: users.page || 1,
+          totalPages: users.totalPages || 1,
+          limit: users.limit || 20,
+          hasMore: users.hasMore || false,
+          code: 'MERCHANT_USERS_FOUND',
+          message: `Found ${users.total || 0} users for merchant`
+        });
+
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
       }
-      const merchant = validation.merchant!;
-
-      // Parse query parameters for pagination and filtering
-      const { searchParams } = new URL(request.url);
-      const { usersQuerySchema } = await import('@rentalshop/utils');
-      
-      const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
-      if (!parsed.success) {
-        return NextResponse.json(
-          ResponseBuilder.validationError(parsed.error.flatten()),
-          { status: 400 }
-        );
-      }
-
-      const query = parsed.data;
-
-      // Build search filters with role-based access control
-      const searchFilters: any = {
-        merchantId: merchantPublicId,
-        page: query.page || 1,
-        limit: query.limit || 20,
-        sortBy: query.sortBy || 'createdAt',
-        sortOrder: query.sortOrder || 'desc'
-      };
-
-      // Add optional filters
-      if (query.search) {
-        searchFilters.search = query.search;
-      }
-      if (query.role) {
-        searchFilters.role = query.role;
-      }
-      if (query.isActive !== undefined) {
-        searchFilters.isActive = query.isActive;
-      } else {
-        // Default to active users only if not specified
-        searchFilters.isActive = true;
-      }
-
-      // Role-based outlet filtering:
-      // - OUTLET_ADMIN: Can only see users from their assigned outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
-        searchFilters.outletId = userScope.outletId;
-      }
-      // ADMIN and MERCHANT: no outlet filtering (can see all users in merchant)
-
-      console.log(`🔍 Role-based filtering for merchant users (${user.role}):`, {
-        merchantPublicId,
-        'userScope.merchantId': userScope.merchantId,
-        'userScope.outletId': userScope.outletId,
-        'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId,
-        'pagination': { page: searchFilters.page, limit: searchFilters.limit }
-      });
-
-      // Get users for this merchant with role-based filtering and pagination
-      const users = await db.users.search(searchFilters);
-
-      return NextResponse.json({
-        success: true,
-        data: users.data || [],
-        users: users.data || [], // Alias for compatibility
-        total: users.total || 0,
-        page: users.page || 1,
-        totalPages: users.totalPages || 1,
-        limit: users.limit || 20,
-        hasMore: users.hasMore || false,
-        code: 'MERCHANT_USERS_FOUND',
-        message: `Found ${users.total || 0} users for merchant`
-      });
-
-    } catch (error) {
-      console.error('Error fetching merchant users:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -159,10 +152,6 @@ export async function POST(
 
       // For OUTLET_ADMIN, validate they can only create users for their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN && outletId && outletId !== userScope.outletId) {
-        console.log('❌ Outlet admin trying to create user for different outlet:', {
-          requestedOutletId: outletId,
-          userOutletId: userScope.outletId
-        });
         return NextResponse.json(
           ResponseBuilder.error('OUTLET_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
@@ -180,10 +169,6 @@ export async function POST(
         }
         
         if (outlet.merchantId !== merchantPublicId) {
-          console.log('❌ Outlet does not belong to merchant:', {
-            outletMerchantId: outlet.merchantId,
-            requestedMerchantId: merchantPublicId
-          });
           return NextResponse.json(
             ResponseBuilder.error('OUTLET_NOT_FOUND'),
             { status: API.STATUS.NOT_FOUND }
@@ -192,9 +177,7 @@ export async function POST(
       }
 
       // Hash password before creating user (same as /api/users)
-      console.log('🔐 Hashing password for new user...');
       const hashedPassword = await hashPassword(password);
-      console.log('✅ Password hashed successfully');
 
       // Check plan limits before creating user (only for non-ADMIN users)
       // Note: Only check if creating non-ADMIN user and merchantId exists
@@ -225,15 +208,8 @@ export async function POST(
         })
       };
 
-      // Remove plain password from data to avoid logging it
-      const { password: _, ...userDataForLogging } = userData;
-      console.log('🔍 POST /api/merchants/[id]/users: Creating user with data:', userDataForLogging);
-      console.log('🔍 POST /api/merchants/[id]/users: merchantId:', merchant.id, 'outletId:', outletId || null);
-
       // Create new user
       const newUser = await db.users.create(userData);
-      
-      console.log(`✅ Created user: ${newUser.email} (ID: ${newUser.id})`);
 
       return NextResponse.json({
         success: true,
@@ -242,12 +218,12 @@ export async function POST(
         message: 'User created successfully'
       }, { status: 201 });
 
-    } catch (error) {
-      console.error('Error creating user:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

@@ -4,10 +4,13 @@ import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { postCategoryUpdateSchema } from '@rentalshop/validation';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/posts/categories/[id]
  * Get category by ID
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -16,8 +19,9 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
 
-  return withPermissions(['posts.view'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['posts.view'])(async (request, { user, userScope }) => {
+      try {
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_CATEGORY_ID_FORMAT'),
@@ -38,12 +42,13 @@ export async function GET(
       return NextResponse.json(
         ResponseBuilder.success('CATEGORY_RETRIEVED_SUCCESS', category)
       );
-    } catch (error) {
-      console.error('Error fetching category:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
@@ -51,6 +56,8 @@ export async function GET(
  * Update category
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
@@ -59,8 +66,9 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
 
-  return withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
+      try {
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_CATEGORY_ID_FORMAT'),
@@ -84,12 +92,13 @@ export async function PUT(
       return NextResponse.json(
         ResponseBuilder.success('CATEGORY_UPDATED_SUCCESS', category)
       );
-    } catch (error) {
-      console.error('Error updating category:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
@@ -97,6 +106,8 @@ export async function PUT(
  * Delete category
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function DELETE(
   request: NextRequest,
@@ -105,8 +116,9 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
 
-  return withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
+      try {
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_CATEGORY_ID_FORMAT'),
@@ -120,10 +132,11 @@ export async function DELETE(
       return NextResponse.json(
         ResponseBuilder.success('CATEGORY_DELETED_SUCCESS')
       );
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

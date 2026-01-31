@@ -3,48 +3,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/users/profile
  * Get current user's profile
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
-  try {
-    console.log('🔍 Profile API called');
-    
-    console.log('✅ Token verification result: Success', { id: user.id, role: user.role });
+export const GET = withApiLogging(
+  withAnyAuth(async (request: NextRequest, { user, userScope }) => {
+    try {
+      // Get user profile with complete merchant and outlet data
+      // Note: user.id is the id, we need to find by id
+      const userProfile = await db.users.findById(user.id);
 
-    // Get user profile with complete merchant and outlet data
-    // Note: user.id is the id, we need to find by id
-    console.log('🔍 Searching for user with id:', user.id);
-    const userProfile = await db.users.findById(user.id);
-
-    if (!userProfile) {
-      console.log('❌ User not found with id:', user.id);
-      return NextResponse.json(
-        ResponseBuilder.error('USER_NOT_FOUND'),
-        { status: API.STATUS.NOT_FOUND }
-      );
-    }
-
-    console.log('✅ User profile found:', { 
-      id: userProfile.id, 
-      email: userProfile.email,
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
-      phone: userProfile.phone,
-      role: userProfile.role,
-      hasMerchant: !!userProfile.merchant,
-      hasOutlet: !!userProfile.outlet
-    });
-    
-    console.log('🔍 Merchant data from DB:', {
-      businessType: userProfile.merchant?.businessType,
-      pricingType: userProfile.merchant?.pricingType,
-      hasBusinessType: 'businessType' in (userProfile.merchant || {}),
-      hasPricingType: 'pricingType' in (userProfile.merchant || {}),
-      merchantKeys: Object.keys(userProfile.merchant || {})
-    });
+      if (!userProfile) {
+        return NextResponse.json(
+          ResponseBuilder.error('USER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
 
     // Transform user data to include complete merchant and outlet information
     const transformedUser = {
@@ -94,50 +73,30 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
       } : undefined,
     };
 
-    console.log('Profile API - User data:', {
-      userId: user.id,
-      role: userProfile.role,
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
-      phone: userProfile.phone,
-      merchantId: userProfile.merchant?.id,
-      outletId: userProfile.outlet?.id,
-      hasMerchant: !!userProfile.merchant,
-      hasOutlet: !!userProfile.outlet,
-      merchantName: userProfile.merchant?.name,
-      outletName: userProfile.outlet?.name
-    });
-    
-    console.log('Profile API - Transformed user data:', {
-      id: transformedUser.id,
-      email: transformedUser.email,
-      firstName: transformedUser.firstName,
-      lastName: transformedUser.lastName,
-      phone: transformedUser.phone,
-      role: transformedUser.role
-    });
-
-    console.log('✅ Returning user profile data');
     return NextResponse.json({
       success: true,
       data: transformedUser,
     });
-  } catch (error) {
-    console.error('❌ Error fetching user profile:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      return NextResponse.json(
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })
+);
 
 /**
  * PUT /api/users/profile
  * Update current user's profile
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
-  const { user, userScope } = context;
-  try {
+export const PUT = withApiLogging(
+  withAnyAuth(async (request: NextRequest, context: any) => {
+    const { user, userScope } = context;
+    try {
 
     const body = await request.json();
     
@@ -199,21 +158,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
 
     // Update user profile using id
     // Note: user.id is already the id (number) from the JWT token
-    console.log('🔄 Updating user profile:', {
-      userId: user.id,
-      updateData,
-      userRole: user.role,
-      merchantId: user.merchant?.id
-    });
-
     const updatedUser = await db.users.update(user.id, updateData);
-
-    console.log('✅ Profile updated successfully:', {
-      userId: updatedUser.id,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      phone: updatedUser.phone
-    });
 
     // Transform user data to match GET profile response format
     const transformedUser = {
@@ -236,17 +181,12 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
     return NextResponse.json(
       ResponseBuilder.success('PROFILE_UPDATED_SUCCESS', transformedUser)
     );
-  } catch (error) {
-    console.error('❌ Error updating user profile:', error);
-    console.error('Error details:', {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    
-    return NextResponse.json(
-      ResponseBuilder.error('UPDATE_PROFILE_FAILED'),
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
-  }
-}); 
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      return NextResponse.json(
+        ResponseBuilder.error('UPDATE_PROFILE_FAILED'),
+        { status: API.STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+  })
+); 

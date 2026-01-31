@@ -2,6 +2,7 @@ import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiConfig } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * @swagger
@@ -64,9 +65,12 @@ import {API} from '@rentalshop/constants';
  *         description: Validation failed
  *       500:
  *         description: Internal server error
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function POST(request: NextRequest) {
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const body = await request.json();
     
     // Validate required fields
@@ -105,14 +109,14 @@ export async function POST(request: NextRequest) {
       }
     });
     
-  } catch (error: any) {
-    console.error('Device registration error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      code: 'DEVICE_REGISTRATION_FAILED',
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      return NextResponse.json({
+        success: false,
+        code: 'DEVICE_REGISTRATION_FAILED',
         message: 'Device registration failed',
-      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
-  }
+        error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
+      }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    }
+  })(request);
 } 

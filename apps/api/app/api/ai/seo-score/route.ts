@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { analyzeSEO } from '@rentalshop/ai-service';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const seoAnalysisSchema = z.object({
   content: z.string().min(1),
@@ -16,9 +17,12 @@ const seoAnalysisSchema = z.object({
  * Analyze SEO score for blog post content
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['posts.manage'])(async (request, { user }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['posts.manage'])(async (request, { user }) => {
+    try {
     const body = await request.json();
     
     const parsed = seoAnalysisSchema.safeParse(body);
@@ -39,9 +43,10 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user }) 
     return NextResponse.json(
       ResponseBuilder.success('SEO_ANALYSIS_SUCCESS', analysis)
     );
-  } catch (error) {
-    console.error('Error analyzing SEO:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

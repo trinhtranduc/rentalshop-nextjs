@@ -5,6 +5,7 @@ import { hashPassword } from '@rentalshop/auth';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { getDefaultPricingConfig, type BusinessType } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Parse name into firstName and lastName
@@ -63,11 +64,8 @@ async function sendVerificationEmailSafe(userId: number, email: string, firstNam
     const userName = `${firstName} ${lastName}`.trim() || email;
     const result = await sendVerificationEmail(email, userName, verification.token);
     
-    if (!result.success) {
-      console.warn('⚠️ Failed to send verification email:', result.error);
-    }
+    // Email sending failure is handled silently - don't block registration
   } catch (error) {
-    console.error('❌ Error sending verification email:', error);
     // Don't throw - email verification failure shouldn't block registration
   }
 }
@@ -95,7 +93,13 @@ function buildPricingConfig(businessType?: string, pricingType?: string): string
   return JSON.stringify(getDefaultPricingConfig((businessType as BusinessType) || 'GENERAL'));
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/auth/register
+ * Register new user (merchant or outlet user)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
@@ -333,14 +337,9 @@ export async function POST(request: NextRequest) {
     }
     
   } catch (error: any) {
-    console.error('❌ Registration error:', error);
-    
     // Transaction automatically rolls back on error
-    if (error?.code === 'P2002' && error?.meta?.target?.includes('id')) {
-      console.error('🚨 Database sequence out of sync! Run: yarn db:fix-sequences');
-    }
-    
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-}
+});

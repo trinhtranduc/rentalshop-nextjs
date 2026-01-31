@@ -4,7 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { z } from 'zod';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const runtime = 'nodejs';
 

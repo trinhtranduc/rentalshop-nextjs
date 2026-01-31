@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { categoriesQuerySchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/categories
@@ -13,14 +14,14 @@ import { API } from '@rentalshop/constants';
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * - Categories are part of products management, so use products.view permission
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['products.view'])(async (request: NextRequest, { user, userScope }) => {
-  console.log(`🔍 GET /api/categories - User: ${user.email} (${user.role})`);
-  
+export const GET = withApiLogging(
+  withPermissions(['products.view'])(async (request: NextRequest, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     const hasSearchParams = searchParams.toString().length > 0;
-    console.log('Search params:', Object.fromEntries(searchParams.entries()), 'Has params:', hasSearchParams);
     
     // Determine merchantId based on user scope (permission-based, not role-based)
     let filterMerchantId: number | undefined;
@@ -43,8 +44,6 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
     
     // SIMPLE LIST MODE: No search params → Return simple array for dropdowns
     if (!hasSearchParams) {
-      console.log('🔍 Simple list mode - returning array for dropdowns');
-      
       const where: any = { isActive: true };
       if (filterMerchantId) where.merchantId = filterMerchantId;
       
@@ -60,11 +59,8 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
     }
     
     // SEARCH MODE: Has search params → Return pagination structure
-    console.log('🔍 Search mode - returning pagination structure');
-    
     const parsed = categoriesQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
-      console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
         ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
@@ -82,16 +78,10 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
       limit
     } = parsed.data;
 
-    console.log('Parsed filters:', { 
-      q, search, queryMerchantId, isActive, sortBy, sortOrder, page, limit
-    });
-
     // Override merchantId from query if system admin
     if (userScope.canAccessSystem && queryMerchantId) {
       filterMerchantId = queryMerchantId;
     }
-
-    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'canAccessSystem:', userScope.canAccessSystem);
 
     // Build search filters with role-based access control
     const searchFilters = {
@@ -104,10 +94,7 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
       limit: limit || 25
     };
 
-    console.log('🔍 Using db.categories.search with filters:', searchFilters);
-    
     const result = await db.categories.search(searchFilters);
-    console.log('✅ Search completed, found:', result.total || 0, 'categories');
 
     return NextResponse.json({
       success: true,
@@ -124,13 +111,13 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
     });
 
   } catch (error) {
-    console.error('Error in GET /api/categories:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * POST /api/categories
@@ -147,19 +134,9 @@ export const GET = withPermissions(['products.view'])(async (request: NextReques
  * - Maintainable: Change permissions in one place, all endpoints update automatically
  * - Flexible: Easy to add/remove roles without updating multiple endpoints
  */
-export const POST = withPermissions(['products.manage'])(async (request: NextRequest, { user, userScope }) => {
-  console.log('🚀 POST /api/categories - Starting category creation...');
-  
+export const POST = withApiLogging(
+  withPermissions(['products.manage'])(async (request: NextRequest, { user, userScope }) => {
   try {
-    console.log('👤 User verification result: Success');
-
-    console.log('👤 User details:', {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: user.merchantId,
-      outletId: user.outletId
-    });
 
     // Determine merchantId based on user scope (permission-based, not role-based)
     let merchantId: number | undefined = userScope.merchantId;
@@ -169,13 +146,11 @@ export const POST = withPermissions(['products.manage'])(async (request: NextReq
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
         merchantId = outlet.merchantId;
-        console.log('✅ Got merchantId from outlet:', merchantId);
       }
     }
 
     // Check if user can manage categories (must have merchantId)
     if (!merchantId) {
-      console.log('❌ User has no merchantId - merchant access required');
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
@@ -183,24 +158,17 @@ export const POST = withPermissions(['products.manage'])(async (request: NextReq
     }
 
     const body = await request.json();
-    console.log('📝 Request body received:', body);
-    
     const { name, description } = body;
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      console.log('❌ Validation failed - invalid name:', { name, type: typeof name, length: name?.length });
       return NextResponse.json(
         ResponseBuilder.error('CATEGORY_NAME_REQUIRED'),
         { status: 400 }
       );
     }
 
-    console.log('✅ Validation passed - proceeding with category creation');
-
     // Check if category name already exists for this merchant
-    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', merchantId);
-    
     const existingCategory = await db.categories.findFirst({
       name: name.trim(),
       merchantId: merchantId,
@@ -208,14 +176,11 @@ export const POST = withPermissions(['products.manage'])(async (request: NextReq
     });
 
     if (existingCategory) {
-      console.log('❌ Category already exists:', existingCategory);
       return NextResponse.json(
         ResponseBuilder.error('CATEGORY_NAME_EXISTS'),
         { status: API.STATUS.CONFLICT }
       );
     }
-
-    console.log('✅ No duplicate category found - proceeding to create category');
 
     // Create category with proper data handling
     // Note: ID will be auto-generated by Prisma @default(autoincrement())
@@ -230,11 +195,7 @@ export const POST = withPermissions(['products.manage'])(async (request: NextReq
       categoryData.description = description.trim();
     }
 
-    console.log('💾 Creating category in database with data:', categoryData);
-
     const category = await db.categories.create(categoryData);
-
-    console.log('✅ Category created successfully in database:', category);
 
     // Transform response: internal id → public id as "id"
     const transformedCategory = {
@@ -247,19 +208,16 @@ export const POST = withPermissions(['products.manage'])(async (request: NextReq
       // DO NOT include category.id (internal CUID)
     };
 
-    console.log('🔄 Transformed category response:', transformedCategory);
-    console.log('🎉 Category creation completed successfully!');
-
     return NextResponse.json(
       ResponseBuilder.success('CATEGORY_CREATED_SUCCESS', transformedCategory),
       { status: 201 }
     );
 
   } catch (error) {
-    console.error('💥 Error creating category:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

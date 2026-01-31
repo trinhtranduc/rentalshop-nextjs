@@ -4,6 +4,7 @@ import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Permission update schema
@@ -23,10 +24,13 @@ const updatePermissionsSchema = z.object({
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['users.manage'])(
-  async (request, { user, userScope, params }) => {
-    try {
+export const GET = withApiLogging(
+  withPermissions(['users.manage'])(
+    async (request, { user, userScope, params }) => {
+      try {
       const resolvedParams = await Promise.resolve(params);
       const { id } = resolvedParams;
 
@@ -90,12 +94,13 @@ export const GET = withPermissions(['users.manage'])(
           permissions: foundUser.permissions,
         })
       );
-    } catch (error) {
-      console.error('Error fetching user permissions:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
     }
-  }
+  )
 );
 
 /**
@@ -109,10 +114,13 @@ export const GET = withPermissions(['users.manage'])(
  * 
  * Note: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF in their outlet
  * MERCHANT and ADMIN can manage permissions of any user in their scope
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const PUT = withPermissions(['users.manage'])(
-  async (request, { user, userScope, params }) => {
-    try {
+export const PUT = withApiLogging(
+  withPermissions(['users.manage'])(
+    async (request, { user, userScope, params }) => {
+      try {
       const resolvedParams = await Promise.resolve(params);
       const { id } = resolvedParams;
 
@@ -220,11 +228,12 @@ export const PUT = withPermissions(['users.manage'])(
           permissions: updatedPermissions,
         })
       );
-    } catch (error) {
-      console.error('Error updating user permissions:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
     }
-  }
+  )
 );
 

@@ -7,7 +7,7 @@ import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/orders

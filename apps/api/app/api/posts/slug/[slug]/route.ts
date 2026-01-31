@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -63,16 +64,19 @@ export async function OPTIONS(request: NextRequest) {
  * GET /api/posts/slug/[slug]
  * Get post by slug (public endpoint for client app)
  * Only returns published posts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
-  try {
-    const resolvedParams = await Promise.resolve(params);
-    const { slug } = resolvedParams;
-
-    const post = await db.posts.findBySlug(slug);
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { slug } = resolvedParams;
+  
+  return withApiLogging(async (request: NextRequest) => {
+        const post = await db.posts.findBySlug(slug);
 
     if (!post) {
       return NextResponse.json(
@@ -101,12 +105,13 @@ export async function GET(
         headers: buildCorsHeaders(request)
       }
     );
-  } catch (error) {
-    console.error('Error fetching post by slug:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
+    }
+  })(request);
 }

@@ -13,7 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
-import { compressImageTo1MB, compressImageForEmbedding } from '../../../../lib/image-compression';
+import { compressImageTo1MB, compressImageForEmbedding } from '@/lib/image-compression';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Force dynamic rendering to prevent Next.js from collecting page data
 export const dynamic = 'force-dynamic';
@@ -82,11 +83,17 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * Step 3: Generate embedding (✅ DONE - with error handling)
  * Step 4: Vector search (TODO)
  */
-export const POST = withPermissions(['products.view'], { requireActiveSubscription: false })(
-  async (request: NextRequest, { user, userScope }) => {
-    const requestStartTime = Date.now();
-    try {
-      console.log(`🔍 POST /api/products/searchByImage - User: ${user.email} (${user.role})`);
+/**
+ * POST /api/products/searchByImage
+ * Search products by image
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(
+  withPermissions(['products.view'], { requireActiveSubscription: false })(
+    async (request: NextRequest, { user, userScope }) => {
+      const requestStartTime = Date.now();
+      try {
 
       // ============================================================
       // STEP 1: Parse form data and validate image
@@ -135,27 +142,15 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         );
       }
 
-      console.log('✅ Step 1: Image validated successfully:', {
-        fileName: file.name,
-        fileSize: file.size,
-        limit,
-        minSimilarity,
-        categoryId
-      });
-
       // ============================================================
       // STEP 2: Compress image for embedding (optimized for ML models)
       // ============================================================
       const bytes = await file.arrayBuffer();
       const originalBuffer = Buffer.from(new Uint8Array(bytes));
       
-      console.log(`🔄 Step 2: Compressing image for embedding... (original: ${(originalBuffer.length / 1024).toFixed(2)} KB)`);
-      
       // OPTIMIZATION: Use aggressive compression for embedding (100KB, 800px)
       // CLIP model only needs 224x224, so smaller images = faster processing
       const compressedBuffer = await compressImageForEmbedding(originalBuffer);
-      
-      console.log(`✅ Step 2: Image compressed for embedding: ${(compressedBuffer.length / 1024).toFixed(2)} KB (${Math.round((1 - compressedBuffer.length / originalBuffer.length) * 100)}% reduction)`);
 
       // ============================================================
       // STEP 3: Complete search in Python service (OPTIMIZED)
@@ -163,7 +158,6 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // OPTIMIZATION: Move all processing to Python service to minimize network round-trips
       // Python service handles: embedding + vector search + product fetching
       // This reduces network latency from 3 calls to 1 call
-      console.log('🔄 Step 3: Processing complete search in Python service...');
       
       try {
         const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
@@ -239,13 +233,6 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
 
         const rawProducts = data.products || [];
         const totalDuration = Date.now() - requestStartTime;
-        
-        console.log(`✅ Step 3: Complete search completed in ${searchDuration}ms`);
-        console.log(`   - Embedding: ${data.embeddingDuration || 0}ms`);
-        console.log(`   - Vector search: ${data.searchDuration || 0}ms`);
-        console.log(`   - Product fetch: ${data.fetchDuration || 0}ms`);
-        console.log(`   - Total Python: ${data.totalDuration || 0}ms`);
-        console.log(`⏱️ Total request time: ${totalDuration}ms`);
 
         if (rawProducts.length === 0) {
           return NextResponse.json(
@@ -280,8 +267,6 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           images: parseProductImages(product.images)
         }));
 
-        console.log(`🖼️  Normalized images for ${products.length} products`);
-
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
             products,
@@ -304,13 +289,6 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           })
         );
       } catch (error: any) {
-        console.error('❌ Step 3: Complete search failed:', error?.message);
-        console.error('   Error details:', {
-          name: error?.name,
-          message: error?.message,
-          stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-        });
-        
         if (error.name === 'AbortError') {
           return NextResponse.json(
             ResponseBuilder.error('SEARCH_TIMEOUT'),
@@ -324,12 +302,13 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         );
       }
 
-    } catch (error: any) {
-      console.error('❌ Error in image search:', error?.message);
-      return NextResponse.json(
-        ResponseBuilder.error('SERVICE_UNAVAILABLE'),
-        { status: 503 }
-      );
+      } catch (error: any) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('SERVICE_UNAVAILABLE'),
+          { status: 503 }
+        );
+      }
     }
-  }
+  )
 );

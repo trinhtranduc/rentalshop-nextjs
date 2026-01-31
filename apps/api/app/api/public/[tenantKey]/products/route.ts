@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -58,6 +59,8 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * GET /api/public/[tenantKey]/products
  * Get products by tenant key (public endpoint, no authentication required)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -67,7 +70,8 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { tenantKey } = resolvedParams;
   
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const { searchParams } = new URL(request.url);
     
     // Validate tenantKey format (alphanumeric + hyphen)
@@ -82,18 +86,11 @@ export async function GET(
     }
 
     // Find merchant by tenantKey (handles case-insensitive search internally)
-    console.log('🔍 Looking for merchant with tenantKey:', tenantKey);
-    
     let merchant;
     try {
       // findByTenantKey now handles case-insensitive search internally
       merchant = await db.merchants.findByTenantKey(tenantKey);
     } catch (error) {
-      console.error('❌ Error finding merchant by tenantKey:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      });
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { 
@@ -104,9 +101,6 @@ export async function GET(
     }
     
     if (!merchant) {
-      console.error('❌ Merchant not found with tenantKey:', tenantKey);
-      console.error('💡 Tip: Make sure merchant has a tenantKey set in database');
-      console.error('💡 Tip: Check if tenantKey matches exactly (case-insensitive)');
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { 
@@ -115,8 +109,6 @@ export async function GET(
         }
       );
     }
-    
-    console.log('✅ Found merchant:', merchant.name, 'ID:', merchant.id, 'Type:', typeof merchant.id);
 
     // Check if merchant is active
     if (!merchant.isActive) {
@@ -143,8 +135,6 @@ export async function GET(
       page,
       limit
     };
-    
-    console.log('🔍 Product filters:', JSON.stringify(productFilters, null, 2));
 
     if (categoryId) {
       const categoryIdNum = parseInt(categoryId, 10);
@@ -158,22 +148,10 @@ export async function GET(
     }
 
     // Get products
-    console.log('🔍 Searching products with filters:', JSON.stringify(productFilters, null, 2));
     let productsResult;
     try {
       productsResult = await db.products.search(productFilters);
-      console.log('📦 Products result:', {
-        total: productsResult.total,
-        dataLength: productsResult.data?.length || 0,
-        hasMore: productsResult.hasMore
-      });
     } catch (error) {
-      console.error('❌ Error searching products:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        filters: productFilters
-      });
       throw error; // Re-throw to be caught by outer catch
     }
 
@@ -188,9 +166,7 @@ export async function GET(
         limit: 1000 // Get all categories
       });
       categoriesResult = categoriesSearchResult.data || [];
-    console.log('📂 Categories found:', categoriesResult.length);
     } catch (error) {
-      console.error('❌ Error fetching categories:', error);
       // Don't fail the whole request if categories fail
       categoriesResult = [];
     }
@@ -213,10 +189,7 @@ export async function GET(
         limit: 1000 // Get all outlets
       });
       outletsResult = outletsSearchResult.data || [];
-    console.log('🏪 Outlets found:', outletsResult.length);
     } catch (error) {
-      console.error('❌ Error fetching outlets:', error);
-      console.error('💡 Note: db.outlets.search may need merchant CUID instead of publicId');
       // Don't fail the whole request if outlets fail
       outletsResult = [];
     }
@@ -273,13 +246,6 @@ export async function GET(
         hasMore: productsResult.hasMore || false
       }
     };
-    
-    console.log('✅ Returning response with:', {
-      merchantName: responseData.merchant.name,
-      productsCount: responseData.products.length,
-      categoriesCount: responseData.categories.length,
-      total: responseData.pagination.total
-    });
 
     return NextResponse.json(
       ResponseBuilder.success('PRODUCTS_FETCHED', responseData),
@@ -288,32 +254,14 @@ export async function GET(
       }
     );
 
-  } catch (error) {
-    console.error('❌ Error fetching public products:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      tenantKey,
-      errorType: error?.constructor?.name,
-      errorName: (error as any)?.name,
-      errorCode: (error as any)?.code,
-      errorMeta: (error as any)?.meta,
-      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-    });
-    
-    // For public endpoints, we want more specific error messages
-    // Check if it's a known error type first
-    if ((error as any)?.code?.startsWith('P')) {
-      // Prisma error - log it but return generic error for security
-      console.error('❌ Prisma error detected:', (error as any).code);
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
     }
-    
-    const { response, statusCode } = handleApiError(error);
-    console.error('❌ Error response:', JSON.stringify(response, null, 2));
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
-  }
+  })(request);
 }
 

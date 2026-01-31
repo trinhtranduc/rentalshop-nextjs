@@ -13,7 +13,7 @@ import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Helper functions (will be available from @rentalshop/utils after rebuild)
 function parseQueryParams<T>(request: NextRequest, schema: any): { success: true; data: T } | { success: false; response: NextResponse } {

@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/growth-metrics - Get growth metrics

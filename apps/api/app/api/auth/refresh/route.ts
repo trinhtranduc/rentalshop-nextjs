@@ -3,6 +3,7 @@ import { verifyTokenSimple, generateToken } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Build CORS headers for response
@@ -48,8 +49,10 @@ export async function OPTIONS(request: NextRequest) {
  * 
  * This endpoint allows users to get a new token without logging in again
  * as long as their current token is still valid (not expired)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   const corsHeaders = buildCorsHeaders(request);
   try {
     // Extract token from Authorization header
@@ -127,12 +130,9 @@ export async function POST(request: NextRequest) {
     // Note: We allow refresh even if session validation fails, as session might be managed separately
     if (sessionId) {
       const isSessionValid = await db.sessions.validateSession(sessionId);
-      if (!isSessionValid) {
-        // Session invalidated, but allow refresh to proceed
-        // This allows token refresh even if session check fails
-        // The session will be properly validated on next login
-        console.warn('Session invalidated during refresh, but allowing token refresh to proceed');
-      }
+      // Session invalidated, but allow refresh to proceed
+      // This allows token refresh even if session check fails
+      // The session will be properly validated on next login
     }
 
     // Generate new token with same user data but new expiration time
@@ -156,10 +156,9 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error: any) {
-    console.error('Token refresh error:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode, headers: corsHeaders });
   }
-}
+});

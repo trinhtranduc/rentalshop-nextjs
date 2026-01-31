@@ -5,8 +5,16 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, SUBSCRIPTION_STATUS, USER_ROLE, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+/**
+ * GET /api/merchants
+ * List merchants with filtering and pagination
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     // Parse query parameters
@@ -107,16 +115,24 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
     });
 
   } catch (error) {
-    console.error('Error fetching merchants:', error);
+    // Error will be automatically logged by withApiLogging wrapper
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       ResponseBuilder.error('FETCH_MERCHANTS_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
-});
+  })
+);
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+/**
+ * POST /api/merchants
+ * Create new merchant
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     const body = await request.json();
@@ -138,7 +154,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       const duplicateField = existingMerchant.email === email ? 'email' : 'phone number';
       const duplicateValue = existingMerchant.email === email ? email : phone;
       
-      console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_DUPLICATE'),
         { status: 409 }
@@ -171,7 +186,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               return !!found;
             }
           );
-          console.log(`⚠️ Custom tenant key "${customKey}" already exists, generated unique key: "${tenantKey}"`);
         } else {
           tenantKey = customKey;
         }
@@ -187,7 +201,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             return !!found;
           }
         );
-        console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
       }
 
       // Create new merchant with retry logic for tenant key uniqueness
@@ -214,8 +227,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         } catch (error: any) {
           // Check if error is due to unique constraint violation on tenantKey
           if (error?.code === 'P2002' && error?.meta?.target?.includes('tenantKey')) {
-            console.log(`⚠️ Tenant key "${finalTenantKey}" collision detected, generating new one...`);
-            
             // Generate new unique tenant key
             const { generateUniqueTenantKey } = await import('@rentalshop/utils');
             finalTenantKey = await generateUniqueTenantKey(
@@ -284,10 +295,10 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     );
 
   } catch (error) {
-    console.error('Error creating merchant:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/customers/[id]/orders
@@ -16,6 +17,8 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * - ADMIN: Can see all orders (no restrictions)
  * - MERCHANT: Can only see orders from their merchant's outlets
  * - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -25,47 +28,39 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const customerId = parseInt(resolvedParams.id);
   
-  return withPermissions(['orders.view'])(async (request, { user, userScope }) => {
-    try {
-      if (isNaN(customerId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
+  return withApiLogging(
+    withPermissions(['orders.view'])(async (request, { user, userScope }) => {
+      try {
+        if (isNaN(customerId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
+            { status: 400 }
+          );
+        }
 
-      // Validate that non-admin users have merchant association
-      if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
-        console.log('❌ Non-admin user without merchant association:', {
-          role: user.role,
-          merchantId: userScope.merchantId,
-          outletId: userScope.outletId
-        });
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 403 }
-        );
-      }
+        // Validate that non-admin users have merchant association
+        if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
+            { status: 403 }
+          );
+        }
 
-      const customer = await db.customers.findById(customerId);
-      if (!customer) {
-        return NextResponse.json(
-          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+        const customer = await db.customers.findById(customerId);
+        if (!customer) {
+          return NextResponse.json(
+            ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
 
-      // Verify customer belongs to user's merchant (security check)
-      if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== userScope.merchantId) {
-        console.log('❌ Customer does not belong to user\'s merchant:', {
-          customerMerchantId: customer.merchantId,
-          userMerchantId: userScope.merchantId
-        });
-        return NextResponse.json(
-          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+        // Verify customer belongs to user's merchant (security check)
+        if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
 
       // Parse pagination parameters from query string
       const { searchParams } = new URL(request.url);
@@ -107,16 +102,6 @@ export async function GET(
       }
       // ADMIN: no outlet filtering (can see all)
 
-      console.log(`🔍 Role-based filtering for customer orders (${user.role}):`, {
-        customerId,
-        page,
-        limit,
-        'userScope.merchantId': userScope.merchantId,
-        'userScope.outletId': userScope.outletId,
-        'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId
-      });
-
       // Get orders for this customer with role-based filtering
       const orders = await db.orders.search(searchFilters);
 
@@ -145,12 +130,12 @@ export async function GET(
         })
       );
 
-    } catch (error) {
-      console.error('Error fetching customer orders:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

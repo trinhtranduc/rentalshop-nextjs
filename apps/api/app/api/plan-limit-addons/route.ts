@@ -8,14 +8,18 @@ import {
   ResponseBuilder 
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/plan-limit-addons
  * Get plan limit addons with filtering and pagination
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+    try {
     const { searchParams } = new URL(request.url);
     
     // Parse and validate query parameters
@@ -42,20 +46,24 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
         hasMore: result.hasMore,
       })
     );
-  } catch (error) {
-    console.error('Error fetching plan limit addons:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 /**
  * POST /api/plan-limit-addons
  * Create a new plan limit addon
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
-  try {
+export const POST = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+    try {
     const body = await request.json();
     
     // Validate input
@@ -83,10 +91,11 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       ResponseBuilder.success('PLAN_LIMIT_ADDON_CREATED_SUCCESS', addon),
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error creating plan limit addon:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 interface IntegrityCheck {
   name: string;
@@ -24,12 +25,18 @@ interface IntegrityReport {
   };
 }
 
+/**
+ * GET /api/system/integrity
+ * Check data integrity across the system
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  const checks: IntegrityCheck[] = [];
-  
-  try {
-    console.log('🔍 Starting data integrity checks...');
+  return withApiLogging(async (request: NextRequest) => {
+    const startTime = Date.now();
+    const checks: IntegrityCheck[] = [];
+    
+    try {
 
     // 1. Order-Customer Relationship Integrity
     await checkOrderCustomerIntegrity(checks);
@@ -83,17 +90,15 @@ export async function GET(request: NextRequest) {
       summary
     };
 
-    console.log(`✅ Integrity check completed: ${summary.passed}/${summary.total} passed`);
-
     return NextResponse.json(report);
 
-  } catch (error) {
-    console.error('❌ Integrity check failed:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 
 async function checkOrderCustomerIntegrity(checks: IntegrityCheck[]) {

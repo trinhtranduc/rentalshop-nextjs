@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -58,6 +59,8 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * GET /api/public/[tenantKey]/categories
  * Get categories by tenant key (public endpoint, no authentication required)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -67,7 +70,8 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { tenantKey } = resolvedParams;
   
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     
     // Validate tenantKey format (alphanumeric + hyphen)
     if (!tenantKey || !/^[a-z0-9\-]+$/i.test(tenantKey)) {
@@ -122,14 +126,14 @@ export async function GET(
       }
     );
 
-  } catch (error) {
-    console.error('Error fetching public categories:', error);
-    
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
+    }
+  })(request);
 }
 

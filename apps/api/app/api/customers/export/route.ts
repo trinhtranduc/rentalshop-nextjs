@@ -11,6 +11,7 @@ import {
   type ExcelColumn
 } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/customers/export
@@ -22,9 +23,12 @@ import {API} from '@rentalshop/constants';
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
  * - startDate: ISO string (required for custom period)
  * - endDate: ISO string (required for custom period)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withCustomerExportAuth(async (authorizedRequest) => {
-  try {
+export const GET = withApiLogging(
+  withCustomerExportAuth(async (authorizedRequest) => {
+    try {
     // User is already authenticated and authorized to export customers
     // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
     // OUTLET_STAFF will automatically get 403 Forbidden
@@ -174,11 +178,11 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
       }
     });
 
-  } catch (error) {
-    console.error('Error exporting customers:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

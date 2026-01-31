@@ -4,6 +4,7 @@ import { comparePassword, generateToken, getUserPermissions, ROLE_PERMISSIONS } 
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Build CORS headers for response (safe, never throws)
@@ -37,7 +38,6 @@ function buildCorsHeaders(request: NextRequest): Record<string, string> {
   };
   } catch (error) {
     // Fallback: return permissive CORS headers if anything fails
-    console.error('❌ LOGIN: Error building CORS headers, using fallback:', error);
     const origin = request.headers.get('origin') || '*';
     return {
       'Access-Control-Allow-Origin': origin,
@@ -56,11 +56,6 @@ export async function OPTIONS(request: NextRequest) {
     headers: corsHeaders,
   });
   } catch (error: any) {
-    console.error('❌ OPTIONS ERROR:', {
-      errorName: error?.name,
-      errorMessage: error?.message,
-    });
-    
     // Return basic CORS headers even on error
     const fallbackHeaders = {
       'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
@@ -76,61 +71,24 @@ export async function OPTIONS(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/auth/login
+ * User login with authentication
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(async (request: NextRequest) => {
   // Build CORS headers first (safe, never throws)
   const corsHeaders = buildCorsHeaders(request);
   
-  // 🔍 DIAGNOSTIC LOGGING: Log request origin and environment
-  const origin = request.headers.get('origin') || 'unknown';
-  const userAgent = request.headers.get('user-agent') || 'unknown';
-  console.log('🔍 LOGIN REQUEST:', {
-    origin,
-    userAgent: userAgent.substring(0, 50),
-    timestamp: new Date().toISOString(),
-    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
-    NODE_ENV: process.env.NODE_ENV,
-  });
-  
   try {
-    // 🔍 DIAGNOSTIC LOGGING: Test Prisma client connection before use
-    try {
-      const { prisma } = await import('@rentalshop/database');
-      console.log('🔍 PRISMA CLIENT STATUS:', {
-        isInitialized: !!prisma,
-        clientType: prisma?.constructor?.name || 'unknown',
-      });
-      
-      // Test database connection with a simple query
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('✅ DATABASE CONNECTION: Successfully connected');
-    } catch (dbTestError: any) {
-      console.error('❌ DATABASE CONNECTION TEST FAILED:', {
-        errorName: dbTestError?.name,
-        errorMessage: dbTestError?.message,
-        errorCode: dbTestError?.code,
-        isPrismaError: dbTestError?.name === 'PrismaClientInitializationError',
-      });
-      // Don't throw here - let the actual query fail to get better error context
-    }
-    
     const body = await request.json();
     
     // Validate input
     const validatedData = loginSchema.parse(body);
     
-    console.log('🔍 LOGIN ATTEMPT:', {
-      email: validatedData.email,
-      emailLength: validatedData.email.length,
-    });
-    
     // Find user in database by email
-    console.log('🔍 DATABASE QUERY: Starting findByEmail...');
     const user = await db.users.findByEmail(validatedData.email);
-    console.log('🔍 DATABASE QUERY: findByEmail completed', {
-      userFound: !!user,
-      userId: user?.id,
-      userRole: user?.role,
-    });
 
     if (!user) {
       return NextResponse.json(
@@ -297,22 +255,6 @@ export async function POST(request: NextRequest) {
       ? Math.floor((user as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp (seconds)
       : null;
 
-    // Debug logging for passwordChangedAt and permissionsChangedAt values
-    console.log('🔍 LOGIN: passwordChangedAt values:', {
-      fromDatabase: (user as any).passwordChangedAt,
-      convertedToToken: passwordChangedAt,
-      type: typeof passwordChangedAt,
-      userId: user.id,
-      email: user.email
-    });
-    console.log('🔍 LOGIN: permissionsChangedAt values:', {
-      fromDatabase: (user as any).permissionsChangedAt,
-      convertedToToken: permissionsChangedAt,
-      type: typeof permissionsChangedAt,
-      userId: user.id,
-      email: user.email
-    });
-
     // ✅ Get user permissions (supports custom merchant permissions)
     const authUserForPermissions = {
       id: user.id,
@@ -322,35 +264,7 @@ export async function POST(request: NextRequest) {
       outletId: user.outletId,
     };
 
-    console.log('🔍 Calling getUserPermissions with:', {
-      role: authUserForPermissions.role,
-      merchantId: authUserForPermissions.merchantId,
-      outletId: authUserForPermissions.outletId
-    });
-
     const permissions = await getUserPermissions(authUserForPermissions as any);
-
-    console.log('🔍 getUserPermissions returned:', {
-      permissionsCount: permissions.length,
-      permissions: permissions
-    });
-    
-    // ✅ DEBUG: Log permissions that will be sent to frontend
-    console.log('🔍 LOGIN: Permissions to be sent to frontend:', {
-      userRole: user.role,
-      permissionsCount: permissions.length,
-      permissions: permissions,
-      hasBankAccountsView: permissions.includes('bankAccounts.view'),
-      hasBankAccountsManage: permissions.includes('bankAccounts.manage'),
-    });
-
-    if (permissions.length === 0) {
-      console.error('❌ WARNING: getUserPermissions returned empty array!', {
-        userRole: user.role,
-        merchantId: user.merchantId,
-        availableRoles: Object.keys(ROLE_PERMISSIONS)
-      });
-    }
 
     // Generate token with minimal payload to keep JWT small
     // Note: planName and allowWebAccess are NOT in JWT - fetched from DB in middleware when needed
@@ -414,39 +328,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { headers: corsHeaders });
     
   } catch (error: any) {
-    // 🔍 DIAGNOSTIC LOGGING: Detailed error information
-    console.error('❌ LOGIN ERROR DETAILS:', {
-      errorName: error?.name,
-      errorMessage: error?.message,
-      errorCode: error?.code,
-      errorStack: error?.stack?.substring(0, 500),
-      isPrismaError: error?.name === 'PrismaClientInitializationError',
-      isDatabaseError: error?.message?.includes('database') || error?.message?.includes('Can\'t reach'),
-      origin,
-      timestamp: new Date().toISOString(),
-    });
-    
     try {
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    
-    console.log('🔍 ERROR RESPONSE:', {
-      statusCode,
-      errorCode: response.code,
-      errorMessage: response.message,
-    });
-    
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: corsHeaders
-    });
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: corsHeaders
+      });
     } catch (handleError: any) {
       // If handleApiError itself throws, return generic error with CORS headers
-      console.error('❌ LOGIN: Error in handleApiError, using fallback:', {
-        originalError: error?.message,
-        handleError: handleError?.message,
-      });
-      
       return NextResponse.json(
         ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { 
@@ -456,4 +348,4 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-} 
+}); 

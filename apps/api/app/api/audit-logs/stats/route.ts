@@ -4,14 +4,16 @@ import { db, prisma } from '@rentalshop/database';
 import { AuditLogger } from '../../../../../../packages/database/src/audit';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/audit-logs/stats - Get audit log statistics
  * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
-  console.log(`📊 GET /api/audit-logs/stats - Admin: ${user.email}`);
-  
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
   try {
 
     const { searchParams } = new URL(request.url);
@@ -41,10 +43,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     });
 
   } catch (error) {
-    console.error('Error fetching audit statistics:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

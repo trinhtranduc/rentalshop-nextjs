@@ -3,10 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/categories/[id]
  * Get category by public ID
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -16,7 +19,8 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const categoryId = parseInt(resolvedParams.id);
   
-  return withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
+  return withApiLogging(
+    withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
     try {
     if (isNaN(categoryId)) {
       return NextResponse.json(
@@ -39,18 +43,8 @@ export async function GET(
     } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
     } else {
       // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
       return NextResponse.json(
         ResponseBuilder.error('NO_DATA_AVAILABLE'),
         { status: 403 }
@@ -82,18 +76,19 @@ export async function GET(
     );
 
     } catch (error) {
-      console.error('Error fetching category:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('FETCH_CATEGORIES_FAILED'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })(request)
+  );
 }
 
 /**
  * PUT /api/categories/[id]
  * Update category by public ID
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
@@ -103,7 +98,8 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const categoryId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories
@@ -176,7 +172,6 @@ export async function PUT(
     // Only update isActive if it's not the default category
     if (existingCategory.isDefault && 'isActive' in updateData) {
       delete updateData.isActive;
-      console.log('🔍 Removed isActive from update data for default category');
     }
 
     // Only update description if it has a value
@@ -202,18 +197,19 @@ export async function PUT(
     );
 
     } catch (error) {
-      console.error('Error updating category:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('UPDATE_CATEGORY_FAILED'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })(request)
+  );
 }
 
 /**
  * DELETE /api/categories/[id]
  * Delete category by public ID
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function DELETE(
   request: NextRequest,
@@ -223,7 +219,8 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const categoryId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories
@@ -256,7 +253,6 @@ export async function DELETE(
 
     // Prevent deleting default category
     if (existingCategory.isDefault) {
-      console.log('❌ Cannot delete default category:', existingCategory.name);
       return NextResponse.json(
         {
           success: false,
@@ -291,11 +287,10 @@ export async function DELETE(
     );
 
     } catch (error) {
-      console.error('Error deleting category:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('DELETE_CATEGORY_FAILED'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })(request)
+  );
 }

@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { ContentGenerator } from '@rentalshop/ai-service';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const generatePostSchema = z.object({
   keyword: z.string().min(1).max(100),
@@ -19,9 +20,12 @@ const generatePostSchema = z.object({
  * Generate blog post content using AI
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['posts.manage'])(async (request, { user }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['posts.manage'])(async (request, { user }) => {
+    try {
     const body = await request.json();
     
     const parsed = generatePostSchema.safeParse(body);
@@ -54,9 +58,10 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user }) 
     return NextResponse.json(
       ResponseBuilder.success('POST_GENERATED_SUCCESS', result)
     );
-  } catch (error) {
-    console.error('Error generating post:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

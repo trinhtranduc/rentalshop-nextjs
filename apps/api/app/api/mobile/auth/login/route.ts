@@ -3,6 +3,7 @@ import { loginUser } from '@rentalshop/auth';
 import { loginSchema, handleApiError } from '@rentalshop/utils';
 import { apiConfig } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * @swagger
@@ -80,9 +81,12 @@ import {API} from '@rentalshop/constants';
  *         description: Invalid credentials
  *       500:
  *         description: Internal server error
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function POST(request: NextRequest) {
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const body = await request.json();
     
     // Validate input
@@ -107,11 +111,11 @@ export async function POST(request: NextRequest) {
       }
     });
     
-  } catch (error: any) {
-    console.error('Mobile login error:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 } 

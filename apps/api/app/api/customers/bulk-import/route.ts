@@ -8,6 +8,7 @@ import {
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const bulkImportSchema = z.object({
   customers: z.array(customerCreateSchema).min(1, 'At least one customer is required')
@@ -18,9 +19,12 @@ const bulkImportSchema = z.object({
  * Bulk import customers from Excel file
  * 
  * Authorization: All roles with 'customers.manage' permission can access
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
+    try {
     const body = await request.json();
     
     // Validate request body
@@ -151,13 +155,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           row: rowNumber, 
           error: errorMessage
         });
-        
-        // Log technical details for debugging
-        console.error(`Error validating customer at row ${rowNumber}:`, {
-          message: error.message,
-          code: error.code,
-          stack: error.stack
-        });
       }
     }
 
@@ -210,13 +207,12 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         }
 
         customersToImport.push(validatedCustomer);
-      } catch (error: any) {
+        } catch (error: any) {
         // If error checking duplicate, skip this customer
         skipped.push({
           row: validatedCustomer.rowNumber,
           reason: 'Failed to check duplicate'
         });
-        console.error(`Error checking duplicate for customer at row ${validatedCustomer.rowNumber}:`, error);
       }
     }
 
@@ -293,13 +289,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
               }
             }
             
-            // Log technical details for debugging
-            console.error(`Error importing customer at row ${validatedCustomer.rowNumber}:`, {
-              message: error.message,
-              code: error.code,
-              stack: error.stack
-            });
-            
             // Throw error with row number to rollback entire transaction (all-or-nothing)
             throw new Error(`Row ${validatedCustomer.rowNumber}: ${errorMessage}`);
           }
@@ -358,13 +347,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           errorMessage = transactionError.message;
         }
       }
-      
-      // Log technical details for debugging
-      console.error('Transaction error in bulk import:', {
-        message: transactionError.message,
-        code: transactionError.code,
-        stack: transactionError.stack
-    });
 
     return NextResponse.json(
       ResponseBuilder.success('CUSTOMERS_IMPORTED', {
@@ -375,10 +357,11 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       })
     );
     }
-  } catch (error) {
-    console.error('Error in bulk import:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

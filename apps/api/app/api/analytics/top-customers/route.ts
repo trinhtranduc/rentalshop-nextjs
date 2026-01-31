@@ -5,7 +5,7 @@ import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers

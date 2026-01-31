@@ -3,16 +3,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * POST /api/users/delete-account
  * Soft delete the current user's account
  * REFACTORED: Now uses unified withAuthRoles pattern for all authenticated users
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAuthRoles()(async (request, { user, userScope }) => {
-  console.log(`🗑️ POST /api/users/delete-account - User: ${user.email}`);
-  
-  try {
+export const POST = withApiLogging(
+  withAuthRoles()(async (request, { user, userScope }) => {
+    try {
     // Get the user ID to delete from the request body
     const body = await request.json();
     const { userId } = body;
@@ -38,11 +40,6 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
       deletedAt: new Date() 
     });
 
-    console.log('✅ User account soft deleted successfully:', {
-      deletedUserId: userId,
-      deletedUser: deletedUser.id
-    });
-
     return NextResponse.json({
       success: true,
         code: 'ACCOUNT_DELETED_SUCCESS',
@@ -56,10 +53,10 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
       }
     });
 
-  } catch (error: any) {
-    console.error('❌ Error in POST /api/users/delete-account:', error);
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
 
-    // Handle specific error cases
+      // Handle specific error cases
     if (error.message.includes('not found')) {
       return NextResponse.json(
         ResponseBuilder.error('USER_NOT_FOUND'),
@@ -78,5 +75,6 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
         ResponseBuilder.error('DELETE_ACCOUNT_FAILED'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
-  }
-});
+    }
+  })
+);

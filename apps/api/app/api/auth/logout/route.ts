@@ -3,12 +3,15 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * POST /api/auth/logout
  * Logout user and invalidate their session (implements single session enforcement)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     // Extract token from Authorization header
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -33,7 +36,6 @@ export async function POST(request: NextRequest) {
     // ✅ Invalidate the session (single session enforcement)
     if (user.sessionId) {
       await db.sessions.invalidateSession(user.sessionId);
-      console.log(`Session ${user.sessionId} invalidated for user ${user.id}`);
     }
     
     return NextResponse.json(
@@ -43,10 +45,9 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error: any) {
-    console.error('Logout error:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-} 
+}); 

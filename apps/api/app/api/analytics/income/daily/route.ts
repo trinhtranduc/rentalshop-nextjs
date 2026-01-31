@@ -4,7 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/income/daily - Lấy doanh thu theo ngày với chi tiết đơn hàng

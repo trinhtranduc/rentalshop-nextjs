@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalshop/types';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // ============================================================================
 // GET MERCHANT PRICING CONFIGURATION
@@ -36,16 +37,15 @@ export async function GET(
    * - They work for the merchant, so should have READ access
    * - Read-only access, cannot modify pricing (PUT is restricted)
    */
-  return withPermissions(['analytics.view'])(async (req, { user, userScope }) => {
-    try {
-      console.log(`🔍 GET /api/merchants/${merchantId}/pricing - User: ${user.email} (${user.role})`);
-      
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const merchant = validation.merchant!;
+  return withApiLogging(
+    withPermissions(['analytics.view'])(async (req, { user, userScope }) => {
+      try {
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
 
       // Parse pricing config
       let pricingConfig: MerchantPricingConfig;
@@ -78,14 +78,15 @@ export async function GET(
         }
       });
 
-    } catch (error: any) {
-      console.error('❌ Error fetching merchant pricing:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('FETCH_PRICING_FAILED'),
-        { status: 500 }
-      );
-    }
-  })(request);
+      } catch (error: any) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('FETCH_PRICING_FAILED'),
+          { status: 500 }
+        );
+      }
+    })
+  )(request);
 }
 
 // ============================================================================
@@ -108,16 +109,17 @@ export async function PUT(
    * - Automatically includes: ADMIN, MERCHANT
    * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
    */
-  return withPermissions(['merchant.manage'])(async (req, { user, userScope }) => {
-    try {
-      const body = await request.json();
-      
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const existingMerchant = validation.merchant!;
+  return withApiLogging(
+    withPermissions(['merchant.manage'])(async (req, { user, userScope }) => {
+      try {
+        const body = await request.json();
+        
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const existingMerchant = validation.merchant!;
 
       // Validate required fields
       const { businessType, defaultPricingType, businessRules, durationLimits } = body;
@@ -179,12 +181,13 @@ export async function PUT(
         }
       });
 
-    } catch (error: any) {
-      console.error('Error updating merchant pricing:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('UPDATE_PRICING_FAILED'),
-        { status: 500 }
-      );
-    }
-  })(request);
+      } catch (error: any) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('UPDATE_PRICING_FAILED'),
+          { status: 500 }
+        );
+      }
+    })
+  )(request);
 }

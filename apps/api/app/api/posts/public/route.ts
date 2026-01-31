@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { postSearchSchema } from '@rentalshop/validation';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -63,9 +64,12 @@ export async function OPTIONS(request: NextRequest) {
  * GET /api/posts/public
  * Get published posts for public display (no authentication required)
  * Only returns PUBLISHED posts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const { searchParams } = new URL(request.url);
     
     // Parse search params with defaults for public access
@@ -97,12 +101,13 @@ export async function GET(request: NextRequest) {
         headers: buildCorsHeaders(request)
       }
     );
-  } catch (error) {
-    console.error('Error fetching public posts:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
+    }
+  })(request);
 }

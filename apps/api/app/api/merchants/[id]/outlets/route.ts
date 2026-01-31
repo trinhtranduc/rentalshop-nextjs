@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/merchants/[id]/outlets
@@ -46,14 +47,6 @@ export async function GET(
       }
       // ADMIN and MERCHANT: no outlet filtering (can see all outlets)
 
-      console.log(`🔍 Role-based filtering for merchant outlets (${user.role}):`, {
-        merchantPublicId,
-        'userScope.merchantId': userScope.merchantId,
-        'userScope.outletId': userScope.outletId,
-        'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId
-      });
-
       // Get outlets for this merchant with role-based filtering
       const outlets = await db.outlets.search(searchFilters);
 
@@ -67,14 +60,14 @@ export async function GET(
         totalPages: Math.ceil((outlets.total || 0) / (outlets.limit || 20))
       }, `Found ${outlets.total || 0} outlets`));
 
-    } catch (error) {
-      console.error('Error fetching merchant outlets:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
@@ -92,50 +85,51 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
-    try {
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
+  return withApiLogging(
+    withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
+      try {
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
+
+        const body = await request.json();
+        const { name, address, phone, description } = body;
+
+        // Create new outlet with proper data handling
+        const outletData: any = {
+          name,
+          address,
+          merchantId: merchant.id,
+          isActive: true
+        };
+
+        // Only include optional fields if they have values
+        if (phone && phone.trim()) {
+          outletData.phone = phone.trim();
+        }
+
+        if (description && description.trim()) {
+          outletData.description = description.trim();
+        }
+
+        const newOutlet = await db.outlets.create(outletData);
+
+        return NextResponse.json({
+          success: true,
+          data: newOutlet,
+          code: 'OUTLET_CREATED_SUCCESS',
+          message: 'Outlet created successfully'
+        });
+
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
       }
-      const merchant = validation.merchant!;
-
-      const body = await request.json();
-      const { name, address, phone, description } = body;
-
-      // Create new outlet with proper data handling
-      const outletData: any = {
-        name,
-        address,
-        merchantId: merchant.id,
-        isActive: true
-      };
-
-      // Only include optional fields if they have values
-      if (phone && phone.trim()) {
-        outletData.phone = phone.trim();
-      }
-
-      if (description && description.trim()) {
-        outletData.description = description.trim();
-      }
-
-      const newOutlet = await db.outlets.create(outletData);
-
-      return NextResponse.json({
-        success: true,
-        data: newOutlet,
-        code: 'OUTLET_CREATED_SUCCESS',
-        message: 'Outlet created successfully'
-      });
-
-    } catch (error) {
-      console.error('Error creating outlet:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+    })
+  )(request);
 }

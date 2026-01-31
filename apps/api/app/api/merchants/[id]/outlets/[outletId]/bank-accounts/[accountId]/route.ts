@@ -11,6 +11,7 @@ import {
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Bank account update schema
@@ -41,50 +42,52 @@ export async function GET(
   const outletId = parseInt(resolvedParams.outletId);
   const accountId = parseInt(resolvedParams.accountId);
   
-  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
-    try {
-      if (isNaN(accountId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
-
-      // Validate merchant and outlet access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const { merchant, outlet } = validation;
-
-      // Get bank account (use outlet.id which is the CUID)
-      const bankAccount = await prisma.bankAccount.findFirst({
-        where: {
-          id: accountId,
-          outletId: outlet.id,
-          outlet: {
-            merchantId: merchant.id
-          }
+  return withApiLogging(
+    withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
+      try {
+        if (isNaN(accountId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_ID_FORMAT'),
+            { status: 400 }
+          );
         }
-      });
 
-      if (!bankAccount) {
+        // Validate merchant and outlet access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const { merchant, outlet } = validation;
+
+        // Get bank account (use outlet.id which is the CUID)
+        const bankAccount = await prisma.bankAccount.findFirst({
+          where: {
+            id: accountId,
+            outletId: outlet.id,
+            outlet: {
+              merchantId: merchant.id
+            }
+          }
+        });
+
+        if (!bankAccount) {
+          return NextResponse.json(
+            ResponseBuilder.error('BANK_ACCOUNT_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+
         return NextResponse.json(
-          ResponseBuilder.error('BANK_ACCOUNT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
+          ResponseBuilder.success('BANK_ACCOUNT_FOUND', bankAccount)
         );
+
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
       }
-
-      return NextResponse.json(
-        ResponseBuilder.success('BANK_ACCOUNT_FOUND', bankAccount)
-      );
-
-    } catch (error) {
-      console.error('Error fetching bank account:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -222,12 +225,13 @@ export async function PUT(
         ResponseBuilder.success('BANK_ACCOUNT_UPDATED_SUCCESS', updatedAccount)
       );
 
-    } catch (error) {
-      console.error('Error updating bank account:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
@@ -294,11 +298,12 @@ export async function DELETE(
         ResponseBuilder.success('BANK_ACCOUNT_DELETED_SUCCESS', deletedAccount)
       );
 
-    } catch (error) {
-      console.error('Error deleting bank account:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 

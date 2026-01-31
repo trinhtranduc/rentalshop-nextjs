@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Force dynamic rendering to prevent Next.js from collecting page data during build
 // This prevents Next.js from trying to load native dependencies (onnxruntime-node) during build
@@ -14,11 +15,11 @@ export const runtime = 'nodejs';
  * 1. During server startup (via start.sh or init script)
  * 2. Manually via API call
  * 3. As a health check to ensure model is ready
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = async (request: NextRequest) => {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
-    console.log('🔥 API: Starting model warm-up...');
-    
     // Lazy import to prevent Next.js from loading during build
     const { warmUpModel } = await import('@rentalshop/database/server');
     
@@ -32,20 +33,21 @@ export const POST = async (request: NextRequest) => {
       })
     );
   } catch (error: any) {
-    console.error('❌ API: Model warm-up failed:', error?.message);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     return NextResponse.json(
       ResponseBuilder.error('MODEL_WARMUP_FAILED'),
       { status: 500 }
     );
   }
-};
+});
 
 /**
  * GET /api/test/warmup-model
  * Check if model is already loaded (quick check)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = async (request: NextRequest) => {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     // Try to get model (will return cached if already loaded)
     const { getEmbeddingService } = await import('@rentalshop/database/server');
@@ -62,11 +64,10 @@ export const GET = async (request: NextRequest) => {
       })
     );
   } catch (error: any) {
-    console.error('❌ API: Model status check failed:', error?.message);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     return NextResponse.json(
       ResponseBuilder.error('MODEL_STATUS_CHECK_FAILED'),
       { status: 500 }
     );
   }
-};
+});

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 import { postCreateSchema, postSearchSchema } from '@rentalshop/validation';
 import { API, USER_ROLE } from '@rentalshop/constants';
 

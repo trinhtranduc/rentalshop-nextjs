@@ -4,6 +4,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/subscriptions/status
@@ -19,10 +20,13 @@ import { API } from '@rentalshop/constants';
  * - They need to see subscription status for their outlet
  * - They work for the merchant, so should have read access
  * - Read-only access, cannot modify subscription
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(request: NextRequest) {
-  return withPermissions(['billing.view', 'analytics.view'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['billing.view', 'analytics.view'])(async (request, { user, userScope }) => {
+      try {
       // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
       // If ADMIN doesn't provide merchantId, return no subscription (ADMIN doesn't have own subscription)
@@ -229,12 +233,12 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus));
 
-    } catch (error) {
-      console.error('Error fetching subscription status:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

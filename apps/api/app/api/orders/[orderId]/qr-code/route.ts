@@ -5,6 +5,7 @@ import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { generateVietQRString } from '@rentalshop/utils';
 import type { BankAccountReference } from '@rentalshop/types';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,8 @@ export const runtime = 'nodejs';
  * - orderNumber: Order number for transfer description
  * 
  * Authorization: All roles with 'orders.view' permission can access
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export const GET = async (
   request: NextRequest,
@@ -28,9 +31,9 @@ export const GET = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
 
-  return withPermissions(['orders.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withPermissions(['orders.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
       try {
-        console.log('🔍 GET /api/orders/[orderId]/qr-code - Order ID:', orderId);
 
         // Validate orderId format
         if (!/^\d+$/.test(orderId)) {
@@ -174,7 +177,7 @@ export const GET = async (
             transferDescription
           );
         } catch (error: any) {
-          console.error('Error generating VietQR string:', error);
+          // Error will be automatically logged by withApiLogging wrapper
           return NextResponse.json(
             ResponseBuilder.error('QR_CODE_GENERATION_FAILED'),
             { status: 500 }
@@ -199,11 +202,11 @@ export const GET = async (
           })
         );
       } catch (error) {
-        console.error('Error in GET /api/orders/[orderId]/qr-code:', error);
+        // Error will be automatically logged by withApiLogging wrapper
         const { response, statusCode } = handleApiError(error);
         return NextResponse.json(response, { status: statusCode });
       }
-    }
+    })
   )(request);
 };
 

@@ -12,6 +12,7 @@ import {
   type ExcelColumn
 } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/products/export
@@ -27,9 +28,12 @@ import {API} from '@rentalshop/constants';
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
  * - startDate: ISO string (required for custom period)
  * - endDate: ISO string (required for custom period)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['products.export'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['products.export'])(async (request, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'excel'; // Default to Excel
     const period = searchParams.get('period');
@@ -184,11 +188,11 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
       }
     });
 
-  } catch (error) {
-    console.error('Error exporting products:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

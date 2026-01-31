@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { customerCreateSchema, handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * POST /api/customers/debug
  * Debug endpoint to identify validation issues
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ * Note: This is a debug endpoint, so some diagnostic logging is kept for debugging purposes
  */
 export async function POST(request: NextRequest) {
-  try {
-    console.log('=== Customer API Debug ===');
-    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
-    
-    const body = await request.json();
-    console.log('Raw request body:', JSON.stringify(body, null, 2));
-    
-    // Check for missing required fields
-    const requiredFields = ['firstName', 'lastName', 'phone', 'merchantId'];
-    const missingFields = requiredFields.filter(field => !body[field]);
-    
-    if (missingFields.length > 0) {
-      console.log('Missing required fields:', missingFields);
-      return NextResponse.json({
+  return withApiLogging(async (request: NextRequest) => {
+    try {
+      const body = await request.json();
+      
+      // Check for missing required fields
+      const requiredFields = ['firstName', 'lastName', 'phone', 'merchantId'];
+      const missingFields = requiredFields.filter(field => !body[field]);
+      
+      if (missingFields.length > 0) {
+        return NextResponse.json({
         success: false,
         code: 'MISSING_REQUIRED_FIELD',
         message: 'Missing required fields',
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     const parsedBody = customerCreateSchema.safeParse(body);
     
     if (!parsedBody.success) {
-      console.log('Validation errors:', parsedBody.error.flatten());
       return NextResponse.json({
         success: false,
         code: 'VALIDATION_ERROR',
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    console.log('Validation successful');
     return NextResponse.json({
       success: true,
       code: 'PAYLOAD_VALIDATION_SUCCESS',
@@ -86,12 +84,13 @@ export async function POST(request: NextRequest) {
       }
     });
     
-  } catch (error) {
-    console.error('Error in debug endpoint:', error);
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 
 export const runtime = 'nodejs';

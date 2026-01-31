@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/merchants/[id]/plan
@@ -16,35 +17,37 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
-    try {
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const merchant = validation.merchant!;
-
-      // Get merchant's current plan and subscription
-      const plan = merchant.Plan;
-      const subscription = merchant.subscription;
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          plan,
-          subscription
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+      try {
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
         }
-      });
+        const merchant = validation.merchant!;
 
-    } catch (error) {
-      console.error('Error fetching merchant plan:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
-  })(request);
+        // Get merchant's current plan and subscription
+        const plan = merchant.Plan;
+        const subscription = merchant.subscription;
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            plan,
+            subscription
+          }
+        });
+
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
+        );
+      }
+    })
+  )(request);
 }
 
 /**
@@ -73,17 +76,6 @@ export async function PUT(
       
       // totalPrice comes from frontend calculation
       const amount = totalPrice || 0;
-
-      console.log('🔍 Plan Change Request:', { 
-        merchantPublicId, 
-        planId, 
-        billingInterval, 
-        amount,
-        totalPrice,
-        duration,
-        discount,
-        body 
-      });
 
       // Update merchant plan
       const updatedMerchant = await db.merchants.update(merchantPublicId, {
@@ -149,16 +141,6 @@ export async function PUT(
           },
           performedBy: user.userId || user.id
         });
-        
-        console.log('✅ Updated subscription:', { 
-          subscriptionId: merchant.subscription.id, 
-          newPlanId: planId,
-          status: 'ACTIVE',
-          amount,
-          interval: billingInterval,
-          periodStart: currentStart,
-          periodEnd: newPeriodEnd
-        });
       }
 
       // Fetch updated merchant with new subscription data
@@ -171,12 +153,12 @@ export async function PUT(
         message: 'Plan updated successfully'
       });
 
-    } catch (error) {
-      console.error('Error updating merchant plan:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

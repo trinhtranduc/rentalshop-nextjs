@@ -10,7 +10,7 @@ import { db } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export interface UserFilters {
   role?: UserRole;

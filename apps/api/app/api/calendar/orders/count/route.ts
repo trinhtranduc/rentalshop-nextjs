@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -51,7 +52,6 @@ function buildWhereClause(
   // 🎯 Filter by status from request (e.g., status=RESERVED)
   if (filters.status) {
     where.status = filters.status;
-    console.log('🔍 Filtering by status:', filters.status);
   }
   if (filters.orderType) where.orderType = filters.orderType;
 
@@ -71,14 +71,6 @@ function buildWhereClause(
     if (toDate) {
       where.pickupPlanAt.lte = toDate;
     }
-    console.log('🔍 Filtering by pickupPlanAt:', {
-      from: filters.from,
-      to: filters.to,
-      fromDate: fromDate?.toISOString(),
-      toDate: toDate?.toISOString(),
-      fromDateUTC: fromDate?.toUTCString(),
-      toDateUTC: toDate?.toUTCString()
-    });
   }
 
   // Role-based access control
@@ -203,9 +195,12 @@ function getMonthDateRange(month: number, year?: number): { from: string; to: st
  * Get count of orders by status for calendar display
  * 
  * Authorization: Requires 'orders.view' permission
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['orders.view'], { requireActiveSubscription: false })(
-  async (request: NextRequest, { user, userScope }) => {
+export const GET = withApiLogging(
+  withPermissions(['orders.view'], { requireActiveSubscription: false })(
+    async (request: NextRequest, { user, userScope }) => {
     try {
       // Parse and validate query parameters
       const { searchParams } = new URL(request.url);
@@ -222,13 +217,6 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
         const monthRange = getMonthDateRange(month, year);
         finalFrom = monthRange.from;
         finalTo = monthRange.to;
-        
-        console.log('📅 Month parameter detected:', {
-          month,
-          year: year || 'current',
-          from: finalFrom,
-          to: finalTo,
-        });
       }
 
       // Build where clause with role-based filtering
@@ -252,44 +240,14 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
           page: 1,
         });
 
-        const sampleOrders = (ordersResult.data || []).slice(0, 3).map((order: any) => ({
-          id: order.id,
-          status: order.status,
-          pickupPlanAt: order.pickupPlanAt,
-          createdAt: order.createdAt
-        }));
-        
-        console.log('🔍 Calendar orders search:', {
-          where,
-          status: status || 'all',
-          ordersFound: ordersResult.data?.length || 0,
-          sampleOrders
-        });
-
         // 🎯 Group orders by pickupPlanAt date (always use pickupPlanAt for calendar)
         // Status filter is already applied in where clause
         const countByDate = groupOrdersByDate(ordersResult.data || [], dateField);
-        
-        console.log('📊 Orders grouped by pickupPlanAt:', {
-          status: status || 'all',
-          countByDateKeys: Object.keys(countByDate).length,
-          sampleCounts: Object.entries(countByDate).slice(0, 5)
-        });
         
         // Fill all dates from 'from' to 'to' with 0 if no orders
         const filledCountByDate = fillDateRange(countByDate, finalFrom, finalTo);
         
         const total = Object.values(filledCountByDate).reduce((sum, count) => sum + count, 0);
-
-        console.log('📦 Calendar orders count:', {
-          from: finalFrom,
-          to: finalTo,
-          month: month || null,
-          year: year || null,
-          totalDays: Object.keys(filledCountByDate).length,
-          totalOrders: total,
-          ordersFound: ordersResult.data?.length || 0,
-        });
 
         return NextResponse.json(
           ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
@@ -328,11 +286,12 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
         })
       );
     } catch (error) {
-      console.error('❌ Calendar Orders Count API error:', error);
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  }
+    }
+  )
 );
 
 export const runtime = 'nodejs';

@@ -6,6 +6,7 @@ import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Validation schema for orders by date query
 const ordersByDateQuerySchema = z.object({
@@ -36,21 +37,19 @@ const ordersByDateQuerySchema = z.object({
  * - For other statuses: filters by createdAt (ngày tạo đơn)
  * - Supports filtering by outlet, merchant, orderType, and status
  * - Optimized for daily calendar view
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withReadOnlyAuth(async (
-  request: NextRequest,
-  { user, userScope }
-) => {
-  console.log(`🔍 GET /api/calendar/orders/by-date - User: ${user.email} (${user.role})`);
-  console.log(`🔍 Calendar Orders By Date API - UserScope:`, userScope);
-
+export const GET = withApiLogging(
+  withReadOnlyAuth(async (
+    request: NextRequest,
+    { user, userScope }
+  ) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
     const validatedQuery = ordersByDateQuerySchema.parse(query);
-
-    console.log('📅 Orders by date query:', validatedQuery);
 
     const { date: dateStr, outletId, merchantId, orderType, status, limit, page } = validatedQuery;
 
@@ -60,8 +59,6 @@ export const GET = withReadOnlyAuth(async (
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
-
-    console.log('📅 Target date range:', { startOfDay, endOfDay });
 
     // Build where clause with role-based filtering
     const where: any = {};
@@ -121,8 +118,6 @@ export const GET = withReadOnlyAuth(async (
       where.outletId = userScope.outletId;
     }
 
-    console.log('🔍 Orders by date where clause:', where);
-
     // Fetch orders with orderItems included (with pagination)
     const ordersResult = await db.orders.searchWithItems({
       where,
@@ -131,8 +126,6 @@ export const GET = withReadOnlyAuth(async (
     });
     
     const orders = ordersResult.data || [];
-
-    console.log('📦 Found orders:', orders.length);
 
     // Transform orders to CalendarOrderSummary format
     const orderSummaries: CalendarOrderSummary[] = orders.map((order: any) => {
@@ -197,17 +190,6 @@ export const GET = withReadOnlyAuth(async (
     const totalPages = Math.ceil(total / limit);
     const hasMore = currentPage < totalPages;
 
-    console.log('📅 Orders by date prepared:', {
-      date: dateStr,
-      status: status || 'all',
-      ordersCount: orderSummaries.length,
-      total,
-      page: currentPage,
-      totalPages,
-      totalRevenue,
-      averageOrderValue
-    });
-
     return NextResponse.json(
       ResponseBuilder.success('ORDERS_BY_DATE_SUCCESS', {
         date: dateStr,
@@ -234,12 +216,13 @@ export const GET = withReadOnlyAuth(async (
     );
 
   } catch (error) {
-    console.error('❌ Calendar Orders By Date API error:', error);
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 export const runtime = 'nodejs';
 

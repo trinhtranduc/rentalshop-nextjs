@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
-import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { compressImageTo1MB } from '@/lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)
 const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
@@ -82,8 +83,11 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * - `originalFileName`: What user sees
  * - `finalFileName`: Actual S3 filename  
  * - `stagingKey`: For cleanup operations
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAnyAuth(async (request: NextRequest) => {
+export const POST = withApiLogging(
+  withAnyAuth(async (request: NextRequest) => {
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
@@ -97,22 +101,9 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       );
     }
 
-    // Debug: Log file type to understand what browser is sending
-    console.log('🔍 File validation debug:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      allowedTypes: ALLOWED_TYPES
-    });
-
     // Validate image
     const validation = validateImage(file);
     if (!validation.isValid) {
-      console.log('❌ Validation failed:', {
-        fileType: file.type,
-        allowedTypes: ALLOWED_TYPES,
-        error: validation.error
-      });
       return NextResponse.json(
         ResponseBuilder.error('VALIDATION_ERROR'),
         { status: 400 }
@@ -155,17 +146,6 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
     const stagingKey = generateStagingKey(fileName);
     const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
 
-    console.log('📸 Uploading image:', {
-      originalFile: file.name,
-      providedOriginalName: originalName,
-      effectiveFileName: effectiveFileName,
-      finalFileName: finalFileName,
-      stagingKey: stagingKey,
-      preserveFilename,
-      contentType: file.type,
-      size: file.size
-    });
-
     // Upload compressed image to AWS S3 staging folder with new structure
     const result = await uploadToS3(buffer, {
       folder,
@@ -173,8 +153,6 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       contentType: 'image/jpeg', // Always JPEG after compression
       preserveOriginalName: false // Always use generated filename for consistency
     });
-    console.log('✅ Image uploaded to AWS S3');
-    console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
       // Prefer CloudFront URL if configured (faster, cleaner, CDN caching)
@@ -190,16 +168,13 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       if (cloudfrontDomain && (result.data.cdnUrl || (result.data.url && !result.data.url.includes('amazonaws.com')))) {
         // CloudFront URL is available - use it directly
         accessUrl = result.data.cdnUrl || result.data.url;
-        console.log('✅ Using CloudFront URL:', accessUrl);
       } else if (cloudfrontDomain) {
         // CloudFront is configured but URL not in result - generate it
         accessUrl = `https://${cloudfrontDomain}/${result.data.key}`;
-        console.log('✅ Generated CloudFront URL:', accessUrl);
       } else {
         // CloudFront not configured - generate presigned URL as fallback
         const presignedUrl = await generateAccessUrl(result.data.key, 86400, false); // 24 hours
         accessUrl = presignedUrl || result.data.s3Url || result.data.url;
-        console.log('⚠️ CloudFront not configured, using presigned URL');
       }
       
       // Extract filename from key for better tracking
@@ -228,15 +203,13 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
         message: 'Image uploaded successfully to AWS S3 staging folder'
       });
     } else {
-      console.error('❌ Upload failed:', result);
       throw new Error(result.error || 'Failed to upload to S3');
     }
 
   } catch (error) {
-    console.error('Error uploading image:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('UPLOAD_IMAGE_FAILED'),
-      { status: 500 }
-    );
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

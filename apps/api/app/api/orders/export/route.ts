@@ -13,6 +13,7 @@ import {
   type ExcelColumn
 } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/orders/export
@@ -31,9 +32,12 @@ import {API} from '@rentalshop/constants';
  * - status: Order status filter (optional)
  * - orderType: Order type filter (optional)
  * - dateField: 'createdAt' (default) | 'pickupPlanAt' | 'returnPlanAt'
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['orders.export'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['orders.export'])(async (request, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'excel'; // Default to Excel
     const period = searchParams.get('period');
@@ -265,11 +269,11 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       }
     });
 
-  } catch (error) {
-    console.error('Error exporting orders:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

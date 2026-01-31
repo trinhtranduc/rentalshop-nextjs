@@ -8,6 +8,7 @@ import {
 } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const bulkImportSchema = z.object({
   products: z.array(z.any()).min(1, 'At least one product is required')
@@ -214,7 +215,6 @@ async function ensureDefaultCategory(merchantPublicId: number, categoryMap: Map<
   }
 
   // Create default category
-  console.log('🔧 Creating default category before import...');
   const newCategory = await prisma.category.create({
     data: {
       name: 'Default',
@@ -225,7 +225,6 @@ async function ensureDefaultCategory(merchantPublicId: number, categoryMap: Map<
   });
   
   categoryMap.set('default', newCategory.id);
-  console.log('✅ Default category created:', newCategory.id);
   
   return newCategory.id;
 }
@@ -239,9 +238,12 @@ async function ensureDefaultCategory(merchantPublicId: number, categoryMap: Map<
  * Bulk import products from Excel file
  * 
  * Authorization: All roles with 'products.manage' permission can access
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+    try {
     const body = await request.json();
     
     // Validate request body
@@ -350,12 +352,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           if (!validated.success) {
           const errorMessage = formatZodError(validated.error, productInput);
           validationErrors.push({ row: rowNumber, error: errorMessage });
-          
-          console.error(`Zod validation error at row ${rowNumber}:`, {
-            errors: validated.error.errors,
-            productInput,
-            productData
-          });
           continue;
         }
 
@@ -367,14 +363,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       } catch (error: any) {
         const errorMessage = formatPrismaError(error, productData);
         validationErrors.push({ row: rowNumber, error: errorMessage });
-        
-        console.error(`Error validating product at row ${rowNumber}:`, {
-          message: error.message,
-          code: error.code,
-          name: error.name,
-          stack: error.stack,
-          productData
-        });
       }
     }
 
@@ -418,13 +406,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }
 
         productsToImport.push(validatedProduct);
-      } catch (error: any) {
-        skipped.push({
-          row: validatedProduct.rowNumber,
-          reason: 'Failed to check duplicate'
-        });
-        console.error(`Error checking duplicate for product at row ${validatedProduct.rowNumber}:`, error);
-      }
+        } catch (error: any) {
+          skipped.push({
+            row: validatedProduct.rowNumber,
+            reason: 'Failed to check duplicate'
+          });
+        }
     }
 
     // If all products are duplicates, return early
@@ -486,13 +473,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         } catch (error: any) {
             // Format error and throw to rollback entire transaction (all-or-nothing)
             const errorMessage = formatPrismaError(error);
-            console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
-              message: error.message,
-              code: error.code,
-              stack: error.stack,
-              productData: validatedProduct.data
-            });
-            
             throw new Error(`Row ${validatedProduct.rowNumber}: ${errorMessage}`);
           }
         }
@@ -540,12 +520,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           errorMessage = transactionError.message;
         }
       }
-      
-      console.error('Transaction error in bulk import:', {
-        message: transactionError.message,
-        code: transactionError.code,
-        stack: transactionError.stack
-    });
 
     return NextResponse.json(
       ResponseBuilder.success('PRODUCTS_IMPORTED', {
@@ -556,10 +530,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       })
     );
     }
-  } catch (error: any) {
-    console.error('Error in bulk import:', error);
-    
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

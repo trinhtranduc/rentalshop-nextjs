@@ -5,7 +5,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
 import type { CurrencyCode } from '@rentalshop/types';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * PUT /api/settings/currency

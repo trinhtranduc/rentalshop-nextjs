@@ -20,9 +20,9 @@ import {
   mapStagingUrlsToProductionUrls,
   getBucketName
 } from '@rentalshop/utils';
-import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { compressImageTo1MB } from '.@/lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Helper function to validate image file
@@ -113,7 +113,6 @@ export async function GET(
       const product = await db.products.findById(productId);
 
       if (!product) {
-        console.log('❌ Product not found in database for productId:', productId);
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
@@ -124,17 +123,11 @@ export async function GET(
       // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
       const productMerchantId = product.merchant?.id;
       if (user.role !== 'ADMIN' && productMerchantId !== userMerchantId) {
-        console.log('❌ Product does not belong to user\'s merchant:', {
-          productMerchantId: productMerchantId,
-          userMerchantId: userMerchantId
-        });
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal product exists)
           { status: API.STATUS.NOT_FOUND }
         );
       }
-
-      console.log('✅ Product found, transforming data...');
 
       // Parse images from database
       const imageUrls = parseProductImages(product.images);
@@ -435,7 +428,6 @@ export async function PUT(
           if (stock.outletId && typeof stock.stock === 'number') {
             const outlet = await db.outlets.findById(stock.outletId);
             if (outlet) {
-              console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
               // For nested write, we need to use outlet's database ID (number)
               validOutletStock.push({
                 outletId: outlet.id, // Use id (number) for nested write
@@ -443,11 +435,7 @@ export async function PUT(
                 available: stock.stock,
                 renting: 0
               });
-            } else {
-              console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
             }
-          } else {
-            console.log(`❌ Invalid outletStock entry:`, stock);
           }
         }
         
@@ -457,15 +445,11 @@ export async function PUT(
             deleteMany: {}, // Delete all existing outlet stock
             create: validOutletStock // Create new ones
           };
-          console.log('✅ Prepared outletStock nested write:', finalUpdateData.outletStock);
         }
-      } else {
-        console.log('ℹ️ No outletStock provided or empty array');
       }
 
       // Update the product using the simplified database API with nested write
       const updatedProduct = await db.products.update(productId, finalUpdateData);
-      console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
       // Sync Product.totalStock = sum of all OutletStock.stock
       // This ensures totalStock always equals the sum of all outlet stocks
@@ -481,8 +465,8 @@ export async function PUT(
             }
           }
         } catch (error) {
-          console.error('❌ Error syncing Product.totalStock after update:', error);
           // Don't throw - product update succeeded, sync failed
+          // Error will be automatically logged by withApiLogging wrapper
         }
       }
 
@@ -495,11 +479,6 @@ export async function PUT(
           // Parse new images after update
           const newImageUrls = parseProductImages(updatedProduct.images);
           
-          console.log(`🔍 Image cleanup check for product ${productId}:`, {
-            existingCount: existingImageUrls.length,
-            newCount: newImageUrls.length
-          });
-          
           // Find images that existed before but are not in the new list
           const imagesToDelete = existingImageUrls.filter(existingUrl => {
             // Normalize URLs for comparison (remove query params, trailing slashes)
@@ -510,43 +489,29 @@ export async function PUT(
             });
           });
           
-          // Delete orphaned images from S3
+          // Delete orphaned images from S3 (background job)
           if (imagesToDelete.length > 0) {
-            console.log(`🗑️ Deleting ${imagesToDelete.length} orphaned image(s) from S3 for product ${productId}`);
             const deletePromises = imagesToDelete.map(async (imageUrl) => {
               try {
                 const s3Key = extractS3KeyFromUrl(imageUrl);
                 if (s3Key) {
                   const deleted = await deleteFromS3(s3Key);
-                  if (deleted) {
-                    console.log(`✅ Deleted orphaned image from S3: ${s3Key}`);
-                    return { success: true, key: s3Key };
-                  } else {
-                    console.warn(`⚠️ Failed to delete orphaned image from S3: ${s3Key}`);
-                    return { success: false, key: s3Key, error: 'Delete failed' };
-                  }
+                  return { success: deleted, key: s3Key };
                 } else {
-                  console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
                   return { success: false, key: null, error: 'Could not extract S3 key' };
                 }
               } catch (error) {
-                console.error(`❌ Error deleting orphaned image ${imageUrl}:`, error);
+                // Error will be automatically logged by withApiLogging wrapper
                 return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
               }
             });
             
-            const results = await Promise.all(deletePromises);
-            const successCount = results.filter(r => r.success).length;
-            const failCount = results.filter(r => !r.success).length;
-            
-            console.log(`📊 Image cleanup summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
-          } else {
-            console.log('ℹ️ No orphaned images to delete - all existing images are still in use');
+            await Promise.all(deletePromises);
           }
         } catch (error) {
-          console.error('❌ Error cleaning up old images:', error);
           // Don't throw - product update succeeded, cleanup failed (images will remain in S3)
           // This is acceptable as orphaned images don't affect functionality, just storage cost
+          // Error will be automatically logged by withApiLogging wrapper
         }
       }
 
@@ -757,9 +722,7 @@ export async function DELETE(
         const failCount = results.filter(r => !r.success).length;
         
         // Log summary for background job monitoring
-        if (failCount > 0) {
-          console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3 for product ${productId}. Product will still be deleted.`);
-        }
+        // Product will still be deleted even if some images fail to delete
       }
 
       // Delete embeddings from Qdrant (background job)

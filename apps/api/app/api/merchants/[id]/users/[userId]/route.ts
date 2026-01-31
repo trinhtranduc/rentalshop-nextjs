@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/merchants/[id]/users/[userId]
@@ -22,35 +23,37 @@ export async function GET(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
-    try {
-      if (isNaN(userPublicId)) {
-        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+  return withApiLogging(
+    withPermissions(['users.view'])(async (request, { user, userScope }) => {
+      try {
+        if (isNaN(userPublicId)) {
+          return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+        }
+
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
+
+        const foundUser = await db.users.findById(userPublicId);
+        if (!foundUser) {
+          return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
+
+        // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
+
+        return NextResponse.json({ success: true, data: foundUser });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
+        );
       }
-
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const merchant = validation.merchant!;
-
-      const foundUser = await db.users.findById(userPublicId);
-      if (!foundUser) {
-        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
-
-      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
-
-      return NextResponse.json({ success: true, data: foundUser });
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -71,38 +74,40 @@ export async function PUT(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-    try {
-      if (isNaN(userPublicId)) {
-        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+  return withApiLogging(
+    withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+      try {
+        if (isNaN(userPublicId)) {
+          return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+        }
+
+        // Validate merchant access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
+
+        const existing = await db.users.findById(userPublicId);
+        if (!existing) {
+          return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
+
+        // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
+
+        const body = await request.json();
+        const updatedUser = await db.users.update(userPublicId, body);
+
+        return NextResponse.json({ success: true, data: updatedUser });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
+        );
       }
-
-      // Validate merchant access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const merchant = validation.merchant!;
-
-      const existing = await db.users.findById(userPublicId);
-      if (!existing) {
-        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
-
-      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
-
-      const body = await request.json();
-      const updatedUser = await db.users.update(userPublicId, body);
-
-      return NextResponse.json({ success: true, data: updatedUser });
-    } catch (error) {
-      console.error('Error updating user:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -145,7 +150,6 @@ export async function DELETE(
 
       // Invalidate all user sessions first
       await db.sessions.invalidateAllUserSessions(userPublicId);
-      console.log(`🗑️ Invalidated all sessions for user ${userPublicId}`);
 
       // Hard delete user (orders.createdById will remain with user's ID as historical reference)
       const deletedUser = await db.users.delete(userPublicId);
@@ -156,12 +160,12 @@ export async function DELETE(
         message: 'User deleted successfully',
         data: deletedUser
       });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

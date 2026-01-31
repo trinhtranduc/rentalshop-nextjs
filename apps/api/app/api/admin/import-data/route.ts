@@ -11,14 +11,21 @@ import { ResponseBuilder, handleApiError, downloadProductImagesForSync, uploadTo
 import { USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { validateImportData } from '@rentalshop/utils';
 import { generateOrderNumber } from '@rentalshop/database';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  console.log('📥 [IMPORT API] POST /api/admin/import-data - Request received');
-  
-  try {
+/**
+ * POST /api/admin/import-data
+ * Import data from JSON file
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ * Note: Background process (processImportData) keeps its own logging for progress tracking
+ */
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const merchantIdStr = formData.get('merchantId') as string;
@@ -255,7 +262,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
     // Start import process in background (don't await)
     processImportData(importData, merchantId, syncSession.id, options, entitiesToImport).catch((error) => {
-      console.error('Error in background import process:', error);
+      // Background process errors are logged in processImportData function
       db.sync.updateStatus(syncSession.id, {
         status: 'FAILED',
         errorLog: [{ error: error.message, timestamp: new Date() }]
@@ -269,12 +276,13 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         preview: validation.preview
       })
     );
-  } catch (error: any) {
-    console.error('Error in import:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 /**
  * Process import data in background
@@ -429,8 +437,6 @@ async function processImportData(
                 const hasImageUrls = Array.isArray(imageUrls) ? imageUrls.length > 0 : (typeof imageUrls === 'string' && imageUrls.trim().length > 0);
                 
                 if (hasImageUrls) {
-                  console.log(`📸 [IMPORT] Downloading images for product ${i + batch.indexOf(productData) + 1}/${exportData.products.length}`);
-                  
                   // Use downloadProductImagesForSync to download images
                   const imageResult = await downloadProductImagesForSync(productData);
                   
@@ -449,14 +455,11 @@ async function processImportData(
                           const imageUrl = uploadResult.data.cdnUrl || uploadResult.data.url;
                           uploadedImageUrls.push(imageUrl);
                           stats.products.imagesDownloaded++;
-                          console.log(`✅ [IMPORT] Uploaded image: ${imageUrl}`);
                         } else {
                           stats.products.imagesFailed++;
-                          console.warn(`⚠️ [IMPORT] Failed to upload image: ${uploadResult.error || 'Unknown error'}`);
                         }
                       } catch (uploadError: any) {
                         stats.products.imagesFailed++;
-                        console.error(`❌ [IMPORT] Error uploading image:`, uploadError.message);
                         errorLog.push({
                           entity: 'product',
                           row: i + batch.indexOf(productData),
@@ -479,7 +482,6 @@ async function processImportData(
                   }
                 }
               } catch (imageError: any) {
-                console.error(`❌ [IMPORT] Error processing images for product:`, imageError.message);
                 errorLog.push({
                   entity: 'product',
                   row: i + batch.indexOf(productData),

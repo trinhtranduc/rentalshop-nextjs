@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 interface HealthCheck {
   name: string;
@@ -30,11 +31,18 @@ interface SystemHealth {
   };
 }
 
+/**
+ * GET /api/system/health
+ * Check system health (database, API, external services, resources)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  const checks: HealthCheck[] = [];
-  
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    const startTime = Date.now();
+    const checks: HealthCheck[] = [];
+    
+    try {
     // 1. Database Health Check
     const dbStartTime = Date.now();
     try {
@@ -182,10 +190,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(systemHealth, { status: statusCode });
 
-  } catch (error) {
-    console.error('System health check failed:', error);
-    
-    return NextResponse.json({
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      
+      return NextResponse.json({
       overall: 'unhealthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -202,5 +210,6 @@ export async function GET(request: NextRequest) {
         cpu: { usage: 0 }
       }
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
-  }
+    }
+  })(request);
 }

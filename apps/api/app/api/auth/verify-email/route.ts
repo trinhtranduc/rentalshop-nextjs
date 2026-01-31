@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db, verifyEmailByToken } from '@rentalshop/database';
 import { generateToken } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -11,8 +12,10 @@ const verifyEmailSchema = z.object({
 /**
  * POST /api/auth/verify-email
  * Verify user email using verification token
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const body = await request.json();
     
@@ -59,13 +62,12 @@ export async function POST(request: NextRequest) {
       })
     );
   } catch (error: any) {
-    console.error('Email verification error:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-}
+});
 
 /**
  * GET /api/auth/verify-email?token=xxx

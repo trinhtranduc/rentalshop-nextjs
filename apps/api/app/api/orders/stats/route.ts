@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/orders/stats - Get order statistics
@@ -12,10 +13,11 @@ import {API} from '@rentalshop/constants';
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF (via orders.view)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['orders.view', 'analytics.view'])(async (request, { user, userScope }) => {
-  console.log(`📊 GET /api/orders/stats - User: ${user.email}, Role: ${user.role}`);
-  
+export const GET = withApiLogging(
+  withPermissions(['orders.view', 'analytics.view'])(async (request, { user, userScope }) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -110,10 +112,10 @@ export const GET = withPermissions(['orders.view', 'analytics.view'])(async (req
     });
 
   } catch (error) {
-    console.error('Error getting order stats:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-}); 
+  })
+); 

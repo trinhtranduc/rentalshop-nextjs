@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, createPasswordResetToken } from '@rentalshop/database';
 import { sendPasswordResetEmail } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -26,8 +27,10 @@ const forgetPasswordSchema = z.object({
  * - Create reset token
  * - Send reset email
  * - Always return success (security best practice)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     // ============================================================================
     // STEP 1: PARSE REQUEST BODY
@@ -41,7 +44,6 @@ export async function POST(request: NextRequest) {
       // Try to parse as JSON (works for both application/json and text/plain with JSON content)
       body = JSON.parse(text);
     } catch (parseError) {
-      console.error('❌ [Forget Password] Invalid JSON format:', parseError);
       return NextResponse.json(
         ResponseBuilder.error('INVALID_REQUEST'),
         { status: 400 }
@@ -53,8 +55,6 @@ export async function POST(request: NextRequest) {
     // ============================================================================
     const validatedData = forgetPasswordSchema.parse(body);
     
-    console.log('🔐 [Forget Password] Password reset requested for:', validatedData.email);
-    
     // ============================================================================
     // STEP 3: PRE-CHECKS - Find user by email
     // ============================================================================
@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
     // Always return success to prevent email enumeration attacks
     // Allow password reset for all users (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
     if (!user) {
-      console.log('ℹ️ [Forget Password] User not found (security: returning success)');
       // Return success even if user doesn't exist (security best practice)
       return NextResponse.json(
         ResponseBuilder.success('PASSWORD_RESET_LINK_SENT', {
@@ -73,36 +72,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ [Forget Password] User found:', { 
-      userId: user.id, 
-      email: user.email, 
-      role: user.role,
-      merchantId: user.merchantId
-    });
-
     // ============================================================================
     // STEP 4: BUSINESS LOGIC - Create password reset token
     // ============================================================================
-    console.log('🔑 [Forget Password] Creating password reset token...');
-    
     // Create password reset token (24 hour expiry)
     const passwordReset = await createPasswordResetToken(user.id, user.email, 24);
-    
-    console.log('✅ [Forget Password] Password reset token created:', { 
-      tokenId: passwordReset.id,
-      expiresAt: passwordReset.expiresAt 
-    });
     
     // ============================================================================
     // STEP 5: SEND PASSWORD RESET EMAIL
     // ============================================================================
     const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
-    
-    console.log('📨 [Forget Password] Sending password reset email...', {
-      to: user.email,
-      userName,
-      provider: process.env.EMAIL_PROVIDER || 'console'
-    });
     
     try {
       const emailResult = await sendPasswordResetEmail(
@@ -111,22 +90,9 @@ export async function POST(request: NextRequest) {
         passwordReset.token
       );
 
-      console.log('📬 [Forget Password] Email result:', {
-        success: emailResult.success,
-        error: emailResult.error,
-        messageId: emailResult.messageId,
-        provider: process.env.EMAIL_PROVIDER
-      });
-
-      if (!emailResult.success) {
-        console.warn('⚠️ [Forget Password] Failed to send password reset email:', emailResult.error);
-        // Don't fail the request - return success anyway (security best practice)
-        // The token is still created, user can request another email if needed
-      } else {
-        console.log('✅ [Forget Password] Password reset email sent successfully');
-      }
+      // Don't fail the request if email fails - return success anyway (security best practice)
+      // The token is still created, user can request another email if needed
     } catch (error) {
-      console.error('❌ [Forget Password] Error sending password reset email:', error);
       // Don't fail the request - return success anyway (security best practice)
       // The token is still created, user can request another email if needed
     }
@@ -145,11 +111,10 @@ export async function POST(request: NextRequest) {
     // ============================================================================
     // ERROR HANDLING
     // ============================================================================
-    console.error('❌ [Forget Password] Error:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system (same pattern as register route)
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-}
+});
 

@@ -4,7 +4,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
-import { withApiLogging } from '../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const GET = withApiLogging(
   withAuthRoles(['ADMIN'])(async (request: NextRequest) => {

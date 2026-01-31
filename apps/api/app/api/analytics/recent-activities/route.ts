@@ -3,7 +3,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const GET = withApiLogging(
   withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {

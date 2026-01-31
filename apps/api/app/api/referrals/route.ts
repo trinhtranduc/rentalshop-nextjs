@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/referrals
@@ -11,9 +12,12 @@ import { USER_ROLE } from '@rentalshop/constants';
  *   - merchantId: Optional - filter by specific referrer merchant ID
  *   - page: Page number (default: 1)
  *   - limit: Items per page (default: 20)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const merchantId = searchParams.get('merchantId');
     const page = parseInt(searchParams.get('page') || '1');
@@ -77,10 +81,11 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         hasMore: result.hasMore
       })
     );
-  } catch (error) {
-    console.error('Error fetching referrals:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

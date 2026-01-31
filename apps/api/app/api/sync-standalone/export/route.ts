@@ -9,6 +9,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { OldServerSyncService, transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   console.log('📤 [EXPORT API] POST /api/sync-standalone/export - Request received');
@@ -72,7 +73,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           );
         }
       } catch (error: any) {
-        console.error('Error exporting customers:', error);
+        // Error will be automatically logged by withApiLogging wrapper
         // Continue with other entities
       }
     }
@@ -113,7 +114,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           });
         }
       } catch (error: any) {
-        console.error('Error exporting products:', error);
+        // Error will be automatically logged by withApiLogging wrapper
         // Continue with other entities
       }
     }
@@ -233,7 +234,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           });
         }
       } catch (error: any) {
-        console.error('Error exporting orders:', error);
+        // Error will be automatically logged by withApiLogging wrapper
         // Continue
       }
     }
@@ -269,10 +270,11 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     return NextResponse.json(
       ResponseBuilder.success('EXPORT_SUCCESS', exportResponse)
     );
-  } catch (error: any) {
-    console.error('Error in export:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

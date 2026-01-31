@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Validation schema for product availability query
 const productAvailabilitySchema = z.object({
@@ -32,14 +33,16 @@ const productAvailabilitySchema = z.object({
  * - Stock summary (total, rented, available)
  * - Orders for the target date
  * - Availability status
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['products.view'], { requireActiveSubscription: false })(
-  async (request, { user, userScope }) => {
-    try {
-      const { searchParams } = new URL(request.url);
-      console.log('Product availability params:', Object.fromEntries(searchParams.entries()));
-      
-      const parsed = productAvailabilitySchema.safeParse(Object.fromEntries(searchParams.entries()));
+export const GET = withApiLogging(
+  withPermissions(['products.view'], { requireActiveSubscription: false })(
+    async (request, { user, userScope }) => {
+      try {
+        const { searchParams } = new URL(request.url);
+        
+        const parsed = productAvailabilitySchema.safeParse(Object.fromEntries(searchParams.entries()));
       if (!parsed.success) {
         return NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
@@ -383,10 +386,11 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         ResponseBuilder.success('PRODUCT_AVAILABILITY_FOUND', response)
       );
 
-    } catch (error) {
-      console.error('Error checking product availability:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
     }
-  }
+  )
 );

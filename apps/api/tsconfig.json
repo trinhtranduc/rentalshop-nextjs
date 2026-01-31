@@ -5,6 +5,12 @@
   // REFACTORED: Now uses shared config instead of duplication
   
   "extends": "../../shared-configs/tsconfig.nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/lib/*": ["./lib/*"]
+    }
+  },
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",

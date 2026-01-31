@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Handler for changing subscription plan

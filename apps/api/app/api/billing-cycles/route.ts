@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/billing-cycles - Get billing cycles
  * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/billing-cycles - User: ${user.email}`);
-  
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
   try {
     // TODO: Implement billing cycle functionality when model is added to schema
     return NextResponse.json(
@@ -16,21 +18,21 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       { status: 501 }
     );
   } catch (error) {
-    console.error('Error fetching billing cycles:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_BILLING_CYCLES_FAILED'),
-      { status: 500 }
-    );
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * POST /api/billing-cycles - Create billing cycle
- * REFACTORED: Now uses unified withAuthRoles pattern  
+ * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
-  console.log(`📝 POST /api/billing-cycles - Admin: ${user.email}`);
-  
+export const POST = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
   try {
     // TODO: Implement billing cycle functionality when model is added to schema
     return NextResponse.json(
@@ -38,10 +40,10 @@ export const POST = withAuthRoles(['ADMIN'])(async (request, { user, userScope }
       { status: 501 }
     );
   } catch (error) {
-    console.error('Error creating billing cycle:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

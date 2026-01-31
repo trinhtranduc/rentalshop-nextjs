@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Validation schema for availability query
 const availabilityQuerySchema = z.object({
@@ -36,6 +37,8 @@ const availabilityQuerySchema = z.object({
  * - Real-time stock availability across all outlets
  * - Hour-by-hour conflict analysis during rental period
  * - Detailed breakdown by outlet with precise timing
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -44,9 +47,9 @@ export async function GET(
   // Resolve params (handle both Promise and direct object)
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
-  return withPermissions(['products.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/products/[id]/availability - Product ID:', id);
+  return withApiLogging(
+    withPermissions(['products.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
+      try {
 
       // Validate product ID format
       if (!/^\d+$/.test(id)) {
@@ -127,10 +130,6 @@ export async function GET(
       // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
       const productMerchantId = product.merchant?.id;
       if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
-        console.log('❌ Product does not belong to user\'s merchant:', {
-          productMerchantId: productMerchantId,
-          userMerchantId: userMerchantId
-        });
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
           { status: 403 }
@@ -170,16 +169,6 @@ export async function GET(
       // For SALE: available = stock - sold (permanent, but we track via stock directly)
       // Since we're checking availability for a potential RENT order, use: available = stock - renting
       const totalAvailableStock = Math.max(0, totalStock - totalRenting);
-
-      console.log('🔍 Stock summary:', {
-        totalStock,
-        totalAvailableStock,
-        totalRenting,
-        requestedQuantity: quantity,
-        outletId: finalOutletId,
-        productId: productId,
-        note: 'Available calculated from stock - renting (for RENT orders)',
-      });
 
       // 3. Check basic stock availability
       const stockAvailable = totalAvailableStock >= quantity;
@@ -242,15 +231,6 @@ export async function GET(
       const durationMs = rentalEnd.getTime() - rentalStart.getTime();
       const durationHours = durationMs / (1000 * 60 * 60);
       const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
-      
-      console.log('🔍 Rental period analysis:', {
-        start: rentalStart.toISOString(),
-        end: rentalEnd.toISOString(),
-        durationHours: Math.round(durationHours * 100) / 100,
-        durationDays,
-        timeZone,
-        includeTimePrecision
-      });
 
       // 5. Find existing orders that overlap with the requested rental period
       // IMPORTANT: Only check RENT orders for conflicts (SALE orders don't affect availability for rentals)
@@ -351,13 +331,11 @@ export async function GET(
       conflictingOrders.forEach(order => {
         // Double-check that order belongs to the correct outlet
         if (order.outletId !== finalOutletId) {
-          console.warn(`Order ${order.orderNumber} belongs to outlet ${order.outletId}, expected ${finalOutletId}`);
           return; // Skip this order
         }
         
         // Only count active rental orders
         if (order.orderType !== ORDER_TYPE.RENT || ![ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED].includes(order.status as any)) {
-          console.warn(`Order ${order.orderNumber} is not an active rental order (type: ${order.orderType}, status: ${order.status})`);
           return; // Skip this order
         }
         
@@ -455,25 +433,6 @@ export async function GET(
       const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
       const canFulfillRequest = effectivelyAvailable >= quantity;
 
-      // Enhanced logging for debugging rental calculation
-      console.log('🔍 Rental calculation summary:', {
-        outletId: finalOutletId,
-        productId: productId,
-        totalStock,
-        totalAvailableStock,
-        totalRenting,
-        conflictingQuantity,
-        effectivelyAvailable,
-        requestedQuantity: quantity,
-        canFulfillRequest,
-        conflictingOrdersCount: conflictingOrders.length,
-        conflictsDetails: outletConflicts.conflicts.map(c => ({
-          orderNumber: c.orderNumber,
-          quantity: c.quantity,
-          conflictType: c.conflictType
-        }))
-      });
-
       const availabilityResult = {
         outletId: outletStock.outlet.id,
         outletName: outletStock.outlet.name,
@@ -536,10 +495,11 @@ export async function GET(
         })
       );
 
-    } catch (error: any) {
-      console.error('Error in GET /api/products/[id]/availability:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error: any) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

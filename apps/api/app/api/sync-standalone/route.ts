@@ -12,6 +12,7 @@ import { db } from '@rentalshop/database';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/sync-standalone
@@ -22,9 +23,12 @@ import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
  * Query params:
  * - endpoint: Old server endpoint URL
  * - token: Old server admin token
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const endpoint = searchParams.get('endpoint');
     const token = searchParams.get('token');
@@ -166,55 +170,45 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         }
       })
     );
-  } catch (error: any) {
-    console.error('Error in GET sync-standalone:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 /**
  * POST /api/sync-standalone
  * Standalone sync endpoint - CẦN admin authentication
  * Old server API calls vẫn tách biệt (dùng token từ request body)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  console.log('🔄 [SYNC API] POST /api/sync-standalone - Request received');
-  
-  try {
-    const body = await request.json();
-    const { merchantId, entities, endpoint, token, action } = body;
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
+      const body = await request.json();
+      const { merchantId, entities, endpoint, token, action } = body;
 
-    console.log('🔄 [SYNC API] Request body:', { 
-      action, 
-      entities, 
-      endpoint, 
-      hasToken: !!token,
-      merchantId 
-    });
+      // Validate required fields
+      if (!endpoint || !token) {
+        return NextResponse.json(
+          ResponseBuilder.error('MISSING_ENDPOINT_OR_TOKEN'),
+          { status: 400 }
+        );
+      }
 
-    // Validate required fields
-    if (!endpoint || !token) {
-      console.log('❌ [SYNC API] Missing endpoint or token');
-      return NextResponse.json(
-        ResponseBuilder.error('MISSING_ENDPOINT_OR_TOKEN'),
-        { status: 400 }
-      );
-    }
+      if (!action || !['preview', 'execute'].includes(action)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_ACTION'),
+          { status: 400 }
+        );
+      }
 
-    if (!action || !['preview', 'execute'].includes(action)) {
-      console.log('❌ [SYNC API] Invalid action:', action);
-      return NextResponse.json(
-        ResponseBuilder.error('INVALID_ACTION'),
-        { status: 400 }
-      );
-    }
-
-    // Tạo OldServerSyncService - tách biệt hoàn toàn
-    // Use default headers (lat, long, device, version) as per old server requirements
-    const syncService = new OldServerSyncService(endpoint, token);
-    
-    console.log('🔄 [SYNC API] OldServerSyncService created, starting preview...');
+      // Tạo OldServerSyncService - tách biệt hoàn toàn
+      // Use default headers (lat, long, device, version) as per old server requirements
+      const syncService = new OldServerSyncService(endpoint, token);
 
     // PREVIEW ACTION - Chỉ fetch data, không lưu vào DB
     if (action === 'preview') {
@@ -242,8 +236,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           const searchParams = body.searchParams || {};
           const customerKeyword = searchParams.customers?.keyword_search || '';
           
-          console.log('🔄 [SYNC API] Starting customers fetch...', { keyword: customerKeyword });
-          
           // Log start of customer fetch
           syncService.getLogs().push({
             timestamp: new Date().toISOString(),
@@ -253,12 +245,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           });
           
           const customersResult = await syncService.fetchCustomers(customerKeyword);
-          
-          console.log('✅ [SYNC API] Customers fetch completed:', {
-            success: customersResult.success,
-            count: customersResult.data?.length || 0,
-            totalPages: customersResult.pagination?.total_of_page || 1
-          });
           if (customersResult.success && customersResult.data) {
             // Store raw response
             preview.rawResponses.customers = customersResult.data;
@@ -874,7 +860,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         });
 
         // Don't auto-rollback - let user decide
-        console.error('❌ Sync failed partially. Session can be resumed or rolled back:', syncSession.id);
+        // Error will be automatically logged by withApiLogging wrapper
 
         return NextResponse.json(
           ResponseBuilder.error('SYNC_PARTIALLY_FAILED'),
@@ -887,10 +873,11 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       ResponseBuilder.error('INVALID_ACTION'),
       { status: 400 }
     );
-  } catch (error: any) {
-    console.error('Error in standalone sync:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

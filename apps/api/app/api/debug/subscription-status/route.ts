@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * DEBUG ENDPOINT: Check subscription status in database
  * GET /api/debug/subscription-status?merchantId=1
  * No auth required for debugging
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const { searchParams } = new URL(request.url);
     const merchantId = parseInt(searchParams.get('merchantId') || '1');
 
@@ -57,11 +61,12 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('Debug endpoint error:', error);
-    // Use unified error handling system (uses ResponseBuilder internally)
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system (uses ResponseBuilder internally)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
 }
 

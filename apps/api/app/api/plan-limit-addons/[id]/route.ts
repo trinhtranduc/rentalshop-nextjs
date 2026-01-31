@@ -7,6 +7,7 @@ import {
   ResponseBuilder,
   validateAddonDeletion
 } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Helper to parse and validate addon ID from params
@@ -21,13 +22,16 @@ async function parseAddonId(params: Promise<{ id: string }> | { id: string }): P
  * GET /api/plan-limit-addons/[id]
  * Get a specific plan limit addon by ID
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN'])(async (request) => {
+      try {
       const id = await parseAddonId(params);
       if (!id) {
         return NextResponse.json(
@@ -47,25 +51,29 @@ export async function GET(
       return NextResponse.json(
         ResponseBuilder.success('PLAN_LIMIT_ADDON_FOUND', addon)
       );
-    } catch (error) {
-      console.error('Error fetching plan limit addon:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
  * PUT /api/plan-limit-addons/[id]
  * Update a plan limit addon
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN'])(async (request) => {
+      try {
       const id = await parseAddonId(params);
       if (!id) {
         return NextResponse.json(
@@ -95,12 +103,13 @@ export async function PUT(
       return NextResponse.json(
         ResponseBuilder.success('PLAN_LIMIT_ADDON_UPDATED_SUCCESS', addon)
       );
-    } catch (error) {
-      console.error('Error updating plan limit addon:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 
 /**
@@ -111,13 +120,16 @@ export async function PUT(
  * Only validates active addons (inactive addons don't affect limits).
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN'])(async (request) => {
+      try {
       const id = await parseAddonId(params);
       if (!id) {
         return NextResponse.json(
@@ -166,11 +178,12 @@ export async function DELETE(
       return NextResponse.json(
         ResponseBuilder.success('PLAN_LIMIT_ADDON_DELETED_SUCCESS')
       );
-    } catch (error) {
-      console.error('Error deleting plan limit addon:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 

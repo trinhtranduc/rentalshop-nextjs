@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/test-aws
  * Test AWS credentials and S3 connection
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+    try {
     const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
     const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
     const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
@@ -34,11 +38,12 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       code: 'AWS_CREDENTIALS_CHECK_SUCCESS'
     });
 
-  } catch (error) {
-    console.error('Error testing AWS S3:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('AWS_S3_TEST_FAILED'),
-      { status: 500 }
-    );
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      return NextResponse.json(
+        ResponseBuilder.error('AWS_S3_TEST_FAILED'),
+        { status: 500 }
+      );
+    }
+  })
+);

@@ -9,6 +9,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { db } from '@rentalshop/database';
 import { USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (
   request: NextRequest,
@@ -56,10 +57,11 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (
         }
       })
     );
-  } catch (error: any) {
-    console.error('Error getting sync session:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

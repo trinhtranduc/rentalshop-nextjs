@@ -122,6 +122,8 @@ const nextConfig = {
         ...config.resolve.alias,
         '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
+        // Path alias for lib directory (for api-logging-wrapper and other utilities)
+        '@/lib': path.join(__dirname, 'lib'),
         // OFFICIAL TUTORIAL APPROACH: No need to alias onnxruntime-node
         // node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
       };

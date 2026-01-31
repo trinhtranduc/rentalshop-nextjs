@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * POST /api/subscriptions/[id]/resume

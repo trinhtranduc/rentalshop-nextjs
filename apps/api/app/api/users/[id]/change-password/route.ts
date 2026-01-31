@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * PATCH /api/users/[id]/change-password
@@ -21,11 +22,10 @@ export async function PATCH(
   // Handle both sync and async params (Next.js 13+ compatibility)
   const resolvedParams = await Promise.resolve(params);
   
-  return withAnyAuth(async (request: NextRequest, { user, userScope }) => {
-    try {
-      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', resolvedParams.id);
-      
-      const currentUser = user;
+  return withApiLogging(
+    withAnyAuth(async (request: NextRequest, { user, userScope }) => {
+      try {
+        const currentUser = user;
 
     const { id } = resolvedParams;
     const body = await request.json();
@@ -74,56 +74,23 @@ export async function PATCH(
     const targetOutletId = targetUser.outletId || (targetUser.outlet as any)?.id;
     const targetMerchantId = targetUser.merchantId || (targetUser.merchant as any)?.id;
     
-    console.log('🔍 Authorization check:', {
-      currentUserRole: currentUser.role,
-      currentUserMerchantId: userScope.merchantId,
-      currentUserOutletId: userScope.outletId,
-      targetUserId: numericId,
-      targetUserMerchantId: targetMerchantId,
-      targetUserOutletId: targetOutletId,
-      targetUserOutletIdField: targetUser.outletId,
-      targetUserOutletRelation: targetUser.outlet?.id
-    });
-    
     if (currentUser.role === USER_ROLE.ADMIN) {
       // ADMIN can change any user's password
       canChangePassword = true;
-      console.log('✅ ADMIN access granted for password change');
     } else if (currentUser.role === USER_ROLE.MERCHANT) {
       // MERCHANT can change passwords for users in their merchant
       if (targetMerchantId && userScope.merchantId && targetMerchantId === userScope.merchantId) {
         canChangePassword = true;
-        console.log('✅ MERCHANT access granted for password change');
-      } else {
-        console.log('❌ MERCHANT access denied - merchant mismatch:', {
-          targetMerchantId,
-          userScopeMerchantId: userScope.merchantId
-        });
       }
     } else if (currentUser.role === USER_ROLE.OUTLET_ADMIN || currentUser.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET_* can change passwords for users in their outlet
       // Compare both outletId (direct field) and outlet.id (relation) with userScope.outletId
       if (targetOutletId && userScope.outletId && targetOutletId === userScope.outletId) {
         canChangePassword = true;
-        console.log(`✅ ${currentUser.role} access granted for password change`);
-      } else {
-        console.log(`❌ ${currentUser.role} access denied - outlet mismatch:`, {
-          targetOutletId,
-          userScopeOutletId: userScope.outletId,
-          targetUserOutletIdField: targetUser.outletId,
-          targetUserOutletRelation: targetUser.outlet?.id
-        });
       }
     }
 
     if (!canChangePassword) {
-      console.log('❌ Access denied for password change:', {
-        currentUserRole: currentUser.role,
-        targetUserId: numericId,
-        userScope: userScope,
-        targetUserMerchantId: targetMerchantId,
-        targetUserOutletId: targetOutletId
-      });
       return NextResponse.json(
         ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
         { status: API.STATUS.FORBIDDEN }
@@ -133,13 +100,10 @@ export async function PATCH(
     // Note: Current password verification removed - users can change their password without providing current password
 
     // Hash new password using centralized password hashing
-    console.log('🔐 Hashing new password...');
     let hashedPassword: string;
     try {
       hashedPassword = await hashPassword(newPassword);
-      console.log('✅ Password hashed successfully');
     } catch (hashError: any) {
-      console.error('❌ Error hashing password:', hashError);
       return NextResponse.json(
         ResponseBuilder.error('PASSWORD_HASH_FAILED'),
         { status: 500 }
@@ -147,11 +111,8 @@ export async function PATCH(
     }
 
     // Update password using user ID
-    console.log('💾 Updating password for user ID:', targetUser.id, 'Type:', typeof targetUser.id);
-    
     // Validate targetUser.id is a number
     if (!targetUser.id || typeof targetUser.id !== 'number') {
-      console.error('❌ Invalid targetUser.id:', targetUser.id, 'Type:', typeof targetUser.id);
       return NextResponse.json(
         ResponseBuilder.error('INVALID_USER_ID'),
         { status: 400 }
@@ -164,22 +125,12 @@ export async function PATCH(
         password: hashedPassword,
         passwordChangedAt: new Date() // Invalidate all existing tokens
     });
-      console.log('✅ Password updated successfully in database');
     } catch (updateError: any) {
-      console.error('❌ Error updating password in database:', updateError);
-      console.error('❌ Update error details:', {
-        message: updateError?.message,
-        code: updateError?.code,
-        meta: updateError?.meta,
-        stack: updateError?.stack
-      });
       return NextResponse.json(
         ResponseBuilder.error('PASSWORD_UPDATE_FAILED'),
         { status: 500 }
       );
     }
-
-    console.log('✅ Password changed successfully for user:', targetUser.email);
 
     return NextResponse.json(
       ResponseBuilder.success('PASSWORD_CHANGED_SUCCESS', {
@@ -188,18 +139,12 @@ export async function PATCH(
       })
     );
 
-  } catch (error: any) {
-      console.error('❌ Error changing password:', error);
-      console.error('❌ Error details:', {
-        message: error?.message,
-        stack: error?.stack,
-        code: error?.code,
-        name: error?.name
-      });
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error: any) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

@@ -11,6 +11,7 @@ import {
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Bank account creation schema
@@ -39,37 +40,39 @@ export async function GET(
   const merchantId = parseInt(resolvedParams.id);
   const outletId = parseInt(resolvedParams.outletId);
   
-  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
-    try {
-      // Validate merchant and outlet access (format, exists, association, scope)
-      const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
-      if (!validation.valid) {
-        return validation.error!;
+  return withApiLogging(
+    withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
+      try {
+        // Validate merchant and outlet access (format, exists, association, scope)
+        const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const { merchant, outlet } = validation;
+
+        // Get bank accounts (use outlet.id which is the CUID)
+        const bankAccounts = await prisma.bankAccount.findMany({
+          where: {
+            outletId: outlet.id,
+            isActive: true
+          },
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'desc' }
+          ]
+        });
+
+        return NextResponse.json(
+          ResponseBuilder.success('BANK_ACCOUNTS_FOUND', bankAccounts)
+        );
+
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
       }
-      const { merchant, outlet } = validation;
-
-      // Get bank accounts (use outlet.id which is the CUID)
-      const bankAccounts = await prisma.bankAccount.findMany({
-        where: {
-          outletId: outlet.id,
-          isActive: true
-        },
-        orderBy: [
-          { isDefault: 'desc' },
-          { createdAt: 'desc' }
-        ]
-      });
-
-      return NextResponse.json(
-        ResponseBuilder.success('BANK_ACCOUNTS_FOUND', bankAccounts)
-      );
-
-    } catch (error) {
-      console.error('Error fetching bank accounts:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -174,11 +177,12 @@ export async function POST(
         { status: 201 }
       );
 
-    } catch (error) {
-      console.error('Error creating bank account:', error);
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }
 

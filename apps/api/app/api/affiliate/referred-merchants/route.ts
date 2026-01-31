@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/affiliate/referred-merchants
@@ -12,9 +13,12 @@ import { USER_ROLE } from '@rentalshop/constants';
  *   - referrerId: ID of the referrer merchant (required)
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const referrerId = searchParams.get('referrerId');
 
@@ -59,9 +63,10 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         total: transformed.length
       })
     );
-  } catch (error) {
-    console.error('Error fetching referred merchants:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

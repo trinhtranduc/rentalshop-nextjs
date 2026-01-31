@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/merchants/[id]
@@ -17,41 +18,39 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/merchants/[id] - Looking for merchant with ID:', id);
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+      try {
+        const merchantId = parseInt(id);
+        
+        // Validate merchant access (format, exists, association, scope)
+        // For MERCHANT role, this ensures they can only access their own merchant
+        const validation = await validateMerchantAccess(merchantId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const merchant = validation.merchant!;
 
-      const merchantId = parseInt(id);
-      
-      // Validate merchant access (format, exists, association, scope)
-      // For MERCHANT role, this ensures they can only access their own merchant
-      const validation = await validateMerchantAccess(merchantId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const merchant = validation.merchant!;
-
-      console.log('✅ Merchant found:', merchant);
-
-      return NextResponse.json({
+        return NextResponse.json({
         success: true,
         data: merchant,
         code: 'MERCHANT_RETRIEVED_SUCCESS',
         message: 'Merchant retrieved successfully'
-      });
+        });
 
-    } catch (error) {
-      console.error('❌ Error fetching merchant:', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Failed to fetch merchant',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Failed to fetch merchant',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          },
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
+        );
+      }
+    })
+  )(request);
 }
 
 /**
@@ -66,21 +65,21 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
-    try {
-      const merchantId = parseInt(id);
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+      try {
+        const merchantId = parseInt(id);
 
-      // Validate merchant access (format, exists, association, scope)
-      // For MERCHANT role, this ensures they can only update their own merchant
-      const validation = await validateMerchantAccess(merchantId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const existingMerchant = validation.merchant!;
+        // Validate merchant access (format, exists, association, scope)
+        // For MERCHANT role, this ensures they can only update their own merchant
+        const validation = await validateMerchantAccess(merchantId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const existingMerchant = validation.merchant!;
 
-      // Parse and validate request body
-      const body = await request.json();
-      console.log('🔍 PUT /api/merchants/[id] - Update request body:', body);
+        // Parse and validate request body
+        const body = await request.json();
 
       // Check for duplicate phone or email if being updated
       if (body.phone || body.email) {
@@ -94,7 +93,6 @@ export async function PUT(
             const duplicateField = duplicateMerchant.email === emailToCheck ? 'email' : 'phone number';
             const duplicateValue = duplicateMerchant.email === emailToCheck ? emailToCheck : phoneToCheck;
             
-            console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
             return NextResponse.json(
               {
                 success: false,
@@ -109,7 +107,6 @@ export async function PUT(
 
       // Update the merchant using the simplified database API
       const updatedMerchant = await db.merchants.update(merchantId, body);
-      console.log('✅ Merchant updated successfully:', updatedMerchant);
 
       return NextResponse.json({
         success: true,
@@ -118,18 +115,19 @@ export async function PUT(
         message: 'Merchant updated successfully'
       });
 
-    } catch (error) {
-      console.error('❌ Error updating merchant:', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Failed to update merchant',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Failed to update merchant',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          },
+          { status: API.STATUS.INTERNAL_SERVER_ERROR }
+        );
+      }
+    })
+  )(request);
 }
 
 /**
@@ -144,53 +142,53 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
-    try {
-      const merchantId = parseInt(id);
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
+      try {
+        const merchantId = parseInt(id);
 
-      // Validate merchant access (format, exists, association, scope)
-      // Only ADMIN can delete merchants, but we still validate merchant exists
-      const validation = await validateMerchantAccess(merchantId, user, userScope);
-      if (!validation.valid) {
-        return validation.error!;
-      }
-      const existingMerchant = validation.merchant!;
+        // Validate merchant access (format, exists, association, scope)
+        // Only ADMIN can delete merchants, but we still validate merchant exists
+        const validation = await validateMerchantAccess(merchantId, user, userScope);
+        if (!validation.valid) {
+          return validation.error!;
+        }
+        const existingMerchant = validation.merchant!;
 
-      // Check if merchant has active subscription
-      const activeSubscription = await db.subscriptions.findFirst({
-        merchantId: merchantId,
-        status: { in: [SUBSCRIPTION_STATUS.ACTIVE as any, SUBSCRIPTION_STATUS.TRIAL as any] }
-      });
+        // Check if merchant has active subscription
+        const activeSubscription = await db.subscriptions.findFirst({
+          merchantId: merchantId,
+          status: { in: [SUBSCRIPTION_STATUS.ACTIVE as any, SUBSCRIPTION_STATUS.TRIAL as any] }
+        });
 
-      if (activeSubscription) {
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'MERCHANT_HAS_ACTIVE_SUBSCRIPTION',
-            message: 'Cannot delete merchant with active subscription. Please cancel the subscription first.'
-          },
-          { status: API.STATUS.CONFLICT }
-        );
-      }
+        if (activeSubscription) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'MERCHANT_HAS_ACTIVE_SUBSCRIPTION',
+              message: 'Cannot delete merchant with active subscription. Please cancel the subscription first.'
+            },
+            { status: API.STATUS.CONFLICT }
+          );
+        }
 
-      // Soft delete by setting isActive to false
-      // Note: This will cascade to outlets, users, products via Prisma schema
-      const deletedMerchant = await db.merchants.update(merchantId, { isActive: false });
-      console.log('✅ Merchant soft deleted successfully:', deletedMerchant);
+        // Soft delete by setting isActive to false
+        // Note: This will cascade to outlets, users, products via Prisma schema
+        const deletedMerchant = await db.merchants.update(merchantId, { isActive: false });
 
-      return NextResponse.json({
+        return NextResponse.json({
         success: true,
         data: deletedMerchant,
         code: 'MERCHANT_DELETED_SUCCESS',
         message: 'Merchant deleted successfully'
-      });
+        });
 
-    } catch (error) {
-      console.error('❌ Error deleting merchant:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })
+  )(request);
 }

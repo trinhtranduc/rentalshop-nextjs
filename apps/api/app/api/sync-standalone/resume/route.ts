@@ -11,6 +11,7 @@ import { db } from '@rentalshop/database';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   console.log('🔄 [SYNC RESUME] POST /api/sync-standalone/resume - Request received');
@@ -136,10 +137,6 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
         const customerProgress = progress.entityProgress?.customers;
         const startIndex = customerProgress ? customerProgress.lastProcessedIndex + 1 : 0;
-
-        if (startIndex > 0) {
-          console.log(`🔄 Resuming customers sync from index ${startIndex}`);
-        }
 
         const customersResult = await syncService.fetchCustomers('');
         
@@ -551,10 +548,11 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         { status: 500 }
       );
     }
-  } catch (error: any) {
-    console.error('Error in resume sync:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error: any) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

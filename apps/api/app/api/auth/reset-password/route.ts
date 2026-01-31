@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, verifyPasswordResetToken, markTokenAsUsed } from '@rentalshop/database';
 import { hashPassword } from '@rentalshop/auth';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -13,21 +14,23 @@ const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/auth/reset-password
+ * Reset password with token
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const body = await request.json();
     
     // Validate input
     const validatedData = resetPasswordSchema.parse(body);
     
-    console.log('🔐 [Reset Password] Password reset requested with token');
-    
     // Verify password reset token
     const tokenVerification = await verifyPasswordResetToken(validatedData.token);
     
     if (!tokenVerification.success || !tokenVerification.user) {
-      console.error('❌ [Reset Password] Invalid or expired token:', tokenVerification.error);
-      
       // Return appropriate error based on token status
       if (tokenVerification.error?.includes('hết hạn')) {
         return NextResponse.json(
@@ -50,14 +53,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = tokenVerification;
-    console.log('✅ [Reset Password] Token verified for user:', { userId: user.id, email: user.email });
 
     // Hash new password
-    console.log('🔑 [Reset Password] Hashing new password...');
     const hashedPassword = await hashPassword(validatedData.password);
 
     // Update user password and set passwordChangedAt to invalidate old tokens
-    console.log('💾 [Reset Password] Updating user password...');
     await db.prisma.user.update({
       where: { id: user.id },
       data: { 
@@ -67,10 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Mark token as used
-    console.log('✅ [Reset Password] Marking token as used...');
     await markTokenAsUsed(validatedData.token);
-    
-    console.log('✅ [Reset Password] Password reset successful for user:', user.id);
     
     return NextResponse.json(
       ResponseBuilder.success('PASSWORD_RESET_SUCCESS', {
@@ -79,8 +76,6 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error: any) {
-    console.error('❌ [Reset Password] Error:', error);
-    
     // Handle validation errors
     if (error.name === 'ZodError') {
       return NextResponse.json(
@@ -89,7 +84,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-} 
+}); 

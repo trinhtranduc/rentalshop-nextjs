@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * Get allowed CORS origins
@@ -61,9 +62,12 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * GET /api/posts/categories/public
  * Get all active post categories for public display (no authentication required)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withApiLogging(async (request: NextRequest) => {
+    try {
     const categories = await db.postCategories.findAll({ isActive: true });
 
     return NextResponse.json(
@@ -72,12 +76,13 @@ export async function GET(request: NextRequest) {
         headers: buildCorsHeaders(request)
       }
     );
-  } catch (error) {
-    console.error('Error fetching public categories:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { 
-      status: statusCode,
-      headers: buildCorsHeaders(request)
-    });
-  }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { 
+        status: statusCode,
+        headers: buildCorsHeaders(request)
+      });
+    }
+  })(request);
 }

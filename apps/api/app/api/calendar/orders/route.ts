@@ -5,6 +5,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
 import { handleApiError, getUTCDateKey, getLocalDateKey, parseProductImages } from '@rentalshop/utils';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -36,29 +37,25 @@ const calendarOrdersQuerySchema = z.object({
  * - Includes both RENT and SALE orders (no default filter)
  * - Limits orders per day for performance (configurable via limit parameter)
  * - Optimized for calendar UI
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withReadOnlyAuth(async (
-  request: NextRequest,
-  { user, userScope }
-) => {
-  console.log(`🔍 GET /api/calendar/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 Calendar API - UserScope:`, userScope);
-
+export const GET = withApiLogging(
+  withReadOnlyAuth(async (
+    request: NextRequest,
+    { user, userScope }
+  ) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
     const validatedQuery = calendarOrdersQuerySchema.parse(query);
 
-    console.log('📅 Calendar query:', validatedQuery);
-
     const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
     // Parse date strings
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
-
-    console.log('📅 Date range:', { startDate, endDate });
 
     // Build where clause with role-based filtering
     // ✅ FIX: Lấy TẤT CẢ đơn RESERVED (không filter pickupPlanAt trong where clause)
@@ -107,8 +104,6 @@ export const GET = withReadOnlyAuth(async (
       where.outletId = userScope.outletId;
     }
 
-    console.log('🔍 Calendar where clause:', where);
-
     // Fetch orders for the month with orderItems included using db.orders.searchWithItems
     // ✅ Note: Calendar only shows RESERVED orders, which automatically excludes CANCELLED
     // RESERVED status filter already excludes CANCELLED, but we ensure it's explicit
@@ -123,8 +118,6 @@ export const GET = withReadOnlyAuth(async (
     });
     
     const orders = ordersResult.data;
-
-    console.log('📦 Found orders:', orders?.length || 0);
 
     // Group orders by date
     const calendarMap: { [dateKey: string]: CalendarOrderSummary[] } = {};
@@ -268,13 +261,6 @@ export const GET = withReadOnlyAuth(async (
         }
       };
 
-      console.log('📅 Calendar data prepared:', {
-        daysWithOrders: calendar.length,
-        totalPickups,
-        totalOrders,
-        totalRevenue
-      });
-
       return NextResponse.json({
         success: true,
         data: calendarData,
@@ -331,9 +317,10 @@ export const GET = withReadOnlyAuth(async (
     });
 
   } catch (error) {
-    console.error('❌ Calendar API error:', error);
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

@@ -3,14 +3,18 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 /**
  * GET /api/request-logs
  * Query request logs with filters, pagination, and search
  * 
  * Authorization: ADMIN only (sensitive data)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     
@@ -167,8 +171,9 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       })
     );
   } catch (error) {
-    console.error('Error fetching request logs:', error);
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
