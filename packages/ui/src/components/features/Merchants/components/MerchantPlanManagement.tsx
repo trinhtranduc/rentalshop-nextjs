@@ -70,6 +70,7 @@ interface MerchantPlanManagementProps {
   };
   subscriptions?: Subscription[]; // ✅ Unified Subscription type
   plans?: Plan[];
+  addonCount?: number; // Number of active addons
   onPlanChange: (planData: {
     planId: number;
     planVariantId?: number;
@@ -99,6 +100,7 @@ export function MerchantPlanManagement({
   merchant,
   subscriptions = [],
   plans = [],
+  addonCount = 0,
   onPlanChange,
   onExtend,
   onCancel,
@@ -394,6 +396,15 @@ export function MerchantPlanManagement({
                       {(currentSubscription as any).interval || currentSubscription.billingInterval || 'month'}
                     </span>
                   </div>
+                  
+                  {addonCount > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Active Addons:</span>
+                      <Badge variant="success" className="font-medium">
+                        {addonCount} addon{addonCount !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  )}
                   
                   {(currentSubscription as any).subscriptionPeriod?.daysRemaining !== undefined && (
                     <div className="flex items-center justify-between text-sm">

@@ -59,7 +59,7 @@ export interface MerchantUpdateData extends Partial<MerchantCreateData> {
  * Find merchant by ID
  */
 export async function findById(id: number) {
-  return await prisma.merchant.findUnique({
+  const merchant = await prisma.merchant.findUnique({
     where: { id },
     select: {
       id: true,
@@ -104,6 +104,27 @@ export async function findById(id: number) {
       }
     }
   });
+
+  // Get orders count separately (orders are related through outlets)
+  if (merchant) {
+    const ordersCount = await prisma.order.count({
+      where: {
+        outlet: {
+          merchantId: id
+        }
+      }
+    });
+
+    return {
+      ...merchant,
+      _count: {
+        ...merchant._count,
+        orders: ordersCount
+      }
+    };
+  }
+
+  return merchant;
 }
 
 /**

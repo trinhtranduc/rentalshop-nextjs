@@ -25,6 +25,7 @@ import type { SubscriptionStatus } from '@rentalshop/constants';
 interface MerchantDetailProps {
   data: MerchantDetailData;
   plans?: Plan[];
+  addonCount?: number; // Number of active addons
   currentUserRole?: string;
   onMerchantAction: (action: string, merchantId: number) => void;
   onOutletAction: (action: string, outletId: number) => void;
@@ -51,6 +52,7 @@ interface MerchantDetailProps {
 export function MerchantDetail({
   data,
   plans = [],
+  addonCount = 0,
   currentUserRole,
   onMerchantAction,
   onOutletAction,
@@ -79,12 +81,48 @@ export function MerchantDetail({
 
   return (
     <div className="space-y-6">
-      {/* Merchant Header with Statistics - Hidden to save space */}
-      {/* <MerchantHeader 
-        merchant={data.merchant}
-        stats={data.stats}
-        showStats={false}
-      /> */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <Users className="w-6 h-6 text-blue-700 mx-auto mb-2" />
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <Package className="w-6 h-6 text-green-600 mx-auto mb-2" />
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Products</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalProducts}</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <ShoppingCart className="w-6 h-6 text-orange-600 mx-auto mb-2" />
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalOrders}</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalCustomers || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Merchant Information */}
       <div className="grid grid-cols-1 gap-6">
@@ -235,6 +273,7 @@ export function MerchantDetail({
           }}
           subscriptions={data.merchant.subscription ? [data.merchant.subscription] : []}
           plans={plans}
+          addonCount={addonCount}
           currentUserRole={currentUserRole}
           onPlanChange={onPlanChange}
           onExtend={onExtend}

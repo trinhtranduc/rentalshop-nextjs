@@ -30,15 +30,19 @@ export class ProductVectorStore {
   private collectionName: string;
 
   constructor() {
-    // Determine collection name based on NODE_ENV
-    const nodeEnv = process.env.NODE_ENV || 'development';
-    const isProduction = nodeEnv === 'production' || nodeEnv === 'prod';
+    // Determine collection name based on QDRANT_COLLECTION_ENV (preferred) or NODE_ENV (fallback)
+    // Use QDRANT_COLLECTION_ENV to avoid Next.js automatically setting NODE_ENV=production
+    const collectionEnv = process.env.QDRANT_COLLECTION_ENV || process.env.APP_ENV || process.env.NODE_ENV || 'development';
+    const isProduction = collectionEnv === 'production' || collectionEnv === 'prod';
     
     this.collectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
     console.log(`📦 Using Qdrant collection: ${this.collectionName}`, {
-      NODE_ENV: nodeEnv,
+      QDRANT_COLLECTION_ENV: process.env.QDRANT_COLLECTION_ENV || 'not set',
+      APP_ENV: process.env.APP_ENV || 'not set',
+      NODE_ENV: process.env.NODE_ENV || 'not set',
+      usedEnv: collectionEnv,
       isProduction: isProduction,
-      '⚠️ If this is wrong, check NODE_ENV on server': 'NODE_ENV should be "development" for dev server'
+      '💡 Tip': 'Set QDRANT_COLLECTION_ENV=development in Railway Variables for dev server'
     });
     
     // Sanitize QDRANT_URL and QDRANT_API_KEY to avoid Unicode issues
@@ -445,22 +449,25 @@ let cachedCollectionName: string | null = null;
 
 /**
  * Get singleton instance của vector store
- * Recreates instance if NODE_ENV changed (to use correct collection)
+ * Recreates instance if environment changed (to use correct collection)
  */
 export function getVectorStore(): ProductVectorStore {
-  // Determine expected collection name based on current NODE_ENV
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  const isProduction = nodeEnv === 'production' || nodeEnv === 'prod';
+  // Determine expected collection name based on QDRANT_COLLECTION_ENV (preferred) or NODE_ENV (fallback)
+  const collectionEnv = process.env.QDRANT_COLLECTION_ENV || process.env.APP_ENV || process.env.NODE_ENV || 'development';
+  const isProduction = collectionEnv === 'production' || collectionEnv === 'prod';
   const expectedCollectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
   
-  // Recreate instance if collection name changed (NODE_ENV changed)
+  // Recreate instance if collection name changed (environment changed)
   if (!vectorStore || cachedCollectionName !== expectedCollectionName) {
     if (vectorStore && cachedCollectionName !== expectedCollectionName) {
-      console.log(`🔄 NODE_ENV changed, recreating vector store instance`, {
+      console.log(`🔄 Environment changed, recreating vector store instance`, {
         oldCollection: cachedCollectionName,
         newCollection: expectedCollectionName,
-        oldNODE_ENV: cachedCollectionName === 'product-images-pro' ? 'production' : 'development',
-        newNODE_ENV: nodeEnv
+        oldEnv: cachedCollectionName === 'product-images-pro' ? 'production' : 'development',
+        newEnv: collectionEnv,
+        QDRANT_COLLECTION_ENV: process.env.QDRANT_COLLECTION_ENV || 'not set',
+        APP_ENV: process.env.APP_ENV || 'not set',
+        NODE_ENV: process.env.NODE_ENV || 'not set'
       });
     }
     vectorStore = new ProductVectorStore();

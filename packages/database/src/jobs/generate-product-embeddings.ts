@@ -73,7 +73,9 @@ export async function generateProductEmbedding(productId: number): Promise<void>
       console.error(`❌ PYTHON_EMBEDDING_API_URL is not set!`);
       console.error(`   This is required for generating embeddings`);
       console.error(`   Current environment variables:`);
-      console.error(`     - NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+      console.error(`     - QDRANT_COLLECTION_ENV: ${process.env.QDRANT_COLLECTION_ENV || 'not set'}`);
+      console.error(`     - APP_ENV: ${process.env.APP_ENV || 'not set'}`);
+      console.error(`     - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
       console.error(`     - APP_ENV: ${process.env.APP_ENV || 'undefined'}`);
       console.error(`     - PYTHON_EMBEDDING_API_URL: ${process.env.PYTHON_EMBEDDING_API_URL || 'NOT SET'}`);
       console.error(`   💡 Fix: Set PYTHON_EMBEDDING_API_URL in your environment variables`);
@@ -86,7 +88,11 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     
     // Log collection name for debugging
     console.log(`   🔍 Vector store collection: ${(vectorStore as any).collectionName}`);
-    console.log(`   🔍 Current NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    console.log(`   🔍 Environment variables:`, {
+      QDRANT_COLLECTION_ENV: process.env.QDRANT_COLLECTION_ENV || 'not set',
+      APP_ENV: process.env.APP_ENV || 'not set',
+      NODE_ENV: process.env.NODE_ENV || 'not set'
+    });
 
     // Initialize collection if needed (creates collection and indexes)
     try {

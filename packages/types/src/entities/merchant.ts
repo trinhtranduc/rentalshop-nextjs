@@ -198,6 +198,7 @@ export interface MerchantDetailStats {
   totalUsers: number;
   totalProducts: number;
   totalOrders: number;
+  totalCustomers: number;
   totalRevenue: number;
   activeOrders: number;
   completedOrders: number;

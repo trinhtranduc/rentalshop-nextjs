@@ -16,7 +16,8 @@ import { ArrowLeft } from 'lucide-react';
 import { 
   merchantsApi,
   subscriptionsApi,
-  plansApi
+  plansApi,
+  planLimitAddonsApi
 } from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
 import type { Merchant } from '@rentalshop/types';
@@ -29,6 +30,7 @@ export default function MerchantDetailPage() {
   
   const [merchant, setMerchant] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
+  const [addonCount, setAddonCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +56,15 @@ export default function MerchantDetailPage() {
       const plansResponse = await plansApi.getPlans();
       if (plansResponse.success && plansResponse.data) {
         setPlans(plansResponse.data.plans || []);
+      }
+
+      // Fetch active addon count
+      const addonsResponse = await planLimitAddonsApi.getMerchantPlanLimitAddons(Number(merchantId), {
+        isActive: true,
+        limit: 1
+      });
+      if (addonsResponse.success && addonsResponse.data) {
+        setAddonCount(addonsResponse.data.total || 0);
       }
 
     } catch (error) {
@@ -308,7 +319,8 @@ export default function MerchantDetailPage() {
       totalOutlets: merchant._count?.outlets || 0,
       totalUsers: merchant._count?.users || 0,
       totalProducts: merchant._count?.products || 0,
-      totalOrders: 0,
+      totalOrders: merchant._count?.orders || 0,
+      totalCustomers: merchant._count?.customers || 0,
       totalRevenue: merchant.totalRevenue || 0,
       activeOrders: 0,
       completedOrders: 0,
@@ -330,6 +342,7 @@ export default function MerchantDetailPage() {
         <MerchantDetail
           data={merchantData}
           plans={plans}
+          addonCount={addonCount}
           currentUserRole={user?.role}
           onMerchantAction={handleMerchantAction}
           onOutletAction={handleOutletAction}
