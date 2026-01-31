@@ -180,8 +180,11 @@ export * from './audit-helper';
 // Request logging utilities
 export * from './request-logger';
 
-// File logger utilities (Winston)
-export * from './logger';
+// File logger utilities (Pino) - SERVER ONLY
+// Note: Logger uses Node.js modules (fs, worker_threads) and should only be imported server-side
+// Use conditional import: if (typeof window === 'undefined') { import('@rentalshop/utils/server').then(...) }
+// Or import directly in API routes: import { logError } from '@rentalshop/utils/server'
+// DO NOT export from here to avoid client-side bundling issues
 
 // Revenue calculator utilities (single source of truth for revenue calculations)
 export * from './revenue-calculator';

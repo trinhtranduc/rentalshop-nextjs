@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { logError } from '@rentalshop/utils/server';
 import { postCreateSchema, postSearchSchema } from '@rentalshop/validation';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
@@ -82,13 +83,13 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Error creating post:', error);
-    console.error('Error details:', {
-      code: error?.code,
-      message: error?.message,
-      meta: error?.meta,
-      name: error?.name,
-      stack: error?.stack,
+    // Log error to file using Winston logger
+    logError('Error creating post', error, {
+      endpoint: '/api/posts',
+      method: 'POST',
+      userId: user?.id,
+      errorCode: error?.code,
+      errorMeta: error?.meta,
     });
     
     // Handle specific database errors
