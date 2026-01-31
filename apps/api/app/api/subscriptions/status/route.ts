@@ -5,37 +5,7 @@ import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
-
-/**
- * Build CORS headers for response
- */
-function buildCorsHeaders(request: NextRequest): Record<string, string> {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'https://anyrent.shop',
-    'https://www.anyrent.shop',
-    'https://api.anyrent.shop',
-    'https://admin.anyrent.shop',
-    'https://dev.anyrent.shop',
-    'https://dev-api.anyrent.shop',
-    'https://dev-admin.anyrent.shop',
-    ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
-  ];
-  
-  const isAllowedOrigin = allowedOrigins.includes(origin);
-  const allowOrigin = isAllowedOrigin ? origin : 'null';
-  
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-}
+import { buildCorsHeaders } from '@/lib/cors';
 
 /**
  * OPTIONS /api/subscriptions/status
