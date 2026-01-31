@@ -2,7 +2,7 @@
 
 ## ✅ Completed: Quick Wins + Products Routes
 
-### Files Updated: 8 files, 16 handlers
+### Files Updated: 12 files, 26 handlers
 
 1. **Posts Routes** (2 files, 5 handlers)
    - ✅ `apps/api/app/api/posts/route.ts` (GET, POST)
@@ -40,11 +40,27 @@
      - Kept console.log for background jobs (embedding generation, S3 deletion)
      - Removed manual error logging
 
+6. **Users Routes** (2 files, 7 handlers)
+   - ✅ `apps/api/app/api/users/route.ts` (GET, POST, PUT, DELETE)
+   - ✅ `apps/api/app/api/users/[id]/route.ts` (GET, PUT, DELETE)
+   - **Changes:**
+     - Removed ~25 console.log statements
+     - Wrapped all handlers with `withApiLogging`
+     - Removed manual error logging
+
+7. **Customers Routes** (2 files, 3 handlers)
+   - ✅ `apps/api/app/api/customers/route.ts` (GET, POST, PUT)
+   - ✅ `apps/api/app/api/customers/[id]/route.ts` (GET, PUT, DELETE)
+   - **Changes:**
+     - Removed ~20 console.log statements
+     - Wrapped all handlers with `withApiLogging`
+     - Removed manual error logging
+
 ### Code Reduction
 
-- **Lines removed:** ~200 lines (manual logging, console.log)
-- **Lines added:** ~50 lines (wrapper imports)
-- **Net reduction:** ~150 lines
+- **Lines removed:** ~270 lines (manual logging, console.log)
+- **Lines added:** ~70 lines (wrapper imports)
+- **Net reduction:** ~200 lines
 
 ### Benefits Achieved
 
@@ -59,7 +75,9 @@
 |-------|-------|----------|--------|----------|
 | **Quick Wins** | 6 | 11 | ✅ Done | 100% |
 | **Products** | 2 | 5 | ✅ Done | 100% |
-| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 35% (8/23) |
+| **Users** | 2 | 7 | ✅ Done | 100% |
+| **Customers** | 2 | 3 | ✅ Done | 100% |
+| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 57% (12/23) |
 | **Phase 2: High** | 29 | 36 | ⏳ Pending | 0% |
 | **Phase 3: Medium** | 21 | 23 | ⏳ Pending | 0% |
 | **Phase 4: Low** | 77 | 130 | ⏳ Pending | 0% |

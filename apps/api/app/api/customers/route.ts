@@ -272,12 +272,6 @@ export const POST = withApiLogging(
         });
 
         if (duplicateCustomer) {
-          // Determine which field caused the duplicate
-          const isPhoneDuplicate = hasPhone && duplicateCustomer.phone === phoneValue;
-          const duplicateField = isPhoneDuplicate ? 'phone number' : 'email';
-          const duplicateValue = isPhoneDuplicate ? phoneValue : emailValue;
-          
-          console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
             ResponseBuilder.error('CUSTOMER_DUPLICATE'),
             { status: 409 }
@@ -417,12 +411,6 @@ export const PUT = withApiLogging(
         });
 
         if (duplicateCustomer) {
-          // Determine which field caused the duplicate
-          const isPhoneDuplicate = hasPhone && duplicateCustomer.phone === phoneValue;
-          const duplicateField = isPhoneDuplicate ? 'phone number' : 'email';
-          const duplicateValue = isPhoneDuplicate ? phoneValue : emailValue;
-          
-          console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
             ResponseBuilder.error('CUSTOMER_DUPLICATE'),
             { status: 409 }
