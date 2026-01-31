@@ -61,6 +61,14 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       );
     }
 
+    // Validate that user.id is a number (for database compatibility)
+    if (typeof user.id !== 'number') {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_USER_ID'),
+        { status: 400 }
+      );
+    }
+
     // Add authorId from current user
     const postData = {
       ...parsed.data,
@@ -73,8 +81,47 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       ResponseBuilder.success('POST_CREATED_SUCCESS', post),
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating post:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      message: error?.message,
+      meta: error?.meta,
+      name: error?.name,
+      stack: error?.stack,
+    });
+    
+    // Handle specific database errors
+    if (error?.message?.includes('slug') || error?.code === 'P2002') {
+      const target = error?.meta?.target;
+      const field = Array.isArray(target) ? target[0] : target;
+      if (field === 'slug' || error?.message?.includes('slug')) {
+        return NextResponse.json(
+          ResponseBuilder.error('POST_SLUG_EXISTS', { message: 'A post with this slug already exists' }),
+          { status: 409 }
+        );
+      }
+    }
+    
+    if (error?.message?.includes('author') || error?.code === 'P2003') {
+      const fieldName = error?.meta?.field_name || 'authorId';
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_AUTHOR', { 
+          message: `Author user not found. Field: ${fieldName}, Value: ${error?.meta?.field_value || user.id}` 
+        }),
+        { status: 400 }
+      );
+    }
+    
+    // Log full error for debugging
+    if (error?.code?.startsWith('P')) {
+      console.error('Prisma error detected:', {
+        code: error.code,
+        message: error.message,
+        meta: error.meta,
+      });
+    }
+    
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

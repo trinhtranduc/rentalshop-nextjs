@@ -14,7 +14,21 @@ export const postCreateSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED']).default('DRAFT'),
   categoryIds: z.array(z.number().int().positive()).optional(),
   tagIds: z.array(z.number().int().positive()).optional(),
-  featuredImage: z.string().url().optional().or(z.literal('')),
+  featuredImage: z
+    .string()
+    .refine(
+      (val) => {
+        if (!val || val === '') return true;
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Featured image must be a valid URL or empty string' }
+    )
+    .optional(),
 });
 
 export const postUpdateSchema = postCreateSchema.partial().extend({

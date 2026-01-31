@@ -16,10 +16,14 @@ import {
   CardContent,
   Badge,
   useToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '../ui';
-import { RichTextEditor } from '../features/Posts';
+import { RichTextEditor, PostContent } from '../features/Posts';
 import { generateSlug, uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Loader2, Eye } from 'lucide-react';
 import type { PostCreateInput, PostUpdateInput, PostCategory, PostTag } from '@rentalshop/types';
 
 interface PostFormProps {
@@ -62,15 +66,29 @@ export function PostForm({
   const [filteredTags, setFilteredTags] = useState(tags);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Auto-generate slug from title
+  // Clear invalid slug on mount if in create mode
   useEffect(() => {
-    if (mode === 'create' && formData.title && !formData.slug) {
-      const generatedSlug = generateSlug(formData.title);
-      setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+    if (mode === 'create' && formData.slug && !formData.title) {
+      // If slug exists but title is empty, clear the slug
+      setFormData((prev) => ({ ...prev, slug: '' }));
     }
-  }, [formData.title, mode, formData.slug]);
+  }, [mode]);
+
+  // Auto-generate slug from title (only in create mode and if slug hasn't been manually edited)
+  useEffect(() => {
+    if (mode === 'create' && formData.title && !slugManuallyEdited) {
+      const generatedSlug = generateSlug(formData.title);
+      // Always update slug if it hasn't been manually edited
+      // This ensures slug always matches the title in create mode
+      if (generatedSlug && formData.slug !== generatedSlug) {
+        setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+      }
+    }
+  }, [formData.title, mode, slugManuallyEdited]);
 
   // Filter tags based on search
   useEffect(() => {
@@ -217,14 +235,17 @@ export function PostForm({
             <label className="block text-sm font-medium mb-2">Slug *</label>
             <Input
               value={formData.slug}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, slug: e.target.value }))
-              }
+              onChange={(e) => {
+                setSlugManuallyEdited(true);
+                setFormData((prev) => ({ ...prev, slug: e.target.value }));
+              }}
               placeholder="url-friendly-slug"
               required
             />
             <p className="text-xs text-text-tertiary mt-1">
-              Auto-generated from title. You can edit it manually.
+              {slugManuallyEdited 
+                ? 'Slug manually edited. It will not auto-update when title changes.'
+                : 'Auto-generated from title. You can edit it manually.'}
             </p>
           </div>
 
@@ -513,6 +534,15 @@ export function PostForm({
             </Select>
 
             <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowPreview(true)}
+                disabled={!formData.title || !formData.content}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
               {onCancel && (
                 <Button type="button" variant="outline" onClick={onCancel}>
                   Cancel
@@ -525,6 +555,105 @@ export function PostForm({
           </div>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Post Preview</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Featured Image */}
+            {formData.featuredImage && (
+              <img
+                src={formData.featuredImage}
+                alt={formData.title}
+                className="w-full h-auto rounded-lg"
+              />
+            )}
+
+            {/* Title */}
+            <h1 className="text-3xl font-bold">{formData.title || 'Untitled Post'}</h1>
+
+            {/* Meta Information */}
+            <div className="flex items-center gap-4 text-sm text-text-tertiary">
+              <span>
+                {new Date().toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+              {selectedCategories.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span>Categories:</span>
+                  <div className="flex gap-1">
+                    {selectedCategories.map((categoryId) => {
+                      const category = categories.find((c) => c.id === categoryId);
+                      return category ? (
+                        <Badge key={categoryId} variant="outline">
+                          {category.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+              {selectedTags.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span>Tags:</span>
+                  <div className="flex gap-1">
+                    {selectedTags.map((tagId) => {
+                      const tag = tags.find((t) => t.id === tagId);
+                      return tag ? (
+                        <Badge key={tagId} variant="secondary">
+                          {tag.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Excerpt */}
+            {formData.excerpt && (
+              <p className="text-lg text-text-secondary italic">{formData.excerpt}</p>
+            )}
+
+            {/* Content */}
+            {formData.content ? (
+              <PostContent content={formData.content} />
+            ) : (
+              <p className="text-text-tertiary italic">No content yet...</p>
+            )}
+
+            {/* SEO Information */}
+            {(formData.seoTitle || formData.seoDescription || formData.seoKeywords) && (
+              <div className="mt-8 pt-6 border-t">
+                <h3 className="text-lg font-semibold mb-4">SEO Information</h3>
+                <div className="space-y-2 text-sm">
+                  {formData.seoTitle && (
+                    <div>
+                      <span className="font-medium">SEO Title:</span> {formData.seoTitle}
+                    </div>
+                  )}
+                  {formData.seoDescription && (
+                    <div>
+                      <span className="font-medium">SEO Description:</span> {formData.seoDescription}
+                    </div>
+                  )}
+                  {formData.seoKeywords && (
+                    <div>
+                      <span className="font-medium">SEO Keywords:</span> {formData.seoKeywords}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

@@ -50,13 +50,36 @@ export const formatPhoneNumberMasked = (phone: string | null | undefined): strin
 
 /**
  * Generate URL-friendly slug from text
+ * Handles Vietnamese characters by converting them to non-accented equivalents
+ * 
+ * @example
+ * generateSlug("Hàng trăm người tuốt lá 1.200 cây mai trên quốc lộ ở TP HCM")
+ * // Returns: "hang-tram-nguoi-tuot-la-1200-cay-mai-tren-quoc-lo-o-tp-hcm"
  */
 export const generateSlug = (text: string): string => {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
+  // Step 1: Remove Vietnamese diacritics (convert to non-accented)
+  let slug = removeVietnameseDiacritics(text);
+
+  // Step 2: Convert to lowercase
+  slug = slug.toLowerCase();
+
+  // Step 3: Replace dots in numbers (e.g., "1.200" -> "1200")
+  slug = slug.replace(/(\d)\.(\d)/g, '$1$2');
+
+  // Step 4: Remove all non-word characters except spaces and hyphens
+  slug = slug.replace(/[^\w\s-]/g, '');
+
+  // Step 5: Replace multiple spaces/hyphens/underscores with single hyphen
+  slug = slug.replace(/[\s_-]+/g, '-');
+
+  // Step 6: Remove leading and trailing hyphens
+  slug = slug.replace(/^-+|-+$/g, '');
+
+  return slug;
 };
 
 /**

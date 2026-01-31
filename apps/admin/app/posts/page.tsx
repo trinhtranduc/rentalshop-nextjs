@@ -28,6 +28,12 @@ export default function PostsPage() {
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+  const [pagination, setPagination] = useState<{
+    currentPage: number;
+    totalPages: number;
+    total: number;
+    limit: number;
+  } | null>(null);
 
   // URL params
   const search = searchParams.get('search') || '';
@@ -48,6 +54,15 @@ export default function PostsPage() {
         });
         if (response.success && response.data) {
           setPosts(response.data.data || []);
+          // Set pagination data
+          const total = response.data.total || 0;
+          const totalPages = response.data.totalPages || Math.ceil(total / limit) || 1;
+          setPagination({
+            currentPage: page,
+            totalPages,
+            total,
+            limit,
+          });
         }
       } catch (error) {
         toastError('Failed to load posts');
@@ -68,11 +83,27 @@ export default function PostsPage() {
         params.delete(key);
       }
     });
+    // Reset to page 1 when filters change
+    if (updates.search !== undefined || updates.status !== undefined) {
+      params.set('page', '1');
+    }
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }, [pathname, router, searchParams]);
 
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage.toString() });
+  }, [updateURL]);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit.toString(), page: '1' });
+  }, [updateURL]);
+
   const handleCreate = () => {
     router.push('/posts/create');
+  };
+
+  const handleView = (post: Post) => {
+    router.push(`/posts/${post.id}`);
   };
 
   const handleEdit = (post: Post) => {
@@ -127,6 +158,83 @@ export default function PostsPage() {
     }
   };
 
+  const handleBulkPublish = async (postIds: number[]) => {
+    try {
+      const promises = postIds.map((id) =>
+        postsApi.updatePost(id, { status: 'PUBLISHED' })
+      );
+      const results = await Promise.all(promises);
+      const successCount = results.filter((r) => r.success).length;
+      if (successCount > 0) {
+        toastSuccess(`${successCount} post(s) published successfully`);
+        // Refresh posts
+        const response = await postsApi.searchPosts({
+          search,
+          status: status as any,
+          page,
+          limit,
+        });
+        if (response.success && response.data) {
+          setPosts(response.data.data || []);
+        }
+      }
+    } catch (error) {
+      toastError('Failed to publish posts');
+    }
+  };
+
+  const handleBulkUnpublish = async (postIds: number[]) => {
+    try {
+      const promises = postIds.map((id) =>
+        postsApi.updatePost(id, { status: 'DRAFT' })
+      );
+      const results = await Promise.all(promises);
+      const successCount = results.filter((r) => r.success).length;
+      if (successCount > 0) {
+        toastSuccess(`${successCount} post(s) unpublished successfully`);
+        // Refresh posts
+        const response = await postsApi.searchPosts({
+          search,
+          status: status as any,
+          page,
+          limit,
+        });
+        if (response.success && response.data) {
+          setPosts(response.data.data || []);
+        }
+      }
+    } catch (error) {
+      toastError('Failed to unpublish posts');
+    }
+  };
+
+  const handleBulkDelete = async (postIds: number[]) => {
+    if (!confirm(`Are you sure you want to delete ${postIds.length} post(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const promises = postIds.map((id) => postsApi.deletePost(id));
+      const results = await Promise.all(promises);
+      const successCount = results.filter((r) => r.success).length;
+      if (successCount > 0) {
+        toastSuccess(`${successCount} post(s) deleted successfully`);
+        // Refresh posts
+        const response = await postsApi.searchPosts({
+          search,
+          status: status as any,
+          page,
+          limit,
+        });
+        if (response.success && response.data) {
+          setPosts(response.data.data || []);
+        }
+      }
+    } catch (error) {
+      toastError('Failed to delete posts');
+    }
+  };
+
   return (
     <PageWrapper>
       <PageHeader>
@@ -136,6 +244,7 @@ export default function PostsPage() {
         <PostList
           posts={posts}
           loading={loading}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onPublish={handlePublish}
@@ -145,6 +254,12 @@ export default function PostsPage() {
           onFiltersChange={(filters) => {
             updateURL(filters);
           }}
+          pagination={pagination || undefined}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          onBulkPublish={handleBulkPublish}
+          onBulkUnpublish={handleBulkUnpublish}
+          onBulkDelete={handleBulkDelete}
         />
         <ConfirmationDialog
           open={showDeleteDialog}

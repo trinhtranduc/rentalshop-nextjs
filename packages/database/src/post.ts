@@ -253,31 +253,47 @@ export const create = async (data: {
     throw new Error(`Post with slug "${slug}" already exists`);
   }
 
+  // Normalize featuredImage: convert empty string to null
+  const normalizedFeaturedImage = featuredImage && featuredImage.trim() !== '' 
+    ? featuredImage 
+    : null;
+
+  // Build create data
+  const createData: any = {
+    title,
+    slug,
+    content,
+    excerpt: excerpt || null,
+    seoTitle: seoTitle || null,
+    seoDescription: seoDescription || null,
+    seoKeywords: seoKeywords || null,
+    status,
+    authorId,
+    featuredImage: normalizedFeaturedImage,
+    publishedAt: status === 'PUBLISHED' ? new Date() : null,
+  };
+
+  // Only add categories relation if categoryIds is provided and not empty
+  if (categoryIds && categoryIds.length > 0) {
+    createData.categories = {
+      create: categoryIds.map((categoryId) => ({
+        categoryId,
+      })),
+    };
+  }
+
+  // Only add tags relation if tagIds is provided and not empty
+  if (tagIds && tagIds.length > 0) {
+    createData.tags = {
+      create: tagIds.map((tagId) => ({
+        tagId,
+      })),
+    };
+  }
+
   // Create post with relations
   const post = await prisma.post.create({
-    data: {
-      title,
-      slug,
-      content,
-      excerpt,
-      seoTitle,
-      seoDescription,
-      seoKeywords,
-      status,
-      authorId,
-      featuredImage,
-      publishedAt: status === 'PUBLISHED' ? new Date() : null,
-      categories: {
-        create: categoryIds.map((categoryId) => ({
-          categoryId,
-        })),
-      },
-      tags: {
-        create: tagIds.map((tagId) => ({
-          tagId,
-        })),
-      },
-    },
+    data: createData,
     include: {
       author: {
         select: {
