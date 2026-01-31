@@ -260,34 +260,34 @@ export const create = async (data: {
 
   // Build create data
   const createData: any = {
-    title,
-    slug,
-    content,
+      title,
+      slug,
+      content,
     excerpt: excerpt || null,
     seoTitle: seoTitle || null,
     seoDescription: seoDescription || null,
     seoKeywords: seoKeywords || null,
-    status,
-    authorId,
+      status,
+      authorId,
     featuredImage: normalizedFeaturedImage,
-    publishedAt: status === 'PUBLISHED' ? new Date() : null,
+      publishedAt: status === 'PUBLISHED' ? new Date() : null,
   };
 
   // Only add categories relation if categoryIds is provided and not empty
   if (categoryIds && categoryIds.length > 0) {
     createData.categories = {
-      create: categoryIds.map((categoryId) => ({
-        categoryId,
-      })),
+        create: categoryIds.map((categoryId) => ({
+          categoryId,
+        })),
     };
   }
 
   // Only add tags relation if tagIds is provided and not empty
   if (tagIds && tagIds.length > 0) {
     createData.tags = {
-      create: tagIds.map((tagId) => ({
-        tagId,
-      })),
+        create: tagIds.map((tagId) => ({
+          tagId,
+        })),
     };
   }
 

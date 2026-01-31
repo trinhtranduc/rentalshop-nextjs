@@ -85,7 +85,7 @@ export function PostForm({
       // Always update slug if it hasn't been manually edited
       // This ensures slug always matches the title in create mode
       if (generatedSlug && formData.slug !== generatedSlug) {
-        setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+      setFormData((prev) => ({ ...prev, slug: generatedSlug }));
       }
     }
   }, [formData.title, mode, slugManuallyEdited]);
