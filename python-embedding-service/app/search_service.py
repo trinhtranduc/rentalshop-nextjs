@@ -30,12 +30,19 @@ class SearchService:
             api_key=qdrant_api_key if qdrant_api_key else None
         )
         
-        # Determine collection name
-        env = os.getenv("NODE_ENV", os.getenv("APP_ENV", "development"))
-        is_production = env in ["production", "prod"]
+        # Determine collection name (use QDRANT_COLLECTION_ENV if set, fallback to NODE_ENV/APP_ENV)
+        # This avoids Next.js automatically setting NODE_ENV=production issue
+        collection_env = os.getenv("QDRANT_COLLECTION_ENV") or os.getenv("APP_ENV") or os.getenv("NODE_ENV", "development")
+        is_production = collection_env in ["production", "prod"]
         self.collection_name = "product-images-pro" if is_production else "product-images-dev"
         
-        print(f"📦 Using Qdrant collection: {self.collection_name} (environment: {env})")
+        print(f"📦 Using Qdrant collection: {self.collection_name}", {
+            "QDRANT_COLLECTION_ENV": os.getenv("QDRANT_COLLECTION_ENV") or "not set",
+            "APP_ENV": os.getenv("APP_ENV") or "not set",
+            "NODE_ENV": os.getenv("NODE_ENV") or "not set",
+            "usedEnv": collection_env,
+            "isProduction": is_production
+        })
         
         # Initialize PostgreSQL connection pool
         database_url = os.getenv("DATABASE_URL")
@@ -109,22 +116,10 @@ class SearchService:
         print(f"   - Must conditions: {len(must_conditions)}")
         
         # Vector search in Qdrant
-        search_limit = max(limit * 2, 30)  # Get more results to filter
+        # OPTIMIZATION: Single search with threshold (removed duplicate debug query)
+        # OPTIMIZATION: Reduced multiplier from 2x to 1.5x for better performance (still enough for filtering)
+        search_limit = max(int(limit * 1.5), 20)  # Reduced from limit * 2 to limit * 1.5
         
-        # First, try without score threshold to see all results
-        all_results = self.qdrant_client.search(
-            collection_name=self.collection_name,
-            query_vector=embedding,
-            limit=10,  # Just get top 10 to check
-            query_filter=qdrant_filter,
-            with_payload=True
-        )
-        
-        print(f"🔍 Debug - Top 10 results (no threshold):")
-        for i, result in enumerate(all_results[:5], 1):
-            print(f"   {i}. Product {result.payload.get('productId')}: {result.score:.4f} (threshold: {min_similarity})")
-        
-        # Now get filtered results with threshold
         search_results = self.qdrant_client.search(
             collection_name=self.collection_name,
             query_vector=embedding,
@@ -133,6 +128,12 @@ class SearchService:
             query_filter=qdrant_filter,
             with_payload=True
         )
+        
+        # Debug: Log top results for monitoring (without extra query)
+        if search_results:
+            print(f"🔍 Top results (above threshold {min_similarity}):")
+            for i, result in enumerate(search_results[:5], 1):
+                print(f"   {i}. Product {result.payload.get('productId')}: {result.score:.4f}")
         
         search_duration = int((time.time() - search_start) * 1000)
         print(f"📊 Qdrant search: {len(search_results)} results (above threshold {min_similarity}) in {search_duration}ms")
@@ -189,8 +190,9 @@ class SearchService:
                 async with self.db_pool.acquire() as conn:
                     # Build query with IN clause
                     placeholders = ','.join([f'${i+1}' for i in range(len(product_ids))])
-                    # Query using id (primary key) for products
+                    # OPTIMIZED: Query using id (primary key) for products
                     # Note: product_ids are Int IDs from Qdrant payload
+                    # OPTIMIZATION: Only select needed fields, use efficient array_position for ordering
                     query = """
                         SELECT 
                             p.id,
@@ -214,9 +216,13 @@ class SearchService:
                         LEFT JOIN "Merchant" m ON p."merchantId" = m.id
                         WHERE p.id = ANY($1::int[])
                         ORDER BY array_position($1::int[], p.id)
+                        LIMIT $2
                     """
                     
-                    rows = await conn.fetch(query, product_ids)
+                    # OPTIMIZATION: Add limit to prevent fetching too many rows
+                    fetch_limit = len(product_ids) + 5  # Small buffer for safety
+                    
+                    rows = await conn.fetch(query, product_ids, fetch_limit)
                     
                     print(f"📊 Fetched {len(rows)} rows from database for {len(product_ids)} product IDs")
                     
