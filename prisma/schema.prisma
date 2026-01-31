@@ -676,11 +676,14 @@ model PostTag {
   id          Int      @id @default(autoincrement())
   name        String
   slug        String   @unique
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
   posts       PostTagRelation[]
   
   @@index([slug])
+  @@index([isActive])
 }
 
 model PostCategoryRelation {
@@ -691,6 +694,7 @@ model PostCategoryRelation {
   
   @@id([postId, categoryId])
   @@index([categoryId])
+  @@index([postId])
 }
 
 model PostTagRelation {
@@ -701,6 +705,7 @@ model PostTagRelation {
   
   @@id([postId, tagId])
   @@index([tagId])
+  @@index([postId])
 }
 
 enum PostStatus {
