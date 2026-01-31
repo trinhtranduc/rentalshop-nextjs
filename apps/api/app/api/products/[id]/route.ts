@@ -20,7 +20,7 @@ import {
   mapStagingUrlsToProductionUrls,
   getBucketName
 } from '@rentalshop/utils';
-import { compressImageTo1MB } from '.@/lib/image-compression';
+import { compressImageTo1MB } from '@/lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 

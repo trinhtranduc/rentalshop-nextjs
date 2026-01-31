@@ -128,7 +128,8 @@ export async function DELETE(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
@@ -160,12 +161,12 @@ export async function DELETE(
         message: 'User deleted successfully',
         data: deletedUser
       });
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        // Use unified error handling system
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
     })
   )(request);
 }

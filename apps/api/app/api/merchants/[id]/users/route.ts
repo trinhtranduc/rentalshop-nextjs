@@ -127,7 +127,8 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
@@ -218,12 +219,12 @@ export async function POST(
         message: 'User created successfully'
       }, { status: 201 });
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        // Use unified error handling system
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
     })
   )(request);
 }

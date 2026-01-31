@@ -26,7 +26,8 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withPermissions(['products.view'])(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
@@ -62,12 +63,12 @@ export async function GET(
         totalPages: Math.ceil((products.total || 0) / (products.limit || 20))
       }, `Found ${products.total || 0} products`));
 
-      } catch (error) {
-        // Error will be automatically logged by withApiLogging wrapper
-        // Use unified error handling system
-        const { response, statusCode } = handleApiError(error);
-        return NextResponse.json(response, { status: statusCode });
-      }
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
     })
   )(request);
 }

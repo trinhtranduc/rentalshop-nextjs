@@ -13,11 +13,10 @@ import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
-  console.log('🔄 [SYNC RESUME] POST /api/sync-standalone/resume - Request received');
-  
-  try {
-    const body = await request.json();
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+    try {
+      const body = await request.json();
     const { sessionId } = body;
 
     if (!sessionId) {
@@ -552,7 +551,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
-    }
+  }
   })
 );
 
