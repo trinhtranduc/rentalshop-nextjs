@@ -65,6 +65,30 @@ export function withApiLogging(handler: RouteHandler) {
       const duration = Date.now() - startTime;
       const statusCode = response.status;
       
+      // Always log to console for Railway visibility (even if log level is high)
+      // This ensures logs appear in Railway deployment logs
+      const logMessage = `[API] ${method} ${pathname} - ${statusCode} (${duration}ms) [${correlationId}]`;
+      if (statusCode >= 500) {
+        console.error(logMessage, {
+          userId: userContext.userId,
+          merchantId: userContext.merchantId,
+          outletId: userContext.outletId,
+        });
+      } else if (statusCode >= 400) {
+        console.warn(logMessage, {
+          userId: userContext.userId,
+          merchantId: userContext.merchantId,
+          outletId: userContext.outletId,
+        });
+      } else {
+        console.log(logMessage, {
+          userId: userContext.userId,
+          merchantId: userContext.merchantId,
+          outletId: userContext.outletId,
+        });
+      }
+      
+      // Also use structured logger (Pino + Axiom)
       logApiRequest(method, pathname, statusCode, duration, {
         correlationId,
         userId: userContext.userId,
@@ -74,6 +98,7 @@ export function withApiLogging(handler: RouteHandler) {
 
       // Log warning for slow requests (>1s)
       if (duration > 1000) {
+        console.warn(`[SLOW REQUEST] ${method} ${pathname} - ${duration}ms [${correlationId}]`);
         logInfo('Slow API request detected', {
           method,
           path: pathname,
@@ -88,7 +113,23 @@ export function withApiLogging(handler: RouteHandler) {
       errorOccurred = true;
       errorDetails = error;
 
-      // Log error with full context
+      // Always log error to console for Railway visibility
+      const duration = Date.now() - startTime;
+      console.error(`[API ERROR] ${method} ${pathname} - ${error instanceof Error ? error.message : String(error)} [${correlationId}]`, {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+        method,
+        path: pathname,
+        userId: userContext.userId,
+        merchantId: userContext.merchantId,
+        outletId: userContext.outletId,
+        duration,
+      });
+      
+      // Also use structured logger (Pino + Axiom)
       logError(
         `API error: ${method} ${pathname}`,
         error,
@@ -99,12 +140,11 @@ export function withApiLogging(handler: RouteHandler) {
           userId: userContext.userId,
           merchantId: userContext.merchantId,
           outletId: userContext.outletId,
-          duration: Date.now() - startTime,
+          duration,
         }
       );
 
       // Create error response
-      const duration = Date.now() - startTime;
       response = NextResponse.json(
         {
           success: false,
