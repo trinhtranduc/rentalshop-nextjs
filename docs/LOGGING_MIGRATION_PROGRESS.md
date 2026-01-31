@@ -2,7 +2,7 @@
 
 ## ✅ Completed: Quick Wins + Products Routes
 
-### Files Updated: 19 files, 34 handlers
+### Files Updated: 22 files, 38 handlers
 
 1. **Posts Routes** (2 files, 5 handlers)
    - ✅ `apps/api/app/api/posts/route.ts` (GET, POST)
@@ -71,11 +71,21 @@
      - Removed manual error logging
      - Kept business logic intact (subscription activities, session invalidation)
 
+9. **Orders Routes (Remaining)** (3 files, 4 handlers)
+   - ✅ `apps/api/app/api/orders/[orderId]/route.ts` (GET, PUT, DELETE)
+   - ✅ `apps/api/app/api/orders/batch-delete/route.ts` (POST)
+   - ✅ `apps/api/app/api/orders/[orderId]/status/route.ts` (PATCH)
+   - **Changes:**
+     - Removed ~20 console.log/console.error statements
+     - Wrapped all handlers with `withApiLogging`
+     - Removed manual error logging
+     - Kept business logic intact (order status updates, timestamp handling)
+
 ### Code Reduction
 
-- **Lines removed:** ~300 lines (manual logging, console.log)
-- **Lines added:** ~90 lines (wrapper imports)
-- **Net reduction:** ~210 lines
+- **Lines removed:** ~320 lines (manual logging, console.log)
+- **Lines added:** ~95 lines (wrapper imports)
+- **Net reduction:** ~225 lines
 
 ### Benefits Achieved
 
@@ -93,7 +103,8 @@
 | **Users** | 2 | 7 | ✅ Done | 100% |
 | **Customers** | 2 | 3 | ✅ Done | 100% |
 | **Subscriptions** | 7 | 8 | ✅ Done | 100% |
-| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 83% (19/23) |
+| **Orders (Remaining)** | 3 | 4 | ✅ Done | 100% |
+| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 96% (22/23) |
 | **Phase 2: High** | 29 | 36 | ⏳ Pending | 0% |
 | **Phase 3: Medium** | 21 | 23 | ⏳ Pending | 0% |
 | **Phase 4: Low** | 77 | 130 | ⏳ Pending | 0% |
