@@ -5,7 +5,7 @@ import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { withApiLogging } from '../../../../lib/api-logging-wrapper';
+import { withApiLogging } from '@/lib/api-logging-wrapper';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
