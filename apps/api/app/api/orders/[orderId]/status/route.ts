@@ -5,6 +5,7 @@ import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
@@ -40,6 +41,8 @@ const statusUpdateSchema = z.object({
  * - Automatic timestamp updates for pickup/return
  * - Notes and metadata handling
  * - Proper authorization checks
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PATCH(
   request: NextRequest,
@@ -49,8 +52,9 @@ export async function PATCH(
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withPermissions(['orders.update'])(async (request: NextRequest, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['orders.update'])(async (request: NextRequest, { user, userScope }) => {
+      try {
       
       if (!orderId) {
         return NextResponse.json(
@@ -123,15 +127,12 @@ export async function PATCH(
       if (pickedUpAt) {
         // Sử dụng timestamp được cung cấp
         updateInput.pickedUpAt = pickedUpAt;
-        console.log('✅ Using provided pickedUpAt timestamp');
       } else if (!existingOrder.pickedUpAt) {
         // Tự động set nếu chưa có (null hoặc missing)
         updateInput.pickedUpAt = new Date().toISOString();
-        console.log(`✅ Auto-setting pickedUpAt for PICKUPED order${isStatusChanging ? ' (status changed)' : ''}`);
       } else if (isStatusChanging) {
         // Nếu status đang thay đổi sang PICKUPED và đã có timestamp, vẫn cập nhật để đảm bảo chính xác
         updateInput.pickedUpAt = new Date().toISOString();
-        console.log('✅ Updating pickedUpAt for status change to PICKUPED');
       }
       // Nếu status đã là PICKUPED và đã có timestamp, giữ nguyên (không override)
     }
@@ -145,33 +146,18 @@ export async function PATCH(
       if (returnedAt) {
         // Sử dụng timestamp được cung cấp
         updateInput.returnedAt = returnedAt;
-        console.log('✅ Using provided returnedAt timestamp');
       } else if (!existingOrder.returnedAt) {
         // Tự động set nếu chưa có (null hoặc missing)
         updateInput.returnedAt = new Date().toISOString();
-        console.log(`✅ Auto-setting returnedAt for RETURNED order${isStatusChanging ? ' (status changed)' : ''}`);
       } else if (isStatusChanging) {
         // Nếu status đang thay đổi sang RETURNED và đã có timestamp, vẫn cập nhật để đảm bảo chính xác
         updateInput.returnedAt = new Date().toISOString();
-        console.log('✅ Updating returnedAt for status change to RETURNED');
       }
       // Nếu status đã là RETURNED và đã có timestamp, giữ nguyên (không override)
       
       // Enhanced return handling with collateral management
-      if (returnAmount === undefined) {
-        // If no return amount specified, calculate it automatically
-        // This will be calculated in the database update function
-        console.log('🔄 Return status detected - will calculate return amount automatically');
-      }
-      
-      // Log collateral information for returns
-      if (collateralReturned !== undefined || collateralType || collateralDetails) {
-        console.log('💎 Collateral return information provided:', {
-          collateralReturned,
-          collateralType,
-          collateralDetails
-        });
-      }
+      // If no return amount specified, calculate it automatically
+      // This will be calculated in the database update function
     }
 
     // Update the order (orderPublicId already validated above)
@@ -218,13 +204,13 @@ export async function PATCH(
     });
 
     } catch (error) {
-      console.error('Error updating order status:', error);
-      
+      // Error will be automatically logged by withApiLogging wrapper
       // Use unified error handling system
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 export const runtime = 'nodejs';

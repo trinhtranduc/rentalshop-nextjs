@@ -4,6 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 export const runtime = 'nodejs';
 
@@ -22,11 +23,12 @@ const batchDeleteSchema = z.object({
  * - ADMIN: can delete any orders regardless of status
  * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
  * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
-  try {
-    console.log(`🔍 POST /api/orders/batch-delete - User: ${user.email} (${user.role})`);
-    console.log(`🔍 POST /api/orders/batch-delete - UserScope:`, userScope);
+export const POST = withApiLogging(
+  withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
+    try {
 
     const body = await request.json();
     
@@ -171,8 +173,6 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
         }
       );
 
-      console.log(`✅ Batch deleted ${deletedOrders.length} orders successfully`);
-
       return NextResponse.json(
         ResponseBuilder.success('ORDERS_BATCH_DELETED_SUCCESS', {
           deleted: deletedOrders.length,
@@ -181,7 +181,7 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
         })
       );
     } catch (error: any) {
-      console.error('❌ Error in batch delete transaction:', error);
+      // Error will be automatically logged by withApiLogging wrapper
       
       // Transaction failed - return error
       const errorResponse = ResponseBuilder.error('BATCH_DELETE_FAILED');
@@ -199,10 +199,10 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
     }
 
   } catch (error: any) {
-    console.error('❌ Error in batch delete:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

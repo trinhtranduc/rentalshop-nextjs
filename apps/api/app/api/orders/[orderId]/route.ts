@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +15,8 @@ export const runtime = 'nodejs';
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * - No subscription required (read-only operation)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export const GET = async (
   request: NextRequest,
@@ -23,9 +26,9 @@ export const GET = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withPermissions(['orders.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
+  return withApiLogging(
+    withPermissions(['orders.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
@@ -51,11 +54,8 @@ export const GET = async (
       const order: any = await db.orders.findByIdDetail(orderIdNum);
 
       if (!order) {
-        console.log('❌ Order not found in database for orderId:', orderIdNum);
         throw new Error('Order not found');
       }
-
-      console.log('✅ Order found:', order);
 
       // Flatten order items with parsed productImages
       // Priority 1: Use productImages (snapshot field saved when order was created)
@@ -96,13 +96,13 @@ export const GET = async (
       });
 
     } catch (error: any) {
-      console.error('❌ Error fetching order:', error);
-      
+      // Error will be automatically logged by withApiLogging wrapper
       // Use unified error handling system (uses ResponseBuilder internally)
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -112,6 +112,8 @@ export const GET = async (
  * Authorization: All roles with 'orders.update' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export const PUT = async (
   request: NextRequest,
@@ -121,10 +123,9 @@ export const PUT = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withPermissions(['orders.update'])(async (request, { user, userScope }) => {
-    try {
-      console.log(`🔍 PUT /api/orders/[orderId] - User: ${user.email} (${user.role})`);
-      console.log(`🔍 PUT /api/orders/[orderId] - UserScope:`, userScope);
+  return withApiLogging(
+    withPermissions(['orders.update'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
@@ -148,11 +149,9 @@ export const PUT = async (
 
       // Parse and validate request body
       const body = await request.json();
-      console.log('🔍 PUT /api/orders/[orderId] - Update request body:', body);
 
       // ✅ Auto-fill outletId from userScope if not provided
       if (!body.outletId && userScope.outletId) {
-        console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
         body.outletId = userScope.outletId;
       }
 
@@ -248,25 +247,12 @@ export const PUT = async (
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
       const { subtotal, taxAmount, id, ...validUpdateData } = body;
-      
-      console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
-      console.log('✅ Order updated successfully:', updatedOrder);
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
-      
-      console.log('🔍 PUT /api/orders/[orderId]: Full order after update:', {
-        orderId: orderIdNum,
-        orderItemsCount: fullOrder?.orderItems?.length,
-        firstItem: fullOrder?.orderItems?.[0],
-        firstItemProduct: fullOrder?.orderItems?.[0]?.product,
-        firstItemProductName: fullOrder?.orderItems?.[0]?.productName,
-        firstItemHasProduct: !!fullOrder?.orderItems?.[0]?.product,
-        firstItemHasProductName: !!fullOrder?.orderItems?.[0]?.productName
-      });
       
       if (!fullOrder) {
         return NextResponse.json(
@@ -327,17 +313,6 @@ export const PUT = async (
           const productName = item.product?.name || item.productName || null;
           const productBarcode = item.product?.barcode || item.productBarcode || null;
 
-          console.log('🔍 PUT /api/orders/[orderId]: Mapping orderItem:', {
-            itemId: item.id,
-            productId: item.productId,
-            hasProduct: !!item.product,
-            productNameFromProduct: item.product?.name,
-            productNameFromSnapshot: item.productName,
-            finalProductName: productName,
-            productBarcodeFromProduct: item.product?.barcode,
-            productBarcodeFromSnapshot: item.productBarcode,
-            finalProductBarcode: productBarcode
-          });
 
           return {
             id: item.id,
@@ -380,13 +355,13 @@ export const PUT = async (
       });
 
     } catch (error: any) {
-      console.error('❌ Error updating order:', error);
-      
+      // Error will be automatically logged by withApiLogging wrapper
       // Use unified error handling system (uses ResponseBuilder internally)
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -397,6 +372,8 @@ export const PUT = async (
  * - ADMIN: can delete any order regardless of status
  * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
  * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export const DELETE = async (
   request: NextRequest,
@@ -406,10 +383,9 @@ export const DELETE = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
-    try {
-      console.log(`🔍 DELETE /api/orders/[orderId] - User: ${user.email} (${user.role})`);
-      console.log(`🔍 DELETE /api/orders/[orderId] - UserScope:`, userScope);
+  return withApiLogging(
+    withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
@@ -470,7 +446,6 @@ export const DELETE = async (
 
       // Soft delete the order
       await db.orders.softDelete(orderIdNum);
-      console.log('✅ Order soft deleted successfully:', orderIdNum);
 
       return NextResponse.json(
         ResponseBuilder.success('ORDER_DELETED_SUCCESS', {
@@ -480,11 +455,11 @@ export const DELETE = async (
       );
 
     } catch (error: any) {
-      console.error('❌ Error deleting order:', error);
-      
+      // Error will be automatically logged by withApiLogging wrapper
       // Use unified error handling system (uses ResponseBuilder internally)
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
