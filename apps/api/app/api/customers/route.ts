@@ -320,8 +320,6 @@ export const POST = withApiLogging(
     );
 
   } catch (error: any) {
-    console.error('Error in POST /api/customers:', error);
-    
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
@@ -330,10 +328,12 @@ export const POST = withApiLogging(
       );
     }
     
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * PUT /api/customers/:id
