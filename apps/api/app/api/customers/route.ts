@@ -13,6 +13,7 @@ import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 // Helper functions (will be available from @rentalshop/utils after rebuild)
 function parseQueryParams<T>(request: NextRequest, schema: any): { success: true; data: T } | { success: false; response: NextResponse } {
@@ -124,11 +125,12 @@ function resolveMerchantId(user: any, userScope: any, requestedMerchantId?: numb
  * Authorization: All roles with 'customers.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['customers.view'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/customers - User: ${user.email} (${user.role})`);
-  
-  try {
+export const GET = withApiLogging(
+  withPermissions(['customers.view'])(async (request, { user, userScope }) => {
+    try {
     // Apply rate limiting
     const rateLimitResult = searchRateLimiter(request);
     if (rateLimitResult) {
@@ -161,7 +163,6 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
     }
 
     const filterMerchantId = merchantResult.merchantId;
-    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
 
     // Build search filters
     const searchFilters = {
@@ -178,7 +179,6 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
 
     // Use simplified database API
     const result = await db.customers.search(searchFilters);
-    console.log('✅ Search completed, found:', result.total || 0, 'customers');
 
     // Normalize date fields in customer list to UTC ISO strings using toISOString()
     const normalizedCustomers = (result.data || []).map(customer => ({
@@ -204,11 +204,12 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
     return createETagResponse(responseData, request);
 
   } catch (error) {
-    console.error('Error fetching customers:', error);
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * POST /api/customers
@@ -222,12 +223,12 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
  * Authorization: All roles with 'customers.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
-  console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
-  console.log(`🔍 POST /api/customers - UserScope:`, userScope);
-  
-  try {
+export const POST = withApiLogging(
+  withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
+    try {
     // Parse and validate request body
     const bodyResult = await parseRequestBody<z.infer<typeof customerCreateSchema>>(request, customerCreateSchema);
     if (!bodyResult.success) {
@@ -235,15 +236,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     }
 
     const parsed = bodyResult.data;
-    
-    // Debug: Log received data
-    console.log('🔍 POST /api/customers - Received data:', {
-      hasMerchantId: 'merchantId' in parsed,
-      merchantId: parsed.merchantId,
-      userRole: user.role,
-      userScopeMerchantId: userScope.merchantId,
-      parsedKeys: Object.keys(parsed)
-    });
 
     // Resolve merchantId using helper
     const merchantResult = resolveMerchantId(user, userScope, parsed.merchantId);
@@ -252,7 +244,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     }
 
     const merchantId = merchantResult.merchantId;
-    console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
     // Check for duplicate phone or email within the same merchant
     // Only check if phone/email are provided, not empty, and have meaningful content
@@ -261,15 +252,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const emailValue = parsed.email ? String(parsed.email).trim() : '';
     const hasPhone = phoneValue.length > 0;
     const hasEmail = emailValue.length > 0;
-    
-    console.log('🔍 Duplicate check:', { 
-      phoneValue, 
-      emailValue, 
-      hasPhone, 
-      hasEmail,
-      phoneType: typeof parsed.phone,
-      emailType: typeof parsed.email
-    });
     
     // Only perform duplicate check if at least one field (phone or email) is provided
     if (hasPhone || hasEmail) {
@@ -303,9 +285,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         }
       }
     }
-    
-    // If no phone or email provided, allow creation (name can be duplicate)
-    console.log('✅ No duplicate check needed - phone and email are both empty or not provided');
 
     // Check plan limits before creating customer (ADMIN bypass)
     const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'customers');
@@ -323,12 +302,9 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       ...parsed,
       merchantId: merchant.id // Use CUID, not publicId
     };
-
-    console.log('🔍 Creating customer with data:', customerData);
     
     // Use simplified database API
     const customer = await db.customers.create(customerData);
-    console.log('✅ Customer created successfully:', customer);
 
     // Normalize date fields to UTC ISO strings using toISOString()
     const normalizedCustomer = {
@@ -371,11 +347,12 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
  * Authorization: All roles with 'customers.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const PUT = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
-  console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
-  
-  try {
+export const PUT = withApiLogging(
+  withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
+    try {
     // Parse and validate request body
     const bodyResult = await parseRequestBody<z.infer<typeof customerUpdateSchema>>(request, customerUpdateSchema);
     if (!bodyResult.success) {
@@ -420,15 +397,6 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
     const hasPhone = phoneValue.length > 0;
     const hasEmail = emailValue.length > 0;
     
-    console.log('🔍 PUT Duplicate check:', { 
-      phoneValue, 
-      emailValue, 
-      hasPhone, 
-      hasEmail,
-      phoneType: typeof parsed.phone,
-      emailType: typeof parsed.email
-    });
-    
     // Only perform duplicate check if at least one field (phone or email) is provided and changed
     if (hasPhone || hasEmail) {
       const duplicateConditions = [];
@@ -463,14 +431,8 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
       }
     }
     
-    // If no phone or email provided, allow update (name can be duplicate)
-    console.log('✅ No duplicate check needed - phone and email are both empty or not provided');
-
-    console.log('🔍 Updating customer with data:', { id, ...parsed });
-    
     // Use simplified database API
     const updatedCustomer = await db.customers.update(id, parsed);
-    console.log('✅ Customer updated successfully:', updatedCustomer);
 
     // Normalize date fields to UTC ISO strings using toISOString()
     const normalizedCustomer = {
@@ -485,8 +447,6 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
     );
 
   } catch (error: any) {
-    console.error('Error in PUT /api/customers:', error);
-    
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
@@ -495,7 +455,9 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
       );
     }
     
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
