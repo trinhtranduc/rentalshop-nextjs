@@ -50,7 +50,11 @@ const logsDir = getLogsDir();
 const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
 
 // Create transports based on environment
-const transports: pino.TransportMultiStreamTargets = [];
+const transports: Array<{
+  target: string;
+  level?: string;
+  options?: Record<string, any>;
+}> = [];
 
 // File logging - always enabled
 transports.push({
