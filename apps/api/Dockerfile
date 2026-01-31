@@ -1,10 +1,9 @@
 # ===================================
 # STAGE 1: Dependencies
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-# Tutorial: transformers.js-main/examples/next-server/Dockerfile
-# node:18 has glibc, so onnxruntime-node (CPU backend) will work
-FROM node:18 AS deps
+# Use node:20 to support @axiomhq/js (requires Node.js >= 20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will still work
+FROM node:20 AS deps
 WORKDIR /app
 
 # Install system dependencies for Prisma
@@ -47,8 +46,9 @@ RUN yarn config set network-timeout 300000 && \
 # ===================================
 # STAGE 2: Builder
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-FROM node:18 AS builder
+# Use node:20 to support @axiomhq/js (requires Node.js >= 20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will still work
+FROM node:20 AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
@@ -97,8 +97,9 @@ RUN yarn build
 # ===================================
 # STAGE 3: Production Runner
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-FROM node:18 AS runner
+# Use node:20 to support @axiomhq/js (requires Node.js >= 20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will still work
+FROM node:20 AS runner
 WORKDIR /app
 
 # Install OpenSSL for Prisma AND postgresql-client for migrations

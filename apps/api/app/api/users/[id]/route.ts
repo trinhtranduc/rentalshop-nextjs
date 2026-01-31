@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/users/[id]
@@ -12,6 +13,8 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -21,9 +24,9 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/users/[id] - Looking for user with ID:', id);
+  return withApiLogging(
+    withPermissions(['users.view'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -39,14 +42,11 @@ export async function GET(
       const foundUser = await db.users.findById(userId);
 
       if (!foundUser) {
-        console.log('❌ User not found in database for userId:', userId);
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
-
-      console.log('✅ User found:', foundUser);
 
       return NextResponse.json({
         success: true,
@@ -56,13 +56,13 @@ export async function GET(
       });
 
     } catch (error) {
-      console.error('❌ Error fetching user:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -73,6 +73,8 @@ export async function GET(
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
@@ -82,22 +84,22 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+      try {
 
-      // Check if the ID is numeric (public ID)
-      if (!/^\d+$/.test(id)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
+        // Check if the ID is numeric (public ID)
+        if (!/^\d+$/.test(id)) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
+            { status: 400 }
+          );
+        }
 
-      const userId = parseInt(id);
+        const userId = parseInt(id);
 
-      // Parse and validate request body
-      const body = await request.json();
-      console.log('🔍 PUT /api/users/[id] - Update request body:', body);
+        // Parse and validate request body
+        const body = await request.json();
 
       // Check if user exists
       const existingUser = await db.users.findById(userId);
@@ -115,12 +117,10 @@ export async function PUT(
 
       // Update the user using the simplified database API
       const updatedUser = await db.users.update(userId, body);
-      console.log('✅ User updated successfully:', updatedUser);
 
       // If user is being deactivated, invalidate all their sessions to force logout
       if (isBeingDeactivated) {
         await db.sessions.invalidateAllUserSessions(userId);
-        console.log(`🗑️ Deactivated user ${userId}: Invalidated all sessions to force logout`);
       }
 
       return NextResponse.json({
@@ -131,13 +131,13 @@ export async function PUT(
       });
 
     } catch (error) {
-      console.error('❌ Error updating user:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -148,6 +148,8 @@ export async function PUT(
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function DELETE(
   request: NextRequest,
@@ -157,8 +159,9 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -185,12 +188,9 @@ export async function DELETE(
       if (userId === user.id) {
         // Invalidate all user sessions to force logout
         await db.sessions.invalidateAllUserSessions(userId);
-        console.log(`🗑️ User ${userId} deleting own account: Invalidated all sessions`);
         
         // Hard delete the account (orders.createdById will be set to null to preserve order history)
         const deletedUser = await db.users.delete(userId);
-        
-        console.log('✅ User account deleted successfully:', deletedUser);
         
         return NextResponse.json({
           success: true,
@@ -224,11 +224,9 @@ export async function DELETE(
 
       // Invalidate all user sessions to force logout
       await db.sessions.invalidateAllUserSessions(userId);
-      console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
       // Hard delete user (orders.createdById will be set to null to preserve order history)
       const deletedUser = await db.users.delete(userId);
-      console.log('✅ User hard deleted successfully:', deletedUser);
 
       return NextResponse.json({
         success: true,
@@ -238,11 +236,11 @@ export async function DELETE(
       });
 
     } catch (error) {
-      console.error('❌ Error deleting user:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }

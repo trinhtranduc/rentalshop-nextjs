@@ -10,6 +10,7 @@ import { db } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 export interface UserFilters {
   role?: UserRole;
@@ -32,10 +33,12 @@ export interface UserListOptions {
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['users.view'])(async (request, { user, userScope }) => {
-  try {
-    console.log(`🔍 GET /api/users - User: ${user.email} (${user.role})`);
+export const GET = withApiLogging(
+  withPermissions(['users.view'])(async (request, { user, userScope }) => {
+    try {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -91,10 +94,8 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
         // If no specific role filter is requested, restrict to outlet-level roles only
         searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
         delete searchFilters.role; // Remove single role filter since we're using roles array
-        console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
       } else if (q.role === USER_ROLE.MERCHANT) {
         // If merchant specifically requests MERCHANT role, return empty (merchants shouldn't see other merchants)
-        console.log('🚫 MERCHANT user: Blocked request for MERCHANT role users');
         return NextResponse.json({
           success: true,
           data: [],
@@ -106,9 +107,6 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
-        // Allow these specific role requests from merchant
-        console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
       }
     }
 
@@ -119,10 +117,8 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
         // If no specific role filter is requested, restrict to outlet-level roles only
         searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
         delete searchFilters.role; // Remove single role filter since we're using roles array
-        console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
       } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.MERCHANT) {
         // Outlet admin should not see ADMIN or MERCHANT users
-        console.log(`🚫 OUTLET_ADMIN user: Blocked request for ${q.role} users`);
         return NextResponse.json({
           success: true,
           data: [],
@@ -134,17 +130,10 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
-        // Allow these specific role requests from outlet admin
-        console.log(`✅ OUTLET_ADMIN user: Allowed request for ${q.role} users`);
       }
     }
-
-    console.log('🔄 Using simplified db.users.search() with filters:', searchFilters);
     
     const result = await db.users.search(searchFilters);
-    
-    console.log(`✅ Retrieved ${result.data.length} users (total: ${result.total})`);
 
     return NextResponse.json({
       success: true,
@@ -159,13 +148,12 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     });
 
   } catch (error) {
-    console.error('❌ GET /api/users error:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('RETRIEVE_USERS_FAILED'),
-      { status: 500 }
-    );
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * POST /api/users
@@ -181,10 +169,12 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-  try {
-    console.log(`➕ POST /api/users - User: ${user.email} (${user.role})`);
+export const POST = withApiLogging(
+  withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+    try {
 
     const body = await request.json();
     const parsed = userCreateSchema.safeParse(body);
@@ -217,9 +207,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     // Hash password before creating user (same as merchant registration)
     let hashedPassword: string | undefined;
     if (parsed.data.password) {
-      console.log('🔐 Hashing password for new user...');
       hashedPassword = await hashPassword(parsed.data.password);
-      console.log('✅ Password hashed successfully');
     }
 
     // NOTE: Only MERCHANT users need email verification
@@ -239,9 +227,6 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     };
 
     // Remove plain password from data to avoid logging it
-    const { password: _, ...userDataForLogging } = userData;
-    console.log('🔍 POST /api/users: Creating user with data:', userDataForLogging);
-    console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
     // Note: Only check if creating non-ADMIN user and merchantId exists
@@ -251,8 +236,6 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     }
 
     const newUser = await db.users.create(userData);
-    
-    console.log(`✅ Created user: ${newUser.email} (ID: ${newUser.id})`);
 
     return NextResponse.json({
       success: true,
@@ -262,13 +245,12 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     }, { status: 201 });
 
   } catch (error: any) {
-    console.error('❌ POST /api/users error:', error);
-    
-    // Use unified error handling
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * PUT /api/users
@@ -278,10 +260,12 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const PUT = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-  try {
-    console.log(`✏️ PUT /api/users - User: ${user.email} (${user.role})`);
+export const PUT = withApiLogging(
+  withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+    try {
 
     const body = await request.json();
     const parsed = userUpdateSchema.safeParse(body);
@@ -324,22 +308,17 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     // Hash password if it's being updated (same as merchant registration)
     // Password is handled separately since it's not in userUpdateSchema
     if (password && typeof password === 'string' && password.length >= 6) {
-      console.log('🔐 Hashing password for user update...');
       updateData.password = await hashPassword(password);
-      console.log('✅ Password hashed successfully');
     }
 
     // Check if user is being deactivated (isActive changed from true to false)
     const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
 
     const updatedUser = await db.users.update(id, updateData);
-    
-    console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
 
     // If user is being deactivated, invalidate all their sessions to force logout
     if (isBeingDeactivated) {
       await db.sessions.invalidateAllUserSessions(id);
-      console.log(`🗑️ Deactivated user ${id}: Invalidated all sessions to force logout`);
     }
 
     return NextResponse.json({
@@ -350,13 +329,12 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     });
 
   } catch (error) {
-    console.error('❌ PUT /api/users error:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('UPDATE_USER_FAILED'),
-      { status: 500 }
-    );
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * DELETE /api/users
@@ -369,10 +347,12 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const DELETE = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
-  try {
-    console.log(`🗑️ DELETE /api/users - User: ${user.email} (${user.role})`);
+export const DELETE = withApiLogging(
+  withPermissions(['users.manage'])(async (request, { user, userScope }) => {
+    try {
 
     const { searchParams } = new URL(request.url);
     const userId = parseInt(searchParams.get('id') || '0');
@@ -435,12 +415,9 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
 
     // Invalidate all user sessions first (using db pattern)
     await db.sessions.invalidateAllUserSessions(userId);
-    console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
     // Hard delete user (orders.createdById will be set to null to preserve order history)
     const deletedUser = await db.users.delete(userId);
-    
-    console.log(`✅ User hard deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
@@ -450,10 +427,9 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     });
 
   } catch (error: any) {
-    console.error('❌ DELETE /api/users error:', error);
-    
-    // Use unified error handling system
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
