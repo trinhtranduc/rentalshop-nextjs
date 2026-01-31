@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 // Simple in-memory storage (in production, use database)
 let billingConfig = {
@@ -12,21 +13,21 @@ let billingConfig = {
   ]
 };
 
-export async function GET() {
+export const GET = withApiLogging(async () => {
   try {
     return NextResponse.json({
       success: true,
       data: billingConfig
     });
-  } catch (error) {
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_BILLING_FAILED'),
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
   }
-}
+);
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const body = await request.json();
     
@@ -54,9 +55,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       ResponseBuilder.success('BILLING_CONFIG_UPDATED_SUCCESS', billingConfig)
     );
-  } catch (error) {
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
   }
-}
+);

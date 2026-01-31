@@ -3,13 +3,15 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 /**
  * POST /api/payments/process
  * Process payment
  */
 export async function POST(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withApiLogging(
+    withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
     try {
       const body = await request.json();
       const { orderId, amount, method, reference } = body;
@@ -36,12 +38,12 @@ export async function POST(request: NextRequest) {
         { status: 501 }
       );
 
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
-  })(request);
+      } catch (error) {
+        // Error will be automatically logged by withApiLogging wrapper
+        // Use unified error handling system
+        const { response, statusCode } = handleApiError(error);
+        return NextResponse.json(response, { status: statusCode });
+      }
+    })(request)
+  );
 }

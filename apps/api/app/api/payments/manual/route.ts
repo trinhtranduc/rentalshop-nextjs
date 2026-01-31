@@ -9,6 +9,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, USER_ROLE, PAYMENT_STATUS} from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -30,7 +31,8 @@ const createManualPaymentSchema = z.object({
 // ============================================================================
 // POST /api/payments/manual - Create manual payment
 // ============================================================================
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     // Parse and validate request body
@@ -109,8 +111,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     return NextResponse.json({
       success: true,
       code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
-      code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
-        message: 'Manual payment created successfully',
+      message: 'Manual payment created successfully',
       data: {
         payment: {
           id: payment.id,
@@ -125,11 +126,11 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       }
     });
 
-  } catch (error) {
-    console.error('Manual payment creation error:', error);
-
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);

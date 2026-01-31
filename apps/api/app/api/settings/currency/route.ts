@@ -5,21 +5,16 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
 import type { CurrencyCode } from '@rentalshop/types';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * PUT /api/settings/currency
  * Update merchant's currency settings
  * Only accessible by users with merchant.view permission (ADMIN, MERCHANT)
  */
-export const PUT = withPermissions(['merchant.view'])(async (request: NextRequest, { user, userScope }) => {
-  try {
-    console.log('🔍 CURRENCY API: PUT /api/settings/currency called');
-    console.log('🔍 CURRENCY API: User:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: userScope.merchantId
-    });
+export const PUT = withApiLogging(
+  withPermissions(['merchant.view'])(async (request: NextRequest, { user, userScope }) => {
+    try {
 
     const body = await request.json();
     const { currency } = body;
@@ -40,17 +35,9 @@ export const PUT = withPermissions(['merchant.view'])(async (request: NextReques
     }
 
     // Get the merchant ID from the authenticated user
-    console.log('🔍 CURRENCY API: Looking up user in database with id:', user.id);
     const dbUser = await db.users.findById(user.id);
 
-    console.log('🔍 CURRENCY API: Database query result:', {
-      userFound: !!dbUser,
-      hasMerchant: !!(dbUser?.merchant),
-      merchantId: dbUser?.merchant?.id
-    });
-
     if (!dbUser || !dbUser.merchant) {
-      console.log('🔍 CURRENCY API: User or merchant not found, returning 403');
       return NextResponse.json(
         ResponseBuilder.error('NO_MERCHANT_ACCESS'),
         { status: API.STATUS.FORBIDDEN }
@@ -58,12 +45,10 @@ export const PUT = withPermissions(['merchant.view'])(async (request: NextReques
     }
 
     // Update merchant currency using the centralized database function
-    console.log('🔍 CURRENCY API: Calling updateMerchant with id:', dbUser.merchant.id);
     const updatedMerchant = await db.merchants.update(dbUser.merchant.id, {
       currency: currency
     });
 
-    console.log('🔍 CURRENCY API: Update successful, new currency:', currency);
     return NextResponse.json(
       ResponseBuilder.success('CURRENCY_UPDATED_SUCCESS', {
         id: updatedMerchant.id,
@@ -72,27 +57,22 @@ export const PUT = withPermissions(['merchant.view'])(async (request: NextReques
       })
     );
 
-  } catch (error) {
-    console.error('🔍 CURRENCY API: Error updating currency:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 /**
  * GET /api/settings/currency
  * Get merchant's current currency settings
  * Only accessible by users with MERCHANT role or ADMIN
  */
-export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
-  try {
-    console.log('🔍 CURRENCY API: GET /api/settings/currency called');
-    console.log('🔍 CURRENCY API: User:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: userScope.merchantId
-    });
+export const GET = withApiLogging(
+  withAnyAuth(async (request: NextRequest, { user, userScope }) => {
+    try {
 
     // Get the merchant ID from the authenticated user
     const dbUser = await db.users.findById(user.id);
@@ -108,7 +88,6 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
     const merchant = await db.merchants.findById(dbUser.merchant.id);
     
     const currencyValue = (merchant as any)?.currency || 'USD';
-    console.log('🔍 CURRENCY API: Returning currency:', currencyValue);
     return NextResponse.json({
       success: true,
       data: {
@@ -118,10 +97,11 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
       }
     });
 
-  } catch (error) {
-    console.error('🔍 CURRENCY API: Error fetching currency:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 

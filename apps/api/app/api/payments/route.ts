@@ -3,8 +3,10 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+export const GET = withApiLogging(
+  withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
 
     // Get search parameters
@@ -109,11 +111,11 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       hasMore: result.hasMore !== undefined ? result.hasMore : page < Math.ceil(total / limit)
     });
 
-  } catch (error) {
-    console.error('Error fetching payments:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
