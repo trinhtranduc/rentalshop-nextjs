@@ -80,7 +80,7 @@ transports.push({
     file: path.join(logsDir, 'combined.log'),
     frequency: 'daily',
     size: '10M',
-    limit: 5, // Keep 5 files
+    limit: { count: 5 }, // Keep 5 files
   },
 });
 
@@ -90,7 +90,7 @@ transports.push({
     file: path.join(logsDir, 'error.log'),
     frequency: 'daily',
     size: '10M',
-    limit: 5,
+    limit: { count: 5 }, // Keep 5 files
     levels: ['error'], // Only log errors
   },
   level: 'error',
