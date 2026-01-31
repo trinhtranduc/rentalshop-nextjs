@@ -103,7 +103,9 @@ WORKDIR /app
 # Install OpenSSL for Prisma AND postgresql-client for migrations
 RUN apt-get update && apt-get install -y openssl postgresql-client && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production
+# CRITICAL: Don't hardcode NODE_ENV here - let Railway Variables override it
+# This allows dev server to use NODE_ENV=development from Railway Variables
+# NODE_ENV will be set by Railway from the Variables tab
 ENV PORT=3002
 # OFFICIAL TUTORIAL APPROACH: No need to force WASM mode
 # node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
