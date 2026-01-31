@@ -46,7 +46,7 @@
     "@rentalshop/env": "file:../env",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^2.30.0",
-    "@axiomhq/pino": "^1.0.0",
+    "@axiomhq/js": "^1.0.0",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
     "pino-roll": "^2.0.0",

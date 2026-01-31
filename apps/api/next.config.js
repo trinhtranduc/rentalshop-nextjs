@@ -16,6 +16,11 @@ const nextConfig = {
         'sharp', // Externalize Sharp (Node.js native module)
         '@xenova/transformers', // Externalize transformers (ML model, needs runtime env vars)
         'onnxruntime-node', // Externalize ONNX runtime (prevent bundling)
+        // Externalize Pino (file logging) and Axiom SDK
+        'pino',
+        'pino-pretty',
+        'pino-roll',
+        '@axiomhq/js',
       ],
     },
   
@@ -81,6 +86,11 @@ const nextConfig = {
         'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
         '@xenova/transformers': 'commonjs @xenova/transformers', // Externalize transformers (ML model)
         'onnxruntime-node': 'commonjs onnxruntime-node', // CRITICAL: Externalize ONNX runtime (prevents webpack bundling)
+        // Externalize Pino (file logging) and Axiom SDK
+        'pino': 'commonjs pino',
+        'pino-pretty': 'commonjs pino-pretty',
+        'pino-roll': 'commonjs pino-roll',
+        '@axiomhq/js': 'commonjs @axiomhq/js',
       };
       
       // Merge with existing externals
