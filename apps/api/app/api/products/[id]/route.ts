@@ -22,6 +22,7 @@ import {
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * Helper function to validate image file
@@ -74,6 +75,8 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * Authorization: All roles with 'products.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -83,9 +86,9 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['products.view'])(async (request, { user, userScope }) => {
-    try {
-      console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
+  return withApiLogging(
+    withPermissions(['products.view'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -175,8 +178,6 @@ export async function GET(
         updatedAt: product.updatedAt?.toISOString() || null
       };
 
-      console.log('✅ Transformed product data:', transformedProduct);
-
       return NextResponse.json({
         success: true,
         data: transformedProduct,
@@ -185,13 +186,13 @@ export async function GET(
       });
 
     } catch (error) {
-      console.error('❌ Error fetching product:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -204,6 +205,8 @@ export async function GET(
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
@@ -213,8 +216,9 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -241,8 +245,6 @@ export async function PUT(
       // Parse multipart form data - UNIFIED FORMAT: Always expects FormData (consistent with POST)
       // - Product data: JSON string in 'data' field
       // - Files (optional): File objects in 'images' field
-      console.log('🔍 Processing multipart form data with file uploads');
-      
       const formData = await request.formData();
       
       // Extract JSON data from form fields
@@ -263,7 +265,7 @@ export async function PUT(
           try {
             productDataFromRequest.outletStock = JSON.parse(productDataFromRequest.outletStock);
           } catch (parseError) {
-            console.log('⚠️ Failed to parse outletStock string:', productDataFromRequest.outletStock);
+            // Ignore parse errors - will be validated by schema
           }
         }
         
@@ -287,8 +289,6 @@ export async function PUT(
       let uploadedFiles: string[] = [];
       
       if (imageFiles.length > 0) {
-        console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
-        
         for (const file of imageFiles) {
           if (!file || file.size === 0) continue;
           
@@ -326,7 +326,6 @@ export async function PUT(
           });
           
           if (!uploadResult.success || !uploadResult.data) {
-            console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
             return NextResponse.json(
               ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
               { status: 500 }
@@ -334,7 +333,6 @@ export async function PUT(
           }
           
           uploadedFiles.push(uploadResult.data.url);
-          console.log(`✅ Uploaded: ${file.name}`);
         }
       }
       
@@ -343,8 +341,6 @@ export async function PUT(
         const stagingKeys = extractStagingKeysFromUrls(uploadedFiles);
         
         if (stagingKeys.length > 0) {
-          console.log('🔍 Committing staging files to production:', stagingKeys.length);
-          
           // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
           const fileName = generateFileName('product-image');
           const productionKey = generateProductImageKey(userMerchantId, fileName);
@@ -358,7 +354,6 @@ export async function PUT(
             // Uses AWS_CLOUDFRONT_DOMAIN (images.anyrent.shop for prod, dev-images.anyrent.shop for dev)
             const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
             if (!cloudfrontDomain) {
-              console.error('❌ AWS_CLOUDFRONT_DOMAIN not configured');
               // Continue with original URLs if CloudFront not configured
               productDataFromRequest.images = combineProductImages(
                 productDataFromRequest.images,
@@ -381,11 +376,8 @@ export async function PUT(
                 productDataFromRequest.images,
                 productionImageUrls
               );
-              
-              console.log('✅ Committed staging files to production');
             }
           } else {
-            console.error('❌ Failed to commit staging files:', commitResult.errors);
             // Continue with staging URLs if commit fails
             productDataFromRequest.images = combineProductImages(
               productDataFromRequest.images,
@@ -400,8 +392,6 @@ export async function PUT(
           );
         }
       }
-
-      console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
 
       // Validate and normalize input data
       const validatedData = productUpdateSchema.parse(productDataFromRequest);
@@ -428,7 +418,6 @@ export async function PUT(
         });
 
         if (duplicateProduct) {
-          console.log('❌ Product name already exists:', productUpdateData.name);
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NAME_EXISTS'),
             { status: 409 }
@@ -440,13 +429,10 @@ export async function PUT(
       let finalUpdateData: any = { ...productUpdateData };
       
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
-        console.log('🔄 Preparing outlet stock nested write:', outletStock);
-        
         // Verify all outlets exist first using db API
         const validOutletStock = [];
         for (const stock of outletStock) {
           if (stock.outletId && typeof stock.stock === 'number') {
-            console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
             const outlet = await db.outlets.findById(stock.outletId);
             if (outlet) {
               console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
@@ -657,13 +643,13 @@ export async function PUT(
       });
 
     } catch (error) {
-      console.error('❌ Error updating product:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
@@ -673,6 +659,9 @@ export async function PUT(
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ * Note: Some console.log kept for background job tracking (S3 deletion, embedding deletion)
  */
 export async function DELETE(
   request: NextRequest,
@@ -682,8 +671,9 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+      try {
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -733,7 +723,6 @@ export async function DELETE(
       });
 
       if (activeOrderItemCount > 0) {
-        console.log(`❌ Cannot delete product ${productId}: Has ${activeOrderItemCount} active order item(s)`);
         return NextResponse.json(
           {
             success: false,
@@ -744,62 +733,37 @@ export async function DELETE(
         );
       }
 
-      // Check total order items count for warning (completed/cancelled orders)
-      const totalOrderItemCount = await prisma.orderItem.count({
-        where: {
-          productId: productId
-        }
-      });
-
-      if (totalOrderItemCount > 0) {
-        console.log(`⚠️ Warning: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
-      }
-
       // IMPORTANT: Delete all product images from S3 before soft deleting the product
       // This prevents orphaned images in S3 storage
       const imageUrls = parseProductImages(existingProduct.images);
 
-      // Delete all product images from S3 storage
+      // Delete all product images from S3 storage (background job)
+      // Note: Keeping console.log for background job tracking
       if (imageUrls.length > 0) {
-        console.log(`🗑️ Deleting ${imageUrls.length} image(s) from S3 for product ${productId}`);
         const deletePromises = imageUrls.map(async (imageUrl) => {
           try {
             const s3Key = extractS3KeyFromUrl(imageUrl);
             if (s3Key) {
               const deleted = await deleteFromS3(s3Key);
-              if (deleted) {
-                console.log(`✅ Deleted image from S3: ${s3Key}`);
-                return { success: true, key: s3Key };
-              } else {
-                console.warn(`⚠️ Failed to delete image from S3: ${s3Key}`);
-                return { success: false, key: s3Key, error: 'Delete failed' };
-              }
-            } else {
-              console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
-              return { success: false, key: null, error: 'Could not extract S3 key' };
+              return { success: deleted, key: s3Key };
             }
+            return { success: false, key: null, error: 'Could not extract S3 key' };
           } catch (error) {
-            console.error(`❌ Error deleting image ${imageUrl}:`, error);
             return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
           }
         });
         
         const results = await Promise.all(deletePromises);
-        const successCount = results.filter(r => r.success).length;
         const failCount = results.filter(r => !r.success).length;
         
-        console.log(`📊 Image deletion summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
-        
-        // Continue with product deletion even if some images failed to delete
-        // This ensures product is deleted even if S3 cleanup has issues
+        // Log summary for background job monitoring
         if (failCount > 0) {
-          console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3. Product will still be deleted.`);
+          console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3 for product ${productId}. Product will still be deleted.`);
         }
-      } else {
-        console.log('ℹ️ No images to delete for product', productId);
       }
 
       // Delete embeddings from Qdrant (background job)
+      // Note: Keeping console.error for background job error tracking
       try {
         const { getVectorStore } = await import('@rentalshop/database/server');
         const vectorStore = getVectorStore();
@@ -807,13 +771,12 @@ export async function DELETE(
           console.error(`Error deleting embeddings for product ${productId}:`, error);
         });
       } catch (error) {
-        console.error('Error starting embedding deletion:', error);
         // Don't fail the request if embedding deletion fails
+        console.error('Error starting embedding deletion:', error);
       }
 
       // Soft delete by setting isActive to false
       const deletedProduct = await db.products.update(productId, { isActive: false });
-      console.log('✅ Product soft deleted successfully:', deletedProduct);
 
       // Return product with parsed images (already parsed above)
       const responseProduct = {
@@ -829,11 +792,11 @@ export async function DELETE(
       });
 
     } catch (error) {
-      console.error('❌ Error deleting product:', error);
-      
       // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }

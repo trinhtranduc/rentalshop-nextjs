@@ -6,6 +6,7 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/products
@@ -15,28 +16,27 @@ import { z } from 'zod';
  * Authorization: All roles with 'products.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['products.view'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
-  
-  try {
-    // Apply rate limiting
-    const rateLimitResult = searchRateLimiter(request);
-    if (rateLimitResult) {
-      return rateLimitResult;
-    }
+export const GET = withApiLogging(
+  withPermissions(['products.view'])(async (request, { user, userScope }) => {
+    try {
+      // Apply rate limiting
+      const rateLimitResult = searchRateLimiter(request);
+      if (rateLimitResult) {
+        return rateLimitResult;
+      }
 
-    const { searchParams } = new URL(request.url);
-    console.log('Search params:', Object.fromEntries(searchParams.entries()));
-    
-    const parsed = productsQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
-    if (!parsed.success) {
-      console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
-        { status: 400 }
-      );
-    }
+      const { searchParams } = new URL(request.url);
+      
+      const parsed = productsQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
 
     const { 
       page, 
@@ -53,11 +53,6 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       sortOrder
     } = parsed.data;
 
-    console.log('Parsed filters:', { 
-      page, limit, q, search, queryMerchantId, categoryId, queryOutletId, 
-      available, minPrice, maxPrice, sortBy, sortOrder 
-    });
-    
     // Role-based merchant filtering:
     // - ADMIN role: Can see products from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see products from their own merchant
@@ -101,10 +96,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       limit: limit || 20
     };
 
-    console.log('🔍 Using simplified db.products.search with filters:', searchFilters);
-    
     const result = await db.products.search(searchFilters);
-    console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
     // Check if user has permission to view costPrice
     const canViewCostPrice = await hasPermission(user, 'products.manage');
@@ -156,19 +148,13 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     });
 
   } catch (error) {
-    console.error('❌ Error in GET /api/products:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      userScope,
-      userRole: user.role
-    });
-    
     // Use unified error handling system
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -284,13 +270,13 @@ async function commitProductImages(
   const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
 
   if (!commitResult.success) {
-    console.error('Failed to commit staging files:', commitResult.errors);
+    // Error will be logged by withApiLogging if needed
     return imageUrls; // Fallback to original URLs
   }
 
   const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
   if (!cloudfrontDomain) {
-    console.error('AWS_CLOUDFRONT_DOMAIN not configured');
+    // Error will be logged by withApiLogging if needed
     return imageUrls;
   }
 
@@ -355,8 +341,12 @@ async function validateOutletStock(
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * Requires active subscription
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ * Note: Some console.log kept for background job tracking (embedding generation)
  */
-export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+export const POST = withApiLogging(
+  withPermissions(['products.manage'])(async (request, { user, userScope }) => {
   try {
     // Parse multipart form data
     const formData = await request.formData();
@@ -385,15 +375,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     let uploadedUrls: string[] = [];
 
     if (imageFiles.length > 0) {
-      console.log(`📤 Uploading ${imageFiles.length} image(s) to staging...`);
       const uploadResult = await uploadProductImages(imageFiles);
       uploadedStagingKeys = uploadResult.stagingKeys;
       uploadedUrls = uploadResult.urls;
-      console.log(`✅ Uploaded ${uploadedUrls.length} image(s) to staging:`, uploadedUrls);
       productData.images = combineProductImages(productData.images, uploadedUrls);
-      console.log(`📋 Combined images:`, productData.images);
-    } else {
-      console.log('ℹ️ No images to upload');
     }
 
     // Validate product data
@@ -447,18 +432,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         ? productData.images.split(',').filter(Boolean)
         : uploadedUrls.length > 0 ? uploadedUrls : []; // Fallback to uploadedUrls if productData.images is missing
 
-    console.log(`🔄 Committing ${imageUrls.length} image(s) to production...`);
-    console.log(`📋 Image URLs to commit:`, imageUrls);
-    console.log(`🔑 Staging keys:`, uploadedStagingKeys);
-    
     const committedImageUrls = await commitProductImages(imageUrls, uploadedStagingKeys, merchantId);
-    console.log(`✅ Committed ${committedImageUrls.length} image(s) to production:`, committedImageUrls);
     
     // Always store as comma-separated string for database consistency
     const imagesValue = committedImageUrls.length > 0 
       ? committedImageUrls.join(',')
       : '';
-    console.log(`💾 Final images value for DB:`, imagesValue);
 
     // Get merchant CUID
     const merchant = await db.merchants.findById(merchantId);
@@ -501,38 +480,28 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         await syncProductTotalStock(product.id);
       }
     } catch (error) {
-      console.error('Error syncing totalStock:', error);
+      // Error will be logged by withApiLogging if needed
     }
 
     // Generate embedding for image search (background job)
+    // Note: Keeping console.log for background job tracking (not part of request/response logging)
     if (committedImageUrls.length > 0) {
-      console.log(`🔄 Triggering embedding generation for product ${product.id} (${committedImageUrls.length} image(s))...`);
-      console.log(`   Product ID (publicId): ${product.id}`);
-      console.log(`   Image URLs:`, committedImageUrls.map((url: string) => url.substring(0, 60) + '...'));
-      
       try {
         const { generateProductEmbedding } = await import('@rentalshop/database/server');
         // Run in background (don't block response)
         generateProductEmbedding(product.id)
           .then(() => {
+            // Background job success - log for monitoring
             console.log(`✅ Embedding generation completed for product ${product.id}`);
           })
           .catch((error: any) => {
+            // Background job error - log for monitoring
             console.error(`❌ Error generating embedding for product ${product.id}:`, error);
-            console.error('   Error message:', error?.message);
-            console.error('   Error name:', error?.name);
-            console.error('   Stack:', error?.stack);
           });
       } catch (error: any) {
-        console.error('❌ Error starting embedding generation:', error);
-        console.error('   Error message:', error?.message);
-        console.error('   Error name:', error?.name);
-        console.error('   Stack:', error?.stack);
         // Don't fail the request if embedding generation fails
+        console.error('❌ Error starting embedding generation:', error);
       }
-    } else {
-      console.log(`⚠️ Product ${product.id} has no images, skipping embedding generation`);
-      console.log(`   committedImageUrls length: ${committedImageUrls.length}`);
     }
 
     return NextResponse.json({
@@ -546,8 +515,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     });
 
   } catch (error: any) {
-    console.error('Error in POST /api/products:', error);
-    
+    // Error will be automatically logged by withApiLogging wrapper
     // Map common errors to API responses
     if (error.message === 'IMAGE_VALIDATION_FAILED' || error.message === 'IMAGE_TOO_LARGE') {
       return NextResponse.json(
@@ -578,5 +546,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 

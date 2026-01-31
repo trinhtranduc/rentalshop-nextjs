@@ -1,8 +1,8 @@
 # Centralized Logging Migration Progress
 
-## ✅ Completed: Quick Wins (Phase 1)
+## ✅ Completed: Quick Wins + Products Routes
 
-### Files Updated: 6 files, 11 handlers
+### Files Updated: 8 files, 16 handlers
 
 1. **Posts Routes** (2 files, 5 handlers)
    - ✅ `apps/api/app/api/posts/route.ts` (GET, POST)
@@ -24,18 +24,27 @@
      - Removed `console.error`
      - Wrapped with `withApiLogging`
 
-4. **Orders Routes** (1 file, 3 handlers) - **IN PROGRESS**
+4. **Orders Routes** (1 file, 3 handlers)
    - ✅ `apps/api/app/api/orders/route.ts` (GET, POST, PUT)
    - **Changes:**
      - Removed ~20 console.log statements
      - Wrapped GET, POST, PUT with `withApiLogging`
      - Removed manual error logging
 
+5. **Products Routes** (2 files, 5 handlers)
+   - ✅ `apps/api/app/api/products/route.ts` (GET, POST)
+   - ✅ `apps/api/app/api/products/[id]/route.ts` (GET, PUT, DELETE)
+   - **Changes:**
+     - Removed ~30 console.log statements
+     - Wrapped all handlers with `withApiLogging`
+     - Kept console.log for background jobs (embedding generation, S3 deletion)
+     - Removed manual error logging
+
 ### Code Reduction
 
-- **Lines removed:** ~150 lines (manual logging, console.log)
-- **Lines added:** ~30 lines (wrapper imports)
-- **Net reduction:** ~120 lines
+- **Lines removed:** ~200 lines (manual logging, console.log)
+- **Lines added:** ~50 lines (wrapper imports)
+- **Net reduction:** ~150 lines
 
 ### Benefits Achieved
 
@@ -49,7 +58,8 @@
 | Phase | Files | Handlers | Status | Progress |
 |-------|-------|----------|--------|----------|
 | **Quick Wins** | 6 | 11 | ✅ Done | 100% |
-| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 26% (6/23) |
+| **Products** | 2 | 5 | ✅ Done | 100% |
+| **Phase 1: Critical** | 23 | 36 | 🟡 In Progress | 35% (8/23) |
 | **Phase 2: High** | 29 | 36 | ⏳ Pending | 0% |
 | **Phase 3: Medium** | 21 | 23 | ⏳ Pending | 0% |
 | **Phase 4: Low** | 77 | 130 | ⏳ Pending | 0% |
