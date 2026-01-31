@@ -7,6 +7,7 @@ import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/orders
@@ -15,31 +16,24 @@ import { PerformanceMonitor } from '@rentalshop/utils';
  * Authorization: All roles with 'orders.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['orders.view'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 GET /api/orders - UserScope:`, userScope);
-  
-  // Validate that non-admin users have merchant association
-  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
-    console.log('❌ Non-admin user without merchant association:', {
-      role: user.role,
-      merchantId: userScope.merchantId,
-      outletId: userScope.outletId
-    });
-    return NextResponse.json(
-      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-      { status: 403 }
-    );
-  }
-  
-  try {
-    const { searchParams } = new URL(request.url);
-    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+export const GET = withApiLogging(
+  withPermissions(['orders.view'])(async (request, { user, userScope }) => {
+    // Validate that non-admin users have merchant association
+    if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+      return NextResponse.json(
+        ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
+        { status: 403 }
+      );
+    }
+    
+    try {
+      const { searchParams } = new URL(request.url);
     
     const parsed = ordersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
-      console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
         ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
@@ -62,11 +56,6 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       sortOrder
     } = parsed.data;
 
-    console.log('Parsed filters:', { 
-      page, limit, q, orderType, status, 
-      queryMerchantId, queryOutletId, customerId, productId, startDate, endDate,
-      sortBy, sortOrder
-    });
     
     // Implement role-based filtering
     let searchFilters: any = {
@@ -123,45 +112,25 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
         
         // Verify product belongs to user's merchant (if not admin)
         if (user.role !== USER_ROLE.ADMIN && product.merchantId !== userScope.merchantId) {
-          console.log('❌ Product does not belong to user\'s merchant:', {
-            productMerchantId: product.merchantId,
-            userMerchantId: userScope.merchantId
-          });
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Security: don't reveal product exists
             { status: API.STATUS.NOT_FOUND }
           );
         }
       } catch (productError) {
-        // If product validation fails, log but continue (product might be deleted)
-        console.warn('⚠️ Product validation failed (continuing with filter):', productError);
+        // If product validation fails, continue (product might be deleted)
+        // Error will be logged by withApiLogging if needed
       }
       
       searchFilters.productId = productId;
     }
 
-    console.log(`🔍 Role-based filtering for ${user.role}:`, {
-      'userScope.merchantId': userScope.merchantId,
-      'userScope.outletId': userScope.outletId,
-      'queryMerchantId': queryMerchantId,
-      'queryOutletId': queryOutletId,
-      'final merchantId filter': searchFilters.merchantId,
-      'final outletId filter': searchFilters.outletId,
-      'productId filter': searchFilters.productId
-    });
-
-    console.log('🔍 Using simplified db.orders.search with filters:', searchFilters);
-    console.log('📊 PAGINATION DEBUG: page=', searchFilters.page, ', limit=', searchFilters.limit);
-    
     // Use performance monitoring for query optimization
     // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
       () => db.orders.findManyLightweight(searchFilters)
     );
-    
-    console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
-    console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
     // Normalize date fields in order list to UTC ISO strings using toISOString()
     const normalizedOrders = (result.data || []).map(order => ({
@@ -191,13 +160,13 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     });
 
   } catch (error) {
-    console.error('Error in GET /api/orders:', error);
-    
     // Use unified error handling system for consistency
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * POST /api/orders
@@ -206,19 +175,18 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
  * Authorization: All roles with 'orders.create' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['orders.create'])(async (request, { user, userScope }) => {
-  console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 POST /api/orders - UserScope:`, userScope);
-  
-  try {
-    const body = await request.json();
-    
-    // ✅ Auto-fill outletId from userScope if not provided
-    if (!body.outletId && userScope.outletId) {
-      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
-      body.outletId = userScope.outletId;
-    }
+export const POST = withApiLogging(
+  withPermissions(['orders.create'])(async (request, { user, userScope }) => {
+    try {
+      const body = await request.json();
+      
+      // ✅ Auto-fill outletId from userScope if not provided
+      if (!body.outletId && userScope.outletId) {
+        body.outletId = userScope.outletId;
+      }
     
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
@@ -340,15 +308,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       if (pricingType === 'HOURLY') {
         const diffTime = returnDate.getTime() - pickup.getTime();
         rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
-        console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
       } else if (pricingType === 'DAILY') {
       const diffTime = returnDate.getTime() - pickup.getTime();
       rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
-      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
         // FIXED pricing: duration is 1 (per rental)
         rentalDuration = 1;
-        console.log('🔍 FIXED pricing: rental duration = 1 rental');
       }
     }
 
@@ -383,8 +348,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
               item.quantity
             );
           } catch (pricingError) {
-            console.error('Pricing calculation error:', pricingError);
             // Fallback to provided values (default FIXED)
+            // Error will be logged by withApiLogging if needed
         // Note: item.deposit should be deposit per unit, will be multiplied by quantity later
             pricing = {
               unitPrice: item.unitPrice,
@@ -461,11 +426,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     };
 
-    console.log('🔍 Creating order with data:', orderData);
-    
     // Use simplified database API
     const order = await db.orders.create(orderData);
-    console.log('✅ Order created successfully:', order);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
     if (order.orderItems && order.orderItems.length > 0) {
@@ -494,15 +456,11 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
                 quantity: item.quantity,
               })).filter(item => item.productId > 0)
             );
-            console.log('✅ Outlet stock updated successfully for new order');
           }
-        } else {
-          console.warn('⚠️ updateOutletStockForOrder function not found in product module');
         }
       } catch (error) {
-        console.error('❌ Error updating outlet stock for new order:', error);
         // Don't throw - order creation succeeded, stock update failed
-        // Log error for manual review
+        // Error will be logged by withApiLogging if needed
       }
     }
 
@@ -594,13 +552,13 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     });
 
   } catch (error: any) {
-    console.error('Error in POST /api/orders:', error);
-    
     // Use unified error handling system (uses ResponseBuilder internally)
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * PUT /api/orders?id={id}
@@ -609,19 +567,18 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
  * Authorization: All roles with 'orders.update' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const PUT = withPermissions(['orders.update'])(async (request, { user, userScope }) => {
-  console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 PUT /api/orders - UserScope:`, userScope);
-  
-  try {
-    const body = await request.json();
-    
-    // ✅ Auto-fill outletId from userScope if not provided and user has outletId
-    if (!body.outletId && userScope.outletId) {
-      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
-      body.outletId = userScope.outletId;
-    }
+export const PUT = withApiLogging(
+  withPermissions(['orders.update'])(async (request, { user, userScope }) => {
+    try {
+      const body = await request.json();
+      
+      // ✅ Auto-fill outletId from userScope if not provided and user has outletId
+      if (!body.outletId && userScope.outletId) {
+        body.outletId = userScope.outletId;
+      }
     
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -745,11 +702,8 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       // Add other simple fields as needed
     };
 
-    console.log('🔍 Updating order with data:', { id, ...updateData });
-    
     // Use simplified database API with basic update
     const updatedOrder = await db.orders.update(id, updateData);
-    console.log('✅ Order updated successfully:', updatedOrder);
 
     return NextResponse.json({
       success: true,
@@ -759,11 +713,9 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
     });
 
   } catch (error: any) {
-    console.error('Error in PUT /api/orders:', error);
-    
-    return NextResponse.json(
-      ResponseBuilder.error('UPDATE_ORDER_FAILED'),
-      { status: 500 }
-    );
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

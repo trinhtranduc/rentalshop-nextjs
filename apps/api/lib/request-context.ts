@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCorrelationId, logRequest, type RequestLogData } from '@rentalshop/utils';
+import { logApiRequest } from '@rentalshop/utils/server';
 
 /**
  * Get correlation ID from request headers (set by middleware) or generate new one
@@ -115,8 +116,27 @@ export async function logRequestResponse(
       errorMessage,
     };
 
-    // Log asynchronously (fire and forget)
-    await logRequest(logData);
+    // Log to database (RequestLog table) - async, fire and forget
+    logRequest(logData).catch((err) => {
+      // Silent failure - don't break main operations
+      console.error('Failed to log request to database:', err);
+    });
+
+    // Also log to structured logger (Pino + Axiom)
+    logApiRequest(
+      request.method,
+      pathname,
+      response.status,
+      duration,
+      {
+        correlationId,
+        userId: userContext.userId,
+        merchantId: userContext.merchantId,
+        outletId: userContext.outletId,
+        queryParams: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+        errorMessage,
+      }
+    );
   } catch (error) {
     // Silent failure - don't break main operations
     console.error('Failed to log request/response:', error);

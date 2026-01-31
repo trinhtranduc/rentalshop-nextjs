@@ -2,34 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 import { postCategoryCreateSchema, postCategoryUpdateSchema } from '@rentalshop/validation';
 
 /**
  * GET /api/posts/categories
  * List all post categories
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['posts.view'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['posts.view'])(async (request, { user, userScope }) => {
     const categories = await db.postCategories.findAll({ isActive: true });
 
     return NextResponse.json(
       ResponseBuilder.success('CATEGORIES_FOUND', categories)
     );
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+  })
+);
 
 /**
  * POST /api/posts/categories
  * Create post category
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
     const body = await request.json();
 
     const parsed = postCategoryCreateSchema.safeParse(body);
@@ -46,9 +47,5 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       ResponseBuilder.success('CATEGORY_CREATED_SUCCESS', category),
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error creating category:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+  })
+);

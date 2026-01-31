@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 import { postTagCreateSchema } from '@rentalshop/validation';
 
 /**
  * GET /api/posts/tags
  * List all post tags with optional search
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const GET = withPermissions(['posts.view'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['posts.view'])(async (request, { user, userScope }) => {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
 
@@ -23,21 +26,19 @@ export const GET = withPermissions(['posts.view'])(async (request, { user, userS
     return NextResponse.json(
       ResponseBuilder.success('TAGS_FOUND', tags)
     );
-  } catch (error) {
-    console.error('Error fetching tags:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+  })
+);
 
 /**
  * POST /api/posts/tags
  * Create post tag
  * 
  * Authorization: ADMIN only
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
-export const POST = withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
-  try {
+export const POST = withApiLogging(
+  withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
     const body = await request.json();
 
     const parsed = postTagCreateSchema.safeParse(body);
@@ -54,9 +55,5 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       ResponseBuilder.success('TAG_CREATED_SUCCESS', tag),
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error creating tag:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+  })
+);
