@@ -1,10 +1,9 @@
 # ===================================
 # STAGE 1: Dependencies
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-# Tutorial: transformers.js-main/examples/next-server/Dockerfile
-# node:18 has glibc, so onnxruntime-node (CPU backend) will work
-FROM node:18 AS deps
+# Use node:20 (LTS) to support @axiomhq/pino which requires Node >= 20
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work
+FROM node:20 AS deps
 WORKDIR /app
 
 # Install system dependencies for Prisma
@@ -39,15 +38,16 @@ RUN yarn config set network-timeout 300000 && \
       yarn cache clean && \
       yarn install --frozen-lockfile --network-timeout 300000))
 
-# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
-# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Keep onnxruntime-node (it will work with node:20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work correctly
 # No need to remove or mock onnxruntime-node
 
 # ===================================
 # STAGE 2: Builder
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-FROM node:18 AS builder
+# Use node:20 (LTS) to support @axiomhq/pino which requires Node >= 20
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work
+FROM node:20 AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
@@ -56,8 +56,8 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
-# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Keep onnxruntime-node (it will work with node:20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work correctly
 # No need to remove or mock onnxruntime-node
 
 # Copy entire source code (needed for monorepo build)
@@ -96,8 +96,9 @@ RUN yarn build
 # ===================================
 # STAGE 3: Production Runner
 # ===================================
-# OFFICIAL TUTORIAL APPROACH: Use node:18 (not Alpine) to support onnxruntime-node
-FROM node:18 AS runner
+# Use node:20 (LTS) to support @axiomhq/pino which requires Node >= 20
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work
+FROM node:20 AS runner
 WORKDIR /app
 
 # Install OpenSSL for Prisma AND postgresql-client for migrations
@@ -122,7 +123,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/package.json ./apps/api/
 
 # Copy node_modules (includes Prisma binaries and onnxruntime-node)
-# Note: onnxruntime-node will work with node:18 (has glibc)
+# Note: onnxruntime-node will work with node:20 (has glibc)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # CRITICAL: Explicitly verify and ensure @huggingface/transformers is accessible
@@ -156,8 +157,8 @@ RUN mkdir -p /tmp/transformers-cache && \
     chmod 777 -R /app/node_modules/@xenova 2>/dev/null || true && \
     echo "✅ Created transformers cache directories: /tmp/transformers-cache and /app/node_modules/@xenova/.cache"
 
-# OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
-# node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
+# Keep onnxruntime-node (it will work with node:20)
+# node:20 has glibc, so onnxruntime-node (CPU backend) will work correctly
 # No need to remove or mock onnxruntime-node
 
 # Copy built packages
