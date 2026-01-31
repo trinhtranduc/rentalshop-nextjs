@@ -7,6 +7,8 @@ import { API, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 /**
  * GET /api/subscriptions/[id]
  * Get subscription by ID
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function GET(
   request: NextRequest,
@@ -16,8 +18,9 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+      try {
       
       if (isNaN(subscriptionId)) {
         throw new Error('Invalid subscription ID');
@@ -30,18 +33,19 @@ export async function GET(
 
       return NextResponse.json({ success: true, data: subscription });
     } catch (error) {
-      console.error('Error fetching subscription:', error);
-      
-      // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
  * PUT /api/subscriptions/[id]
  * Update subscription
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function PUT(
   request: NextRequest,
@@ -51,8 +55,9 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+      try {
       
       if (isNaN(subscriptionId)) {
         throw new Error('Invalid subscription ID');
@@ -68,18 +73,19 @@ export async function PUT(
 
       return NextResponse.json({ success: true, data: updatedSubscription });
     } catch (error) {
-      console.error('Error updating subscription:', error);
-      
-      // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
 
 /**
  * DELETE /api/subscriptions/[id]
  * Cancel subscription
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function DELETE(
   request: NextRequest,
@@ -89,8 +95,9 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+      try {
       
       if (isNaN(subscriptionId)) {
         throw new Error('Invalid subscription ID');
@@ -109,11 +116,10 @@ export async function DELETE(
 
       return NextResponse.json({ success: true, data: cancelledSubscription });
     } catch (error) {
-      console.error('Error cancelling subscription:', error);
-      
-      // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }

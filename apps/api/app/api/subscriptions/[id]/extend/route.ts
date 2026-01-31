@@ -7,6 +7,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
 
 /**
  * POST /api/subscriptions/[id]/extend - Extend subscription
@@ -124,19 +125,26 @@ async function handleExtendSubscription(
       ResponseBuilder.success('SUBSCRIPTION_EXTENDED_SUCCESS', extendedSubscription)
     );
   } catch (error) {
-    console.error('Error extending subscription:', error);
-    // Use unified error handling system
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
 }
 
+/**
+ * POST /api/subscriptions/[id]/extend
+ * Extend subscription
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, context) => {
-    return handleExtendSubscription(request, { params }, context);
-  })(request);
+  return withApiLogging(
+    withAuthRoles(['ADMIN'])(async (request, context) => {
+      return handleExtendSubscription(request, { params }, context);
+    })
+  )(request);
 }
 

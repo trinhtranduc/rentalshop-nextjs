@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
 
 /**
  * Handler for changing subscription plan
@@ -40,15 +41,6 @@ async function handleChangePlan(
         return NextResponse.json(ResponseBuilder.error('PLAN_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      console.log('🔍 Changing subscription plan:', {
-        subscriptionId,
-        merchantId: existing.merchantId,
-        oldPlanId: existing.planId,
-        newPlanId: planId,
-        planName: plan.name,
-        currentStatus: existing.status
-      });
-
       // Determine if we need to update status
       // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
       const isCurrentTrial = existing.status?.toLowerCase() === SUBSCRIPTION_STATUS.TRIAL.toLowerCase();
@@ -64,7 +56,6 @@ async function handleChangePlan(
       // If changing from TRIAL to paid plan, update status to ACTIVE
       if (shouldActivate) {
         updateData.status = SUBSCRIPTION_STATUS.ACTIVE;
-        console.log('🔄 Updating status from TRIAL to ACTIVE for paid plan');
         
         // If currentPeriodEnd doesn't exist or is in the past, set new period dates
         const now = new Date();
@@ -78,10 +69,6 @@ async function handleChangePlan(
             periodEnd.setDate(0); // Last day of previous month
           }
           updateData.currentPeriodEnd = periodEnd;
-          console.log('📅 Setting new period dates:', {
-            start: updateData.currentPeriodStart,
-            end: updateData.currentPeriodEnd
-          });
         }
       }
 
@@ -95,26 +82,14 @@ async function handleChangePlan(
       // Change subscription plan
       const updatedSubscription = await db.subscriptions.update(subscriptionId, updateData);
 
-      console.log('✅ Subscription plan updated successfully:', {
-        subscriptionId,
-        newPlanId: updatedSubscription.planId,
-        planName: plan.name,
-        newStatus: updatedSubscription.status,
-        statusChanged: shouldActivate,
-        allowWebAccessChanged,
-        oldAllowWebAccess,
-        newAllowWebAccess
-      });
-
       // If allowWebAccess changed, invalidate all merchant user sessions
       // This forces users to re-login and get updated subscription data
       if (allowWebAccessChanged && existing.merchantId) {
         try {
-          const invalidatedCount = await db.sessions.invalidateAllMerchantUserSessions(existing.merchantId);
-          console.log(`🔄 Invalidated ${invalidatedCount} sessions for merchant ${existing.merchantId} due to allowWebAccess change`);
+          await db.sessions.invalidateAllMerchantUserSessions(existing.merchantId);
         } catch (error) {
-          console.error('⚠️ Failed to invalidate merchant sessions:', error);
           // Don't fail the request if session invalidation fails
+          // Error will be automatically logged by withApiLogging wrapper
         }
       }
 
@@ -148,9 +123,7 @@ async function handleChangePlan(
       ResponseBuilder.success('PLAN_CHANGED_SUCCESS', updatedSubscription)
     );
     } catch (error) {
-      console.error('Error changing subscription plan:', error);
-      
-      // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }

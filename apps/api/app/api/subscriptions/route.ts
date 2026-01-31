@@ -7,12 +7,17 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../lib/api-logging-wrapper';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
 // ============================================================================
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
-  try {
+/**
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+    try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const filters = {
@@ -45,19 +50,22 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
       }
     });
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
-    
-    // Use unified error handling system
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 // ============================================================================
 // POST /api/subscriptions - Create subscription
 // ============================================================================
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
-  try {
+/**
+ * Logging: Automatically handled by withApiLogging wrapper
+ */
+export const POST = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+    try {
     const body = await request.json();
     const validatedData = subscriptionCreateSchema.parse(body);
 
@@ -109,10 +117,9 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
         message: 'Subscription created successfully'
     });
   } catch (error) {
-    console.error('Error creating subscription:', error);
-    
-    // Use unified error handling system
+    // Error will be automatically logged by withApiLogging wrapper
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);

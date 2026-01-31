@@ -3,10 +3,13 @@ import { db, prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
 
 /**
  * POST /api/subscriptions/[id]/renew
  * Renew subscription with payment tracking
+ * 
+ * Logging: Automatically handled by withApiLogging wrapper
  */
 export async function POST(
   request: NextRequest,
@@ -16,8 +19,9 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
-    try {
+  return withApiLogging(
+    withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+      try {
       
       if (isNaN(subscriptionId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_SUBSCRIPTION_ID'), { status: 400 });
@@ -122,11 +126,10 @@ export async function POST(
         })
       );
     } catch (error) {
-      console.error('Error renewing subscription:', error);
-      
-      // Use unified error handling system
+      // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
-  })(request);
+    })
+  )(request);
 }
