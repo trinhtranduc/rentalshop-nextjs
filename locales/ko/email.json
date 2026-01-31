@@ -50,6 +50,20 @@
     "systemName": "AnyRent",
     "systemTagline": "렌탈 관리 시스템"
   },
+  "subscriptionExtension": {
+    "title": "구독이 연장되었습니다",
+    "greeting": "안녕하세요",
+    "message": "구독이 연장되었습니다. 구독 기간이 업데이트되었습니다.",
+    "planName": "구독 플랜",
+    "oldEndDate": "이전 종료일",
+    "newEndDate": "새 종료일",
+    "extensionDays": "연장 기간",
+    "method": "연장 방법",
+    "description": "설명",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
   "addonChange": {
     "created": {
       "title": "애드온 패키지가 추가되었습니다",

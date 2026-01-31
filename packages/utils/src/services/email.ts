@@ -230,6 +230,13 @@ type EmailTranslations = {
   };
 };
 
+// Import all locale files at build time
+import enEmailTranslations from '../../../../locales/en/email.json';
+import viEmailTranslations from '../../../../locales/vi/email.json';
+import zhEmailTranslations from '../../../../locales/zh/email.json';
+import koEmailTranslations from '../../../../locales/ko/email.json';
+import jaEmailTranslations from '../../../../locales/ja/email.json';
+
 /**
  * Load email translations for a specific locale
  * Falls back to 'vi' if locale not found
@@ -238,111 +245,107 @@ function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
   const validLocales = ['en', 'vi', 'zh', 'ko', 'ja'];
   const safeLocale = validLocales.includes(locale) ? locale : 'vi';
   
-  try {
-    // Dynamic import based on locale
-    const translations = require(`../../../locales/${safeLocale}/email.json`);
-    return translations as EmailTranslations;
-  } catch (error) {
-    console.warn(`Failed to load email translations for locale ${safeLocale}, falling back to 'vi'`);
-    try {
-      const fallback = require('../../../locales/vi/email.json');
-      return fallback as EmailTranslations;
-    } catch (fallbackError) {
-      // If even fallback fails, return a minimal English structure
-      console.error('Failed to load email translations, using minimal fallback');
-      return {
-        planChange: {
-          title: 'Subscription Plan Changed',
-          greeting: 'Hello',
-          message: 'Your subscription plan has been successfully changed.',
-          oldPlan: 'Old Plan',
-          newPlan: 'New Plan',
-          billingCycle: 'Billing Cycle',
-          periodStart: 'Period Start',
-          periodEnd: 'Period End',
-          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
-          systemName: 'AnyRent',
-          systemTagline: 'Rental Management System'
-        },
-        subscriptionRenewal: {
-          title: 'Subscription Renewed',
-          greeting: 'Hello',
-          message: 'Your subscription has been renewed.',
-          planName: 'Plan',
-          paymentMethod: 'Payment Method',
-          transactionId: 'Transaction ID',
-          periodStart: 'Period Start',
-          periodEnd: 'Period End',
-          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
-          systemName: 'AnyRent',
-          systemTagline: 'Rental Management System'
-        },
-        subscriptionStatusChange: {
-          cancelled: { title: 'Cancelled', message: 'Your subscription has been cancelled.', status: 'Cancelled' },
-          paused: { title: 'Paused', message: 'Your subscription has been paused.', status: 'Paused' },
-          resumed: { title: 'Resumed', message: 'Your subscription has been resumed.', status: 'Resumed' },
-          greeting: 'Hello',
-          planName: 'Plan',
-          status: 'Status',
-          periodEnd: 'Period End',
-          reason: 'Reason',
-          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
-          systemName: 'AnyRent',
-          systemTagline: 'Rental Management System'
-        },
-        subscriptionExtension: {
-          title: 'Subscription Extended',
-          greeting: 'Hello',
-          message: 'Your subscription has been extended. Your subscription period has been updated.',
-          planName: 'Plan',
-          oldEndDate: 'Previous End Date',
-          newEndDate: 'New End Date',
-          extensionDays: 'Extension Period',
-          method: 'Method',
-          description: 'Description',
-          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
-          systemName: 'AnyRent',
-          systemTagline: 'Rental Management System'
-        },
-        addonChange: {
-          created: { title: 'Addon Added', message: 'An addon has been added.', action: 'Added' },
-          updated: { title: 'Addon Updated', message: 'An addon has been updated.', action: 'Updated' },
-          deleted: { title: 'Addon Deleted', message: 'An addon has been deleted.', action: 'Deleted' },
-          activated: { title: 'Addon Activated', message: 'An addon has been activated.', action: 'Activated' },
-          deactivated: { title: 'Addon Deactivated', message: 'An addon has been deactivated.', action: 'Deactivated' },
-          greeting: 'Hello',
-          action: 'Action',
-          addonLimits: 'Addon Limits',
-          notes: 'Notes',
-          noSpecificLimits: 'No specific limits',
-          outlets: '{count} outlets',
-          users: '{count} users',
-          products: '{count} products',
-          customers: '{count} customers',
-          orders: '{count} orders',
-          createdMessage: 'You can use these limits now.',
-          deletedMessage: 'Please ensure your counts do not exceed the new limits.',
-          updatedMessage: 'Changes have been applied.',
-          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
-          systemName: 'AnyRent',
-          systemTagline: 'Rental Management System'
-        },
-        common: {
-          billingIntervals: {
-            monthly: 'Monthly',
-            quarterly: 'Every 3 months',
-            semi_annual: 'Every 6 months',
-            annual: 'Yearly'
-          },
-          paymentMethods: {
-            STRIPE: 'Credit/Debit Card',
-            TRANSFER: 'Bank Transfer',
-            CASH: 'Cash'
-          }
-        }
-      } as EmailTranslations;
+  // Map locale to imported translations
+  const translationsMap: Record<string, EmailTranslations> = {
+    en: enEmailTranslations as EmailTranslations,
+    vi: viEmailTranslations as EmailTranslations,
+    zh: zhEmailTranslations as EmailTranslations,
+    ko: koEmailTranslations as EmailTranslations,
+    ja: jaEmailTranslations as EmailTranslations,
+  };
+  
+  // Return translations for the locale, or fallback to 'vi', or minimal fallback
+  return translationsMap[safeLocale] || translationsMap['vi'] || {
+    planChange: {
+      title: 'Subscription Plan Changed',
+      greeting: 'Hello',
+      message: 'Your subscription plan has been successfully changed.',
+      oldPlan: 'Old Plan',
+      newPlan: 'New Plan',
+      billingCycle: 'Billing Cycle',
+      periodStart: 'Period Start',
+      periodEnd: 'Period End',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
+    subscriptionRenewal: {
+      title: 'Subscription Renewed',
+      greeting: 'Hello',
+      message: 'Your subscription has been renewed.',
+      planName: 'Plan',
+      paymentMethod: 'Payment Method',
+      transactionId: 'Transaction ID',
+      periodStart: 'Period Start',
+      periodEnd: 'Period End',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
+    subscriptionStatusChange: {
+      cancelled: { title: 'Cancelled', message: 'Your subscription has been cancelled.', status: 'Cancelled' },
+      paused: { title: 'Paused', message: 'Your subscription has been paused.', status: 'Paused' },
+      resumed: { title: 'Resumed', message: 'Your subscription has been resumed.', status: 'Resumed' },
+      greeting: 'Hello',
+      planName: 'Plan',
+      status: 'Status',
+      periodEnd: 'Period End',
+      reason: 'Reason',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
+    subscriptionExtension: {
+      title: 'Subscription Extended',
+      greeting: 'Hello',
+      message: 'Your subscription has been extended. Your subscription period has been updated.',
+      planName: 'Plan',
+      oldEndDate: 'Previous End Date',
+      newEndDate: 'New End Date',
+      extensionDays: 'Extension Period',
+      method: 'Method',
+      description: 'Description',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
+    addonChange: {
+      created: { title: 'Addon Added', message: 'An addon has been added.', action: 'Added' },
+      updated: { title: 'Addon Updated', message: 'An addon has been updated.', action: 'Updated' },
+      deleted: { title: 'Addon Deleted', message: 'An addon has been deleted.', action: 'Deleted' },
+      activated: { title: 'Addon Activated', message: 'An addon has been activated.', action: 'Activated' },
+      deactivated: { title: 'Addon Deactivated', message: 'An addon has been deactivated.', action: 'Deactivated' },
+      greeting: 'Hello',
+      action: 'Action',
+      addonLimits: 'Addon Limits',
+      notes: 'Notes',
+      noSpecificLimits: 'No specific limits',
+      outlets: '{count} outlets',
+      users: '{count} users',
+      products: '{count} products',
+      customers: '{count} customers',
+      orders: '{count} orders',
+      createdMessage: 'You can use these limits now.',
+      deletedMessage: 'Please ensure your counts do not exceed the new limits.',
+      updatedMessage: 'Changes have been applied.',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
+    common: {
+      billingIntervals: {
+        monthly: 'Monthly',
+        quarterly: 'Every 3 months',
+        semi_annual: 'Every 6 months',
+        annual: 'Yearly'
+      },
+      paymentMethods: {
+        STRIPE: 'Credit/Debit Card',
+        TRANSFER: 'Bank Transfer',
+        CASH: 'Cash'
+      }
     }
-  }
+  } as EmailTranslations;
 }
 
 // ============================================================================

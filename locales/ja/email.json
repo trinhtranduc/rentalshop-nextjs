@@ -50,6 +50,20 @@
     "systemName": "AnyRent",
     "systemTagline": "レンタル管理システム"
   },
+  "subscriptionExtension": {
+    "title": "サブスクリプションが延長されました",
+    "greeting": "こんにちは",
+    "message": "サブスクリプションが延長されました。サブスクリプション期間が更新されました。",
+    "planName": "サブスクリプションプラン",
+    "oldEndDate": "以前の終了日",
+    "newEndDate": "新しい終了日",
+    "extensionDays": "延長期間",
+    "method": "延長方法",
+    "description": "説明",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
   "addonChange": {
     "created": {
       "title": "アドオンパッケージが追加されました",

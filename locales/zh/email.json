@@ -50,6 +50,20 @@
     "systemName": "AnyRent",
     "systemTagline": "租赁管理系统"
   },
+  "subscriptionExtension": {
+    "title": "订阅已延长",
+    "greeting": "您好",
+    "message": "您的订阅已延长。订阅期限已更新。",
+    "planName": "订阅计划",
+    "oldEndDate": "之前的结束日期",
+    "newEndDate": "新的结束日期",
+    "extensionDays": "延长期限",
+    "method": "延长方式",
+    "description": "描述",
+    "footer": "© {year} AnyRent. 保留所有权利。",
+    "systemName": "AnyRent",
+    "systemTagline": "租赁管理系统"
+  },
   "addonChange": {
     "created": {
       "title": "附加包已添加",
