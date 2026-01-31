@@ -198,6 +198,42 @@ export function PostForm({
     }
   };
 
+  const handleAnalyzeSEO = async () => {
+    if (!formData.content || !formData.title) {
+      toastError('Title and content are required for SEO analysis');
+      return;
+    }
+
+    setAnalyzingSEO(true);
+    try {
+      // Extract keyword from title or use first word
+      const keyword = formData.seoKeywords?.split(',')[0]?.trim() || 
+                     formData.title.split(' ')[0]?.toLowerCase() || 
+                     'content';
+
+      const result = await aiApi.analyzeSEO({
+        content: formData.content,
+        title: formData.title,
+        keyword: keyword,
+        metaTitle: formData.seoTitle || formData.title,
+        metaDescription: formData.seoDescription || formData.excerpt || '',
+      });
+
+      if (result.success && result.data) {
+        setSeoAnalysis(result.data);
+        setShowSEOAnalysis(true);
+        toastSuccess('SEO analysis completed!');
+      } else {
+        toastError(result.error || 'Failed to analyze SEO');
+      }
+    } catch (error) {
+      console.error('Error analyzing SEO:', error);
+      toastError('Failed to analyze SEO. Please try again.');
+    } finally {
+      setAnalyzingSEO(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
