@@ -11,11 +11,12 @@ import { db } from '@rentalshop/database';
 import { USER_ROLE } from '@rentalshop/constants';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) => {
-  try {
+export const GET = withApiLogging(
+  withAuthRoles([USER_ROLE.ADMIN])(async (
+    request: NextRequest,
+    { params }: { params: { id: string } }
+  ) => {
+    try {
     const sessionId = parseInt(params.id, 10);
 
     if (isNaN(sessionId)) {
@@ -58,10 +59,10 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (
       })
     );
     } catch (error: any) {
-      // Error will be automatically logged by withApiLogging wrapper
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
-    }
+    // Error will be automatically logged by withApiLogging wrapper
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
   })
 );
 
