@@ -1,0 +1,109 @@
+{
+  "planChange": {
+    "title": "구독 플랜이 변경되었습니다",
+    "greeting": "안녕하세요",
+    "message": "구독 플랜이 성공적으로 변경되었습니다. 자세한 내용은 아래를 참조하세요:",
+    "oldPlan": "이전 플랜",
+    "newPlan": "새 플랜",
+    "billingCycle": "결제 주기",
+    "periodStart": "시작일",
+    "periodEnd": "종료일",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
+  "subscriptionRenewal": {
+    "title": "구독 갱신 성공",
+    "greeting": "안녕하세요",
+    "message": "구독이 성공적으로 갱신되었습니다. 저희 서비스를 계속 이용해 주셔서 감사합니다!",
+    "planName": "구독 플랜",
+    "paymentMethod": "결제 방법",
+    "transactionId": "거래 ID",
+    "periodStart": "시작일",
+    "periodEnd": "종료일",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "구독이 취소되었습니다",
+      "message": "구독이 취소되었습니다. 서비스를 계속 이용하려면 저희에게 연락하여 구독을 재활성화해 주세요.",
+      "status": "취소됨"
+    },
+    "paused": {
+      "title": "구독이 일시 중지되었습니다",
+      "message": "구독이 일시 중지되었습니다. 구독 관리 페이지에서 언제든지 구독을 재활성화할 수 있습니다.",
+      "status": "일시 중지됨"
+    },
+    "resumed": {
+      "title": "구독이 재개되었습니다",
+      "message": "구독이 재개되었습니다. 이제 구독 플랜의 모든 기능을 계속 사용할 수 있습니다.",
+      "status": "재개됨"
+    },
+    "greeting": "안녕하세요",
+    "planName": "플랜",
+    "status": "상태",
+    "periodEnd": "종료일",
+    "reason": "사유",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
+  "addonChange": {
+    "created": {
+      "title": "애드온 패키지가 추가되었습니다",
+      "message": "새 애드온 패키지가 계정에 추가되었습니다. 제한이 증가했습니다.",
+      "action": "추가됨"
+    },
+    "updated": {
+      "title": "애드온 패키지가 업데이트되었습니다",
+      "message": "애드온 패키지가 업데이트되었습니다. 제한이 조정되었습니다.",
+      "action": "업데이트됨"
+    },
+    "deleted": {
+      "title": "애드온 패키지가 삭제되었습니다",
+      "message": "애드온 패키지가 계정에서 제거되었습니다. 제한이 감소했습니다.",
+      "action": "삭제됨"
+    },
+    "activated": {
+      "title": "애드온 패키지가 활성화되었습니다",
+      "message": "애드온 패키지가 활성화되었습니다. 제한이 적용되었습니다.",
+      "action": "활성화됨"
+    },
+    "deactivated": {
+      "title": "애드온 패키지가 비활성화되었습니다",
+      "message": "애드온 패키지가 비활성화되었습니다. 제한이 제거되었습니다.",
+      "action": "비활성화됨"
+    },
+    "greeting": "안녕하세요",
+    "action": "작업",
+    "addonLimits": "애드온 제한",
+    "notes": "참고",
+    "noSpecificLimits": "특정 제한 없음",
+    "outlets": "{count}개 매장",
+    "users": "{count}명 사용자",
+    "products": "{count}개 제품",
+    "customers": "{count}명 고객",
+    "orders": "{count}개 주문",
+    "createdMessage": "이제 이러한 추가 제한을 사용할 수 있습니다.",
+    "deletedMessage": "현재 수량이 새 제한을 초과하지 않도록 하세요.",
+    "updatedMessage": "변경 사항이 계정에 적용되었습니다.",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "월간",
+      "quarterly": "3개월마다",
+      "semi_annual": "6개월마다",
+      "annual": "연간"
+    },
+    "paymentMethods": {
+      "STRIPE": "신용/직불 카드",
+      "TRANSFER": "은행 송금",
+      "CASH": "현금"
+    }
+  }
+}

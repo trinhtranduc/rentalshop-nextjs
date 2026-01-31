@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail } from '@rentalshop/utils';
+import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -598,7 +598,40 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
     }
   });
 
-  return transformSubscriptionFromDb(subscription);
+  const result = transformSubscriptionFromDb(subscription);
+  
+  // Send email notification (non-blocking)
+  if (subscription.merchant?.email) {
+    console.log('📨 [Subscription] Sending pause email...', {
+      to: subscription.merchant.email,
+      merchantName: subscription.merchant.name,
+      planName: subscription.plan?.name,
+      provider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
+    sendSubscriptionStatusChangeEmail({
+      merchantName: subscription.merchant.name || 'Quý khách',
+      email: subscription.merchant.email,
+      planName: subscription.plan?.name || 'Unknown Plan',
+      status: 'PAUSED',
+      periodEnd: subscription.currentPeriodEnd || undefined
+    })
+      .then((emailResult) => {
+        console.log('📬 [Subscription] Pause email result:', {
+          success: emailResult.success,
+          error: emailResult.error,
+          messageId: emailResult.messageId,
+          provider: process.env.EMAIL_PROVIDER
+        });
+      })
+      .catch((error) => {
+        console.error('❌ [Subscription] Failed to send pause email:', error);
+      });
+  } else {
+    console.warn('⚠️ [Subscription] Cannot send pause email: merchant email not found');
+  }
+
+  return result;
 }
 
 export async function resumeSubscription(subscriptionId: number): Promise<Subscription> {
@@ -620,15 +653,50 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     }
   });
 
-  return transformSubscriptionFromDb(subscription);
+  const result = transformSubscriptionFromDb(subscription);
+  
+  // Send email notification (non-blocking)
+  if (subscription.merchant?.email) {
+    console.log('📨 [Subscription] Sending resume email...', {
+      to: subscription.merchant.email,
+      merchantName: subscription.merchant.name,
+      planName: subscription.plan?.name,
+      provider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
+    sendSubscriptionStatusChangeEmail({
+      merchantName: subscription.merchant.name || 'Quý khách',
+      email: subscription.merchant.email,
+      planName: subscription.plan?.name || 'Unknown Plan',
+      status: 'RESUMED',
+      periodEnd: subscription.currentPeriodEnd || undefined
+    })
+      .then((emailResult) => {
+        console.log('📬 [Subscription] Resume email result:', {
+          success: emailResult.success,
+          error: emailResult.error,
+          messageId: emailResult.messageId,
+          provider: process.env.EMAIL_PROVIDER
+        });
+      })
+      .catch((error) => {
+        console.error('❌ [Subscription] Failed to send resume email:', error);
+      });
+  } else {
+    console.warn('⚠️ [Subscription] Cannot send resume email: merchant email not found');
+  }
+
+  return result;
 }
 
-export async function cancelSubscription(subscriptionId: number): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
+export async function cancelSubscription(subscriptionId: number, reason?: string): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
   try {
     const subscription = await prisma.subscription.update({
       where: { id: subscriptionId },
       data: {
         status: SUBSCRIPTION_STATUS.CANCELLED, // ✅ Use enum constant
+        canceledAt: new Date(),
+        cancelReason: reason || null,
         updatedAt: new Date()
       },
       include: {
@@ -644,6 +712,39 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
     });
 
     const result = transformSubscriptionFromDb(subscription);
+    
+    // Send email notification (non-blocking)
+    if (subscription.merchant?.email) {
+      console.log('📨 [Subscription] Sending cancellation email...', {
+        to: subscription.merchant.email,
+        merchantName: subscription.merchant.name,
+        planName: subscription.plan?.name,
+        reason: reason || 'No reason provided',
+        provider: process.env.EMAIL_PROVIDER || 'console'
+      });
+      
+      sendSubscriptionStatusChangeEmail({
+        merchantName: subscription.merchant.name || 'Quý khách',
+        email: subscription.merchant.email,
+        planName: subscription.plan?.name || 'Unknown Plan',
+        status: 'CANCELLED',
+        reason: reason || undefined,
+        periodEnd: subscription.currentPeriodEnd || undefined
+      })
+        .then((emailResult) => {
+          console.log('📬 [Subscription] Cancellation email result:', {
+            success: emailResult.success,
+            error: emailResult.error,
+            messageId: emailResult.messageId,
+            provider: process.env.EMAIL_PROVIDER
+          });
+        })
+        .catch((error) => {
+          console.error('❌ [Subscription] Failed to send cancellation email:', error);
+        });
+    } else {
+      console.warn('⚠️ [Subscription] Cannot send cancellation email: merchant email not found');
+    }
 
     return {
       success: true,

@@ -1,0 +1,123 @@
+{
+  "planChange": {
+    "title": "Subscription Plan Changed",
+    "greeting": "Hello",
+    "message": "Your subscription plan has been successfully changed. Details below:",
+    "oldPlan": "Old Plan",
+    "newPlan": "New Plan",
+    "billingCycle": "Billing Cycle",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
+  "subscriptionRenewal": {
+    "title": "Subscription Renewed Successfully",
+    "greeting": "Hello",
+    "message": "Your subscription has been successfully renewed. Thank you for continuing to use our service!",
+    "planName": "Subscription Plan",
+    "paymentMethod": "Payment Method",
+    "transactionId": "Transaction ID",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
+  "subscriptionExtension": {
+    "title": "Subscription Extended",
+    "greeting": "Hello",
+    "message": "Your subscription has been extended. Your subscription period has been updated.",
+    "planName": "Subscription Plan",
+    "oldEndDate": "Previous End Date",
+    "newEndDate": "New End Date",
+    "extensionDays": "Extension Period",
+    "method": "Extension Method",
+    "description": "Description",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Subscription Cancelled",
+      "message": "Your subscription has been cancelled. If you wish to continue using our service, please contact us to reactivate your subscription.",
+      "status": "Cancelled"
+    },
+    "paused": {
+      "title": "Subscription Paused",
+      "message": "Your subscription has been paused. You can reactivate your subscription at any time from your subscription management page.",
+      "status": "Paused"
+    },
+    "resumed": {
+      "title": "Subscription Resumed",
+      "message": "Your subscription has been resumed. You can now continue using all features of your subscription plan.",
+      "status": "Resumed"
+    },
+    "greeting": "Hello",
+    "planName": "Plan",
+    "status": "Status",
+    "periodEnd": "Period End",
+    "reason": "Reason",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Addon Package Added",
+      "message": "A new addon package has been added to your account. Your limits have been increased.",
+      "action": "Added"
+    },
+    "updated": {
+      "title": "Addon Package Updated",
+      "message": "Your addon package has been updated. Limits have been adjusted.",
+      "action": "Updated"
+    },
+    "deleted": {
+      "title": "Addon Package Deleted",
+      "message": "An addon package has been removed from your account. Your limits have been reduced.",
+      "action": "Deleted"
+    },
+    "activated": {
+      "title": "Addon Package Activated",
+      "message": "Your addon package has been activated. Limits have been applied.",
+      "action": "Activated"
+    },
+    "deactivated": {
+      "title": "Addon Package Deactivated",
+      "message": "Your addon package has been deactivated. Limits have been removed.",
+      "action": "Deactivated"
+    },
+    "greeting": "Hello",
+    "action": "Action",
+    "addonLimits": "Addon Limits",
+    "notes": "Notes",
+    "noSpecificLimits": "No specific limits",
+    "outlets": "{count} outlets",
+    "users": "{count} users",
+    "products": "{count} products",
+    "customers": "{count} customers",
+    "orders": "{count} orders",
+    "createdMessage": "You can use these additional limits now.",
+    "deletedMessage": "Please ensure your current counts do not exceed the new limits.",
+    "updatedMessage": "Changes have been applied to your account.",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "Monthly",
+      "quarterly": "Every 3 months",
+      "semi_annual": "Every 6 months",
+      "annual": "Yearly"
+    },
+    "paymentMethods": {
+      "STRIPE": "Credit/Debit Card",
+      "TRANSFER": "Bank Transfer",
+      "CASH": "Cash"
+    }
+  }
+}

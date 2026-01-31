@@ -1,0 +1,123 @@
+{
+  "planChange": {
+    "title": "Gói đăng ký đã được thay đổi",
+    "greeting": "Xin chào",
+    "message": "Gói đăng ký của bạn đã được thay đổi thành công. Dưới đây là thông tin chi tiết:",
+    "oldPlan": "Gói cũ",
+    "newPlan": "Gói mới",
+    "billingCycle": "Chu kỳ thanh toán",
+    "periodStart": "Ngày bắt đầu",
+    "periodEnd": "Ngày kết thúc",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
+  "subscriptionRenewal": {
+    "title": "Gia hạn đăng ký thành công",
+    "greeting": "Xin chào",
+    "message": "Gói đăng ký của bạn đã được gia hạn thành công. Cảm ơn bạn đã tiếp tục sử dụng dịch vụ của chúng tôi!",
+    "planName": "Gói đăng ký",
+    "paymentMethod": "Phương thức thanh toán",
+    "transactionId": "Mã giao dịch",
+    "periodStart": "Ngày bắt đầu",
+    "periodEnd": "Ngày kết thúc",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
+  "subscriptionExtension": {
+    "title": "Gia hạn đăng ký",
+    "greeting": "Xin chào",
+    "message": "Gói đăng ký của bạn đã được gia hạn. Thời hạn đăng ký đã được cập nhật.",
+    "planName": "Gói đăng ký",
+    "oldEndDate": "Ngày kết thúc cũ",
+    "newEndDate": "Ngày kết thúc mới",
+    "extensionDays": "Thời gian gia hạn",
+    "method": "Phương thức gia hạn",
+    "description": "Mô tả",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Gói đăng ký đã bị hủy",
+      "message": "Gói đăng ký của bạn đã bị hủy. Nếu bạn muốn tiếp tục sử dụng dịch vụ, vui lòng liên hệ với chúng tôi để kích hoạt lại gói đăng ký.",
+      "status": "Đã hủy"
+    },
+    "paused": {
+      "title": "Gói đăng ký đã tạm dừng",
+      "message": "Gói đăng ký của bạn đã được tạm dừng. Bạn có thể kích hoạt lại gói đăng ký bất cứ lúc nào từ trang quản lý đăng ký của mình.",
+      "status": "Đã tạm dừng"
+    },
+    "resumed": {
+      "title": "Gói đăng ký đã được kích hoạt lại",
+      "message": "Gói đăng ký của bạn đã được kích hoạt lại. Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói đăng ký ngay bây giờ.",
+      "status": "Đã kích hoạt lại"
+    },
+    "greeting": "Xin chào",
+    "planName": "Gói",
+    "status": "Trạng thái",
+    "periodEnd": "Ngày kết thúc",
+    "reason": "Lý do",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Gói bổ sung đã được thêm",
+      "message": "Một gói bổ sung mới đã được thêm vào tài khoản của bạn. Các giới hạn của bạn đã được tăng lên.",
+      "action": "Đã thêm"
+    },
+    "updated": {
+      "title": "Gói bổ sung đã được cập nhật",
+      "message": "Gói bổ sung của bạn đã được cập nhật. Các giới hạn đã được điều chỉnh.",
+      "action": "Đã cập nhật"
+    },
+    "deleted": {
+      "title": "Gói bổ sung đã bị xóa",
+      "message": "Một gói bổ sung đã bị xóa khỏi tài khoản của bạn. Các giới hạn của bạn đã được giảm xuống.",
+      "action": "Đã xóa"
+    },
+    "activated": {
+      "title": "Gói bổ sung đã được kích hoạt",
+      "message": "Gói bổ sung của bạn đã được kích hoạt. Các giới hạn đã được áp dụng.",
+      "action": "Đã kích hoạt"
+    },
+    "deactivated": {
+      "title": "Gói bổ sung đã bị vô hiệu hóa",
+      "message": "Gói bổ sung của bạn đã bị vô hiệu hóa. Các giới hạn đã được loại bỏ.",
+      "action": "Đã vô hiệu hóa"
+    },
+    "greeting": "Xin chào",
+    "action": "Hành động",
+    "addonLimits": "Giới hạn bổ sung",
+    "notes": "Ghi chú",
+    "noSpecificLimits": "Không có giới hạn cụ thể",
+    "outlets": "{count} cửa hàng",
+    "users": "{count} người dùng",
+    "products": "{count} sản phẩm",
+    "customers": "{count} khách hàng",
+    "orders": "{count} đơn hàng",
+    "createdMessage": "Bạn có thể sử dụng các giới hạn bổ sung này ngay bây giờ.",
+    "deletedMessage": "Vui lòng đảm bảo số lượng hiện tại của bạn không vượt quá giới hạn mới.",
+    "updatedMessage": "Các thay đổi đã được áp dụng cho tài khoản của bạn.",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "hàng tháng",
+      "quarterly": "3 tháng",
+      "semi_annual": "6 tháng",
+      "annual": "hàng năm"
+    },
+    "paymentMethods": {
+      "STRIPE": "Thẻ tín dụng/Ghi nợ",
+      "TRANSFER": "Chuyển khoản ngân hàng",
+      "CASH": "Tiền mặt"
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "planChange": {
+    "title": "订阅计划已更改",
+    "greeting": "您好",
+    "message": "您的订阅计划已成功更改。详细信息如下：",
+    "oldPlan": "旧计划",
+    "newPlan": "新计划",
+    "billingCycle": "计费周期",
+    "periodStart": "开始日期",
+    "periodEnd": "结束日期",
+    "footer": "© {year} AnyRent. 保留所有权利。",
+    "systemName": "AnyRent",
+    "systemTagline": "租赁管理系统"
+  },
+  "subscriptionRenewal": {
+    "title": "订阅续订成功",
+    "greeting": "您好",
+    "message": "您的订阅已成功续订。感谢您继续使用我们的服务！",
+    "planName": "订阅计划",
+    "paymentMethod": "付款方式",
+    "transactionId": "交易ID",
+    "periodStart": "开始日期",
+    "periodEnd": "结束日期",
+    "footer": "© {year} AnyRent. 保留所有权利。",
+    "systemName": "AnyRent",
+    "systemTagline": "租赁管理系统"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "订阅已取消",
+      "message": "您的订阅已取消。如果您希望继续使用我们的服务，请联系我们重新激活您的订阅。",
+      "status": "已取消"
+    },
+    "paused": {
+      "title": "订阅已暂停",
+      "message": "您的订阅已暂停。您可以随时从订阅管理页面重新激活订阅。",
+      "status": "已暂停"
+    },
+    "resumed": {
+      "title": "订阅已恢复",
+      "message": "您的订阅已恢复。您现在可以继续使用订阅计划的所有功能。",
+      "status": "已恢复"
+    },
+    "greeting": "您好",
+    "planName": "计划",
+    "status": "状态",
+    "periodEnd": "结束日期",
+    "reason": "原因",
+    "footer": "© {year} AnyRent. 保留所有权利。",
+    "systemName": "AnyRent",
+    "systemTagline": "租赁管理系统"
+  },
+  "addonChange": {
+    "created": {
+      "title": "附加包已添加",
+      "message": "新的附加包已添加到您的账户。您的限制已增加。",
+      "action": "已添加"
+    },
+    "updated": {
+      "title": "附加包已更新",
+      "message": "您的附加包已更新。限制已调整。",
+      "action": "已更新"
+    },
+    "deleted": {
+      "title": "附加包已删除",
+      "message": "附加包已从您的账户中删除。您的限制已减少。",
+      "action": "已删除"
+    },
+    "activated": {
+      "title": "附加包已激活",
+      "message": "您的附加包已激活。限制已应用。",
+      "action": "已激活"
+    },
+    "deactivated": {
+      "title": "附加包已停用",
+      "message": "您的附加包已停用。限制已移除。",
+      "action": "已停用"
+    },
+    "greeting": "您好",
+    "action": "操作",
+    "addonLimits": "附加限制",
+    "notes": "备注",
+    "noSpecificLimits": "无特定限制",
+    "outlets": "{count} 个门店",
+    "users": "{count} 个用户",
+    "products": "{count} 个产品",
+    "customers": "{count} 个客户",
+    "orders": "{count} 个订单",
+    "createdMessage": "您现在可以使用这些附加限制。",
+    "deletedMessage": "请确保您当前的数量不超过新限制。",
+    "updatedMessage": "更改已应用到您的账户。",
+    "footer": "© {year} AnyRent. 保留所有权利。",
+    "systemName": "AnyRent",
+    "systemTagline": "租赁管理系统"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "每月",
+      "quarterly": "每3个月",
+      "semi_annual": "每6个月",
+      "annual": "每年"
+    },
+    "paymentMethods": {
+      "STRIPE": "信用卡/借记卡",
+      "TRANSFER": "银行转账",
+      "CASH": "现金"
+    }
+  }
+}

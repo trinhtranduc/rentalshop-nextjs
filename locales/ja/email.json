@@ -1,0 +1,109 @@
+{
+  "planChange": {
+    "title": "サブスクリプションプランが変更されました",
+    "greeting": "こんにちは",
+    "message": "サブスクリプションプランが正常に変更されました。詳細は以下の通りです：",
+    "oldPlan": "旧プラン",
+    "newPlan": "新プラン",
+    "billingCycle": "請求サイクル",
+    "periodStart": "開始日",
+    "periodEnd": "終了日",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
+  "subscriptionRenewal": {
+    "title": "サブスクリプション更新成功",
+    "greeting": "こんにちは",
+    "message": "サブスクリプションが正常に更新されました。サービスを継続してご利用いただき、ありがとうございます！",
+    "planName": "サブスクリプションプラン",
+    "paymentMethod": "支払い方法",
+    "transactionId": "取引ID",
+    "periodStart": "開始日",
+    "periodEnd": "終了日",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "サブスクリプションがキャンセルされました",
+      "message": "サブスクリプションがキャンセルされました。サービスを継続してご利用になりたい場合は、お問い合わせいただき、サブスクリプションを再有効化してください。",
+      "status": "キャンセル済み"
+    },
+    "paused": {
+      "title": "サブスクリプションが一時停止されました",
+      "message": "サブスクリプションが一時停止されました。サブスクリプション管理ページからいつでもサブスクリプションを再有効化できます。",
+      "status": "一時停止中"
+    },
+    "resumed": {
+      "title": "サブスクリプションが再開されました",
+      "message": "サブスクリプションが再開されました。これで、サブスクリプションプランのすべての機能を引き続き使用できます。",
+      "status": "再開済み"
+    },
+    "greeting": "こんにちは",
+    "planName": "プラン",
+    "status": "ステータス",
+    "periodEnd": "終了日",
+    "reason": "理由",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
+  "addonChange": {
+    "created": {
+      "title": "アドオンパッケージが追加されました",
+      "message": "新しいアドオンパッケージがアカウントに追加されました。制限が増加しました。",
+      "action": "追加済み"
+    },
+    "updated": {
+      "title": "アドオンパッケージが更新されました",
+      "message": "アドオンパッケージが更新されました。制限が調整されました。",
+      "action": "更新済み"
+    },
+    "deleted": {
+      "title": "アドオンパッケージが削除されました",
+      "message": "アドオンパッケージがアカウントから削除されました。制限が減少しました。",
+      "action": "削除済み"
+    },
+    "activated": {
+      "title": "アドオンパッケージが有効化されました",
+      "message": "アドオンパッケージが有効化されました。制限が適用されました。",
+      "action": "有効化済み"
+    },
+    "deactivated": {
+      "title": "アドオンパッケージが無効化されました",
+      "message": "アドオンパッケージが無効化されました。制限が削除されました。",
+      "action": "無効化済み"
+    },
+    "greeting": "こんにちは",
+    "action": "アクション",
+    "addonLimits": "アドオン制限",
+    "notes": "備考",
+    "noSpecificLimits": "特定の制限なし",
+    "outlets": "{count}店舗",
+    "users": "{count}ユーザー",
+    "products": "{count}製品",
+    "customers": "{count}顧客",
+    "orders": "{count}注文",
+    "createdMessage": "これらの追加制限を今すぐ使用できます。",
+    "deletedMessage": "現在の数量が新しい制限を超えないようにしてください。",
+    "updatedMessage": "変更がアカウントに適用されました。",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "月次",
+      "quarterly": "3ヶ月ごと",
+      "semi_annual": "6ヶ月ごと",
+      "annual": "年次"
+    },
+    "paymentMethods": {
+      "STRIPE": "クレジット/デビットカード",
+      "TRANSFER": "銀行振込",
+      "CASH": "現金"
+    }
+  }
+}

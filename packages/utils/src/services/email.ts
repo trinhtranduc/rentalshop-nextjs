@@ -52,6 +52,297 @@ export interface SubscriptionRenewalData {
   periodEnd: Date;
   paymentMethod: string;
   transactionId?: string;
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+export interface SubscriptionExtensionData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  oldEndDate: Date;
+  newEndDate: Date;
+  extensionDays: number;
+  method: string;
+  description?: string;
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+export interface SubscriptionStatusChangeData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  status: string; // 'CANCELLED' | 'PAUSED' | 'RESUMED'
+  reason?: string;
+  periodEnd?: Date;
+  amount?: number; // Optional: for tracking/logging, not displayed in email
+  currency?: string; // Optional: for tracking/logging, not displayed in email
+}
+
+export interface PlanLimitAddonChangeData {
+  merchantName: string;
+  email: string;
+  action: string; // 'CREATED' | 'UPDATED' | 'DELETED' | 'ACTIVATED' | 'DEACTIVATED'
+  addonLimits: {
+    outlets?: number;
+    users?: number;
+    products?: number;
+    customers?: number;
+    orders?: number;
+  };
+  notes?: string;
+  amount?: number; // Optional: for tracking/logging, not displayed in email
+  currency?: string; // Optional: for tracking/logging, not displayed in email
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+// Add locale to other interfaces
+export interface PlanChangeData {
+  merchantName: string;
+  email: string;
+  oldPlanName: string;
+  newPlanName: string;
+  amount: number;
+  currency: string;
+  billingInterval: string;
+  periodStart: Date;
+  periodEnd: Date;
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+export interface SubscriptionRenewalData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  periodStart: Date;
+  periodEnd: Date;
+  paymentMethod: string;
+  transactionId?: string;
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+export interface SubscriptionStatusChangeData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  status: string; // 'CANCELLED' | 'PAUSED' | 'RESUMED'
+  reason?: string;
+  periodEnd?: Date;
+  amount?: number; // Optional: for tracking/logging, not displayed in email
+  currency?: string; // Optional: for tracking/logging, not displayed in email
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
+// ============================================================================
+// EMAIL TRANSLATIONS
+// ============================================================================
+
+type EmailTranslations = {
+  planChange: {
+    title: string;
+    greeting: string;
+    message: string;
+    oldPlan: string;
+    newPlan: string;
+    billingCycle: string;
+    periodStart: string;
+    periodEnd: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  subscriptionRenewal: {
+    title: string;
+    greeting: string;
+    message: string;
+    planName: string;
+    paymentMethod: string;
+    transactionId: string;
+    periodStart: string;
+    periodEnd: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  subscriptionStatusChange: {
+    cancelled: { title: string; message: string; status: string };
+    paused: { title: string; message: string; status: string };
+    resumed: { title: string; message: string; status: string };
+    greeting: string;
+    planName: string;
+    status: string;
+    periodEnd: string;
+    reason: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  subscriptionExtension?: {
+    title: string;
+    greeting: string;
+    message: string;
+    planName: string;
+    oldEndDate: string;
+    newEndDate: string;
+    extensionDays: string;
+    method: string;
+    description: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  addonChange: {
+    created: { title: string; message: string; action: string };
+    updated: { title: string; message: string; action: string };
+    deleted: { title: string; message: string; action: string };
+    activated: { title: string; message: string; action: string };
+    deactivated: { title: string; message: string; action: string };
+    greeting: string;
+    action: string;
+    addonLimits: string;
+    notes: string;
+    noSpecificLimits: string;
+    outlets: string;
+    users: string;
+    products: string;
+    customers: string;
+    orders: string;
+    createdMessage: string;
+    deletedMessage: string;
+    updatedMessage: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  common: {
+    billingIntervals: {
+      monthly: string;
+      quarterly: string;
+      semi_annual: string;
+      annual: string;
+    };
+    paymentMethods: {
+      STRIPE: string;
+      TRANSFER: string;
+      CASH: string;
+    };
+  };
+};
+
+/**
+ * Load email translations for a specific locale
+ * Falls back to 'vi' if locale not found
+ */
+function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
+  const validLocales = ['en', 'vi', 'zh', 'ko', 'ja'];
+  const safeLocale = validLocales.includes(locale) ? locale : 'vi';
+  
+  try {
+    // Dynamic import based on locale
+    const translations = require(`../../../locales/${safeLocale}/email.json`);
+    return translations as EmailTranslations;
+  } catch (error) {
+    console.warn(`Failed to load email translations for locale ${safeLocale}, falling back to 'vi'`);
+    try {
+      const fallback = require('../../../locales/vi/email.json');
+      return fallback as EmailTranslations;
+    } catch (fallbackError) {
+      // If even fallback fails, return a minimal English structure
+      console.error('Failed to load email translations, using minimal fallback');
+      return {
+        planChange: {
+          title: 'Subscription Plan Changed',
+          greeting: 'Hello',
+          message: 'Your subscription plan has been successfully changed.',
+          oldPlan: 'Old Plan',
+          newPlan: 'New Plan',
+          billingCycle: 'Billing Cycle',
+          periodStart: 'Period Start',
+          periodEnd: 'Period End',
+          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+          systemName: 'AnyRent',
+          systemTagline: 'Rental Management System'
+        },
+        subscriptionRenewal: {
+          title: 'Subscription Renewed',
+          greeting: 'Hello',
+          message: 'Your subscription has been renewed.',
+          planName: 'Plan',
+          paymentMethod: 'Payment Method',
+          transactionId: 'Transaction ID',
+          periodStart: 'Period Start',
+          periodEnd: 'Period End',
+          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+          systemName: 'AnyRent',
+          systemTagline: 'Rental Management System'
+        },
+        subscriptionStatusChange: {
+          cancelled: { title: 'Cancelled', message: 'Your subscription has been cancelled.', status: 'Cancelled' },
+          paused: { title: 'Paused', message: 'Your subscription has been paused.', status: 'Paused' },
+          resumed: { title: 'Resumed', message: 'Your subscription has been resumed.', status: 'Resumed' },
+          greeting: 'Hello',
+          planName: 'Plan',
+          status: 'Status',
+          periodEnd: 'Period End',
+          reason: 'Reason',
+          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+          systemName: 'AnyRent',
+          systemTagline: 'Rental Management System'
+        },
+        subscriptionExtension: {
+          title: 'Subscription Extended',
+          greeting: 'Hello',
+          message: 'Your subscription has been extended. Your subscription period has been updated.',
+          planName: 'Plan',
+          oldEndDate: 'Previous End Date',
+          newEndDate: 'New End Date',
+          extensionDays: 'Extension Period',
+          method: 'Method',
+          description: 'Description',
+          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+          systemName: 'AnyRent',
+          systemTagline: 'Rental Management System'
+        },
+        addonChange: {
+          created: { title: 'Addon Added', message: 'An addon has been added.', action: 'Added' },
+          updated: { title: 'Addon Updated', message: 'An addon has been updated.', action: 'Updated' },
+          deleted: { title: 'Addon Deleted', message: 'An addon has been deleted.', action: 'Deleted' },
+          activated: { title: 'Addon Activated', message: 'An addon has been activated.', action: 'Activated' },
+          deactivated: { title: 'Addon Deactivated', message: 'An addon has been deactivated.', action: 'Deactivated' },
+          greeting: 'Hello',
+          action: 'Action',
+          addonLimits: 'Addon Limits',
+          notes: 'Notes',
+          noSpecificLimits: 'No specific limits',
+          outlets: '{count} outlets',
+          users: '{count} users',
+          products: '{count} products',
+          customers: '{count} customers',
+          orders: '{count} orders',
+          createdMessage: 'You can use these limits now.',
+          deletedMessage: 'Please ensure your counts do not exceed the new limits.',
+          updatedMessage: 'Changes have been applied.',
+          footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+          systemName: 'AnyRent',
+          systemTagline: 'Rental Management System'
+        },
+        common: {
+          billingIntervals: {
+            monthly: 'Monthly',
+            quarterly: 'Every 3 months',
+            semi_annual: 'Every 6 months',
+            annual: 'Yearly'
+          },
+          paymentMethods: {
+            STRIPE: 'Credit/Debit Card',
+            TRANSFER: 'Bank Transfer',
+            CASH: 'Cash'
+          }
+        }
+      } as EmailTranslations;
+    }
+  }
 }
 
 // ============================================================================
@@ -477,17 +768,14 @@ export async function sendPasswordResetEmail(
  * Generate plan change notification email HTML
  */
 export function generatePlanChangeEmail(data: PlanChangeData): string {
-  const { merchantName, oldPlanName, newPlanName, amount, currency, billingInterval, periodStart, periodEnd } = data;
+  const { merchantName, oldPlanName, newPlanName, billingInterval, periodStart, periodEnd, locale = 'vi' } = data;
+  // Note: amount and currency are included in data for tracking/logging but not displayed in email
   
-  const formatCurrency = (amount: number, currency: string) => {
-    if (currency === 'VND') {
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
-  };
+  const t = getEmailTranslations(locale);
+  const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', { 
+    return new Intl.DateTimeFormat(dateLocale, { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
@@ -495,13 +783,7 @@ export function generatePlanChangeEmail(data: PlanChangeData): string {
   };
 
   const getBillingIntervalText = (interval: string) => {
-    const intervals: Record<string, string> = {
-      'monthly': 'hàng tháng',
-      'quarterly': '3 tháng',
-      'semi_annual': '6 tháng',
-      'annual': 'hàng năm'
-    };
-    return intervals[interval] || interval;
+    return t.common.billingIntervals[interval as keyof typeof t.common.billingIntervals] || interval;
   };
 
   return `
@@ -587,14 +869,8 @@ export async function sendPlanChangeEmail(
  * Generate subscription renewal notification email HTML
  */
 export function generateSubscriptionRenewalEmail(data: SubscriptionRenewalData): string {
-  const { merchantName, planName, amount, currency, periodStart, periodEnd, paymentMethod, transactionId } = data;
-  
-  const formatCurrency = (amount: number, currency: string) => {
-    if (currency === 'VND') {
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
-  };
+  const { merchantName, planName, periodStart, periodEnd, paymentMethod, transactionId } = data;
+  // Note: amount and currency are included in data for tracking/logging but not displayed in email
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('vi-VN', { 
@@ -690,6 +966,394 @@ export async function sendSubscriptionRenewalEmail(
   return await sendEmail({
     to: data.email,
     subject: `Gia hạn đăng ký thành công - ${data.planName}`,
+    html,
+  });
+}
+
+/**
+ * Generate subscription extension email HTML
+ */
+export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionData): string {
+  const { merchantName, planName, oldEndDate, newEndDate, extensionDays, method, description, locale = 'vi' } = data;
+  
+  const t = getEmailTranslations(locale);
+  const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat(dateLocale, { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(new Date(date));
+  };
+
+  const getMethodText = (method: string) => {
+    if (method === 'MANUAL_EXTENSION') {
+      return locale === 'vi' ? 'Gia hạn thủ công' : 'Manual Extension';
+    }
+    return method;
+  };
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${t.subscriptionExtension?.title || 'Subscription Extended'}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">${t.subscriptionExtension?.systemName || 'AnyRent'}</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">${t.subscriptionExtension?.systemTagline || 'Rental Management System'}</p>
+    </div>
+    
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${t.subscriptionExtension?.title || 'Subscription Extended'}</h2>
+    
+    <p style="color: #374151; font-size: 16px;">${t.subscriptionExtension?.greeting || 'Hello'} <strong>${merchantName}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      ${t.subscriptionExtension?.message || 'Your subscription has been extended. Your subscription period has been updated.'}
+    </p>
+    
+    <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.planName || 'Plan'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.oldEndDate || 'Previous End Date'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(oldEndDate)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.newEndDate || 'New End Date'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #2563eb;">${formatDate(newEndDate)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.extensionDays || 'Extension Period'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${extensionDays} ${extensionDays === 1 ? (locale === 'vi' ? 'ngày' : 'day') : (locale === 'vi' ? 'ngày' : 'days')}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.method || 'Method'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${getMethodText(method)}</td>
+        </tr>
+        ${description ? `
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.description || 'Description'}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${description}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      ${(t.subscriptionExtension?.footer || '© {year} AnyRent. All rights reserved.').replace('{year}', new Date().getFullYear().toString())}
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send subscription extension notification email
+ */
+export async function sendSubscriptionExtensionEmail(
+  data: SubscriptionExtensionData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generateSubscriptionExtensionEmail(data);
+  const locale = data.locale || 'vi';
+  const t = getEmailTranslations(locale);
+
+  return await sendEmail({
+    to: data.email,
+    subject: `${t.subscriptionExtension?.title || 'Subscription Extended'} - ${data.planName}`,
+    html,
+  });
+}
+
+/**
+ * Generate subscription status change email HTML (cancel, pause, resume)
+ */
+export function generateSubscriptionStatusChangeEmail(data: SubscriptionStatusChangeData): string {
+  const { merchantName, planName, status, reason, periodEnd } = data;
+  
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('vi-VN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(new Date(date));
+  };
+
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, { title: string; message: string; color: string }> = {
+      'CANCELLED': {
+        title: 'Gói đăng ký đã bị hủy',
+        message: 'Gói đăng ký của bạn đã bị hủy. Bạn sẽ không thể tiếp tục sử dụng các tính năng của gói này sau khi thời gian đăng ký hiện tại kết thúc.',
+        color: '#dc2626'
+      },
+      'PAUSED': {
+        title: 'Gói đăng ký đã tạm dừng',
+        message: 'Gói đăng ký của bạn đã được tạm dừng. Bạn có thể tiếp tục sử dụng dịch vụ sau khi kích hoạt lại gói đăng ký.',
+        color: '#f59e0b'
+      },
+      'RESUMED': {
+        title: 'Gói đăng ký đã được kích hoạt lại',
+        message: 'Gói đăng ký của bạn đã được kích hoạt lại thành công. Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói đăng ký.',
+        color: '#10b981'
+      }
+    };
+    return statusMap[status] || { title: 'Thay đổi trạng thái gói đăng ký', message: '', color: '#6b7280' };
+  };
+
+  const statusInfo = getStatusText(status);
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${statusInfo.title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+    </div>
+    
+    <h2 style="color: ${statusInfo.color}; margin-top: 0; font-size: 24px;">${statusInfo.title}</h2>
+    
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${merchantName}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      ${statusInfo.message}
+    </p>
+    
+    <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Gói đăng ký:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Trạng thái:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: ${statusInfo.color};">
+            ${status === 'CANCELLED' ? 'Đã hủy' : status === 'PAUSED' ? 'Đã tạm dừng' : 'Đã kích hoạt lại'}
+          </td>
+        </tr>
+        ${reason ? `
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Lý do:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${reason}</td>
+        </tr>
+        ` : ''}
+        ${periodEnd ? `
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày kết thúc:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodEnd)}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+    
+    ${status === 'CANCELLED' ? `
+    <p style="color: #374151; font-size: 16px;">
+      Nếu bạn muốn tiếp tục sử dụng dịch vụ, vui lòng liên hệ với chúng tôi để kích hoạt lại gói đăng ký.
+    </p>
+    ` : status === 'PAUSED' ? `
+    <p style="color: #374151; font-size: 16px;">
+      Bạn có thể kích hoạt lại gói đăng ký bất cứ lúc nào từ trang quản lý đăng ký của mình.
+    </p>
+    ` : `
+    <p style="color: #374151; font-size: 16px;">
+      Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói đăng ký ngay bây giờ.
+    </p>
+    `}
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send subscription status change notification email
+ */
+export async function sendSubscriptionStatusChangeEmail(
+  data: SubscriptionStatusChangeData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generateSubscriptionStatusChangeEmail(data);
+  
+  const getSubject = (status: string) => {
+    const subjectMap: Record<string, string> = {
+      'CANCELLED': 'Gói đăng ký đã bị hủy',
+      'PAUSED': 'Gói đăng ký đã tạm dừng',
+      'RESUMED': 'Gói đăng ký đã được kích hoạt lại'
+    };
+    return subjectMap[status] || 'Thay đổi trạng thái gói đăng ký';
+  };
+
+  return await sendEmail({
+    to: data.email,
+    subject: `${getSubject(data.status)} - ${data.planName}`,
+    html,
+  });
+}
+
+/**
+ * Generate plan limit addon change email HTML
+ */
+export function generatePlanLimitAddonChangeEmail(data: PlanLimitAddonChangeData): string {
+  const { merchantName, action, addonLimits, notes } = data;
+  
+  const getActionText = (action: string) => {
+    const actionMap: Record<string, { title: string; message: string; color: string }> = {
+      'CREATED': {
+        title: 'Gói bổ sung đã được thêm',
+        message: 'Một gói bổ sung mới đã được thêm vào tài khoản của bạn. Các giới hạn của bạn đã được tăng lên.',
+        color: '#10b981'
+      },
+      'UPDATED': {
+        title: 'Gói bổ sung đã được cập nhật',
+        message: 'Gói bổ sung của bạn đã được cập nhật. Các giới hạn đã được điều chỉnh.',
+        color: '#2563eb'
+      },
+      'DELETED': {
+        title: 'Gói bổ sung đã bị xóa',
+        message: 'Một gói bổ sung đã bị xóa khỏi tài khoản của bạn. Các giới hạn của bạn đã được giảm xuống.',
+        color: '#dc2626'
+      },
+      'ACTIVATED': {
+        title: 'Gói bổ sung đã được kích hoạt',
+        message: 'Gói bổ sung của bạn đã được kích hoạt. Các giới hạn đã được áp dụng.',
+        color: '#10b981'
+      },
+      'DEACTIVATED': {
+        title: 'Gói bổ sung đã bị vô hiệu hóa',
+        message: 'Gói bổ sung của bạn đã bị vô hiệu hóa. Các giới hạn đã được loại bỏ.',
+        color: '#f59e0b'
+      }
+    };
+    return actionMap[action] || { title: 'Thay đổi gói bổ sung', message: '', color: '#6b7280' };
+  };
+
+  const actionInfo = getActionText(action);
+  
+  // Build limits display
+  const limitsList: string[] = [];
+  if (addonLimits.outlets && addonLimits.outlets > 0) {
+    limitsList.push(`${addonLimits.outlets} cửa hàng`);
+  }
+  if (addonLimits.users && addonLimits.users > 0) {
+    limitsList.push(`${addonLimits.users} người dùng`);
+  }
+  if (addonLimits.products && addonLimits.products > 0) {
+    limitsList.push(`${addonLimits.products} sản phẩm`);
+  }
+  if (addonLimits.customers && addonLimits.customers > 0) {
+    limitsList.push(`${addonLimits.customers} khách hàng`);
+  }
+  if (addonLimits.orders && addonLimits.orders > 0) {
+    limitsList.push(`${addonLimits.orders} đơn hàng`);
+  }
+  
+  const limitsText = limitsList.length > 0 
+    ? limitsList.join(', ')
+    : 'Không có giới hạn cụ thể';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${actionInfo.title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+    </div>
+    
+    <h2 style="color: ${actionInfo.color}; margin-top: 0; font-size: 24px;">${actionInfo.title}</h2>
+    
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${merchantName}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      ${actionInfo.message}
+    </p>
+    
+    <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Hành động:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: ${actionInfo.color};">
+            ${action === 'CREATED' ? 'Đã thêm' : action === 'UPDATED' ? 'Đã cập nhật' : action === 'DELETED' ? 'Đã xóa' : action === 'ACTIVATED' ? 'Đã kích hoạt' : 'Đã vô hiệu hóa'}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Giới hạn bổ sung:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${limitsText}</td>
+        </tr>
+        ${notes ? `
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ghi chú:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${notes}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+    
+    <p style="color: #374151; font-size: 16px;">
+      ${action === 'CREATED' || action === 'ACTIVATED' ? 'Bạn có thể sử dụng các giới hạn bổ sung này ngay bây giờ.' : action === 'DELETED' || action === 'DEACTIVATED' ? 'Vui lòng đảm bảo số lượng hiện tại của bạn không vượt quá giới hạn mới.' : 'Các thay đổi đã được áp dụng cho tài khoản của bạn.'}
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send plan limit addon change notification email
+ */
+export async function sendPlanLimitAddonChangeEmail(
+  data: PlanLimitAddonChangeData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generatePlanLimitAddonChangeEmail(data);
+  
+  const getSubject = (action: string) => {
+    const subjectMap: Record<string, string> = {
+      'CREATED': 'Gói bổ sung đã được thêm',
+      'UPDATED': 'Gói bổ sung đã được cập nhật',
+      'DELETED': 'Gói bổ sung đã bị xóa',
+      'ACTIVATED': 'Gói bổ sung đã được kích hoạt',
+      'DEACTIVATED': 'Gói bổ sung đã bị vô hiệu hóa'
+    };
+    return subjectMap[action] || 'Thay đổi gói bổ sung';
+  };
+
+  return await sendEmail({
+    to: data.email,
+    subject: getSubject(data.action),
     html,
   });
 }

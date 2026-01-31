@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, sendSubscriptionExtensionEmail } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -88,6 +88,9 @@ async function handleExtendSubscription(
     };
     
     const extendedSubscription = await db.subscriptions.update(subscriptionId, updateData);
+    
+    // Fetch subscription with merchant and plan for email
+    const subscriptionWithDetails = await db.subscriptions.findById(subscriptionId);
 
     // Calculate extension duration
     const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
@@ -119,6 +122,41 @@ async function handleExtendSubscription(
       },
       performedBy: user.userId || user.id
     });
+
+    // Send email notification (non-blocking)
+    if (subscriptionWithDetails?.merchant?.email) {
+      console.log('📨 [Subscription] Sending extension email...', {
+        to: subscriptionWithDetails.merchant.email,
+        merchantName: subscriptionWithDetails.merchant.name,
+        planName: subscriptionWithDetails.plan?.name,
+        extensionDays,
+        provider: process.env.EMAIL_PROVIDER || 'console'
+      });
+      
+      sendSubscriptionExtensionEmail({
+        merchantName: subscriptionWithDetails.merchant.name || 'Quý khách',
+        email: subscriptionWithDetails.merchant.email,
+        planName: subscriptionWithDetails.plan?.name || 'Unknown Plan',
+        oldEndDate: oldEndDate,
+        newEndDate: endDate,
+        extensionDays,
+        method: method || 'MANUAL_EXTENSION',
+        description: description || undefined
+      })
+        .then((emailResult) => {
+          console.log('📬 [Subscription] Extension email result:', {
+            success: emailResult.success,
+            error: emailResult.error,
+            messageId: emailResult.messageId,
+            provider: process.env.EMAIL_PROVIDER
+          });
+        })
+        .catch((error) => {
+          console.error('❌ [Subscription] Failed to send extension email:', error);
+        });
+    } else {
+      console.warn('⚠️ [Subscription] Cannot send extension email: merchant email not found');
+    }
 
     return NextResponse.json(
       ResponseBuilder.success('SUBSCRIPTION_EXTENDED_SUCCESS', extendedSubscription)

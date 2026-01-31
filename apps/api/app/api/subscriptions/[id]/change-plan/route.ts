@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
@@ -24,6 +24,7 @@ async function handleChangePlan(
       const body = await request.json();
     // Support both 'planId' and 'newPlanId' for compatibility
     const planId = body.planId || body.newPlanId;
+    const billingInterval = body.billingInterval || body.interval || 'monthly';
 
       if (!planId) {
         return NextResponse.json(ResponseBuilder.error('PLAN_ID_REQUIRED'), { status: 400 });
@@ -46,44 +47,9 @@ async function handleChangePlan(
         oldPlanId: existing.planId,
         newPlanId: planId,
         planName: plan.name,
-        currentStatus: existing.status
+        currentStatus: existing.status,
+        billingInterval
       });
-
-      // Determine if we need to update status
-      // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
-      const isCurrentTrial = existing.status?.toLowerCase() === SUBSCRIPTION_STATUS.TRIAL.toLowerCase();
-      const isNewPlanTrial = plan.trialDays && plan.trialDays > 0;
-      const shouldActivate = isCurrentTrial && !isNewPlanTrial;
-
-      // Prepare update data
-      const updateData: any = {
-        planId: planId,
-        updatedAt: new Date()
-      };
-
-      // If changing from TRIAL to paid plan, update status to ACTIVE
-      if (shouldActivate) {
-        updateData.status = SUBSCRIPTION_STATUS.ACTIVE;
-        console.log('🔄 Updating status from TRIAL to ACTIVE for paid plan');
-        
-        // If currentPeriodEnd doesn't exist or is in the past, set new period dates
-        const now = new Date();
-        if (!existing.currentPeriodEnd || new Date(existing.currentPeriodEnd) < now) {
-          // Set period start to now and end to 30 days from now (default monthly billing)
-          updateData.currentPeriodStart = now;
-          const periodEnd = new Date(now);
-          periodEnd.setMonth(periodEnd.getMonth() + 1);
-          // Handle month boundary issues
-          if (periodEnd.getDate() !== now.getDate()) {
-            periodEnd.setDate(0); // Last day of previous month
-          }
-          updateData.currentPeriodEnd = periodEnd;
-          console.log('📅 Setting new period dates:', {
-            start: updateData.currentPeriodStart,
-            end: updateData.currentPeriodEnd
-          });
-        }
-      }
 
       // Check if allowWebAccess changed (for platform access control)
       const oldPlanLimits = existing.plan?.limits as any || {};
@@ -92,14 +58,34 @@ async function handleChangePlan(
       const newAllowWebAccess = newPlanLimits?.allowWebAccess !== undefined ? newPlanLimits.allowWebAccess : true;
       const allowWebAccessChanged = oldAllowWebAccess !== newAllowWebAccess;
 
-      // Change subscription plan
-      const updatedSubscription = await db.subscriptions.update(subscriptionId, updateData);
+      // Change subscription plan using changePlan() function (includes email notification)
+      const updatedSubscription = await changePlan(subscriptionId, planId, billingInterval as any);
+      
+      // Determine if we need to update status
+      // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
+      const isCurrentTrial = existing.status?.toLowerCase() === SUBSCRIPTION_STATUS.TRIAL.toLowerCase();
+      const isNewPlanTrial = plan.trialDays && plan.trialDays > 0;
+      const shouldActivate = isCurrentTrial && !isNewPlanTrial;
+
+      // If changing from TRIAL to paid plan, update status to ACTIVE
+      if (shouldActivate) {
+        await db.subscriptions.update(subscriptionId, {
+          status: SUBSCRIPTION_STATUS.ACTIVE,
+          updatedAt: new Date()
+        });
+        console.log('🔄 Updated status from TRIAL to ACTIVE for paid plan');
+      }
+
+      // Get updated subscription with status if it was changed
+      const finalSubscription = shouldActivate 
+        ? await db.subscriptions.findById(subscriptionId)
+        : updatedSubscription;
 
       console.log('✅ Subscription plan updated successfully:', {
         subscriptionId,
         newPlanId: updatedSubscription.planId,
         planName: plan.name,
-        newStatus: updatedSubscription.status,
+        newStatus: finalSubscription?.status || updatedSubscription.status,
         statusChanged: shouldActivate,
         allowWebAccessChanged,
         oldAllowWebAccess,
@@ -129,7 +115,7 @@ async function handleChangePlan(
           newPlanId: plan.id,
           newPlanName: plan.name,
           previousStatus: existing.status,
-          newStatus: updatedSubscription.status,
+          newStatus: finalSubscription?.status || updatedSubscription.status,
           statusChanged: shouldActivate,
           performedBy: {
             userId: user.userId || user.id,
@@ -145,7 +131,7 @@ async function handleChangePlan(
       });
 
     return NextResponse.json(
-      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', updatedSubscription)
+      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', finalSubscription || updatedSubscription)
     );
     } catch (error) {
       console.error('Error changing subscription plan:', error);

@@ -5,7 +5,8 @@ import {
   planLimitAddonCreateSchema, 
   planLimitAddonsQuerySchema,
   handleApiError,
-  ResponseBuilder 
+  ResponseBuilder,
+  sendPlanLimitAddonChangeEmail
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -78,6 +79,49 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
     // Create plan limit addon
     const addon = await db.planLimitAddons.create(parsed.data);
+
+      // Send email notification (non-blocking) - TEMPORARILY DISABLED
+      // if (merchant.email) {
+      //   console.log('📨 [Addon] Sending addon created email...', {
+      //     to: merchant.email,
+      //     merchantName: merchant.name,
+      //     addonLimits: {
+      //       outlets: addon.outlets,
+      //       users: addon.users,
+      //       products: addon.products,
+      //       customers: addon.customers,
+      //       orders: addon.orders
+      //     },
+      //     provider: process.env.EMAIL_PROVIDER || 'console'
+      //   });
+      //   
+      //   sendPlanLimitAddonChangeEmail({
+      //     merchantName: merchant.name || 'Quý khách',
+      //     email: merchant.email,
+      //     action: 'CREATED',
+      //     addonLimits: {
+      //       outlets: addon.outlets,
+      //       users: addon.users,
+      //       products: addon.products,
+      //       customers: addon.customers,
+      //       orders: addon.orders
+      //     },
+      //     notes: addon.notes || undefined
+      //   })
+      //     .then((emailResult) => {
+      //       console.log('📬 [Addon] Addon created email result:', {
+      //         success: emailResult.success,
+      //         error: emailResult.error,
+      //         messageId: emailResult.messageId,
+      //         provider: process.env.EMAIL_PROVIDER
+      //       });
+      //     })
+      //     .catch((error) => {
+      //       console.error('❌ [Addon] Failed to send addon created email:', error);
+      //     });
+      // } else {
+      //   console.warn('⚠️ [Addon] Cannot send addon created email: merchant email not found');
+      // }
 
     return NextResponse.json(
       ResponseBuilder.success('PLAN_LIMIT_ADDON_CREATED_SUCCESS', addon),

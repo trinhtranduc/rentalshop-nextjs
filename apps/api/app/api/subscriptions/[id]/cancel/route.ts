@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, cancelSubscription } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
@@ -32,12 +32,17 @@ export async function POST(
       const body = await request.json().catch(() => ({}));
       const reason = body.reason || 'Cancelled by admin';
 
-      // Cancel subscription
-      const cancelledSubscription = await db.subscriptions.update(subscriptionId, {
-        status: SUBSCRIPTION_STATUS.CANCELLED,
-        canceledAt: new Date(),
-        cancelReason: reason
-      });
+      // Cancel subscription using cancelSubscription() function (includes email notification)
+      const cancelResult = await cancelSubscription(subscriptionId, reason);
+      
+      if (!cancelResult.success || !cancelResult.data) {
+        return NextResponse.json(
+          ResponseBuilder.error('SUBSCRIPTION_CANCEL_FAILED'),
+          { status: cancelResult.statusCode || 500 }
+        );
+      }
+      
+      const cancelledSubscription = cancelResult.data;
 
       // Log activity to database
       await db.subscriptionActivities.create({

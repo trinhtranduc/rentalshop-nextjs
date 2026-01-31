@@ -5,7 +5,8 @@ import {
   planLimitAddonUpdateSchema,
   handleApiError,
   ResponseBuilder,
-  validateAddonDeletion
+  validateAddonDeletion,
+  sendPlanLimitAddonChangeEmail
 } from '@rentalshop/utils';
 
 /**
@@ -92,6 +93,55 @@ export async function PUT(
       }
 
       const addon = await db.planLimitAddons.update(id, parsed.data);
+      
+      // Send email notification (non-blocking) - TEMPORARILY DISABLED
+      // if (addon.merchant?.email) {
+      //   console.log('📨 [Addon] Sending addon updated email...', {
+      //     to: addon.merchant.email,
+      //     merchantName: addon.merchant.name,
+      //     addonLimits: {
+      //       outlets: addon.outlets,
+      //       users: addon.users,
+      //       products: addon.products,
+      //       customers: addon.customers,
+      //       orders: addon.orders
+      //     },
+      //     isActive: addon.isActive,
+      //     provider: process.env.EMAIL_PROVIDER || 'console'
+      //   });
+      //   
+      //   const action = addon.isActive !== existingAddon.isActive
+      //     ? (addon.isActive ? 'ACTIVATED' : 'DEACTIVATED')
+      //     : 'UPDATED';
+      //   
+      //   sendPlanLimitAddonChangeEmail({
+      //     merchantName: addon.merchant.name || 'Quý khách',
+      //     email: addon.merchant.email,
+      //     action,
+      //     addonLimits: {
+      //       outlets: addon.outlets,
+      //       users: addon.users,
+      //       products: addon.products,
+      //       customers: addon.customers,
+      //       orders: addon.orders
+      //     },
+      //     notes: addon.notes || undefined
+      //   })
+      //     .then((emailResult) => {
+      //       console.log('📬 [Addon] Addon updated email result:', {
+      //         success: emailResult.success,
+      //         error: emailResult.error,
+      //         messageId: emailResult.messageId,
+      //         provider: process.env.EMAIL_PROVIDER
+      //       });
+      //     })
+      //     .catch((error) => {
+      //       console.error('❌ [Addon] Failed to send addon updated email:', error);
+      //     });
+      // } else {
+      //   console.warn('⚠️ [Addon] Cannot send addon updated email: merchant email not found');
+      // }
+      
       return NextResponse.json(
         ResponseBuilder.success('PLAN_LIMIT_ADDON_UPDATED_SUCCESS', addon)
       );
@@ -163,6 +213,50 @@ export async function DELETE(
       }
 
       await db.planLimitAddons.delete(id);
+      
+      // Send email notification (non-blocking) - TEMPORARILY DISABLED
+      // if (existingAddon.merchant?.email) {
+      //   console.log('📨 [Addon] Sending addon deleted email...', {
+      //     to: existingAddon.merchant.email,
+      //     merchantName: existingAddon.merchant.name,
+      //     addonLimits: {
+      //       outlets: existingAddon.outlets,
+      //       users: existingAddon.users,
+      //       products: existingAddon.products,
+      //       customers: existingAddon.customers,
+      //       orders: existingAddon.orders
+      //     },
+      //     provider: process.env.EMAIL_PROVIDER || 'console'
+      //   });
+      //   
+      //   sendPlanLimitAddonChangeEmail({
+      //     merchantName: existingAddon.merchant.name || 'Quý khách',
+      //     email: existingAddon.merchant.email,
+      //     action: 'DELETED',
+      //     addonLimits: {
+      //       outlets: existingAddon.outlets,
+      //       users: existingAddon.users,
+      //       products: existingAddon.products,
+      //       customers: existingAddon.customers,
+      //       orders: existingAddon.orders
+      //     },
+      //     notes: existingAddon.notes || undefined
+      //   })
+      //     .then((emailResult) => {
+      //       console.log('📬 [Addon] Addon deleted email result:', {
+      //         success: emailResult.success,
+      //         error: emailResult.error,
+      //         messageId: emailResult.messageId,
+      //         provider: process.env.EMAIL_PROVIDER
+      //       });
+      //     })
+      //     .catch((error) => {
+      //       console.error('❌ [Addon] Failed to send addon deleted email:', error);
+      //     });
+      // } else {
+      //   console.warn('⚠️ [Addon] Cannot send addon deleted email: merchant email not found');
+      // }
+      
       return NextResponse.json(
         ResponseBuilder.success('PLAN_LIMIT_ADDON_DELETED_SUCCESS')
       );

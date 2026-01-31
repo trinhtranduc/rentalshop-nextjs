@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, resumeSubscription } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
@@ -40,12 +40,17 @@ export async function POST(
       const body = await request.json().catch(() => ({}));
       const reason = body.reason || (existing.status === SUBSCRIPTION_STATUS.CANCELLED ? 'Reactivated by admin' : 'Resumed by admin');
 
-      // Resume subscription (reactivate)
-      const resumedSubscription = await db.subscriptions.update(subscriptionId, {
-        status: SUBSCRIPTION_STATUS.ACTIVE,
-        canceledAt: null, // Clear cancellation date when reactivating
-        cancelReason: null // Clear cancellation reason when reactivating
-      });
+      // Resume subscription using resumeSubscription() function (includes email notification)
+      // Note: resumeSubscription() automatically clears canceledAt and cancelReason
+      const resumedSubscription = await resumeSubscription(subscriptionId);
+      
+      // Clear cancellation fields if needed (resumeSubscription already handles this)
+      if (existing.canceledAt || existing.cancelReason) {
+        await db.subscriptions.update(subscriptionId, {
+          canceledAt: null,
+          cancelReason: null
+        });
+      }
 
       // Log activity to database
       await db.subscriptionActivities.create({

@@ -264,7 +264,7 @@ export { simplifiedPayments } from './payment';
 export { simplifiedSubscriptionActivities } from './subscription-activity';
 
 // Legacy exports for backward compatibility
-export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
+export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById, changePlan, renewSubscription, cancelSubscription, pauseSubscription, resumeSubscription } from './subscription';
 
 // Export product functions
 export { syncProductTotalStock, updateOutletStockForOrder } from './product';

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
+import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
@@ -114,6 +115,42 @@ export async function POST(
 
         return { updatedSubscription, payment };
       });
+
+      // Send email notification (non-blocking)
+      if (result.updatedSubscription.merchant?.email) {
+        console.log('📨 [Subscription] Sending renewal email...', {
+          to: result.updatedSubscription.merchant.email,
+          merchantName: result.updatedSubscription.merchant.name,
+          planName: result.updatedSubscription.plan?.name,
+          paymentMethod: method,
+          provider: process.env.EMAIL_PROVIDER || 'console'
+        });
+        
+        sendSubscriptionRenewalEmail({
+          merchantName: result.updatedSubscription.merchant.name || 'Quý khách',
+          email: result.updatedSubscription.merchant.email,
+          planName: result.updatedSubscription.plan?.name || 'Unknown Plan',
+          amount: renewalAmount,
+          currency: result.updatedSubscription.currency || 'VND',
+          periodStart: result.updatedSubscription.currentPeriodStart || new Date(),
+          periodEnd: result.updatedSubscription.currentPeriodEnd || new Date(),
+          paymentMethod: method,
+          transactionId: transactionId || undefined
+        })
+          .then((emailResult) => {
+            console.log('📬 [Subscription] Renewal email result:', {
+              success: emailResult.success,
+              error: emailResult.error,
+              messageId: emailResult.messageId,
+              provider: process.env.EMAIL_PROVIDER
+            });
+          })
+          .catch((error) => {
+            console.error('❌ [Subscription] Failed to send renewal email:', error);
+          });
+      } else {
+        console.warn('⚠️ [Subscription] Cannot send renewal email: merchant email not found');
+      }
 
       return NextResponse.json(
         ResponseBuilder.success('SUBSCRIPTION_RENEWED_SUCCESS', {

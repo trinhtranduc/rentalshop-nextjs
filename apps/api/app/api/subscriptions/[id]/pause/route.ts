@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, pauseSubscription } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -32,10 +32,8 @@ export async function POST(
       const body = await request.json().catch(() => ({}));
       const reason = body.reason || 'Paused by admin';
 
-      // Pause subscription
-      const pausedSubscription = await db.subscriptions.update(subscriptionId, {
-        status: 'PAUSED'
-      });
+      // Pause subscription using pauseSubscription() function (includes email notification)
+      const pausedSubscription = await pauseSubscription(subscriptionId);
 
       // Log activity to database
       await db.subscriptionActivities.create({
