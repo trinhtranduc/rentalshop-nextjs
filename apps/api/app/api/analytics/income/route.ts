@@ -5,6 +5,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/income - Get income analytics
@@ -14,10 +15,9 @@ import { API } from '@rentalshop/constants';
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
-  console.log(`💰 GET /api/analytics/income - User: ${user.email}`);
-  
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
+    try {
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -45,7 +45,6 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           selectedOutletIds = null;
         }
       } catch (error) {
-        console.error('Error parsing outletIds:', error);
         selectedOutletIds = null;
       }
     }
@@ -63,7 +62,6 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
               const outlet = await db.outlets.findById(outletId);
               return outlet ? { id: outlet.id, publicId: outletId, name: outlet.name } : null;
             } catch (error) {
-              console.error(`Error fetching outlet ${outletId}:`, error);
               return null;
             }
           })
@@ -350,13 +348,13 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     }
     return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
-  } catch (error) {
-    console.error('Error fetching income analytics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

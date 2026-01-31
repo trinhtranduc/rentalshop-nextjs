@@ -5,6 +5,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/dashboard - Get dashboard analytics
@@ -14,10 +15,9 @@ import { API } from '@rentalshop/constants';
  * - OUTLET_STAFF: Dashboard only (daily/today metrics)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
-  console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
-  
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
+    try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'today'; // Get period from query params
     
@@ -45,20 +45,12 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       // Find merchant by id to get outlets
       const merchant = await db.merchants.findById(userScope.merchantId);
-      console.log('🔍 Merchant found:', {
-        merchantId: userScope.merchantId,
-        merchant: merchant ? { id: merchant.id, name: merchant.name } : null,
-        outlets: merchant?.outlets || [],
-        outletsLength: merchant?.outlets?.length || 0
-      });
       
       if (merchant && merchant.outlets && merchant.outlets.length > 0) {
         const outletIds = merchant.outlets.map(outlet => outlet.id);
         orderWhereClause.outletId = { in: outletIds };
         paymentWhereClause.order = { outletId: { in: outletIds } };
-        console.log('✅ Applied outlet filter:', { outletIds });
       } else {
-        console.log('❌ No outlets found for merchant, returning empty data');
         return NextResponse.json(
           ResponseBuilder.success('NO_OUTLETS_FOUND', {
             totalOrders: 0,
@@ -83,18 +75,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
     } else {
       // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
       return NextResponse.json(
         ResponseBuilder.success('NO_DATA_AVAILABLE', {
           totalOrders: 0,
@@ -109,8 +91,6 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         })
       );
     }
-
-    console.log('🔍 Dashboard filters:', { orderWhereClause, paymentWhereClause });
 
     // Fetch dashboard data in parallel
     const [
@@ -254,13 +234,13 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     }
     return NextResponse.json(responseData, { status: API.STATUS.OK, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
 
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

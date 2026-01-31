@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/today-metrics - Get today's operational metrics
@@ -13,8 +14,9 @@ import { API } from '@rentalshop/constants';
  * - OUTLET_STAFF: Dashboard only (daily/today metrics)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
+    try {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
@@ -46,18 +48,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
     } else {
       // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
       return NextResponse.json(
         ResponseBuilder.success('NO_DATA_AVAILABLE', {
           totalOrders: 0,
@@ -155,13 +147,13 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       ResponseBuilder.success('TODAY_METRICS_SUCCESS', metrics)
     );
 
-  } catch (error) {
-    console.error('❌ Error fetching today metrics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';

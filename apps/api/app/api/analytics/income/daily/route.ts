@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { withApiLogging } from '../../../../../lib/api-logging-wrapper';
 
 /**
  * GET /api/analytics/income/daily - Lấy doanh thu theo ngày với chi tiết đơn hàng
@@ -35,10 +36,9 @@ import { API } from '@rentalshop/constants';
  * - OUTLET_STAFF: Chỉ xem doanh thu theo ngày (analytics.view.revenue.daily)
  * - Nguồn phân quyền: ROLE_PERMISSIONS trong packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
-  console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
-  
-  try {
+export const GET = withApiLogging(
+  withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
+    try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
@@ -384,12 +384,12 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       })
     );
 
-  } catch (error) {
-    console.error('Error fetching daily income:', error);
-    
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
-});
+    } catch (error) {
+      // Error will be automatically logged by withApiLogging wrapper
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })
+);
 
 export const runtime = 'nodejs';
