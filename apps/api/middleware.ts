@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
-// Import generateCorrelationId - it's now in a separate file without Prisma dependency
-import { generateCorrelationId } from '@rentalshop/utils';
+// Import generateCorrelationId from local file to avoid importing from @rentalshop/utils
+// which may pull in Prisma dependencies through barrel exports
+import { generateCorrelationId } from './lib/correlation-id';
 import { buildCorsHeaders } from './lib/cors';
 
 // Protected routes that require authentication
@@ -190,7 +191,9 @@ export async function middleware(request: NextRequest) {
       // Exception: /api/plans/public should remain accessible to all authenticated users
       if (!pathname.startsWith('/api/plans/public')) {
         console.log('🔍 MIDDLEWARE: Admin access required for:', pathname);
-        const { ResponseBuilder } = await import('@rentalshop/utils');
+        // Use local ResponseBuilder to avoid importing from @rentalshop/utils
+        // which may pull in Prisma dependencies through barrel exports
+        const { ResponseBuilder } = await import('./lib/response-builder');
         return NextResponse.json(
           ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { 
