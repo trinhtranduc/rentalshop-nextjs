@@ -3,6 +3,7 @@ import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
 import { generateCorrelationId } from '@rentalshop/utils';
+import { buildCorsHeaders } from './lib/cors';
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -46,65 +47,6 @@ const adminRoutes = [
   // Removed /api/users since it now has proper role-based authorization
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
-
-/**
- * Build CORS headers safely (never throws)
- * This function is guaranteed to return valid CORS headers
- */
-function buildCorsHeaders(request: NextRequest): Record<string, string> {
-  try {
-    // Get allowed origins from environment
-    const corsOrigins = (process.env.CORS_ORIGINS || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    
-    // Add localhost, Railway domains, and custom domains
-    const allowedOrigins = [
-      ...corsOrigins,
-      // Local development
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      // Custom domains - anyrent.shop (production)
-      'https://anyrent.shop',
-      'https://www.anyrent.shop', // Production website (www subdomain)
-      'https://api.anyrent.shop', // Production API
-      'https://admin.anyrent.shop',
-      // Custom domains - anyrent.shop (development)
-      'https://dev.anyrent.shop',
-      'https://dev-api.anyrent.shop', // Development API
-      'https://dev-admin.anyrent.shop'
-    ];
-    
-    // Get request origin safely
-    const requestOrigin = request.headers.get('origin') || '';
-    
-    // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
-    const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
-    
-    // Use request origin if allowed, otherwise null (reject)
-    const allowOrigin = isAllowedOrigin ? requestOrigin : 'null';
-    
-    return {
-      'Access-Control-Allow-Origin': allowOrigin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Max-Age': '86400',
-    };
-  } catch (error) {
-    // Fallback: return permissive CORS headers if anything fails
-    console.error('❌ MIDDLEWARE: Error building CORS headers, using fallback:', error);
-    const requestOrigin = request.headers.get('origin') || '*';
-    return {
-      'Access-Control-Allow-Origin': requestOrigin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-}
 
 /**
  * Middleware for API authentication and authorization

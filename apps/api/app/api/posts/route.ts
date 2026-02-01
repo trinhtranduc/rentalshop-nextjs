@@ -5,12 +5,22 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 import { postCreateSchema, postSearchSchema } from '@rentalshop/validation';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { buildCorsHeaders } from '@/lib/cors';
 
 // Dynamic import for server-only logger
 let logInfo: any;
 if (typeof window === 'undefined') {
   const loggerModule = require('@rentalshop/utils/server');
   logInfo = loggerModule.logInfo;
+}
+
+/**
+ * OPTIONS /api/posts
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = buildCorsHeaders(request);
+  return NextResponse.json({}, { headers: corsHeaders });
 }
 
 /**
@@ -26,10 +36,12 @@ export const GET = withApiLogging(
     const { searchParams } = new URL(request.url);
     
     const parsed = postSearchSchema.safeParse(Object.fromEntries(searchParams.entries()));
+    const corsHeaders = buildCorsHeaders(request);
+    
     if (!parsed.success) {
       return NextResponse.json(
         ResponseBuilder.validationError(parsed.error.flatten()),
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -44,7 +56,8 @@ export const GET = withApiLogging(
     const result = await db.posts.search(filters);
 
     return NextResponse.json(
-      ResponseBuilder.success('POSTS_FOUND', result)
+      ResponseBuilder.success('POSTS_FOUND', result),
+      { headers: corsHeaders }
     );
   })
 );
@@ -61,12 +74,13 @@ export const GET = withApiLogging(
 export const POST = withApiLogging(
   withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
     const body = await request.json();
+    const corsHeaders = buildCorsHeaders(request);
     
     const parsed = postCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         ResponseBuilder.validationError(parsed.error.flatten()),
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -89,7 +103,7 @@ export const POST = withApiLogging(
 
     return NextResponse.json(
       ResponseBuilder.success('POST_CREATED_SUCCESS', post),
-      { status: 201 }
+      { status: 201, headers: corsHeaders }
     );
   })
 );

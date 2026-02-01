@@ -1,12 +1,21 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Build CORS headers safely (never throws)
  * This function is guaranteed to return valid CORS headers
  * 
  * Used across all API routes for consistent CORS handling
+ * 
+ * @param request - NextRequest object to extract origin from
+ * @param methods - Allowed HTTP methods (default: 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+ * @param headers - Allowed headers (default: comprehensive list)
+ * @returns CORS headers object
  */
-export function buildCorsHeaders(request: NextRequest): Record<string, string> {
+export function buildCorsHeaders(
+  request: NextRequest,
+  methods: string = 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  headers: string = 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type'
+): Record<string, string> {
   try {
     // Get allowed origins from environment
     const corsOrigins = (process.env.CORS_ORIGINS || '')
@@ -43,8 +52,8 @@ export function buildCorsHeaders(request: NextRequest): Record<string, string> {
     
     return {
       'Access-Control-Allow-Origin': allowOrigin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
+      'Access-Control-Allow-Methods': methods,
+      'Access-Control-Allow-Headers': headers,
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400',
     };
@@ -54,9 +63,33 @@ export function buildCorsHeaders(request: NextRequest): Record<string, string> {
     const requestOrigin = request.headers.get('origin') || '*';
     return {
       'Access-Control-Allow-Origin': requestOrigin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+      'Access-Control-Allow-Methods': methods,
+      'Access-Control-Allow-Headers': headers,
       'Access-Control-Allow-Credentials': 'true',
     };
   }
+}
+
+/**
+ * Handle CORS preflight (OPTIONS) requests
+ * 
+ * This function creates a proper OPTIONS response with CORS headers.
+ * Note: Middleware already handles OPTIONS requests, but this is useful
+ * for routes that want to handle OPTIONS explicitly.
+ * 
+ * @param request - NextRequest object
+ * @param methods - Allowed HTTP methods (default: 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+ * @param headers - Allowed headers (default: comprehensive list)
+ * @returns NextResponse with 204 status and CORS headers
+ */
+export function handleCorsPreflight(
+  request: NextRequest,
+  methods?: string,
+  headers?: string
+): NextResponse {
+  const corsHeaders = buildCorsHeaders(request, methods, headers);
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }

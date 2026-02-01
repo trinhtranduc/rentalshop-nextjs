@@ -5,6 +5,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
 import { postUpdateSchema } from '@rentalshop/validation';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { buildCorsHeaders } from '@/lib/cors';
 
 // Dynamic import for server-only logger
 let logInfo: any, logWarn: any;
@@ -12,6 +13,15 @@ if (typeof window === 'undefined') {
   const loggerModule = require('@rentalshop/utils/server');
   logInfo = loggerModule.logInfo;
   logWarn = loggerModule.logWarn;
+}
+
+/**
+ * OPTIONS /api/posts/[id]
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = buildCorsHeaders(request);
+  return NextResponse.json({}, { headers: corsHeaders });
 }
 
 /**
@@ -30,10 +40,12 @@ export async function GET(
 
   return withApiLogging(
     withPermissions(['posts.view'])(async (request, { user, userScope }) => {
+      const corsHeaders = buildCorsHeaders(request);
+      
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_POST_ID_FORMAT'),
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -44,7 +56,7 @@ export async function GET(
         logWarn('Post not found', { postId, userId: user.id });
         return NextResponse.json(
           ResponseBuilder.error('POST_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
+          { status: API.STATUS.NOT_FOUND, headers: corsHeaders }
         );
       }
 
@@ -53,12 +65,13 @@ export async function GET(
         logWarn('Access denied to draft post', { postId, userId: user.id, userRole: user.role });
         return NextResponse.json(
           ResponseBuilder.error('POST_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
+          { status: API.STATUS.NOT_FOUND, headers: corsHeaders }
         );
       }
 
       return NextResponse.json(
-        ResponseBuilder.success('POST_RETRIEVED_SUCCESS', post)
+        ResponseBuilder.success('POST_RETRIEVED_SUCCESS', post),
+        { headers: corsHeaders }
       );
     })
   )(request);
@@ -82,10 +95,12 @@ export async function PUT(
 
   return withApiLogging(
     withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
+      const corsHeaders = buildCorsHeaders(request);
+      
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_POST_ID_FORMAT'),
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -96,7 +111,7 @@ export async function PUT(
       if (!parsed.success) {
         return NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -111,7 +126,8 @@ export async function PUT(
       });
 
       return NextResponse.json(
-        ResponseBuilder.success('POST_UPDATED_SUCCESS', post)
+        ResponseBuilder.success('POST_UPDATED_SUCCESS', post),
+        { headers: corsHeaders }
       );
     })
   )(request);
@@ -135,10 +151,12 @@ export async function DELETE(
 
   return withApiLogging(
     withPermissions(['posts.manage'])(async (request, { user, userScope }) => {
+      const corsHeaders = buildCorsHeaders(request);
+      
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_POST_ID_FORMAT'),
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -152,7 +170,8 @@ export async function DELETE(
       });
 
       return NextResponse.json(
-        ResponseBuilder.success('POST_DELETED_SUCCESS')
+        ResponseBuilder.success('POST_DELETED_SUCCESS'),
+        { headers: corsHeaders }
       );
     })
   )(request);

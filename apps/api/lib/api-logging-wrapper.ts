@@ -18,6 +18,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorrelationId, getUserContext } from './request-context';
+import { buildCorsHeaders } from './cors';
 
 // Dynamic import for server-only logger (avoids client-side bundling)
 let logError: any, logInfo: any, logApiRequest: any, logDatabaseOperation: any;
@@ -29,6 +30,21 @@ if (typeof window === 'undefined') {
   logInfo = loggerModule.logInfo;
   logApiRequest = loggerModule.logApiRequest;
   logDatabaseOperation = loggerModule.logDatabaseOperation;
+}
+
+/**
+ * Helper to add CORS headers to a NextResponse
+ * Ensures CORS headers are always present, even if route handler doesn't add them
+ */
+function addCorsHeaders(response: NextResponse, request: NextRequest): NextResponse {
+  const corsHeaders = buildCorsHeaders(request);
+  
+  // Merge CORS headers with existing headers
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  return response;
 }
 
 type RouteHandler = (
@@ -60,6 +76,9 @@ export function withApiLogging(handler: RouteHandler) {
     try {
       // Execute the route handler
       response = await handler(request, context);
+      
+      // ✅ Automatically add CORS headers to all responses
+      response = addCorsHeaders(response, request);
       
       // Log successful API request
       const duration = Date.now() - startTime;
@@ -153,6 +172,9 @@ export function withApiLogging(handler: RouteHandler) {
         },
         { status: 500 }
       );
+
+      // ✅ Automatically add CORS headers to error responses
+      response = addCorsHeaders(response, request);
 
       // Log failed API request
       logApiRequest(method, pathname, 500, duration, {
