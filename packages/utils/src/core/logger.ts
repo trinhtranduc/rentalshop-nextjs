@@ -15,9 +15,19 @@
 import pino from 'pino';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 // Get logs directory (works in monorepo structure)
-function getLogsDir(): string {
+function getLogsDir(): string | null {
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const isProduction = nodeEnv === 'production';
+  
+  // In production (Railway/Docker), skip file logging and use stdout only
+  // File logging requires write permissions which may not be available
+  if (isProduction) {
+    return null; // Use stdout/stderr only in production
+  }
+  
   // Try to find project root by looking for package.json
   // Start from current file location (packages/utils/src/core)
   let currentDir = __dirname;
@@ -26,8 +36,8 @@ function getLogsDir(): string {
   while (!fs.existsSync(path.join(currentDir, 'package.json'))) {
     const parentDir = path.dirname(currentDir);
     if (parentDir === currentDir) {
-      // Reached filesystem root, use current directory
-      break;
+      // Reached filesystem root, use temp directory as fallback
+      return os.tmpdir();
     }
     currentDir = parentDir;
   }
@@ -36,12 +46,17 @@ function getLogsDir(): string {
   const projectRoot = path.resolve(currentDir, '../../..');
   const logsDir = path.join(projectRoot, 'logs');
   
-  // Create logs directory if it doesn't exist
-  if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
+  // Create logs directory if it doesn't exist (with error handling)
+  try {
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    return logsDir;
+  } catch (error) {
+    // If we can't create logs directory, fall back to temp directory
+    console.warn('Failed to create logs directory, using temp directory:', error);
+    return require('os').tmpdir();
   }
-  
-  return logsDir;
 }
 
 // Initialize Axiom client (optional)
@@ -49,14 +64,27 @@ let axiomClient: any = null;
 if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
   try {
     // Dynamic import to avoid breaking if package is not installed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Axiom } = require('@axiomhq/js');
-    axiomClient = new Axiom({
-      token: process.env.AXIOM_TOKEN,
-      orgId: process.env.AXIOM_ORG_ID,
-    });
+    // Check if module exists before requiring
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const axiomModule = require('@axiomhq/js');
+      if (axiomModule && axiomModule.Axiom) {
+        axiomClient = new axiomModule.Axiom({
+          token: process.env.AXIOM_TOKEN,
+          orgId: process.env.AXIOM_ORG_ID,
+        });
+      }
+    } catch (requireError: any) {
+      // Module not found or other require error - silently skip
+      // This is expected if @axiomhq/js is not installed or not bundled
+      if (requireError.code !== 'MODULE_NOT_FOUND') {
+        // Only warn for non-MODULE_NOT_FOUND errors
+        console.warn('Axiom client initialization failed:', requireError.message);
+      }
+    }
   } catch (error) {
-    console.warn('Axiom client initialization failed:', error);
+    // Catch any other errors during initialization
+    console.warn('Axiom client initialization failed:', error instanceof Error ? error.message : error);
   }
 }
 
@@ -73,28 +101,36 @@ const transports: Array<{
   level?: string;
 }> = [];
 
-// File logging with rotation (always enabled)
-transports.push({
-  target: 'pino-roll',
-  options: {
-    file: path.join(logsDir, 'combined.log'),
-    frequency: 'daily',
-    size: '10M',
-    limit: { count: 5 }, // Keep 5 files
-  },
-});
+// File logging with rotation (only in development, skip in production)
+// Production environments (Railway/Docker) should use stdout/stderr only
+if (logsDir && !isProduction) {
+  try {
+    transports.push({
+      target: 'pino-roll',
+      options: {
+        file: path.join(logsDir, 'combined.log'),
+        frequency: 'daily',
+        size: '10M',
+        limit: { count: 5 }, // Keep 5 files
+      },
+    });
 
-transports.push({
-  target: 'pino-roll',
-  options: {
-    file: path.join(logsDir, 'error.log'),
-    frequency: 'daily',
-    size: '10M',
-    limit: { count: 5 }, // Keep 5 files
-    levels: ['error'], // Only log errors
-  },
-  level: 'error',
-});
+    transports.push({
+      target: 'pino-roll',
+      options: {
+        file: path.join(logsDir, 'error.log'),
+        frequency: 'daily',
+        size: '10M',
+        limit: { count: 5 }, // Keep 5 files
+        levels: ['error'], // Only log errors
+      },
+      level: 'error',
+    });
+  } catch (error) {
+    // If file logging fails, continue with console logging only
+    console.warn('File logging disabled due to error:', error);
+  }
+}
 
 // Console logging (pretty in dev, JSON in prod)
 if (!isProduction) {
