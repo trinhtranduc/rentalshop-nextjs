@@ -95,10 +95,21 @@ export class HuggingFaceClient {
           continue;
         }
         
-        // For other errors, throw immediately
+        // For other errors, throw immediately with detailed info
         if (response.status >= 400 && response.status < 500) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(`HuggingFace API error: ${response.status} - ${JSON.stringify(errorData)}`);
+          const errorText = await response.text().catch(() => '');
+          
+          // Provide more specific error messages
+          if (response.status === 401 || response.status === 403) {
+            throw new Error(`HuggingFace API authentication failed (${response.status}): Invalid API key or insufficient permissions. Please check your HUGGINGFACE_API_KEY.`);
+          }
+          
+          if (response.status === 404) {
+            throw new Error(`HuggingFace API model not found (404): Model "${this.model}" may not exist or is not accessible. Error: ${JSON.stringify(errorData) || errorText}`);
+          }
+          
+          throw new Error(`HuggingFace API error: ${response.status} - ${JSON.stringify(errorData) || errorText}`);
         }
 
         if (!response.ok) {

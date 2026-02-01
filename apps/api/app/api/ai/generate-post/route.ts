@@ -39,9 +39,14 @@ export const POST = withApiLogging(
     const apiKey = process.env.HUGGINGFACE_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        ResponseBuilder.error('HUGGINGFACE_API_KEY_NOT_CONFIGURED'),
+        ResponseBuilder.error('HUGGINGFACE_API_KEY_NOT_CONFIGURED', 'HuggingFace API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.'),
         { status: 500 }
       );
+    }
+    
+    // Validate API key format (should start with hf_)
+    if (!apiKey.startsWith('hf_')) {
+      console.warn('⚠️ HUGGINGFACE_API_KEY does not start with "hf_". This may indicate an invalid key format.');
     }
 
     const generator = new ContentGenerator(apiKey, parsed.data.model);

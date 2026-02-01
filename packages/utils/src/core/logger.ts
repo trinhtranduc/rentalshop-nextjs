@@ -62,8 +62,24 @@ function getLogsDir(): string | null {
 // Initialize Axiom client (optional)
 let axiomClient: any = null;
 let axiomInitError: string | null = null;
+let axiomInitAttempted = false;
 
-if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
+function initializeAxiomClient() {
+  // Only initialize once
+  if (axiomInitAttempted) {
+    return;
+  }
+  axiomInitAttempted = true;
+
+  const hasToken = !!process.env.AXIOM_TOKEN;
+  const hasOrgId = !!process.env.AXIOM_ORG_ID;
+
+  if (!hasToken || !hasOrgId) {
+    axiomInitError = `AXIOM_TOKEN or AXIOM_ORG_ID not set. Token: ${hasToken ? 'set' : 'missing'}, OrgId: ${hasOrgId ? 'set' : 'missing'}`;
+    console.log('ℹ️ Axiom logging disabled:', axiomInitError);
+    return;
+  }
+
   try {
     // Dynamic import to avoid breaking if package is not installed
     // Check if module exists before requiring
@@ -75,7 +91,8 @@ if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
           token: process.env.AXIOM_TOKEN,
           orgId: process.env.AXIOM_ORG_ID,
         });
-        console.log('✅ Axiom client initialized successfully');
+        const dataset = process.env.AXIOM_DATASET || (process.env.NODE_ENV === 'production' ? 'anyrent-logs-prod' : 'anyrent-logs-dev');
+        console.log(`✅ Axiom client initialized successfully (dataset: ${dataset})`);
       } else {
         axiomInitError = 'Axiom class not found in @axiomhq/js module';
         console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
@@ -83,22 +100,23 @@ if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
     } catch (requireError: any) {
       // Module not found or other require error
       if (requireError.code === 'MODULE_NOT_FOUND') {
-        axiomInitError = `Module @axiomhq/js not found. Install with: yarn add @axiomhq/js`;
-        console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
+        axiomInitError = `Module @axiomhq/js not found. Install with: yarn add @axiomhq/js. Error: ${requireError.message}`;
+        console.error('❌ Axiom client initialization failed:', axiomInitError);
+        console.error('💡 Make sure @axiomhq/js is installed in packages/utils/package.json and yarn install has been run');
       } else {
         axiomInitError = requireError.message || String(requireError);
-        console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
+        console.error('❌ Axiom client initialization failed:', axiomInitError);
       }
     }
   } catch (error) {
     // Catch any other errors during initialization
     axiomInitError = error instanceof Error ? error.message : String(error);
-    console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
+    console.error('❌ Axiom client initialization failed:', axiomInitError);
   }
-} else {
-  axiomInitError = 'AXIOM_TOKEN or AXIOM_ORG_ID not set';
-  console.log('ℹ️ Axiom logging disabled:', axiomInitError);
 }
+
+// Initialize on module load
+initializeAxiomClient();
 
 // Configure Pino logger
 const logsDir = getLogsDir();
@@ -184,13 +202,18 @@ const logger = pino({
 
 // Helper function to send logs to Axiom (if configured)
 const sendToAxiom = async (level: string, message: string, data: Record<string, any>) => {
+  // Try to initialize if not already attempted
+  if (!axiomInitAttempted) {
+    initializeAxiomClient();
+  }
+
   if (!axiomClient) {
     // Only log once per session to avoid spam
     if (!axiomInitError || axiomInitError.includes('not set')) {
       return; // Silent skip if not configured
     }
-    // Log error once if there was an initialization error
-    if (process.env.NODE_ENV === 'development') {
+    // Log error once if there was an initialization error (only for error level)
+    if (level === 'error' && process.env.NODE_ENV === 'development') {
       console.debug('⚠️ Axiom client not available:', axiomInitError);
     }
     return;
@@ -211,28 +234,46 @@ const sendToAxiom = async (level: string, message: string, data: Record<string, 
       return; // Skip logs below configured level
     }
     
-    await axiomClient.datasets.ingest(axiomDataset, [
-      {
-        _time: new Date().toISOString(),
-        level,
-        message,
-        ...data,
-        environment: process.env.NODE_ENV || 'development',
-      },
-    ]);
+    const logEntry = {
+      _time: new Date().toISOString(),
+      level,
+      message,
+      ...data,
+      environment: process.env.NODE_ENV || 'development',
+      service: 'api',
+      timestamp: Date.now(),
+    };
+    
+    await axiomClient.datasets.ingest(axiomDataset, [logEntry]);
+    
+    // Log success in development for debugging
+    if (process.env.NODE_ENV === 'development' && level === 'error') {
+      console.debug(`✅ Log sent to Axiom (${level}):`, { dataset: axiomDataset, message });
+    }
   } catch (error) {
     // Log error but don't break main operations
     // Only log to console to avoid infinite loop
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('❌ Failed to send log to Axiom:', errorMessage);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Always log Axiom errors to console (important for debugging)
+    console.error('❌ Failed to send log to Axiom:', {
+      error: errorMessage,
+      level,
+      message,
+      dataset: process.env.AXIOM_DATASET || (process.env.NODE_ENV === 'production' ? 'anyrent-logs-prod' : 'anyrent-logs-dev'),
+      ...(errorStack && { stack: errorStack }),
+    });
     
     // In development, log full error for debugging
     if (process.env.NODE_ENV === 'development' && error instanceof Error) {
-      const axiomDataset = process.env.AXIOM_DATASET || 'anyrent-logs-dev';
       console.error('Axiom error details:', {
         message: error.message,
         stack: error.stack,
-        dataset: axiomDataset,
+        name: error.name,
+        dataset: process.env.AXIOM_DATASET || 'anyrent-logs-dev',
+        hasToken: !!process.env.AXIOM_TOKEN,
+        hasOrgId: !!process.env.AXIOM_ORG_ID,
       });
     }
   }
