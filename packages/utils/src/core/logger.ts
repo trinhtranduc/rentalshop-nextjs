@@ -55,12 +55,14 @@ function getLogsDir(): string | null {
   } catch (error) {
     // If we can't create logs directory, fall back to temp directory
     console.warn('Failed to create logs directory, using temp directory:', error);
-    return require('os').tmpdir();
+    return os.tmpdir();
   }
 }
 
 // Initialize Axiom client (optional)
 let axiomClient: any = null;
+let axiomInitError: string | null = null;
+
 if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
   try {
     // Dynamic import to avoid breaking if package is not installed
@@ -73,19 +75,29 @@ if (process.env.AXIOM_TOKEN && process.env.AXIOM_ORG_ID) {
           token: process.env.AXIOM_TOKEN,
           orgId: process.env.AXIOM_ORG_ID,
         });
+        console.log('✅ Axiom client initialized successfully');
+      } else {
+        axiomInitError = 'Axiom class not found in @axiomhq/js module';
+        console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
       }
     } catch (requireError: any) {
-      // Module not found or other require error - silently skip
-      // This is expected if @axiomhq/js is not installed or not bundled
-      if (requireError.code !== 'MODULE_NOT_FOUND') {
-        // Only warn for non-MODULE_NOT_FOUND errors
-        console.warn('Axiom client initialization failed:', requireError.message);
+      // Module not found or other require error
+      if (requireError.code === 'MODULE_NOT_FOUND') {
+        axiomInitError = `Module @axiomhq/js not found. Install with: yarn add @axiomhq/js`;
+        console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
+      } else {
+        axiomInitError = requireError.message || String(requireError);
+        console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
       }
     }
   } catch (error) {
     // Catch any other errors during initialization
-    console.warn('Axiom client initialization failed:', error instanceof Error ? error.message : error);
+    axiomInitError = error instanceof Error ? error.message : String(error);
+    console.warn('⚠️ Axiom client initialization failed:', axiomInitError);
   }
+} else {
+  axiomInitError = 'AXIOM_TOKEN or AXIOM_ORG_ID not set';
+  console.log('ℹ️ Axiom logging disabled:', axiomInitError);
 }
 
 // Configure Pino logger
@@ -152,6 +164,16 @@ if (!isProduction) {
   });
 }
 
+// Ensure at least one transport exists (fallback to stdout if all fail)
+if (transports.length === 0) {
+  transports.push({
+    target: 'pino/file',
+    options: {
+      destination: 1, // stdout
+    },
+  });
+}
+
 // Create Pino logger with transports
 const logger = pino({
   level: logLevel,
@@ -162,7 +184,17 @@ const logger = pino({
 
 // Helper function to send logs to Axiom (if configured)
 const sendToAxiom = async (level: string, message: string, data: Record<string, any>) => {
-  if (!axiomClient) return;
+  if (!axiomClient) {
+    // Only log once per session to avoid spam
+    if (!axiomInitError || axiomInitError.includes('not set')) {
+      return; // Silent skip if not configured
+    }
+    // Log error once if there was an initialization error
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('⚠️ Axiom client not available:', axiomInitError);
+    }
+    return;
+  }
   
   try {
     const isProduction = (process.env.NODE_ENV || 'development') === 'production';
@@ -189,9 +221,20 @@ const sendToAxiom = async (level: string, message: string, data: Record<string, 
       },
     ]);
   } catch (error) {
-    // Silent failure - don't break main operations
+    // Log error but don't break main operations
     // Only log to console to avoid infinite loop
-    console.error('Failed to send log to Axiom:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ Failed to send log to Axiom:', errorMessage);
+    
+    // In development, log full error for debugging
+    if (process.env.NODE_ENV === 'development' && error instanceof Error) {
+      const axiomDataset = process.env.AXIOM_DATASET || 'anyrent-logs-dev';
+      console.error('Axiom error details:', {
+        message: error.message,
+        stack: error.stack,
+        dataset: axiomDataset,
+      });
+    }
   }
 };
 
