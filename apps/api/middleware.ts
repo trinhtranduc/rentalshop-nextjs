@@ -64,16 +64,35 @@ export async function middleware(request: NextRequest) {
   
   // Handle OPTIONS preflight requests immediately
   // This must be done before any other processing to ensure CORS works
+  // Middleware handles ALL OPTIONS requests to ensure CORS headers are always present
   if (request.method === 'OPTIONS') {
     const requestOrigin = request.headers.get('origin') || '';
+    const { pathname } = request.nextUrl;
+    
+    // Log CORS details for debugging
     console.log('🔍 MIDDLEWARE: OPTIONS preflight request', {
       origin: requestOrigin,
-      pathname: request.nextUrl.pathname
+      pathname,
+      'Access-Control-Allow-Origin': corsHeaders['Access-Control-Allow-Origin'],
+      'Access-Control-Allow-Methods': corsHeaders['Access-Control-Allow-Methods'],
+      allCorsHeaders: corsHeaders
     });
-    return new NextResponse(null, {
+    
+    // Return OPTIONS response with CORS headers
+    // This ensures CORS works for all routes, even if route handler doesn't have OPTIONS
+    const response = new NextResponse(null, {
       status: 204,
       headers: corsHeaders,
     });
+    
+    // Double-check headers are set
+    console.log('🔍 MIDDLEWARE: OPTIONS response headers:', {
+      'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+      'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+    });
+    
+    return response;
   }
 
   // Wrap all remaining middleware logic in try-catch
