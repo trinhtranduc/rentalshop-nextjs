@@ -30,8 +30,21 @@ COPY apps/client/package.json ./apps/client/
 # Set NODE_ENV=development to ensure workspace devDependencies are installed
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-# Retry yarn install up to 3 times to handle network issues
-RUN for i in 1 2 3; do yarn install --frozen-lockfile && break || (echo "Attempt $i failed, retrying..." && sleep 5); done
+# Add retry and network timeout for Railway builds (similar to API Dockerfile)
+RUN yarn config set network-timeout 300000 && \
+    yarn config set registry https://registry.npmjs.org/ && \
+    (yarn install --frozen-lockfile --network-timeout 300000 || \
+     (echo "First attempt failed, retrying..." && \
+      yarn cache clean && \
+      yarn install --frozen-lockfile --network-timeout 300000)) && \
+    # Verify node_modules was created successfully
+    if [ ! -d "node_modules" ]; then \
+      echo "❌ ERROR: node_modules directory not found after yarn install"; \
+      exit 1; \
+    fi && \
+    echo "✅ node_modules created successfully ($(du -sh node_modules | cut -f1))" && \
+    # List first few packages to verify installation
+    ls -la node_modules | head -10 || true
 
 # ===================================
 # STAGE 2: Builder
@@ -44,7 +57,14 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_ENV
 
 # Copy node_modules from deps stage
+# Verify deps stage completed successfully before copying
 COPY --from=deps /app/node_modules ./node_modules
+# Verify node_modules was copied successfully
+RUN if [ ! -d "node_modules" ]; then \
+      echo "❌ ERROR: node_modules not found after copy from deps stage"; \
+      exit 1; \
+    fi && \
+    echo "✅ node_modules copied successfully from deps stage"
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
