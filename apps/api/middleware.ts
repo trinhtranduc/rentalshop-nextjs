@@ -202,64 +202,15 @@ export async function middleware(request: NextRequest) {
     }
 
     // ============================================================================
-    // PLATFORM ACCESS CONTROL - FETCH allowWebAccess FROM DB WHEN NEEDED
+    // PLATFORM ACCESS CONTROL
     // ============================================================================
-    // Fetch subscription data from DB only when checking web access (keeps JWT small)
+    // Note: Platform access check (allowWebAccess) is now handled in route handlers
+    // using authenticateRequest from @rentalshop/auth, which runs in Node.js runtime.
+    // This avoids Edge Runtime limitations (no fs module, no Prisma Client).
+    // 
+    // Middleware only forwards platform info via headers for route handlers to use.
     
-    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web' && payload.merchantId) {
-      try {
-        // Fetch subscription with plan limits from DB
-        const { getSubscriptionByMerchantId } = await import('@rentalshop/database');
-        const subscription = await getSubscriptionByMerchantId(payload.merchantId);
-        
-        if (subscription?.plan?.limits) {
-          const planLimits = subscription.plan.limits as any;
-          const allowWebAccess = planLimits?.allowWebAccess !== undefined 
-            ? planLimits.allowWebAccess 
-            : true; // Default to true if not set
-          
-          if (!allowWebAccess) {
-            const planName = subscription.plan?.name || 'Unknown';
-            console.log('❌ MIDDLEWARE: Platform access denied:', {
-              planName,
-              platform: platformInfo.platform,
-              allowWebAccess,
-              merchantId: payload.merchantId,
-              message: 'Plan does not allow web access'
-            });
-            
-            return NextResponse.json(
-              {
-                success: false,
-                code: 'PLATFORM_ACCESS_DENIED',
-                message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
-                data: {
-                  currentPlan: planName,
-                  currentPlatform: platformInfo.platform,
-                  allowedPlatforms: ['mobile'],
-                  upgradeRequired: true,
-                  upgradeUrl: '/settings/subscription'
-                }
-              },
-              {
-                status: API.STATUS.FORBIDDEN,
-                headers: {
-                  ...corsHeaders,
-                  'X-Platform-Access-Denied': 'true',
-                  'X-Upgrade-Required': 'true'
-                }
-              }
-            );
-          }
-        }
-      } catch (error) {
-        // If error fetching subscription, allow access (fail open for better UX)
-        // Log error for monitoring
-        console.error('⚠️ MIDDLEWARE: Error fetching subscription for platform access check:', error);
-      }
-    }
-    
-    console.log('✅ MIDDLEWARE: Platform access granted:', {
+    console.log('✅ MIDDLEWARE: Platform info forwarded:', {
       platform: platformInfo.platform,
       role: payload.role
     });

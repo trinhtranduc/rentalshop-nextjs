@@ -11,6 +11,7 @@ import { PlanLimitError } from '@rentalshop/utils';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { type ClientPlatform } from '@rentalshop/types';
 
 // ============================================================================
 // SUBSCRIPTION STATUS CHECK HELPER
@@ -618,6 +619,85 @@ export async function authenticateRequest(request: NextRequest): Promise<{
           success: false,
           response: subscriptionCheck.response!
         };
+      }
+    }
+
+    // ============================================================================
+    // PLATFORM ACCESS CHECK
+    // ============================================================================
+    // Check if subscription plan allows access from the current platform (web/mobile)
+    // Skip for ADMIN users (they have full access)
+    if (user.role !== 'ADMIN' && user.merchantId) {
+      // Get platform from request headers (set by middleware)
+      const platform = request.headers.get('x-platform') as ClientPlatform | null;
+      
+      // Only check if platform is specified (web or mobile)
+      if (platform && (platform === 'web' || platform === 'mobile')) {
+        try {
+          // Get merchant with subscription and plan info
+          const merchant = await db.merchants.findById(user.merchantId);
+          
+          if (merchant?.subscription?.plan) {
+            const dbPlan = merchant.subscription.plan;
+            
+            // Parse plan limits (may be string or object)
+            let planLimits: any = {};
+            if (typeof dbPlan.limits === 'string') {
+              try {
+                planLimits = JSON.parse(dbPlan.limits);
+              } catch {
+                planLimits = {};
+              }
+            } else {
+              planLimits = dbPlan.limits || {};
+            }
+            
+            // Check platform access from limits
+            const { allowWebAccess = true, allowMobileAccess = true } = planLimits;
+            
+            if (platform === 'web' && !allowWebAccess) {
+              throw new Error('Web access not allowed for your subscription plan. Please upgrade to Premium or Enterprise plan.');
+            }
+            
+            if (platform === 'mobile' && !allowMobileAccess) {
+              throw new Error('Mobile access not allowed for your subscription plan.');
+            }
+          }
+        } catch (error) {
+          // If platform access is denied, return error response
+          if (error instanceof Error && error.message.includes('access')) {
+            // Re-fetch merchant to get plan name for error message
+            const merchant = await db.merchants.findById(user.merchantId);
+            const planName = merchant?.subscription?.plan?.name || 'Your current plan';
+            
+            return {
+              success: false,
+              response: NextResponse.json(
+                {
+                  success: false,
+                  code: 'PLATFORM_ACCESS_DENIED',
+                  message: error.message || 'Your subscription plan does not allow access from this platform.',
+                  data: {
+                    currentPlan: planName,
+                    currentPlatform: platform,
+                    allowedPlatforms: platform === 'web' ? ['mobile'] : ['web'],
+                    upgradeRequired: true,
+                    upgradeUrl: '/settings/subscription'
+                  }
+                },
+                {
+                  status: API.STATUS.FORBIDDEN,
+                  headers: {
+                    'X-Platform-Access-Denied': 'true',
+                    'X-Upgrade-Required': 'true'
+                  }
+                }
+              )
+            };
+          }
+          // Re-throw other errors
+          throw error;
+        }
       }
     }
 
