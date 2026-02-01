@@ -547,6 +547,52 @@ export function handleBusinessError(error: any): ApiError {
     return new ApiError(ErrorCode.INVALID_ORDER_STATUS);
   }
   
+  // HuggingFace API errors
+  if (error.message?.includes('HuggingFace API error') || error.message?.includes('HuggingFace')) {
+    console.error('🔍 HuggingFace API Error detected:', error.message);
+    // Extract status code if available
+    const statusMatch = error.message.match(/status:\s*(\d+)/);
+    if (statusMatch) {
+      const status = parseInt(statusMatch[1]);
+      if (status === 401 || status === 403) {
+        return new ApiError(
+          ErrorCode.UNAUTHORIZED,
+          'HuggingFace API authentication failed. Please check API key configuration.',
+          error.message
+        );
+      }
+      if (status === 429) {
+        return new ApiError(
+          ErrorCode.SERVICE_UNAVAILABLE,
+          'HuggingFace API rate limit exceeded. Please try again later.',
+          error.message
+        );
+      }
+      if (status === 503) {
+        return new ApiError(
+          ErrorCode.SERVICE_UNAVAILABLE,
+          'HuggingFace API service is temporarily unavailable. Please try again later.',
+          error.message
+        );
+      }
+    }
+    return new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'AI service error. Please try again later.',
+      error.message
+    );
+  }
+  
+  // AI generation errors
+  if (error.message?.includes('Invalid response from HuggingFace') || 
+      error.message?.includes('Failed to generate after')) {
+    return new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'AI content generation failed. Please try again.',
+      error.message
+    );
+  }
+  
   return new ApiError(ErrorCode.BUSINESS_RULE_VIOLATION);
 }
 

@@ -213,7 +213,6 @@ export function PostForm({
 
       const result = await aiApi.analyzeSEO({
         content: formData.content,
-        title: formData.title,
         keyword: keyword,
         metaTitle: formData.seoTitle || formData.title,
         metaDescription: formData.seoDescription || formData.excerpt || '',
@@ -238,7 +237,20 @@ export function PostForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{mode === 'create' ? 'Create Post' : 'Edit Post'}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>{mode === 'create' ? 'Create Post' : 'Edit Post'}</CardTitle>
+            {mode === 'create' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAIGenerator(true)}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate with AI
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Title */}

@@ -59,6 +59,16 @@ export const POST = withApiLogging(
       ResponseBuilder.success('POST_GENERATED_SUCCESS', result)
     );
     } catch (error) {
+      // Log detailed error for debugging
+      console.error('🚨 AI Generate Post Error:', {
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorCode: (error as any)?.code,
+        errorStatus: (error as any)?.status,
+        errorResponse: (error as any)?.response,
+      });
+      
       // Error will be automatically logged by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
