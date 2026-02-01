@@ -20,7 +20,8 @@ export class HuggingFaceClient {
   constructor(options: HuggingFaceClientOptions) {
     this.apiKey = options.apiKey;
     this.model = options.model || 'mistralai/Mistral-7B-Instruct-v0.2';
-    this.baseUrl = options.baseUrl || 'https://api-inference.huggingface.co/models';
+    // Updated to use new router endpoint (api-inference.huggingface.co is deprecated)
+    this.baseUrl = options.baseUrl || 'https://router.huggingface.co/models';
     this.maxRetries = options.maxRetries || 3;
     this.retryDelay = options.retryDelay || 1000;
   }
