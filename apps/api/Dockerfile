@@ -37,7 +37,13 @@ RUN yarn config set network-timeout 300000 && \
     (yarn install --frozen-lockfile --network-timeout 300000 || \
      (echo "First attempt failed, retrying..." && \
       yarn cache clean && \
-      yarn install --frozen-lockfile --network-timeout 300000))
+      yarn install --frozen-lockfile --network-timeout 300000)) && \
+    # Verify node_modules was created successfully
+    if [ ! -d "node_modules" ]; then \
+      echo "❌ ERROR: node_modules directory not found after yarn install"; \
+      exit 1; \
+    fi && \
+    echo "✅ node_modules created successfully ($(du -sh node_modules | cut -f1))"
 
 # OFFICIAL TUTORIAL APPROACH: Keep onnxruntime-node (it will work with node:18)
 # node:18 has glibc, so onnxruntime-node (CPU backend) will work correctly
