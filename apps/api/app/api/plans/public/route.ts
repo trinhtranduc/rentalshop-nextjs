@@ -3,48 +3,7 @@ import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
 import { withApiLogging } from '@/lib/api-logging-wrapper';
-
-/**
- * Get allowed CORS origins
- */
-function getAllowedOrigins(): string[] {
-  const corsOrigins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-  
-  return [
-    ...corsOrigins,
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'https://anyrent.shop',
-    'https://www.anyrent.shop',
-    'https://api.anyrent.shop',
-    'https://admin.anyrent.shop',
-    'https://dev.anyrent.shop',
-    'https://dev-api.anyrent.shop',
-    'https://dev-admin.anyrent.shop'
-  ];
-}
-
-/**
- * Build CORS headers for response
- */
-function buildCorsHeaders(request: NextRequest): Record<string, string> {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigins = getAllowedOrigins();
-  const isAllowedOrigin = allowedOrigins.includes(origin);
-  const allowOrigin = isAllowedOrigin ? origin : 'null';
-  
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-}
+import { handleCorsPreflight } from '@/lib/cors';
 
 /**
  * Helper function to generate pricing object from base price
@@ -131,10 +90,7 @@ function transformPlan(plan: any): Plan {
  * Handle CORS preflight requests
  */
 export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    status: 204,
-    headers: buildCorsHeaders(request),
-  });
+  return handleCorsPreflight(request, 'GET, OPTIONS', 'Content-Type, Authorization');
 }
 
 /**
@@ -154,21 +110,16 @@ export const GET = withApiLogging(async (request: NextRequest) => {
     // Transform raw Prisma data to Plan type
     const plans = result.data.map(transformPlan).filter(plan => plan !== null);
 
+    // ✅ CORS headers automatically added by withApiLogging wrapper
     return NextResponse.json(
-      ResponseBuilder.success('PLANS_RETRIEVED_SUCCESS', plans),
-      {
-      headers: buildCorsHeaders(request)
-      }
+      ResponseBuilder.success('PLANS_RETRIEVED_SUCCESS', plans)
     );
 
     } catch (error) {
       // Error will be automatically logged by withApiLogging wrapper
-      // Use unified error handling system
+      // ✅ CORS headers automatically added by withApiLogging wrapper
       const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { 
-        status: statusCode,
-        headers: buildCorsHeaders(request)
-      });
+      return NextResponse.json(response, { status: statusCode });
     }
   }
 );
