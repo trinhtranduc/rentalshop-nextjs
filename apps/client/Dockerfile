@@ -11,6 +11,7 @@ RUN apk add --no-cache libc6-compat openssl
 COPY package.json yarn.lock ./
 
 # Copy all workspace package.json files (for proper dependency resolution)
+COPY packages/ai-service/package.json ./packages/ai-service/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/constants/package.json ./packages/constants/
 COPY packages/database/package.json ./packages/database/
