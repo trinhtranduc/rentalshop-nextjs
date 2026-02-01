@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
+// Import generateCorrelationId - it's now in a separate file without Prisma dependency
 import { generateCorrelationId } from '@rentalshop/utils';
 import { buildCorsHeaders } from './lib/cors';
 

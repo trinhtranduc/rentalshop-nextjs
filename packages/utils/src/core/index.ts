@@ -177,7 +177,10 @@ export * from './bank-qr';
 export * from './audit-config';
 export * from './audit-helper';
 
-// Request logging utilities
+// Correlation ID utility (Edge Runtime safe - no Prisma dependency)
+export { generateCorrelationId } from './correlation-id';
+
+// Request logging utilities (exports generateCorrelationId as re-export, but we export it directly above)
 export * from './request-logger';
 
 // Revenue calculator utilities (single source of truth for revenue calculations)
