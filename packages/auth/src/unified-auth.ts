@@ -141,9 +141,16 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
         return await handler(request, context);
 
       } catch (error) {
-        console.error('🚨 Auth wrapper error:', error);
+        console.error('🚨 Auth wrapper error (withAuthRoles):', error);
+        console.error('🚨 Auth wrapper error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined
+        });
+        
+        const { ResponseBuilder } = await import('@rentalshop/utils');
         return NextResponse.json(
-          { error: 'Authentication error' },
+          ResponseBuilder.error('AUTHENTICATION_ERROR'),
           { status: 500 }
         );
       }
@@ -332,9 +339,16 @@ export function withPermissions(
         return await handler(request, context);
 
       } catch (error) {
-        console.error('🚨 Auth wrapper error:', error);
+        console.error('🚨 Auth wrapper error (withPermissions):', error);
+        console.error('🚨 Auth wrapper error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined
+        });
+        
+        const { ResponseBuilder } = await import('@rentalshop/utils');
         return NextResponse.json(
-          { error: 'Authentication error' },
+          ResponseBuilder.error('AUTHENTICATION_ERROR'),
           { status: 500 }
         );
       }
