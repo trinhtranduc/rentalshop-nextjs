@@ -454,11 +454,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const committedImageUrls = await commitProductImages(imageUrls, uploadedStagingKeys, merchantId);
     console.log(`✅ Committed ${committedImageUrls.length} image(s) to production:`, committedImageUrls);
     
-    // Always store as comma-separated string for database consistency
+    // ✅ STANDARDIZED: Always store as JSON array for database consistency
+    // Prisma Json? field will automatically serialize array to JSON
     const imagesValue = committedImageUrls.length > 0 
-      ? committedImageUrls.join(',')
-      : '';
-    console.log(`💾 Final images value for DB:`, imagesValue);
+      ? committedImageUrls  // Array: ["url1", "url2"]
+      : [];  // Empty array instead of empty string
+    console.log(`💾 Final images value for DB (array):`, imagesValue);
 
     // Get merchant CUID
     const merchant = await db.merchants.findById(merchantId);

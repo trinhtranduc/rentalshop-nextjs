@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 
 /**
  * Get allowed CORS origins
@@ -225,19 +225,9 @@ export async function GET(
     const transformedProducts = (productsResult.data || []).map((product: any) => ({
       ...product,
       categoryId: product.categoryId || product.category?.id,
-      // Ensure images is an array
-      images: Array.isArray(product.images) 
-        ? product.images 
-        : typeof product.images === 'string' 
-          ? (() => {
-              try {
-                const parsed = JSON.parse(product.images);
-                return Array.isArray(parsed) ? parsed : [];
-              } catch {
-                return product.images.split(',').filter(Boolean);
-              }
-            })()
-          : []
+      // ✅ Use shared parseProductImages() for backward compatibility
+      // Handles: array, JSON string, comma-separated string, quoted string
+      images: parseProductImages(product.images)
     }));
 
     const responseData = {

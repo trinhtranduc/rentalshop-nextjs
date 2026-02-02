@@ -7,26 +7,85 @@
 
 /**
  * Parse images from database (handles JSON string, array, or comma-separated string)
+ * Handles various formats:
+ * - Array: ["url1", "url2"]
+ * - JSON string: "[\"url1\", \"url2\"]"
+ * - Quoted string: "\"url1\"" or '"url1"'
+ * - Comma-separated: "url1,url2"
  */
 export function parseProductImages(images: any): string[] {
   if (!images) return [];
   
   if (typeof images === 'string') {
-    // Try parsing as JSON first
-    if (images.trim().startsWith('[') || images.trim().startsWith('{')) {
+    const trimmed = images.trim();
+    
+    // Handle quoted string (e.g., "\"url\"" or '"url"')
+    // Remove outer quotes if present
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || 
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
       try {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed : [parsed];
+        // Try to parse as JSON first (handles escaped quotes)
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+        }
+        if (typeof parsed === 'string') {
+          return [parsed];
+        }
+      } catch {
+        // If JSON.parse fails, remove outer quotes manually
+        const unquoted = trimmed.slice(1, -1);
+        // Remove escaped quotes if present
+        const cleaned = unquoted.replace(/\\"/g, '"').replace(/\\'/g, "'");
+        return cleaned ? [cleaned] : [];
+      }
+    }
+    
+    // Try parsing as JSON array/object first
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+        }
+        if (typeof parsed === 'string') {
+          return [parsed];
+        }
+        return [];
       } catch {
         // Fall through to comma-separated handling
       }
     }
+    
     // Handle comma-separated string
-    return images.split(',').filter(Boolean).map((url: string) => url.trim());
+    return trimmed.split(',').map((url: string) => {
+      // Remove quotes and whitespace from each URL
+      let cleaned = url.trim();
+      if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
+          (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+        cleaned = cleaned.slice(1, -1);
+      }
+      // Remove escaped quotes
+      cleaned = cleaned.replace(/\\"/g, '"').replace(/\\'/g, "'");
+      return cleaned;
+    }).filter(Boolean);
   }
   
   if (Array.isArray(images)) {
-    return images.map(String).filter(Boolean);
+    return images
+      .map((img) => {
+        if (typeof img === 'string') {
+          // Remove quotes if present
+          const trimmed = img.trim();
+          if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || 
+              (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+            return trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\'/g, "'");
+          }
+          return trimmed;
+        }
+        return String(img);
+      })
+      .filter(Boolean);
   }
   
   return [];

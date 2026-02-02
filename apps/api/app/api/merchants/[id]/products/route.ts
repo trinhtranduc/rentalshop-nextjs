@@ -119,7 +119,8 @@ export async function POST(
         salePrice,
         deposit,
         totalStock,
-        images: JSON.stringify(Array.isArray(images) ? images : images ? [images] : []),
+        // ✅ STANDARDIZED: Always store as array, Prisma will serialize to JSON
+        images: Array.isArray(images) ? images : images ? [images] : [],
         merchantId: merchant.id,
         isActive: true
       });

@@ -275,10 +275,47 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         // STEP 4: Normalize images and return results
         // ============================================================
         // Parse images to ensure consistent format (array of strings)
-        const products = rawProducts.map((product: any) => ({
-          ...product,
-          images: parseProductImages(product.images)
-        }));
+        // Also normalize IDs to integers (Python service may return strings from Qdrant metadata)
+        const products = rawProducts.map((product: any) => {
+          const normalized: any = {
+            ...product,
+            images: parseProductImages(product.images)
+          };
+          
+          // Convert string IDs to integers (Python service returns strings from Qdrant metadata)
+          if (normalized.merchantId !== undefined && normalized.merchantId !== null) {
+            normalized.merchantId = typeof normalized.merchantId === 'string' 
+              ? parseInt(normalized.merchantId, 10) 
+              : normalized.merchantId;
+          }
+          
+          if (normalized.categoryId !== undefined && normalized.categoryId !== null) {
+            normalized.categoryId = typeof normalized.categoryId === 'string' 
+              ? parseInt(normalized.categoryId, 10) 
+              : normalized.categoryId;
+          }
+          
+          if (normalized.outletId !== undefined && normalized.outletId !== null) {
+            normalized.outletId = typeof normalized.outletId === 'string' 
+              ? parseInt(normalized.outletId, 10) 
+              : normalized.outletId;
+          }
+          
+          // Ensure nested objects also have integer IDs
+          if (normalized.merchant && normalized.merchant.id) {
+            normalized.merchant.id = typeof normalized.merchant.id === 'string'
+              ? parseInt(normalized.merchant.id, 10)
+              : normalized.merchant.id;
+          }
+          
+          if (normalized.category && normalized.category.id) {
+            normalized.category.id = typeof normalized.category.id === 'string'
+              ? parseInt(normalized.category.id, 10)
+              : normalized.category.id;
+          }
+          
+          return normalized;
+        });
 
         console.log(`🖼️  Normalized images for ${products.length} products`);
 

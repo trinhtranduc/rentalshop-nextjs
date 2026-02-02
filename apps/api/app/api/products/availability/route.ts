@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName, parseProductImages } from '@rentalshop/utils';
 import { z } from 'zod';
 
 // Validation schema for product availability query
@@ -333,21 +333,8 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           
           // Order items (only for this product)
           orderItems: productItems.map((item: any) => {
-            // Helper function to parse productImages (handle both JSON string and array)
-            const parseProductImages = (images: any): string[] => {
-              if (!images) return [];
-              if (Array.isArray(images)) return images;
-              if (typeof images === 'string') {
-                try {
-                  const parsed = JSON.parse(images);
-                  return Array.isArray(parsed) ? parsed : [];
-                } catch {
-                  return [];
-                }
-              }
-              return [];
-            };
-
+            // ✅ Use shared parseProductImages() for backward compatibility
+            // Handles: array, JSON string, comma-separated string, quoted string
             const productImages = parseProductImages(item.product?.images);
 
             return {
