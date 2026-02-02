@@ -82,6 +82,72 @@ async function main() {
   console.log('🎨 Generating product embeddings...\n');
   console.log('📋 Purpose: Create vector embeddings for image search\n');
 
+  // Check required environment variables
+  console.log('🔍 Checking required environment variables...');
+  const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
+  const qdrantUrl = process.env.QDRANT_URL;
+  const qdrantApiKey = process.env.QDRANT_API_KEY;
+  
+  if (!pythonApiUrl) {
+    console.error('\n❌ PYTHON_EMBEDDING_API_URL is not set (REQUIRED)');
+    console.error('   Please set: export PYTHON_EMBEDDING_API_URL="https://your-python-service.up.railway.app"');
+    console.error('   Or for local: export PYTHON_EMBEDDING_API_URL="http://localhost:8000"');
+    console.error('   Then start the Python embedding service locally');
+    process.exit(1);
+  }
+  
+  if (!qdrantUrl) {
+    console.error('\n❌ QDRANT_URL is not set (REQUIRED)');
+    console.error('   Please set: export QDRANT_URL="https://your-qdrant-cluster.qdrant.io"');
+    process.exit(1);
+  }
+  
+  if (!qdrantApiKey) {
+    console.error('\n❌ QDRANT_API_KEY is not set (REQUIRED for Qdrant Cloud)');
+    console.error('   Please set: export QDRANT_API_KEY="your-api-key"');
+    process.exit(1);
+  }
+  
+  console.log(`   ✅ PYTHON_EMBEDDING_API_URL: ${pythonApiUrl}`);
+  console.log(`   ✅ QDRANT_URL: ${qdrantUrl.substring(0, 50)}...`);
+  console.log(`   ✅ QDRANT_API_KEY: ${qdrantApiKey.substring(0, 20)}...`);
+  
+  // Test Python API connection
+  console.log('\n🏥 Testing Python Embedding API connection...');
+  try {
+    const healthUrl = pythonApiUrl.endsWith('/') ? `${pythonApiUrl}health` : `${pythonApiUrl}/health`;
+    const healthResponse = await fetch(healthUrl, { 
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    
+    if (healthResponse.ok) {
+      const healthData = await healthResponse.json();
+      console.log(`   ✅ Python API is reachable and healthy`);
+      console.log(`   Status: ${healthData.status || 'OK'}`);
+    } else {
+      console.warn(`   ⚠️ Python API returned status ${healthResponse.status}`);
+      console.warn(`   Continuing anyway, but embedding generation may fail...`);
+    }
+  } catch (error: any) {
+    console.error(`   ❌ Cannot reach Python Embedding API at ${pythonApiUrl}`);
+    console.error(`   Error: ${error.message}`);
+    console.error(`\n💡 Solutions:`);
+    if (pythonApiUrl.includes('localhost')) {
+      console.error(`   1. Start Python embedding service locally:`);
+      console.error(`      cd python-embedding-service`);
+      console.error(`      python -m uvicorn app.main:app --reload --port 8000`);
+      console.error(`   2. Or use production Python API URL:`);
+      console.error(`      export PYTHON_EMBEDDING_API_URL="https://your-python-service.up.railway.app"`);
+    } else {
+      console.error(`   1. Check if Python embedding service is deployed and running`);
+      console.error(`   2. Verify PYTHON_EMBEDDING_API_URL is correct`);
+      console.error(`   3. Check network connectivity to ${pythonApiUrl}`);
+    }
+    process.exit(1);
+  }
+  
+  console.log('');
+
   // Create Prisma client instance
   const prisma = new PrismaClient();
 
@@ -172,7 +238,21 @@ async function main() {
 
     // Initialize services (create instances directly to avoid auth dependencies)
     const embeddingService = new FashionImageEmbedding();
+    
+    // Check QDRANT_COLLECTION_ENV before creating vector store
+    if (!process.env.QDRANT_COLLECTION_ENV) {
+      console.error('\n❌ QDRANT_COLLECTION_ENV is not set (REQUIRED)');
+      console.error('   Please set: export QDRANT_COLLECTION_ENV="production" or "development"');
+      console.error('   This determines which Qdrant collection to use:');
+      console.error('   - production → product-images-pro');
+      console.error('   - development → product-images-dev');
+      process.exit(1);
+    }
+    
     const vectorStore = new ProductVectorStore();
+    const collectionName = (vectorStore as any).collectionName;
+    console.log(`📦 Using Qdrant collection: ${collectionName}`);
+    console.log(`   QDRANT_COLLECTION_ENV: ${process.env.QDRANT_COLLECTION_ENV}\n`);
 
     // Process in batches
     const batchSize = 10;
