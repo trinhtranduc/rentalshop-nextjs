@@ -10,6 +10,7 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue
 import asyncpg
 import json
 import time
+import re
 
 class SearchService:
     """Service for image search with embedding + vector search + product fetch"""
@@ -18,6 +19,80 @@ class SearchService:
         self.qdrant_client = None
         self.db_pool = None
         self.collection_name = None
+    
+    def parse_product_images(self, images: Any) -> List[str]:
+        """
+        Parse product images from database (handles JSON string, array, or comma-separated string)
+        Ensures consistent format: array of clean URL strings
+        """
+        if not images:
+            return []
+        
+        # If already a list
+        if isinstance(images, list):
+            result = []
+            for img in images:
+                if isinstance(img, str):
+                    # Remove quotes if present
+                    cleaned = img.strip()
+                    if (cleaned.startswith('"') and cleaned.endswith('"')) or \
+                       (cleaned.startswith("'") and cleaned.endswith("'")):
+                        cleaned = cleaned[1:-1]
+                    # Remove escaped quotes
+                    cleaned = cleaned.replace('\\"', '"').replace("\\'", "'")
+                    if cleaned:
+                        result.append(cleaned)
+                else:
+                    result.append(str(img))
+            return result
+        
+        # If string, try to parse
+        if isinstance(images, str):
+            trimmed = images.strip()
+            
+            # Handle quoted string (e.g., "\"url\"" or '"url"')
+            if (trimmed.startswith('"') and trimmed.endswith('"')) or \
+               (trimmed.startswith("'") and trimmed.endswith("'")):
+                try:
+                    # Try JSON parse first (handles escaped quotes)
+                    parsed = json.loads(trimmed)
+                    if isinstance(parsed, list):
+                        return [str(img).strip() for img in parsed if img]
+                    if isinstance(parsed, str):
+                        return [parsed]
+                except:
+                    # If JSON parse fails, remove outer quotes manually
+                    unquoted = trimmed[1:-1]
+                    cleaned = unquoted.replace('\\"', '"').replace("\\'", "'")
+                    return [cleaned] if cleaned else []
+            
+            # Try parsing as JSON array/object
+            if trimmed.startswith('[') or trimmed.startswith('{'):
+                try:
+                    parsed = json.loads(trimmed)
+                    if isinstance(parsed, list):
+                        return [str(img).strip() for img in parsed if img]
+                    if isinstance(parsed, str):
+                        return [parsed]
+                    return []
+                except:
+                    pass
+            
+            # Handle comma-separated string
+            result = []
+            for url in trimmed.split(','):
+                cleaned = url.strip()
+                # Remove quotes if present
+                if (cleaned.startswith('"') and cleaned.endswith('"')) or \
+                   (cleaned.startswith("'") and cleaned.endswith("'")):
+                    cleaned = cleaned[1:-1]
+                # Remove escaped quotes
+                cleaned = cleaned.replace('\\"', '"').replace("\\'", "'")
+                if cleaned:
+                    result.append(cleaned)
+            return result
+        
+        return []
         
     async def initialize(self):
         """Initialize Qdrant and PostgreSQL connections"""
@@ -30,22 +105,23 @@ class SearchService:
             api_key=qdrant_api_key if qdrant_api_key else None
         )
         
-        # Determine collection name based ONLY on QDRANT_COLLECTION_ENV
-        # Must be set explicitly: 'development' or 'production'
+        # ✅ Use QDRANT_COLLECTION_ENV directly as collection name
+        # No logic needed - just use the value directly
+        # Example: QDRANT_COLLECTION_ENV=product-images-pro → uses "product-images-pro"
+        # Example: QDRANT_COLLECTION_ENV=product-images-dev → uses "product-images-dev"
         collection_env = os.getenv("QDRANT_COLLECTION_ENV")
         
         if not collection_env:
             raise ValueError(
-                "QDRANT_COLLECTION_ENV is required. Set it to 'development' or 'production'. "
-                "Example: QDRANT_COLLECTION_ENV=production"
+                "QDRANT_COLLECTION_ENV is required. Set it to your Qdrant collection name. "
+                "Example: QDRANT_COLLECTION_ENV=product-images-pro"
             )
         
-        is_production = collection_env in ["production", "prod"]
-        self.collection_name = "product-images-pro" if is_production else "product-images-dev"
+        # Use the environment variable value directly as collection name
+        self.collection_name = collection_env
         
         print(f"📦 Using Qdrant collection: {self.collection_name}", {
-            "QDRANT_COLLECTION_ENV": collection_env,
-            "isProduction": is_production
+            "QDRANT_COLLECTION_ENV": collection_env
         })
         
         # Initialize PostgreSQL connection pool
@@ -258,7 +334,7 @@ class SearchService:
                                 "rentPrice": float(row["rentPrice"]) if row["rentPrice"] else None,
                                 "salePrice": float(row["salePrice"]) if row["salePrice"] else None,
                                 "deposit": float(row["deposit"]) if row["deposit"] else None,
-                                "images": row["images"] if row["images"] else [],
+                                "images": self.parse_product_images(row["images"]) if row["images"] else [],
                                 "totalStock": row["totalStock"],
                                 "isActive": row["isActive"],
                                 "createdAt": row["createdAt"].isoformat() if row["createdAt"] else None,
