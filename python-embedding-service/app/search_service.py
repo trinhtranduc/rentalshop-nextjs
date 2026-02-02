@@ -30,17 +30,21 @@ class SearchService:
             api_key=qdrant_api_key if qdrant_api_key else None
         )
         
-        # Determine collection name (use QDRANT_COLLECTION_ENV if set, fallback to NODE_ENV/APP_ENV)
-        # This avoids Next.js automatically setting NODE_ENV=production issue
-        collection_env = os.getenv("QDRANT_COLLECTION_ENV") or os.getenv("APP_ENV") or os.getenv("NODE_ENV", "development")
+        # Determine collection name based ONLY on QDRANT_COLLECTION_ENV
+        # Must be set explicitly: 'development' or 'production'
+        collection_env = os.getenv("QDRANT_COLLECTION_ENV")
+        
+        if not collection_env:
+            raise ValueError(
+                "QDRANT_COLLECTION_ENV is required. Set it to 'development' or 'production'. "
+                "Example: QDRANT_COLLECTION_ENV=production"
+            )
+        
         is_production = collection_env in ["production", "prod"]
         self.collection_name = "product-images-pro" if is_production else "product-images-dev"
         
         print(f"📦 Using Qdrant collection: {self.collection_name}", {
-            "QDRANT_COLLECTION_ENV": os.getenv("QDRANT_COLLECTION_ENV") or "not set",
-            "APP_ENV": os.getenv("APP_ENV") or "not set",
-            "NODE_ENV": os.getenv("NODE_ENV") or "not set",
-            "usedEnv": collection_env,
+            "QDRANT_COLLECTION_ENV": collection_env,
             "isProduction": is_production
         })
         
