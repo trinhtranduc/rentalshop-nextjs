@@ -105,10 +105,9 @@ class SearchService:
             api_key=qdrant_api_key if qdrant_api_key else None
         )
         
-        # ✅ Use QDRANT_COLLECTION_ENV directly as collection name
-        # No logic needed - just use the value directly
-        # Example: QDRANT_COLLECTION_ENV=product-images-pro → uses "product-images-pro"
-        # Example: QDRANT_COLLECTION_ENV=product-images-dev → uses "product-images-dev"
+        # ✅ Use QDRANT_COLLECTION_ENV as collection name
+        # Normalize: convert underscores to dashes for consistency
+        # This handles both formats: "product_images_pro" → "product-images-pro"
         collection_env = os.getenv("QDRANT_COLLECTION_ENV")
         
         if not collection_env:
@@ -117,8 +116,10 @@ class SearchService:
                 "Example: QDRANT_COLLECTION_ENV=product-images-pro"
             )
         
-        # Use the environment variable value directly as collection name
-        self.collection_name = collection_env
+        # Normalize collection name: convert underscores to dashes
+        # This ensures compatibility with both "product_images_pro" and "product-images-pro"
+        # Qdrant collections use dashes: "product-images-pro", "product-images-dev"
+        self.collection_name = collection_env.replace("_", "-")
         
         print(f"📦 Using Qdrant collection: {self.collection_name}", {
             "QDRANT_COLLECTION_ENV": collection_env
@@ -268,60 +269,98 @@ class SearchService:
         if self.db_pool:
             try:
                 async with self.db_pool.acquire() as conn:
-                    # Build query with IN clause
-                    placeholders = ','.join([f'${i+1}' for i in range(len(product_ids))])
                     # OPTIMIZED: Query using id (primary key) for products
                     # Note: product_ids are Int IDs from Qdrant payload
+                    # ✅ SECURITY: Add merchantId filter to ensure data isolation
+                    # This double-checks that products belong to the correct merchant
+                    # (Qdrant filter may have issues, database is source of truth)
                     # OPTIMIZATION: Only select needed fields, use efficient array_position for ordering
-                    query = """
-                        SELECT 
-                            p.id,
-                            p.name,
-                            p.description,
-                            p.barcode,
-                            p."rentPrice",
-                            p."salePrice",
-                            p.deposit,
-                            p.images,
-                            p."totalStock",
-                            p."isActive",
-                            p."createdAt",
-                            p."updatedAt",
-                            c.id as "categoryId",
-                            c.name as "categoryName",
-                            m.id as "merchantId",
-                            m.name as "merchantName"
-                        FROM "Product" p
-                        LEFT JOIN "Category" c ON p."categoryId" = c.id
-                        LEFT JOIN "Merchant" m ON p."merchantId" = m.id
-                        WHERE p.id = ANY($1::int[])
-                        ORDER BY array_position($1::int[], p.id)
-                        LIMIT $2
-                    """
                     
-                    # OPTIMIZATION: Add limit to prevent fetching too many rows
-                    fetch_limit = len(product_ids) + 5  # Small buffer for safety
-                    
-                    rows = await conn.fetch(query, product_ids, fetch_limit)
+                    # Build query with merchantId filter if provided (for security)
+                    if filters.get("merchantId"):
+                        # Query with merchantId filter (parameterized for security)
+                        query = """
+                            SELECT 
+                                p.id,
+                                p.name,
+                                p.description,
+                                p.barcode,
+                                p."rentPrice",
+                                p."salePrice",
+                                p.deposit,
+                                p.images,
+                                p."totalStock",
+                                p."isActive",
+                                p."createdAt",
+                                p."updatedAt",
+                                c.id as "categoryId",
+                                c.name as "categoryName",
+                                m.id as "merchantId",
+                                m.name as "merchantName"
+                            FROM "Product" p
+                            LEFT JOIN "Category" c ON p."categoryId" = c.id
+                            LEFT JOIN "Merchant" m ON p."merchantId" = m.id
+                            WHERE p.id = ANY($1::int[]) AND p."merchantId" = $2
+                            ORDER BY array_position($1::int[], p.id)
+                            LIMIT $3
+                        """
+                        fetch_limit = len(product_ids) + 5  # Small buffer for safety
+                        rows = await conn.fetch(query, product_ids, filters["merchantId"], fetch_limit)
+                    else:
+                        # Query without merchantId filter (for admin users)
+                        query = """
+                            SELECT 
+                                p.id,
+                                p.name,
+                                p.description,
+                                p.barcode,
+                                p."rentPrice",
+                                p."salePrice",
+                                p.deposit,
+                                p.images,
+                                p."totalStock",
+                                p."isActive",
+                                p."createdAt",
+                                p."updatedAt",
+                                c.id as "categoryId",
+                                c.name as "categoryName",
+                                m.id as "merchantId",
+                                m.name as "merchantName"
+                            FROM "Product" p
+                            LEFT JOIN "Category" c ON p."categoryId" = c.id
+                            LEFT JOIN "Merchant" m ON p."merchantId" = m.id
+                            WHERE p.id = ANY($1::int[])
+                            ORDER BY array_position($1::int[], p.id)
+                            LIMIT $2
+                        """
+                        fetch_limit = len(product_ids) + 5  # Small buffer for safety
+                        rows = await conn.fetch(query, product_ids, fetch_limit)
                     
                     print(f"📊 Fetched {len(rows)} rows from database for {len(product_ids)} product IDs")
                     
                     if len(rows) == 0:
                         print(f"⚠️ No products found in database for IDs: {product_ids}")
-                        # Return product IDs with similarity and metadata from Qdrant if no rows found
-                        products = [
-                            {
-                                "id": pid,
-                                "similarity": similarity_map.get(pid, 0.0),
-                                "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
-                                "merchantId": metadata_map.get(pid, {}).get("merchantId"),
-                                "outletId": metadata_map.get(pid, {}).get("outletId"),
-                                "categoryId": metadata_map.get(pid, {}).get("categoryId"),
-                                "name": metadata_map.get(pid, {}).get("productName"),
-                                "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
-                            }
-                            for pid in product_ids
-                        ]
+                        # ✅ SECURITY: Filter by merchantId even in fallback (from Qdrant metadata)
+                        # Only return products that match the requested merchantId
+                        products = []
+                        for pid in product_ids:
+                            metadata = metadata_map.get(pid, {})
+                            qdrant_merchant_id = metadata.get("merchantId")
+                            
+                            # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
+                            if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                                products.append({
+                                    "id": pid,
+                                    "similarity": similarity_map.get(pid, 0.0),
+                                    "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
+                                    "merchantId": qdrant_merchant_id,
+                                    "outletId": metadata.get("outletId"),
+                                    "categoryId": metadata.get("categoryId"),
+                                    "name": metadata.get("productName"),
+                                    "imageUrl": metadata.get("imageUrl")
+                                })
+                            else:
+                                print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
                     else:
                         for row in rows:
                             # Get metadata from Qdrant if available (fallback to database)
@@ -359,38 +398,63 @@ class SearchService:
                 print(f"❌ Error fetching products: {e}")
                 import traceback
                 traceback.print_exc()
-                # Return product IDs with similarity and metadata from Qdrant if fetch fails
-                products = [
-                    {
+                # ✅ SECURITY: Filter by merchantId even when database fetch fails
+                # Return product IDs with similarity and metadata from Qdrant, but filter by merchantId
+                products = []
+                for pid in product_ids:
+                    metadata = metadata_map.get(pid, {})
+                    qdrant_merchant_id = metadata.get("merchantId")
+                    
+                    # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
+                    if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                        products.append({
+                            "id": pid,
+                            "similarity": similarity_map.get(pid, 0.0),
+                            "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
+                            "merchantId": qdrant_merchant_id,
+                            "outletId": metadata.get("outletId"),
+                            "categoryId": metadata.get("categoryId"),
+                            "name": metadata.get("productName"),
+                            "imageUrl": metadata.get("imageUrl")
+                        })
+                    else:
+                        print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
+        else:
+            # ✅ SECURITY: Filter by merchantId even when no database connection
+            # No database connection, return IDs with metadata from Qdrant, but filter by merchantId
+            products = []
+            for pid in product_ids:
+                metadata = metadata_map.get(pid, {})
+                qdrant_merchant_id = metadata.get("merchantId")
+                
+                # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
+                if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                    products.append({
                         "id": pid,
                         "similarity": similarity_map.get(pid, 0.0),
                         "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
-                        "merchantId": metadata_map.get(pid, {}).get("merchantId"),
-                        "outletId": metadata_map.get(pid, {}).get("outletId"),
-                        "categoryId": metadata_map.get(pid, {}).get("categoryId"),
-                        "name": metadata_map.get(pid, {}).get("productName"),
-                        "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
-                    }
-                    for pid in product_ids
-                ]
-        else:
-            # No database connection, return IDs with metadata from Qdrant
-            products = [
-                {
-                    "id": pid,
-                    "similarity": similarity_map.get(pid, 0.0),
-                    "similarityPercent": int(similarity_map.get(pid, 0.0) * 100),
-                    "merchantId": metadata_map.get(pid, {}).get("merchantId"),
-                    "outletId": metadata_map.get(pid, {}).get("outletId"),
-                    "categoryId": metadata_map.get(pid, {}).get("categoryId"),
-                    "name": metadata_map.get(pid, {}).get("productName"),
-                    "imageUrl": metadata_map.get(pid, {}).get("imageUrl")
-                }
-                for pid in product_ids
-            ]
+                        "merchantId": qdrant_merchant_id,
+                        "outletId": metadata.get("outletId"),
+                        "categoryId": metadata.get("categoryId"),
+                        "name": metadata.get("productName"),
+                        "imageUrl": metadata.get("imageUrl")
+                    })
+                else:
+                    print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
         
         fetch_duration = int((time.time() - fetch_start) * 1000)
         print(f"✅ Fetched {len(products)} products in {fetch_duration}ms")
+        
+        # ✅ SECURITY: Final filter by merchantId to ensure 100% data isolation
+        # This is a safety net in case any products slipped through previous filters
+        if filters.get("merchantId"):
+            original_count = len(products)
+            products = [
+                p for p in products
+                if str(p.get("merchantId")) == str(filters["merchantId"])
+            ]
+            if len(products) < original_count:
+                print(f"⚠️ Final filter: Removed {original_count - len(products)} products with wrong merchantId")
         
         # Sort by similarity (highest first)
         products.sort(key=lambda p: p.get("similarity", 0), reverse=True)
