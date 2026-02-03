@@ -7,7 +7,7 @@ from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
 import io
 import numpy as np
-from typing import List
+from typing import List, Optional
 import boto3
 from botocore.exceptions import ClientError
 import os
@@ -136,7 +136,9 @@ class EmbeddingModel:
         self, 
         s3_keys: List[str], 
         bucket_name: str,
-        region: str = 'ap-southeast-1'
+        region: str = 'ap-southeast-1',
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None
     ) -> List[List[float]]:
         """
         Generate embeddings from S3 keys (DIRECT S3 ACCESS - MUCH FASTER)
@@ -150,6 +152,8 @@ class EmbeddingModel:
             s3_keys: List of S3 keys (e.g., ['products/merchant-1/image.jpg'])
             bucket_name: S3 bucket name (e.g., 'anyrent-images-dev')
             region: AWS region (default: 'ap-southeast-1')
+            aws_access_key_id: AWS access key (optional, falls back to env var)
+            aws_secret_access_key: AWS secret key (optional, falls back to env var)
         
         Returns:
             List of normalized embedding vectors (512 dimensions each)
@@ -162,20 +166,27 @@ class EmbeddingModel:
         
         try:
             # Initialize S3 client
-            # AWS credentials are read from environment variables (already set in Railway/env files)
-            aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-            aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-            
+            # AWS credentials MUST be provided via form data (NO FALLBACK to env vars)
+            # This ensures explicit credential passing for security and control
             if not aws_access_key_id or not aws_secret_access_key:
                 raise RuntimeError(
-                    "AWS credentials not found. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables."
+                    "AWS credentials are required. Please provide aws_access_key_id and aws_secret_access_key in the request form data."
+                )
+            
+            # Clean and validate credentials
+            final_access_key = aws_access_key_id.strip() if isinstance(aws_access_key_id, str) else None
+            final_secret_key = aws_secret_access_key.strip() if isinstance(aws_secret_access_key, str) else None
+            
+            if not final_access_key or not final_secret_key:
+                raise RuntimeError(
+                    "AWS credentials cannot be empty. Please provide valid aws_access_key_id and aws_secret_access_key in the request form data."
                 )
             
             s3_client = boto3.client(
                 's3',
                 region_name=region,
-                aws_access_key_id=aws_access_key_id,
-                aws_secret_access_key=aws_secret_access_key
+                aws_access_key_id=final_access_key,
+                aws_secret_access_key=final_secret_key
             )
             
             # Download all images from S3 in parallel
@@ -225,4 +236,5 @@ class EmbeddingModel:
         
         except Exception as e:
             print(f"❌ Error generating embeddings from S3 keys: {e}")
+            raise
             raise

@@ -283,7 +283,9 @@ async def search_products(
 async def generate_embeddings_from_s3(
     s3_keys: str = Form(...),  # JSON array as string
     bucket_name: str = Form(...),
-    region: str = Form("ap-southeast-1")
+    region: str = Form("ap-southeast-1"),
+    aws_access_key_id: str = Form(...),  # REQUIRED - no fallback
+    aws_secret_access_key: str = Form(...)  # REQUIRED - no fallback
 ):
     """
     Generate embeddings from S3 keys (DIRECT S3 ACCESS - FASTEST METHOD)
@@ -297,6 +299,8 @@ async def generate_embeddings_from_s3(
         s3_keys: JSON array string of S3 keys (e.g., '["products/merchant-1/image.jpg"]')
         bucket_name: S3 bucket name (e.g., 'anyrent-images-dev')
         region: AWS region (default: 'ap-southeast-1')
+        aws_access_key_id: AWS access key (REQUIRED - must be provided in form data)
+        aws_secret_access_key: AWS secret key (REQUIRED - must be provided in form data)
     
     Returns:
         {
@@ -331,7 +335,9 @@ async def generate_embeddings_from_s3(
         embeddings = await model.generate_embeddings_from_s3_keys(
             s3_keys=s3_keys_list,
             bucket_name=bucket_name,
-            region=region
+            region=region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
         )
         
         return JSONResponse({
