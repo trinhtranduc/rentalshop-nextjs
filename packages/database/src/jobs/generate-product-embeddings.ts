@@ -8,28 +8,7 @@ import { getVectorStore } from '../ml/vector-store';
 import { db } from '../index';
 import { prisma } from '../client';
 import { randomUUID } from 'crypto';
-
-/**
- * Parse product images from various formats
- */
-function parseProductImages(images: any): string[] {
-  if (Array.isArray(images)) {
-    return images.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
-  }
-  if (typeof images === 'string') {
-    // Try JSON parse first
-    try {
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) {
-        return parsed.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
-      }
-    } catch {
-      // Not JSON, try comma-separated
-      return images.split(',').map((img: string) => img.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
+import { parseProductImages } from '@rentalshop/utils';
 
 /**
  * Generate và store embeddings cho TẤT CẢ images của một product
@@ -53,12 +32,16 @@ export async function generateProductEmbedding(productId: number): Promise<void>
       return;
     }
 
+    // Get merchantId - ensure we get the correct publicId (number)
+    const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
+    const categoryId = (product as any).categoryId ?? (product as any).category?.id;
+    
     console.log(`🔄 Generating embeddings for product ${productId} (${images.length} image(s))...`);
     console.log(`   Product details:`, {
       id: product.id,
       name: product.name,
-      merchantId: product.merchantId,
-      categoryId: product.categoryId,
+      merchantId: merchantId,
+      categoryId: categoryId,
       imagesCount: images.length
     });
 
@@ -118,14 +101,24 @@ export async function generateProductEmbedding(productId: number): Promise<void>
           const embeddingDuration = Date.now() - embeddingStartTime;
           console.log(`   ✅ Embedding generated for image ${index + 1} (${embeddingDuration}ms, dimension: ${embedding.length})`);
 
+          // Get merchantId - ensure we get the correct publicId (number)
+          // Product from db.products.findById may have merchantId directly or via merchant.id
+          const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
+          if (!merchantId) {
+            throw new Error(`Product ${product.id} missing merchantId`);
+          }
+          
+          // Get categoryId - ensure we get the correct publicId (number)
+          const categoryId = (product as any).categoryId ?? (product as any).category?.id;
+          
           return {
             imageId: randomUUID(), // UUID cho mỗi image
             embedding,
             metadata: {
               productId: String(product.id),
               imageUrl,
-              merchantId: String(product.merchantId),
-              categoryId: product.categoryId ? String(product.categoryId) : undefined,
+              merchantId: String(merchantId), // Store as string of publicId (number)
+              categoryId: categoryId ? String(categoryId) : undefined,
               productName: product.name
             }
           };
@@ -202,9 +195,17 @@ export async function generateAllProductEmbeddings(
     merchantId?: number;
     batchSize?: number;
     skipExisting?: boolean;
+    delayBetweenBatches?: number; // Delay in ms between batches
+    maxRetries?: number; // Max retries per product
   } = {}
 ): Promise<void> {
-  const { merchantId, batchSize = 10, skipExisting = false } = options;
+  const { 
+    merchantId, 
+    batchSize = 5, // Increased to 5 for faster processing
+    skipExisting = false,
+    delayBetweenBatches = 2000, // 2 seconds delay between batches
+    maxRetries = 2 // Retry up to 2 times
+  } = options;
 
   console.log('🚀 Starting batch embedding generation...');
   console.log(`📊 Options:`, { merchantId, batchSize, skipExisting });
@@ -222,11 +223,7 @@ export async function generateAllProductEmbeddings(
 
     // Filter products with images
     const productsWithImages = productList.filter(p => {
-      const images = Array.isArray(p.images)
-        ? p.images
-        : p.images
-        ? JSON.parse(p.images as string)
-        : [];
+      const images = parseProductImages(p.images);
       
       if (images.length === 0) return false;
       
@@ -256,40 +253,94 @@ export async function generateAllProductEmbeddings(
     let processed = 0;
     let errors = 0;
 
+    // Helper function to retry with exponential backoff
+    // For production, use longer delays between retries
+    const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' || 
+                         process.env.QDRANT_COLLECTION_ENV === 'prod' ||
+                         process.env.NODE_ENV === 'production';
+    const baseRetryDelay = isProduction ? 5000 : 1000; // 5s for production, 1s for dev
+    
+    const retryWithBackoff = async <T>(
+      fn: () => Promise<T>,
+      retries: number = maxRetries,
+      delay: number = baseRetryDelay
+    ): Promise<T> => {
+      try {
+        return await fn();
+      } catch (error) {
+        if (retries > 0) {
+          const backoffDelay = delay * (maxRetries - retries + 1) * 2; // Exponential backoff
+          console.log(`   ⚠️ Retry in ${(backoffDelay/1000).toFixed(1)}s... (${retries} retries left)`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          return retryWithBackoff(fn, retries - 1, delay);
+        }
+        throw error;
+      }
+    };
+
     for (let i = 0; i < productsWithImages.length; i += batchSize) {
       const batch = productsWithImages.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
       const totalBatches = Math.ceil(productsWithImages.length / batchSize);
 
-      console.log(`\n📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)...`);
+      // Display batch header with current progress
+      const currentProgress = ((i / productsWithImages.length) * 100).toFixed(1);
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`📦 Batch ${batchNumber}/${totalBatches} (${batch.length} products) | Current Progress: ${currentProgress}%`);
+      console.log(`${'='.repeat(60)}`);
 
-      // Generate embeddings
+      // Process products in parallel within batch for faster processing
+      // Use Promise.all with controlled concurrency to avoid overwhelming the API
       const embeddings = await Promise.all(
         batch.map(async (product) => {
-          try {
-            const images = Array.isArray(product.images)
-              ? product.images
-              : JSON.parse(product.images as string);
-            const imageUrl = images[0];
+        try {
+          const images = parseProductImages(product.images);
+          const imageUrl = images[0];
 
-            const embedding = await embeddingService.generateEmbedding(imageUrl);
-            
-            return {
-              productId: product.id,
-              embedding,
-              metadata: {
-                productId: String(product.id),
-                imageUrl,
-                merchantId: String(product.merchantId),
-                categoryId: product.categoryId ? String(product.categoryId) : undefined,
-                productName: product.name
-              }
-            };
-          } catch (error) {
-            console.error(`❌ Error processing product ${product.id}:`, error);
-            errors++;
-            return null;
+          if (!imageUrl) {
+            console.log(`⚠️ Product ${product.id}: No image URL, skipping`);
+              return null;
+            }
+
+            // Check if we should skip existing embeddings
+            if (skipExisting) {
+              // Note: Skip check is done at batch level for performance
+              // Individual product check would be too slow for large datasets
           }
+
+          // Generate embedding with retry
+          const embedding = await retryWithBackoff(
+            () => embeddingService.generateEmbedding(imageUrl),
+            maxRetries,
+            2000 // 2 second base delay
+          );
+          
+          // Get merchantId - ensure we get the correct publicId (number)
+          // Product from db.products.search may have merchantId directly or via merchant.id
+          const productMerchantId = (product as any).merchantId ?? (product as any).merchant?.id;
+          if (!productMerchantId) {
+            throw new Error(`Product ${product.id} missing merchantId`);
+          }
+          
+          // Get categoryId - ensure we get the correct publicId (number)
+          const categoryId = (product as any).categoryId ?? (product as any).category?.id;
+          
+            return {
+            productId: product.id,
+            embedding,
+            pointId: randomUUID(), // Generate UUID for Qdrant point ID
+            metadata: {
+              productId: String(product.id),
+              imageUrl,
+              merchantId: String(productMerchantId), // Store as string of publicId (number)
+              categoryId: categoryId ? String(categoryId) : undefined,
+              productName: product.name
+            }
+            };
+        } catch (error) {
+          console.error(`❌ Error processing product ${product.id}:`, error);
+            return null;
+        }
         })
       );
 
@@ -297,16 +348,60 @@ export async function generateAllProductEmbeddings(
       const validEmbeddings = embeddings.filter(e => e !== null) as Array<{
         productId: number;
         embedding: number[];
+        pointId: string;
         metadata: any;
       }>;
 
-      // Store in batch
+      // Store in batch with retry
       if (validEmbeddings.length > 0) {
-        await vectorStore.storeEmbeddingsBatch(validEmbeddings);
-        processed += validEmbeddings.length;
+        try {
+          await retryWithBackoff(
+            () => vectorStore.storeEmbeddingsBatch(validEmbeddings),
+            maxRetries,
+            1000
+          );
+          processed += validEmbeddings.length;
+        } catch (error) {
+          console.error(`❌ Error storing batch ${batchNumber}:`, error);
+          errors += validEmbeddings.length;
+        }
       }
 
-      console.log(`✅ Processed ${validEmbeddings.length} products (${processed}/${productsWithImages.length} total)`);
+      // Calculate and display progress
+      const progress = ((processed / productsWithImages.length) * 100).toFixed(2);
+      const remaining = productsWithImages.length - processed;
+      
+      // Progress bar
+      const barWidth = 40;
+      const filled = Math.floor((processed / productsWithImages.length) * barWidth);
+      const empty = barWidth - filled;
+      const bar = '█'.repeat(filled) + '░'.repeat(empty);
+      
+      // Estimated time remaining (assuming ~2.5 seconds per product on average)
+      const avgTimePerProduct = 2.5;
+      const estimatedSecondsRemaining = remaining * avgTimePerProduct;
+      const estimatedMinutes = Math.floor(estimatedSecondsRemaining / 60);
+      const estimatedHours = Math.floor(estimatedMinutes / 60);
+      const estimatedMins = estimatedMinutes % 60;
+      
+      // Display progress
+      console.log(`\n📊 Progress:`);
+      console.log(`   Batch: ${batchNumber}/${totalBatches} | Processed: ${processed}/${productsWithImages.length} | Errors: ${errors}`);
+      console.log(`   [${bar}] ${progress}%`);
+      if (remaining > 0) {
+        if (estimatedHours > 0) {
+          console.log(`   ⏱️  Estimated time remaining: ${estimatedHours}h ${estimatedMins}m`);
+        } else {
+          console.log(`   ⏱️  Estimated time remaining: ${estimatedMins}m`);
+        }
+      }
+      console.log(`   ✅ Stored ${validEmbeddings.length} embeddings in this batch`);
+
+      // Delay between batches to avoid overwhelming the system
+      if (i + batchSize < productsWithImages.length && delayBetweenBatches > 0) {
+        console.log(`   ⏳ Waiting ${(delayBetweenBatches / 1000).toFixed(1)}s before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+      }
     }
 
     console.log('\n✅ Batch embedding generation completed!');

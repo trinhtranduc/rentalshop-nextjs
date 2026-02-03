@@ -11,6 +11,7 @@
  */
 
 import { QdrantClient } from '@qdrant/js-client-rest';
+import { randomUUID } from 'crypto';
 
 export interface ProductEmbeddingMetadata {
   productId: string;
@@ -30,23 +31,36 @@ export class ProductVectorStore {
   private collectionName: string;
 
   constructor() {
-    // Determine collection name based ONLY on QDRANT_COLLECTION_ENV
-    // Must be set explicitly: 'development' or 'production'
+    // Determine collection name based on QDRANT_COLLECTION_ENV
+    // Supports two formats:
+    // 1. Environment names: 'production', 'prod', 'development', 'dev'
+    // 2. Direct collection names: 'product-images-pro', 'product-images-dev'
     const collectionEnv = process.env.QDRANT_COLLECTION_ENV;
     
     if (!collectionEnv) {
       throw new Error(
-        'QDRANT_COLLECTION_ENV is required. Set it to "development" or "production". ' +
+        'QDRANT_COLLECTION_ENV is required. Set it to "development", "production", ' +
+        'or direct collection name like "product-images-pro" or "product-images-dev". ' +
         'Example: QDRANT_COLLECTION_ENV=production'
       );
     }
     
-    const isProduction = collectionEnv === 'production' || collectionEnv === 'prod';
+    // Normalize: convert underscores to dashes for consistency
+    const normalized = collectionEnv.replace(/_/g, '-').toLowerCase();
+    
+    // Check if it's a direct collection name (starts with 'product-images-')
+    if (normalized.startsWith('product-images-')) {
+      this.collectionName = normalized;
+    } else {
+      // Map environment names to collection names
+      const isProduction = normalized === 'production' || normalized === 'prod';
     this.collectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
+    }
     
     console.log(`📦 Using Qdrant collection: ${this.collectionName}`, {
       QDRANT_COLLECTION_ENV: collectionEnv,
-      isProduction: isProduction
+      normalized: normalized,
+      resolvedCollection: this.collectionName
     });
     
     // Sanitize QDRANT_URL and QDRANT_API_KEY to avoid Unicode issues
@@ -344,11 +358,12 @@ export class ProductVectorStore {
     embeddings: Array<{
       productId: string | number;
       embedding: number[];
+      pointId?: string; // Optional UUID for point ID
       metadata: ProductEmbeddingMetadata;
     }>
   ): Promise<void> {
-    const points = embeddings.map(({ productId, embedding, metadata }) => ({
-      id: String(productId),
+    const points = embeddings.map(({ productId, embedding, pointId, metadata }) => ({
+      id: pointId || randomUUID(), // Use provided UUID or generate new one
       vector: embedding,
       payload: {
         productId: String(metadata.productId),
@@ -445,6 +460,27 @@ export class ProductVectorStore {
       throw error;
     }
   }
+
+  /**
+   * Delete entire collection (use with caution!)
+   * ⚠️ WARNING: This will delete ALL embeddings in the collection
+   * 
+   * @returns true if collection was deleted, false if it didn't exist
+   */
+  async deleteCollection(): Promise<boolean> {
+    try {
+      await this.client.deleteCollection(this.collectionName);
+      console.log(`✅ Deleted collection: ${this.collectionName}`);
+      return true;
+    } catch (error: any) {
+      if (error?.status === 404 || error?.message?.includes('not found')) {
+        console.log(`ℹ️  Collection ${this.collectionName} does not exist`);
+        return false;
+      }
+      console.error(`Error deleting collection ${this.collectionName}:`, error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance
@@ -456,18 +492,29 @@ let cachedCollectionName: string | null = null;
  * Recreates instance if QDRANT_COLLECTION_ENV changed (to use correct collection)
  */
 export function getVectorStore(): ProductVectorStore {
-  // Determine expected collection name based ONLY on QDRANT_COLLECTION_ENV
+  // Determine expected collection name based on QDRANT_COLLECTION_ENV
+  // Supports both environment names and direct collection names
   const collectionEnv = process.env.QDRANT_COLLECTION_ENV;
   
   if (!collectionEnv) {
     throw new Error(
-      'QDRANT_COLLECTION_ENV is required. Set it to "development" or "production". ' +
+      'QDRANT_COLLECTION_ENV is required. Set it to "development", "production", ' +
+      'or direct collection name like "product-images-pro" or "product-images-dev". ' +
       'Example: QDRANT_COLLECTION_ENV=production'
     );
   }
   
-  const isProduction = collectionEnv === 'production' || collectionEnv === 'prod';
-  const expectedCollectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
+  // Normalize: convert underscores to dashes for consistency
+  const normalized = collectionEnv.replace(/_/g, '-').toLowerCase();
+  
+  // Determine expected collection name (same logic as constructor)
+  let expectedCollectionName: string;
+  if (normalized.startsWith('product-images-')) {
+    expectedCollectionName = normalized;
+  } else {
+    const isProduction = normalized === 'production' || normalized === 'prod';
+    expectedCollectionName = isProduction ? 'product-images-pro' : 'product-images-dev';
+  }
   
   // Recreate instance if collection name changed (environment changed)
   if (!vectorStore || cachedCollectionName !== expectedCollectionName) {

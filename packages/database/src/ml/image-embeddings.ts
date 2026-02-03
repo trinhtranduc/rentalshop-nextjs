@@ -92,6 +92,14 @@ export class FashionImageEmbedding {
   private async generateEmbeddingViaPythonApi(imageBuffer: Buffer): Promise<number[]> {
     const baseUrl = getPythonEmbeddingApiUrl();
     const imageSizeKB = (imageBuffer.length / 1024).toFixed(1);
+    const imageSizeMB = (imageBuffer.length / 1024 / 1024).toFixed(2);
+    
+    // Skip very large images (>10MB) to avoid timeout
+    const maxImageSize = 10 * 1024 * 1024; // 10MB
+    if (imageBuffer.length > maxImageSize) {
+      throw new Error(`Image too large (${imageSizeMB}MB). Maximum size is 10MB. Skipping to avoid timeout.`);
+    }
+    
     console.log(`🔄 Using Python Embedding API: ${baseUrl} (image: ${imageSizeKB}KB)`);
 
     const formData = new FormData();
@@ -103,9 +111,21 @@ export class FashionImageEmbedding {
     // OPTIMIZATION: Node.js 18+ fetch API automatically uses connection pooling
     // For additional optimization, we can set keepAlive headers
     // Connection pooling is handled automatically by the runtime
-    // Add timeout to prevent hanging (30 seconds max)
+    // Add timeout to prevent hanging
+    // Production may need more time due to larger images, higher load, or network latency
+    // Auto-detect production environment and use longer timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' || 
+                         process.env.QDRANT_COLLECTION_ENV === 'prod' ||
+                         process.env.NODE_ENV === 'production';
+    
+    // Production: 5 minutes (300s) - Python API may be slow under load
+    // Development: 90 seconds
+    const defaultTimeout = isProduction ? 300000 : 90000; // 300s (5min) for production, 90s for dev
+    const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT 
+      ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10) 
+      : defaultTimeout;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
     // Measure network + processing time
     const apiCallStartTime = Date.now();
@@ -161,7 +181,7 @@ export class FashionImageEmbedding {
       console.error(`  ❌ Python API failed after ${failedDuration}ms`);
       
       if (error.name === 'AbortError') {
-        throw new Error('Python Embedding API timeout: Request took longer than 30 seconds');
+        throw new Error(`Python Embedding API timeout: Request took longer than ${timeoutMs/1000} seconds`);
       }
       throw error;
     }
@@ -216,18 +236,220 @@ export class FashionImageEmbedding {
   }
 
   /**
-   * Batch generate embeddings
+   * Batch generate embeddings (OPTIMIZED - uses batch API endpoint)
+   * 
+   * This method uses the /embed/batch endpoint which processes multiple images
+   * in a single request, much faster than individual requests.
+   * 
+   * @param imageUrls - Array of image URLs
+   * @param batchSize - Number of images per batch request (default: 20)
+   * @returns Array of embedding vectors
    */
-  async generateEmbeddingsBatch(imageUrls: string[]): Promise<number[][]> {
+  async generateEmbeddingsBatch(
+    imageUrls: string[], 
+    batchSize: number = 20
+  ): Promise<number[][]> {
     try {
-      // Python embedding service is the default (shouldUsePythonEmbeddingApi() defaults to true)
-      // Python service currently supports single image per request.
-      // Batch = parallel calls (kept simple; can be optimized later).
+      if (!shouldUsePythonEmbeddingApi()) {
+        // Fallback to individual calls if not using Python API
       return await Promise.all(imageUrls.map((url) => this.generateEmbedding(url)));
+      }
+
+      const apiUrl = getPythonEmbeddingApiUrl();
+      const results: number[][] = [];
+
+      // Process in batches to avoid overwhelming the API
+      for (let i = 0; i < imageUrls.length; i += batchSize) {
+        const batch = imageUrls.slice(i, i + batchSize);
+        
+        // Download all images in batch
+        const imageBuffers = await Promise.all(
+          batch.map(async (url) => {
+            try {
+              const response = await fetch(url);
+              if (!response.ok) {
+                throw new Error(`Failed to download image: ${response.statusText}`);
+              }
+              return Buffer.from(await response.arrayBuffer());
+            } catch (error) {
+              console.error(`Error downloading image ${url}:`, error);
+              throw error;
+            }
+          })
+        );
+
+        // Create FormData with all images
+        const formData = new FormData();
+        imageBuffers.forEach((buffer, index) => {
+          const blob = new Blob([buffer], { type: 'image/jpeg' });
+          formData.append('files', blob, `image-${i + index}.jpg`);
+        });
+
+        // Call batch endpoint
+        const controller = new AbortController();
+        const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
+                             process.env.QDRANT_COLLECTION_ENV === 'prod' ||
+                             process.env.NODE_ENV === 'production';
+        
+        const defaultTimeout = isProduction ? 300000 : 90000; // 5min for production, 90s for dev
+        const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT
+          ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10)
+          : defaultTimeout;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          const response = await fetch(`${apiUrl}/embed/batch`, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            // If batch endpoint doesn't exist (404), fallback to individual calls
+            if (response.status === 404) {
+              console.warn(`⚠️  Batch endpoint /embed/batch not found (404). Falling back to individual API calls.`);
+              console.warn(`   💡 Deploy Python service with batch endpoint for 5-10x speed improvement.`);
+              // Fallback to individual calls
+              const individualResults = await Promise.all(
+                batch.map(async (url) => {
+                  try {
+                    return await this.generateEmbedding(url);
+                  } catch (error) {
+                    console.error(`Error generating embedding for ${url}:`, error);
+                    throw error;
+                  }
+                })
+              );
+              results.push(...individualResults);
+              continue; // Skip to next batch
+            }
+            
+            const errorText = await response.text();
+            throw new Error(
+              `Python Embedding API batch failed: ${response.status} ${response.statusText} - ${errorText}`
+            );
+          }
+
+          const data = await response.json();
+          
+          if (!data.success || !data.embeddings) {
+            throw new Error(`Invalid batch response: ${JSON.stringify(data)}`);
+          }
+
+          results.push(...data.embeddings);
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            throw new Error(
+              `Python Embedding API batch timeout: Request took longer than ${timeoutMs/1000} seconds`
+            );
+          }
+          throw error;
+        }
+      }
+
+      return results;
     } catch (error) {
       console.error('Error generating embeddings in batch:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Batch embedding generation failed: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate embeddings from S3 keys (FASTEST METHOD - Direct S3 access)
+   * 
+   * This method sends S3 keys to Python API, which downloads images directly from S3.
+   * Much faster because:
+   * - No need to download images in Node.js
+   * - No need to upload images to Python API
+   * - Python API and S3 are in same AWS network (faster transfer)
+   * 
+   * @param s3Keys - Array of S3 keys (e.g., ['products/merchant-1/image.jpg'])
+   * @param bucketName - S3 bucket name (e.g., 'anyrent-images-dev')
+   * @param region - AWS region (default: 'ap-southeast-1')
+   * @returns Array of embedding vectors
+   */
+  async generateEmbeddingsFromS3Keys(
+    s3Keys: string[],
+    bucketName: string,
+    region: string = 'ap-southeast-1'
+  ): Promise<number[][]> {
+    try {
+      if (!shouldUsePythonEmbeddingApi()) {
+        throw new Error('S3 key method requires Python embedding API');
+      }
+
+      const apiUrl = getPythonEmbeddingApiUrl();
+
+      // Create form data with S3 keys
+      const formData = new FormData();
+      formData.append('bucket_name', bucketName);
+      formData.append('region', region);
+      
+      // Send S3 keys as JSON array
+      formData.append('s3_keys', JSON.stringify(s3Keys));
+
+      // Call S3 batch endpoint
+      const controller = new AbortController();
+      const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
+                           process.env.QDRANT_COLLECTION_ENV === 'prod' ||
+                           process.env.NODE_ENV === 'production';
+      
+      const defaultTimeout = isProduction ? 300000 : 90000; // 5min for production, 90s for dev
+      const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT
+        ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10)
+        : defaultTimeout;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(`${apiUrl}/embed/s3-batch`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          
+          // If S3 endpoint doesn't exist (404), fail with clear error
+          if (response.status === 404) {
+            throw new Error(
+              `S3 batch endpoint /embed/s3-batch not found (404). ` +
+              `Please deploy Python service with S3 batch endpoint support. ` +
+              `Error: ${errorText}`
+            );
+          }
+          
+          throw new Error(
+            `Python Embedding API S3 batch failed: ${response.status} ${response.statusText} - ${errorText}`
+          );
+        }
+
+        const data = await response.json();
+        
+        if (!data.success || !data.embeddings) {
+          throw new Error(`Invalid S3 batch response: ${JSON.stringify(data)}`);
+        }
+
+        return data.embeddings;
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error(
+            `Python Embedding API S3 batch timeout: Request took longer than ${timeoutMs/1000} seconds`
+          );
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error generating embeddings from S3 keys:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`S3 embedding generation failed: ${errorMessage}`);
     }
   }
 }

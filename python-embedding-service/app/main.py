@@ -113,6 +113,75 @@ async def generate_embedding(file: UploadFile = File(...)):
             detail=f"Embedding generation failed: {str(e)}"
         )
 
+@app.post("/embed/batch")
+async def generate_embeddings_batch(files: list[UploadFile] = File(...)):
+    """
+    Generate embeddings from multiple images (BATCH PROCESSING - MUCH FASTER)
+    
+    This endpoint processes multiple images in a single batch, which is:
+    - Much faster than individual requests (GPU parallelization)
+    - More efficient (less network overhead)
+    - Better for bulk operations (1k+ images)
+    
+    Args:
+        files: List of image files (JPEG, PNG, WebP)
+    
+    Returns:
+        {
+            "success": true,
+            "embeddings": [[float, ...], ...],  # List of 512-dim vectors
+            "count": int,
+            "dimension": 512,
+            "normalized": true
+        }
+    """
+    try:
+        if not files or len(files) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No files provided"
+            )
+        
+        # Validate and read all images
+        image_bytes_list = []
+        for file in files:
+            if not file.content_type or not file.content_type.startswith('image/'):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid file type: {file.filename}. Expected image file."
+                )
+            
+            image_bytes = await file.read()
+            if len(image_bytes) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Empty file: {file.filename}"
+                )
+            
+            image_bytes_list.append(image_bytes)
+        
+        # Generate embeddings in batch (much faster!)
+        embeddings = await model.generate_embeddings_batch(image_bytes_list)
+        
+        return JSONResponse({
+            "success": True,
+            "embeddings": embeddings,
+            "count": len(embeddings),
+            "dimension": len(embeddings[0]) if embeddings else 512,
+            "normalized": True
+        })
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error generating batch embeddings: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Batch embedding generation failed: {str(e)}"
+        )
+
 @app.post("/search")
 async def search_products(
     file: UploadFile = File(...),
@@ -210,6 +279,80 @@ async def search_products(
             detail=f"Image search failed: {str(e)}"
         )
 
+@app.post("/embed/s3-batch")
+async def generate_embeddings_from_s3(
+    s3_keys: str = Form(...),  # JSON array as string
+    bucket_name: str = Form(...),
+    region: str = Form("ap-southeast-1")
+):
+    """
+    Generate embeddings from S3 keys (DIRECT S3 ACCESS - FASTEST METHOD)
+    
+    This endpoint downloads images directly from S3, avoiding:
+    - Downloading images in Node.js
+    - Uploading images to Python API
+    - Much faster because Python API and S3 are in same AWS network
+    
+    Args:
+        s3_keys: JSON array string of S3 keys (e.g., '["products/merchant-1/image.jpg"]')
+        bucket_name: S3 bucket name (e.g., 'anyrent-images-dev')
+        region: AWS region (default: 'ap-southeast-1')
+    
+    Returns:
+        {
+            "success": true,
+            "embeddings": [[float, ...], ...],  # List of 512-dim vectors
+            "count": int,
+            "dimension": 512,
+            "normalized": true
+        }
+    """
+    try:
+        import json
+        
+        # Parse JSON array string
+        try:
+            s3_keys_list = json.loads(s3_keys)
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid JSON format for s3_keys: {s3_keys}"
+            )
+        
+        if not isinstance(s3_keys_list, list) or len(s3_keys_list) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="s3_keys must be a non-empty JSON array"
+            )
+        
+        print(f"🔄 Processing {len(s3_keys_list)} images from S3 bucket: {bucket_name}")
+        
+        # Generate embeddings from S3 keys
+        embeddings = await model.generate_embeddings_from_s3_keys(
+            s3_keys=s3_keys_list,
+            bucket_name=bucket_name,
+            region=region
+        )
+        
+        return JSONResponse({
+            "success": True,
+            "embeddings": embeddings,
+            "count": len(embeddings),
+            "dimension": len(embeddings[0]) if embeddings else 512,
+            "normalized": True
+        })
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error generating embeddings from S3: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"S3 embedding generation failed: {str(e)}"
+        )
+
 @app.get("/")
 async def root():
     """Root endpoint"""
@@ -218,7 +361,9 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
-            "embed": "/embed (POST) - Generate embedding only",
+            "embed": "/embed (POST) - Generate embedding for single image",
+            "embed/batch": "/embed/batch (POST) - Generate embeddings for multiple images (FAST BATCH)",
+            "embed/s3-batch": "/embed/s3-batch (POST) - Generate embeddings from S3 keys (FASTEST - Direct S3 access)",
             "search": "/search (POST) - Complete image search (embedding + vector search + product fetch)"
         }
     }
