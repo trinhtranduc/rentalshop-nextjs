@@ -247,6 +247,9 @@ export function formatChartPeriod(date: string | Date, locale: string): string {
  * Format date for full display (day + month + year)
  * Standardized format: Vietnamese dd/mm/yyyy, English MMM dd, yyyy (e.g., "Nov 28, 2020")
  * 
+ * ✅ FIX: Uses UTC date components for date-only fields to avoid timezone shift
+ * This ensures dates like pickupPlanAt and returnPlanAt display correctly
+ * 
  * @param date - Date string or Date object
  * @param locale - Current locale ('en' or 'vi')
  * @returns Formatted date string (e.g., "28/11/2020" for vi, "Nov 28, 2020" for en)
@@ -255,20 +258,23 @@ export function formatFullDateByLocale(date: string | Date, locale: string): str
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(dateObj.getTime())) return date.toString();
   
+  // ✅ FIX: Use UTC date components to avoid timezone shift for date-only fields
+  // This ensures dates stored as UTC (e.g., "2026-02-25T17:00:00.000Z") display correctly
+  // as the intended date (25/02) regardless of user's timezone
   if (locale === 'vi') {
     // Vietnamese format: dd/mm/yyyy (e.g., "28/11/2020")
-    const day = dateObj.getDate().toString().padStart(2, '0');
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString(); // Full 4-digit year
+    const day = dateObj.getUTCDate().toString().padStart(2, '0');
+    const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getUTCFullYear().toString(); // Full 4-digit year
     
     return `${day}/${month}/${year}`;
   }
   
   // English format: MMM dd, yyyy (US standard, e.g., "Nov 28, 2020")
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[dateObj.getMonth()];
-  const day = dateObj.getDate();
-  const year = dateObj.getFullYear();
+  const month = months[dateObj.getUTCMonth()];
+  const day = dateObj.getUTCDate();
+  const year = dateObj.getUTCFullYear();
   
   return `${month} ${day}, ${year}`;
 }
