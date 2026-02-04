@@ -76,7 +76,18 @@ var postCreateSchema = import_zod2.z.object({
   status: import_zod2.z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   categoryIds: import_zod2.z.array(import_zod2.z.number().int().positive()).optional(),
   tagIds: import_zod2.z.array(import_zod2.z.number().int().positive()).optional(),
-  featuredImage: import_zod2.z.string().url().optional().or(import_zod2.z.literal(""))
+  featuredImage: import_zod2.z.string().refine(
+    (val) => {
+      if (!val || val === "") return true;
+      try {
+        new URL(val);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Featured image must be a valid URL or empty string" }
+  ).optional()
 });
 var postUpdateSchema = postCreateSchema.partial().extend({
   status: import_zod2.z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional()

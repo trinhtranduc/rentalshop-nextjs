@@ -120,7 +120,7 @@ declare const postCreateSchema: z.ZodObject<{
     status: z.ZodDefault<z.ZodEnum<["DRAFT", "PUBLISHED"]>>;
     categoryIds: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
     tagIds: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
-    featuredImage: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
+    featuredImage: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 }, "strip", z.ZodTypeAny, {
     status: "DRAFT" | "PUBLISHED";
     title: string;
@@ -156,7 +156,7 @@ declare const postUpdateSchema: z.ZodObject<{
     seoKeywords: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     categoryIds: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>>;
     tagIds: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>>;
-    featuredImage: z.ZodOptional<z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>>;
+    featuredImage: z.ZodOptional<z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>>;
 } & {
     status: z.ZodOptional<z.ZodEnum<["DRAFT", "PUBLISHED", "ARCHIVED"]>>;
 }, "strip", z.ZodTypeAny, {

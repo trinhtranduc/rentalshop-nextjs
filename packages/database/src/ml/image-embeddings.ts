@@ -384,10 +384,30 @@ export class FashionImageEmbedding {
 
       const apiUrl = getPythonEmbeddingApiUrl();
 
-      // Create form data with S3 keys
+      // Get AWS credentials from environment (REQUIRED - NO FALLBACK)
+      const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID?.trim();
+      const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY?.trim();
+      
+      // AWS credentials are REQUIRED - Python API does NOT fallback to env vars
+      if (!awsAccessKeyId || !awsSecretAccessKey) {
+        throw new Error(
+          'AWS credentials are REQUIRED. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables. ' +
+          'Python API does NOT use Railway env vars (no fallback for security).'
+        );
+      }
+
+      // Create form data with S3 keys and AWS credentials (REQUIRED)
       const formData = new FormData();
       formData.append('bucket_name', bucketName);
       formData.append('region', region);
+      formData.append('aws_access_key_id', awsAccessKeyId);
+      formData.append('aws_secret_access_key', awsSecretAccessKey);
+      
+      console.log(`🔑 Sending AWS credentials to Python API (REQUIRED - no fallback):`);
+      console.log(`   Access Key: ${awsAccessKeyId.substring(0, 8)}...`);
+      console.log(`   Secret Key: ${awsSecretAccessKey.substring(0, 8)}...`);
+      console.log(`   Bucket: ${bucketName}, Region: ${region}`);
+      console.log(`   S3 Keys: ${s3Keys.length} keys`);
       
       // Send S3 keys as JSON array
       formData.append('s3_keys', JSON.stringify(s3Keys));

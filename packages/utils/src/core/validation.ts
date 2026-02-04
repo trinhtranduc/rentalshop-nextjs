@@ -899,7 +899,14 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       // Example: plan = 10, addon = 5 => total = 15
       const total = baseLimit + addonLimit;
       
-      // Ensure total is never negative (minimum is 0)
+      // ✅ FIX: If total is 0, treat as unlimited (-1) to prevent blocking
+      // This handles edge cases where plan limit + addon = 0
+      if (total === 0) {
+        console.warn(`⚠️ Total limit is 0 (baseLimit=${baseLimit}, addonLimit=${addonLimit}), treating as unlimited (-1) to prevent blocking`);
+        return -1;
+      }
+      
+      // Ensure total is never negative (minimum is 0, but 0 is already handled above)
       return Math.max(0, total);
     };
     
@@ -1069,6 +1076,23 @@ export async function validatePlanLimits(
     };
   } catch (error) {
     console.error('Error validating plan limits:', error);
+    
+    // ✅ FIX: If it's a Prisma error (database issue), don't treat as plan limit exceeded
+    // This prevents false PLAN_LIMIT_EXCEEDED errors when database is unavailable
+    if (error && typeof error === 'object' && 'name' in error) {
+      const errorName = (error as any).name;
+      if (errorName === 'PrismaClientInitializationError' || 
+          errorName === 'PrismaClientKnownRequestError' ||
+          errorName === 'PrismaClientUnknownRequestError' ||
+          errorName === 'PrismaClientRustPanicError' ||
+          errorName === 'PrismaClientValidationError') {
+        console.error('❌ Prisma database error detected, not a plan limit issue:', errorName);
+        // Re-throw as internal server error to indicate database issue, not plan limit
+        throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
+      }
+    }
+    
+    // For other errors, also throw as internal server error
     throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
@@ -1312,23 +1336,55 @@ export async function checkPlanLimitIfNeeded(
     console.log(`✅ Plan limit check passed for ${entityType} (merchantId: ${merchantId})`);
     return null;
   } catch (error: any) {
-    console.log(`❌ Plan limit exceeded for ${entityType} (merchantId: ${merchantId}):`, error.message);
-    const { ResponseBuilder, getErrorStatusCode } = await import('../api/response-builder');
+    // ✅ FIX: Check if error is actually a plan limit error or a database error
+    // If it's a database error (Prisma), don't return PLAN_LIMIT_EXCEEDED
+    if (error && typeof error === 'object' && 'code' in error) {
+      const errorCode = (error as any).code;
+      
+      // If it's INTERNAL_SERVER_ERROR (from Prisma/database issues), re-throw it
+      // Don't mask database errors as plan limit errors
+      if (errorCode === 'INTERNAL_SERVER_ERROR') {
+        console.error(`❌ Database error during plan limit check (not a plan limit issue):`, {
+          merchantId,
+          entityType,
+          errorMessage: error.message,
+          errorName: error.name
+        });
+        // Re-throw to let the API route handle it as a 500 error
+        throw error;
+      }
+    }
     
-    // Use error code only - translation system will handle the message
-    // Don't pass detailed message to preserve translation
-    const errorResponse = ResponseBuilder.error('PLAN_LIMIT_EXCEEDED');
-    const statusCode = getErrorStatusCode({ code: 'PLAN_LIMIT_EXCEEDED' }, 422);
+    // Only return PLAN_LIMIT_EXCEEDED if it's actually a plan limit error
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'PLAN_LIMIT_EXCEEDED') {
+      console.log(`❌ Plan limit exceeded for ${entityType} (merchantId: ${merchantId}):`, error.message);
+      const { ResponseBuilder, getErrorStatusCode } = await import('../api/response-builder');
+      
+      // Use error code only - translation system will handle the message
+      // Don't pass detailed message to preserve translation
+      const errorResponse = ResponseBuilder.error('PLAN_LIMIT_EXCEEDED');
+      const statusCode = getErrorStatusCode({ code: 'PLAN_LIMIT_EXCEEDED' }, 422);
+      
+      // ✅ Log response format for debugging translation
+      console.log('🔍 Plan limit error response:', {
+        code: errorResponse.code,
+        message: errorResponse.message,
+        error: errorResponse.error,
+        statusCode,
+        note: 'Frontend should use code field for translation'
+      });
+      
+      return NextResponse.json(errorResponse, { status: statusCode });
+    }
     
-    // ✅ Log response format for debugging translation
-    console.log('🔍 Plan limit error response:', {
-      code: errorResponse.code,
-      message: errorResponse.message,
-      error: errorResponse.error,
-      statusCode,
-      note: 'Frontend should use code field for translation'
+    // For any other error, re-throw it (don't mask as plan limit error)
+    console.error(`❌ Unexpected error during plan limit check:`, {
+      merchantId,
+      entityType,
+      error: error,
+      errorMessage: error?.message,
+      errorName: error?.name
     });
-    
-    return NextResponse.json(errorResponse, { status: statusCode });
+    throw error;
   }
 }

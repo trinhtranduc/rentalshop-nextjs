@@ -596,26 +596,25 @@ export async function PUT(
           const { generateProductEmbedding } = await import('@rentalshop/database/server');
           const { getVectorStore } = await import('@rentalshop/database/server');
           
-          // Delete old embeddings first (run in background)
-          const vectorStore = getVectorStore();
-          vectorStore.deleteProductEmbeddings(productId)
-            .then(() => {
+          // Delete old embeddings first, then generate new ones (sequential to avoid race condition)
+          // Run in background, don't block API response
+          (async () => {
+            try {
+              const vectorStore = getVectorStore();
+              
+              // Step 1: Delete old embeddings first
+              await vectorStore.deleteProductEmbeddings(productId);
               console.log(`✅ Deleted old embeddings for product ${productId}`);
-            })
-            .catch((error: any) => {
-              console.error(`❌ Error deleting old embeddings for product ${productId}:`, error);
-              console.error('Stack:', error.stack);
-            });
-          
-          // Generate new embeddings (run in background, don't block response)
-          generateProductEmbedding(productId)
-            .then(() => {
+              
+              // Step 2: Generate new embeddings after delete completes
+              await generateProductEmbedding(productId);
               console.log(`✅ Embedding regeneration completed for product ${productId}`);
-            })
-            .catch((error: any) => {
-              console.error(`❌ Error generating embedding for product ${productId}:`, error);
+            } catch (error: any) {
+              console.error(`❌ Error in embedding regeneration for product ${productId}:`, error);
               console.error('Stack:', error.stack);
-            });
+              // Don't fail the request if embedding generation fails
+            }
+          })();
         } catch (error: any) {
           console.error('❌ Error starting embedding regeneration:', error);
           console.error('Stack:', error.stack);

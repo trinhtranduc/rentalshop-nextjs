@@ -278,8 +278,8 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         // Also normalize IDs to integers (Python service may return strings from Qdrant metadata)
         const products = rawProducts.map((product: any) => {
           const normalized: any = {
-            ...product,
-            images: parseProductImages(product.images)
+          ...product,
+          images: parseProductImages(product.images)
           };
           
           // Convert string IDs to integers (Python service returns strings from Qdrant metadata)

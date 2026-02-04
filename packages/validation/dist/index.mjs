@@ -37,7 +37,18 @@ var postCreateSchema = z2.object({
   status: z2.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   categoryIds: z2.array(z2.number().int().positive()).optional(),
   tagIds: z2.array(z2.number().int().positive()).optional(),
-  featuredImage: z2.string().url().optional().or(z2.literal(""))
+  featuredImage: z2.string().refine(
+    (val) => {
+      if (!val || val === "") return true;
+      try {
+        new URL(val);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Featured image must be a valid URL or empty string" }
+  ).optional()
 });
 var postUpdateSchema = postCreateSchema.partial().extend({
   status: z2.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional()
