@@ -236,11 +236,21 @@ export default function CalendarPage() {
     
     try {
       setLoadingDailyOrders(true);
-      setSelectedDate(date);
+      
+      // ✅ FIX: Normalize date to midnight local time to ensure consistency
+      // This ensures the date object represents exactly the local date without time component
+      const normalizedDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        0, 0, 0, 0 // Midnight local time
+      );
+      
+      setSelectedDate(normalizedDate);
       setShowDailyModal(true);
       setCurrentPage(page);
       
-      // Format date as YYYY-MM-DD
+      // Format date as YYYY-MM-DD (using normalized date)
       const formatDateForAPI = (date: Date): string => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -248,7 +258,18 @@ export default function CalendarPage() {
         return `${year}-${month}-${day}`;
       };
       
-      const dateStr = formatDateForAPI(date);
+      const dateStr = formatDateForAPI(normalizedDate);
+      
+      console.log('📅 Date click details:', {
+        originalDate: date.toISOString(),
+        normalizedDate: normalizedDate.toISOString(),
+        dateStr,
+        localDateComponents: {
+          year: normalizedDate.getFullYear(),
+          month: normalizedDate.getMonth() + 1,
+          day: normalizedDate.getDate()
+        }
+      });
       
       // 🎯 Fetch orders by date and status using new API with pagination
       const result = await calendarApi.getOrdersByDate(dateStr, {
@@ -356,6 +377,15 @@ export default function CalendarPage() {
               <div>
                 <h3 className="text-xl font-semibold text-gray-900">
                   {(() => {
+                    // ✅ FIX: Normalize selectedDate to ensure consistent formatting
+                    // This ensures the date displayed matches the date used for API filtering
+                    const normalizedSelectedDate = new Date(
+                      selectedDate.getFullYear(),
+                      selectedDate.getMonth(),
+                      selectedDate.getDate(),
+                      0, 0, 0, 0 // Midnight local time
+                    );
+                    
                     // Get translation value
                     let ordersForText = tcal('modal.ordersFor');
                     
@@ -369,7 +399,8 @@ export default function CalendarPage() {
                     };
                     const intlLocale = intlLocaleMap[locale] || 'vi-VN';
                     
-                    const dateText = selectedDate.toLocaleDateString(intlLocale, { 
+                    // Format using normalized date to ensure consistency
+                    const dateText = normalizedSelectedDate.toLocaleDateString(intlLocale, { 
                       weekday: 'long', 
                       year: 'numeric', 
                       month: 'long', 

@@ -95,8 +95,17 @@ export function CalendarGrid({
       const returnOrders: any[] = []; // No return orders displayed in calendar
       const hasEvents = pickupCount > 0;
       
+      // ✅ FIX: Normalize date to midnight local time to avoid timezone issues
+      // This ensures the date object represents exactly the local date without time component
+      const normalizedDate = new Date(
+        tempDate.getFullYear(),
+        tempDate.getMonth(),
+        tempDate.getDate(),
+        0, 0, 0, 0 // Midnight local time
+      );
+      
       days.push({
-        date: new Date(tempDate),
+        date: normalizedDate,
         events: [], // Required by CalendarDay interface
         isCurrentMonth,
         isToday,
