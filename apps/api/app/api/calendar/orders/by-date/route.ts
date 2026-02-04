@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -190,11 +190,14 @@ export const GET = withReadOnlyAuth(async (
         orderType: order.orderType || undefined,
         totalAmount: order.totalAmount,
         outletName: order.outlet?.name,
-        // ✅ FIX: Normalize dates to midnight UTC for consistent display
-        pickupPlanAt: order.pickupPlanAt ? normalizeDateToMidnightUTC(order.pickupPlanAt)?.toISOString() : undefined,
-        returnPlanAt: order.returnPlanAt ? normalizeDateToMidnightUTC(order.returnPlanAt)?.toISOString() : undefined,
-        pickedUpAt: order.pickedUpAt ? normalizeDateToMidnightUTC(order.pickedUpAt)?.toISOString() : undefined,
-        createdAt: order.createdAt ? normalizeDateToMidnightUTC(order.createdAt)?.toISOString() : undefined, // Order creation date (book date)
+        // ✅ FIX: Return dates as-is to match get order API format
+        // Don't normalize to midnight UTC as it loses local date information
+        // Dates are stored as "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25)
+        // Frontend will handle display formatting using formatFullDateByLocale
+        pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
+        returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+        pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt).toISOString() : undefined,
+        createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
         // Product summary for calendar display
         productName: firstProduct?.name || 'Multiple Products',
         productCount: totalProductCount,

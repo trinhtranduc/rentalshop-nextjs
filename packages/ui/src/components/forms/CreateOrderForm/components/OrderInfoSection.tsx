@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { 
   User, 
   Search, 
@@ -625,7 +626,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           {/* Rental Duration - Show for RENT orders with dates */}
           {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
             <div className="pb-2 mb-2 border-b border-border">
-              <div className="flex justify-between text-sm mb-1">
+              <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">{t('summary.rentalDuration')}:</span>
                 <span className="font-medium">
                   {(() => {
@@ -635,10 +636,6 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                     return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
                   })()}
                 </span>
-              </div>
-              <div className="flex justify-between text-xs text-text-tertiary">
-                <span>{t('summary.from')}: {new Date(formData.pickupPlanAt).toLocaleDateString('en-GB')}</span>
-                <span>{t('summary.to')}: {new Date(formData.returnPlanAt).toLocaleDateString('en-GB')}</span>
               </div>
             </div>
           )}
