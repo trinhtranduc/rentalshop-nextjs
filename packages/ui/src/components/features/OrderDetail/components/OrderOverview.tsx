@@ -9,7 +9,7 @@ import {
   ShoppingCart 
 } from 'lucide-react';
 import { VALIDATION } from '@rentalshop/constants';
-import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly, useFormattedDateTime } from '@rentalshop/utils/client';
 
 interface OrderOverviewProps {
   order: OrderDetailData;
@@ -75,7 +75,11 @@ const OutletInfo: React.FC<{ outlet: OrderDetailData['outlet'] }> = ({ outlet })
 
 const ImportantDates: React.FC<{ order: OrderDetailData }> = ({ order }) => {
   // Use centralized date formatting hooks (DRY principle)
-  const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  // For timestamp fields (pickedUpAt, returnedAt), use useFormattedFullDate (may have time component)
+  const formatDateOnly = useFormattedDateOnly; // For pickup/return plan dates (date only, no timezone conversion)
+  const formatDate = useFormattedFullDate; // For pickedUpAt/returnedAt (may have time component)
   const formatDateTime = useFormattedDateTime; // For createdAt/updatedAt (with time)
   
   return (
@@ -93,13 +97,13 @@ const ImportantDates: React.FC<{ order: OrderDetailData }> = ({ order }) => {
         {order.pickupPlanAt && (
           <div className="flex justify-between">
             <span>Pickup:</span>
-            <span>{formatDate(order.pickupPlanAt)}</span>
+            <span>{formatDateOnly(order.pickupPlanAt)}</span>
           </div>
         )}
         {order.returnPlanAt && (
           <div className="flex justify-between">
             <span>Return:</span>
-            <span>{formatDate(order.returnPlanAt)}</span>
+            <span>{formatDateOnly(order.returnPlanAt)}</span>
           </div>
         )}
         {order.pickedUpAt && (

@@ -13,7 +13,7 @@ import {
 import type { Order, OrderItemWithProduct } from '@rentalshop/types';
 import type { OutletReference, MerchantReference } from '@rentalshop/types';
 import { formatCurrency } from '@rentalshop/utils';
-import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface ReceiptPreviewModalProps {
@@ -278,7 +278,10 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const address = outlet?.address || '';
 
   // Use centralized date formatting hooks (DRY principle)
-  const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  const formatDateOnly = useFormattedDateOnly; // For pickup/return plan dates (date only, no timezone conversion)
+  const formatDate = useFormattedFullDate; // For other dates (may have time component)
   const formatDateTime = useFormattedDateTime; // For createdAt (with time)
 
   // Calculate totals
@@ -331,16 +334,16 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
           {/* Rent Date and Return Date */}
           {order.pickupPlanAt && order.returnPlanAt && (
             <div className="flex justify-between">
-              <span>{t('receipt.rentDate')}: {formatDate(order.pickupPlanAt)}</span>
-              <span>{t('receipt.returnDate')}: {formatDate(order.returnPlanAt)}</span>
+              <span>{t('receipt.rentDate')}: {formatDateOnly(order.pickupPlanAt)}</span>
+              <span>{t('receipt.returnDate')}: {formatDateOnly(order.returnPlanAt)}</span>
             </div>
           )}
           {/* Fallback: show individually if only one date exists */}
           {order.pickupPlanAt && !order.returnPlanAt && (
-            <div>{t('receipt.rentDate')}: {formatDate(order.pickupPlanAt)}</div>
+            <div>{t('receipt.rentDate')}: {formatDateOnly(order.pickupPlanAt)}</div>
           )}
           {!order.pickupPlanAt && order.returnPlanAt && (
-            <div>{t('receipt.returnDate')}: {formatDate(order.returnPlanAt)}</div>
+            <div>{t('receipt.returnDate')}: {formatDateOnly(order.returnPlanAt)}</div>
           )}
         </div>
       )}

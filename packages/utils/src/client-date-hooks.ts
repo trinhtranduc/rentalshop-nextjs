@@ -9,6 +9,7 @@ import {
   formatDateByLocale,
   formatChartPeriod,
   formatFullDateByLocale,
+  formatDateOnlyByLocale,
   formatDateTimeByLocale,
   formatMonthOnlyByLocale,
   formatDailyByLocale,
@@ -44,12 +45,29 @@ export function useFormattedChartPeriod(date: string | Date): string {
 /**
  * Hook to get formatted full date using current locale
  * 
+ * ⚠️ NOTE: This hook uses LOCAL date components which will convert UTC to local timezone.
+ * For date-only fields (pickupPlanAt, returnPlanAt), use useFormattedDateOnly() instead.
+ * 
  * @param date - Date string or Date object
  * @returns Formatted date string (dd/mm/yy for Vietnamese, standard for English)
  */
 export function useFormattedFullDate(date: string | Date): string {
   const locale = useNextIntlLocale() as 'en' | 'vi';
   return formatFullDateByLocale(date, locale);
+}
+
+/**
+ * Hook to get formatted date-only fields (pickupPlanAt, returnPlanAt) without timezone conversion
+ * This hook uses UTC date components to preserve the date as stored in database
+ * 
+ * Use case: For date-only fields that should display the exact UTC date without conversion
+ * 
+ * @param date - Date string or Date object (UTC datetime from database)
+ * @returns Formatted date string using UTC date components (no timezone conversion)
+ */
+export function useFormattedDateOnly(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatDateOnlyByLocale(date, locale);
 }
 
 /**

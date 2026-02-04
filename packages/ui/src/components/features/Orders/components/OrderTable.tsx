@@ -6,7 +6,7 @@ import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
-import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly, useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumberMasked } from '@rentalshop/utils';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2 } from 'lucide-react';
@@ -120,9 +120,14 @@ export const OrderTable = React.memo(function OrderTable({
     );
   };
 
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  const formatDateOnly = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    return useFormattedDateOnly(dateString);
+  };
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
-    // Use the new date utility for consistent formatting (date only for pickup/return dates)
     return useFormattedFullDate(dateString);
   };
   
@@ -341,11 +346,11 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Pickup Date */}
                 <td className="px-6 py-3 whitespace-nowrap">
                   <div className="text-sm text-gray-900 dark:text-white">
-                    {formatDate(order.pickupPlanAt)}
+                    {formatDateOnly(order.pickupPlanAt)}
                   </div>
                   {order.returnPlanAt && (
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {t('dates.returnLabel')}: {formatDate(order.returnPlanAt)}
+                      {t('dates.returnLabel')}: {formatDateOnly(order.returnPlanAt)}
                     </div>
                   )}
                 </td>

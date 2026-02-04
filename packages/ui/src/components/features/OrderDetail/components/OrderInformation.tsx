@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly, useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumberMasked } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
 
@@ -14,6 +14,12 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
   const t = useOrderTranslations();
   
   // Use centralized date formatting hooks (DRY principle)
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  const formatDateOnly = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    return useFormattedDateOnly(dateString);
+  };
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
     return useFormattedFullDate(dateString);
@@ -71,13 +77,13 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">{t('dates.pickupDate')}:</span>
                   <span className="text-sm font-medium">
-                    {formatDate(order.pickupPlanAt)}
+                    {formatDateOnly(order.pickupPlanAt)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">{t('dates.returnDate')}:</span>
                   <span className="text-sm font-medium">
-                    {formatDate(order.returnPlanAt)}
+                    {formatDateOnly(order.returnPlanAt)}
                   </span>
                 </div>
               </>

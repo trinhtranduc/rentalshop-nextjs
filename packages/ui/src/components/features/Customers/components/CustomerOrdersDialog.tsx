@@ -7,7 +7,7 @@ import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
 import { getOrderStatusClassName } from '@rentalshop/constants';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface CustomerOrdersDialogProps {
@@ -138,8 +138,10 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
     }).format(amount);
   };
 
-  // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  const formatDateOnly = useFormattedDateOnly;
+  const formatDate = useFormattedFullDate; // For createdAt (may have time component)
 
   const getDaysOverdue = (returnDate: Date | undefined) => {
     if (!returnDate) return 0;
@@ -261,7 +263,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                             <div className="flex items-center gap-2">
                               <Package className="w-4 h-4 text-text-tertiary" />
                               <span className="text-text-secondary">
-                                Pickup: {formatDate(order.pickupPlanAt)}
+                                Pickup: {formatDateOnly(order.pickupPlanAt)}
                               </span>
                             </div>
                           )}
@@ -270,7 +272,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4 text-text-tertiary" />
                               <span className="text-text-secondary">
-                                Return: {formatDate(order.returnPlanAt)}
+                                Return: {formatDateOnly(order.returnPlanAt)}
                               </span>
                             </div>
                           )}

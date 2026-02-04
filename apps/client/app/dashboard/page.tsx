@@ -36,7 +36,7 @@ import {
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
-import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { ORDER_STATUS_COLORS, getOrderStatusClassName } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
@@ -1261,7 +1261,8 @@ export default function DashboardPage() {
                               {hasRentalDates ? (
                                 <>
                                   <p className="text-sm text-gray-600">
-                                    {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                    {/* ✅ FIX: Use useFormattedDateOnly for date-only fields (no timezone conversion) */}
+                                    {useFormattedDateOnly(order.pickupPlanAt)} - {useFormattedDateOnly(order.returnPlanAt)}
                                   </p>
                                   {order.customerName && (
                                     <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>

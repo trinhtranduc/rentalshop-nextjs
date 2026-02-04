@@ -5,7 +5,7 @@ import { useLocale as useNextIntlLocale } from 'next-intl';
 import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator, Pagination } from '@rentalshop/ui';
 import { X, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAuth, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly } from '@rentalshop/utils/client';
 import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced, formatPhoneNumberMasked, parseProductImages } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import { ORDER_STATUS } from '@rentalshop/constants';
@@ -498,7 +498,8 @@ export default function CalendarPage() {
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
                                     <div className="text-sm text-gray-500">
-                                      {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
+                                      {/* ✅ FIX: Use useFormattedDateOnly for date-only fields (no timezone conversion) */}
+                                      {order.pickupPlanAt ? useFormattedDateOnly(order.pickupPlanAt) : 'N/A'}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">

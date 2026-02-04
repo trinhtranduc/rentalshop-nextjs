@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi } from '@rentalshop/utils';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateOnly } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface ProductOrdersDialogProps {
@@ -81,8 +81,10 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
     }).format(amount);
   };
 
-  // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  // ✅ FIX: Use useFormattedDateOnly for date-only fields (pickupPlanAt, returnPlanAt)
+  // This preserves UTC date without timezone conversion
+  const formatDateOnly = useFormattedDateOnly;
+  const formatDate = useFormattedFullDate; // For createdAt (may have time component)
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -243,7 +245,7 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
                             <div>
                               <p className="text-text-secondary">Pickup Date:</p>
                               <p className="text-text-primary font-medium">
-                                {formatDate(order.pickupPlanAt)}
+                                {formatDateOnly(order.pickupPlanAt)}
                               </p>
                             </div>
                           )}
@@ -251,7 +253,7 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
                             <div>
                               <p className="text-text-secondary">Return Date:</p>
                               <p className="text-text-primary font-medium">
-                                {formatDate(order.returnPlanAt)}
+                                {formatDateOnly(order.returnPlanAt)}
                               </p>
                             </div>
                           )}

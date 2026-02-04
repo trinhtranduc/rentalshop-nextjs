@@ -378,7 +378,7 @@ export default function ProductOrdersPage() {
                             <div>
                               <p className="text-text-secondary">Pickup Date:</p>
                               <p className="text-text-primary font-medium">
-                                {formatDate(order.pickupPlanAt)}
+                                {formatDateOnly(order.pickupPlanAt)}
                               </p>
                             </div>
                           )}
@@ -386,7 +386,7 @@ export default function ProductOrdersPage() {
                             <div>
                               <p className="text-text-secondary">Return Date:</p>
                               <p className="text-text-primary font-medium">
-                                {formatDate(order.returnPlanAt)}
+                                {formatDateOnly(order.returnPlanAt)}
                               </p>
                             </div>
                           )}

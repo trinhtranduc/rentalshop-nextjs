@@ -673,8 +673,10 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 </span>
               </div>
               <div className="flex justify-between text-xs text-text-tertiary">
-                <span>{t('summary.from')}: {new Date(formData.pickupPlanAt).toLocaleDateString('en-GB')}</span>
-                <span>{t('summary.to')}: {new Date(formData.returnPlanAt).toLocaleDateString('en-GB')}</span>
+                {/* ✅ FIX: Display date string directly (no conversion) */}
+                {/* formData.pickupPlanAt and returnPlanAt are already in "YYYY-MM-DD" format */}
+                <span>{t('summary.from')}: {formData.pickupPlanAt}</span>
+                <span>{t('summary.to')}: {formData.returnPlanAt}</span>
               </div>
             </div>
           )}
