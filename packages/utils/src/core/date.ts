@@ -389,14 +389,17 @@ export function formatDateTimeByLocale(date: string | Date, locale: string): str
  * Get local date key from UTC datetime string
  * Converts UTC database datetime to local date (YYYY-MM-DD)
  * 
+ * ✅ FIX: Uses UTC date components to ensure consistency
+ * Since orders are normalized to midnight UTC, we should use UTC components
+ * to get the date key, not server timezone which may differ from user timezone
+ * 
  * @param date - UTC datetime string or Date object from database
- * @returns Local date in YYYY-MM-DD format
+ * @returns Local date in YYYY-MM-DD format (based on UTC date components)
  * 
  * @example
- * // Database stores UTC: "2025-10-28T17:00:00Z"
- * // User in UTC+7 timezone sees it as: "2025-10-29T00:00:00+07:00"
- * // This function returns: "2025-10-29"
- * getLocalDateKey("2025-10-28T17:00:00Z") // "2025-10-29"
+ * // Database stores UTC: "2025-10-28T17:00:00Z" (normalized to "2025-10-28T00:00:00Z")
+ * // This function returns: "2025-10-28" (using UTC date components)
+ * getLocalDateKey("2025-10-28T00:00:00Z") // "2025-10-28"
  */
 export function getLocalDateKey(date: Date | string | null | undefined): string {
   if (!date) return '';
@@ -405,11 +408,12 @@ export function getLocalDateKey(date: Date | string | null | undefined): string 
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '';
     
-    // Use local date components (getFullYear, getMonth, getDate)
-    // These automatically convert UTC to local timezone
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
+    // ✅ FIX: Use UTC date components instead of server timezone
+    // This ensures consistency regardless of server timezone
+    // Since dates are normalized to midnight UTC, UTC components give the correct date
+    const year = dateObj.getUTCFullYear();
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
     
     return `${year}-${month}-${day}`;
   } catch {
