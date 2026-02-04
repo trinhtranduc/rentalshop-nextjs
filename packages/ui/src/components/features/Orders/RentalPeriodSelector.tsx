@@ -25,12 +25,25 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   initialEndDate
 }) => {
   const t = useOrderTranslations();
+  // ✅ FIX: Parse date string (YYYY-MM-DD) as local date, not UTC
+  // new Date("2026-02-04") parses as UTC midnight, which can shift the date
+  // We need to parse it as local midnight to preserve the selected date
+  const parseLocalDate = (dateString: string): Date => {
+    // If dateString is in YYYY-MM-DD format, parse as local date
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    // Otherwise, parse normally (handles ISO strings with time)
+    return new Date(dateString);
+  };
+
   // Initialize with formData values if available
   const [rentalStartAt, setRentalStartAt] = useState<Date | null>(() => 
-    initialStartDate ? new Date(initialStartDate) : null
+    initialStartDate ? parseLocalDate(initialStartDate) : null
   );
   const [rentalEndAt, setRentalEndAt] = useState<Date | null>(() => 
-    initialEndDate ? new Date(initialEndDate) : null
+    initialEndDate ? parseLocalDate(initialEndDate) : null
   );
   const [validationResult, setValidationResult] = useState<any>(null);
   const [lastNotifiedDates, setLastNotifiedDates] = useState<string>('');
@@ -40,13 +53,13 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   // Hourly-specific state (must be at component level, not inside render function)
   const [pickupHour, setPickupHour] = useState<number>(() => {
     if (initialStartDate) {
-      return new Date(initialStartDate).getHours();
+      return parseLocalDate(initialStartDate).getHours();
     }
     return 9;
   });
   const [returnHour, setReturnHour] = useState<number>(() => {
     if (initialEndDate) {
-      return new Date(initialEndDate).getHours();
+      return parseLocalDate(initialEndDate).getHours();
     }
     return 17;
   });

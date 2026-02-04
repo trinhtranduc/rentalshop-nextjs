@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@rentalshop/ui';
-import { customersApi, handleApiError } from '@rentalshop/utils';
+import { customersApi, handleApiError, getLocalDateKey } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
   OrderFormData, 
@@ -29,8 +29,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: parseInt(initialOrder.customerId) || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        // ✅ FIX: Use getLocalDateKey to prevent UTC conversion issues when loading from API
+        // API may return UTC date strings, but we want to display/edit in local timezone
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: initialOrder.discountType || 'amount',
@@ -194,8 +196,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: initialOrder.customerId || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        // ✅ FIX: Use getLocalDateKey to prevent UTC conversion issues when loading from API
+        // API may return UTC date strings, but we want to display/edit in local timezone
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: initialOrder.discountType || 'amount',
@@ -385,8 +389,25 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: formData.orderType,
         customerId: formData.customerId, // Send as number
         outletId: formData.outletId, // Send as number
-        pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt).toISOString() : undefined,
-        returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt).toISOString() : undefined,
+        // ✅ FIX: Convert date string (YYYY-MM-DD) to ISO string with local midnight
+        // This ensures the date is preserved correctly regardless of timezone
+        // Example: "2026-02-04" → "2026-02-04T00:00:00" (local) → API will parse correctly
+        pickupPlanAt: formData.pickupPlanAt 
+          ? (() => {
+              // Parse date string as local date (not UTC)
+              const [year, month, day] = formData.pickupPlanAt.split('-').map(Number);
+              const localDate = new Date(year, month - 1, day);
+              // Convert to ISO string - this will include timezone offset
+              return localDate.toISOString();
+            })()
+          : undefined,
+        returnPlanAt: formData.returnPlanAt
+          ? (() => {
+              const [year, month, day] = formData.returnPlanAt.split('-').map(Number);
+              const localDate = new Date(year, month - 1, day);
+              return localDate.toISOString();
+            })()
+          : undefined,
         subtotal: formData.subtotal,
         taxAmount: formData.taxAmount,
         discountType: formData.discountType,
@@ -429,8 +450,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: parseInt(initialOrder.customerId) || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        // ✅ FIX: Use getLocalDateKey to prevent UTC conversion issues when loading from API
+        // API may return UTC date strings, but we want to display/edit in local timezone
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: 'amount',

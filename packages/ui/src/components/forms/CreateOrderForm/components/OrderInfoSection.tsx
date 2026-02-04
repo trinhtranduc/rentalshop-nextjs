@@ -257,8 +257,16 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 initialStartDate={formData.pickupPlanAt}
                 initialEndDate={formData.returnPlanAt}
                 onPeriodChange={(startAt, endAt) => {
-                  const startDate = startAt.toISOString().split('T')[0];
-                  const endDate = endAt.toISOString().split('T')[0];
+                  // ✅ FIX: Use local date components instead of toISOString() to prevent UTC conversion issues
+                  const getLocalDateString = (date: Date): string => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  };
+                  
+                  const startDate = getLocalDateString(startAt);
+                  const endDate = getLocalDateString(endAt);
                   
                   onFormDataChange('pickupPlanAt', startDate);
                   onFormDataChange('returnPlanAt', endDate);
@@ -278,12 +286,40 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 </label>
                 <DateRangePicker
                   value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                    // ✅ FIX: Parse date string (YYYY-MM-DD) as local date, not UTC
+                    // new Date("2026-02-04") parses as UTC midnight, which can shift the date
+                    from: formData.pickupPlanAt 
+                      ? (() => {
+                          // If dateString is in YYYY-MM-DD format, parse as local date
+                          if (/^\d{4}-\d{2}-\d{2}$/.test(formData.pickupPlanAt)) {
+                            const [year, month, day] = formData.pickupPlanAt.split('-').map(Number);
+                            return new Date(year, month - 1, day);
+                          }
+                          return new Date(formData.pickupPlanAt);
+                        })()
+                      : undefined,
+                    to: formData.returnPlanAt
+                      ? (() => {
+                          if (/^\d{4}-\d{2}-\d{2}$/.test(formData.returnPlanAt)) {
+                            const [year, month, day] = formData.returnPlanAt.split('-').map(Number);
+                            return new Date(year, month - 1, day);
+                          }
+                          return new Date(formData.returnPlanAt);
+                        })()
+                      : undefined
                   }}
                   onChange={(range) => {
-                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    // ✅ FIX: Use local date components instead of toISOString() to prevent UTC conversion issues
+                    // toISOString() converts to UTC which can shift the date by 1 day depending on timezone
+                    const getLocalDateString = (date: Date): string => {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      return `${year}-${month}-${day}`;
+                    };
+                    
+                    const startDate = range.from ? getLocalDateString(range.from) : '';
+                    const endDate = range.to ? getLocalDateString(range.to) : '';
                     
                     onFormDataChange('pickupPlanAt', startDate);
                     onFormDataChange('returnPlanAt', endDate);
