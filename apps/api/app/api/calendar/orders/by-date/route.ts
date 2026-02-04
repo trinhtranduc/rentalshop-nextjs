@@ -146,28 +146,23 @@ export const GET = withReadOnlyAuth(async (
     console.log('📦 Found orders:', orders.length);
 
     // ✅ FIX: Filter orders by exact local date using getLocalDateKey
-    // This ensures we only return orders that match the selected date in user's local timezone
+    // getLocalDateKey now converts UTC datetime to local date (VN UTC+7)
+    // No need to normalize first, as it would lose the local date information
     const filteredOrders = orders.filter((order: any) => {
       if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
         // For RESERVED/PICKUPED: filter by pickupPlanAt
         if (!order.pickupPlanAt) return false;
-        const normalizedPickup = normalizeDateToMidnightUTC(order.pickupPlanAt);
-        if (!normalizedPickup) return false;
-        const orderDateKey = getLocalDateKey(normalizedPickup);
+        const orderDateKey = getLocalDateKey(order.pickupPlanAt);
         return orderDateKey === dateStr;
       } else if (status) {
         // For other statuses: filter by createdAt
         if (!order.createdAt) return false;
-        const normalizedCreated = normalizeDateToMidnightUTC(order.createdAt);
-        if (!normalizedCreated) return false;
-        const orderDateKey = getLocalDateKey(normalizedCreated);
+        const orderDateKey = getLocalDateKey(order.createdAt);
         return orderDateKey === dateStr;
       } else {
         // Default: filter by pickupPlanAt
         if (!order.pickupPlanAt) return false;
-        const normalizedPickup = normalizeDateToMidnightUTC(order.pickupPlanAt);
-        if (!normalizedPickup) return false;
-        const orderDateKey = getLocalDateKey(normalizedPickup);
+        const orderDateKey = getLocalDateKey(order.pickupPlanAt);
         return orderDateKey === dateStr;
       }
     });

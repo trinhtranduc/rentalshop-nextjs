@@ -119,7 +119,7 @@ function buildWhereClause(
 /**
  * Group orders by date (YYYY-MM-DD format)
  * ✅ FIX: Uses local date key to match frontend calendar display
- * Normalizes dates to midnight UTC first, then gets local date key
+ * Converts UTC datetime to local date (VN UTC+7) before grouping
  */
 function groupOrdersByDate(
   orders: any[],
@@ -130,14 +130,13 @@ function groupOrdersByDate(
   for (const order of orders) {
     const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
     if (dateValue) {
-      // ✅ FIX: Normalize to midnight UTC first, then get local date key
-      // This ensures consistent grouping that matches frontend calendar display
-      const normalizedDate = normalizeDateToMidnightUTC(dateValue);
-      if (normalizedDate) {
-        const dateKey = getLocalDateKey(normalizedDate);
-        if (dateKey) {
-          countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
-        }
+      // ✅ FIX: Get local date key directly from UTC datetime
+      // getLocalDateKey now converts UTC datetime to local date (VN UTC+7)
+      // No need to normalize first, as it would lose the local date information
+      // Example: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) → "2026-02-25"
+      const dateKey = getLocalDateKey(dateValue);
+      if (dateKey) {
+        countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
       }
     }
   }

@@ -399,17 +399,16 @@ export function formatDateTimeByLocale(date: string | Date, locale: string): str
  * Get local date key from UTC datetime string
  * Converts UTC database datetime to local date (YYYY-MM-DD)
  * 
- * ✅ FIX: Uses UTC date components to ensure consistency
- * Since orders are normalized to midnight UTC, we should use UTC components
- * to get the date key, not server timezone which may differ from user timezone
+ * ✅ FIX: Converts UTC datetime to local date (VN UTC+7) for date-only fields
+ * Dates like "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) should return "2026-02-25"
  * 
  * @param date - UTC datetime string or Date object from database
- * @returns Local date in YYYY-MM-DD format (based on UTC date components)
+ * @returns Local date in YYYY-MM-DD format (based on local date after timezone conversion)
  * 
  * @example
- * // Database stores UTC: "2025-10-28T17:00:00Z" (normalized to "2025-10-28T00:00:00Z")
- * // This function returns: "2025-10-28" (using UTC date components)
- * getLocalDateKey("2025-10-28T00:00:00Z") // "2025-10-28"
+ * // Database stores UTC: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25)
+ * // This function returns: "2026-02-25" (after converting to VN UTC+7)
+ * getLocalDateKey("2026-02-24T17:00:00.000Z") // "2026-02-25"
  */
 export function getLocalDateKey(date: Date | string | null | undefined): string {
   if (!date) return '';
@@ -418,12 +417,16 @@ export function getLocalDateKey(date: Date | string | null | undefined): string 
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '';
     
-    // ✅ FIX: Use UTC date components instead of server timezone
-    // This ensures consistency regardless of server timezone
-    // Since dates are normalized to midnight UTC, UTC components give the correct date
-    const year = dateObj.getUTCFullYear();
-    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+    // ✅ FIX: Convert UTC datetime to local date (VN UTC+7) for date-only fields
+    // Dates are stored as "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25)
+    // We need to convert to local date to get the correct date key
+    // Add 7 hours to convert UTC to VN timezone, then extract date components
+    const localDate = new Date(dateObj.getTime() + (7 * 60 * 60 * 1000)); // UTC+7
+    
+    // Use UTC components of the local date (after timezone conversion)
+    const year = localDate.getUTCFullYear();
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getUTCDate()).padStart(2, '0');
     
     return `${year}-${month}-${day}`;
   } catch {
