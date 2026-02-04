@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getLocalDateKey } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -122,12 +122,16 @@ function groupOrdersByDate(
   for (const order of orders) {
     const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
     if (dateValue) {
-      // ✅ FIX: Use getLocalDateKey to convert UTC datetime to local date
+      // ✅ FIX: Normalize date to midnight UTC before grouping (handles old orders)
+      // Then use getLocalDateKey to convert UTC datetime to local date
       // This ensures orders are grouped by their LOCAL date, matching user's timezone
       // This is consistent with by-date API filtering logic
-      const dateKey = getLocalDateKey(dateValue);
-      if (dateKey) {
-        countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+      const normalizedDate = normalizeDateToMidnightUTC(dateValue);
+      if (normalizedDate) {
+        const dateKey = getLocalDateKey(normalizedDate);
+        if (dateKey) {
+          countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+        }
       }
     }
   }

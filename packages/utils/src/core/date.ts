@@ -539,3 +539,36 @@ export function parseDateStringToUTC(dateStr: string | null | undefined): Date |
     return null;
   }
 }
+
+/**
+ * Normalize a Date object to midnight UTC based on its UTC date components
+ * This function preserves the date without timezone shift, useful for normalizing old orders
+ * 
+ * Use case: Normalize old orders' dates that may have time components or timezone shifts
+ * This ensures consistent date handling for calendar filtering and display
+ * 
+ * @param date - Date object or date string
+ * @returns Date object at midnight UTC based on UTC date components
+ * 
+ * @example
+ * normalizeDateToMidnightUTC(new Date("2026-02-10T17:00:00.000Z")) // "2026-02-10T00:00:00.000Z"
+ * normalizeDateToMidnightUTC("2026-02-10T17:00:00.000Z") // "2026-02-10T00:00:00.000Z"
+ */
+export function normalizeDateToMidnightUTC(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return null;
+    
+    // Extract UTC date components and normalize to midnight UTC
+    // This preserves the date without timezone shift
+    const year = dateObj.getUTCFullYear();
+    const month = dateObj.getUTCMonth();
+    const day = dateObj.getUTCDate();
+    
+    return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  } catch {
+    return null;
+  }
+}

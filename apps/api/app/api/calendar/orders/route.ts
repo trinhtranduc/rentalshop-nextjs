@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
-import { handleApiError, getUTCDateKey, getLocalDateKey, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, getUTCDateKey, getLocalDateKey, parseProductImages, normalizeDateToMidnightUTC } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -146,8 +146,10 @@ export const GET = withReadOnlyAuth(async (
           orderType: order.orderType || undefined,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
-          pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
-          returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          // ✅ FIX: Normalize dates to midnight UTC before returning
+          // This ensures old orders with time components are normalized consistently
+          pickupPlanAt: order.pickupPlanAt ? normalizeDateToMidnightUTC(order.pickupPlanAt)?.toISOString() : undefined,
+          returnPlanAt: order.returnPlanAt ? normalizeDateToMidnightUTC(order.returnPlanAt)?.toISOString() : undefined,
           pickedUpAt: (order as any).pickedUpAt ? new Date((order as any).pickedUpAt).toISOString() : undefined,
           createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
           // Product summary for calendar display
@@ -188,16 +190,18 @@ export const GET = withReadOnlyAuth(async (
         if (order.status === ORDER_STATUS.RESERVED) {
           // Chỉ hiển thị đơn có pickupPlanAt (theo yêu cầu: hiển thị theo pickupPlanAt)
           if (order.pickupPlanAt) {
-            const displayDate = new Date(order.pickupPlanAt);
+            // ✅ FIX: Normalize date to midnight UTC before grouping (handles old orders)
+            // This ensures old orders with time components are normalized consistently
+            const normalizedDate = normalizeDateToMidnightUTC(order.pickupPlanAt);
+            if (!normalizedDate) continue;
             
             // ✅ FIX: Kiểm tra xem pickupPlanAt có trong tháng hiện tại không
             // Nếu có, hiển thị trong calendar
-            const pickupDate = new Date(order.pickupPlanAt);
-            const isInMonth = pickupDate >= startDate && pickupDate <= endDate;
+            const isInMonth = normalizedDate >= startDate && normalizedDate <= endDate;
             
             if (isInMonth) {
               // Use local date key to match frontend calendar display (user's local timezone)
-              const dateKey = getLocalDateKey(displayDate);
+              const dateKey = getLocalDateKey(normalizedDate);
               
               if (!calendarMap[dateKey]) {
                 calendarMap[dateKey] = [];

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -157,11 +157,19 @@ export const GET = withReadOnlyAuth(async (
     // In UTC+7 timezone, this is "2026-02-04T07:00:00+07:00" (local date = Feb 4)
     // When user selects "2026-02-03", we should NOT show this order
     // When user selects "2026-02-04", we SHOULD show this order
+    // 
+    // ✅ FIX: Normalize old orders' dates to midnight UTC before filtering
+    // Old orders may have time components or timezone shifts, so we normalize them
+    // to ensure consistent filtering with new orders
     const filteredOrders = orders.filter((order: any) => {
       if (!order.pickupPlanAt) return false;
       
-      // Get local date key from pickupPlanAt (converts UTC to local date)
-      const pickupLocalDateKey = getLocalDateKey(order.pickupPlanAt);
+      // Normalize date to midnight UTC (handles old orders with time components)
+      const normalizedDate = normalizeDateToMidnightUTC(order.pickupPlanAt);
+      if (!normalizedDate) return false;
+      
+      // Get local date key from normalized date (converts UTC to local date)
+      const pickupLocalDateKey = getLocalDateKey(normalizedDate);
       
       // Only include orders where local date matches the selected date
       return pickupLocalDateKey === dateStr;
@@ -195,8 +203,10 @@ export const GET = withReadOnlyAuth(async (
         orderType: order.orderType || undefined,
         totalAmount: order.totalAmount,
         outletName: order.outlet?.name,
-        pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
-        returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+        // ✅ FIX: Normalize dates to midnight UTC before returning
+        // This ensures old orders with time components are normalized consistently
+        pickupPlanAt: order.pickupPlanAt ? normalizeDateToMidnightUTC(order.pickupPlanAt)?.toISOString() : undefined,
+        returnPlanAt: order.returnPlanAt ? normalizeDateToMidnightUTC(order.returnPlanAt)?.toISOString() : undefined,
         pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt).toISOString() : undefined,
         createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
         // Product summary for calendar display
