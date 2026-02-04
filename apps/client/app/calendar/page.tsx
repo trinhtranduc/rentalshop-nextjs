@@ -427,8 +427,8 @@ export default function CalendarPage() {
                           <tr>
                             <th className="w-12 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.order')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.returnDate')}</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.customer')}</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.product')}</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.type')}</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.status')}</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{tcal('labels.amount')}</th>
@@ -470,16 +470,13 @@ export default function CalendarPage() {
                                       {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
                                     </div>
                                   </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
+                                  </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
                                     {order.customerPhone && (
                                       <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div className="text-sm font-medium text-gray-900">{order.productName}</div>
-                                    {(order.productCount && order.productCount > 1) && (
-                                      <div className="text-sm text-gray-500">{order.productCount} {tcal('modal.items')}</div>
                                     )}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">

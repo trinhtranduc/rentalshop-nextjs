@@ -20,6 +20,7 @@
     "type": "Loại",
     "status": "Trạng thái",
     "amount": "Số tiền",
+    "returnDate": "Ngày trả",
     "overdue": "Quá hạn",
     "month": "Tháng",
     "noOrders": "Không có đơn hàng",

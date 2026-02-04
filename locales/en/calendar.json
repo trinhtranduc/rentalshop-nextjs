@@ -20,6 +20,7 @@
     "type": "Type",
     "status": "Status",
     "amount": "Amount",
+    "returnDate": "Return Date",
     "overdue": "Overdue",
     "month": "Month",
     "noOrders": "No orders",
