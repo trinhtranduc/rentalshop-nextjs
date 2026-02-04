@@ -335,16 +335,6 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                 </Button>
               );
             })}
-            <Button
-              variant="ghost"
-              onClick={() => handleTabClick('/settings')}
-              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
-                currentPage === '/settings' ? 'text-blue-700 bg-blue-50 shadow-sm' : ''
-              } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
-            >
-              <Settings className="w-5 h-5" />
-              {t('navigation.settings')}
-            </Button>
           </div>
         </div>
       </div>

@@ -550,31 +550,53 @@ export function normalizeDateToISO(date: Date | string | null | undefined): stri
  * Use case: For pickupPlanAt and returnPlanAt fields that only store dates
  * Future: Will support time component, but for now only date is stored
  * 
- * @param dateStr - Date string in YYYY-MM-DD format (e.g., "2026-02-10")
+ * @param dateInput - Date string (YYYY-MM-DD or ISO string) or Date object
  * @returns Date object at midnight UTC (e.g., "2026-02-10T00:00:00.000Z")
  * 
  * @example
  * parseDateStringToUTC("2026-02-10") // Date object: "2026-02-10T00:00:00.000Z"
- * parseDateStringToUTC("2026-02-10") // No timezone shift, stores exactly as "2026-02-10"
+ * parseDateStringToUTC("2026-02-10T17:00:00.000Z") // Date object: "2026-02-10T00:00:00.000Z" (normalized)
+ * parseDateStringToUTC(new Date("2026-02-10T17:00:00.000Z")) // Date object: "2026-02-10T00:00:00.000Z" (normalized)
  */
-export function parseDateStringToUTC(dateStr: string | null | undefined): Date | null {
-  if (!dateStr) return null;
+export function parseDateStringToUTC(dateInput: string | Date | null | undefined): Date | null {
+  if (!dateInput) return null;
   
   try {
-    // Parse date string (YYYY-MM-DD) and normalize to midnight UTC
-    // This ensures the date is stored exactly as provided, without timezone conversion
-    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) {
-      // If not YYYY-MM-DD format, try parsing as-is
-      const parsed = new Date(dateStr);
-      return isNaN(parsed.getTime()) ? null : parsed;
+    // Handle Date object input (from z.coerce.date())
+    if (dateInput instanceof Date) {
+      if (isNaN(dateInput.getTime())) return null;
+      // Normalize Date object to midnight UTC using UTC date components
+      return new Date(Date.UTC(
+        dateInput.getUTCFullYear(),
+        dateInput.getUTCMonth(),
+        dateInput.getUTCDate(),
+        0, 0, 0, 0
+      ));
     }
     
-    const [, year, month, day] = match;
-    // Create UTC date at midnight (no timezone shift)
-    const utcDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0, 0));
+    // Handle string input
+    const dateStr = String(dateInput);
     
-    return utcDate;
+    // Try to match YYYY-MM-DD format first
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const [, year, month, day] = match;
+      // Create UTC date at midnight (no timezone shift)
+      return new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0, 0));
+    }
+    
+    // If not YYYY-MM-DD format, parse as ISO string or other date format
+    // Then normalize to midnight UTC using UTC date components
+    const parsed = new Date(dateStr);
+    if (isNaN(parsed.getTime())) return null;
+    
+    // Normalize to midnight UTC using UTC date components (preserves date without timezone shift)
+    return new Date(Date.UTC(
+      parsed.getUTCFullYear(),
+      parsed.getUTCMonth(),
+      parsed.getUTCDate(),
+      0, 0, 0, 0
+    ));
   } catch {
     return null;
   }
