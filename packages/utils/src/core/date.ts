@@ -247,10 +247,10 @@ export function formatChartPeriod(date: string | Date, locale: string): string {
  * Format date for full display (day + month + year)
  * Standardized format: Vietnamese dd/mm/yyyy, English MMM dd, yyyy (e.g., "Nov 28, 2020")
  * 
- * ✅ FIX: Uses UTC date components for date-only fields to avoid timezone shift
- * This ensures dates like pickupPlanAt and returnPlanAt display correctly
+ * ✅ FIX: Converts UTC datetime to local date (VN UTC+7) for date-only fields
+ * Dates like "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) should display as 25/02
  * 
- * @param date - Date string or Date object
+ * @param date - Date string or Date object (UTC datetime from database)
  * @param locale - Current locale ('en' or 'vi')
  * @returns Formatted date string (e.g., "28/11/2020" for vi, "Nov 28, 2020" for en)
  */
@@ -258,23 +258,27 @@ export function formatFullDateByLocale(date: string | Date, locale: string): str
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(dateObj.getTime())) return date.toString();
   
-  // ✅ FIX: Use UTC date components to avoid timezone shift for date-only fields
-  // This ensures dates stored as UTC (e.g., "2026-02-25T17:00:00.000Z") display correctly
-  // as the intended date (25/02) regardless of user's timezone
+  // ✅ FIX: Convert UTC datetime to local date (VN UTC+7) for date-only fields
+  // Dates are stored as "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25)
+  // We need to convert to local date to display correctly
+  // Add 7 hours to convert UTC to VN timezone, then extract date components
+  const localDate = new Date(dateObj.getTime() + (7 * 60 * 60 * 1000)); // UTC+7
+  
   if (locale === 'vi') {
     // Vietnamese format: dd/mm/yyyy (e.g., "28/11/2020")
-    const day = dateObj.getUTCDate().toString().padStart(2, '0');
-    const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getUTCFullYear().toString(); // Full 4-digit year
+    // Use UTC components of the local date (after timezone conversion)
+    const day = localDate.getUTCDate().toString().padStart(2, '0');
+    const month = (localDate.getUTCMonth() + 1).toString().padStart(2, '0');
+    const year = localDate.getUTCFullYear().toString(); // Full 4-digit year
     
     return `${day}/${month}/${year}`;
   }
   
   // English format: MMM dd, yyyy (US standard, e.g., "Nov 28, 2020")
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[dateObj.getUTCMonth()];
-  const day = dateObj.getUTCDate();
-  const year = dateObj.getUTCFullYear();
+  const month = months[localDate.getUTCMonth()];
+  const day = localDate.getUTCDate();
+  const year = localDate.getUTCFullYear();
   
   return `${month} ${day}, ${year}`;
 }
