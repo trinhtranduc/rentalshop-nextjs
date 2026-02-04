@@ -472,6 +472,36 @@ export function getUTCDateKey(date: Date | string | null | undefined): string {
 // ============================================================================
 
 /**
+ * Normalize a date to midnight UTC and return as Date object
+ * Useful for date comparisons and filtering in API routes
+ * 
+ * @param date - Date object or date string
+ * @returns Date object at midnight UTC (e.g., Date("2025-11-29T00:00:00.000Z"))
+ * 
+ * @example
+ * normalizeDateToMidnightUTC(new Date("2025-11-29T09:37:02.976Z")) // Date("2025-11-29T00:00:00.000Z")
+ * normalizeDateToMidnightUTC("2025-11-29T17:00:00.000Z") // Date("2025-11-29T00:00:00.000Z")
+ */
+export function normalizeDateToMidnightUTC(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return null;
+    
+    // Extract UTC date components and normalize to midnight UTC
+    const year = dateObj.getUTCFullYear();
+    const month = dateObj.getUTCMonth();
+    const day = dateObj.getUTCDate();
+    
+    // Create new Date object at midnight UTC
+    return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Normalize a date to midnight UTC and return as ISO string
  * Useful for API responses where you want consistent date format for mobile locale formatting
  * 
@@ -485,18 +515,43 @@ export function getUTCDateKey(date: Date | string | null | undefined): string {
 export function normalizeDateToISO(date: Date | string | null | undefined): string {
   if (!date) return '';
   
+  const normalized = normalizeDateToMidnightUTC(date);
+  return normalized ? normalized.toISOString() : '';
+}
+
+/**
+ * Convert local date string (YYYY-MM-DD) to UTC datetime string matching mobile app format
+ * 
+ * Single Source of Truth: This function ensures consistent date format between frontend and mobile app
+ * Mobile app sends: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 local in VN UTC+7)
+ * Frontend should match this format to avoid timezone shift issues
+ * 
+ * @param dateStr - Local date string in YYYY-MM-DD format
+ * @returns UTC datetime string in ISO format (e.g., "2026-02-24T17:00:00.000Z")
+ * 
+ * @example
+ * convertLocalDateToUTCDatetime("2026-02-24") // "2026-02-24T17:00:00.000Z"
+ * convertLocalDateToUTCDatetime("2026-02-26") // "2026-02-26T17:00:00.000Z"
+ */
+export function convertLocalDateToUTCDatetime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  
   try {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return '';
+    // Parse as local date (YYYY-MM-DD)
+    const [year, month, day] = dateStr.split('-').map(Number);
     
-    // Extract UTC date components and normalize to midnight UTC
-    const year = dateObj.getUTCFullYear();
-    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getUTCDate()).padStart(2, '0');
-    // Use YYYY-MM-DD format for ISO string (standard format)
-    const dateKeyISO = `${year}-${month}-${day}`;
+    // Validate parsed values
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return '';
+    if (month < 1 || month > 12) return '';
+    if (day < 1 || day > 31) return '';
     
-    return new Date(dateKeyISO + 'T00:00:00.000Z').toISOString();
+    // Create UTC datetime at 17:00 UTC (equivalent to 00:00 local in VN UTC+7)
+    // This matches mobile app's format to ensure consistency
+    const utcDate = new Date(Date.UTC(year, month - 1, day, 17, 0, 0, 0));
+    
+    if (isNaN(utcDate.getTime())) return '';
+    
+    return utcDate.toISOString();
   } catch {
     return '';
   }

@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -58,26 +58,37 @@ function buildWhereClause(
   // Date range filter (from/to)
   // 🎯 Calendar always filters by pickupPlanAt (pickup date plan)
   if (filters.from || filters.to) {
-    // Parse dates as UTC to avoid timezone issues
-    // "2026-01-01" should be treated as 2026-01-01 00:00:00 UTC
+    // ✅ FIX: Parse dates as UTC and use wider range to capture all potentially relevant orders
+    // Orders are stored with time component (e.g., "2026-02-25T17:00:00.000Z")
+    // So we need a wider range to capture orders that might shift due to timezone
     const fromDate = filters.from ? new Date(filters.from + 'T00:00:00.000Z') : null;
     const toDate = filters.to ? new Date(filters.to + 'T23:59:59.999Z') : null;
 
+    // Use wider range: from previous day to next day to capture all orders
+    const previousDayStartUTC = fromDate ? new Date(fromDate) : null;
+    if (previousDayStartUTC) {
+      previousDayStartUTC.setUTCDate(previousDayStartUTC.getUTCDate() - 1);
+    }
+    const nextDayEndUTC = toDate ? new Date(toDate) : null;
+    if (nextDayEndUTC) {
+      nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
+    }
+
     // Calendar always uses pickupPlanAt for filtering (ngày dự kiến lấy)
     where.pickupPlanAt = {};
-    if (fromDate) {
-      where.pickupPlanAt.gte = fromDate;
+    if (previousDayStartUTC) {
+      where.pickupPlanAt.gte = previousDayStartUTC;
     }
-    if (toDate) {
-      where.pickupPlanAt.lte = toDate;
+    if (nextDayEndUTC) {
+      where.pickupPlanAt.lte = nextDayEndUTC;
     }
-    console.log('🔍 Filtering by pickupPlanAt:', {
+    console.log('🔍 Filtering by pickupPlanAt (wider range):', {
       from: filters.from,
       to: filters.to,
       fromDate: fromDate?.toISOString(),
       toDate: toDate?.toISOString(),
-      fromDateUTC: fromDate?.toUTCString(),
-      toDateUTC: toDate?.toUTCString()
+      previousDayStartUTC: previousDayStartUTC?.toISOString(),
+      nextDayEndUTC: nextDayEndUTC?.toISOString()
     });
   }
 
@@ -107,7 +118,8 @@ function buildWhereClause(
 
 /**
  * Group orders by date (YYYY-MM-DD format)
- * Uses UTC date to avoid timezone issues
+ * ✅ FIX: Uses local date key to match frontend calendar display
+ * Normalizes dates to midnight UTC first, then gets local date key
  */
 function groupOrdersByDate(
   orders: any[],
@@ -118,14 +130,15 @@ function groupOrdersByDate(
   for (const order of orders) {
     const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
     if (dateValue) {
-      const date = new Date(dateValue);
-      // Use UTC methods to avoid timezone issues
-      // This ensures "2026-01-08T00:00:00.000Z" is always grouped as "2026-01-08"
-      const year = date.getUTCFullYear();
-      const month = date.getUTCMonth() + 1;
-      const day = date.getUTCDate();
-      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+      // ✅ FIX: Normalize to midnight UTC first, then get local date key
+      // This ensures consistent grouping that matches frontend calendar display
+      const normalizedDate = normalizeDateToMidnightUTC(dateValue);
+      if (normalizedDate) {
+        const dateKey = getLocalDateKey(normalizedDate);
+        if (dateKey) {
+          countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+        }
+      }
     }
   }
 

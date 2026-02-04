@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -54,14 +54,24 @@ export const GET = withReadOnlyAuth(async (
 
     const { date: dateStr, outletId, merchantId, orderType, status, limit, page } = validatedQuery;
 
-    // Parse date string
-    const targetDate = new Date(dateStr);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // ✅ FIX: Parse date string as UTC to avoid timezone issues
+    // "2026-02-25" should be treated as 2026-02-25 00:00:00 UTC
+    // But orders are stored with time component (e.g., "2026-02-25T17:00:00.000Z")
+    // So we need a wider range to capture all potentially relevant orders
+    const startOfDayUTC = new Date(dateStr + 'T00:00:00.000Z');
+    // Use previous day's midnight UTC to capture orders that might shift due to timezone
+    const previousDayStartUTC = new Date(startOfDayUTC);
+    previousDayStartUTC.setUTCDate(previousDayStartUTC.getUTCDate() - 1);
+    // Use next day's end UTC to capture all orders
+    const nextDayEndUTC = new Date(dateStr + 'T23:59:59.999Z');
+    nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
 
-    console.log('📅 Target date range:', { startOfDay, endOfDay });
+    console.log('📅 Target date range (UTC):', { 
+      dateStr,
+      startOfDayUTC: startOfDayUTC.toISOString(),
+      previousDayStartUTC: previousDayStartUTC.toISOString(),
+      nextDayEndUTC: nextDayEndUTC.toISOString()
+    });
 
     // Build where clause with role-based filtering
     const where: any = {};
@@ -74,22 +84,23 @@ export const GET = withReadOnlyAuth(async (
     // Date filter based on status
     // For RESERVED/PICKUPED: filter by pickupPlanAt (ngày dự kiến lấy)
     // For other statuses: filter by createdAt (ngày tạo đơn)
+    // ✅ FIX: Use wider UTC range to capture all potentially relevant orders
     if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
       where.pickupPlanAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: previousDayStartUTC,
+        lte: nextDayEndUTC
       };
     } else if (status) {
       // For COMPLETED, RETURNED, CANCELLED: filter by createdAt
       where.createdAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: previousDayStartUTC,
+        lte: nextDayEndUTC
       };
     } else {
       // If no status specified, default to pickupPlanAt (for backward compatibility)
       where.pickupPlanAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: previousDayStartUTC,
+        lte: nextDayEndUTC
       };
     }
 
@@ -134,8 +145,41 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📦 Found orders:', orders.length);
 
+    // ✅ FIX: Filter orders by exact local date using getLocalDateKey
+    // This ensures we only return orders that match the selected date in user's local timezone
+    const filteredOrders = orders.filter((order: any) => {
+      if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
+        // For RESERVED/PICKUPED: filter by pickupPlanAt
+        if (!order.pickupPlanAt) return false;
+        const normalizedPickup = normalizeDateToMidnightUTC(order.pickupPlanAt);
+        if (!normalizedPickup) return false;
+        const orderDateKey = getLocalDateKey(normalizedPickup);
+        return orderDateKey === dateStr;
+      } else if (status) {
+        // For other statuses: filter by createdAt
+        if (!order.createdAt) return false;
+        const normalizedCreated = normalizeDateToMidnightUTC(order.createdAt);
+        if (!normalizedCreated) return false;
+        const orderDateKey = getLocalDateKey(normalizedCreated);
+        return orderDateKey === dateStr;
+      } else {
+        // Default: filter by pickupPlanAt
+        if (!order.pickupPlanAt) return false;
+        const normalizedPickup = normalizeDateToMidnightUTC(order.pickupPlanAt);
+        if (!normalizedPickup) return false;
+        const orderDateKey = getLocalDateKey(normalizedPickup);
+        return orderDateKey === dateStr;
+      }
+    });
+
+    console.log('📦 Filtered orders by local date:', {
+      totalFound: orders.length,
+      filteredCount: filteredOrders.length,
+      dateStr
+    });
+
     // Transform orders to CalendarOrderSummary format
-    const orderSummaries: CalendarOrderSummary[] = orders.map((order: any) => {
+    const orderSummaries: CalendarOrderSummary[] = filteredOrders.map((order: any) => {
       const orderItems = order.orderItems || [];
       const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
       const firstProduct = orderItems[0]?.product;
@@ -151,10 +195,11 @@ export const GET = withReadOnlyAuth(async (
         orderType: order.orderType || undefined,
         totalAmount: order.totalAmount,
         outletName: order.outlet?.name,
-        pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
-        returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
-        pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt).toISOString() : undefined,
-        createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
+        // ✅ FIX: Normalize dates to midnight UTC for consistent display
+        pickupPlanAt: order.pickupPlanAt ? normalizeDateToMidnightUTC(order.pickupPlanAt)?.toISOString() : undefined,
+        returnPlanAt: order.returnPlanAt ? normalizeDateToMidnightUTC(order.returnPlanAt)?.toISOString() : undefined,
+        pickedUpAt: order.pickedUpAt ? normalizeDateToMidnightUTC(order.pickedUpAt)?.toISOString() : undefined,
+        createdAt: order.createdAt ? normalizeDateToMidnightUTC(order.createdAt)?.toISOString() : undefined, // Order creation date (book date)
         // Product summary for calendar display
         productName: firstProduct?.name || 'Multiple Products',
         productCount: totalProductCount,
