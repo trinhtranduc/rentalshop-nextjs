@@ -389,25 +389,12 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: formData.orderType,
         customerId: formData.customerId, // Send as number
         outletId: formData.outletId, // Send as number
-        // ✅ FIX: Convert date string (YYYY-MM-DD) to ISO string with local midnight
-        // This ensures the date is preserved correctly regardless of timezone
-        // Example: "2026-02-04" → "2026-02-04T00:00:00" (local) → API will parse correctly
-        pickupPlanAt: formData.pickupPlanAt 
-          ? (() => {
-              // Parse date string as local date (not UTC)
-              const [year, month, day] = formData.pickupPlanAt.split('-').map(Number);
-              const localDate = new Date(year, month - 1, day);
-              // Convert to ISO string - this will include timezone offset
-              return localDate.toISOString();
-            })()
-          : undefined,
-        returnPlanAt: formData.returnPlanAt
-          ? (() => {
-              const [year, month, day] = formData.returnPlanAt.split('-').map(Number);
-              const localDate = new Date(year, month - 1, day);
-              return localDate.toISOString();
-            })()
-          : undefined,
+        // ✅ FIX: Send date string (YYYY-MM-DD) directly without UTC conversion
+        // Backend will parse and store as date only (no time component)
+        // Future: Will support time component, but for now only date is stored
+        // Example: "2026-02-10" → Backend stores as "2026-02-10T00:00:00.000Z" (midnight UTC, no timezone shift)
+        pickupPlanAt: formData.pickupPlanAt || undefined,
+        returnPlanAt: formData.returnPlanAt || undefined,
         subtotal: formData.subtotal,
         taxAmount: formData.taxAmount,
         discountType: formData.discountType,

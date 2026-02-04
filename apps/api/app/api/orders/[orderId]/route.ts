@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, formatFullName, parseProductImages, parseDateStringToUTC } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -248,6 +248,16 @@ export const PUT = async (
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
       const { subtotal, taxAmount, id, ...validUpdateData } = body;
+      
+      // ✅ FIX: Parse date strings (YYYY-MM-DD) and normalize to midnight UTC
+      // This treats the date as a pure date (no time component) and stores it exactly as provided
+      // Future: Will support time component, but for now only date is stored
+      if (validUpdateData.pickupPlanAt && typeof validUpdateData.pickupPlanAt === 'string') {
+        validUpdateData.pickupPlanAt = parseDateStringToUTC(validUpdateData.pickupPlanAt);
+      }
+      if (validUpdateData.returnPlanAt && typeof validUpdateData.returnPlanAt === 'string') {
+        validUpdateData.returnPlanAt = parseDateStringToUTC(validUpdateData.returnPlanAt);
+      }
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
 

@@ -501,3 +501,41 @@ export function normalizeDateToISO(date: Date | string | null | undefined): stri
     return '';
   }
 }
+
+/**
+ * Parse date string (YYYY-MM-DD) and normalize to midnight UTC
+ * This function treats the date string as a pure date (no time component)
+ * and stores it as midnight UTC without timezone conversion
+ * 
+ * Use case: For pickupPlanAt and returnPlanAt fields that only store dates
+ * Future: Will support time component, but for now only date is stored
+ * 
+ * @param dateStr - Date string in YYYY-MM-DD format (e.g., "2026-02-10")
+ * @returns Date object at midnight UTC (e.g., "2026-02-10T00:00:00.000Z")
+ * 
+ * @example
+ * parseDateStringToUTC("2026-02-10") // Date object: "2026-02-10T00:00:00.000Z"
+ * parseDateStringToUTC("2026-02-10") // No timezone shift, stores exactly as "2026-02-10"
+ */
+export function parseDateStringToUTC(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  
+  try {
+    // Parse date string (YYYY-MM-DD) and normalize to midnight UTC
+    // This ensures the date is stored exactly as provided, without timezone conversion
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      // If not YYYY-MM-DD format, try parsing as-is
+      const parsed = new Date(dateStr);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    
+    const [, year, month, day] = match;
+    // Create UTC date at midnight (no timezone shift)
+    const utcDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0, 0));
+    
+    return utcDate;
+  } catch {
+    return null;
+  }
+}

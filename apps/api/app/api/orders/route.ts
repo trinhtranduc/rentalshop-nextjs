@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages, parseDateStringToUTC } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -447,8 +447,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       discountType: parsed.data.discountType,
       discountValue: parsed.data.discountValue || 0,
       discountAmount: parsed.data.discountAmount || 0,
-      pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
-      returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
+      // ✅ FIX: Parse date string (YYYY-MM-DD) and normalize to midnight UTC
+      // This treats the date as a pure date (no time component) and stores it exactly as provided
+      // Future: Will support time component, but for now only date is stored
+      // Example: "2026-02-10" → "2026-02-10T00:00:00.000Z" (midnight UTC, no timezone shift)
+      pickupPlanAt: parsed.data.pickupPlanAt ? parseDateStringToUTC(parsed.data.pickupPlanAt) : null,
+      returnPlanAt: parsed.data.returnPlanAt ? parseDateStringToUTC(parsed.data.returnPlanAt) : null,
       rentalDuration: rentalDuration,
       isReadyToDeliver: parsed.data.isReadyToDeliver || false,
       collateralType: parsed.data.collateralType,

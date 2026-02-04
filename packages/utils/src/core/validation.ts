@@ -323,8 +323,17 @@ const baseOrderSchema = z.object({
   orderType: orderTypeEnum,
   customerId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive(),
-  pickupPlanAt: z.coerce.date().optional(),
-  returnPlanAt: z.coerce.date().optional(),
+  // ✅ FIX: Accept date string (YYYY-MM-DD) or Date object
+  // Backend will parse and normalize to midnight UTC (no timezone shift)
+  // Future: Will support time component, but for now only date is stored
+  pickupPlanAt: z.union([
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+    z.coerce.date()
+  ]).optional(),
+  returnPlanAt: z.union([
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+    z.coerce.date()
+  ]).optional(),
   // rentalDuration removed - API will calculate from pickupPlanAt and returnPlanAt
   subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
