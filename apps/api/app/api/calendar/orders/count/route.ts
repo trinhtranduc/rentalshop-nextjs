@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getLocalDateKey } from '@rentalshop/utils';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -107,7 +107,11 @@ function buildWhereClause(
 
 /**
  * Group orders by date (YYYY-MM-DD format)
- * Uses UTC date to avoid timezone issues
+ * ✅ FIX: Uses LOCAL date key to match user's timezone
+ * This ensures consistency with calendar display and by-date API filtering
+ * Example: Order with pickupPlanAt = "2026-02-03T17:00:00Z" (UTC)
+ * In UTC+7 timezone, local date = "2026-02-04"
+ * This function groups it as "2026-02-04" (local date), not "2026-02-03" (UTC date)
  */
 function groupOrdersByDate(
   orders: any[],
@@ -118,14 +122,13 @@ function groupOrdersByDate(
   for (const order of orders) {
     const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
     if (dateValue) {
-      const date = new Date(dateValue);
-      // Use UTC methods to avoid timezone issues
-      // This ensures "2026-01-08T00:00:00.000Z" is always grouped as "2026-01-08"
-      const year = date.getUTCFullYear();
-      const month = date.getUTCMonth() + 1;
-      const day = date.getUTCDate();
-      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+      // ✅ FIX: Use getLocalDateKey to convert UTC datetime to local date
+      // This ensures orders are grouped by their LOCAL date, matching user's timezone
+      // This is consistent with by-date API filtering logic
+      const dateKey = getLocalDateKey(dateValue);
+      if (dateKey) {
+        countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+      }
     }
   }
 
