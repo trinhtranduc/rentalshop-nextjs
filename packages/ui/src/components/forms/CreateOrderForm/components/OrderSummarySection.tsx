@@ -52,7 +52,7 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           {/* Rental Duration - Show for RENT orders with dates */}
           {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
             <div className="pb-2 mb-2 border-b border-border">
-              <div className="flex justify-between text-sm mb-1">
+              <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">{t('summary.rentalDuration')}:</span>
                 <span className="font-medium">
                   {(() => {
@@ -62,10 +62,6 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
                     return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
                   })()}
                 </span>
-              </div>
-              <div className="flex justify-between text-xs text-text-tertiary">
-                <span>{t('summary.from')}: {useFormattedFullDate(formData.pickupPlanAt)}</span>
-                <span>{t('summary.to')}: {useFormattedFullDate(formData.returnPlanAt)}</span>
               </div>
             </div>
           )}

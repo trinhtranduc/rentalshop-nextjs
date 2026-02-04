@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@rentalshop/ui';
-import { customersApi, handleApiError } from '@rentalshop/utils';
+import { customersApi, handleApiError, convertLocalDateToUTCDatetime } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
   OrderFormData, 
@@ -381,12 +381,13 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     
     try {
       // Prepare API payload with proper types (send numeric IDs directly)
+      // DRY: Use centralized utility function to convert local date to UTC datetime (matches mobile app format)
       const apiPayload = {
         orderType: formData.orderType,
         customerId: formData.customerId, // Send as number
         outletId: formData.outletId, // Send as number
-        pickupPlanAt: formData.pickupPlanAt ? new Date(formData.pickupPlanAt).toISOString() : undefined,
-        returnPlanAt: formData.returnPlanAt ? new Date(formData.returnPlanAt).toISOString() : undefined,
+        pickupPlanAt: formData.pickupPlanAt ? convertLocalDateToUTCDatetime(formData.pickupPlanAt) : undefined,
+        returnPlanAt: formData.returnPlanAt ? convertLocalDateToUTCDatetime(formData.returnPlanAt) : undefined,
         subtotal: formData.subtotal,
         taxAmount: formData.taxAmount,
         discountType: formData.discountType,
