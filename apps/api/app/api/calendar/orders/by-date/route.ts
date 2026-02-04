@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -54,14 +54,21 @@ export const GET = withReadOnlyAuth(async (
 
     const { date: dateStr, outletId, merchantId, orderType, status, limit, page } = validatedQuery;
 
-    // Parse date string
-    const targetDate = new Date(dateStr);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    console.log('📅 Target date range:', { startOfDay, endOfDay });
+    // ✅ FIX: Parse date string (YYYY-MM-DD) as UTC date for database comparison
+    // Database stores dates as UTC datetime, so we parse the date string as UTC
+    // Example: "2026-02-03" → Parse as UTC date (2026-02-03 00:00:00 UTC)
+    // This ensures consistent comparison with database UTC datetime values
+    const [year, month, day] = dateStr.split('-').map(Number);
+    
+    // ✅ FIX: Use wider date range to account for timezone differences
+    // Problem: Database stores UTC datetime, but we want to match by LOCAL date
+    // Example: User selects "2026-02-03" (local), we want orders where pickupPlanAt
+    // in local timezone is "2026-02-03", regardless of UTC time
+    // Solution: Use a wider range (from previous day 00:00 UTC to next day 23:59 UTC)
+    // This ensures we capture all orders that could be displayed as the selected date
+    // in any timezone, then filter by local date key to ensure accuracy
+    const startOfDayUTC = new Date(Date.UTC(year, month - 1, day - 1, 0, 0, 0, 0));
+    const endOfDayUTC = new Date(Date.UTC(year, month - 1, day + 1, 23, 59, 59, 999));
 
     // Build where clause with role-based filtering
     const where: any = {};
@@ -71,25 +78,35 @@ export const GET = withReadOnlyAuth(async (
       where.status = status as any;
     }
 
+    console.log('📅 UTC date range for database comparison:', {
+      dateStr,
+      year,
+      month,
+      day,
+      startOfDayUTC: startOfDayUTC.toISOString(),
+      endOfDayUTC: endOfDayUTC.toISOString(),
+      note: 'Filtering by UTC date range, then frontend will filter by local date key'
+    });
+
     // Date filter based on status
     // For RESERVED/PICKUPED: filter by pickupPlanAt (ngày dự kiến lấy)
     // For other statuses: filter by createdAt (ngày tạo đơn)
     if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
       where.pickupPlanAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: startOfDayUTC,
+        lte: endOfDayUTC
       };
     } else if (status) {
       // For COMPLETED, RETURNED, CANCELLED: filter by createdAt
       where.createdAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: startOfDayUTC,
+        lte: endOfDayUTC
       };
     } else {
       // If no status specified, default to pickupPlanAt (for backward compatibility)
       where.pickupPlanAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: startOfDayUTC,
+        lte: endOfDayUTC
       };
     }
 
@@ -134,8 +151,35 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📦 Found orders:', orders.length);
 
+    // ✅ FIX: Filter orders by local date key to ensure correct date matching
+    // Database stores UTC datetime, but we want to match by LOCAL date
+    // Example: Order with pickupPlanAt = "2026-02-04T00:00:00Z" (UTC)
+    // In UTC+7 timezone, this is "2026-02-04T07:00:00+07:00" (local date = Feb 4)
+    // When user selects "2026-02-03", we should NOT show this order
+    // When user selects "2026-02-04", we SHOULD show this order
+    const filteredOrders = orders.filter((order: any) => {
+      if (!order.pickupPlanAt) return false;
+      
+      // Get local date key from pickupPlanAt (converts UTC to local date)
+      const pickupLocalDateKey = getLocalDateKey(order.pickupPlanAt);
+      
+      // Only include orders where local date matches the selected date
+      return pickupLocalDateKey === dateStr;
+    });
+
+    console.log('📦 Filtered orders by local date:', {
+      dateStr,
+      totalOrders: orders.length,
+      filteredOrders: filteredOrders.length,
+      sampleOrders: filteredOrders.slice(0, 3).map((o: any) => ({
+        id: o.id,
+        pickupPlanAt: o.pickupPlanAt,
+        localDateKey: getLocalDateKey(o.pickupPlanAt)
+      }))
+    });
+
     // Transform orders to CalendarOrderSummary format
-    const orderSummaries: CalendarOrderSummary[] = orders.map((order: any) => {
+    const orderSummaries: CalendarOrderSummary[] = filteredOrders.map((order: any) => {
       const orderItems = order.orderItems || [];
       const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
       const firstProduct = orderItems[0]?.product;
