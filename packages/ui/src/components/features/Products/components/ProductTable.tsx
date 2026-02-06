@@ -158,10 +158,10 @@ export function ProductTable({
                 {tc('labels.price')}
               </th>
               
-              {/* Stock */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {/* Stock - Hidden */}
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('inventory.title') || t('stock.label')}
-              </th>
+              </th> */}
               
               {/* Status column hidden as requested */}
               {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -287,8 +287,8 @@ export function ProductTable({
                   </div>
                 </td>
                 
-                {/* Stock */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                {/* Stock - Hidden */}
+                {/* <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.totalStock')}:</span>
@@ -303,7 +303,7 @@ export function ProductTable({
                       </span>
                     </div>
                   </div>
-                </td>
+                </td> */}
                 
                 {/* Status cell hidden as requested */}
                 {/* <td className="px-6 py-4 whitespace-nowrap">

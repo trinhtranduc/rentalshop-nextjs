@@ -102,7 +102,8 @@ export function SearchResultsTable({
               <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.product') || 'Product'}</th>
               {/* Category column hidden */}
               <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.price') || 'Price'}</th>
-              <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.stock') || 'Stock'}</th>
+              {/* Stock column hidden */}
+              {/* <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.stock') || 'Stock'}</th> */}
               {/* Status column hidden */}
               <th className="text-right p-4 font-semibold text-gray-700">{t('searchResults.actions') || 'Actions'}</th>
             </tr>
@@ -217,8 +218,8 @@ export function SearchResultsTable({
                     )}
                   </td>
 
-                  {/* Stock */}
-                  <td className="p-4">
+                  {/* Stock - Hidden */}
+                  {/* <td className="p-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-gray-500">{t('inventory.totalStock')}:</span>
@@ -235,7 +236,7 @@ export function SearchResultsTable({
                         (product as any).totalStock ?? product.stock ?? 0
                       )}
                     </div>
-                  </td>
+                  </td> */}
 
                   {/* Status - Hidden */}
                   {/* <td className="p-4">
