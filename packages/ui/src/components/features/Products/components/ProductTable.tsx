@@ -158,10 +158,10 @@ export function ProductTable({
                 {tc('labels.price')}
               </th>
               
-              {/* Stock - Hidden as requested */}
-              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('stock.label')}
-              </th> */}
+              {/* Stock */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t('inventory.title') || t('stock.label')}
+              </th>
               
               {/* Status column hidden as requested */}
               {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -287,22 +287,23 @@ export function ProductTable({
                   </div>
                 </td>
                 
-                {/* Stock - Hidden as requested */}
-                {/* <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {product.available} / {product.stock}
+                {/* Stock */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.totalStock')}:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {(product as any).totalStock ?? product.stock ?? 0}
+                      </span>
                     </div>
-                    {product.renting > 0 && (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        {t('stock.renting')}: {product.renting}
-                      </div>
-                    )}
-                    <div className="mt-1">
-                      {getAvailabilityBadge(product.available, product.stock)}
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.availableStock')}:</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        {product.available ?? 0}
+                      </span>
                     </div>
                   </div>
-                </td> */}
+                </td>
                 
                 {/* Status cell hidden as requested */}
                 {/* <td className="px-6 py-4 whitespace-nowrap">

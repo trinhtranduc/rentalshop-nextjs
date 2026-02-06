@@ -122,11 +122,23 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         outletStock = outletStock.filter((stock: any) => stock.outlet?.id === queryOutletId);
       }
       
+      // Ensure available is calculated correctly: available = stock - renting
+      outletStock = outletStock.map((stock: any) => ({
+        ...stock,
+        available: Math.max(0, (stock.stock || 0) - (stock.renting || 0))
+      }));
+      
+      // Calculate total renting from all outlets (use original outletStock before filtering)
+      const totalRenting = (product.outletStock || []).reduce((sum: number, stock: any) => sum + (stock.renting || 0), 0);
+      // Calculate available at product level: totalStock - totalRenting
+      const available = Math.max(0, (product.totalStock || 0) - totalRenting);
+      
       // Build product object, excluding costPrice if user doesn't have permission
       const productData: any = {
         ...product,
         images: imageUrls,
-        outletStock: outletStock // Show stock filtered by outletId (if provided)
+        available: available, // Product-level available = totalStock - sum(renting from all outlets)
+        outletStock: outletStock // Show stock filtered by outletId (if provided) with calculated available
       };
       
       // Only include costPrice if user has products.manage permission

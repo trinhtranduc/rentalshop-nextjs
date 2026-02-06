@@ -10,6 +10,9 @@ export * from './core/customer-utils';
 export * from './core/product-utils';
 export * from './core/user-utils';
 
+// Product image helpers (client-safe)
+export { parseProductImages } from './utils/product-image-helpers';
+
 // Date formatting hooks (require React context)
 export * from './client-date-hooks';
 

@@ -184,7 +184,18 @@
     "errorFileSize": "Image size must be less than 10MB",
     "errorSearchFailed": "Failed to search products",
     "success": "Success",
-    "successFound": "Found {count} similar products"
+    "successFound": "Found {count} similar products",
+    "similaritySearch": "Similarity Search"
+  },
+  "searchResults": {
+    "match": "Match",
+    "product": "Product",
+    "category": "Category",
+    "price": "Price",
+    "stock": "Stock",
+    "status": "Status",
+    "actions": "Actions",
+    "add": "Add"
   },
   "search": {
     "placeholder": "Search products by name, barcode, or SKU...",

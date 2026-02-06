@@ -319,40 +319,49 @@ export async function searchProducts(filters: ProductSearchFilter) {
   ]);
 
   // Transform to match expected types
-  const transformedProducts = products.map((product: any) => ({
-    id: product.id, // Return id (number) for external use
-    name: product.name,
-    description: product.description,
-    barcode: product.barcode,
-    totalStock: product.totalStock,
-    rentPrice: product.rentPrice,
-    salePrice: product.salePrice,
-    costPrice: product.costPrice, // Include costPrice (giá vốn)
-    deposit: product.deposit,
-    images: product.images,
-    isActive: product.isActive,
-    createdAt: product.createdAt,
-    updatedAt: product.updatedAt,
-    category: {
-      id: product.category.id, // Return id (number)
-      name: product.category.name,
-    },
-    merchant: {
-      id: product.merchant.id, // Return id (number)
-      name: product.merchant.name,
-    },
-    outletStock: product.outletStock.map((stock: any) => ({
-      id: stock.id, // Keep CUID for internal use
-      stock: stock.stock,
-      available: stock.available,
-      renting: stock.renting,
-      outlet: {
-        id: stock.outlet.id, // Return id (number)
-        name: stock.outlet.name,
-        address: stock.outlet.address,
+  const transformedProducts = products.map((product: any) => {
+    // Calculate total renting from all outlets
+    const totalRenting = product.outletStock.reduce((sum: number, stock: any) => sum + (stock.renting || 0), 0);
+    // Calculate available at product level: totalStock - totalRenting
+    const available = Math.max(0, (product.totalStock || 0) - totalRenting);
+    
+    return {
+      id: product.id, // Return id (number) for external use
+      name: product.name,
+      description: product.description,
+      barcode: product.barcode,
+      totalStock: product.totalStock,
+      available: available, // Product-level available = totalStock - sum(renting from all outlets)
+      rentPrice: product.rentPrice,
+      salePrice: product.salePrice,
+      costPrice: product.costPrice, // Include costPrice (giá vốn)
+      deposit: product.deposit,
+      images: product.images,
+      isActive: product.isActive,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      category: {
+        id: product.category.id, // Return id (number)
+        name: product.category.name,
       },
-    })),
-  }));
+      merchant: {
+        id: product.merchant.id, // Return id (number)
+        name: product.merchant.name,
+      },
+      outletStock: product.outletStock.map((stock: any) => ({
+        id: stock.id, // Keep CUID for internal use
+        stock: stock.stock,
+        // Calculate available = stock - renting (ensure it's always correct)
+        available: Math.max(0, (stock.stock || 0) - (stock.renting || 0)),
+        renting: stock.renting,
+        outlet: {
+          id: stock.outlet.id, // Return id (number)
+          name: stock.outlet.name,
+          address: stock.outlet.address,
+        },
+      })),
+    };
+  });
 
   return {
     products: transformedProducts,

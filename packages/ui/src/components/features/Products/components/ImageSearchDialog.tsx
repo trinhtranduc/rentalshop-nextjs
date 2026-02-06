@@ -285,7 +285,7 @@ export function ImageSearchDialog({
                         {t('imageSearch.foundResults', { count: searchResults.length })}
                       </h3>
                       <Badge variant="secondary" className="text-xs">
-                        Similarity Search
+                        {t('imageSearch.similaritySearch')}
                       </Badge>
                     </div>
                     <Button
