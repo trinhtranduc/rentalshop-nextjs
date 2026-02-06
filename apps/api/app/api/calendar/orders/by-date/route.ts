@@ -24,7 +24,7 @@ const ordersByDateQuerySchema = z.object({
     ORDER_STATUS.RETURNED,
     ORDER_STATUS.CANCELLED
   ] as [string, ...string[]]).optional(),
-  limit: z.coerce.number().int().min(1).max(500).default(20), // Default 20 items per page, max 500 for iOS app
+  limit: z.coerce.number().int().min(1).max(500).default(50), // Default 50 items per page, max 500 for iOS app
   page: z.coerce.number().int().min(1).default(1), // Page number for pagination
 });
 
@@ -134,21 +134,23 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('🔍 Orders by date where clause:', where);
 
-    // Fetch orders with orderItems included (with pagination)
-    const ordersResult = await db.orders.searchWithItems({
+    // ✅ FIX: Query ALL orders (no pagination) to filter by local date and get correct total
+    // Then paginate the filtered results
+    // This ensures we get the correct total count after local date filtering
+    const allOrdersResult = await db.orders.searchWithItems({
       where,
-      limit,
-      page: page || 1
+      limit: 10000, // Large limit to get all orders in the date range
+      page: 1
     });
     
-    const orders = ordersResult.data || [];
+    const allOrders = allOrdersResult.data || [];
 
-    console.log('📦 Found orders:', orders.length);
+    console.log('📦 Found orders (before local date filter):', allOrders.length);
 
     // ✅ FIX: Filter orders by exact local date using getLocalDateKey
     // getLocalDateKey now converts UTC datetime to local date (VN UTC+7)
     // No need to normalize first, as it would lose the local date information
-    const filteredOrders = orders.filter((order: any) => {
+    const filteredOrders = allOrders.filter((order: any) => {
       if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
         // For RESERVED/PICKUPED: filter by pickupPlanAt
         if (!order.pickupPlanAt) return false;
@@ -167,14 +169,23 @@ export const GET = withReadOnlyAuth(async (
       }
     });
 
+    // ✅ FIX: Calculate correct total after local date filtering
+    const totalFiltered = filteredOrders.length;
+
     console.log('📦 Filtered orders by local date:', {
-      totalFound: orders.length,
-      filteredCount: filteredOrders.length,
+      totalFound: allOrders.length,
+      filteredCount: totalFiltered,
       dateStr
     });
 
-    // Transform orders to CalendarOrderSummary format
-    const orderSummaries: CalendarOrderSummary[] = filteredOrders.map((order: any) => {
+    // ✅ FIX: Paginate filtered results
+    const currentPage = page || 1;
+    const startIndex = (currentPage - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+    // Transform orders to CalendarOrderSummary format (only paginated orders)
+    const orderSummaries: CalendarOrderSummary[] = paginatedOrders.map((order: any) => {
       const orderItems = order.orderItems || [];
       const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
       const firstProduct = orderItems[0]?.product;
@@ -230,13 +241,12 @@ export const GET = withReadOnlyAuth(async (
       };
     });
 
-    // Calculate summary statistics
-    const totalRevenue = orderSummaries.reduce((sum, order) => sum + order.totalAmount, 0);
-    const averageOrderValue = orderSummaries.length > 0 ? totalRevenue / orderSummaries.length : 0;
+    // Calculate summary statistics (from all filtered orders, not just paginated)
+    const totalRevenue = filteredOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+    const averageOrderValue = totalFiltered > 0 ? totalRevenue / totalFiltered : 0;
 
-    // Get pagination info from search result
-    const total = ordersResult.total || orderSummaries.length;
-    const currentPage = page || 1;
+    // ✅ FIX: Use correct total after local date filtering
+    const total = totalFiltered;
     const totalPages = Math.ceil(total / limit);
     const hasMore = currentPage < totalPages;
 

@@ -62,7 +62,7 @@ export default function CalendarPage() {
   // 🎯 Pagination state for daily orders
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
-  const itemsPerPage = 20;
+  const itemsPerPage = 50;
   // 🎯 State for expanded orders (to show order items)
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
   
@@ -385,7 +385,7 @@ export default function CalendarPage() {
                   })()}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {dailyOrders.length} {dailyOrders.length === 1 ? tcal('modal.ordersFound') : tcal('modal.ordersFoundPlural')}
+                  {totalOrders} {totalOrders === 1 ? tcal('modal.ordersFound') : tcal('modal.ordersFoundPlural')}
                 </p>
               </div>
               <Button
