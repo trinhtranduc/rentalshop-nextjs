@@ -48,6 +48,7 @@
     "loading": "Loading orders...",
     "ordersFound": "order found",
     "ordersFoundPlural": "orders found",
+    "orders": "orders",
     "noOrders": "No Orders",
     "noPickupReturnOrders": "No pickup or return orders scheduled for this date.",
     "items": "items"

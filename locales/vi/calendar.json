@@ -48,6 +48,7 @@
     "loading": "Đang tải đơn hàng...",
     "ordersFound": "đơn hàng",
     "ordersFoundPlural": "đơn hàng",
+    "orders": "đơn hàng",
     "noOrders": "Không có đơn hàng",
     "noPickupReturnOrders": "Không có đơn lấy hàng hoặc trả hàng nào được lên lịch cho ngày này.",
     "items": "sản phẩm"
