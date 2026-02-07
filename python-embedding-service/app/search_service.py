@@ -364,8 +364,11 @@ class SearchService:
                     
                     if len(rows) == 0:
                         print(f"⚠️ No products found in database for IDs: {product_ids}")
+                        print(f"   ⚠️ Products may have been deleted from database but still exist in Qdrant")
                         # ✅ SECURITY: Filter by merchantId even in fallback (from Qdrant metadata)
                         # Only return products that match the requested merchantId
+                        # ⚠️ NOTE: Using Qdrant metadata as fallback (products may have been deleted)
+                        # Database is source of truth, but we return Qdrant data if database has no results
                         products = []
                         for pid in product_ids:
                             metadata = metadata_map.get(pid, {})
@@ -373,6 +376,8 @@ class SearchService:
                             
                             # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
                             if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                                # ⚠️ FALLBACK: Using Qdrant metadata name (database has no results)
+                                # This should rarely happen - database is source of truth
                                 products.append({
                                     "id": pid,
                                     "similarity": similarity_map.get(pid, 0.0),
@@ -380,7 +385,7 @@ class SearchService:
                                     "merchantId": qdrant_merchant_id,
                                     "outletId": metadata.get("outletId"),
                                     "categoryId": metadata.get("categoryId"),
-                                    "name": metadata.get("productName"),
+                                    "name": metadata.get("productName") or "Unknown Product",
                                     "imageUrl": metadata.get("imageUrl")
                                 })
                             else:
@@ -399,7 +404,7 @@ class SearchService:
                         outlet_stock_map = {row["productId"]: {"renting": row["totalRenting"]} for row in outlet_stock_rows}
                         
                         for row in rows:
-                            # Get metadata from Qdrant if available (fallback to database)
+                            # Get metadata from Qdrant if available (for similarity scores and IDs)
                             metadata = metadata_map.get(row["id"], {})
                             # Get outlet stock aggregates
                             outlet_stock = outlet_stock_map.get(row["id"], {"renting": 0})
@@ -408,9 +413,14 @@ class SearchService:
                             total_renting = outlet_stock["renting"] or 0
                             available = max(0, total_stock - total_renting)
                             
+                            # ✅ ALWAYS use database name (source of truth - preserves Vietnamese accents and Unicode)
+                            # Database is the authoritative source for product names
+                            # Qdrant metadata productName is only used as last resort if database name is null/empty
+                            product_name = row["name"] or metadata.get("productName") or "Unknown Product"
+                            
                             product = {
                                 "id": row["id"],
-                                "name": row["name"],
+                                "name": product_name,
                                 "description": row["description"],
                                 "barcode": row["barcode"],
                                 "rentPrice": float(row["rentPrice"]) if row["rentPrice"] else None,
@@ -441,11 +451,12 @@ class SearchService:
                             products.append(product)
                     
             except Exception as e:
-                print(f"❌ Error fetching products: {e}")
+                print(f"❌ Error fetching products from database: {e}")
                 import traceback
                 traceback.print_exc()
                 # ✅ SECURITY: Filter by merchantId even when database fetch fails
-                # Return product IDs with similarity and metadata from Qdrant, but filter by merchantId
+                # ⚠️ FALLBACK: Return product IDs with similarity and metadata from Qdrant
+                # Database is source of truth, but we use Qdrant metadata when database is unavailable
                 products = []
                 for pid in product_ids:
                     metadata = metadata_map.get(pid, {})
@@ -453,6 +464,8 @@ class SearchService:
                     
                     # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
                     if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                        # ⚠️ FALLBACK: Using Qdrant metadata name (database fetch failed)
+                        # Database is source of truth, but we use Qdrant data when database is unavailable
                         products.append({
                             "id": pid,
                             "similarity": similarity_map.get(pid, 0.0),
@@ -460,14 +473,16 @@ class SearchService:
                             "merchantId": qdrant_merchant_id,
                             "outletId": metadata.get("outletId"),
                             "categoryId": metadata.get("categoryId"),
-                            "name": metadata.get("productName"),
+                            "name": metadata.get("productName") or "Unknown Product",
                             "imageUrl": metadata.get("imageUrl")
                         })
                     else:
                         print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
         else:
             # ✅ SECURITY: Filter by merchantId even when no database connection
-            # No database connection, return IDs with metadata from Qdrant, but filter by merchantId
+            # ⚠️ FALLBACK: No database connection, return IDs with metadata from Qdrant
+            # Database is source of truth, but we use Qdrant metadata when DATABASE_URL is not set
+            print("⚠️ No database connection (DATABASE_URL not set) - using Qdrant metadata as fallback")
             products = []
             for pid in product_ids:
                 metadata = metadata_map.get(pid, {})
@@ -475,6 +490,8 @@ class SearchService:
                 
                 # ✅ SECURITY: Only include if merchantId matches (or no merchantId filter)
                 if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
+                    # ⚠️ FALLBACK: Using Qdrant metadata name (no database connection)
+                    # Database is source of truth, but we use Qdrant data when DATABASE_URL is not set
                     products.append({
                         "id": pid,
                         "similarity": similarity_map.get(pid, 0.0),
@@ -482,7 +499,7 @@ class SearchService:
                         "merchantId": qdrant_merchant_id,
                         "outletId": metadata.get("outletId"),
                         "categoryId": metadata.get("categoryId"),
-                        "name": metadata.get("productName"),
+                        "name": metadata.get("productName") or "Unknown Product",
                         "imageUrl": metadata.get("imageUrl")
                     })
                 else:
