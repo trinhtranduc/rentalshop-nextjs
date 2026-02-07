@@ -647,10 +647,21 @@ export const simplifiedUsers = {
   },
 
   /**
+   * Soft delete user (simplified API)
+   * Sets isActive = false and deletedAt = current timestamp
+   * Preserves order history (createdById remains) and frees up addon slot
+   * Soft deleted users are automatically excluded from queries and plan limit counts
+   */
+  softDelete: async (id: number) => {
+    return await softDeleteUser(id);
+  },
+
+  /**
    * Delete user (hard delete) (simplified API)
    * Hard delete removes user from database permanently.
    * Before deleting, sets null for foreign key references to avoid constraint violations.
    * Note: Schema now allows createdById to be null with onDelete: SetNull
+   * WARNING: Only use for cleanup, prefer softDelete to preserve order history
    */
   delete: async (id: number) => {
     // Step 1: Set null for orders.createdById using raw SQL (schema allows null with onDelete: SetNull)

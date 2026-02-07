@@ -181,14 +181,15 @@ export async function DELETE(
 
       // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
 
-      // If user is deleting themselves, hard delete account
+      // If user is deleting themselves, soft delete account
       if (userId === user.id) {
         // Invalidate all user sessions to force logout
         await db.sessions.invalidateAllUserSessions(userId);
         console.log(`🗑️ User ${userId} deleting own account: Invalidated all sessions`);
         
-        // Hard delete the account (orders.createdById will be set to null to preserve order history)
-        const deletedUser = await db.users.delete(userId);
+        // Soft delete the account (preserves order history and frees addon slot)
+        // Soft deleted users are automatically excluded from queries and plan limit counts
+        const deletedUser = await db.users.softDelete(userId);
         
         console.log('✅ User account deleted successfully:', deletedUser);
         
@@ -226,9 +227,10 @@ export async function DELETE(
       await db.sessions.invalidateAllUserSessions(userId);
       console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-      // Hard delete user (orders.createdById will be set to null to preserve order history)
-      const deletedUser = await db.users.delete(userId);
-      console.log('✅ User hard deleted successfully:', deletedUser);
+      // Soft delete user (preserves order history and frees addon slot)
+      // Soft deleted users are automatically excluded from queries and plan limit counts
+      const deletedUser = await db.users.softDelete(userId);
+      console.log('✅ User soft deleted successfully:', deletedUser);
 
       return NextResponse.json({
         success: true,

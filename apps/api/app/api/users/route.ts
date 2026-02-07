@@ -437,10 +437,11 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     await db.sessions.invalidateAllUserSessions(userId);
     console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-    // Hard delete user (orders.createdById will be set to null to preserve order history)
-    const deletedUser = await db.users.delete(userId);
+    // Soft delete user (preserves order history and frees addon slot)
+    // Soft deleted users are automatically excluded from queries and plan limit counts
+    const deletedUser = await db.users.softDelete(userId);
     
-    console.log(`✅ User hard deleted: ${existingUser.email} (ID: ${userId})`);
+    console.log(`✅ User soft deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
