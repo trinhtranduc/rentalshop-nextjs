@@ -136,7 +136,7 @@ function groupOrdersByDate(
       // Example: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) → "2026-02-25"
       const dateKey = getLocalDateKey(dateValue);
       if (dateKey) {
-        countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
+      countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
       }
     }
   }

@@ -263,9 +263,9 @@ model Order {
   deletedAt          DateTime?
   outletId           Int
   customerId         Int?
-  createdById        Int
+  createdById        Int?  // Allow null to support user deletion
   rentalDurationUnit String?
-  createdBy          User        @relation(fields: [createdById], references: [id])
+  createdBy          User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
   customer           Customer?   @relation(fields: [customerId], references: [id])
   outlet             Outlet      @relation(fields: [outletId], references: [id])
   orderItems         OrderItem[]

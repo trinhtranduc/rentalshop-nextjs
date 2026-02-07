@@ -338,6 +338,30 @@ class SearchService:
                     
                     print(f"📊 Fetched {len(rows)} rows from database for {len(product_ids)} product IDs")
                     
+                    # Query outlet stock aggregates for renting (sum across all outlets)
+                    outlet_stock_query = """
+                        SELECT 
+                            os."productId",
+                            COALESCE(SUM(os.renting), 0) as "totalRenting"
+                        FROM "OutletStock" os
+                        INNER JOIN "Product" p ON os."productId" = p.id
+                        WHERE os."productId" = ANY($1::int[])
+                    """
+                    if filters.get("merchantId"):
+                        # Filter by merchantId through Product table
+                        outlet_stock_query += " AND p.\"merchantId\" = $2"
+                        outlet_stock_rows = await conn.fetch(outlet_stock_query, product_ids, filters["merchantId"])
+                    else:
+                        outlet_stock_rows = await conn.fetch(outlet_stock_query, product_ids)
+                    
+                    # Create map for quick lookup
+                    outlet_stock_map = {
+                        row["productId"]: {
+                            "renting": int(row["totalRenting"]) if row["totalRenting"] else 0
+                        } 
+                        for row in outlet_stock_rows
+                    }
+                    
                     if len(rows) == 0:
                         print(f"⚠️ No products found in database for IDs: {product_ids}")
                         # ✅ SECURITY: Filter by merchantId even in fallback (from Qdrant metadata)
@@ -362,9 +386,28 @@ class SearchService:
                             else:
                                 print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
                     else:
+                        # Query outlet stock aggregates for renting (sum across all outlets)
+                        outlet_stock_query = """
+                            SELECT 
+                                "productId",
+                                COALESCE(SUM(renting), 0) as "totalRenting"
+                            FROM "OutletStock"
+                            WHERE "productId" = ANY($1::int[])
+                            GROUP BY "productId"
+                        """
+                        outlet_stock_rows = await conn.fetch(outlet_stock_query, product_ids)
+                        outlet_stock_map = {row["productId"]: {"renting": row["totalRenting"]} for row in outlet_stock_rows}
+                        
                         for row in rows:
                             # Get metadata from Qdrant if available (fallback to database)
                             metadata = metadata_map.get(row["id"], {})
+                            # Get outlet stock aggregates
+                            outlet_stock = outlet_stock_map.get(row["id"], {"renting": 0})
+                            # Calculate available at product level: totalStock - totalRenting
+                            total_stock = row["totalStock"] or 0
+                            total_renting = outlet_stock["renting"] or 0
+                            available = max(0, total_stock - total_renting)
+                            
                             product = {
                                 "id": row["id"],
                                 "name": row["name"],
@@ -375,6 +418,9 @@ class SearchService:
                                 "deposit": float(row["deposit"]) if row["deposit"] else None,
                                 "images": self.parse_product_images(row["images"]) if row["images"] else [],
                                 "totalStock": row["totalStock"],
+                                "stock": row["totalStock"],  # Alias for compatibility
+                                "available": available,  # Product-level available = totalStock - sum(renting from all outlets)
+                                "renting": outlet_stock["renting"],
                                 "isActive": row["isActive"],
                                 "createdAt": row["createdAt"].isoformat() if row["createdAt"] else None,
                                 "updatedAt": row["updatedAt"].isoformat() if row["updatedAt"] else None,

@@ -139,6 +139,11 @@ export async function GET(
       // Check if user has products.manage permission to view cost price
       const canViewCostPrice = await hasPermission(user, 'products.manage');
 
+      // Calculate total renting from all outlets
+      const totalRenting = product.outletStock.reduce((sum: number, os: any) => sum + (os.renting || 0), 0);
+      // Calculate available at product level: totalStock - totalRenting
+      const available = Math.max(0, (product.totalStock || 0) - totalRenting);
+      
       // Transform the data to match the expected format
       const transformedProduct = {
         id: product.id, // Return id directly to frontend
@@ -152,6 +157,7 @@ export async function GET(
         ...(canViewCostPrice ? { costPrice: product.costPrice ?? null } : {}),
         deposit: product.deposit,
         totalStock: product.totalStock,
+        available: available, // Product-level available = totalStock - sum(renting from all outlets)
         images: imageUrls,
         isActive: product.isActive,
         // Optional pricing configuration
@@ -163,7 +169,8 @@ export async function GET(
           id: os.id,
           outletId: os.outlet.id, // Use id for frontend
           stock: os.stock,
-          available: os.available,
+          // Calculate available = stock - renting (ensure it's always correct)
+          available: Math.max(0, (os.stock || 0) - (os.renting || 0)),
           renting: os.renting,
           outlet: {
             id: os.outlet.id, // Use id for frontend
@@ -600,12 +607,12 @@ export async function PUT(
           // Run in background, don't block API response
           (async () => {
             try {
-              const vectorStore = getVectorStore();
+          const vectorStore = getVectorStore();
               
               // Step 1: Delete old embeddings first
               await vectorStore.deleteProductEmbeddings(productId);
               console.log(`✅ Deleted old embeddings for product ${productId}`);
-              
+          
               // Step 2: Generate new embeddings after delete completes
               await generateProductEmbedding(productId);
               console.log(`✅ Embedding regeneration completed for product ${productId}`);

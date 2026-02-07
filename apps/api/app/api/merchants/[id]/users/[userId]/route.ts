@@ -141,14 +141,27 @@ export async function DELETE(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
+      // Check if user is already soft deleted
+      if (existing.deletedAt) {
+        return NextResponse.json(
+          ResponseBuilder.error('USER_ALREADY_DELETED'),
+          { status: API.STATUS.CONFLICT }
+        );
+      }
 
+      // Soft delete user (sets deletedAt and isActive = false)
+      // This preserves order history (createdById remains) and frees up addon slot
+      // Soft deleted users are automatically excluded from:
+      // - User listing queries (deletedAt = null filter)
+      // - Plan limit counts (deletedAt = null in getCurrentEntityCounts)
+      // - Login attempts (deletedAt check in auth)
+      
       // Invalidate all user sessions first
       await db.sessions.invalidateAllUserSessions(userPublicId);
       console.log(`🗑️ Invalidated all sessions for user ${userPublicId}`);
 
-      // Hard delete user (orders.createdById will remain with user's ID as historical reference)
-      const deletedUser = await db.users.delete(userPublicId);
+      // Soft delete user (preserves order history and frees addon slot)
+      const deletedUser = await db.users.softDelete(userPublicId);
 
       return NextResponse.json({
         success: true,

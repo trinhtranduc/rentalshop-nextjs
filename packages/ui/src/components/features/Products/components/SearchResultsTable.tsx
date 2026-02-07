@@ -13,7 +13,7 @@ import {
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
-import { getProductImageUrl } from '@rentalshop/utils/client';
+import { parseProductImages } from '@rentalshop/utils';
 import { Eye, Edit, ShoppingCart, MoreVertical, Package, Percent } from 'lucide-react';
 
 interface SearchResult extends Product {
@@ -54,19 +54,19 @@ export function SearchResultsTable({
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
-      <Badge className="bg-green-100 text-green-800">Active</Badge>
+      <Badge className="bg-green-100 text-green-800">{t('status.active')}</Badge>
     ) : (
-      <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
+      <Badge className="bg-gray-100 text-gray-800">{t('status.inactive')}</Badge>
     );
   };
 
   const getAvailabilityBadge = (available: number, stock: number) => {
     if (available === 0) {
-      return <Badge className="bg-red-100 text-red-800">Out of Stock</Badge>;
+      return <Badge className="bg-red-100 text-red-800">{t('status.outOfStock')}</Badge>;
     } else if (available < stock * 0.2) {
-      return <Badge className="bg-yellow-100 text-yellow-800">Low Stock</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800">{t('status.lowStock')}</Badge>;
     } else {
-      return <Badge className="bg-green-100 text-green-800">In Stock</Badge>;
+      return <Badge className="bg-green-100 text-green-800">{t('status.inStock')}</Badge>;
     }
   };
 
@@ -96,24 +96,37 @@ export function SearchResultsTable({
               <th className="text-left p-4 font-semibold text-gray-700">
                 <div className="flex items-center gap-2">
                   <Percent className="w-4 h-4 text-primary" />
-                  Match
+                  {t('searchResults.match') || 'Match'}
                 </div>
               </th>
-              <th className="text-left p-4 font-semibold text-gray-700">Product</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Category</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Price</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Stock</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Status</th>
-              <th className="text-right p-4 font-semibold text-gray-700">Actions</th>
+              <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.product') || 'Product'}</th>
+              {/* Category column hidden */}
+              <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.price') || 'Price'}</th>
+              {/* Stock column hidden */}
+              {/* <th className="text-left p-4 font-semibold text-gray-700">{t('searchResults.stock') || 'Stock'}</th> */}
+              {/* Status column hidden */}
+              <th className="text-right p-4 font-semibold text-gray-700">{t('searchResults.actions') || 'Actions'}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {products.map((product) => {
-              // Images are already parsed by backend API as array of strings
-              const mainImage = product.images && product.images.length > 0
-                ? (Array.isArray(product.images) ? product.images[0] : product.images)
-                : null;
-              const imageUrl = mainImage ? getProductImageUrl(mainImage) : null;
+              // Parse images (handles JSON string, array, or comma-separated string)
+              const parsedImages = parseProductImages(product.images);
+              const mainImage = parsedImages.length > 0 ? parsedImages[0] : null;
+              // mainImage is already a URL string, use it directly
+              const imageUrl = mainImage || null;
+              
+              // Debug: Log image parsing (remove in production)
+              if (process.env.NODE_ENV === 'development') {
+                console.log('🔍 Product image debug:', {
+                  productId: product.id,
+                  productName: product.name,
+                  originalImages: product.images,
+                  parsedImages,
+                  mainImage,
+                  imageUrl
+                });
+              }
 
               return (
                 <tr
@@ -135,7 +148,13 @@ export function SearchResultsTable({
                             src={imageUrl}
                             alt={product.name}
                             className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
+                            loading="lazy"
                             onError={(e) => {
+                              console.error('❌ Image load error:', {
+                                productId: product.id,
+                                imageUrl,
+                                error: e
+                              });
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                               const parent = target.parentElement;
@@ -143,10 +162,16 @@ export function SearchResultsTable({
                                 parent.classList.add('flex', 'items-center', 'justify-center');
                               }
                             }}
+                            onLoad={() => {
+                              if (process.env.NODE_ENV === 'development') {
+                                console.log('✅ Image loaded successfully:', {
+                                  productId: product.id,
+                                  imageUrl
+                                });
+                              }
+                            }}
                           />
-                        ) : null}
-                        {/* Placeholder - shown when no image or image fails */}
-                        {!imageUrl && (
+                        ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="w-10 h-10 text-gray-400" />
                           </div>
@@ -174,12 +199,12 @@ export function SearchResultsTable({
                     </div>
                   </td>
 
-                  {/* Category */}
-                  <td className="p-4">
+                  {/* Category - Hidden */}
+                  {/* <td className="p-4">
                     <span className="text-gray-700">
                       {product.category?.name || 'N/A'}
                     </span>
-                  </td>
+                  </td> */}
 
                   {/* Price */}
                   <td className="p-4">
@@ -188,32 +213,35 @@ export function SearchResultsTable({
                     </div>
                     {product.salePrice && (
                       <div className="text-xs text-gray-500">
-                        Sale: {formatMoney(product.salePrice)}
+                        {t('price.sale')}: {formatMoney(product.salePrice)}
                       </div>
                     )}
                   </td>
 
-                  {/* Stock */}
-                  <td className="p-4">
+                  {/* Stock - Hidden */}
+                  {/* <td className="p-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500">Total:</span>
-                        <span className="font-medium">{product.stock}</span>
+                        <span className="text-gray-500">{t('inventory.totalStock')}:</span>
+                        <span className="font-medium">{(product as any).totalStock ?? product.stock ?? 0}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500">Available:</span>
+                        <span className="text-gray-500">{t('inventory.availableStock')}:</span>
                         <span className="font-medium text-green-600">
-                          {product.available}
+                          {product.available ?? 0}
                         </span>
                       </div>
-                      {getAvailabilityBadge(product.available, product.stock)}
+                      {getAvailabilityBadge(
+                        product.available ?? 0, 
+                        (product as any).totalStock ?? product.stock ?? 0
+                      )}
                     </div>
-                  </td>
+                  </td> */}
 
-                  {/* Status */}
-                  <td className="p-4">
+                  {/* Status - Hidden */}
+                  {/* <td className="p-4">
                     {getStatusBadge(product.isActive)}
-                  </td>
+                  </td> */}
 
                   {/* Actions */}
                   <td className="p-4 text-right">
@@ -226,7 +254,7 @@ export function SearchResultsTable({
                           className="flex items-center gap-1"
                         >
                           <ShoppingCart className="w-4 h-4" />
-                          <span className="hidden sm:inline">Add</span>
+                          <span className="hidden sm:inline">{t('searchResults.add') || 'Add'}</span>
                         </Button>
                       )}
                       

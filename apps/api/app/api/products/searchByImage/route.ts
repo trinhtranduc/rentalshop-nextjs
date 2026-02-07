@@ -191,11 +191,28 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         const totalDuration = Date.now() - requestStartTime;
         console.log(`✅ Cache hit! Returning cached results in ${totalDuration}ms (cache check: ${cacheCheckDuration}ms)`);
         
+        // Normalize cached results: if imageUrl exists, add it to images array
+        const normalizedCachedResults = cachedResults.map((product: any) => {
+          let images = parseProductImages(product.images);
+          // If imageUrl exists and is not already in images, add it
+          if (product.imageUrl && !images.includes(product.imageUrl)) {
+            images = [product.imageUrl, ...images]; // Put imageUrl first
+          }
+          // If images is still empty but imageUrl exists, use imageUrl
+          if (images.length === 0 && product.imageUrl) {
+            images = [product.imageUrl];
+          }
+          return {
+            ...product,
+            images: images
+          };
+        });
+        
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
-            products: cachedResults,
-            total: cachedResults.length,
-            message: `Tìm thấy ${cachedResults.length} sản phẩm tương tự (cached)`,
+            products: normalizedCachedResults,
+            total: normalizedCachedResults.length,
+            message: `Tìm thấy ${normalizedCachedResults.length} sản phẩm tương tự (cached)`,
             debug: {
               cacheHit: true,
               totalDuration: `${totalDuration}ms`,
@@ -321,9 +338,19 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         // Parse images to ensure consistent format (array of strings)
         // Also normalize IDs to integers (Python service may return strings from Qdrant metadata)
         const products = rawProducts.map((product: any) => {
+          let images = parseProductImages(product.images);
+          // If imageUrl exists and is not already in images, add it
+          if (product.imageUrl && !images.includes(product.imageUrl)) {
+            images = [product.imageUrl, ...images]; // Put imageUrl first
+          }
+          // If images is still empty but imageUrl exists, use imageUrl
+          if (images.length === 0 && product.imageUrl) {
+            images = [product.imageUrl];
+          }
+          
           const normalized: any = {
           ...product,
-          images: parseProductImages(product.images)
+          images: images
           };
           
           // Convert string IDs to integers (Python service returns strings from Qdrant metadata)

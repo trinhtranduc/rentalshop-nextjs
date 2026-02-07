@@ -647,24 +647,62 @@ export const simplifiedUsers = {
   },
 
   /**
+   * Soft delete user (simplified API)
+   * Sets isActive = false and deletedAt = current timestamp
+   * Preserves order history (createdById remains) and frees up addon slot
+   * Soft deleted users are automatically excluded from queries and plan limit counts
+   */
+  softDelete: async (id: number) => {
+    return await softDeleteUser(id);
+  },
+
+  /**
    * Delete user (hard delete) (simplified API)
    * Hard delete removes user from database permanently.
-   * Note: If user has created orders, the orders.createdById will remain but user will be deleted.
-   * This is acceptable as orders preserve the ID reference even if user no longer exists.
+   * Before deleting, sets null for foreign key references to avoid constraint violations.
+   * Note: Schema now allows createdById to be null with onDelete: SetNull
+   * WARNING: Only use for cleanup, prefer softDelete to preserve order history
    */
   delete: async (id: number) => {
-    // Check if user has created any orders
+    // Step 1: Set null for orders.createdById using raw SQL (schema allows null with onDelete: SetNull)
     const orderCount = await prisma.order.count({
       where: { createdById: id }
     });
-
     if (orderCount > 0) {
-      console.log(`⚠️ Warning: User ${id} has created ${orderCount} orders. User will be hard deleted but orders.createdById will remain.`);
+      console.log(`🔄 Setting null for ${orderCount} orders.createdById before deleting user ${id}`);
+      // Use raw SQL to set null (Prisma may not allow null for Int? in updateMany)
+      await prisma.$executeRawUnsafe(`
+        UPDATE "Order" SET "createdById" = NULL WHERE "createdById" = ${id};
+      `);
     }
 
-    // Hard delete the user
-    // Note: UserSession will be cascade deleted due to onDelete: Cascade in schema
-    // Orders.createdById will remain with the deleted user's ID (historical reference)
+    // Step 2: Set null for auditLogs.userId (if any) - this is optional so can be null
+    const auditLogCount = await prisma.auditLog.count({
+      where: { userId: id }
+    });
+    if (auditLogCount > 0) {
+      console.log(`🔄 Setting null for ${auditLogCount} auditLogs.userId before deleting user ${id}`);
+      await prisma.auditLog.updateMany({
+        where: { userId: id },
+        data: { userId: null }
+      });
+    }
+
+    // Step 3: Set null for requestLogs.userId (if any) - this is optional so can be null
+    const requestLogCount = await prisma.requestLog.count({
+      where: { userId: id }
+    });
+    if (requestLogCount > 0) {
+      console.log(`🔄 Setting null for ${requestLogCount} requestLogs.userId before deleting user ${id}`);
+      await prisma.requestLog.updateMany({
+        where: { userId: id },
+        data: { userId: null }
+      });
+    }
+
+    // Step 4: Hard delete the user
+    // Note: UserSession, EmailVerification, PasswordReset will be cascade deleted due to onDelete: Cascade in schema
+    // Orders.createdById will be set to null automatically due to onDelete: SetNull
     return await prisma.user.delete({
       where: { id },
       include: {

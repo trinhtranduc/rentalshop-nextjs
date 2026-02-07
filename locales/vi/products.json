@@ -183,7 +183,18 @@
     "errorFileSize": "Kích thước hình ảnh phải nhỏ hơn 10MB",
     "errorSearchFailed": "Không thể tìm kiếm sản phẩm",
     "success": "Thành công",
-    "successFound": "Tìm thấy {count} sản phẩm tương tự"
+    "successFound": "Tìm thấy {count} sản phẩm tương tự",
+    "similaritySearch": "Tìm kiếm tương tự"
+  },
+  "searchResults": {
+    "match": "Khớp",
+    "product": "Sản phẩm",
+    "category": "Danh mục",
+    "price": "Giá",
+    "stock": "Tồn kho",
+    "status": "Trạng thái",
+    "actions": "Thao tác",
+    "add": "Thêm"
   },
   "search": {
     "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",
