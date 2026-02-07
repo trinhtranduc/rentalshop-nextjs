@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { Search, Image as ImageIcon } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import { ImageSearchDialog } from './ImageSearchDialog';
 
 interface ProductFiltersProps {
@@ -159,16 +159,16 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
             />
           </svg>
-          {/* Image Search Button */}
+          {/* AI Image Search Button */}
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center p-0"
             onClick={() => setShowImageSearch(true)}
-            title="Search by image"
+            title="AI Image Search"
           >
-            <ImageIcon className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-purple-600" />
           </Button>
         </div>
       </div>
