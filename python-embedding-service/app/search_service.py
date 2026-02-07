@@ -350,6 +350,10 @@ class SearchService:
                     if filters.get("merchantId"):
                         # Filter by merchantId through Product table
                         outlet_stock_query += " AND p.\"merchantId\" = $2"
+                    # ✅ Add GROUP BY when using aggregate functions (SUM)
+                    outlet_stock_query += " GROUP BY os.\"productId\""
+                    
+                    if filters.get("merchantId"):
                         outlet_stock_rows = await conn.fetch(outlet_stock_query, product_ids, filters["merchantId"])
                     else:
                         outlet_stock_rows = await conn.fetch(outlet_stock_query, product_ids)
@@ -378,6 +382,7 @@ class SearchService:
                             if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
                                 # ⚠️ FALLBACK: Using Qdrant metadata name (database has no results)
                                 # This should rarely happen - database is source of truth
+                                # Stock info not available from Qdrant, set to 0
                                 products.append({
                                     "id": pid,
                                     "similarity": similarity_map.get(pid, 0.0),
@@ -386,7 +391,11 @@ class SearchService:
                                     "outletId": metadata.get("outletId"),
                                     "categoryId": metadata.get("categoryId"),
                                     "name": metadata.get("productName") or "Unknown Product",
-                                    "imageUrl": metadata.get("imageUrl")
+                                    "imageUrl": metadata.get("imageUrl"),
+                                    "totalStock": 0,
+                                    "stock": 0,  # Stock not available from Qdrant metadata
+                                    "available": 0,  # Available not available from Qdrant metadata
+                                    "renting": 0
                                 })
                             else:
                                 print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
@@ -466,6 +475,7 @@ class SearchService:
                     if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
                         # ⚠️ FALLBACK: Using Qdrant metadata name (database fetch failed)
                         # Database is source of truth, but we use Qdrant data when database is unavailable
+                        # Stock info not available from Qdrant, set to 0
                         products.append({
                             "id": pid,
                             "similarity": similarity_map.get(pid, 0.0),
@@ -474,7 +484,11 @@ class SearchService:
                             "outletId": metadata.get("outletId"),
                             "categoryId": metadata.get("categoryId"),
                             "name": metadata.get("productName") or "Unknown Product",
-                            "imageUrl": metadata.get("imageUrl")
+                            "imageUrl": metadata.get("imageUrl"),
+                            "totalStock": 0,
+                            "stock": 0,  # Stock not available from Qdrant metadata
+                            "available": 0,  # Available not available from Qdrant metadata
+                            "renting": 0
                         })
                     else:
                         print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
@@ -492,6 +506,7 @@ class SearchService:
                 if not filters.get("merchantId") or str(qdrant_merchant_id) == str(filters["merchantId"]):
                     # ⚠️ FALLBACK: Using Qdrant metadata name (no database connection)
                     # Database is source of truth, but we use Qdrant data when DATABASE_URL is not set
+                    # Stock info not available from Qdrant, set to 0
                     products.append({
                         "id": pid,
                         "similarity": similarity_map.get(pid, 0.0),
@@ -500,7 +515,11 @@ class SearchService:
                         "outletId": metadata.get("outletId"),
                         "categoryId": metadata.get("categoryId"),
                         "name": metadata.get("productName") or "Unknown Product",
-                        "imageUrl": metadata.get("imageUrl")
+                        "imageUrl": metadata.get("imageUrl"),
+                        "totalStock": 0,
+                        "stock": 0,  # Stock not available from Qdrant metadata
+                        "available": 0,  # Available not available from Qdrant metadata
+                        "renting": 0
                     })
                 else:
                     print(f"⚠️ Filtered out product {pid}: merchantId mismatch (Qdrant: {qdrant_merchant_id}, Filter: {filters['merchantId']})")
