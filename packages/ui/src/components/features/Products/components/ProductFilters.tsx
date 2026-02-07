@@ -178,10 +178,12 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         open={showImageSearch}
         onOpenChange={setShowImageSearch}
         onSearchResult={(products) => {
+          // Call callback to update product list (but don't close dialog - keep results visible)
           if (onImageSearchResult) {
             onImageSearchResult(products);
           }
-          setShowImageSearch(false);
+          // ✅ Keep dialog open to show results (same behavior as cart)
+          // User can close manually or search another image
         }}
         categoryId={filters.categoryId}
       />

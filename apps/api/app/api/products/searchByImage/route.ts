@@ -1,19 +1,20 @@
 /**
  * POST /api/products/searchByImage
- * Search products by uploading an image
+ * Search products by uploading an image using AI/ML similarity search
  * 
- * ⚠️ TEMPORARILY SIMPLIFIED: Feature returns empty results to ensure app stability
- * TODO: Re-enable full ML functionality after fixing WASM backend initialization issues
- * 
- * Current behavior: Returns empty results without loading ML model
- * This allows frontend to work without crashing while we fix the backend
+ * Flow:
+ * 1. Validate image file
+ * 2. Check cache (fast path)
+ * 3. Compress image for embedding
+ * 4. Call Python service (embedding + vector search + product fetch)
+ * 5. Normalize and return results
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
-import { compressImageTo1MB, compressImageForEmbedding } from '../../../../lib/image-compression';
+import { compressImageForEmbedding } from '../../../../lib/image-compression';
 import { 
   generateImageHash, 
   getCachedSearchResults,
@@ -21,7 +22,6 @@ import {
 } from '../../../../lib/image-search-cache';
 import { fetchWithPooling } from '../../../../lib/python-api-client';
 
-// Force dynamic rendering to prevent Next.js from collecting page data
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -29,6 +29,127 @@ export const runtime = 'nodejs';
 const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE; // 5MB
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Parse imageUrl (may be JSON string from Qdrant metadata)
+ * Handles: '["url"]', '"url"', 'url'
+ */
+function parseImageUrl(imageUrl: any): string | null {
+  if (!imageUrl) return null;
+  
+  try {
+    // Try to parse as JSON if it looks like JSON array
+    const parsed = typeof imageUrl === 'string' && imageUrl.trim().startsWith('[')
+      ? JSON.parse(imageUrl)
+      : imageUrl;
+    
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed[0];
+    }
+    if (typeof parsed === 'string') {
+      return parsed;
+    }
+    return String(imageUrl);
+  } catch {
+    return typeof imageUrl === 'string' ? imageUrl : String(imageUrl);
+  }
+}
+
+/**
+ * Normalize product images: merge images array and imageUrl into single images array
+ */
+function normalizeProductImages(product: any): string[] {
+  let images = parseProductImages(product.images);
+  const imageUrl = parseImageUrl(product.imageUrl);
+  
+  // Add imageUrl to images if not already present
+  if (imageUrl && !images.includes(imageUrl)) {
+    images = [imageUrl, ...images];
+  }
+  
+  // Fallback to imageUrl if images is empty
+  if (images.length === 0 && imageUrl) {
+    images = [imageUrl];
+  }
+  
+  return images;
+}
+
+/**
+ * Convert string IDs to integers (Python service may return strings from Qdrant)
+ */
+function normalizeProductIds(product: any): any {
+  const normalized = { ...product };
+  
+  // Normalize top-level IDs
+  ['merchantId', 'categoryId', 'outletId'].forEach(key => {
+    if (normalized[key] !== undefined && normalized[key] !== null) {
+      normalized[key] = typeof normalized[key] === 'string' 
+        ? parseInt(normalized[key], 10) 
+        : normalized[key];
+    }
+  });
+  
+  // Normalize nested object IDs
+  if (normalized.merchant?.id) {
+    normalized.merchant.id = typeof normalized.merchant.id === 'string'
+      ? parseInt(normalized.merchant.id, 10)
+      : normalized.merchant.id;
+  }
+  
+  if (normalized.category?.id) {
+    normalized.category.id = typeof normalized.category.id === 'string'
+      ? parseInt(normalized.category.id, 10)
+      : normalized.category.id;
+  }
+  
+  return normalized;
+}
+
+/**
+ * Normalize a single product: images + IDs
+ */
+function normalizeProduct(product: any): any {
+  const normalized = normalizeProductIds({
+    ...product,
+    images: normalizeProductImages(product),
+    imageUrl: undefined // Remove imageUrl (images array is source of truth)
+  });
+  
+  return normalized;
+}
+
+/**
+ * Build search filters from user scope and category
+ */
+function buildSearchFilters(
+  userScope: { merchantId?: number; outletId?: number },
+  categoryId?: number
+) {
+  const filters: {
+    merchantId?: number;
+    outletId?: number;
+    categoryId?: number;
+  } = {};
+  
+  if (userScope.merchantId) {
+    filters.merchantId = userScope.merchantId;
+  }
+  
+  if (userScope.outletId) {
+    filters.outletId = userScope.outletId;
+  }
+  
+  if (categoryId) {
+    filters.categoryId = categoryId;
+  }
+  
+  return filters;
+}
 
 /**
  * Validate image file
@@ -69,25 +190,6 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
   return { isValid: true };
 }
 
-/**
- * POST /api/products/searchByImage
- * Search products by image
- * 
- * ⚠️ TEMPORARILY SIMPLIFIED: Returns empty results without loading ML model
- * This allows frontend to work without crashing while we fix WASM backend
- * 
- * TODO: Re-enable full ML functionality after fixing WASM backend initialization
- */
-/**
- * POST /api/products/searchByImage
- * Search products by image
- * 
- * ⚠️ STEP-BY-STEP INTEGRATION: Currently at Step 3
- * Step 1: Parse form data and validate image (✅ DONE)
- * Step 2: Compress image (✅ DONE)
- * Step 3: Generate embedding (✅ DONE - with error handling)
- * Step 4: Vector search (TODO)
- */
 export const POST = withPermissions(['products.view'], { requireActiveSubscription: false })(
   async (request: NextRequest, { user, userScope }) => {
     const requestStartTime = Date.now();
@@ -163,24 +265,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // ============================================================
       // STEP 2: Check cache first (FAST PATH - 80-90% latency reduction)
       // ============================================================
-      const searchFilters: {
-        merchantId?: number;
-        outletId?: number;
-        categoryId?: number;
-      } = {};
-
-      // Apply role-based filtering (security: backend-only)
-      if (userScope.merchantId) {
-        searchFilters.merchantId = userScope.merchantId;
-      }
-      
-      if (userScope.outletId) {
-        searchFilters.outletId = userScope.outletId;
-      }
-      
-      if (categoryId) {
-        searchFilters.categoryId = categoryId;
-      }
+      const searchFilters = buildSearchFilters(userScope, categoryId);
 
       // Check if we have cached search results
       const cacheCheckStart = Date.now();
@@ -191,22 +276,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         const totalDuration = Date.now() - requestStartTime;
         console.log(`✅ Cache hit! Returning cached results in ${totalDuration}ms (cache check: ${cacheCheckDuration}ms)`);
         
-        // Normalize cached results: if imageUrl exists, add it to images array
-        const normalizedCachedResults = cachedResults.map((product: any) => {
-          let images = parseProductImages(product.images);
-          // If imageUrl exists and is not already in images, add it
-          if (product.imageUrl && !images.includes(product.imageUrl)) {
-            images = [product.imageUrl, ...images]; // Put imageUrl first
-          }
-          // If images is still empty but imageUrl exists, use imageUrl
-          if (images.length === 0 && product.imageUrl) {
-            images = [product.imageUrl];
-          }
-          return {
-            ...product,
-            images: images
-          };
-        });
+        const normalizedCachedResults = cachedResults.map(normalizeProduct);
         
         return NextResponse.json(
           ResponseBuilder.success('PRODUCTS_FOUND', {
@@ -333,62 +403,10 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         }
 
         // ============================================================
-        // STEP 4: Normalize images and return results
+        // STEP 4: Normalize products (images + IDs)
         // ============================================================
-        // Parse images to ensure consistent format (array of strings)
-        // Also normalize IDs to integers (Python service may return strings from Qdrant metadata)
-        const products = rawProducts.map((product: any) => {
-          let images = parseProductImages(product.images);
-          // If imageUrl exists and is not already in images, add it
-          if (product.imageUrl && !images.includes(product.imageUrl)) {
-            images = [product.imageUrl, ...images]; // Put imageUrl first
-          }
-          // If images is still empty but imageUrl exists, use imageUrl
-          if (images.length === 0 && product.imageUrl) {
-            images = [product.imageUrl];
-          }
-          
-          const normalized: any = {
-          ...product,
-          images: images
-          };
-          
-          // Convert string IDs to integers (Python service returns strings from Qdrant metadata)
-          if (normalized.merchantId !== undefined && normalized.merchantId !== null) {
-            normalized.merchantId = typeof normalized.merchantId === 'string' 
-              ? parseInt(normalized.merchantId, 10) 
-              : normalized.merchantId;
-          }
-          
-          if (normalized.categoryId !== undefined && normalized.categoryId !== null) {
-            normalized.categoryId = typeof normalized.categoryId === 'string' 
-              ? parseInt(normalized.categoryId, 10) 
-              : normalized.categoryId;
-          }
-          
-          if (normalized.outletId !== undefined && normalized.outletId !== null) {
-            normalized.outletId = typeof normalized.outletId === 'string' 
-              ? parseInt(normalized.outletId, 10) 
-              : normalized.outletId;
-          }
-          
-          // Ensure nested objects also have integer IDs
-          if (normalized.merchant && normalized.merchant.id) {
-            normalized.merchant.id = typeof normalized.merchant.id === 'string'
-              ? parseInt(normalized.merchant.id, 10)
-              : normalized.merchant.id;
-          }
-          
-          if (normalized.category && normalized.category.id) {
-            normalized.category.id = typeof normalized.category.id === 'string'
-              ? parseInt(normalized.category.id, 10)
-              : normalized.category.id;
-          }
-          
-          return normalized;
-        });
-
-        console.log(`🖼️  Normalized images for ${products.length} products`);
+        const products = rawProducts.map(normalizeProduct);
+        console.log(`🖼️  Normalized ${products.length} products`);
 
         // ============================================================
         // STEP 5: Cache results for future queries
