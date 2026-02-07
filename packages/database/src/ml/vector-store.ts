@@ -162,7 +162,8 @@ export class ProductVectorStore {
             merchantId: String(metadata.merchantId),
             outletId: metadata.outletId ? String(metadata.outletId) : undefined,
             categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
-            productName: metadata.productName,
+            // ✅ PRESERVE Unicode characters in productName (Vietnamese accents, etc.)
+            productName: metadata.productName ? String(metadata.productName) : undefined,
             updatedAt: new Date().toISOString()
           }
         }]
@@ -371,7 +372,8 @@ export class ProductVectorStore {
         merchantId: String(metadata.merchantId),
         outletId: metadata.outletId ? String(metadata.outletId) : undefined,
         categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
-        productName: metadata.productName,
+        // ✅ PRESERVE Unicode characters in productName (Vietnamese accents, etc.)
+        productName: metadata.productName ? String(metadata.productName) : undefined,
         updatedAt: new Date().toISOString()
       }
     }));
@@ -399,7 +401,8 @@ export class ProductVectorStore {
       metadata: ProductEmbeddingMetadata;
     }>
   ): Promise<void> {
-    // Sanitize all strings to avoid Unicode issues with Qdrant
+    // Sanitize URLs and IDs to avoid Unicode issues with Qdrant
+    // BUT preserve productName with full Unicode (Vietnamese accents, etc.)
     const points = embeddings.map(({ imageId, embedding, metadata }) => ({
       id: imageId, // UUID is already ASCII-safe
       vector: embedding,
@@ -409,7 +412,9 @@ export class ProductVectorStore {
         merchantId: String(metadata.merchantId),
         outletId: metadata.outletId ? String(metadata.outletId) : undefined,
         categoryId: metadata.categoryId ? String(metadata.categoryId) : undefined,
-        productName: metadata.productName ? String(metadata.productName).replace(/[^\x00-\x7F]/g, '') : undefined,
+        // ✅ PRESERVE Unicode characters in productName (Vietnamese accents, etc.)
+        // Qdrant supports UTF-8 strings, so we don't need to strip non-ASCII characters
+        productName: metadata.productName ? String(metadata.productName) : undefined,
         updatedAt: new Date().toISOString()
       }
     }));
