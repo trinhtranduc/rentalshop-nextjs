@@ -34,6 +34,7 @@ import {
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { Plus, Edit, Trash2, X, Check } from 'lucide-react';
 import { planLimitAddonsApi, merchantsApi } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import type { PlanLimitAddon, PlanLimitAddonCreateInput, PlanLimitAddonUpdateInput } from '@rentalshop/types';
 
 export default function MerchantPlanLimitAddonsPage() {
@@ -302,6 +303,8 @@ export default function MerchantPlanLimitAddonsPage() {
                     <TableRow>
                       <TableHead>Limits</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead>Updated At</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -336,6 +339,16 @@ export default function MerchantPlanLimitAddonsPage() {
                             <Badge variant={addon.isActive ? 'default' : 'secondary'}>
                               {addon.isActive ? 'Active' : 'Inactive'}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-600">
+                              {useFormattedFullDate(addon.createdAt)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-600">
+                              {useFormattedFullDate(addon.updatedAt)}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
