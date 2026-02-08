@@ -1207,7 +1207,7 @@ export const simplifiedSubscriptions = {
     return await prisma.subscription.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
+        merchant: { select: { id: true, name: true, email: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -1227,7 +1227,7 @@ export const simplifiedSubscriptions = {
         status: { not: 'CANCELLED' }
       },
       include: {
-        merchant: { select: { id: true, name: true } },
+        merchant: { select: { id: true, name: true, email: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
