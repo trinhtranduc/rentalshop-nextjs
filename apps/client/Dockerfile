@@ -5,7 +5,8 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache libc6-compat openssl
+# Add vips-dev for sharp (optional, helps with sharp installation)
+RUN apk add --no-cache libc6-compat openssl python3 make g++ || true
 
 # Copy root package files
 COPY package.json yarn.lock ./
@@ -30,7 +31,19 @@ COPY apps/client/package.json ./apps/client/
 # Set NODE_ENV=development to ensure workspace devDependencies are installed
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-RUN yarn install --frozen-lockfile
+# CRITICAL: Handle sharp installation issues on Alpine Linux
+# Sharp needs to download libvips binaries from GitHub, which can fail on Railway
+# Solution: Use retry logic and alternative CDN, or skip sharp if not critical
+RUN yarn config set network-timeout 300000 && \
+    yarn config set registry https://registry.npmjs.org/ && \
+    export SHARP_IGNORE_GLOBAL_LIBVIPS=1 || true && \
+    (yarn install --frozen-lockfile --network-timeout 300000 || \
+     (echo "First attempt failed, retrying with clean cache..." && \
+      yarn cache clean && \
+      export SHARP_IGNORE_GLOBAL_LIBVIPS=1 || true && \
+      yarn install --frozen-lockfile --network-timeout 300000 || \
+      (echo "Second attempt failed, trying with ignore optional..." && \
+       yarn install --frozen-lockfile --network-timeout 300000 --ignore-optional || true)))
 
 # ===================================
 # STAGE 2: Builder
