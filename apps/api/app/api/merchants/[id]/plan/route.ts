@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -97,24 +97,33 @@ export async function PUT(
         const oldPlan = await db.plans.findById(merchant.subscription.planId);
         const newPlan = await db.plans.findById(planId);
         
-        // Calculate new period end date based on billing interval
-        const currentStart = new Date();
-        const months = duration || 1;
-        const newPeriodEnd = new Date(currentStart);
-        newPeriodEnd.setMonth(newPeriodEnd.getMonth() + months);
+        // Normalize billingInterval format (API uses 'month', changePlan expects 'monthly')
+        const normalizedBillingInterval = billingInterval === 'month' ? 'monthly' : 
+                                         billingInterval === 'quarter' ? 'quarterly' :
+                                         billingInterval === 'semi_annual' ? 'semi_annual' :
+                                         billingInterval === 'annual' ? 'annual' : 'monthly';
         
-        await db.subscriptions.update(merchant.subscription.id, {
-          planId,
-          interval: billingInterval || 'month',
-          amount: amount,
-          discount: discount || 0,
-          status: 'ACTIVE', // Update status to ACTIVE (UPPERCASE)
-          currentPeriodStart: currentStart,
-          currentPeriodEnd: newPeriodEnd,
-          // Clear trial dates when upgrading from trial
-          trialStart: null,
-          trialEnd: null
+        // Use changePlan() function which includes email notification
+        console.log('📧 Using changePlan() function to update subscription with email notification...', {
+          subscriptionId: merchant.subscription.id,
+          newPlanId: planId,
+          billingInterval: normalizedBillingInterval
         });
+        
+        const updatedSubscription = await changePlan(
+          merchant.subscription.id,
+          planId,
+          normalizedBillingInterval as any
+        );
+
+        // Update additional fields if provided (discount, custom amount, etc.)
+        if (discount !== undefined || amount !== undefined) {
+          await db.subscriptions.update(merchant.subscription.id, {
+            discount: discount || 0,
+            // Only update amount if explicitly provided (otherwise use calculated amount from changePlan)
+            ...(amount !== undefined && amount !== 0 ? { amount } : {})
+          });
+        }
 
         // Log activity to database
         await db.subscriptionActivities.create({
@@ -131,12 +140,20 @@ export async function PUT(
             newPlan: {
               id: newPlan?.id,
               name: newPlan?.name,
-              amount: amount
+              amount: updatedSubscription.amount || amount
             },
-            billingInterval: billingInterval || 'month',
+            billingInterval: normalizedBillingInterval,
             discount: discount || 0,
-            effectiveDate: currentStart.toISOString(),
-            nextBillingDate: newPeriodEnd.toISOString(),
+            effectiveDate: updatedSubscription.currentPeriodStart 
+              ? (typeof updatedSubscription.currentPeriodStart === 'string' 
+                  ? updatedSubscription.currentPeriodStart 
+                  : updatedSubscription.currentPeriodStart.toISOString())
+              : new Date().toISOString(),
+            nextBillingDate: updatedSubscription.currentPeriodEnd
+              ? (typeof updatedSubscription.currentPeriodEnd === 'string'
+                  ? updatedSubscription.currentPeriodEnd
+                  : updatedSubscription.currentPeriodEnd.toISOString())
+              : new Date().toISOString(),
             performedBy: {
               userId: user.userId || user.id,
               email: user.email,
@@ -150,14 +167,15 @@ export async function PUT(
           performedBy: user.userId || user.id
         });
         
-        console.log('✅ Updated subscription:', { 
+        console.log('✅ Updated subscription with email notification:', { 
           subscriptionId: merchant.subscription.id, 
           newPlanId: planId,
-          status: 'ACTIVE',
-          amount,
-          interval: billingInterval,
-          periodStart: currentStart,
-          periodEnd: newPeriodEnd
+          status: updatedSubscription.status,
+          amount: updatedSubscription.amount,
+          interval: normalizedBillingInterval,
+          periodStart: updatedSubscription.currentPeriodStart,
+          periodEnd: updatedSubscription.currentPeriodEnd,
+          emailSent: 'check logs above'
         });
       }
 

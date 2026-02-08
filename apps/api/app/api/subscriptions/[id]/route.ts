@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
@@ -64,9 +64,39 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const updatedSubscription = await db.subscriptions.update(subscriptionId, body);
-
-      return NextResponse.json({ success: true, data: updatedSubscription });
+      
+      // If planId is being changed, use changePlan() function to ensure email notification
+      if (body.planId && body.planId !== existing.planId) {
+        console.log('📧 Plan ID changed in PUT /api/subscriptions/[id], using changePlan() for email notification...', {
+          subscriptionId,
+          oldPlanId: existing.planId,
+          newPlanId: body.planId,
+          billingInterval: body.billingInterval || body.interval || 'monthly'
+        });
+        
+        // Use changePlan() for plan changes (includes email notification)
+        const billingInterval = body.billingInterval || body.interval || 'monthly';
+        const updatedSubscription = await changePlan(
+          subscriptionId,
+          body.planId,
+          billingInterval as any
+        );
+        
+        // Update other fields if provided (excluding planId and billingInterval which are handled by changePlan)
+        const { planId, billingInterval: _, interval, ...otherFields } = body;
+        if (Object.keys(otherFields).length > 0) {
+          await db.subscriptions.update(subscriptionId, otherFields);
+        }
+        
+        // Fetch final subscription with all updates
+        const finalSubscription = await db.subscriptions.findById(subscriptionId);
+        
+        return NextResponse.json({ success: true, data: finalSubscription || updatedSubscription });
+      } else {
+        // For non-plan changes, update directly
+        const updatedSubscription = await db.subscriptions.update(subscriptionId, body);
+        return NextResponse.json({ success: true, data: updatedSubscription });
+      }
     } catch (error) {
       console.error('Error updating subscription:', error);
       
