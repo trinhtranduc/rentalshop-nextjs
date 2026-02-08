@@ -979,7 +979,6 @@ export async function sendSubscriptionRenewalEmail(
 export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionData): string {
   const { merchantName, planName, oldEndDate, newEndDate, extensionDays, method, description, locale = 'vi' } = data;
   
-  const t = getEmailTranslations(locale);
   const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
 
   const formatDate = (date: Date) => {
@@ -992,7 +991,7 @@ export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionDa
 
   const getMethodText = (method: string) => {
     if (method === 'MANUAL_EXTENSION') {
-      return locale === 'vi' ? 'Gia hạn thủ công' : 'Manual Extension';
+      return 'Gia hạn thủ công';
     }
     return method;
   };
@@ -1003,58 +1002,63 @@ export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionDa
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${t.subscriptionExtension?.title || 'Subscription Extended'}</title>
+  <title>Gia hạn đăng ký</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
   <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">${t.subscriptionExtension?.systemName || 'AnyRent'}</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">${t.subscriptionExtension?.systemTagline || 'Rental Management System'}</p>
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
     </div>
     
-    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${t.subscriptionExtension?.title || 'Subscription Extended'}</h2>
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Gia hạn đăng ký</h2>
     
-    <p style="color: #374151; font-size: 16px;">${t.subscriptionExtension?.greeting || 'Hello'} <strong>${merchantName}</strong>,</p>
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${merchantName}</strong>,</p>
     
     <p style="color: #374151; font-size: 16px;">
-      ${t.subscriptionExtension?.message || 'Your subscription has been extended. Your subscription period has been updated.'}
+      Gói đăng ký của bạn đã được gia hạn thành công. Dưới đây là thông tin chi tiết:
     </p>
     
     <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 30px 0;">
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.planName || 'Plan'}:</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Gói đăng ký:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${planName}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.oldEndDate || 'Previous End Date'}:</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày kết thúc cũ:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(oldEndDate)}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.newEndDate || 'New End Date'}:</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ngày kết thúc mới:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #2563eb;">${formatDate(newEndDate)}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.extensionDays || 'Extension Period'}:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${extensionDays} ${extensionDays === 1 ? (locale === 'vi' ? 'ngày' : 'day') : (locale === 'vi' ? 'ngày' : 'days')}</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Thời gian gia hạn:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${extensionDays} ${extensionDays === 1 ? 'ngày' : 'ngày'}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.method || 'Method'}:</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Phương thức gia hạn:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${getMethodText(method)}</td>
         </tr>
         ${description ? `
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.subscriptionExtension?.description || 'Description'}:</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Mô tả:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${description}</td>
         </tr>
         ` : ''}
       </table>
     </div>
     
+    <p style="color: #374151; font-size: 16px;">
+      Gói đăng ký của bạn đã được gia hạn và sẽ tiếp tục hoạt động cho đến ngày ${formatDate(newEndDate)}. 
+      Bạn có thể tiếp tục sử dụng tất cả các tính năng của gói đăng ký.
+    </p>
+    
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
     
     <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-      ${(t.subscriptionExtension?.footer || '© {year} AnyRent. All rights reserved.').replace('{year}', new Date().getFullYear().toString())}
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
     </p>
   </div>
 </body>
