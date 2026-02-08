@@ -64,7 +64,7 @@ export async function GET(
       const searchFilters: any = {
         merchantId: merchantPublicId,
         page: page || 1,
-        limit: limit || 20,
+        limit: limit || 50,
         sortBy: sortBy || 'createdAt',
         sortOrder: sortOrder || 'desc'
       };

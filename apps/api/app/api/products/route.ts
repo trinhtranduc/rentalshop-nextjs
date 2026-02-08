@@ -98,7 +98,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       sortBy: sortBy as any,
       sortOrder: sortOrder as any,
       page: page || 1,
-      limit: limit || 20
+      limit: limit || 50
     };
 
     console.log('🔍 Using simplified db.products.search with filters:', searchFilters);
@@ -158,10 +158,10 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         products: processedProducts,
         total: result.total || 0,
         page: result.page || 1,
-        limit: result.limit || 20,
-        offset: ((result.page || 1) - 1) * (result.limit || 20),
+        limit: result.limit || 50,
+        offset: ((result.page || 1) - 1) * (result.limit || 50),
         hasMore: result.hasMore || false,
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 50))
       },
       code: "PRODUCTS_FOUND",
       message: `Found ${result.total || 0} products`

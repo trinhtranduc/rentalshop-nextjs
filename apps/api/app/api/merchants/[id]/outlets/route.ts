@@ -62,9 +62,9 @@ export async function GET(
         outlets: outlets.data || [],
         total: outlets.total || 0,
         page: outlets.page || 1,
-        limit: outlets.limit || 20,
+        limit: outlets.limit || 50,
         hasMore: outlets.hasMore || false,
-        totalPages: Math.ceil((outlets.total || 0) / (outlets.limit || 20))
+        totalPages: Math.ceil((outlets.total || 0) / (outlets.limit || 50))
       }, `Found ${outlets.total || 0} outlets`));
 
     } catch (error) {

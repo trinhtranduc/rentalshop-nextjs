@@ -39,8 +39,8 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
       pagination: {
         total: result.total,
         page: result.page || filters.page || 1,
-        limit: result.limit || filters.limit || 20,
-        totalPages: Math.ceil(result.total / (result.limit || filters.limit || 20)),
+        limit: result.limit || filters.limit || 50,
+        totalPages: Math.ceil(result.total / (result.limit || filters.limit || 50)),
         hasMore: result.hasMore
       }
     });

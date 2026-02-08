@@ -30,7 +30,7 @@ export async function GET(
 
       // Get query parameters
       const { searchParams } = new URL(request.url);
-      const limit = parseInt(searchParams.get('limit') || '20');
+      const limit = parseInt(searchParams.get('limit') || '50');
       const offset = parseInt(searchParams.get('offset') || '0');
 
       // Get payments for this subscription from Payment table

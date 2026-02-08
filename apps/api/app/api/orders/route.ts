@@ -78,7 +78,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       endDate: endDate ? new Date(endDate) : undefined,
       search: q,
       page: page || 1,
-      limit: limit || 20,
+      limit: limit || 50,
       sortBy: sortBy || 'createdAt',
       sortOrder: sortOrder || 'desc'
     };
@@ -181,10 +181,10 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
         orders: normalizedOrders,
         total: result.total || 0,
         page: result.page || 1,
-        limit: result.limit || 20,
-        offset: ((result.page || 1) - 1) * (result.limit || 20),
-        hasMore: (result.page || 1) * (result.limit || 20) < (result.total || 0),
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        limit: result.limit || 50,
+        offset: ((result.page || 1) - 1) * (result.limit || 50),
+        hasMore: (result.page || 1) * (result.limit || 50) < (result.total || 0),
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 50))
       },
       code: "ORDERS_FOUND",
       message: `Found ${result.total || 0} orders`

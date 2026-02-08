@@ -17,7 +17,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
     const { searchParams } = new URL(request.url);
     const merchantId = searchParams.get('merchantId');
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     // Validate page and limit
     if (page < 1) {

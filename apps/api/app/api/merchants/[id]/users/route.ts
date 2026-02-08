@@ -54,7 +54,7 @@ export async function GET(
       const searchFilters: any = {
         merchantId: merchantPublicId,
         page: query.page || 1,
-        limit: query.limit || 20,
+        limit: query.limit || 50,
         sortBy: query.sortBy || 'createdAt',
         sortOrder: query.sortOrder || 'desc'
       };
@@ -98,7 +98,7 @@ export async function GET(
         total: users.total || 0,
         page: users.page || 1,
         totalPages: users.totalPages || 1,
-        limit: users.limit || 20,
+        limit: users.limit || 50,
         hasMore: users.hasMore || false,
         code: 'MERCHANT_USERS_FOUND',
         message: `Found ${users.total || 0} users for merchant`
