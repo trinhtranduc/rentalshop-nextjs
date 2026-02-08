@@ -66,7 +66,8 @@ export default function BlogPage() {
     };
 
     fetchData();
-  }, [search, selectedCategory, selectedTag, page, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedCategory, selectedTag, page]);
 
   return (
     <PageWrapper>
