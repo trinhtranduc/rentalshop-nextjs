@@ -63,6 +63,9 @@ export async function OPTIONS(request: NextRequest) {
  * GET /api/posts/slug/[slug]
  * Get post by slug (public endpoint for client app)
  * Only returns published posts
+ * 
+ * Query params:
+ * - locale: Language code (en, vi, zh, ko, ja). Defaults to 'vi' if not provided.
  */
 export async function GET(
   request: NextRequest,
@@ -71,8 +74,12 @@ export async function GET(
   try {
     const resolvedParams = await Promise.resolve(params);
     const { slug } = resolvedParams;
+    
+    // Get locale from query params, default to 'vi'
+    const { searchParams } = new URL(request.url);
+    const locale = (searchParams.get('locale') || 'vi') as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
 
-    const post = await db.posts.findBySlug(slug);
+    const post = await db.posts.findBySlug(slug, locale);
 
     if (!post) {
       return NextResponse.json(

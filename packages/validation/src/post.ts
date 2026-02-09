@@ -6,6 +6,7 @@ export const slugRegex = /^[a-z0-9-]+$/;
 export const postCreateSchema = z.object({
   title: z.string().min(1).max(255),
   slug: z.string().min(1).max(255).regex(slugRegex, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).default('vi'), // Supported languages
   content: z.string().min(1, 'Content is required'),
   excerpt: z.string().max(500).optional(),
   seoTitle: z.string().max(60).optional(),
@@ -53,6 +54,7 @@ export const postTagUpdateSchema = postTagCreateSchema.partial();
 
 export const postSearchSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
+  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).optional(), // Filter by language
   categoryId: z.coerce.number().int().positive().optional(),
   tagId: z.coerce.number().int().positive().optional(),
   authorId: z.coerce.number().int().positive().optional(),

@@ -54,11 +54,16 @@ export const findById = async (id: number) => {
 };
 
 /**
- * Find post by slug (simplified API)
+ * Find post by slug and locale (simplified API)
  */
-export const findBySlug = async (slug: string) => {
+export const findBySlug = async (slug: string, locale: string = 'vi') => {
   return await prisma.post.findUnique({
-    where: { slug },
+    where: { 
+      slug_locale: {
+        slug,
+        locale,
+      }
+    },
     include: {
       author: {
         select: {
@@ -99,6 +104,7 @@ export const findBySlug = async (slug: string) => {
  */
 export const search = async (filters: {
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
   categoryId?: number;
   tagId?: number;
   authorId?: number;
@@ -110,6 +116,7 @@ export const search = async (filters: {
 }) => {
   const {
     status,
+    locale,
     categoryId,
     tagId,
     authorId,
@@ -124,6 +131,10 @@ export const search = async (filters: {
 
   if (status) {
     where.status = status;
+  }
+
+  if (locale) {
+    where.locale = locale;
   }
 
   if (authorId) {
@@ -218,6 +229,7 @@ export const search = async (filters: {
 export const create = async (data: {
   title: string;
   slug: string;
+  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
   content: string;
   excerpt?: string;
   seoTitle?: string;
@@ -232,6 +244,7 @@ export const create = async (data: {
   const {
     title,
     slug,
+    locale = 'vi',
     content,
     excerpt,
     seoTitle,
@@ -244,13 +257,18 @@ export const create = async (data: {
     featuredImage,
   } = data;
 
-  // Check if slug already exists
+  // Check if slug already exists for this locale
   const existingPost = await prisma.post.findUnique({
-    where: { slug },
+    where: { 
+      slug_locale: {
+        slug,
+        locale,
+      }
+    },
   });
 
   if (existingPost) {
-    throw new Error(`Post with slug "${slug}" already exists`);
+    throw new Error(`Post with slug "${slug}" already exists for locale "${locale}"`);
   }
 
   // Normalize featuredImage: convert empty string to null
@@ -262,6 +280,7 @@ export const create = async (data: {
   const createData: any = {
       title,
       slug,
+      locale,
       content,
     excerpt: excerpt || null,
     seoTitle: seoTitle || null,
@@ -343,6 +362,7 @@ export const update = async (
   data: {
     title?: string;
     slug?: string;
+    locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
     content?: string;
     excerpt?: string;
     seoTitle?: string;
@@ -357,6 +377,7 @@ export const update = async (
   const {
     title,
     slug,
+    locale,
     content,
     excerpt,
     seoTitle,
@@ -368,17 +389,26 @@ export const update = async (
     featuredImage,
   } = data;
 
-  // Check if slug already exists (for different post)
+  // Get current post to check locale if slug is being updated
+  const currentPost = await prisma.post.findUnique({
+    where: { id },
+    select: { locale: true },
+  });
+
+  const targetLocale = locale || currentPost?.locale || 'vi';
+
+  // Check if slug already exists for this locale (for different post)
   if (slug) {
     const existingPost = await prisma.post.findFirst({
       where: {
         slug,
+        locale: targetLocale,
         id: { not: id },
       },
     });
 
     if (existingPost) {
-      throw new Error(`Post with slug "${slug}" already exists`);
+      throw new Error(`Post with slug "${slug}" already exists for locale "${targetLocale}"`);
     }
   }
 
@@ -386,6 +416,7 @@ export const update = async (
   const updateData: any = {};
   if (title !== undefined) updateData.title = title;
   if (slug !== undefined) updateData.slug = slug;
+  if (locale !== undefined) updateData.locale = locale;
   if (content !== undefined) updateData.content = content;
   if (excerpt !== undefined) updateData.excerpt = excerpt;
   if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
