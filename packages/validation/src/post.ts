@@ -53,12 +53,12 @@ export const postTagUpdateSchema = postTagCreateSchema.partial();
 
 export const postSearchSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
-  categoryId: z.number().int().positive().optional(),
-  tagId: z.number().int().positive().optional(),
-  authorId: z.number().int().positive().optional(),
+  categoryId: z.coerce.number().int().positive().optional(),
+  tagId: z.coerce.number().int().positive().optional(),
+  authorId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
   sortBy: z.enum(['createdAt', 'updatedAt', 'publishedAt', 'title']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
