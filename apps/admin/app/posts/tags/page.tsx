@@ -56,7 +56,8 @@ export default function TagsPage() {
     };
 
     fetchTags();
-  }, [toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch once on mount
 
   // Filter tags by search
   const filteredTags = tags.filter((tag) =>

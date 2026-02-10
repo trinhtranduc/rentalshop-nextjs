@@ -334,9 +334,9 @@ declare namespace ORDERS {
  * These constants define limits for various list operations across the application
  */
 declare const PAGINATION: {
-    readonly SEARCH_LIMIT: 20;
-    readonly DEFAULT_PAGE_SIZE: 25;
-    readonly MAX_PAGE_SIZE: 20;
+    readonly SEARCH_LIMIT: 50;
+    readonly DEFAULT_PAGE_SIZE: 50;
+    readonly MAX_PAGE_SIZE: 50;
     readonly DASHBOARD_ITEMS: 10;
     readonly RECENT_ORDERS: 5;
     readonly TOP_PRODUCTS: 8;
@@ -509,8 +509,8 @@ type BusinessValue = typeof BUSINESS[keyof typeof BUSINESS];
 declare const ENVIRONMENT: {
     readonly API_TIMEOUT: 10000 | 30000;
     readonly API_RETRY_ATTEMPTS: 1 | 3;
-    readonly SEARCH_LIMIT: 20 | 50;
-    readonly DASHBOARD_ITEMS: 20 | 10;
+    readonly SEARCH_LIMIT: 50 | 20;
+    readonly DASHBOARD_ITEMS: 10 | 20;
     readonly CACHE_TTL: 300 | 60;
     readonly CACHE_MAX_SIZE: 1000 | 100;
     readonly LOG_LEVEL: "error" | "debug";
@@ -1396,9 +1396,9 @@ type ButtonVariant = keyof typeof BUTTON_COLORS;
 
 declare const CONSTANTS: {
     readonly PAGINATION: {
-        readonly SEARCH_LIMIT: 20;
-        readonly DEFAULT_PAGE_SIZE: 25;
-        readonly MAX_PAGE_SIZE: 20;
+        readonly SEARCH_LIMIT: 50;
+        readonly DEFAULT_PAGE_SIZE: 50;
+        readonly MAX_PAGE_SIZE: 50;
         readonly DASHBOARD_ITEMS: 10;
         readonly RECENT_ORDERS: 5;
         readonly TOP_PRODUCTS: 8;
@@ -1536,8 +1536,8 @@ declare const CONSTANTS: {
     readonly ENVIRONMENT: {
         readonly API_TIMEOUT: 10000 | 30000;
         readonly API_RETRY_ATTEMPTS: 1 | 3;
-        readonly SEARCH_LIMIT: 20 | 50;
-        readonly DASHBOARD_ITEMS: 20 | 10;
+        readonly SEARCH_LIMIT: 50 | 20;
+        readonly DASHBOARD_ITEMS: 10 | 20;
         readonly CACHE_TTL: 300 | 60;
         readonly CACHE_MAX_SIZE: 1000 | 100;
         readonly LOG_LEVEL: "error" | "debug";

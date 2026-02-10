@@ -112,6 +112,7 @@ declare const slugRegex: RegExp;
 declare const postCreateSchema: z.ZodObject<{
     title: z.ZodString;
     slug: z.ZodString;
+    locale: z.ZodDefault<z.ZodEnum<["en", "vi", "zh", "ko", "ja"]>>;
     content: z.ZodString;
     excerpt: z.ZodOptional<z.ZodString>;
     seoTitle: z.ZodOptional<z.ZodString>;
@@ -125,6 +126,7 @@ declare const postCreateSchema: z.ZodObject<{
     status: "DRAFT" | "PUBLISHED";
     title: string;
     slug: string;
+    locale: "en" | "vi" | "zh" | "ko" | "ja";
     content: string;
     excerpt?: string | undefined;
     seoTitle?: string | undefined;
@@ -138,6 +140,7 @@ declare const postCreateSchema: z.ZodObject<{
     slug: string;
     content: string;
     status?: "DRAFT" | "PUBLISHED" | undefined;
+    locale?: "en" | "vi" | "zh" | "ko" | "ja" | undefined;
     excerpt?: string | undefined;
     seoTitle?: string | undefined;
     seoDescription?: string | undefined;
@@ -149,6 +152,7 @@ declare const postCreateSchema: z.ZodObject<{
 declare const postUpdateSchema: z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     slug: z.ZodOptional<z.ZodString>;
+    locale: z.ZodOptional<z.ZodDefault<z.ZodEnum<["en", "vi", "zh", "ko", "ja"]>>>;
     content: z.ZodOptional<z.ZodString>;
     excerpt: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     seoTitle: z.ZodOptional<z.ZodOptional<z.ZodString>>;
@@ -163,6 +167,7 @@ declare const postUpdateSchema: z.ZodObject<{
     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED" | undefined;
     title?: string | undefined;
     slug?: string | undefined;
+    locale?: "en" | "vi" | "zh" | "ko" | "ja" | undefined;
     content?: string | undefined;
     excerpt?: string | undefined;
     seoTitle?: string | undefined;
@@ -175,6 +180,7 @@ declare const postUpdateSchema: z.ZodObject<{
     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED" | undefined;
     title?: string | undefined;
     slug?: string | undefined;
+    locale?: "en" | "vi" | "zh" | "ko" | "ja" | undefined;
     content?: string | undefined;
     excerpt?: string | undefined;
     seoTitle?: string | undefined;
@@ -238,6 +244,7 @@ declare const postTagUpdateSchema: z.ZodObject<{
 }>;
 declare const postSearchSchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodEnum<["DRAFT", "PUBLISHED", "ARCHIVED"]>>;
+    locale: z.ZodOptional<z.ZodEnum<["en", "vi", "zh", "ko", "ja"]>>;
     categoryId: z.ZodOptional<z.ZodNumber>;
     tagId: z.ZodOptional<z.ZodNumber>;
     authorId: z.ZodOptional<z.ZodNumber>;
@@ -253,12 +260,14 @@ declare const postSearchSchema: z.ZodObject<{
     sortOrder: "asc" | "desc";
     categoryId?: number | undefined;
     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED" | undefined;
+    locale?: "en" | "vi" | "zh" | "ko" | "ja" | undefined;
     tagId?: number | undefined;
     authorId?: number | undefined;
     search?: string | undefined;
 }, {
     categoryId?: number | undefined;
     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED" | undefined;
+    locale?: "en" | "vi" | "zh" | "ko" | "ja" | undefined;
     tagId?: number | undefined;
     authorId?: number | undefined;
     search?: string | undefined;

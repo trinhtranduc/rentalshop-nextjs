@@ -22,6 +22,19 @@ export function PostContent({ content }: PostContentProps) {
         HTMLAttributes: {
           class: 'post-image max-w-full h-auto rounded-lg',
         },
+        // Handle image loading errors gracefully
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            onError: {
+              default: null,
+              parseHTML: () => null,
+              renderHTML: () => ({
+                onerror: 'this.style.display="none"',
+              }),
+            },
+          };
+        },
       }),
       Link.configure({
         HTMLAttributes: {
@@ -42,7 +55,21 @@ export function PostContent({ content }: PostContentProps) {
       TableCell,
       TableHeader,
     ],
-    content: JSON.parse(content),
+    content: (() => {
+      try {
+        const parsed = JSON.parse(content);
+        // Validate content structure
+        if (parsed && typeof parsed === 'object' && parsed.type === 'doc') {
+          return parsed;
+        }
+        // If invalid, return empty doc
+        console.warn('Invalid content structure, using empty document');
+        return { type: 'doc', content: [] };
+      } catch (error) {
+        console.error('Error parsing content:', error);
+        return { type: 'doc', content: [] };
+      }
+    })(),
     editable: false, // Read-only for display
   });
 
@@ -51,7 +78,7 @@ export function PostContent({ content }: PostContentProps) {
   }
 
   return (
-    <div className="prose prose-lg max-w-none">
+    <div className="tiptap-content">
       <EditorContent editor={editor} />
     </div>
   );

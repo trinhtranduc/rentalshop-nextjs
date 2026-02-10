@@ -1041,12 +1041,6 @@ export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionDa
           <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Phương thức gia hạn:</td>
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${getMethodText(method)}</td>
         </tr>
-        ${description ? `
-        <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Mô tả:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${description}</td>
-        </tr>
-        ` : ''}
       </table>
     </div>
     

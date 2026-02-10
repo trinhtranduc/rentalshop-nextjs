@@ -68,10 +68,14 @@ var slugRegex = /^[a-z0-9-]+$/;
 var postCreateSchema = import_zod2.z.object({
   title: import_zod2.z.string().min(1).max(255),
   slug: import_zod2.z.string().min(1).max(255).regex(slugRegex, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  locale: import_zod2.z.enum(["en", "vi", "zh", "ko", "ja"]).default("vi"),
+  // Supported languages
   content: import_zod2.z.string().min(1, "Content is required"),
-  excerpt: import_zod2.z.string().max(500).optional(),
+  excerpt: import_zod2.z.string().max(1e3).optional(),
+  // Increased from 500 to 1000 for longer excerpts
   seoTitle: import_zod2.z.string().max(60).optional(),
-  seoDescription: import_zod2.z.string().max(160).optional(),
+  seoDescription: import_zod2.z.string().max(320).optional(),
+  // Increased from 160 to 320 (Google allows up to 320 chars)
   seoKeywords: import_zod2.z.string().max(255).optional(),
   status: import_zod2.z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   categoryIds: import_zod2.z.array(import_zod2.z.number().int().positive()).optional(),
@@ -106,12 +110,14 @@ var postTagCreateSchema = import_zod2.z.object({
 var postTagUpdateSchema = postTagCreateSchema.partial();
 var postSearchSchema = import_zod2.z.object({
   status: import_zod2.z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
-  categoryId: import_zod2.z.number().int().positive().optional(),
-  tagId: import_zod2.z.number().int().positive().optional(),
-  authorId: import_zod2.z.number().int().positive().optional(),
+  locale: import_zod2.z.enum(["en", "vi", "zh", "ko", "ja"]).optional(),
+  // Filter by language
+  categoryId: import_zod2.z.coerce.number().int().positive().optional(),
+  tagId: import_zod2.z.coerce.number().int().positive().optional(),
+  authorId: import_zod2.z.coerce.number().int().positive().optional(),
   search: import_zod2.z.string().optional(),
-  page: import_zod2.z.number().int().positive().default(1),
-  limit: import_zod2.z.number().int().positive().max(100).default(20),
+  page: import_zod2.z.coerce.number().int().positive().default(1),
+  limit: import_zod2.z.coerce.number().int().positive().max(100).default(20),
   sortBy: import_zod2.z.enum(["createdAt", "updatedAt", "publishedAt", "title"]).default("createdAt"),
   sortOrder: import_zod2.z.enum(["asc", "desc"]).default("desc")
 });
@@ -120,8 +126,8 @@ var postSearchSchema = import_zod2.z.object({
 var import_zod3 = require("zod");
 var IdSchema = import_zod3.z.number().int().positive();
 var PaginationSchema = import_zod3.z.object({
-  page: import_zod3.z.number().int().min(1).default(1),
-  limit: import_zod3.z.number().int().min(1).max(100).default(20)
+  page: import_zod3.z.coerce.number().int().min(1).default(1),
+  limit: import_zod3.z.coerce.number().int().min(1).max(100).default(50)
 });
 
 // src/index.ts

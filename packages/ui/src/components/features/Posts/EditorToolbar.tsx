@@ -32,7 +32,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleBold().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleBold().run();
+          } catch (error) {
+            console.error('Error toggling bold:', error);
+          }
+        }}
         className={editor.isActive('bold') ? 'bg-bg-tertiary' : ''}
       >
         <Bold className="h-4 w-4" />
@@ -41,7 +47,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleItalic().run();
+          } catch (error) {
+            console.error('Error toggling italic:', error);
+          }
+        }}
         className={editor.isActive('italic') ? 'bg-bg-tertiary' : ''}
       >
         <Italic className="h-4 w-4" />
@@ -53,8 +65,33 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        onClick={() => {
+          try {
+            if (!editor.isEditable) return;
+            // Ensure editor is focused first
+            editor.chain().focus().setHeading({ level: 1 }).run();
+          } catch (error) {
+            console.error('Error setting heading 1:', error);
+            // Fallback: try to insert heading manually
+            try {
+              const { from, to } = editor.state.selection;
+              const text = editor.state.doc.textBetween(from, to);
+              editor.chain()
+                .focus()
+                .deleteSelection()
+                .insertContent({
+                  type: 'heading',
+                  attrs: { level: 1 },
+                  content: text ? [{ type: 'text', text }] : []
+                })
+                .run();
+            } catch (fallbackError) {
+              console.error('Fallback heading 1 failed:', fallbackError);
+            }
+          }
+        }}
         className={editor.isActive('heading', { level: 1 }) ? 'bg-bg-tertiary' : ''}
+        disabled={!editor.isEditable}
       >
         <Heading1 className="h-4 w-4" />
       </Button>
@@ -62,8 +99,33 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        onClick={() => {
+          try {
+            if (!editor.isEditable) return;
+            // Ensure editor is focused first
+            editor.chain().focus().setHeading({ level: 2 }).run();
+          } catch (error) {
+            console.error('Error setting heading 2:', error);
+            // Fallback: try to insert heading manually
+            try {
+              const { from, to } = editor.state.selection;
+              const text = editor.state.doc.textBetween(from, to);
+              editor.chain()
+                .focus()
+                .deleteSelection()
+                .insertContent({
+                  type: 'heading',
+                  attrs: { level: 2 },
+                  content: text ? [{ type: 'text', text }] : []
+                })
+                .run();
+            } catch (fallbackError) {
+              console.error('Fallback heading 2 failed:', fallbackError);
+            }
+          }
+        }}
         className={editor.isActive('heading', { level: 2 }) ? 'bg-bg-tertiary' : ''}
+        disabled={!editor.isEditable}
       >
         <Heading2 className="h-4 w-4" />
       </Button>
@@ -71,8 +133,33 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        onClick={() => {
+          try {
+            if (!editor.isEditable) return;
+            // Ensure editor is focused first
+            editor.chain().focus().setHeading({ level: 3 }).run();
+          } catch (error) {
+            console.error('Error setting heading 3:', error);
+            // Fallback: try to insert heading manually
+            try {
+              const { from, to } = editor.state.selection;
+              const text = editor.state.doc.textBetween(from, to);
+              editor.chain()
+                .focus()
+                .deleteSelection()
+                .insertContent({
+                  type: 'heading',
+                  attrs: { level: 3 },
+                  content: text ? [{ type: 'text', text }] : []
+                })
+                .run();
+            } catch (fallbackError) {
+              console.error('Fallback heading 3 failed:', fallbackError);
+            }
+          }
+        }}
         className={editor.isActive('heading', { level: 3 }) ? 'bg-bg-tertiary' : ''}
+        disabled={!editor.isEditable}
       >
         <Heading3 className="h-4 w-4" />
       </Button>
@@ -83,7 +170,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleBulletList().run();
+          } catch (error) {
+            console.error('Error toggling bullet list:', error);
+          }
+        }}
         className={editor.isActive('bulletList') ? 'bg-bg-tertiary' : ''}
       >
         <List className="h-4 w-4" />
@@ -92,7 +185,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleOrderedList().run();
+          } catch (error) {
+            console.error('Error toggling ordered list:', error);
+          }
+        }}
         className={editor.isActive('orderedList') ? 'bg-bg-tertiary' : ''}
       >
         <ListOrdered className="h-4 w-4" />
@@ -101,7 +200,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleBlockquote().run();
+          } catch (error) {
+            console.error('Error toggling blockquote:', error);
+          }
+        }}
         className={editor.isActive('blockquote') ? 'bg-bg-tertiary' : ''}
       >
         <Quote className="h-4 w-4" />
@@ -110,7 +215,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        onClick={() => {
+          try {
+            editor.chain().focus().toggleCodeBlock().run();
+          } catch (error) {
+            console.error('Error toggling code block:', error);
+          }
+        }}
         className={editor.isActive('codeBlock') ? 'bg-bg-tertiary' : ''}
       >
         <Code className="h-4 w-4" />

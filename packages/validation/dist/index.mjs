@@ -29,10 +29,14 @@ var slugRegex = /^[a-z0-9-]+$/;
 var postCreateSchema = z2.object({
   title: z2.string().min(1).max(255),
   slug: z2.string().min(1).max(255).regex(slugRegex, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  locale: z2.enum(["en", "vi", "zh", "ko", "ja"]).default("vi"),
+  // Supported languages
   content: z2.string().min(1, "Content is required"),
-  excerpt: z2.string().max(500).optional(),
+  excerpt: z2.string().max(1e3).optional(),
+  // Increased from 500 to 1000 for longer excerpts
   seoTitle: z2.string().max(60).optional(),
-  seoDescription: z2.string().max(160).optional(),
+  seoDescription: z2.string().max(320).optional(),
+  // Increased from 160 to 320 (Google allows up to 320 chars)
   seoKeywords: z2.string().max(255).optional(),
   status: z2.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   categoryIds: z2.array(z2.number().int().positive()).optional(),
@@ -67,12 +71,14 @@ var postTagCreateSchema = z2.object({
 var postTagUpdateSchema = postTagCreateSchema.partial();
 var postSearchSchema = z2.object({
   status: z2.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
-  categoryId: z2.number().int().positive().optional(),
-  tagId: z2.number().int().positive().optional(),
-  authorId: z2.number().int().positive().optional(),
+  locale: z2.enum(["en", "vi", "zh", "ko", "ja"]).optional(),
+  // Filter by language
+  categoryId: z2.coerce.number().int().positive().optional(),
+  tagId: z2.coerce.number().int().positive().optional(),
+  authorId: z2.coerce.number().int().positive().optional(),
   search: z2.string().optional(),
-  page: z2.number().int().positive().default(1),
-  limit: z2.number().int().positive().max(100).default(20),
+  page: z2.coerce.number().int().positive().default(1),
+  limit: z2.coerce.number().int().positive().max(100).default(20),
   sortBy: z2.enum(["createdAt", "updatedAt", "publishedAt", "title"]).default("createdAt"),
   sortOrder: z2.enum(["asc", "desc"]).default("desc")
 });
@@ -81,8 +87,8 @@ var postSearchSchema = z2.object({
 import { z as z3 } from "zod";
 var IdSchema = z3.number().int().positive();
 var PaginationSchema = z3.object({
-  page: z3.number().int().min(1).default(1),
-  limit: z3.number().int().min(1).max(100).default(20)
+  page: z3.coerce.number().int().min(1).default(1),
+  limit: z3.coerce.number().int().min(1).max(100).default(50)
 });
 
 // src/index.ts
