@@ -158,6 +158,7 @@ export interface ApiUrls {
     update: (id: number) => string;
     delete: (id: number) => string;
     extend: (id: number) => string;
+    calculateExtension: (id: number) => string;
     status: string;
     stats: string;
   };
@@ -679,6 +680,7 @@ function createApiUrls(): ApiUrls {
       update: (id: number) => `${base}/api/subscriptions/${id}`,
       delete: (id: number) => `${base}/api/subscriptions/${id}`,
       extend: (id: number) => `${base}/api/subscriptions/${id}/extend`,
+      calculateExtension: (id: number) => `${base}/api/subscriptions/${id}/extend/calculate`,
       status: `${base}/api/subscriptions/status`,
       stats: `${base}/api/subscriptions/stats`,
     },

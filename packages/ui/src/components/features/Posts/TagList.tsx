@@ -1,20 +1,10 @@
 'use client';
 
 import React from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Input,
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from '../../ui';
+import { Card, CardHeader, CardTitle, CardContent } from '../../ui/card';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../../ui/table';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import type { PostTag } from '@rentalshop/types';
 

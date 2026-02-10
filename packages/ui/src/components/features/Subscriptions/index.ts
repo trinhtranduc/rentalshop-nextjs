@@ -21,6 +21,7 @@ export { SubscriptionActivityTimeline } from './components/SubscriptionActivityT
 export { SubscriptionHistoryDialog } from './components/SubscriptionHistoryDialog';
 export { SubscriptionChangePlanDialog } from './components/SubscriptionChangePlanDialog';
 export { SubscriptionExtendDialog } from './components/SubscriptionExtendDialog';
+export { SubscriptionExtendDialogEnhanced } from './components/SubscriptionExtendDialogEnhanced';
 
 // Re-export types for convenience
 export type {

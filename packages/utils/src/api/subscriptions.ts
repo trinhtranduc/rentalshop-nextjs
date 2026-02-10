@@ -118,13 +118,62 @@ export const subscriptionsApi = {
   },
 
   /**
+   * Calculate extension price for a subscription
+   */
+  async calculateExtensionPrice(
+    id: number,
+    newEndDate: Date | string
+  ): Promise<ApiResponse<{
+    subscriptionId: number;
+    planId: number;
+    planName: string;
+    billingInterval: string;
+    oldEndDate: string;
+    newEndDate: string;
+    extensionDays: number;
+    monthlyPrice: number;
+    dailyPrice: number;
+    extensionPrice: number;
+    currency: string;
+    addons: {
+      count: number;
+      items: Array<{
+        id: number;
+        outlets: number;
+        users: number;
+        products: number;
+        customers: number;
+        orders: number;
+        notes?: string;
+        isActive: boolean;
+      }>;
+      totalLimits: {
+        outlets: number;
+        users: number;
+        products: number;
+        customers: number;
+        orders: number;
+      };
+    };
+  }>> {
+    const dateStr = typeof newEndDate === 'string' 
+      ? newEndDate 
+      : newEndDate.toISOString().split('T')[0];
+    
+    const url = `${apiUrls.subscriptions.calculateExtension(id)}?newEndDate=${encodeURIComponent(dateStr)}`;
+    const response = await authenticatedFetch(url);
+    return await parseApiResponse(response);
+  },
+
+  /**
    * Extend subscription
    */
   async extend(id: number, data: {
     newEndDate: Date | string;
-    amount: number;
+    amount?: number; // Optional: will be auto-calculated if not provided
     method: string;
     description?: string;
+    sendEmail?: boolean; // Optional: default true
   }): Promise<ApiResponse<Subscription>> {
     const response = await authenticatedFetch(apiUrls.subscriptions.extend(id), {
       method: 'POST',

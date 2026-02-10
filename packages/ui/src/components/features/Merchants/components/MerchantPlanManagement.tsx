@@ -26,7 +26,7 @@ import {
 } from '../../../ui';
 import { 
   SubscriptionChangePlanDialog,
-  SubscriptionExtendDialog 
+  SubscriptionExtendDialogEnhanced 
 } from '../../Subscriptions';
 import { SubscriptionHistoryDialog } from '../../Subscriptions/components/SubscriptionHistoryDialog';
 import type { BillingInterval } from '@rentalshop/types';
@@ -202,7 +202,7 @@ export function MerchantPlanManagement({
     onPlanChange(planChangeData);
   };
 
-  // Adapter function to convert SubscriptionExtendDialog callback to onExtend format
+  // Adapter function to convert SubscriptionExtendDialogEnhanced callback to onExtend format
   const handleExtendConfirm = (
     subscription: Subscription,
     data: {
@@ -210,6 +210,7 @@ export function MerchantPlanManagement({
       amount: number;
       method: string;
       description?: string;
+      sendEmail?: boolean;
     }
   ) => {
     // Calculate duration from newEndDate
@@ -593,7 +594,7 @@ export function MerchantPlanManagement({
 
       {/* Extend Dialog - Using shared component */}
       {currentSubscription && (
-        <SubscriptionExtendDialog
+        <SubscriptionExtendDialogEnhanced
           subscription={currentSubscription}
           isOpen={showExtendDialog}
           onClose={() => setShowExtendDialog(false)}

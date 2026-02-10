@@ -38,6 +38,19 @@ export function RichTextEditor({
         HTMLAttributes: {
           class: 'post-image max-w-full h-auto rounded-lg',
         },
+        // Handle image loading errors gracefully
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            onError: {
+              default: null,
+              parseHTML: () => null,
+              renderHTML: () => ({
+                onerror: 'this.style.display="none"',
+              }),
+            },
+          };
+        },
       }),
       Link.configure({
         openOnClick: false,
@@ -63,7 +76,26 @@ export function RichTextEditor({
       TableCell,
       TableHeader,
     ],
-    content: content ? JSON.parse(content) : undefined,
+    content: content ? (() => {
+      try {
+        const parsed = JSON.parse(content);
+        // Validate content structure - must be a doc node
+        if (parsed && typeof parsed === 'object' && parsed.type === 'doc') {
+          // Ensure content array exists
+          if (!parsed.content || !Array.isArray(parsed.content)) {
+            console.warn('Content missing content array, initializing empty');
+            return { type: 'doc', content: [] };
+          }
+          return parsed;
+        }
+        // If invalid, return empty doc
+        console.warn('Invalid content structure, using empty document');
+        return { type: 'doc', content: [] };
+      } catch (error) {
+        console.error('Error parsing content:', error);
+        return { type: 'doc', content: [] };
+      }
+    })() : undefined,
     editable,
     onUpdate: ({ editor }) => {
       // Convert to JSON string for storage
@@ -72,7 +104,7 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-lg max-w-none focus:outline-none min-h-[400px] p-4',
+        class: 'tiptap-editor focus:outline-none min-h-[400px] p-4',
       },
     },
   });
@@ -100,6 +132,17 @@ export function RichTextEditor({
 
   if (!editor) {
     return <div className="p-4">Loading editor...</div>;
+  }
+
+  // Check if editor is in a valid state
+  try {
+    editor.getJSON();
+  } catch (error) {
+    console.error('Editor state is invalid, resetting...', error);
+    // Try to reset editor with empty content
+    setTimeout(() => {
+      editor.commands.setContent({ type: 'doc', content: [] });
+    }, 0);
   }
 
   return (

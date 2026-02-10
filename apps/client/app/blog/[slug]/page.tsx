@@ -68,21 +68,29 @@ export default function BlogPostPage() {
           ? post.tags[0].tag.id 
           : undefined;
 
-        if (!categoryId && !tagId) {
-          setLoadingRelated(false);
-          return;
+        let response;
+        
+        if (categoryId || tagId) {
+          // Fetch posts with same category or tag
+          response = await postsApi.searchPublicPosts({
+            locale,
+            categoryId,
+            tagId,
+            page: 1,
+            limit: 6, // Fetch more to ensure we have enough after filtering
+            sortBy: 'publishedAt',
+            sortOrder: 'desc',
+          });
+        } else {
+          // If no category or tag, fetch latest posts
+          response = await postsApi.searchPublicPosts({
+            locale,
+            page: 1,
+            limit: 4,
+            sortBy: 'publishedAt',
+            sortOrder: 'desc',
+          });
         }
-
-        // Fetch posts with same category or tag
-        const response = await postsApi.searchPublicPosts({
-          locale,
-          categoryId,
-          tagId,
-          page: 1,
-          limit: 6, // Fetch more to ensure we have enough after filtering
-          sortBy: 'publishedAt',
-          sortOrder: 'desc',
-        });
 
         if (response.success && response.data) {
           // Filter out current post and limit to 3 related posts
@@ -125,16 +133,11 @@ export default function BlogPostPage() {
 
   return (
     <PageWrapper>
-      <PageHeader>
-        <PageTitle>{post.seoTitle || post.title}</PageTitle>
-        {post.seoDescription && (
-          <p className="text-text-secondary mt-2">{post.seoDescription}</p>
-        )}
-      </PageHeader>
-      <PageContent>
-        {/* Featured Image - Always show with placeholder if missing */}
-        <div className="w-full h-64 md:h-96 overflow-hidden rounded-lg mb-6 bg-gray-100 flex items-center justify-center">
-          {post.featuredImage ? (
+      {/* Hero Header with Featured Image */}
+      <div className="relative w-full h-64 md:h-96 lg:h-[500px] overflow-hidden mb-8">
+        {/* Background Image or Gradient */}
+        {post.featuredImage ? (
+          <div className="absolute inset-0">
             <img
               src={post.featuredImage}
               alt={post.title}
@@ -145,9 +148,16 @@ export default function BlogPostPage() {
                 target.nextElementSibling?.classList.remove('hidden');
               }}
             />
-          ) : null}
-          {/* Placeholder - shown when no image or image fails to load */}
-          <div className={`${post.featuredImage ? 'hidden' : ''} w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300`}>
+            {/* Overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400" />
+        )}
+        
+        {/* Placeholder - shown when image fails to load */}
+        {post.featuredImage && (
+          <div className="hidden absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400 flex items-center justify-center">
             <svg
               className="w-24 h-24 text-gray-400"
               fill="none"
@@ -163,64 +173,87 @@ export default function BlogPostPage() {
               />
             </svg>
           </div>
-        </div>
+        )}
 
-        {/* Post Meta */}
-        <div className="flex items-center gap-4 text-sm text-text-tertiary mb-6">
-          {post.author && (
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              <span>
-                {post.author.firstName} {post.author.lastName}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            <span>
-              {post.publishedAt
-                ? new Date(post.publishedAt).toLocaleDateString()
-                : new Date(post.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-
-        {/* Categories & Tags */}
-        {(post.categories && post.categories.length > 0) ||
-        (post.tags && post.tags.length > 0) ? (
-          <div className="mb-8 space-y-4">
-            {post.categories && post.categories.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <FolderOpen className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-sm font-medium text-text-secondary">Categories</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
+        {/* Header Content */}
+        <div className="relative z-10 h-full flex flex-col justify-end">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8">
+            <div className="max-w-3xl">
+              {/* Categories */}
+              {post.categories && post.categories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
                   {post.categories.map((cat) => (
-                    <Badge key={cat.category.id} variant="outline" className="text-sm">
+                    <Badge key={cat.category.id} variant="outline" className="bg-white/90 text-gray-900 border-white/50">
                       {cat.category.name}
                     </Badge>
                   ))}
                 </div>
-              </div>
-            )}
-            {post.tags && post.tags.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Tag className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-sm font-medium text-text-secondary">Tags</span>
+              )}
+              
+              {/* Title */}
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                {post.seoTitle || post.title}
+              </h1>
+              
+              {/* Description */}
+              {post.seoDescription && (
+                <p className="text-lg md:text-xl text-white/90 mb-6 leading-relaxed">
+                  {post.seoDescription}
+                </p>
+              )}
+              
+              {/* Meta Info */}
+              <div className="flex items-center gap-6 text-sm text-white/80">
+                {post.author && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>
+                      {post.author.firstName} {post.author.lastName}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {post.publishedAt
+                      ? new Date(post.publishedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : new Date(post.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map((tag) => (
-                    <Badge key={tag.tag.id} variant="secondary" className="text-sm">
-                      {tag.tag.name}
-                    </Badge>
-                  ))}
-                </div>
               </div>
-            )}
+            </div>
           </div>
-        ) : null}
+        </div>
+      </div>
+
+      <PageContent className="py-12 px-4 sm:px-6 lg:px-8">
+        {/* Post Content Container - Limited width for better readability */}
+        <div className="max-w-3xl mx-auto">
+
+        {/* Tags - Only show tags here since categories are in header */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="h-4 w-4 text-text-tertiary" />
+              <span className="text-sm font-medium text-text-secondary">Tags</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <Badge key={tag.tag.id} variant="secondary" className="text-sm">
+                  {tag.tag.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Post Content */}
         {post.content && (
@@ -228,24 +261,27 @@ export default function BlogPostPage() {
             <PostContent content={post.content} />
           </div>
         )}
+        </div>
 
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-border">
-            <h2 className="text-2xl font-bold text-text-primary mb-6">Related Posts</h2>
-            {loadingRelated ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {relatedPosts.map((relatedPost) => (
-                  <PostCard key={relatedPost.id} post={relatedPost} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Related Posts - Always show section */}
+        <div className="mt-12 pt-8 border-t border-border max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-text-primary mb-6 text-center">Related Posts</h2>
+          {loadingRelated ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
+            </div>
+          ) : relatedPosts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedPosts.map((relatedPost) => (
+                <PostCard key={relatedPost.id} post={relatedPost} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-text-tertiary">
+              <p>No related posts found.</p>
+            </div>
+          )}
+        </div>
       </PageContent>
     </PageWrapper>
   );

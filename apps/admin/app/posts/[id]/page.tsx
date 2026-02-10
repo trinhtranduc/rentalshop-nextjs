@@ -54,7 +54,8 @@ export default function PostDetailPage() {
     };
 
     fetchPost();
-  }, [postId, router, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]); // Only fetch when postId changes
 
   const handleEdit = () => {
     if (post) {

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
-import { SubscriptionExtendDialog } from './SubscriptionExtendDialog';
+import { SubscriptionExtendDialogEnhanced } from './SubscriptionExtendDialogEnhanced';
 import { SubscriptionChangePlanDialog } from './SubscriptionChangePlanDialog';
 import { SubscriptionEditDialog } from './SubscriptionEditDialog';
 
@@ -44,6 +44,7 @@ interface SubscriptionListProps {
     amount: number;
     method: string;
     description?: string;
+    sendEmail?: boolean;
   }) => void;
   onCancel?: (subscription: Subscription, reason: string) => void;
   onSuspend?: (subscription: Subscription, reason: string) => void;
@@ -427,7 +428,7 @@ export function SubscriptionList({
       />
 
 
-      <SubscriptionExtendDialog
+      <SubscriptionExtendDialogEnhanced
         subscription={selectedSubscription}
         isOpen={showExtendDialog}
         onClose={() => setShowExtendDialog(false)}

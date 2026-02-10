@@ -264,6 +264,7 @@ export default function SubscriptionsPage() {
     amount: number;
     method: string;
     description?: string;
+    sendEmail?: boolean;
   }) => {
     try {
       setSubmitting(true);

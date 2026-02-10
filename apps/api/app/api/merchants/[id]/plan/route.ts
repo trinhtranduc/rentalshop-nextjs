@@ -119,7 +119,7 @@ export async function PUT(
         // Update additional fields if provided (discount, custom amount, etc.)
         if (discount !== undefined || amount !== undefined) {
           await db.subscriptions.update(merchant.subscription.id, {
-            discount: discount || 0,
+          discount: discount || 0,
             // Only update amount if explicitly provided (otherwise use calculated amount from changePlan)
             ...(amount !== undefined && amount !== 0 ? { amount } : {})
           });

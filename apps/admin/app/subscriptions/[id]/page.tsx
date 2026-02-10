@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { subscriptionsApi } from '@rentalshop/utils';
+import { subscriptionsApi, planLimitAddonsApi } from '@rentalshop/utils';
+import { SubscriptionExtendDialogEnhanced } from '@rentalshop/ui';
+import type { PlanLimitAddon } from '@rentalshop/types';
 import { Card,
   CardHeader,
   CardTitle,
@@ -44,7 +46,9 @@ import {
   Clock,
   Download,
   RefreshCw,
-  X
+  X,
+  Package,
+  Plus
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, Payment } from '@rentalshop/types';
 
@@ -58,15 +62,16 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
+  const [totalAddonLimits, setTotalAddonLimits] = useState({
+    outlets: 0,
+    users: 0,
+    products: 0,
+    customers: 0,
+    orders: 0
+  });
   const [loading, setLoading] = useState(true);
   const [showExtendModal, setShowExtendModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [extendData, setExtendData] = useState({
-    newEndDate: new Date(),
-    amount: 0,
-    method: 'MANUAL',
-    description: ''
-  });
 
   // Toast management
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -86,12 +91,47 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     try {
       setLoading(true);
       
-      const { subscriptionsApi } = await import('@rentalshop/utils');
+      const { subscriptionsApi, planLimitAddonsApi } = await import('@rentalshop/utils');
       const result = await subscriptionsApi.getById(parseInt(params.id));
       
       if (result.success && result.data) {
         setSubscription(result.data);
         setPayments(result.data.payments || []);
+        
+        // Fetch addons for this merchant
+        if (result.data.merchantId) {
+          try {
+            const addonsResult = await planLimitAddonsApi.getMerchantPlanLimitAddons(
+              result.data.merchantId,
+              { 
+                isActive: true,
+                page: 1,
+                limit: 100,
+                offset: 0
+              }
+            );
+            
+            if (addonsResult.success && addonsResult.data) {
+              const activeAddons = addonsResult.data.addons || [];
+              setAddons(activeAddons);
+              
+              // Calculate total addon limits
+              const totals = activeAddons.reduce(
+                (acc, addon) => ({
+                  outlets: acc.outlets + (addon.outlets || 0),
+                  users: acc.users + (addon.users || 0),
+                  products: acc.products + (addon.products || 0),
+                  customers: acc.customers + (addon.customers || 0),
+                  orders: acc.orders + (addon.orders || 0)
+                }),
+                { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 }
+              );
+              setTotalAddonLimits(totals);
+            }
+          } catch (addonError) {
+            console.error('Error fetching addons:', addonError);
+          }
+        }
       } else {
         throw new Error(result.message || 'Failed to fetch subscription');
       }
@@ -110,10 +150,21 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     setShowExtendModal(true);
   };
 
-  const handleExtendConfirm = async () => {
+  const handleExtendConfirm = async (subscription: Subscription, data: {
+    newEndDate: Date;
+    amount: number;
+    method: string;
+    description?: string;
+    sendEmail?: boolean;
+  }) => {
     try {
       const { subscriptionsApi } = await import('@rentalshop/utils');
-      const result = await subscriptionsApi.extend(parseInt(params.id), extendData);
+      const result = await subscriptionsApi.extend(parseInt(params.id), {
+        newEndDate: data.newEndDate,
+        amount: data.amount, // Will be auto-calculated if not provided
+        method: data.method,
+        description: data.description
+      });
 
       if (result.success) {
         setShowExtendModal(false);
@@ -433,6 +484,148 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             </CardContent>
           </Card>
 
+          {/* Plan Limits & Addons */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center space-x-2">
+                  <Package className="h-5 w-5" />
+                  <span>Plan Limits & Addons</span>
+                </span>
+                {subscription.merchantId && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => router.push(`/admin/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Manage Addons
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Plan Base Limits */}
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 mb-3 block">Base Plan Limits</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm text-gray-600">Outlets</span>
+                    <span className="font-semibold">
+                      {subscription.plan?.limits?.outlets === -1 ? 'Unlimited' : subscription.plan?.limits?.outlets || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm text-gray-600">Users</span>
+                    <span className="font-semibold">
+                      {subscription.plan?.limits?.users === -1 ? 'Unlimited' : subscription.plan?.limits?.users || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm text-gray-600">Products</span>
+                    <span className="font-semibold">
+                      {subscription.plan?.limits?.products === -1 ? 'Unlimited' : subscription.plan?.limits?.products?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm text-gray-600">Customers</span>
+                    <span className="font-semibold">
+                      {subscription.plan?.limits?.customers === -1 ? 'Unlimited' : subscription.plan?.limits?.customers?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm text-gray-600">Orders</span>
+                    <span className="font-semibold">
+                      {subscription.plan?.limits?.orders === -1 ? 'Unlimited' : subscription.plan?.limits?.orders?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Addons Summary */}
+              {addons.length > 0 && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-semibold text-gray-700">Active Addons ({addons.length})</Label>
+                    <Badge variant="outline" className="text-xs">
+                      +{Object.values(totalAddonLimits).reduce((a, b) => a + b, 0)} total additional limits
+                    </Badge>
+                  </div>
+                  
+                  {/* Total Limits with Addons */}
+                  <div className="mb-3">
+                    <Label className="text-xs text-gray-500 mb-2 block">Total Limits (Plan + Addons)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(totalAddonLimits).map(([key, value]) => {
+                        if (value === 0) return null;
+                        const baseLimit = (subscription.plan?.limits?.[key as keyof typeof subscription.plan.limits] as number) || 0;
+                        const totalLimit = baseLimit === -1 ? -1 : (baseLimit as number) + (value as number);
+                        return (
+                          <div key={key} className="flex justify-between items-center p-2 bg-primary/5 border border-primary/20 rounded">
+                            <span className="text-sm text-gray-600 capitalize">{key}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">
+                                {baseLimit === -1 ? 'Unlimited' : baseLimit}
+                              </span>
+                              <span className="text-xs text-primary font-semibold">+{value}</span>
+                              <span className="text-sm font-semibold">=</span>
+                              <span className="font-semibold text-primary">
+                                {totalLimit === -1 ? 'Unlimited' : totalLimit}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Addons List */}
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {addons.map((addon) => {
+                      const limits = [];
+                      if (addon.outlets > 0) limits.push(`${addon.outlets} Outlets`);
+                      if (addon.users > 0) limits.push(`${addon.users} Users`);
+                      if (addon.products > 0) limits.push(`${addon.products} Products`);
+                      if (addon.customers > 0) limits.push(`${addon.customers} Customers`);
+                      if (addon.orders > 0) limits.push(`${addon.orders} Orders`);
+                      
+                      return (
+                        <div key={addon.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold">Addon #{addon.id}</span>
+                                <Badge variant={addon.isActive ? "default" : "secondary"} className="text-xs">
+                                  {addon.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                {limits.map((limit, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    +{limit}
+                                  </Badge>
+                                ))}
+                              </div>
+                              {addon.notes && (
+                                <p className="text-xs text-gray-500 mt-1">{addon.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {addons.length === 0 && (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No active addons. Addons provide additional limits on top of your base plan.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Payment History */}
           <Card>
             <CardHeader>
@@ -550,105 +743,14 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         </div>
       </div>
 
-      {/* Extend Modal */}
-      <Dialog open={showExtendModal} onOpenChange={setShowExtendModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-700" />
-              Extend Subscription
-            </DialogTitle>
-            <DialogDescription>
-              Extend subscription for {subscription?.merchant?.name || 'Unknown Merchant'}. 
-              This will update the end date and create a payment record.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Current Subscription Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Current Subscription</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Plan</Label>
-                    <p className="text-sm font-medium">{subscription?.plan?.name || 'Unknown Plan'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Current Amount</Label>
-                    <p className="text-sm font-medium">
-                      {formatCurrency(subscription?.amount || 0, subscription?.currency || 'USD')}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Current End Date</Label>
-                    <p className="text-sm">{subscription?.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'No end date'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Status</Label>
-                    <p className="text-sm">{subscription?.status}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Extension Details */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="amount">Extension Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={extendData.amount}
-                    onChange={(e) => setExtendData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="method">Payment Method</Label>
-                  <select
-                    id="method"
-                    value={extendData.method}
-                    onChange={(e) => setExtendData(prev => ({ ...prev, method: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    <option value="MANUAL">Manual</option>
-                    <option value="STRIPE">Stripe</option>
-                    <option value="TRANSFER">Bank Transfer</option>
-                    <option value="CASH">Cash</option>
-                    <option value="CHECK">Check</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={extendData.description}
-                  onChange={(e) => setExtendData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Optional description about this extension..."
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExtendModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleExtendConfirm}>
-              Extend Subscription
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Extend Modal - Enhanced with Auto-calculation */}
+      <SubscriptionExtendDialogEnhanced
+        subscription={subscription}
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        onConfirm={handleExtendConfirm}
+        loading={false}
+      />
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog

@@ -70,7 +70,11 @@
     "verify:embeddings-quality": "tsx scripts/verify-embeddings-quality.ts",
     "test:qdrant": "tsx scripts/test-qdrant-connection.ts",
     "test:qdrant-railway": "tsx scripts/test-qdrant-railway.ts",
-    "verify:railway-setup": "tsx scripts/verify-railway-setup.ts"
+    "verify:railway-setup": "tsx scripts/verify-railway-setup.ts",
+    "posts:delete-all": "node scripts/delete-all-posts-categories-tags.js",
+    "posts:convert-to-md": "node scripts/convert-json-articles-to-markdown.js",
+    "posts:export-for-review": "node scripts/export-posts-to-review-folder.js",
+    "posts:clean-duplicates": "node scripts/clean-duplicate-content.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
