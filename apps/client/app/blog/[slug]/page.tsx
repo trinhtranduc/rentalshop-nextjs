@@ -13,12 +13,13 @@ import {
 } from '@rentalshop/ui';
 import { postsApi } from '@rentalshop/utils';
 import { useParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Calendar, User } from 'lucide-react';
 import type { Post } from '@rentalshop/types';
-import { Metadata } from 'next';
 
 export default function BlogPostPage() {
   const params = useParams();
+  const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
   const { toastError } = useToast();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export default function BlogPostPage() {
     const fetchPost = async () => {
       setLoading(true);
       try {
-        const response = await postsApi.getPostBySlug(slug);
+        const response = await postsApi.getPostBySlug(slug, locale);
         if (response.success && response.data) {
           setPost(response.data);
         } else {
@@ -45,7 +46,7 @@ export default function BlogPostPage() {
     };
 
     fetchPost();
-  }, [slug, toastError]);
+  }, [slug, locale, toastError]);
 
   if (loading) {
     return (

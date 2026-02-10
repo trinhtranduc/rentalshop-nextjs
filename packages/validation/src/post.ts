@@ -8,9 +8,9 @@ export const postCreateSchema = z.object({
   slug: z.string().min(1).max(255).regex(slugRegex, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).default('vi'), // Supported languages
   content: z.string().min(1, 'Content is required'),
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().max(1000).optional(), // Increased from 500 to 1000 for longer excerpts
   seoTitle: z.string().max(60).optional(),
-  seoDescription: z.string().max(160).optional(),
+  seoDescription: z.string().max(320).optional(), // Increased from 160 to 320 (Google allows up to 320 chars)
   seoKeywords: z.string().max(255).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']).default('DRAFT'),
   categoryIds: z.array(z.number().int().positive()).optional(),
