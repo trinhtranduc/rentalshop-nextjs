@@ -135,6 +135,9 @@ export const search = async (filters: {
 
   if (locale) {
     where.locale = locale;
+    console.log('🔍 db.posts.search - Filtering by locale:', locale);
+  } else {
+    console.log('🔍 db.posts.search - No locale filter (will return all locales)');
   }
 
   if (authorId) {

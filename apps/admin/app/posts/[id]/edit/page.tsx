@@ -57,7 +57,8 @@ export default function EditPostPage() {
     };
 
     fetchData();
-  }, [postId, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]); // Only fetch when postId changes
 
   const handleSubmit = async (data: PostUpdateInput) => {
     if (!postId) return;
@@ -113,6 +114,7 @@ export default function EditPostPage() {
           initialData={{
             title: post.title,
             slug: post.slug,
+            locale: post.locale,
             content: post.content,
             excerpt: post.excerpt,
             seoTitle: post.seoTitle,
