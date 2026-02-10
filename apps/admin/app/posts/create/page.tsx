@@ -50,7 +50,11 @@ export default function CreatePostPage() {
       const response = await postsApi.createPost(data);
       if (response.success) {
         toastSuccess('Post created successfully');
-        router.push('/posts');
+        // Redirect to posts list with status filter to show the new post
+        // If status is DRAFT, filter by DRAFT; if PUBLISHED, filter by PUBLISHED
+        const statusFilter = data.status || 'DRAFT';
+        router.push(`/posts?status=${statusFilter}&page=1`);
+        router.refresh(); // Force refresh to ensure data is fetched
       } else {
         toastError('Failed to create post');
       }

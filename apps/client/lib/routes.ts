@@ -19,6 +19,7 @@ export const PUBLIC_ROUTES = [
   '/terms',
   '/privacy',
   '/features',
+  '/blog',
 ] as const;
 
 /**
@@ -52,6 +53,11 @@ export function isPublicRoute(pathname: string): boolean {
   
   // Check dynamic routes (e.g., /register/step-1)
   if (pathname.startsWith('/register')) {
+    return true;
+  }
+  
+  // Check blog pages (e.g., /blog, /blog/[slug])
+  if (pathname.startsWith('/blog')) {
     return true;
   }
   

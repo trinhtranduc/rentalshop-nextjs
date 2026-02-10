@@ -31,12 +31,23 @@ COPY apps/client/package.json ./apps/client/
 # Install ALL dependencies including devDependencies (needed for build)
 ENV NODE_ENV=development
 # Add retry and network timeout for Railway builds
+# CRITICAL: Set sharp environment variables to handle network issues
+# SHARP_IGNORE_GLOBAL_LIBVIPS=1: Skip global libvips check
+# SHARP_LIBVIPS_BINARY_PATH: Use pre-built binaries if available
+# npm_config_sharp_binary_host: Alternative CDN for sharp binaries
 RUN yarn config set network-timeout 300000 && \
     yarn config set registry https://registry.npmjs.org/ && \
+    export SHARP_IGNORE_GLOBAL_LIBVIPS=1 && \
+    export npm_config_sharp_binary_host="https://npmmirror.com/mirrors/sharp" || true && \
     (yarn install --frozen-lockfile --network-timeout 300000 || \
-     (echo "First attempt failed, retrying..." && \
+     (echo "First attempt failed, retrying with clean cache..." && \
       yarn cache clean && \
-      yarn install --frozen-lockfile --network-timeout 300000))
+      export SHARP_IGNORE_GLOBAL_LIBVIPS=1 && \
+      export npm_config_sharp_binary_host="https://npmmirror.com/mirrors/sharp" || true && \
+      yarn install --frozen-lockfile --network-timeout 300000 || \
+      (echo "Second attempt failed, trying with sharp skip install..." && \
+       export SHARP_SKIP_INSTALL=1 || true && \
+       yarn install --frozen-lockfile --network-timeout 300000 --ignore-optional || true)))
 
 # Keep onnxruntime-node (it will work with node:20)
 # node:20 has glibc, so onnxruntime-node (CPU backend) will work correctly

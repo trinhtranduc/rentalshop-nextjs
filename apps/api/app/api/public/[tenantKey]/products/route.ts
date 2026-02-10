@@ -133,7 +133,7 @@ export async function GET(
     const categoryId = searchParams.get('categoryId');
     const search = searchParams.get('search') || searchParams.get('q');
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     // Build product filters
     // Note: For public pages, we only show active products

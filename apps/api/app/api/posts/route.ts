@@ -27,10 +27,14 @@ export const GET = withPermissions(['posts.view'])(async (request, { user, userS
     const filters = parsed.data;
     
     // Only ADMIN can see all posts (including drafts)
-    // For public access, filter to published only
+    // For non-ADMIN users, filter to published only
+    // If status is not specified in query params, return all (DRAFT + PUBLISHED) for ADMIN
     if (user.role !== USER_ROLE.ADMIN) {
+      // Non-ADMIN users can only see published posts
       filters.status = 'PUBLISHED';
     }
+    // For ADMIN users: if status is not specified, don't set it (will return all statuses)
+    // If status is specified in query params, use that filter
 
     const result = await db.posts.search(filters);
 

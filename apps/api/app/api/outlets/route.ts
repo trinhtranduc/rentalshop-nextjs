@@ -61,7 +61,7 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
       sortBy: sortBy || 'name',
       sortOrder: sortOrder || 'asc',
       page: page || 1,
-      limit: limit || 20,
+      limit: limit || 50,
       offset: offset
     };
 
@@ -83,9 +83,9 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
         outlets: normalizedOutlets,
         total: result.total || 0,
         page: result.page || 1,
-        limit: result.limit || 20,
+        limit: result.limit || 50,
         hasMore: result.hasMore || false,
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 50))
       },
       code: "OUTLETS_FOUND",
       message: `Found ${result.total || 0} outlets`

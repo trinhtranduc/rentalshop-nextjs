@@ -24,7 +24,7 @@ export const GET = withReadOnlyAuth(async (request, { user, userScope }) => {
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
       cursor: searchParams.get('cursor') || undefined,
-      limit: parseInt(searchParams.get('limit') || '20'),
+      limit: parseInt(searchParams.get('limit') || '50'),
       sortBy: searchParams.get('sortBy') || 'createdAt',
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
     };

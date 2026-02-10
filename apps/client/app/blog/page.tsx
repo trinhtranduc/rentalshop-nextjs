@@ -17,10 +17,12 @@ import {
   useToast,
 } from '@rentalshop/ui';
 import { postsApi } from '@rentalshop/utils';
+import { useLocale } from 'next-intl';
 import { Search } from 'lucide-react';
 import type { Post, PostCategory, PostTag } from '@rentalshop/types';
 
 export default function BlogPage() {
+  const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
   const { toastError } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<PostCategory[]>([]);
@@ -38,6 +40,7 @@ export default function BlogPage() {
       try {
         const [postsRes, categoriesRes, tagsRes] = await Promise.all([
           postsApi.searchPublicPosts({
+            locale,
             search: search || undefined,
             categoryId: selectedCategory,
             tagId: selectedTag,
@@ -66,7 +69,8 @@ export default function BlogPage() {
     };
 
     fetchData();
-  }, [search, selectedCategory, selectedTag, page, toastError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, search, selectedCategory, selectedTag, page]);
 
   return (
     <PageWrapper>

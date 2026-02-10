@@ -232,6 +232,42 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         endOfPeriod
       );
 
+      // Calculate total deposit collected (tiền thế chân thu được)
+      // Tính securityDeposit dựa vào ngày phát sinh (ngày thu tiền cọc)
+      // - RESERVED: Tính nếu có securityDeposit và createdAt trong period
+      // - PICKUPED: Tính nếu có securityDeposit và pickedUpAt trong period
+      // - RETURNED: KHÔNG tính (đã trả lại)
+      // - CANCELLED: KHÔNG tính (đã hoàn lại)
+      let totalDepositRefund = 0;
+      for (const order of allOrders) {
+        if (order.orderType !== ORDER_TYPE.RENT) continue;
+        
+        const securityDeposit = order.securityDeposit || 0;
+        if (securityDeposit === 0) continue;
+
+        // Tính khi RESERVED: Nếu có securityDeposit và createdAt trong period
+        if (
+          order.status === ORDER_STATUS.RESERVED &&
+          order.createdAt &&
+          new Date(order.createdAt) >= startOfPeriod &&
+          new Date(order.createdAt) <= endOfPeriod
+        ) {
+          totalDepositRefund += securityDeposit;
+        }
+        
+        // Tính khi PICKUPED: Nếu có securityDeposit và pickedUpAt trong period
+        if (
+          order.status === ORDER_STATUS.PICKUPED &&
+          order.pickedUpAt &&
+          new Date(order.pickedUpAt) >= startOfPeriod &&
+          new Date(order.pickedUpAt) <= endOfPeriod
+        ) {
+          totalDepositRefund += securityDeposit;
+        }
+        
+        // KHÔNG tính khi RETURNED hoặc CANCELLED (đã trả lại/hoàn lại)
+      }
+
       // Get order count for the period
         const orderCount = await db.orders.getStats({
           where: {
@@ -261,7 +297,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         dayNumber: groupByType === 'day' ? normalizedStartOfPeriod.getUTCDate() : undefined, // 1-31
         realIncome: realIncome,
         futureIncome: futureIncome,
-        orderCount: orderCount
+        orderCount: orderCount,
+        depositRefund: totalDepositRefund // Tiền thế chân thu được (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       };
 
       // Add outlet info when outletIds parameter is provided

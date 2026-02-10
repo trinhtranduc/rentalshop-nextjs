@@ -67,14 +67,18 @@ export async function OPTIONS(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const rawParams = Object.fromEntries(searchParams.entries());
+    
+    console.log('🔍 GET /api/posts/public - Raw search params:', rawParams);
     
     // Parse search params with defaults for public access
     const parsed = postSearchSchema.safeParse({
-      ...Object.fromEntries(searchParams.entries()),
+      ...rawParams,
       status: 'PUBLISHED', // Force published only for public access
     });
 
     if (!parsed.success) {
+      console.log('❌ Validation error:', parsed.error.flatten());
       return NextResponse.json(
         ResponseBuilder.validationError(parsed.error.flatten()),
         { 
@@ -89,7 +93,11 @@ export async function GET(request: NextRequest) {
       status: 'PUBLISHED' as const, // Always published for public
     };
 
+    console.log('🔍 GET /api/posts/public - Parsed filters:', filters);
+
     const result = await db.posts.search(filters);
+    
+    console.log('🔍 GET /api/posts/public - Result count:', result.data?.length || 0, 'Total:', result.total);
 
     return NextResponse.json(
       ResponseBuilder.success('POSTS_FOUND', result),

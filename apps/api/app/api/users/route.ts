@@ -100,7 +100,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
           data: [],
           pagination: {
             page: 1,
-            limit: q.limit || 20,
+            limit: q.limit || 50,
             total: 0,
             hasMore: false,
             totalPages: 0
@@ -128,7 +128,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
           data: [],
           pagination: {
             page: 1,
-            limit: q.limit || 20,
+            limit: q.limit || 50,
             total: 0,
             hasMore: false,
             totalPages: 0
@@ -154,7 +154,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
         limit: result.limit,
         total: result.total,
         hasMore: result.hasMore,
-        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
+        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 50))
       }
     });
 

@@ -6,10 +6,11 @@ export const slugRegex = /^[a-z0-9-]+$/;
 export const postCreateSchema = z.object({
   title: z.string().min(1).max(255),
   slug: z.string().min(1).max(255).regex(slugRegex, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).default('vi'), // Supported languages
   content: z.string().min(1, 'Content is required'),
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().max(1000).optional(), // Increased from 500 to 1000 for longer excerpts
   seoTitle: z.string().max(60).optional(),
-  seoDescription: z.string().max(160).optional(),
+  seoDescription: z.string().max(320).optional(), // Increased from 160 to 320 (Google allows up to 320 chars)
   seoKeywords: z.string().max(255).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']).default('DRAFT'),
   categoryIds: z.array(z.number().int().positive()).optional(),
@@ -53,12 +54,13 @@ export const postTagUpdateSchema = postTagCreateSchema.partial();
 
 export const postSearchSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
-  categoryId: z.number().int().positive().optional(),
-  tagId: z.number().int().positive().optional(),
-  authorId: z.number().int().positive().optional(),
+  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).optional(), // Filter by language
+  categoryId: z.coerce.number().int().positive().optional(),
+  tagId: z.coerce.number().int().positive().optional(),
+  authorId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
   sortBy: z.enum(['createdAt', 'updatedAt', 'publishedAt', 'title']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

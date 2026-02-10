@@ -67,8 +67,11 @@ export const postsApi = {
   /**
    * Get post by slug (public - no authentication required)
    */
-  async getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
-    const response = await publicFetch(apiUrls.posts.getBySlug(slug));
+  async getPostBySlug(slug: string, locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'): Promise<ApiResponse<Post>> {
+    const url = locale 
+      ? `${apiUrls.posts.getBySlug(slug)}?locale=${locale}`
+      : apiUrls.posts.getBySlug(slug);
+    const response = await publicFetch(url);
     return await parseApiResponse<Post>(response);
   },
 
@@ -81,6 +84,7 @@ export const postsApi = {
     
     // Always force PUBLISHED for public access
     params.append('status', 'PUBLISHED');
+    if (filters.locale) params.append('locale', filters.locale);
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.tagId) params.append('tagId', filters.tagId.toString());
     if (filters.search) params.append('search', filters.search);

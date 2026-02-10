@@ -70,7 +70,7 @@ export async function GET(
       // Parse pagination parameters from query string
       const { searchParams } = new URL(request.url);
       const page = parseInt(searchParams.get('page') || '1');
-      const limit = parseInt(searchParams.get('limit') || '20');
+      const limit = parseInt(searchParams.get('limit') || '50');
       const sortBy = searchParams.get('sortBy') || 'createdAt';
       const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 

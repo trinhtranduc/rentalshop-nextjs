@@ -13,7 +13,7 @@ import { User } from 'lucide-react'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 
 // Import Blog Section (Client Component that calls API)
-// import BlogSectionWrapper from './components/BlogSectionWrapper'
+import BlogSection from './components/BlogSection'
 import { 
   Check, 
   ChevronDown, 
@@ -872,11 +872,11 @@ const LandingPage = () => {
       {/* FAQ Section - Below the fold, lazy loaded */}
       <FAQ />
 
-      {/* Blog Section */}
-      {/* <BlogSectionWrapper 
-        title={t('blog.title')}
-        subtitle={t('blog.subtitle')}
-      /> */}
+      {/* Blog Section - Latest Posts */}
+      <BlogSection 
+        title={t('blog.title') || 'Latest Blog Posts'}
+        subtitle={t('blog.subtitle') || 'Discover insights and tips for your rental business'}
+      />
 
       {/* Pricing Section - Below the fold, heavy component with API calls */}
       <Pricing />

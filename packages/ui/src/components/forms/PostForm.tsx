@@ -49,6 +49,7 @@ export function PostForm({
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     slug: initialData.slug || '',
+    locale: (initialData.locale || 'vi') as 'en' | 'vi' | 'zh' | 'ko' | 'ja',
     content: initialData.content || '',
     excerpt: initialData.excerpt || '',
     seoTitle: initialData.seoTitle || '',
@@ -228,6 +229,31 @@ export function PostForm({
               placeholder="Enter post title"
               required
             />
+          </div>
+
+          {/* Locale */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Language *</label>
+            <Select
+              value={formData.locale}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, locale: value as 'en' | 'vi' | 'zh' | 'ko' | 'ja' }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="vi">Tiếng Việt</SelectItem>
+                <SelectItem value="zh">中文</SelectItem>
+                <SelectItem value="ko">한국어</SelectItem>
+                <SelectItem value="ja">日本語</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-text-tertiary mt-1">
+              Select the language for this post. The same slug can be used for different languages.
+            </p>
           </div>
 
           {/* Slug */}

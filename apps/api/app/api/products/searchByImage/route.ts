@@ -222,7 +222,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       }
 
       // Parse optional parameters
-      const limit = limitParam ? parseInt(String(limitParam)) : 20;
+      const limit = limitParam ? parseInt(String(limitParam)) : 50;
       const minSimilarity = minSimilarityParam 
         ? parseFloat(String(minSimilarityParam)) 
         : parseFloat(process.env.IMAGE_SEARCH_MIN_SIMILARITY || '0.5');

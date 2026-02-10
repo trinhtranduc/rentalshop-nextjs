@@ -182,6 +182,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       dateISO: string; // Full ISO string at midnight UTC (for frontend formatting)
       dateObj: Date;
       totalRevenue: number; // Tổng doanh thu trong ngày
+      depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
       orders: Array<{
         id: number;
@@ -254,6 +255,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             dateISO: dateISO,
             dateObj,
             totalRevenue: 0,
+            depositRefund: 0, // Tiền thế chân trả lại
             newOrderCount: 0,
             orders: []
           });
@@ -357,6 +359,51 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         }
       }
+
+      // ============================================================================
+      // TÍNH TIỀN THẾ CHÂN THU ĐƯỢC: Tính theo ngày phát sinh
+      // ============================================================================
+      // Tính securityDeposit dựa vào ngày phát sinh (ngày thu tiền cọc)
+      // - RESERVED: Tính nếu có securityDeposit và createdAt trong period
+      // - PICKUPED: Tính nếu có securityDeposit và pickedUpAt trong period
+      // - RETURNED: KHÔNG tính (đã trả lại)
+      // - CANCELLED: KHÔNG tính (đã hoàn lại)
+      if (order.orderType === ORDER_TYPE.RENT) {
+        const securityDeposit = order.securityDeposit || 0;
+        if (securityDeposit > 0) {
+          // Tính khi RESERVED: Nếu có securityDeposit và createdAt trong period
+          if (
+            order.status === ORDER_STATUS.RESERVED &&
+            order.createdAt
+          ) {
+            const createdDate = new Date(order.createdAt);
+            if (createdDate >= start && createdDate <= end) {
+              const dateKey = getUTCDateKey(createdDate);
+              if (dailyDataMap.has(dateKey)) {
+                const dailyData = dailyDataMap.get(dateKey)!;
+                dailyData.depositRefund += securityDeposit;
+              }
+            }
+          }
+          
+          // Tính khi PICKUPED: Nếu có securityDeposit và pickedUpAt trong period
+          if (
+            order.status === ORDER_STATUS.PICKUPED &&
+            order.pickedUpAt
+          ) {
+            const pickedUpDate = new Date(order.pickedUpAt);
+            if (pickedUpDate >= start && pickedUpDate <= end) {
+              const dateKey = getUTCDateKey(pickedUpDate);
+              if (dailyDataMap.has(dateKey)) {
+                const dailyData = dailyDataMap.get(dateKey)!;
+                dailyData.depositRefund += securityDeposit;
+              }
+            }
+          }
+          
+          // KHÔNG tính khi RETURNED hoặc CANCELLED (đã trả lại/hoàn lại)
+        }
+      }
     }
 
     // ============================================================================
@@ -378,6 +425,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         summary: {
           totalDays: dailyDataArray.length,
           totalRevenue: dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0),
+          totalDepositRefund: dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0), // Tổng tiền thế chân thu được
           totalNewOrders: dailyDataArray.reduce((sum, day) => sum + day.newOrderCount, 0),
           totalOrders: dailyDataArray.reduce((sum, day) => sum + day.orders.length, 0)
         }

@@ -30,6 +30,7 @@ export interface Post {
   id: number;
   title: string;
   slug: string;
+  locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code
   content: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -53,6 +54,7 @@ export interface Post {
 export interface PostCreateInput {
   title: string;
   slug: string;
+  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code, defaults to 'vi'
   content: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -67,6 +69,7 @@ export interface PostCreateInput {
 export interface PostUpdateInput {
   title?: string;
   slug?: string;
+  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code
   content?: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -80,6 +83,7 @@ export interface PostUpdateInput {
 
 export interface PostSearchFilter {
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Filter by language
   categoryId?: number;
   tagId?: number;
   authorId?: number;

@@ -64,9 +64,9 @@ export async function GET(
         products: products.data || [],
         total: products.total || 0,
         page: products.page || 1,
-        limit: products.limit || 20,
+        limit: products.limit || 50,
         hasMore: products.hasMore || false,
-        totalPages: Math.ceil((products.total || 0) / (products.limit || 20))
+        totalPages: Math.ceil((products.total || 0) / (products.limit || 50))
       }, `Found ${products.total || 0} products`));
 
     } catch (error) {

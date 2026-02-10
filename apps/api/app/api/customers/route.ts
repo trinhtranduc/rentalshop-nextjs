@@ -195,9 +195,9 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
         customers: normalizedCustomers,
         total: result.total || 0,
         page: result.page || 1,
-        limit: result.limit || 20,
+        limit: result.limit || 50,
         hasMore: result.hasMore || false,
-        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
+        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 50))
       }
     };
 

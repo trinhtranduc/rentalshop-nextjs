@@ -627,7 +627,8 @@ enum UserRole {
 model Post {
   id          Int      @id @default(autoincrement())
   title       String
-  slug        String   @unique
+  slug        String
+  locale      String   @default("vi") // Language code: en, vi, zh, ko, ja
   content     String   // Rich text content stored as JSON string (TipTap format)
   excerpt     String?  // Short description for previews
   
@@ -653,10 +654,13 @@ model Post {
   // Featured image
   featuredImage String?
   
+  @@unique([slug, locale]) // Slug must be unique per locale
   @@index([status, publishedAt])
   @@index([slug])
+  @@index([locale])
   @@index([authorId])
   @@index([createdAt])
+  @@index([locale, status]) // For filtering posts by locale and status
 }
 
 model PostCategory {
