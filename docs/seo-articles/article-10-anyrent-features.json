@@ -1,0 +1,646 @@
+{
+  "article": {
+    "number": 10,
+    "title_vi": "AnyRent: Giải pháp quản lý cửa hàng cho thuê toàn diện với đầy đủ tính năng",
+    "title_en": "AnyRent: Comprehensive Rental Shop Management Solution with Complete Features",
+    "slug_vi": "anyrent-giai-phap-quan-ly-cua-hang-cho-thue-toan-dien",
+    "slug_en": "anyrent-comprehensive-rental-shop-management-solution",
+    "excerpt_vi": "AnyRent là phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam, được thiết kế đặc biệt để giúp các doanh nghiệp cho thuê quản lý hoạt động kinh doanh một cách hiệu quả và chuyên nghiệp. Với hệ thống đa nền tảng hỗ trợ cả mobile app và web portal, AnyRent cung cấp đầy đủ các tính năng từ quản lý đơn hàng, quản lý kho hàng, quản lý khách hàng, lịch đặt chỗ, báo cáo tài chính, đến quản lý đa chi nhánh. Bài viết này sẽ giới thiệu chi tiết tất cả các tính năng nổi bật của AnyRent và cách chúng giúp doanh nghiệp cho thuê tối ưu hóa hoạt động kinh doanh.",
+    "excerpt_en": "AnyRent is Vietnam's leading rental shop management software, specially designed to help rental businesses manage their operations efficiently and professionally. With a multi-platform system supporting both mobile app and web portal, AnyRent provides complete features from order management, inventory management, customer management, calendar scheduling, financial reports, to multi-location management. This article will introduce in detail all the outstanding features of AnyRent and how they help rental businesses optimize their operations.",
+    "seo_title_vi": "AnyRent: Phần mềm quản lý cửa hàng cho thuê toàn diện",
+    "seo_title_en": "AnyRent: Comprehensive Rental Shop Management Software",
+    "seo_description_vi": "Tìm hiểu các tính năng của AnyRent - phần mềm quản lý cửa hàng cho thuê hàng đầu: quản lý đơn hàng, kho hàng, khách hàng, lịch đặt chỗ, báo cáo tài chính và đa chi nhánh. Giải pháp toàn diện cho doanh nghiệp cho thuê.",
+    "seo_description_en": "Discover AnyRent features - leading rental shop management software: order management, inventory, customers, calendar scheduling, financial reports, and multi-location. Complete solution for rental businesses.",
+    "seo_keywords_vi": "AnyRent, phần mềm AnyRent, AnyRent tính năng, quản lý cửa hàng cho thuê, phần mềm quản lý cho thuê",
+    "seo_keywords_en": "AnyRent, AnyRent software, AnyRent features, rental shop management, rental management software",
+    "category_slugs": [
+      "software-technology"
+    ],
+    "tag_slugs": [
+      "AnyRent",
+      "rental software",
+      "inventory management",
+      "order processing",
+      "customer management"
+    ],
+    "featured_image_alt_vi": "AnyRent - Phần mềm quản lý cửa hàng cho thuê toàn diện",
+    "featured_image_alt_en": "AnyRent - Comprehensive rental shop management software"
+  },
+  "content_vi": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 1
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent: Giải pháp quản lý cửa hàng cho thuê toàn diện với đầy đủ tính năng"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Trong bối cảnh thị trường cho thuê đang phát triển mạnh mẽ tại Việt Nam, việc quản lý hiệu quả các hoạt động kinh doanh trở thành yếu tố quyết định thành công của mỗi doanh nghiệp. AnyRent ra đời như một giải pháp toàn diện, được thiết kế đặc biệt để đáp ứng mọi nhu cầu quản lý của các cửa hàng cho thuê từ quy mô nhỏ đến lớn. Với hơn 5 năm phát triển và cải tiến liên tục, AnyRent đã trở thành lựa chọn hàng đầu của hàng nghìn doanh nghiệp cho thuê tại Việt Nam, bao gồm các lĩnh vực đa dạng như cho thuê áo dài, cho thuê váy cưới, cho thuê thiết bị xây dựng, cho thuê xe, cho thuê trang phục, và cho thuê máy in. Hệ thống được xây dựng trên nền tảng công nghệ hiện đại, hỗ trợ đa nền tảng với ứng dụng di động cho iOS và Android, cùng với web portal đầy đủ tính năng, cho phép người dùng quản lý doanh nghiệp mọi lúc, mọi nơi."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Điểm nổi bật của AnyRent không chỉ nằm ở việc tích hợp đầy đủ các tính năng cần thiết mà còn ở khả năng tùy biến linh hoạt, giao diện thân thiện dễ sử dụng, và hệ thống hỗ trợ khách hàng chuyên nghiệp 24/7. Bài viết này sẽ đi sâu vào từng tính năng của AnyRent, giúp bạn hiểu rõ cách hệ thống có thể hỗ trợ doanh nghiệp cho thuê của bạn phát triển bền vững và hiệu quả."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop",
+          "alt": "AnyRent - Phần mềm quản lý cửa hàng cho thuê toàn diện"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Quản lý đơn hàng cho thuê chuyên nghiệp"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống quản lý đơn hàng của AnyRent được thiết kế để xử lý mọi khía cạnh của quy trình cho thuê, từ việc tạo đơn hàng ban đầu đến việc theo dõi trạng thái và hoàn tất giao dịch. Với giao diện trực quan và thân thiện, nhân viên có thể tạo đơn hàng mới chỉ trong vài giây, bao gồm đầy đủ thông tin về khách hàng, sản phẩm cho thuê, thời gian nhận và trả hàng, giá cả, và các điều khoản đặc biệt. Hệ thống tự động tạo số đơn hàng duy nhất, giúp dễ dàng tra cứu và quản lý. Một trong những tính năng nổi bật là khả năng xử lý nhiều loại đơn hàng khác nhau như đơn cho thuê thông thường, đơn bán hàng, và đơn cho thuê có mua lại, tất cả đều được quản lý trong cùng một hệ thống thống nhất."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Tính năng cảnh báo trùng đơn hàng thông minh là một trong những điểm mạnh đặc biệt của AnyRent, giúp ngăn chặn các lỗi phổ biến trong quản lý cho thuê. Hệ thống tự động kiểm tra và phát hiện khi có đơn hàng mới được tạo với thông tin trùng lặp, ví dụ như cùng một khách hàng đặt cùng một sản phẩm trong cùng một khoảng thời gian, hoặc cùng một sản phẩm được đặt cho nhiều khách hàng trong khoảng thời gian chồng chéo. Khi phát hiện ra sự trùng lặp, hệ thống sẽ ngay lập tức hiển thị cảnh báo rõ ràng cho nhân viên, kèm theo thông tin chi tiết về đơn hàng trùng lặp, giúp nhân viên có thể xác nhận và xử lý kịp thời. Điều này đặc biệt quan trọng trong môi trường làm việc có nhiều nhân viên cùng xử lý đơn hàng, hoặc khi khách hàng gọi điện đặt hàng nhiều lần, giúp tránh tình trạng double booking và đảm bảo tính chính xác của dữ liệu kho hàng."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống theo dõi trạng thái đơn hàng theo thời gian thực, từ trạng thái đã đặt, đã nhận hàng, đang cho thuê, đến đã trả hàng và hoàn tất, giúp nhân viên luôn nắm bắt được tình hình hiện tại của mỗi đơn hàng. Báo cáo đơn hàng chi tiết cung cấp thông tin về doanh thu, sản phẩm được thuê nhiều nhất, khách hàng thường xuyên, và các chỉ số hiệu suất khác, giúp chủ doanh nghiệp đưa ra quyết định kinh doanh dựa trên dữ liệu thực tế."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Quản lý kho hàng và tồn kho thông minh"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Quản lý kho hàng là một trong những thách thức lớn nhất đối với các doanh nghiệp cho thuê, đặc biệt khi bạn có hàng trăm hoặc hàng nghìn sản phẩm khác nhau. AnyRent giải quyết vấn đề này bằng hệ thống quản lý tồn kho thông minh, cung cấp cái nhìn tổng quan theo thời gian thực về tình trạng của từng sản phẩm. Hệ thống tự động cập nhật số lượng tồn kho mỗi khi có đơn hàng mới, khi khách hàng nhận hàng, hoặc khi hàng được trả về, đảm bảo dữ liệu luôn chính xác và cập nhật. Mỗi sản phẩm trong hệ thống có thể được quản lý với đầy đủ thông tin như tên, mô tả, hình ảnh, mã vạch, giá cho thuê, giá đặt cọc, số lượng tổng, số lượng đang cho thuê, và số lượng còn khả dụng. Tính năng tìm kiếm và lọc nâng cao cho phép nhân viên nhanh chóng tìm thấy sản phẩm cần thiết dựa trên nhiều tiêu chí khác nhau như tên, mã vạch, danh mục, hoặc trạng thái."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống cũng hỗ trợ quản lý nhiều biến thể của cùng một sản phẩm, ví dụ như các size khác nhau của trang phục, hoặc các model khác nhau của thiết bị. Một tính năng đặc biệt hữu ích là khả năng theo dõi lịch sử sử dụng của từng sản phẩm, giúp bạn biết được sản phẩm nào được thuê thường xuyên, sản phẩm nào ít được sử dụng, từ đó đưa ra quyết định về việc mua thêm hoặc thanh lý sản phẩm. Hệ thống cảnh báo tự động khi số lượng tồn kho thấp, giúp bạn chủ động trong việc bổ sung hàng hóa và tránh tình trạng hết hàng."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
+          "alt": "Quản lý kho hàng thông minh với AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Tìm kiếm sản phẩm bằng AI và hình ảnh thông minh"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent tích hợp công nghệ AI tiên tiến để cung cấp tính năng tìm kiếm sản phẩm bằng hình ảnh, một tính năng đột phá giúp nhân viên và khách hàng có thể tìm kiếm sản phẩm một cách nhanh chóng và chính xác chỉ bằng cách chụp hoặc tải lên một bức ảnh. Khi khách hàng mang theo hình ảnh của sản phẩm họ muốn thuê, hoặc khi nhân viên cần tìm kiếm sản phẩm tương tự trong kho hàng, họ chỉ cần sử dụng camera trên điện thoại để chụp ảnh hoặc tải lên hình ảnh từ thư viện, và hệ thống AI sẽ tự động phân tích hình ảnh, nhận diện các đặc điểm như màu sắc, kiểu dáng, loại sản phẩm, và sau đó tìm kiếm trong cơ sở dữ liệu để đưa ra danh sách các sản phẩm tương tự hoặc khớp nhất. Tính năng này đặc biệt hữu ích trong các trường hợp khách hàng không nhớ tên chính xác của sản phẩm, hoặc khi nhân viên cần tìm sản phẩm tương tự để đề xuất thay thế khi sản phẩm khách hàng yêu cầu không còn sẵn sàng."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống AI của AnyRent sử dụng công nghệ machine learning và computer vision tiên tiến, được huấn luyện trên hàng nghìn hình ảnh sản phẩm để có thể nhận diện chính xác các đặc điểm và đặc tính của từng loại sản phẩm. Hệ thống không chỉ nhận diện được các đặc điểm cơ bản như màu sắc và hình dáng, mà còn có thể phân tích các chi tiết phức tạp như kiểu dáng, chất liệu, và thậm chí là các đặc điểm đặc trưng của từng sản phẩm. Kết quả tìm kiếm được sắp xếp theo độ tương đồng, với các sản phẩm khớp nhất được hiển thị ở đầu danh sách, kèm theo phần trăm độ tương đồng để người dùng có thể đánh giá. Tính năng này giúp giảm đáng kể thời gian tìm kiếm sản phẩm, đặc biệt là trong các cửa hàng có hàng trăm hoặc hàng nghìn sản phẩm khác nhau, và cải thiện đáng kể trải nghiệm khách hàng bằng cách giúp họ tìm thấy sản phẩm mong muốn một cách nhanh chóng và dễ dàng."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&h=600&fit=crop",
+          "alt": "Tìm kiếm sản phẩm bằng AI và hình ảnh với AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Quản lý khách hàng và quan hệ khách hàng"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Xây dựng và duy trì mối quan hệ tốt với khách hàng là chìa khóa thành công trong kinh doanh cho thuê, và AnyRent cung cấp một hệ thống quản lý khách hàng toàn diện để hỗ trợ điều này. Mỗi khách hàng trong hệ thống có một hồ sơ chi tiết bao gồm thông tin cơ bản như tên, số điện thoại, email, địa chỉ, cùng với các thông tin bổ sung như ghi chú đặc biệt, sở thích, và lịch sử tương tác. Hệ thống tự động lưu trữ toàn bộ lịch sử giao dịch của khách hàng, bao gồm tất cả các đơn hàng đã đặt, sản phẩm đã thuê, số tiền đã thanh toán, và các giao dịch đặc biệt. Điều này giúp nhân viên có thể nhanh chóng hiểu được nhu cầu và hành vi của khách hàng khi họ quay lại, từ đó cung cấp dịch vụ cá nhân hóa và nâng cao trải nghiệm khách hàng."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Tính năng tìm kiếm khách hàng mạnh mẽ cho phép tìm kiếm theo tên, số điện thoại, email, hoặc thậm chí là theo sản phẩm đã thuê trước đó, giúp tiết kiệm thời gian khi xử lý đơn hàng. Hệ thống cũng hỗ trợ phân loại khách hàng theo nhiều tiêu chí khác nhau như khách hàng VIP, khách hàng thường xuyên, hoặc khách hàng mới, giúp bạn có thể áp dụng các chính sách ưu đãi phù hợp. Với tính năng ghi chú và nhắc nhở, bạn có thể lưu lại các thông tin quan trọng về khách hàng, ví dụ như ngày sinh nhật, sở thích đặc biệt, hoặc các yêu cầu đặc biệt, giúp tạo ra trải nghiệm khách hàng đáng nhớ và tăng cường lòng trung thành."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Lịch đặt chỗ và quản lý thời gian trực quan"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Một trong những tính năng được yêu thích nhất của AnyRent là hệ thống lịch đặt chỗ trực quan, giúp quản lý thời gian nhận và trả hàng một cách hiệu quả. Giao diện lịch hiển thị dưới dạng calendar view với các màu sắc khác nhau để phân biệt các trạng thái đơn hàng, giúp nhân viên có thể nhanh chóng nắm bắt được lịch trình trong ngày, tuần, hoặc tháng. Hệ thống tự động kiểm tra và cảnh báo khi có xung đột về thời gian, ví dụ như khi một sản phẩm được đặt cho thuê trong khoảng thời gian mà nó vẫn chưa được trả về từ đơn hàng trước đó. Điều này giúp tránh tình trạng double booking và đảm bảo khách hàng luôn nhận được sản phẩm đúng như cam kết. Tính năng lọc và tìm kiếm trong lịch cho phép xem lịch của từng sản phẩm cụ thể, hoặc lịch của từng khách hàng, giúp dễ dàng lập kế hoạch và sắp xếp công việc."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống cũng hỗ trợ gửi thông báo tự động cho khách hàng về thời gian nhận và trả hàng, giúp giảm thiểu việc khách hàng quên lịch và cải thiện tỷ lệ tuân thủ. Với chế độ xem theo ngày, tuần, hoặc tháng, bạn có thể linh hoạt điều chỉnh cách hiển thị phù hợp với nhu cầu quản lý của mình. Tính năng drag-and-drop cho phép dễ dàng thay đổi thời gian đặt chỗ bằng cách kéo thả trực tiếp trên lịch, giúp tiết kiệm thời gian khi cần điều chỉnh lịch trình."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=600&fit=crop",
+          "alt": "Lịch đặt chỗ trực quan với AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Báo cáo tài chính và phân tích kinh doanh chi tiết"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hiểu rõ tình hình tài chính của doanh nghiệp là điều cần thiết để đưa ra các quyết định kinh doanh đúng đắn, và AnyRent cung cấp một bộ công cụ báo cáo và phân tích mạnh mẽ để hỗ trợ điều này. Hệ thống tự động thu thập và tổng hợp dữ liệu từ tất cả các giao dịch, đơn hàng, và hoạt động kinh doanh, sau đó trình bày dưới dạng các báo cáo trực quan và dễ hiểu. Các báo cáo tài chính bao gồm báo cáo doanh thu theo ngày, tuần, tháng, hoặc năm, báo cáo lợi nhuận, báo cáo chi phí, và báo cáo dòng tiền. Bạn có thể xem báo cáo tổng quan hoặc chi tiết theo từng sản phẩm, từng khách hàng, hoặc từng loại đơn hàng. Hệ thống cũng cung cấp các biểu đồ và đồ thị trực quan để giúp bạn dễ dàng nhận biết các xu hướng và mẫu hình trong dữ liệu."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Tính năng so sánh cho phép so sánh hiệu suất giữa các khoảng thời gian khác nhau, ví dụ như so sánh doanh thu tháng này với tháng trước, hoặc so sánh hiệu suất giữa các năm, giúp bạn đánh giá được sự tăng trưởng của doanh nghiệp. Báo cáo sản phẩm cho biết sản phẩm nào đang mang lại doanh thu cao nhất, sản phẩm nào có tỷ lệ lấp đầy tốt nhất, và sản phẩm nào cần được xem xét lại về giá cả hoặc chiến lược marketing. Với các báo cáo này, bạn có thể đưa ra quyết định dựa trên dữ liệu thực tế thay vì dựa trên cảm tính, giúp tối ưu hóa hiệu suất kinh doanh và tăng lợi nhuận."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống đa nền tảng và đồng bộ dữ liệu"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Một trong những điểm mạnh lớn nhất của AnyRent là khả năng hoạt động trên nhiều nền tảng khác nhau, cho phép người dùng quản lý doanh nghiệp từ bất kỳ đâu và bất kỳ thiết bị nào. Ứng dụng di động cho iOS và Android được thiết kế đặc biệt để tối ưu hóa trải nghiệm người dùng trên thiết bị di động, với giao diện thân thiện, các tính năng được sắp xếp hợp lý, và khả năng hoạt động ngay cả khi không có kết nối internet nhờ chế độ offline. Khi có kết nối lại, tất cả dữ liệu sẽ được đồng bộ tự động với server, đảm bảo không mất bất kỳ thông tin nào. Web portal cung cấp đầy đủ các tính năng với giao diện lớn hơn, phù hợp cho việc quản lý chi tiết, xem báo cáo, và thực hiện các tác vụ phức tạp. Dữ liệu được đồng bộ theo thời gian thực giữa tất cả các nền tảng, có nghĩa là khi bạn tạo đơn hàng trên điện thoại, đơn hàng đó sẽ ngay lập tức xuất hiện trên web portal, và ngược lại."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Điều này đặc biệt hữu ích khi bạn có nhiều nhân viên làm việc trên các thiết bị khác nhau, đảm bảo mọi người đều có thông tin cập nhật nhất. Hệ thống bảo mật cao với mã hóa dữ liệu và xác thực đa yếu tố, đảm bảo thông tin kinh doanh của bạn được bảo vệ an toàn. Với khả năng sao lưu tự động và khôi phục dữ liệu, bạn không cần lo lắng về việc mất dữ liệu do sự cố kỹ thuật."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1551288049-8b5b5e5e5e5e?w=1200&h=600&fit=crop",
+          "alt": "Hệ thống đa nền tảng của AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Quản lý đa chi nhánh và phân quyền người dùng"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Đối với các doanh nghiệp có nhiều chi nhánh hoặc cửa hàng, AnyRent cung cấp hệ thống quản lý đa chi nhánh mạnh mẽ, cho phép quản lý tất cả các địa điểm từ một tài khoản trung tâm. Mỗi chi nhánh có thể được quản lý độc lập với kho hàng riêng, nhân viên riêng, và báo cáo riêng, nhưng tất cả đều được tích hợp trong cùng một hệ thống. Điều này cho phép bạn có cái nhìn tổng quan về toàn bộ hoạt động kinh doanh, đồng thời vẫn có thể đi sâu vào chi tiết của từng chi nhánh khi cần. Hệ thống báo cáo tập trung cung cấp thông tin tổng hợp từ tất cả các chi nhánh, giúp bạn so sánh hiệu suất và đưa ra quyết định chiến lược. Tính năng chuyển hàng giữa các chi nhánh được tích hợp sẵn, cho phép bạn dễ dàng điều chuyển sản phẩm từ chi nhánh này sang chi nhánh khác khi cần."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hệ thống phân quyền người dùng linh hoạt cho phép bạn kiểm soát chính xác ai có thể truy cập vào tính năng nào, đảm bảo bảo mật thông tin và tránh các thao tác không mong muốn. Bạn có thể tạo các vai trò khác nhau như quản lý, nhân viên bán hàng, nhân viên kho, mỗi vai trò có quyền truy cập phù hợp với nhiệm vụ của họ. Điều này đặc biệt quan trọng đối với các doanh nghiệp lớn với nhiều nhân viên, giúp đảm bảo mỗi người chỉ có thể thực hiện các thao tác phù hợp với vai trò của mình."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Kết luận: AnyRent - Giải pháp toàn diện cho doanh nghiệp cho thuê"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent không chỉ đơn giản là một phần mềm quản lý, mà là một giải pháp toàn diện được thiết kế để hỗ trợ mọi khía cạnh của hoạt động kinh doanh cho thuê. Từ quản lý đơn hàng và kho hàng, đến quản lý khách hàng và báo cáo tài chính, mọi tính năng đều được tích hợp một cách mượt mà và hoạt động hiệu quả cùng nhau. Với hệ thống đa nền tảng, bạn có thể quản lý doanh nghiệp mọi lúc, mọi nơi, từ điện thoại di động hoặc máy tính. Giao diện thân thiện và dễ sử dụng giúp nhân viên có thể nhanh chóng làm quen và sử dụng hiệu quả hệ thống, giảm thiểu thời gian đào tạo và tăng năng suất làm việc. Hệ thống hỗ trợ khách hàng chuyên nghiệp 24/7 luôn sẵn sàng giúp đỡ bạn giải quyết mọi vấn đề và tối ưu hóa việc sử dụng hệ thống. Với các gói dịch vụ linh hoạt từ cơ bản đến doanh nghiệp, AnyRent phù hợp với mọi quy mô doanh nghiệp, từ cửa hàng nhỏ với vài chục sản phẩm đến các doanh nghiệp lớn với hàng nghìn sản phẩm và nhiều chi nhánh. Hãy bắt đầu hành trình số hóa doanh nghiệp cho thuê của bạn với AnyRent ngay hôm nay, và trải nghiệm sự khác biệt mà một hệ thống quản lý chuyên nghiệp có thể mang lại cho hoạt động kinh doanh của bạn."
+          }
+        ]
+      }
+    ]
+  },
+  "content_en": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 1
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent: Comprehensive Rental Shop Management Solution with Complete Features"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "In the context of Vietnam's rapidly growing rental market, efficient business operations management has become a key success factor for every enterprise. AnyRent emerges as a comprehensive solution, specially designed to meet all management needs of rental shops from small to large scale. With over 5 years of continuous development and improvement, AnyRent has become the top choice of thousands of rental businesses in Vietnam, covering diverse fields such as ao dai rental, wedding dress rental, construction equipment rental, vehicle rental, costume rental, and printer rental. The system is built on modern technology platforms, supporting multiple platforms with mobile apps for iOS and Android, along with a fully-featured web portal, allowing users to manage their business anytime, anywhere. AnyRent's standout features lie not only in integrating all necessary features but also in flexible customization capabilities, user-friendly interface, and professional 24/7 customer support. This article will delve into each feature of AnyRent, helping you understand how the system can support your rental business to develop sustainably and efficiently."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop",
+          "alt": "AnyRent - Comprehensive rental shop management software"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Professional Rental Order Management"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent's order management system is designed to handle every aspect of the rental process, from creating initial orders to tracking status and completing transactions. With an intuitive and user-friendly interface, staff can create new orders in just seconds, including complete information about customers, rental products, pickup and return times, pricing, and special terms. The system automatically generates unique order numbers, making it easy to search and manage. One of the standout features is the ability to handle different types of orders such as regular rentals, sales orders, and rent-to-own orders, all managed in a unified system."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "The intelligent duplicate order alert system is one of AnyRent's particularly strong features, helping prevent common errors in rental management. The system automatically checks and detects when a new order is created with duplicate information, for example when the same customer orders the same product during the same time period, or when the same product is booked for multiple customers during overlapping time periods. When a duplicate is detected, the system immediately displays a clear alert to staff, along with detailed information about the duplicate order, helping staff confirm and handle it promptly. This is especially important in work environments with multiple staff processing orders simultaneously, or when customers call to place orders multiple times, helping avoid double booking situations and ensuring inventory data accuracy."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "The system tracks order status in real-time, from reserved, picked up, currently rented, to returned and completed, helping staff always stay informed about each order's current situation. Detailed order reports provide information about revenue, most rented products, frequent customers, and other performance indicators, helping business owners make data-driven business decisions."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Smart Inventory and Stock Management"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Inventory management is one of the biggest challenges for rental businesses, especially when you have hundreds or thousands of different products. AnyRent solves this problem with a smart inventory management system, providing real-time overview of each product's status. The system automatically updates inventory quantities whenever there's a new order, when customers pick up items, or when items are returned, ensuring data is always accurate and up-to-date. Each product in the system can be managed with complete information such as name, description, images, barcode, rental price, deposit price, total quantity, quantity currently rented, and available quantity. Advanced search and filter features allow staff to quickly find needed products based on various criteria such as name, barcode, category, or status. The system also supports managing multiple variants of the same product, for example different sizes of costumes, or different models of equipment. A particularly useful feature is the ability to track usage history of each product, helping you know which products are rented frequently, which products are rarely used, thereby making decisions about purchasing more or liquidating products. The system automatically alerts when inventory levels are low, helping you proactively replenish stock and avoid out-of-stock situations."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
+          "alt": "Smart inventory management with AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "AI-Powered Image Search for Products"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent integrates advanced AI technology to provide image-based product search, a breakthrough feature that helps staff and customers quickly and accurately find products simply by taking or uploading a photo. When customers bring an image of the product they want to rent, or when staff need to search for similar products in inventory, they simply use the phone's camera to take a photo or upload an image from the gallery, and the AI system will automatically analyze the image, recognize features such as color, style, product type, and then search the database to provide a list of similar or matching products. This feature is especially useful when customers don't remember the exact product name, or when staff need to find similar products to suggest as alternatives when the requested product is no longer available."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent's AI system uses advanced machine learning and computer vision technology, trained on thousands of product images to accurately recognize features and characteristics of each product type. The system not only recognizes basic features like color and shape, but can also analyze complex details such as style, material, and even distinctive characteristics of each product. Search results are sorted by similarity, with the most matching products displayed at the top of the list, along with similarity percentage so users can evaluate. This feature significantly reduces product search time, especially in stores with hundreds or thousands of different products, and significantly improves customer experience by helping them find desired products quickly and easily."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&h=600&fit=crop",
+          "alt": "AI-powered image search with AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Customer Management and Relationship Management"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Building and maintaining good customer relationships is key to success in rental business, and AnyRent provides a comprehensive customer management system to support this. Each customer in the system has a detailed profile including basic information such as name, phone number, email, address, along with additional information such as special notes, preferences, and interaction history. The system automatically stores the complete transaction history of customers, including all orders placed, products rented, amounts paid, and special transactions. This helps staff quickly understand customer needs and behavior when they return, thereby providing personalized service and enhancing customer experience. Powerful customer search features allow searching by name, phone number, email, or even by previously rented products, saving time when processing orders. The system also supports customer classification by various criteria such as VIP customers, frequent customers, or new customers, helping you apply appropriate discount policies. With note and reminder features, you can save important information about customers, for example birthdays, special preferences, or special requirements, helping create memorable customer experiences and strengthen loyalty."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Visual Calendar and Time Management"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "One of the most loved features of AnyRent is the visual booking calendar system, helping manage pickup and return times efficiently. The calendar interface displays in calendar view with different colors to distinguish order statuses, helping staff quickly grasp the schedule for the day, week, or month. The system automatically checks and alerts when there are time conflicts, for example when a product is booked for rental during a time period when it hasn't been returned from a previous order yet. This helps avoid double booking situations and ensures customers always receive products as promised. Calendar filtering and search features allow viewing schedules of specific products, or schedules of specific customers, making it easy to plan and organize work. The system also supports sending automatic notifications to customers about pickup and return times, helping minimize customers forgetting schedules and improving compliance rates. With day, week, or month view modes, you can flexibly adjust the display to suit your management needs. Drag-and-drop features allow easy changes to booking times by directly dragging and dropping on the calendar, saving time when schedule adjustments are needed."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=600&fit=crop",
+          "alt": "Visual booking calendar with AnyRent"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Detailed Financial Reports and Business Analytics"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Understanding your business's financial situation is essential for making sound business decisions, and AnyRent provides a powerful set of reporting and analytics tools to support this. The system automatically collects and aggregates data from all transactions, orders, and business activities, then presents it in visual and easy-to-understand reports. Financial reports include revenue reports by day, week, month, or year, profit reports, cost reports, and cash flow reports. You can view overview reports or detailed reports by product, by customer, or by order type. The system also provides visual charts and graphs to help you easily identify trends and patterns in the data. Comparison features allow comparing performance between different time periods, for example comparing this month's revenue with last month, or comparing performance between years, helping you assess business growth. Product reports show which products are generating the highest revenue, which products have the best occupancy rates, and which products need to be reviewed regarding pricing or marketing strategy. With these reports, you can make data-driven decisions instead of based on intuition, helping optimize business performance and increase profits."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Multi-Platform System and Data Synchronization"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "One of AnyRent's greatest strengths is the ability to operate on multiple different platforms, allowing users to manage their business from anywhere and any device. Mobile apps for iOS and Android are specially designed to optimize user experience on mobile devices, with a friendly interface, logically arranged features, and the ability to operate even without internet connection thanks to offline mode. When connection is restored, all data is automatically synchronized with the server, ensuring no information is lost. The web portal provides full features with a larger interface, suitable for detailed management, viewing reports, and performing complex tasks. Data is synchronized in real-time between all platforms, meaning when you create an order on your phone, that order will immediately appear on the web portal, and vice versa. This is especially useful when you have multiple staff working on different devices, ensuring everyone has the most up-to-date information. The system has high security with data encryption and multi-factor authentication, ensuring your business information is safely protected. With automatic backup and data recovery capabilities, you don't need to worry about data loss due to technical issues."
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "src": "https://images.unsplash.com/photo-1551288049-8b5b5e5e5e5e?w=1200&h=600&fit=crop",
+          "alt": "AnyRent multi-platform system"
+        }
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Multi-Location Management and User Permissions"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "For businesses with multiple branches or stores, AnyRent provides a powerful multi-location management system, allowing management of all locations from a central account. Each branch can be managed independently with its own inventory, staff, and reports, but all are integrated in the same system. This allows you to have an overview of all business operations, while still being able to dive into details of each branch when needed. The centralized reporting system provides aggregated information from all branches, helping you compare performance and make strategic decisions. Inter-branch transfer features are built-in, allowing you to easily transfer products from one branch to another when needed. The flexible user permission system allows you to precisely control who can access which features, ensuring information security and avoiding unwanted operations. You can create different roles such as manager, sales staff, warehouse staff, each role having appropriate access rights matching their tasks. This is especially important for large businesses with many employees, helping ensure each person can only perform operations appropriate to their role."
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Conclusion: AnyRent - Comprehensive Solution for Rental Businesses"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "AnyRent is not simply a management software, but a comprehensive solution designed to support every aspect of rental business operations. From order and inventory management, to customer management and financial reporting, every feature is seamlessly integrated and works efficiently together. With the multi-platform system, you can manage your business anytime, anywhere, from mobile phones or computers. The friendly and easy-to-use interface helps staff quickly get familiar and use the system effectively, minimizing training time and increasing work productivity. The professional 24/7 customer support team is always ready to help you solve any problems and optimize system usage. With flexible service packages from basic to enterprise, AnyRent is suitable for businesses of all scales, from small shops with dozens of products to large enterprises with thousands of products and multiple branches. Start your rental business digitalization journey with AnyRent today, and experience the difference that a professional management system can bring to your business operations."
+          }
+        ]
+      }
+    ]
+  }
+}
