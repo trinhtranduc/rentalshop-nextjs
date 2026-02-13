@@ -22,44 +22,44 @@ export default function AffiliateBanner({
 }: AffiliateBannerProps) {
   const tAffiliate = useTranslations('affiliate');
 
-  // Variant 1: Default - Full width gradient banner (current)
+  // Variant 1: Default - Railway-style banner with dark purple background
   if (variant === 'default') {
     return (
       <div 
-        className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600/90 to-blue-700/90 text-white/90 shadow-lg cursor-pointer hover:from-blue-700/90 hover:to-blue-800/90 transition-all duration-200 backdrop-blur-sm"
+        className="fixed top-0 left-0 right-0 z-[60] bg-[#1a0b2e] text-[#b794f6] border-t border-white/10"
         onClick={onClick}
         style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60 }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Link2 className="w-4 h-4 flex-shrink-0 opacity-90" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-xs sm:text-sm truncate opacity-90">
-                    {tAffiliate('banner.title')}
-                  </p>
-                  <span className="px-2 py-0.5 bg-orange-500/90 text-white text-[10px] sm:text-xs font-bold rounded whitespace-nowrap">
-                    {tAffiliate('banner.promo')}
-                  </span>
-                </div>
-                <p className="text-[10px] sm:text-xs text-blue-100/80 opacity-80 truncate">
-                  {tAffiliate('banner.description')}
-                </p>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-center gap-2 relative">
+            {/* Center Content */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm sm:text-base text-[#b794f6]">
+                {tAffiliate('banner.title')}
+              </span>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick();
+                }}
+                className="text-[#d4b4ff] underline hover:text-[#e9d5ff] transition-colors text-sm sm:text-base"
+              >
+                {tAffiliate('banner.viewDetails') || 'View details'}
+              </a>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            
+            {/* Close Button - Right */}
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="text-white/80 hover:bg-blue-600/40 flex-shrink-0 h-6 w-6"
+              className="absolute right-0 text-white hover:text-gray-300 transition-colors flex-shrink-0 h-5 w-5 flex items-center justify-center"
               title={tAffiliate('banner.dismiss')}
             >
               <X className="w-4 h-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
