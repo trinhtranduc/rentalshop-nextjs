@@ -31,11 +31,17 @@ export default function AffiliateBanner({
         style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60 }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-center gap-2 relative">
+          <div className="flex items-center justify-center gap-3 relative">
             {/* Center Content */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               <span className="text-sm sm:text-base text-[#b794f6]">
                 {tAffiliate('banner.title')}
+              </span>
+              <span className="text-sm sm:text-base text-[#b794f6]">
+                {tAffiliate('banner.description')}
+              </span>
+              <span className="text-sm sm:text-base font-semibold text-[#d4b4ff]">
+                {tAffiliate('banner.promo')}
               </span>
               <a
                 href="#"
