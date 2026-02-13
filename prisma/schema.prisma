@@ -254,6 +254,7 @@ model Order {
   isReadyToDeliver   Boolean     @default(false)
   collateralType     String?
   collateralDetails  String?
+  collateralImageUrl String?
   notes              String?
   pickupNotes        String?
   returnNotes        String?

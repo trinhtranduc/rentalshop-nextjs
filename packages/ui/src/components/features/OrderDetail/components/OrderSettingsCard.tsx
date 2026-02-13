@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -13,11 +13,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  FieldTooltip
+  FieldTooltip,
+  useToast
 } from '@rentalshop/ui';
-import { Settings, Save, Edit } from 'lucide-react';
+import { Settings, Save, Edit, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface SettingsForm {
@@ -25,6 +27,7 @@ interface SettingsForm {
   securityDeposit: number;
   collateralType: string;
   collateralDetails: string;
+  collateralImageUrl?: string;
   notes: string;
 }
 
@@ -65,6 +68,80 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
+  const { toastSuccess, toastError } = useToast();
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toastError('Invalid file type. Please upload an image.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toastError('Image size must be less than 5MB.');
+      return;
+    }
+
+    setUploadingImage(true);
+    setUploadProgress({ loaded: 0, total: file.size, percentage: 0, stage: 'uploading' });
+
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        toastError('Authentication required. Please log in.');
+        return;
+      }
+
+      const result = await uploadImage(file, token, {
+        folder: 'collateral',
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        enableCompression: true,
+        compressionQuality: 0.8,
+        maxSizeMB: 2, // Max 2MB after compression
+        onProgress: (progress: UploadProgress) => {
+          setUploadProgress(progress);
+        },
+      });
+
+      if (result.success && result.data?.url) {
+        onSettingsChange({ collateralImageUrl: result.data.url });
+        toastSuccess('Image uploaded successfully!');
+      } else {
+        toastError(result.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toastError('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    onSettingsChange({ collateralImageUrl: '' });
+  };
 
   return (
     <Card>
@@ -164,6 +241,86 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 placeholder={t('messages.enterCollateralDetails')}
                 disabled={!isCollateralDetailsEnabled()}
               />
+              
+              {/* Image Upload Section */}
+              <div className="mt-3">
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  {t('amount.collateralImage') || 'Collateral Image (e.g., ID Card)'}
+                </Label>
+                
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={!isCollateralDetailsEnabled() || uploadingImage}
+                />
+
+                {/* Image Preview */}
+                {tempSettings.collateralImageUrl && (
+                  <div className="relative mb-2">
+                    <div className="relative w-full max-w-xs border border-gray-300 rounded-lg overflow-hidden">
+                      <img
+                        src={tempSettings.collateralImageUrl}
+                        alt="Collateral"
+                        className="w-full h-auto max-h-48 object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        disabled={uploadingImage}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                {!tempSettings.collateralImageUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={!isCollateralDetailsEnabled() || uploadingImage}
+                    className="w-full sm:w-auto"
+                  >
+                    {uploadingImage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {t('amount.uploadImage') || 'Upload Image'}
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Upload Progress */}
+                {uploadProgress && uploadingImage && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {uploadProgress.percentage}% uploaded
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('amount.collateralImageHint') || 'Upload an image of ID card or other collateral document. Max size: 5MB'}
+                </p>
+              </div>
             </div>
 
             {/* Order Notes */}
@@ -252,6 +409,20 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   }
                 </span>
               </div>
+              {settingsForm.collateralImageUrl && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-gray-600">
+                    {t('amount.collateralImage') || 'Collateral Image'}:
+                  </span>
+                  <div className="relative w-full max-w-xs border border-gray-300 rounded-lg overflow-hidden">
+                    <img
+                      src={settingsForm.collateralImageUrl}
+                      alt="Collateral"
+                      className="w-full h-auto max-h-48 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">{t('detail.notes')}:</span>
                 <span className="text-sm font-medium">{settingsForm.notes || t('detail.noNotes')}</span>

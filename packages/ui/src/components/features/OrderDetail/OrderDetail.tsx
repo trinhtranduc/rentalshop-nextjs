@@ -34,6 +34,7 @@ interface SettingsForm {
   securityDeposit: number;
   collateralType: string;
   collateralDetails: string;
+  collateralImageUrl?: string;
   notes: string;
 }
 
@@ -233,6 +234,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     securityDeposit: order.securityDeposit || 0,
     collateralType: order.collateralType || 'Other',
     collateralDetails: order.collateralDetails || '',
+    collateralImageUrl: (order as any).collateralImageUrl || '',
     notes: order.notes || ''
   });
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -261,6 +263,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         securityDeposit: order.securityDeposit || 0,
         collateralType: order.collateralType || 'Other',
         collateralDetails: order.collateralDetails || '',
+        collateralImageUrl: (order as any).collateralImageUrl || '',
         notes: order.notes || ''
       };
       setSettingsForm(newSettings);
@@ -482,6 +485,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           securityDeposit: tempSettings.securityDeposit,
           collateralType: tempSettings.collateralType,
           collateralDetails: tempSettings.collateralDetails,
+          collateralImageUrl: tempSettings.collateralImageUrl,
           notes: tempSettings.notes
         };
         onEdit(enhancedOrder);
