@@ -53,11 +53,15 @@
     "damageFee": "Phí hư hỏng",
     "collateralType": "Loại thế chấp",
     "collateralDetails": "Chi tiết thế chấp",
+    "collateralImage": "Hình ảnh giấy tờ bảo đảm",
+    "uploadImage": "Tải lên hình ảnh giấy tờ",
+    "collateralImageHint": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác. Định dạng hỗ trợ: JPEG, PNG, WebP. Kích thước tối đa: 5MB",
     "tooltips": {
       "damageFee": "Phí bồi thường thiệt hại khi sản phẩm bị hư hỏng, mất mát hoặc trả muộn trong quá trình khách hàng thuê",
       "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phí hư hỏng (nếu có)",
       "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chấp (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
-      "collateralDetails": "Thông tin chi tiết về giấy tờ thế chấp (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)"
+      "collateralDetails": "Thông tin chi tiết về giấy tờ thế chấp (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)",
+      "collateralImage": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác để xác minh"
     }
   },
   "detail": {
