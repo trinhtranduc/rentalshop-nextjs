@@ -28,10 +28,12 @@ function getAllowedOrigins(): string[] {
     'https://www.anyrent.shop',
     'https://api.anyrent.shop',
     'https://admin.anyrent.shop',
+    'https://adminvercel.anyrent.shop',
     // Custom domains - anyrent.shop (development)
     'https://dev.anyrent.shop',
     'https://dev-api.anyrent.shop',
-    'https://dev-admin.anyrent.shop'
+    'https://dev-admin.anyrent.shop',
+    'https://dev-adminvercel.anyrent.shop'
   ];
 }
 

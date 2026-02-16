@@ -1,0 +1,27 @@
+{
+  "buildCommand": "cd ../.. && yarn workspace @rentalshop/admin build",
+  "devCommand": "cd ../.. && yarn workspace @rentalshop/admin dev",
+  "installCommand": "cd ../.. && yarn install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "rewrites": [],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}

@@ -70,11 +70,13 @@ function buildCorsHeaders(request: NextRequest): Record<string, string> {
       'https://anyrent.shop',
       'https://www.anyrent.shop', // Production website (www subdomain)
       'https://api.anyrent.shop', // Production API
-      'https://admin.anyrent.shop',
+      'https://admin.anyrent.shop', // Production admin (Railway)
+      'https://adminvercel.anyrent.shop', // Production admin (Vercel)
       // Custom domains - anyrent.shop (development)
       'https://dev.anyrent.shop',
       'https://dev-api.anyrent.shop', // Development API
-      'https://dev-admin.anyrent.shop'
+      'https://dev-admin.anyrent.shop', // Development admin (Railway)
+      'https://dev-adminvercel.anyrent.shop' // Development admin (Vercel)
     ];
     
     // Get request origin safely

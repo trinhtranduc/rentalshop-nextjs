@@ -17,9 +17,11 @@ function buildCorsHeaders(request: NextRequest): Record<string, string> {
     'https://www.anyrent.shop',
     'https://api.anyrent.shop',
     'https://admin.anyrent.shop',
+    'https://adminvercel.anyrent.shop',
     'https://dev.anyrent.shop',
     'https://dev-api.anyrent.shop',
     'https://dev-admin.anyrent.shop',
+    'https://dev-adminvercel.anyrent.shop',
     ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
   ];
   
