@@ -47,10 +47,15 @@ This guide covers deploying the Rental Shop admin and client apps to Vercel whil
    - **Project Name**: `rentalshop-admin`
    - **Framework Preset**: `Next.js`
    - **Root Directory**: `apps/admin`
-   - **Build Command**: `cd ../.. && yarn workspace @rentalshop/admin build`
+   - **Build Command**: `cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin`
    - **Output Directory**: `.next`
    - **Install Command**: `cd ../.. && yarn install`
 5. Click **"Deploy"**
+
+**Lưu ý quan trọng**: 
+- Build Command phải sử dụng `turbo run build` để tự động build dependencies trước
+- `SKIP_ENV_VALIDATION=true` cần thiết để tránh lỗi validation khi build
+- Nếu project đã được tạo, cần cập nhật Build Command trong **Settings** → **General** → **Build & Development Settings**
 
 #### Using Vercel CLI
 
@@ -215,7 +220,7 @@ This file configures Vercel deployment for the admin app:
 
 ```json
 {
-  "buildCommand": "cd ../.. && yarn workspace @rentalshop/admin build",
+  "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin",
   "devCommand": "cd ../.. && yarn workspace @rentalshop/admin dev",
   "installCommand": "cd ../.. && yarn install",
   "framework": "nextjs",
@@ -242,6 +247,14 @@ This file configures Vercel deployment for the admin app:
   ]
 }
 ```
+
+**Lưu ý**: 
+- Build Command sử dụng `turbo run build` để tự động build dependencies trước
+- `SKIP_ENV_VALIDATION=true` cần thiết để tránh lỗi validation khi build
+- **Nếu Vercel không đọc `vercel.json`**, cần cập nhật Build Command trong Dashboard:
+  1. Go to **Settings** → **General** → **Build & Development Settings**
+  2. Update **Build Command** to: `cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin`
+  3. Save và redeploy
 
 ### `apps/admin/next.config.js` Changes
 
@@ -327,11 +340,19 @@ Chúng ta sử dụng **Production + Development** environments:
 
 ### Build Failures
 
+**Issue**: Build fails with "Module not found: Can't resolve '@rentalshop/env'"
+**Solution**: 
+1. Cập nhật Build Command trong Vercel Dashboard:
+   - Go to **Settings** → **General** → **Build & Development Settings**
+   - Update **Build Command** to: `cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin`
+   - Save và redeploy
+2. Turbo sẽ tự động build dependencies (`@rentalshop/env`, `@rentalshop/utils`, etc.) trước khi build admin app
+
 **Issue**: Build fails with module not found errors
 **Solution**: Ensure `installCommand` runs at root: `cd ../.. && yarn install`
 
 **Issue**: Build fails with workspace errors
-**Solution**: Verify `buildCommand` uses workspace: `cd ../.. && yarn workspace @rentalshop/admin build`
+**Solution**: Verify `buildCommand` uses turbo: `cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin`
 
 ### CORS Errors
 

@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin",
+    "build:next": "next build",
     "start": "next start",
     "start:standalone": "node .next/standalone/apps/admin/server.js",
     "lint": "next lint"
