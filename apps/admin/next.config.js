@@ -22,7 +22,8 @@ const nextConfig = {
     '@rentalshop/constants',
     '@rentalshop/types',
     '@rentalshop/ui',
-    '@rentalshop/hooks'
+    '@rentalshop/hooks',
+    '@rentalshop/env'
   ],
   eslint: {
     // Temporarily disable ESLint during builds to allow development to continue

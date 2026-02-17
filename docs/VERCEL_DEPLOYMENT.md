@@ -130,9 +130,12 @@ NODE_ENV=production
 NEXT_PUBLIC_API_URL=https://api.anyrent.shop
 NEXTAUTH_SECRET=<same-secret-as-railway-api>
 NEXTAUTH_URL=https://adminvercel.anyrent.shop
+SKIP_ENV_VALIDATION=true
 ```
 
-**Lưu ý**: Chỉ chọn checkbox **Production**, không chọn Preview hay Development.
+**Lưu ý**: 
+- Chỉ chọn checkbox **Production**, không chọn Preview hay Development
+- `SKIP_ENV_VALIDATION=true` cần thiết để tránh lỗi validation khi build (package @rentalshop/env sẽ skip validation)
 
 #### Development Environment Variables
 
@@ -148,12 +151,14 @@ NODE_ENV=development
 NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop
 NEXTAUTH_SECRET=<same-secret-as-railway-api>
 NEXTAUTH_URL=https://dev-adminvercel.anyrent.shop
+SKIP_ENV_VALIDATION=true
 ```
 
 **Lưu ý**: 
 - Chỉ chọn checkbox **Development**
 - Khi Vercel hỏi branch name, nhập: `development`
 - Variables này chỉ áp dụng cho branch `development`
+- `SKIP_ENV_VALIDATION=true` cần thiết để tránh lỗi validation khi build
 
 #### Kết quả
 

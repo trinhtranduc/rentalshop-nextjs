@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && yarn workspace @rentalshop/admin build",
+  "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin",
   "devCommand": "cd ../.. && yarn workspace @rentalshop/admin dev",
   "installCommand": "cd ../.. && yarn install",
   "framework": "nextjs",
