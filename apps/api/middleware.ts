@@ -3,7 +3,7 @@ import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
 import { generateCorrelationId } from '@rentalshop/utils';
-import { buildCorsHeaders } from './lib/cors';
+import { buildCorsHeaders } from '@rentalshop/utils';
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -48,7 +48,7 @@ const adminRoutes = [
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
 
-// CORS headers are now built using centralized utility function from ./lib/cors.ts
+// CORS headers are now built using centralized utility function from @rentalshop/utils
 
 /**
  * Middleware for API authentication and authorization

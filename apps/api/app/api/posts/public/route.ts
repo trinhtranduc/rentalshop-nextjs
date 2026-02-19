@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { postSearchSchema } from '@rentalshop/validation';
-import { isAllowedOrigin, getAllowedOrigins } from '../../../../lib/cors';
+import { isAllowedOrigin, getAllowedOrigins } from '@rentalshop/utils';
 
 /**
  * Build CORS headers for response

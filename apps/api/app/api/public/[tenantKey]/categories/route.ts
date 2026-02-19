@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { buildCorsHeaders } from '../../../../../lib/cors';
+import { buildCorsHeaders } from '@rentalshop/utils';
 
 /**
  * OPTIONS /api/public/[tenantKey]/categories
