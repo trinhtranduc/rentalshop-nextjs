@@ -456,6 +456,47 @@ Chúng ta sử dụng **Production + Development** environments:
 2. Check `NEXTAUTH_URL` matches the actual domain
 3. Verify cookies are set correctly (check browser DevTools)
 
+### Output Directory Not Found Error
+
+**Issue**: `Error: The Next.js output directory ".next" was not found at "/vercel/path0/apps/api/.next"`
+
+**Root Cause**: Vercel is looking in the wrong directory (apps/api instead of apps/admin)
+
+**Solution**:
+
+1. **Check Vercel Dashboard Settings** (Most Important):
+   - Go to **Settings** → **General** → **Build & Development Settings**
+   - Verify **Root Directory** is set to: `apps/admin`
+   - Verify **Output Directory** is set to: `.next` (relative to root directory)
+   - If these are wrong, update them and save
+   - **Note**: Dashboard settings override `vercel.json`, so this must be correct
+
+2. **Verify vercel.json Configuration**:
+   - Ensure `apps/admin/vercel.json` has:
+     ```json
+     {
+       "rootDirectory": "apps/admin",
+       "outputDirectory": ".next",
+       "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin"
+     }
+     ```
+
+3. **Check Project Link**:
+   - Ensure Vercel project is linked to the correct directory
+   - If project was created for API app, it may be looking in wrong place
+   - Consider creating a new project specifically for admin app
+
+4. **Verify Build Output**:
+   - Check build logs to confirm `.next` directory is created
+   - Look for: `Creating an optimized production build...`
+   - Look for: `✓ Compiled successfully`
+   - If build fails, `.next` won't be created
+
+5. **Force Rebuild**:
+   - Go to **Deployments** tab
+   - Click **"Redeploy"** on latest deployment
+   - Or push a new commit to trigger rebuild
+
 ## Cost Savings
 
 - **Before**: 3 Railway services (API, Admin, Client) + Database
