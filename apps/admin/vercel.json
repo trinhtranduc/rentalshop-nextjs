@@ -4,7 +4,6 @@
   "devCommand": "yarn workspace @rentalshop/admin dev",
   "installCommand": "yarn install",
   "framework": "nextjs",
-  "outputDirectory": "apps/admin/.next",
   "rewrites": [],
   "headers": [
     {
