@@ -354,6 +354,84 @@ Chúng ta sử dụng **Production + Development** environments:
 **Issue**: Build fails with workspace errors
 **Solution**: Verify `buildCommand` uses turbo: `cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin`
 
+### Viewing Full Build Logs in Vercel
+
+**Issue**: Cannot see full build logs in Vercel dashboard (logs truncated or stuck)
+**Solutions**:
+
+**💡 RECOMMENDED: Test with Docker First**
+- Use Docker to test build locally with full logs before deploying to Vercel
+- See [DOCKER_TESTING.md](./DOCKER_TESTING.md) for complete guide
+- Quick test: `yarn test:admin:docker`
+- This shows full build output and helps debug issues faster
+
+**Alternative Methods**:
+
+1. **Expand Log Sections**:
+   - In Vercel deployment page, click on each build step to expand
+   - Look for "Installing dependencies", "Building", "Deploying" sections
+   - Each section can be expanded individually
+
+2. **Download Full Logs**:
+   - Go to your deployment page in Vercel
+   - Click the **"..."** (three dots) menu in the top right
+   - Select **"Download Logs"** to get the complete build log as a text file
+   - This includes all output, even truncated sections
+
+3. **Use Vercel CLI** (Recommended for detailed debugging):
+   ```bash
+   # Install Vercel CLI globally
+   npm i -g vercel
+   
+   # Login to Vercel
+   vercel login
+   
+   # Link to your project
+   cd apps/admin
+   vercel link
+   
+   # View logs for latest deployment
+   vercel logs
+   
+   # View logs for specific deployment
+   vercel logs [deployment-url]
+   ```
+
+4. **Test Build Locally** (Best way to debug):
+   ```bash
+   # Navigate to project root
+   cd /Users/trinhtran/Documents/Source-Code/rentalshop-nextjs
+   
+   # Test the exact build command Vercel uses
+   SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin
+   
+   # This will show you the full output and any errors
+   # Fix any issues locally, then push to trigger Vercel build
+   ```
+
+5. **Check Build Command in Vercel Dashboard**:
+   - Go to **Settings** → **General** → **Build & Development Settings**
+   - Verify the **Build Command** field shows:
+     ```
+     cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin
+     ```
+   - If it's different, update it and save
+   - Vercel may override `vercel.json` settings with dashboard settings
+
+6. **View Real-time Logs During Build**:
+   - Start a new deployment (push a commit or manually trigger)
+   - Watch the deployment page in real-time
+   - Logs stream live during the build process
+   - You can see each step as it happens
+
+7. **Check Specific Error Messages**:
+   - Look for red error messages in the build log
+   - Common patterns to search for:
+     - `Module not found`
+     - `Cannot resolve`
+     - `Error: Command exited with`
+     - `Failed to compile`
+
 ### CORS Errors
 
 **Issue**: CORS errors in browser console
@@ -406,7 +484,27 @@ Follow the same process as admin app:
 
 ## Additional Resources
 
+- [Docker Testing Guide](./DOCKER_TESTING.md) - **Test builds locally with full logs**
 - [Vercel Documentation](https://vercel.com/docs)
 - [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs)
 - [Monorepo Deployment](https://vercel.com/docs/monorepos)
 - [Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables)
+
+## Quick Reference: Docker Testing
+
+If Vercel build is stuck or logs are truncated, test locally with Docker:
+
+```bash
+# Quick test build
+yarn test:admin:docker
+
+# View full logs
+cat /tmp/admin-docker-build.log
+
+# Run container
+yarn docker:admin:up
+
+# Access at http://localhost:3001
+```
+
+See [DOCKER_TESTING.md](./DOCKER_TESTING.md) for detailed guide.
