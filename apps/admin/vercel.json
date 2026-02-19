@@ -3,7 +3,7 @@
   "devCommand": "cd ../.. && yarn workspace @rentalshop/admin dev",
   "installCommand": "cd ../.. && yarn install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
+  "outputDirectory": "apps/admin/.next",
   "rewrites": [],
   "headers": [
     {
