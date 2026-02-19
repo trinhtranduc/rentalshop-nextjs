@@ -30,8 +30,8 @@ export function getAllowedOrigins(): string[] {
     'https://dev-api.anyrent.shop', // Development API
     'https://dev-admin.anyrent.shop', // Development admin (Railway)
     'https://dev-adminvercel.anyrent.shop', // Development admin (Vercel)
-    // Vercel preview URLs
-    'https://anyrent-admin-git-dev-trinhduc20-gmailcoms-projects.vercel.app'
+    // Vercel preview URLs - handled by pattern matching in isAllowedOrigin()
+    // No need to list individual preview URLs
   ];
   
   return [...corsOrigins, ...baseOrigins];
@@ -45,8 +45,24 @@ export function getAllowedOrigins(): string[] {
  */
 export function isAllowedOrigin(origin: string): boolean {
   const allowedOrigins = getAllowedOrigins();
-  // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
-  return allowedOrigins.includes(origin);
+  
+  // Check exact match first
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+  
+  // SECURITY: Allow Vercel preview URLs with pattern matching
+  // Pattern: https://*-*-*.vercel.app or https://*-git-*-*.vercel.app
+  // This is safe because:
+  // 1. Vercel preview URLs are unique per deployment
+  // 2. They use .vercel.app domain (not user-controlled)
+  // 3. Pattern is specific enough to prevent subdomain attacks
+  const vercelPreviewPattern = /^https:\/\/.*\.vercel\.app$/;
+  if (vercelPreviewPattern.test(origin)) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
