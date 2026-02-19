@@ -464,12 +464,28 @@ Chúng ta sử dụng **Production + Development** environments:
 
 **Solution**:
 
-1. **Check Vercel Dashboard Settings** (Most Important):
+1. **Check Vercel Dashboard Settings** (CRITICAL - This is likely the issue):
+   
+   **Step-by-step:**
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Select your **rentalshop-admin** project
    - Go to **Settings** → **General** → **Build & Development Settings**
-   - Verify **Root Directory** is set to: `apps/admin`
-   - Verify **Output Directory** is set to: `.next` (relative to root directory)
-   - If these are wrong, update them and save
-   - **Note**: Dashboard settings override `vercel.json`, so this must be correct
+   
+   **Verify these settings:**
+   - **Root Directory**: MUST be `apps/admin` (NOT `apps/api` or empty)
+   - **Output Directory**: MUST be `.next` (relative to root directory)
+   - **Build Command**: Should be `cd ../.. && SKIP_ENV_VALIDATION=true yarn turbo run build --filter=@rentalshop/admin`
+   - **Install Command**: Should be `yarn install` (runs from root)
+   
+   **If Root Directory is wrong:**
+   - If it shows `apps/api` → Change to `apps/admin`
+   - If it's empty → Set to `apps/admin`
+   - **Save** and **Redeploy**
+   
+   **Why this happens:**
+   - Vercel Dashboard settings **OVERRIDE** `vercel.json`
+   - If project was created for API app, Root Directory may be set to `apps/api`
+   - This causes Vercel to look for `.next` in `apps/api/.next` instead of `apps/admin/.next`
 
 2. **Verify vercel.json Configuration**:
    - Ensure `apps/admin/vercel.json` has:

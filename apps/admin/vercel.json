@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=true turbo run build --filter=@rentalshop/admin",
+  "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=true yarn turbo run build --filter=@rentalshop/admin",
   "devCommand": "yarn workspace @rentalshop/admin dev",
   "installCommand": "yarn install",
   "framework": "nextjs",
