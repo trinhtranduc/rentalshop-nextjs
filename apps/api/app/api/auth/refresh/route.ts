@@ -3,41 +3,10 @@ import { verifyTokenSimple, generateToken } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-
-/**
- * Build CORS headers for response
- */
-function buildCorsHeaders(request: NextRequest): Record<string, string> {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'https://anyrent.shop',
-    'https://www.anyrent.shop',
-    'https://api.anyrent.shop',
-    'https://admin.anyrent.shop',
-    'https://adminvercel.anyrent.shop',
-    'https://dev.anyrent.shop',
-    'https://dev-api.anyrent.shop',
-    'https://dev-admin.anyrent.shop',
-    'https://dev-adminvercel.anyrent.shop',
-    ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
-  ];
-  
-  const isAllowed = allowedOrigins.includes(origin);
-  const allowOrigin = isAllowed ? origin : 'null';
-  
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+import { buildSimpleCorsHeaders } from '../../../../lib/cors';
 
 export async function OPTIONS(request: NextRequest) {
-  const corsHeaders = buildCorsHeaders(request);
+  const corsHeaders = buildSimpleCorsHeaders(request);
   return new NextResponse(null, {
     status: 204,
     headers: corsHeaders,
@@ -52,7 +21,7 @@ export async function OPTIONS(request: NextRequest) {
  * as long as their current token is still valid (not expired)
  */
 export async function POST(request: NextRequest) {
-  const corsHeaders = buildCorsHeaders(request);
+  const corsHeaders = buildSimpleCorsHeaders(request);
   try {
     // Extract token from Authorization header
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
