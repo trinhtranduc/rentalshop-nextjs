@@ -23,6 +23,9 @@ export * from './core/error-display';
 // Breadcrumb utilities
 export * from './breadcrumbs';
 
+// CORS utilities
+export * from './cors';
+
 // Performance monitoring
 export * from './performance';
 

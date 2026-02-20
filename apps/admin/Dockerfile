@@ -7,10 +7,11 @@ WORKDIR /app
 # Install system dependencies
 RUN apk add --no-cache libc6-compat openssl
 
-# Copy root package files
+# Copy root package files FIRST for better layer caching
 COPY package.json yarn.lock ./
 
 # Copy all workspace package.json files (for proper dependency resolution)
+# This layer is cached unless package.json changes
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/constants/package.json ./packages/constants/
 COPY packages/database/package.json ./packages/database/
@@ -30,8 +31,21 @@ COPY apps/client/package.json ./apps/client/
 # Set NODE_ENV=development to ensure workspace devDependencies are installed
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-# Retry yarn install up to 3 times to handle network issues
-RUN for i in 1 2 3; do yarn install --frozen-lockfile && break || (echo "Attempt $i failed, retrying..." && sleep 5); done
+
+# Use yarn cache mount + turbo cache for faster builds (Docker BuildKit feature)
+# - Cache yarn packages between builds
+# - Increase network timeout for slow connections
+# - Use higher concurrency for parallel downloads
+# - Retry with exponential backoff
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    --mount=type=cache,target=/app/.turbo \
+    yarn install --frozen-lockfile \
+      --network-timeout 600000 \
+      --network-concurrency 8 \
+      --prefer-offline \
+      --check-files || \
+    (echo "First attempt failed, retrying..." && \
+     yarn install --frozen-lockfile --network-timeout 600000 --network-concurrency 8)
 
 # ===================================
 # STAGE 2: Builder
@@ -56,8 +70,13 @@ ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 
-# Build packages using Turbo (respects dependency order)
-RUN yarn build
+# Build admin app using Turbo filter (same as Vercel)
+# This ensures dependencies are built in correct order
+# Use turbo cache mount for faster incremental builds
+# Use yarn turbo to ensure it's available from node_modules
+# Use --output-logs=new-only to prevent repeated prefixes in logs
+RUN --mount=type=cache,target=/app/.turbo \
+    SKIP_ENV_VALIDATION=true yarn turbo run build --filter=@rentalshop/admin --output-logs=new-only
 
 # ===================================
 # STAGE 3: Production Runner

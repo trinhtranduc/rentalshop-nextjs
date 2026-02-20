@@ -19,6 +19,7 @@ interface SettingsForm {
   securityDeposit: number;
   collateralType: string;
   collateralDetails: string;
+  collateralImageUrl?: string;
   notes: string;
 }
 import { 

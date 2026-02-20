@@ -4,25 +4,23 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "SKIP_ENV_VALIDATION=true next build",
+    "build:next": "next build",
     "start": "next start",
     "start:standalone": "node .next/standalone/apps/admin/server.js",
     "lint": "next lint"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.3.0",
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/hooks": "file:../../packages/hooks",
     "@rentalshop/ui": "file:../../packages/ui",
     "@rentalshop/utils": "file:../../packages/utils",
-    "critters": "^0.0.25",
     "formik": "^2.4.6",
     "lucide-react": "^0.263.0",
     "next": "^14.2.35",
     "next-auth": "^4.24.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-hook-form": "^7.47.0",
     "tailwindcss-animate": "^1.0.0",
     "yup": "^1.7.0",
     "zod": "^3.22.0"

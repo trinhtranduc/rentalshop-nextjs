@@ -6,8 +6,8 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CRITICAL for Railway deployment - reduces bundle size by 90%
-  output: 'standalone',
+  // Removed 'output: standalone' - not needed for Vercel deployment
+  // Vercel handles Next.js deployments automatically
   
   // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
   experimental: {
@@ -22,7 +22,8 @@ const nextConfig = {
     '@rentalshop/constants',
     '@rentalshop/types',
     '@rentalshop/ui',
-    '@rentalshop/hooks'
+    '@rentalshop/hooks',
+    '@rentalshop/env'
   ],
   eslint: {
     // Temporarily disable ESLint during builds to allow development to continue
@@ -49,14 +50,8 @@ const nextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:3002'}/api/:path*`,
-      },
-    ];
-  },
+  // Removed rewrites() - admin app will call Railway API directly using NEXT_PUBLIC_API_URL
+  // No need to proxy API calls through Next.js server on Vercel
   // Ensure proper routing
   trailingSlash: false,
   // Disable static optimization for development

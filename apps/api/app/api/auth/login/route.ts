@@ -4,53 +4,11 @@ import { comparePassword, generateToken, getUserPermissions, ROLE_PERMISSIONS } 
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
-
-/**
- * Build CORS headers for response (safe, never throws)
- * This function is guaranteed to return valid CORS headers
- */
-function buildCorsHeaders(request: NextRequest): Record<string, string> {
-  try {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'https://anyrent.shop',
-    'https://www.anyrent.shop',
-    'https://api.anyrent.shop',
-    'https://admin.anyrent.shop',
-    'https://dev.anyrent.shop',
-    'https://dev-api.anyrent.shop',
-    'https://dev-admin.anyrent.shop',
-    ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
-  ];
-  
-  const isAllowed = allowedOrigins.includes(origin);
-  const allowOrigin = isAllowed ? origin : 'null';
-  
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-  } catch (error) {
-    // Fallback: return permissive CORS headers if anything fails
-    console.error('❌ LOGIN: Error building CORS headers, using fallback:', error);
-    const origin = request.headers.get('origin') || '*';
-    return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-}
+import { buildSimpleCorsHeaders } from '@rentalshop/utils';
 
 export async function OPTIONS(request: NextRequest) {
   try {
-  const corsHeaders = buildCorsHeaders(request);
+  const corsHeaders = buildSimpleCorsHeaders(request);
   return new NextResponse(null, {
     status: 204,
     headers: corsHeaders,
@@ -78,7 +36,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   // Build CORS headers first (safe, never throws)
-  const corsHeaders = buildCorsHeaders(request);
+  const corsHeaders = buildSimpleCorsHeaders(request);
   
   // 🔍 DIAGNOSTIC LOGGING: Log request origin and environment
   const origin = request.headers.get('origin') || 'unknown';
