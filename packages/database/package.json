@@ -23,8 +23,8 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "yarn tsup",
+    "dev": "yarn tsup --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "test": "jest",
     "test:watch": "jest --watch",
