@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "node ../../node_modules/tsup/dist/cli-default.js",
-    "dev": "node ../../node_modules/tsup/dist/cli-default.js --watch",
+    "build": "yarn tsup",
+    "dev": "yarn tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },
