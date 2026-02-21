@@ -86,7 +86,7 @@
     "@types/qrcode.react": "^3.0.0",
     "@types/xlsx": "^0.0.36",
     "concurrently": "^9.2.1",
-    "tsup": "^7.0.0",
+    "tsup": "^8.0.0",
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"
   },
