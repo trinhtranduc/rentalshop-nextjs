@@ -4,8 +4,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "PATH=$PATH:../../node_modules/.bin tsup",
+    "dev": "PATH=$PATH:../../node_modules/.bin tsup --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
