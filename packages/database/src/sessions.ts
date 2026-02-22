@@ -1,4 +1,5 @@
 import { prisma } from './client';
+import type { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 /**
@@ -22,7 +23,7 @@ export async function createUserSession(
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
   // Start a transaction to ensure atomicity
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // 1. Invalidate ALL previous sessions for this user
     await tx.userSession.updateMany({
       where: {
@@ -141,7 +142,7 @@ export async function invalidateAllMerchantUserSessions(merchantId: number): Pro
     return 0;
   }
 
-  const userIds = users.map(u => u.id);
+  const userIds = users.map((u: { id: string }) => u.id);
 
   // Invalidate all sessions for these users
   const result = await prisma.userSession.updateMany({

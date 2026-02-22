@@ -697,13 +697,13 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
       where: { merchantId },
       select: { id: true, email: true, deletedAt: true, role: true }
     });
-    const activeUsers = allUsers.filter(u => !u.deletedAt);
+    const activeUsers = allUsers.filter((u: { deletedAt: Date | null }) => !u.deletedAt);
     
     console.log(`🔍 getCurrentEntityCounts - Merchant ${merchantId}:`, {
       totalUsersInDB: allUsers.length,
       activeUsers: activeUsers.length,
       deletedUsers: allUsers.length - activeUsers.length,
-      userDetails: allUsers.map(u => ({
+      userDetails: allUsers.map((u: { id: string; email: string; deletedAt: Date | null; role: string }) => ({
         id: u.id,
         email: u.email,
         role: u.role,
