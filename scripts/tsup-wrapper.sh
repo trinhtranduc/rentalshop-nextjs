@@ -9,13 +9,21 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Try to find tsup in root node_modules
 TSUP_BIN="$ROOT_DIR/node_modules/.bin/tsup"
 
+# Debug: Print paths (commented out for production)
+# echo "SCRIPT_DIR: $SCRIPT_DIR" >&2
+# echo "ROOT_DIR: $ROOT_DIR" >&2
+# echo "TSUP_BIN: $TSUP_BIN" >&2
+
 if [ -f "$TSUP_BIN" ]; then
   # Found in root node_modules, use it
-  exec node "$TSUP_BIN" "$@"
+  node "$TSUP_BIN" "$@"
+  exit $?
 elif command -v tsup >/dev/null 2>&1; then
   # Found in PATH, use it
-  exec tsup "$@"
+  tsup "$@"
+  exit $?
 else
   # Not found, try npx as fallback
-  exec npx --yes tsup "$@"
+  npx --yes tsup "$@"
+  exit $?
 fi
