@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "npx --yes tsup",
-    "dev": "npx --yes tsup --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },
