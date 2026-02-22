@@ -85,7 +85,8 @@ export class AuditHelper {
       // Get entity config for default values
       const entityConfig = getAuditEntityConfig(params.entityType);
       
-      await this.auditLogger.log({
+      const logger = await this.ensureAuditLogger();
+      await logger.log({
         action: 'CREATE',
         entityType: params.entityType,
         entityId: params.entityId,
