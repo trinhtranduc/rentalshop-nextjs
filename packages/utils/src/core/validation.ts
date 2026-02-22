@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+// Lazy load Prisma to avoid bundling it into client-side code
+// Prisma will be imported dynamically when functions are called (server-side only)
 import { ApiError, ErrorCode } from './errors';
 import { 
   API, 
@@ -692,6 +693,9 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
   orders: number;
 }> {
   try {
+    // Lazy load Prisma (server-side only)
+    const { prisma } = await import('@rentalshop/database');
+    
     // Debug: Get detailed user count info
     const allUsers = await prisma.user.findMany({
       where: { merchantId },
@@ -747,6 +751,9 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
  */
 export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsInfo> {
   try {
+    // Lazy load Prisma (server-side only)
+    const { prisma } = await import('@rentalshop/database');
+    
     // Get merchant with subscription - use fresh query to avoid stale data
     const merchant = await prisma.merchant.findUnique({
       where: { id: merchantId },
