@@ -23,8 +23,8 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/server.ts --format esm,cjs --dts",
-    "dev": "tsup src/index.ts src/server.ts --format esm,cjs --watch --dts",
+    "build": "../../node_modules/.bin/tsup src/index.ts src/server.ts --format esm,cjs --dts",
+    "dev": "../../node_modules/.bin/tsup src/index.ts src/server.ts --format esm,cjs --watch --dts",
     "lint": "eslint \"src/**/*.ts*\"",
     "test": "jest",
     "test:watch": "jest --watch",

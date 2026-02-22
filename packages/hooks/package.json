@@ -23,9 +23,9 @@
     "tsup.config.ts"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs",
-    "build:with-types": "tsup src/index.ts --format esm,cjs --dts",
-    "dev": "tsup src/index.ts --format esm,cjs --watch",
+    "build": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs",
+    "build:with-types": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts",
+    "dev": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
