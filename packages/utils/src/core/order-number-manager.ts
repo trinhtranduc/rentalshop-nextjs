@@ -5,16 +5,15 @@
  * Provides easy-to-use functions for different order number formats.
  */
 
-import { 
-  getOutletOrderStats,
-  createOrderNumberWithFormat,
-  type OrderNumberFormat
-} from '@rentalshop/database';
+// Lazy load database functions to avoid bundling Prisma into client-side code
+import type { OrderNumberFormat } from '@rentalshop/database';
 
 /**
  * Get outlet order statistics
  */
 export async function getOutletStats(outletId: number) {
+  // Lazy load database function (server-side only)
+  const { getOutletOrderStats } = await import('@rentalshop/database');
   return await getOutletOrderStats(outletId);
 }
 
@@ -24,6 +23,9 @@ export async function getOutletStats(outletId: number) {
 export async function compareOrderNumberFormats(outletId: number) {
   const formats: OrderNumberFormat[] = ['sequential', 'date-based', 'random', 'hybrid'];
   const results: Record<string, any> = {};
+  
+  // Lazy load database function (server-side only)
+  const { createOrderNumberWithFormat } = await import('@rentalshop/database');
   
   for (const format of formats) {
     try {
