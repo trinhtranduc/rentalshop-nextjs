@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "yarn tsup src/index.ts --format esm,cjs --dts",
+    "build": "npx tsup src/index.ts --format esm,cjs --dts",
     "dev": "../../scripts/tsup-wrapper.sh src/index.ts --format esm,cjs --dts --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"

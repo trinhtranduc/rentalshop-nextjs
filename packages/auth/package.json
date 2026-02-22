@@ -33,7 +33,7 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "yarn tsup",
+    "build": "npx tsup",
     "dev": "tsup --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
