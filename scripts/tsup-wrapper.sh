@@ -91,30 +91,34 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: try to install tsup in root and use it
+# Last resort: try to use yarn workspace command to run tsup
 # This ensures tsup can find typescript from workspace
-echo "TSUP_WRAPPER: tsup not found in any location, installing in root..." >&2
+echo "TSUP_WRAPPER: tsup not found in any location, trying yarn workspace command" >&2
 cd "$ROOT_DIR"
 
-# Check if tsup is in root package.json devDependencies
-if grep -q '"tsup"' "$ROOT_DIR/package.json"; then
-  echo "TSUP_WRAPPER: tsup found in root package.json, installing..." >&2
-  # Install tsup in root if not already installed
-  if [ ! -d "$ROOT_DIR/node_modules/tsup" ]; then
-    yarn add -D tsup --ignore-workspace-root-check 2>&1 || true
-  fi
-  
-  # Try to use tsup from root after installation
-  if [ -f "$ROOT_DIR/node_modules/tsup/dist/cli-default.js" ]; then
-    echo "TSUP_WRAPPER: Using tsup from root after installation" >&2
-    node "$ROOT_DIR/node_modules/tsup/dist/cli-default.js" "$@" 2>&1
-    exit $?
-  fi
+# Get package name from current directory
+PKG_NAME=$(basename "$CURRENT_PKG_DIR")
+echo "TSUP_WRAPPER: Package name: $PKG_NAME" >&2
+
+# Try to find workspace name from package.json
+WORKSPACE_NAME=""
+if [ -f "$CURRENT_PKG_DIR/package.json" ]; then
+  WORKSPACE_NAME=$(grep '"name"' "$CURRENT_PKG_DIR/package.json" | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  echo "TSUP_WRAPPER: Found workspace name: $WORKSPACE_NAME" >&2
 fi
 
-# Final fallback: use yarn to run tsup from workspace
-# This should work because yarn will resolve tsup from workspace dependencies
-echo "TSUP_WRAPPER: Final fallback: yarn tsup from root with workspace context" >&2
-cd "$ROOT_DIR"
+if [ -n "$WORKSPACE_NAME" ]; then
+  echo "TSUP_WRAPPER: Trying yarn workspace $WORKSPACE_NAME exec tsup" >&2
+  # Use yarn workspace exec to run tsup in the package's context
+  # This ensures tsup can find typescript from the package's node_modules
+  yarn workspace "$WORKSPACE_NAME" exec tsup "$@" 2>&1
+  exit $?
+fi
+
+# Final fallback: try to run tsup directly from package directory
+# This should work if tsup is in package's devDependencies
+echo "TSUP_WRAPPER: Final fallback: running from package directory" >&2
+cd "$CURRENT_PKG_DIR"
+# Try yarn tsup from package directory
 yarn tsup "$@" 2>&1
 exit $?
