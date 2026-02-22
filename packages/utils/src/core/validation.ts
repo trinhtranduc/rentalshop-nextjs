@@ -707,7 +707,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
       totalUsersInDB: allUsers.length,
       activeUsers: activeUsers.length,
       deletedUsers: allUsers.length - activeUsers.length,
-      userDetails: allUsers.map((u: { id: string; email: string; deletedAt: Date | null; role: string }) => ({
+      userDetails: allUsers.map((u: { id: number; email: string; deletedAt: Date | null; role: string }) => ({
         id: u.id,
         email: u.email,
         role: u.role,
