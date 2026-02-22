@@ -60,7 +60,9 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   }
 
   // Get permissions from ROLE_PERMISSIONS based on user role
-  const permissions = ROLE_PERMISSIONS[user.role] || [];
+  // Normalize role to ensure it matches ROLE_PERMISSIONS keys
+  const normalizedRole = (user.role?.toUpperCase() || '') as import('./core').Role;
+  const permissions = ROLE_PERMISSIONS[normalizedRole] || [];
 
   // Include passwordChangedAt in token to invalidate old tokens when password changes
   const passwordChangedAt = (user as any).passwordChangedAt 
