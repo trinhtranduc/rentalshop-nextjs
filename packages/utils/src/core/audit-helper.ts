@@ -5,8 +5,9 @@
  * across all API routes and database operations with selective logging.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { AuditLogger } from '@rentalshop/database';
+// Use type-only import to avoid bundling Prisma into client-side code
+import type { PrismaClient } from '@prisma/client';
+// Lazy load AuditLogger to avoid bundling Prisma into client-side code
 import type { AuditContext } from '@rentalshop/database';
 import { 
   shouldLogEntity, 
@@ -32,12 +33,24 @@ export interface AuditHelperContext {
 }
 
 export class AuditHelper {
-  private auditLogger: AuditLogger;
+  private auditLogger: any; // AuditLogger - lazy loaded
   private prisma: PrismaClient;
+  private auditLoggerPromise: Promise<any>;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
-    this.auditLogger = new AuditLogger(prisma);
+    // Lazy load AuditLogger (server-side only)
+    this.auditLoggerPromise = import('@rentalshop/database').then(({ AuditLogger }) => {
+      this.auditLogger = new AuditLogger(prisma);
+      return this.auditLogger;
+    });
+  }
+
+  private async ensureAuditLogger() {
+    if (!this.auditLogger) {
+      await this.auditLoggerPromise;
+    }
+    return this.auditLogger;
   }
 
   /**

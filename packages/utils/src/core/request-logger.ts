@@ -7,7 +7,7 @@
  * - Error handling (silent failure to not break main operations)
  */
 
-import { prisma } from '@rentalshop/database';
+// Lazy load Prisma to avoid bundling it into client-side code
 
 export interface RequestLogData {
   correlationId: string;
@@ -109,6 +109,9 @@ function serializeData(data: any): string | null {
  */
 export async function logRequest(data: RequestLogData): Promise<void> {
   try {
+    // Lazy load Prisma (server-side only)
+    const { prisma } = await import('@rentalshop/database');
+    
     // Don't await - fire and forget to not block the request
     // @ts-ignore - RequestLog model will be available after migration
     prisma.requestLog.create({

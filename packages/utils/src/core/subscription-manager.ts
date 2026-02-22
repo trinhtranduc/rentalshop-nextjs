@@ -14,8 +14,7 @@
 
 import { PlanLimitError } from '../core';
 import { ErrorCode } from './errors';
-import { getSubscriptionByMerchantId } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+// Lazy load database functions to avoid bundling Prisma into client-side code
 import { API } from '@rentalshop/constants';
 import type { AuthUser, Subscription, SubscriptionStatus } from '@rentalshop/types';
 
@@ -170,6 +169,8 @@ export class SubscriptionManager {
 
       console.log('🔍 SUBSCRIPTION: Using merchantId:', merchantId, 'type:', typeof merchantId);
 
+      // Lazy load database function (server-side only)
+      const { getSubscriptionByMerchantId } = await import('@rentalshop/database');
       const subscription = await getSubscriptionByMerchantId(merchantId);
       
       console.log('🔍 SUBSCRIPTION: Subscription data:', {
