@@ -91,31 +91,10 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: try to use yarn workspace command
-echo "TSUP_WRAPPER: tsup not found in any location, trying yarn workspace command" >&2
+# Last resort: try to use npx with --yes flag to auto-install
+# This will install tsup if not found and run it
+echo "TSUP_WRAPPER: tsup not found in any location, trying npx --yes tsup" >&2
+echo "TSUP_WRAPPER: This will auto-install tsup if needed" >&2
 cd "$ROOT_DIR"
-# Get package name from current directory
-PKG_NAME=$(basename "$CURRENT_PKG_DIR")
-echo "TSUP_WRAPPER: Package name: $PKG_NAME" >&2
-
-# Try yarn workspace command
-if echo "$PKG_NAME" | grep -q "^@rentalshop/"; then
-  WORKSPACE_NAME="$PKG_NAME"
-else
-  # Try to find workspace name from package.json
-  if [ -f "$CURRENT_PKG_DIR/package.json" ]; then
-    WORKSPACE_NAME=$(grep '"name"' "$CURRENT_PKG_DIR/package.json" | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-    echo "TSUP_WRAPPER: Found workspace name: $WORKSPACE_NAME" >&2
-  fi
-fi
-
-if [ -n "$WORKSPACE_NAME" ]; then
-  echo "TSUP_WRAPPER: Trying yarn workspace $WORKSPACE_NAME tsup" >&2
-  yarn workspace "$WORKSPACE_NAME" tsup "$@" 2>&1
-  exit $?
-fi
-
-# Final fallback: yarn tsup from root
-echo "TSUP_WRAPPER: Final fallback: yarn tsup from root" >&2
-yarn tsup "$@" 2>&1
+npx --yes tsup "$@" 2>&1
 exit $?
