@@ -12,9 +12,12 @@ export default defineConfig({
       'react-dom',
       'next',
       'zod',
-    'date-fns',
-    'lucide-react',
-    'next-intl'
+      'date-fns',
+      'lucide-react',
+      'next-intl',
+      '@rentalshop/database',
+      '@prisma/client',
+      'prisma'
     ],
   clean: true, // Clean once for all entries
     sourcemap: true,
