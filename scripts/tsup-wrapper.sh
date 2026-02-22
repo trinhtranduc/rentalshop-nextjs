@@ -66,16 +66,56 @@ fi
 # Try to find tsup in package-level node_modules (if not hoisted)
 echo "TSUP_WRAPPER: tsup not found in root, checking package-level node_modules..." >&2
 CURRENT_PKG_DIR="$(pwd)"
+echo "TSUP_WRAPPER: CURRENT_PKG_DIR=$CURRENT_PKG_DIR" >&2
+
+# Check package-level node_modules
 if [ -d "$CURRENT_PKG_DIR/node_modules/tsup" ]; then
   echo "TSUP_WRAPPER: Found tsup in package node_modules" >&2
   if [ -f "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" ]; then
-    echo "TSUP_WRAPPER: Using package-level tsup" >&2
+    echo "TSUP_WRAPPER: Using package-level tsup at $CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" >&2
     node "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" "$@"
     exit $?
   fi
 fi
 
-# Last resort: try to use yarn to run tsup from workspace
-echo "TSUP_WRAPPER: tsup not found in any location, trying yarn tsup from workspace root" >&2
-cd "$ROOT_DIR" && yarn tsup "$@" 2>&1
+# Try to find tsup in any package's node_modules
+echo "TSUP_WRAPPER: Searching for tsup in all packages..." >&2
+for pkg_dir in "$ROOT_DIR/packages"/*; do
+  if [ -d "$pkg_dir/node_modules/tsup" ]; then
+    echo "TSUP_WRAPPER: Found tsup in $pkg_dir/node_modules/tsup" >&2
+    if [ -f "$pkg_dir/node_modules/tsup/dist/cli-default.js" ]; then
+      echo "TSUP_WRAPPER: Using tsup from $pkg_dir" >&2
+      node "$pkg_dir/node_modules/tsup/dist/cli-default.js" "$@"
+      exit $?
+    fi
+  fi
+done
+
+# Last resort: try to use yarn workspace command
+echo "TSUP_WRAPPER: tsup not found in any location, trying yarn workspace command" >&2
+cd "$ROOT_DIR"
+# Get package name from current directory
+PKG_NAME=$(basename "$CURRENT_PKG_DIR")
+echo "TSUP_WRAPPER: Package name: $PKG_NAME" >&2
+
+# Try yarn workspace command
+if echo "$PKG_NAME" | grep -q "^@rentalshop/"; then
+  WORKSPACE_NAME="$PKG_NAME"
+else
+  # Try to find workspace name from package.json
+  if [ -f "$CURRENT_PKG_DIR/package.json" ]; then
+    WORKSPACE_NAME=$(grep '"name"' "$CURRENT_PKG_DIR/package.json" | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    echo "TSUP_WRAPPER: Found workspace name: $WORKSPACE_NAME" >&2
+  fi
+fi
+
+if [ -n "$WORKSPACE_NAME" ]; then
+  echo "TSUP_WRAPPER: Trying yarn workspace $WORKSPACE_NAME tsup" >&2
+  yarn workspace "$WORKSPACE_NAME" tsup "$@" 2>&1
+  exit $?
+fi
+
+# Final fallback: yarn tsup from root
+echo "TSUP_WRAPPER: Final fallback: yarn tsup from root" >&2
+yarn tsup "$@" 2>&1
 exit $?
