@@ -91,37 +91,37 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: try to find and run tsup from package's devDependencies
-# Even if not hoisted, yarn should have installed it in package's node_modules
-echo "TSUP_WRAPPER: tsup not found in any location, checking package devDependencies..." >&2
-cd "$CURRENT_PKG_DIR"
+# Last resort: ensure tsup is installed in root and use it
+# On Vercel, yarn workspace hoisting may not work, so we need to ensure tsup is in root
+echo "TSUP_WRAPPER: tsup not found in any location, ensuring tsup is in root..." >&2
+cd "$ROOT_DIR"
 
-# Check if package has tsup in devDependencies
-if [ -f "$CURRENT_PKG_DIR/package.json" ]; then
-  if grep -q '"tsup"' "$CURRENT_PKG_DIR/package.json"; then
-    echo "TSUP_WRAPPER: Package has tsup in devDependencies" >&2
+# Check if tsup is in root package.json devDependencies
+if grep -q '"tsup"' "$ROOT_DIR/package.json"; then
+  echo "TSUP_WRAPPER: tsup found in root package.json" >&2
+  
+  # If tsup is not in root node_modules, try to install it
+  # But skip if it causes issues (we'll handle that in the fallback)
+  if [ ! -d "$ROOT_DIR/node_modules/tsup" ]; then
+    echo "TSUP_WRAPPER: tsup not in root node_modules, but root package.json has it" >&2
+    echo "TSUP_WRAPPER: This suggests yarn hoisting issue on Vercel" >&2
+    echo "TSUP_WRAPPER: Trying to use yarn to resolve tsup from workspace..." >&2
     
-    # Try to find tsup in package's node_modules (yarn might have installed it there)
-    if [ -d "$CURRENT_PKG_DIR/node_modules/tsup" ]; then
-      echo "TSUP_WRAPPER: Found tsup in package node_modules, using it" >&2
-      if [ -f "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" ]; then
-        # Set NODE_PATH to ensure typescript can be found
-        export NODE_PATH="$ROOT_DIR/node_modules:$CURRENT_PKG_DIR/node_modules:${NODE_PATH:-}"
-        node "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" "$@" 2>&1
-        exit $?
-      fi
-    fi
+    # Try yarn from root - it should be able to find tsup from workspace
+    # Use yarn run tsup from root, which should resolve from workspace packages
+    export NODE_PATH="$ROOT_DIR/node_modules:${NODE_PATH:-}"
     
-    # If not in package node_modules, try yarn to install/run it
-    echo "TSUP_WRAPPER: tsup not in package node_modules, trying yarn tsup" >&2
-    export NODE_PATH="$ROOT_DIR/node_modules:$CURRENT_PKG_DIR/node_modules:${NODE_PATH:-}"
+    # Try to run tsup using yarn from root with workspace resolution
+    # This should work because yarn will resolve tsup from workspace packages
+    echo "TSUP_WRAPPER: Trying yarn tsup from root (workspace resolution)" >&2
     yarn tsup "$@" 2>&1
     exit $?
   fi
 fi
 
 # Final fallback: error message
-echo "TSUP_WRAPPER: ERROR - tsup not found and package does not have tsup in devDependencies" >&2
+echo "TSUP_WRAPPER: ERROR - tsup not found anywhere" >&2
+echo "TSUP_WRAPPER: Root: $ROOT_DIR" >&2
 echo "TSUP_WRAPPER: Package: $CURRENT_PKG_DIR" >&2
-echo "TSUP_WRAPPER: Please ensure tsup is in package's devDependencies" >&2
+echo "TSUP_WRAPPER: Please ensure tsup is installed in root or package devDependencies" >&2
 exit 1
