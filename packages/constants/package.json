@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "yarn tsup",
-    "dev": "yarn tsup --watch",
+    "build": "npx --yes tsup",
+    "dev": "npx --yes tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },
