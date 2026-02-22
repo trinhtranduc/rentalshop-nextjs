@@ -91,10 +91,30 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: try to use npx with --yes flag to auto-install
-# This will install tsup if not found and run it
-echo "TSUP_WRAPPER: tsup not found in any location, trying npx --yes tsup" >&2
-echo "TSUP_WRAPPER: This will auto-install tsup if needed" >&2
+# Last resort: try to install tsup in root and use it
+# This ensures tsup can find typescript from workspace
+echo "TSUP_WRAPPER: tsup not found in any location, installing in root..." >&2
 cd "$ROOT_DIR"
-npx --yes tsup "$@" 2>&1
+
+# Check if tsup is in root package.json devDependencies
+if grep -q '"tsup"' "$ROOT_DIR/package.json"; then
+  echo "TSUP_WRAPPER: tsup found in root package.json, installing..." >&2
+  # Install tsup in root if not already installed
+  if [ ! -d "$ROOT_DIR/node_modules/tsup" ]; then
+    yarn add -D tsup --ignore-workspace-root-check 2>&1 || true
+  fi
+  
+  # Try to use tsup from root after installation
+  if [ -f "$ROOT_DIR/node_modules/tsup/dist/cli-default.js" ]; then
+    echo "TSUP_WRAPPER: Using tsup from root after installation" >&2
+    node "$ROOT_DIR/node_modules/tsup/dist/cli-default.js" "$@" 2>&1
+    exit $?
+  fi
+fi
+
+# Final fallback: use yarn to run tsup from workspace
+# This should work because yarn will resolve tsup from workspace dependencies
+echo "TSUP_WRAPPER: Final fallback: yarn tsup from root with workspace context" >&2
+cd "$ROOT_DIR"
+yarn tsup "$@" 2>&1
 exit $?
