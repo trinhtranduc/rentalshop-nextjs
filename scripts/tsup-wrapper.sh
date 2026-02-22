@@ -91,34 +91,23 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: try to use yarn workspace command to run tsup
-# This ensures tsup can find typescript from workspace
-echo "TSUP_WRAPPER: tsup not found in any location, trying yarn workspace command" >&2
+# Last resort: use npx with NODE_PATH to find typescript from workspace
+# This ensures tsup can find typescript even when installed by npx
+echo "TSUP_WRAPPER: tsup not found in any location, using npx with NODE_PATH" >&2
 cd "$ROOT_DIR"
 
-# Get package name from current directory
-PKG_NAME=$(basename "$CURRENT_PKG_DIR")
-echo "TSUP_WRAPPER: Package name: $PKG_NAME" >&2
+# Set NODE_PATH to include root node_modules so typescript can be found
+# This allows npx-installed tsup to find typescript from workspace
+export NODE_PATH="$ROOT_DIR/node_modules:${NODE_PATH:-}"
 
-# Try to find workspace name from package.json
-WORKSPACE_NAME=""
-if [ -f "$CURRENT_PKG_DIR/package.json" ]; then
-  WORKSPACE_NAME=$(grep '"name"' "$CURRENT_PKG_DIR/package.json" | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-  echo "TSUP_WRAPPER: Found workspace name: $WORKSPACE_NAME" >&2
+# Also add package node_modules to NODE_PATH if it exists
+if [ -d "$CURRENT_PKG_DIR/node_modules" ]; then
+  export NODE_PATH="$CURRENT_PKG_DIR/node_modules:$NODE_PATH"
 fi
 
-if [ -n "$WORKSPACE_NAME" ]; then
-  echo "TSUP_WRAPPER: Trying yarn workspace $WORKSPACE_NAME exec tsup" >&2
-  # Use yarn workspace exec to run tsup in the package's context
-  # This ensures tsup can find typescript from the package's node_modules
-  yarn workspace "$WORKSPACE_NAME" exec tsup "$@" 2>&1
-  exit $?
-fi
+echo "TSUP_WRAPPER: NODE_PATH=$NODE_PATH" >&2
+echo "TSUP_WRAPPER: Using npx --yes tsup with workspace typescript resolution" >&2
 
-# Final fallback: try to run tsup directly from package directory
-# This should work if tsup is in package's devDependencies
-echo "TSUP_WRAPPER: Final fallback: running from package directory" >&2
-cd "$CURRENT_PKG_DIR"
-# Try yarn tsup from package directory
-yarn tsup "$@" 2>&1
+# Use npx --yes to auto-install tsup, but with NODE_PATH set so it can find typescript
+npx --yes tsup "$@" 2>&1
 exit $?
