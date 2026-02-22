@@ -100,15 +100,45 @@ const nextConfig = {
   
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // CRITICAL: Exclude Prisma and database packages from client-side bundles
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@prisma/client': false,
+        '@prisma/engines': false,
+        '@rentalshop/database': false,
+      };
+      
+      // Exclude Prisma from externals for client-side
+      config.externals = config.externals || [];
+      if (typeof config.externals === 'function') {
+        const originalExternals = config.externals;
+        config.externals = [
+          originalExternals,
+          ({ request }, callback) => {
+            if (
+              request?.includes('@prisma/client') ||
+              request?.includes('@prisma/engines') ||
+              request?.includes('@rentalshop/database')
+            ) {
+              return callback(null, `commonjs ${request}`);
+            }
+            callback();
+          },
+        ];
+      } else if (Array.isArray(config.externals)) {
+        config.externals.push({
+          '@prisma/client': 'commonjs @prisma/client',
+          '@prisma/engines': 'commonjs @prisma/engines',
+          '@rentalshop/database': 'commonjs @rentalshop/database',
+        });
+      }
+    }
+    
     // Ensure proper resolution of subpath exports
     config.resolve.extensionAlias = {
       '.js': ['.js', '.ts', '.tsx'],
       '.jsx': ['.jsx', '.tsx'],
-    };
-    
-    // Add aliases for workspace packages to ensure proper resolution
-    config.resolve.alias = {
-      ...config.resolve.alias
     };
     
     // Optimize bundle size
