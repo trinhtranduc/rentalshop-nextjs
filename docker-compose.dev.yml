@@ -1,0 +1,213 @@
+# ========================================
+# Docker Compose for Local Development
+# ========================================
+# This file sets up a complete local development environment with:
+# - PostgreSQL database
+# - Qdrant vector database
+# - API server (Next.js)
+# - Admin dashboard (Next.js)
+# - Client app (Next.js)
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up -d
+#   docker-compose -f docker-compose.dev.yml logs -f
+#   docker-compose -f docker-compose.dev.yml down
+#
+# Note: This is for LOCAL DEVELOPMENT only
+# Vercel doesn't support Docker, but you can use this for local testing
+# Railway supports Docker natively (use Dockerfile directly)
+# ========================================
+
+version: '3.8'
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: rentalshop-postgres-dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rentalshop_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentalshop-network
+
+  # ========================================
+  # Qdrant Vector Database
+  # ========================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rentalshop-qdrant-dev
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HTTP_PORT=6333
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentalshop-network
+
+  # ========================================
+  # API Server (Next.js)
+  # ========================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: rentalshop-api-dev
+    ports:
+      - "3002:3002"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/rentalshop_dev
+      
+      # Node Environment
+      NODE_ENV: development
+      PORT: 3002
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-local-jwt-secret-key-minimum-32-characters-change-this}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      
+      # NextAuth Configuration
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local-nextauth-secret-key-minimum-32-characters}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3002}
+      
+      # API URLs
+      API_URL: http://localhost:3002
+      CLIENT_URL: http://localhost:3000
+      ADMIN_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3002
+      
+      # CORS
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
+      
+      # Qdrant Configuration
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      
+      # Optional: AWS S3 (if using file uploads)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - rentalshop-network
+    volumes:
+      # Mount source code for hot reload (development only)
+      - ./apps/api:/app/apps/api:ro
+      - ./packages:/app/packages:ro
+      - ./prisma:/app/prisma:ro
+      # Exclude node_modules to use container's node_modules
+      - /app/node_modules
+      - /app/apps/api/node_modules
+
+  # ========================================
+  # Admin Dashboard (Next.js)
+  # ========================================
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3002}
+        NEXT_PUBLIC_APP_ENV: ${NEXT_PUBLIC_APP_ENV:-development}
+    container_name: rentalshop-admin-dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3002}
+      NEXT_PUBLIC_APP_ENV: ${NEXT_PUBLIC_APP_ENV:-development}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local-nextauth-secret-key-minimum-32-characters}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3001}
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - rentalshop-network
+    volumes:
+      # Mount source code for hot reload (development only)
+      - ./apps/admin:/app/apps/admin:ro
+      - ./packages:/app/packages:ro
+      # Exclude node_modules to use container's node_modules
+      - /app/node_modules
+      - /app/apps/admin/node_modules
+
+  # ========================================
+  # Client App (Next.js)
+  # ========================================
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3002}
+        NEXT_PUBLIC_APP_ENV: ${NEXT_PUBLIC_APP_ENV:-development}
+    container_name: rentalshop-client-dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3002}
+      NEXT_PUBLIC_APP_ENV: ${NEXT_PUBLIC_APP_ENV:-development}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local-nextauth-secret-key-minimum-32-characters}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - rentalshop-network
+    volumes:
+      # Mount source code for hot reload (development only)
+      - ./apps/client:/app/apps/client:ro
+      - ./packages:/app/packages:ro
+      # Exclude node_modules to use container's node_modules
+      - /app/node_modules
+      - /app/apps/client/node_modules
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  rentalshop-network:
+    driver: bridge
+    name: rentalshop-network
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  postgres_data:
+    name: rentalshop-postgres-data
+  qdrant_data:
+    name: rentalshop-qdrant-data

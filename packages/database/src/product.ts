@@ -711,7 +711,7 @@ export async function syncProductTotalStock(productId: number): Promise<void> {
   });
   
   // Calculate total stock = sum of all outlet stocks
-  const totalStock = allOutletStock.reduce((sum, os) => sum + os.stock, 0);
+  const totalStock = allOutletStock.reduce((sum: number, os: { stock: number }): number => sum + os.stock, 0);
   
   // Update Product.totalStock
   await prisma.product.update({

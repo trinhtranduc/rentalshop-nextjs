@@ -697,10 +697,10 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
       where: { merchantId },
       select: { id: true, email: true, deletedAt: true, role: true, isActive: true }
     });
-    const nonDeletedUsers = allUsers.filter(u => !u.deletedAt);
-    const nonDeletedNonAdminUsers = nonDeletedUsers.filter(u => u.role !== USER_ROLE.ADMIN);
-    const adminUsers = allUsers.filter(u => u.role === USER_ROLE.ADMIN);
-    const deletedUsers = allUsers.filter(u => u.deletedAt);
+    const nonDeletedUsers = allUsers.filter((u: { deletedAt: Date | null }): boolean => !u.deletedAt);
+    const nonDeletedNonAdminUsers = nonDeletedUsers.filter((u: { role: string }): boolean => u.role !== USER_ROLE.ADMIN);
+    const adminUsers = allUsers.filter((u: { role: string }): boolean => u.role === USER_ROLE.ADMIN);
+    const deletedUsers = allUsers.filter((u: { deletedAt: Date | null }): boolean => !!u.deletedAt);
     
     console.log(`🔍 getCurrentEntityCounts - Merchant ${merchantId}:`, {
       totalUsersInDB: allUsers.length,
@@ -708,7 +708,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
       nonDeletedNonAdminUsers: nonDeletedNonAdminUsers.length, // Users that count toward limit (active + inactive, excluding ADMIN)
       adminUsers: adminUsers.length, // ADMIN users (excluded from limit)
       deletedUsers: deletedUsers.length, // Deleted users (excluded from limit)
-      userDetails: allUsers.map(u => ({
+      userDetails: allUsers.map((u: { id: number; email: string; role: string; deletedAt: Date | null; isActive: boolean }): { id: number; email: string; role: string; deletedAt: string; isActive: boolean; countsTowardLimit: boolean } => ({
         id: u.id,
         email: u.email,
         role: u.role,

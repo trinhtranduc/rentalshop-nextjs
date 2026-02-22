@@ -511,10 +511,10 @@ export async function updateOrder(
         newStatus,
         orderType as 'RENT' | 'SALE',
         oldOutletId,
-        oldOrderItems.map(item => ({
-          productId: item.productId || 0,
+        oldOrderItems.map((item: { productId: number; quantity: number }): { productId: number; quantity: number } => ({
+          productId: item.productId,
           quantity: item.quantity,
-        })).filter(item => item.productId > 0)
+        })).filter((item: { productId: number }): boolean => item.productId > 0)
       );
       console.log('✅ Outlet stock updated successfully');
     } catch (error) {
@@ -1411,13 +1411,13 @@ export const simplifiedOrders = {
     ]);
 
     // Get item counts for each order
-    const orderIds = orders.map(order => order.id);
+    const orderIds = orders.map((order: { id: number }): number => order.id);
     const itemCounts = await prisma.orderItem.groupBy({
       by: ['orderId'],
       where: { orderId: { in: orderIds } },
       _count: { id: true }
     });
-    const itemCountMap = new Map(itemCounts.map(item => [item.orderId, item._count.id]));
+    const itemCountMap = new Map(itemCounts.map((item: { orderId: number; _count: { id: number } }): [number, number] => [item.orderId, item._count.id]));
 
     // Get payment counts and totals
     const paymentCounts = await prisma.payment.groupBy({
@@ -1426,11 +1426,11 @@ export const simplifiedOrders = {
       _count: { id: true },
       _sum: { amount: true }
     });
-    const paymentCountMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._count.id]));
-    const totalPaidMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._sum.amount || 0]));
+    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]): boolean => orderId > 0));
+    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]): boolean => orderId > 0));
 
     // Enhance orders with calculated fields and flattened structure
-    const enhancedOrders = orders.map(order => ({
+    const enhancedOrders = orders.map((order: any): any => ({
       id: order.id,
       orderNumber: order.orderNumber,
       orderType: order.orderType,
@@ -1686,7 +1686,7 @@ export const simplifiedOrders = {
     ]);
 
     // Get summary counts for order items and payments (separate queries for performance)
-    const orderIds = orders.map(o => o.id);
+    const orderIds = orders.map((o: { id: number }): number => o.id);
     const [itemCounts, paymentCounts] = await Promise.all([
       prisma.orderItem.groupBy({
         by: ['orderId'],
@@ -1705,12 +1705,12 @@ export const simplifiedOrders = {
     ]);
 
     // Create lookup maps for performance
-    const itemCountMap = new Map(itemCounts.map(item => [item.orderId, item._count.id]));
-    const paymentCountMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._count.id]));
-    const totalPaidMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._sum.amount || 0]));
+    const itemCountMap = new Map(itemCounts.map((item: { orderId: number; _count: { id: number } }): [number, number] => [item.orderId, item._count.id]));
+    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]): boolean => orderId > 0));
+    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]): boolean => orderId > 0));
 
     // Enhance orders with calculated fields and flattened structure
-    const enhancedOrders = orders.map(order => ({
+    const enhancedOrders = orders.map((order: any): any => ({
       id: order.id,
       orderNumber: order.orderNumber,
       orderType: order.orderType,
@@ -1755,7 +1755,7 @@ export const simplifiedOrders = {
       createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
       
       // Order items with flattened product data
-      orderItems: order.orderItems?.map(item => {
+      orderItems: order.orderItems?.map((item: any): any => {
         // Priority 1: Use productImages (snapshot field saved when order was created)
         // Priority 2: Fallback to product.images (from product relation - current images)
         const snapshotImages = parseProductImages((item as any).productImages);
@@ -2421,11 +2421,11 @@ export const simplifiedOrders = {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
-      statusBreakdown: statusBreakdown.reduce((acc, item) => {
+      statusBreakdown: statusBreakdown.reduce((acc: Record<string, number>, item: { status: string; _count: { id: number } }): Record<string, number> => {
         acc[item.status] = item._count.id;
         return acc;
       }, {} as Record<string, number>),
-      typeBreakdown: typeBreakdown.reduce((acc, item) => {
+      typeBreakdown: typeBreakdown.reduce((acc: Record<string, number>, item: { orderType: string; _count: { id: number } }): Record<string, number> => {
         acc[item.orderType] = item._count.id;
         return acc;
       }, {} as Record<string, number>),
