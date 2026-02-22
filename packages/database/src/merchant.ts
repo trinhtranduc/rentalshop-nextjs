@@ -576,7 +576,7 @@ export async function getAffiliateStats() {
   // Get merchant details for each referrer
   const referrerIds = referralStats
     .map((stat: { referredByMerchantId: number | null }): number | null => stat.referredByMerchantId)
-    .filter((id): id is number => id !== null);
+    .filter((id: number | null): id is number => id !== null);
 
   const referrers = await prisma.merchant.findMany({
     where: {
