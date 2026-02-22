@@ -1426,8 +1426,8 @@ export const simplifiedOrders = {
       _count: { id: true },
       _sum: { amount: true }
     });
-    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]): boolean => orderId > 0));
-    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]): boolean => orderId > 0));
+    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]: [number, number]): boolean => orderId > 0));
+    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]: [number, number]): boolean => orderId > 0));
 
     // Enhance orders with calculated fields and flattened structure
     const enhancedOrders = orders.map((order: any): any => ({
@@ -1706,8 +1706,8 @@ export const simplifiedOrders = {
 
     // Create lookup maps for performance
     const itemCountMap = new Map(itemCounts.map((item: { orderId: number; _count: { id: number } }): [number, number] => [item.orderId, item._count.id]));
-    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]): boolean => orderId > 0));
-    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]): boolean => orderId > 0));
+    const paymentCountMap = new Map(paymentCounts.map((payment: { orderId: number | null; _count: { id: number } }): [number, number] => [payment.orderId || 0, payment._count.id]).filter(([orderId]: [number, number]): boolean => orderId > 0));
+    const totalPaidMap = new Map(paymentCounts.map((payment: { orderId: number | null; _sum: { amount: number | null } }): [number, number] => [payment.orderId || 0, payment._sum.amount || 0]).filter(([orderId]: [number, number]): boolean => orderId > 0));
 
     // Enhance orders with calculated fields and flattened structure
     const enhancedOrders = orders.map((order: any): any => ({
