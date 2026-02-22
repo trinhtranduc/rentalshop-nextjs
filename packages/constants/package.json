@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "node ../../node_modules/.bin/tsup",
+    "dev": "node ../../node_modules/.bin/tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },
