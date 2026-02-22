@@ -91,23 +91,25 @@ for pkg_dir in "$ROOT_DIR/packages"/*; do
   fi
 done
 
-# Last resort: use npx with NODE_PATH to find typescript from workspace
-# This ensures tsup can find typescript even when installed by npx
-echo "TSUP_WRAPPER: tsup not found in any location, using npx with NODE_PATH" >&2
-cd "$ROOT_DIR"
+# Last resort: run from package directory with yarn
+# This ensures tsup can find all dependencies from workspace
+echo "TSUP_WRAPPER: tsup not found in any location, running from package directory" >&2
+cd "$CURRENT_PKG_DIR"
 
-# Set NODE_PATH to include root node_modules so typescript can be found
-# This allows npx-installed tsup to find typescript from workspace
-export NODE_PATH="$ROOT_DIR/node_modules:${NODE_PATH:-}"
+# Set NODE_PATH to include root and package node_modules
+export NODE_PATH="$ROOT_DIR/node_modules:$CURRENT_PKG_DIR/node_modules:${NODE_PATH:-}"
 
-# Also add package node_modules to NODE_PATH if it exists
-if [ -d "$CURRENT_PKG_DIR/node_modules" ]; then
-  export NODE_PATH="$CURRENT_PKG_DIR/node_modules:$NODE_PATH"
+# Try yarn tsup from package directory first
+# This should work if tsup is in package's devDependencies
+echo "TSUP_WRAPPER: Trying yarn tsup from package directory" >&2
+yarn tsup "$@" 2>&1
+if [ $? -eq 0 ]; then
+  exit 0
 fi
 
-echo "TSUP_WRAPPER: NODE_PATH=$NODE_PATH" >&2
-echo "TSUP_WRAPPER: Using npx --yes tsup with workspace typescript resolution" >&2
-
-# Use npx --yes to auto-install tsup, but with NODE_PATH set so it can find typescript
+# If yarn tsup fails, try npx with NODE_PATH from root
+echo "TSUP_WRAPPER: yarn tsup failed, trying npx from root with NODE_PATH" >&2
+cd "$ROOT_DIR"
+export NODE_PATH="$ROOT_DIR/node_modules:$CURRENT_PKG_DIR/node_modules:${NODE_PATH:-}"
 npx --yes tsup "$@" 2>&1
 exit $?
