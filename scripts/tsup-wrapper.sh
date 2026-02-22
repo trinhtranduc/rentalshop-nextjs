@@ -16,9 +16,11 @@ TSUP_PKG_BIN="$ROOT_DIR/node_modules/tsup/bin/tsup"
 echo "TSUP_WRAPPER: SCRIPT_DIR=$SCRIPT_DIR" >&2
 echo "TSUP_WRAPPER: ROOT_DIR=$ROOT_DIR" >&2
 echo "TSUP_WRAPPER: Checking for tsup..." >&2
+echo "TSUP_WRAPPER: Checking if $ROOT_DIR/node_modules/tsup exists..." >&2
 
-# Check if tsup package exists
+# Check if tsup package exists in root
 if [ -d "$ROOT_DIR/node_modules/tsup" ]; then
+  echo "TSUP_WRAPPER: Found tsup package directory in root" >&2
   echo "TSUP_WRAPPER: Found tsup package directory" >&2
   
   # Try cli-default.js first (this is what .bin/tsup symlinks to)
@@ -59,6 +61,18 @@ if [ -f "$TSUP_BIN" ] || [ -L "$TSUP_BIN" ]; then
   echo "TSUP_WRAPPER: Found tsup symlink at $TSUP_BIN, using it" >&2
   node "$TSUP_BIN" "$@"
   exit $?
+fi
+
+# Try to find tsup in package-level node_modules (if not hoisted)
+echo "TSUP_WRAPPER: tsup not found in root, checking package-level node_modules..." >&2
+CURRENT_PKG_DIR="$(pwd)"
+if [ -d "$CURRENT_PKG_DIR/node_modules/tsup" ]; then
+  echo "TSUP_WRAPPER: Found tsup in package node_modules" >&2
+  if [ -f "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" ]; then
+    echo "TSUP_WRAPPER: Using package-level tsup" >&2
+    node "$CURRENT_PKG_DIR/node_modules/tsup/dist/cli-default.js" "$@"
+    exit $?
+  fi
 fi
 
 # Last resort: try to use yarn to run tsup from workspace
