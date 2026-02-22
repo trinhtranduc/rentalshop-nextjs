@@ -156,7 +156,8 @@ export class AuditHelper {
         // Get entity config for default values
         const entityConfig = getAuditEntityConfig(params.entityType);
         
-        await this.auditLogger.log({
+        const logger = await this.ensureAuditLogger();
+        await logger.log({
           action: 'UPDATE',
           entityType: params.entityType,
           entityId: params.entityId,
@@ -192,7 +193,8 @@ export class AuditHelper {
     category?: 'GENERAL' | 'SECURITY' | 'BUSINESS' | 'SYSTEM' | 'COMPLIANCE';
   }) {
     try {
-      await this.auditLogger.log({
+      const logger = await this.ensureAuditLogger();
+      await logger.log({
         action: 'DELETE',
         entityType: params.entityType,
         entityId: params.entityId,
@@ -223,7 +225,8 @@ export class AuditHelper {
     metadata?: Record<string, any>;
   }) {
     try {
-      await this.auditLogger.log({
+      const logger = await this.ensureAuditLogger();
+      await logger.log({
         action: params.action as any, // Cast to allowed action type
         entityType: params.entityType,
         entityId: params.entityId,
