@@ -11,7 +11,7 @@ const nextConfig = {
   
   transpilePackages: [
     '@rentalshop/auth',
-    '@rentalshop/database', 
+    // @rentalshop/database removed - it's server-only and in serverComponentsExternalPackages
     '@rentalshop/middleware',
     '@rentalshop/utils',
     '@rentalshop/constants',
