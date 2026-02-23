@@ -334,7 +334,7 @@ export async function generateAllProductEmbeddings(
               imageUrl,
               merchantId: String(productMerchantId), // Store as string of publicId (number)
               categoryId: categoryId ? String(categoryId) : undefined,
-              productName: product.name
+              productName: (product as any).name || `Product ${product.id}`
             }
             };
         } catch (error) {
