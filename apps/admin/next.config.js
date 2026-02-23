@@ -10,8 +10,14 @@ const nextConfig = {
   // Vercel handles Next.js deployments automatically
   
   // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+  // Also exclude server-only utilities that use Node.js modules (fs, etc.)
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+    serverComponentsExternalPackages: [
+      '@prisma/client', 
+      '@prisma/engines',
+      '@rentalshop/database',
+      '@rentalshop/utils/server'
+    ],
   },
   
   transpilePackages: [
@@ -66,6 +72,37 @@ const nextConfig = {
       '.js': ['.js', '.ts', '.tsx'],
       '.jsx': ['.jsx', '.tsx'],
     };
+    
+    // Prevent bundling server-only modules in client-side code
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+      
+      // Mark server-only packages as external for client-side builds
+      config.externals = config.externals || [];
+      if (typeof config.externals === 'function') {
+        const originalExternals = config.externals;
+        config.externals = [
+          originalExternals,
+          ({ request }, callback) => {
+            if (request === '@rentalshop/utils/server' || 
+                request?.startsWith('@rentalshop/utils/server/')) {
+              return callback(null, 'commonjs ' + request);
+            }
+            callback();
+          }
+        ];
+      } else if (Array.isArray(config.externals)) {
+        config.externals.push(({ request }) => {
+          return request === '@rentalshop/utils/server' || 
+                 request?.startsWith('@rentalshop/utils/server/');
+        });
+      }
+    }
     
     return config;
   },
