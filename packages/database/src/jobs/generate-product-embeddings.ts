@@ -222,7 +222,7 @@ export async function generateAllProductEmbeddings(
     console.log(`📊 Found ${productList.length} products`);
 
     // Filter products with images
-    const productsWithImages = productList.filter(p => {
+    const productsWithImages = productList.filter((p: { images: any }) => {
       const images = parseProductImages(p.images);
       
       if (images.length === 0) return false;
@@ -292,7 +292,7 @@ export async function generateAllProductEmbeddings(
       // Process products in parallel within batch for faster processing
       // Use Promise.all with controlled concurrency to avoid overwhelming the API
       const embeddings = await Promise.all(
-        batch.map(async (product) => {
+        batch.map(async (product: { images: any; id: number }) => {
         try {
           const images = parseProductImages(product.images);
           const imageUrl = images[0];

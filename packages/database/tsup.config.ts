@@ -6,7 +6,7 @@ export default defineConfig({
     server: 'src/server.ts',
   },
   format: ['esm', 'cjs'],
-  dts: true,
+  dts: true, // Giữ type definitions
   external: [
     '@prisma/client',
     'sharp',
