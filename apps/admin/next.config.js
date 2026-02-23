@@ -22,7 +22,6 @@ const nextConfig = {
   
   transpilePackages: [
     '@rentalshop/auth',
-    '@rentalshop/database', 
     '@rentalshop/middleware',
     '@rentalshop/utils',
     '@rentalshop/constants',
@@ -83,23 +82,27 @@ const nextConfig = {
       };
       
       // Mark server-only packages as external for client-side builds
+      // Replace with empty objects to prevent 'require is not defined' errors
       config.externals = config.externals || [];
       if (typeof config.externals === 'function') {
         const originalExternals = config.externals;
         config.externals = [
           originalExternals,
           ({ request }, callback) => {
-            if (request === '@rentalshop/utils/server' || 
-                request?.startsWith('@rentalshop/utils/server/')) {
-              return callback(null, 'commonjs ' + request);
+            // Server-only packages that should be stubbed in client builds
+            if (
+              /^@prisma\/(client|engines)/.test(request) ||
+              /^@rentalshop\/(database|utils\/server)/.test(request)
+            ) {
+              return callback(null, '{}');
             }
             callback();
           }
         ];
       } else if (Array.isArray(config.externals)) {
         config.externals.push(({ request }) => {
-          return request === '@rentalshop/utils/server' || 
-                 request?.startsWith('@rentalshop/utils/server/');
+          return /^@prisma\/(client|engines)/.test(request) ||
+                 /^@rentalshop\/(database|utils\/server)/.test(request);
         });
       }
     }
