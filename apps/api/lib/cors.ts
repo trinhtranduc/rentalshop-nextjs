@@ -25,6 +25,7 @@ export function getAllowedOrigins(): string[] {
     'https://api.anyrent.shop', // Production API
     'https://admin.anyrent.shop', // Production admin (Railway)
     'https://adminvercel.anyrent.shop', // Production admin (Vercel)
+    'https://vercel-admin.anyrent.shop', // Production admin (Vercel - alternative domain)
     // Custom domains - anyrent.shop (development)
     'https://dev.anyrent.shop',
     'https://dev-api.anyrent.shop', // Development API
