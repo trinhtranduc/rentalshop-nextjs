@@ -13,6 +13,7 @@ export default defineConfig({
     '@rentalshop/ui',
     '@rentalshop/database',
     '@rentalshop/utils',
+    '@rentalshop/utils/server', // Server-only exports (built separately)
     'bcryptjs',
     'jsonwebtoken', 
     'next-auth'
