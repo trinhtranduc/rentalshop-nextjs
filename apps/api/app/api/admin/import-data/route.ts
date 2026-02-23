@@ -7,7 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError, downloadProductImagesForSync, uploadToS3 } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, downloadProductImagesForSync } from '@rentalshop/utils';
+import { uploadToS3 } from '@rentalshop/utils/server';
 import { USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { validateImportData } from '@rentalshop/utils';
 import { generateOrderNumber } from '@rentalshop/database';

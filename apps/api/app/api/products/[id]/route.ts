@@ -5,10 +5,6 @@ import {
   productUpdateSchema, 
   handleApiError, 
   ResponseBuilder, 
-  uploadToS3, 
-  commitStagingFiles, 
-  deleteFromS3, 
-  extractS3KeyFromUrl, 
   generateStagingKey, 
   generateProductImageKey, 
   generateFileName, 
@@ -17,9 +13,9 @@ import {
   normalizeImagesInput,
   combineProductImages,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls,
-  getBucketName
+  mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
+import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 

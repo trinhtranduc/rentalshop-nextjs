@@ -21,3 +21,7 @@ export * from './core/subscription-manager';
 export * from './core/audit-helper';
 export * from './core/order-number-manager';
 export * from './core/request-logger';
+
+// AWS S3 utilities - SERVER ONLY
+// These use AWS SDK and Node.js modules (fs, stream) which cannot run in browser
+export * from './api/aws-s3';

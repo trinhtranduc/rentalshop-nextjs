@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { ResponseBuilder } from '@rentalshop/utils';
-import { uploadToS3, generateAccessUrl, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { ResponseBuilder, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { uploadToS3, generateAccessUrl } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
 

@@ -28,7 +28,7 @@ export * from './plan-limit-addons';
 export * from './system';
 export * from './calendar';
 export * from './upload';
-export * from './aws-s3';
+// aws-s3.ts is server-only (uses AWS SDK and Node.js modules) - exported from server.ts
 export * from './response-builder';
 export * from './route-helpers';
 export * from './referrals';
