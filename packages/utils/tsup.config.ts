@@ -13,9 +13,11 @@ export default defineConfig({
       'react-dom',
       'next',
       'zod',
-    'date-fns',
-    'lucide-react',
-    'next-intl'
+      'date-fns',
+      'lucide-react',
+      'next-intl',
+      // Self-reference - prevent circular resolution during build
+      '@rentalshop/utils/server'
     ],
   clean: true, // Clean once for all entries
     sourcemap: true,
