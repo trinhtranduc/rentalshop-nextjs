@@ -1,7 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "paths": {
+      "@rentalshop/utils/server": ["../utils/src/server", "../utils/dist/server"]
+    }
   },
   "include": ["src/**/*"]
 } 
