@@ -14,6 +14,7 @@ export default defineConfig({
     '@rentalshop/database',
     '@rentalshop/utils',
     '@rentalshop/utils/server', // Server-only exports (built separately)
+    '@rentalshop/constants', // Constants package
     'bcryptjs',
     'jsonwebtoken', 
     'next-auth'
