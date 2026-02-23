@@ -1,7 +1,7 @@
 import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
-import { getSubscriptionError } from '@rentalshop/utils';
+import { getSubscriptionError } from '@rentalshop/utils/server';
 import { ROLE_PERMISSIONS } from './core';
 import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
