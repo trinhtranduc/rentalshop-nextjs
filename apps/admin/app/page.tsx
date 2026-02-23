@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
 
+// Force dynamic rendering to ensure this page is built as serverless
+export const dynamic = 'force-dynamic';
+
 export default function AdminHomePage() {
   const router = useRouter();
   const { user, loading } = useAuth();
