@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "skipLibCheck": true,
     "paths": {
-      "@rentalshop/utils/server": ["../utils/src/server", "../utils/dist/server"]
+      "@rentalshop/utils/server": ["../utils/src/server", "../utils/dist/server"],
+      "@rentalshop/database": ["../database/src", "../database/dist"]
     }
   },
   "include": ["src/**/*"]

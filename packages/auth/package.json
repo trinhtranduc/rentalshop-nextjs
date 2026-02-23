@@ -39,6 +39,7 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
+    "@rentalshop/database": "file:../database",
     "@rentalshop/utils": "file:../utils",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.0",
