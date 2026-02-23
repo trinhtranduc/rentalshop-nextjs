@@ -142,7 +142,9 @@ const nextConfig = {
         ({ request }, callback) => {
           // Check if request matches any server-only package pattern
           if (serverOnlyPackages.some(pattern => pattern.test(request))) {
-            return callback(null, `commonjs ${request}`);
+            // Return empty object instead of commonjs require to avoid "require is not defined" error
+            // This creates a stub that prevents the module from being bundled
+            return callback(null, '{}');
           }
           // Call original externals if it's a function
           if (typeof originalExternals === 'function') {
