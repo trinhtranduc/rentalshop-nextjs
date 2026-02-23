@@ -34,7 +34,13 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
-    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+    // Also exclude server-only utilities that use Node.js modules (fs, etc.)
+    serverComponentsExternalPackages: [
+      '@prisma/client', 
+      '@prisma/engines',
+      '@rentalshop/database',
+      '@rentalshop/utils/server'
+    ],
     // Enable optimizations for better performance
     optimizeCss: true,
     optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils', '@rentalshop/hooks'],
@@ -110,27 +116,39 @@ const nextConfig = {
       ...config.resolve.alias
     };
     
-    // CRITICAL: Mark @rentalshop/database as external for client-side builds
-    // This prevents Prisma Client from being bundled into client code
+    // CRITICAL: Mark server-only packages as external for client-side builds
+    // This prevents Prisma Client and server-only utilities from being bundled into client code
     if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+      
       config.externals = config.externals || [];
       if (typeof config.externals === 'function') {
         const originalExternals = config.externals;
         config.externals = [
           originalExternals,
           ({ request }, callback) => {
-            if (request === '@rentalshop/database' || request?.startsWith('@rentalshop/database/')) {
+            // Prevent bundling server-only packages
+            if (request === '@rentalshop/database' || 
+                request?.startsWith('@rentalshop/database/') ||
+                request === '@rentalshop/utils/server' ||
+                request?.startsWith('@rentalshop/utils/server/')) {
               return callback(null, `commonjs ${request}`);
             }
             callback();
           }
         ];
       } else if (Array.isArray(config.externals)) {
-        config.externals.push('@rentalshop/database');
+        config.externals.push('@rentalshop/database', '@rentalshop/utils/server');
       } else {
         config.externals = [
           config.externals,
-          '@rentalshop/database'
+          '@rentalshop/database',
+          '@rentalshop/utils/server'
         ];
       }
     }
