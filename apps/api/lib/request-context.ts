@@ -5,7 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCorrelationId, logRequest, type RequestLogData } from '@rentalshop/utils';
+import { generateCorrelationId } from '@rentalshop/utils';
+import { logRequest, type RequestLogData } from '@rentalshop/utils/server';
 
 /**
  * Get correlation ID from request headers (set by middleware) or generate new one

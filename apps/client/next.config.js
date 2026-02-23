@@ -110,6 +110,31 @@ const nextConfig = {
       ...config.resolve.alias
     };
     
+    // CRITICAL: Mark @rentalshop/database as external for client-side builds
+    // This prevents Prisma Client from being bundled into client code
+    if (!isServer) {
+      config.externals = config.externals || [];
+      if (typeof config.externals === 'function') {
+        const originalExternals = config.externals;
+        config.externals = [
+          originalExternals,
+          ({ request }, callback) => {
+            if (request === '@rentalshop/database' || request?.startsWith('@rentalshop/database/')) {
+              return callback(null, `commonjs ${request}`);
+            }
+            callback();
+          }
+        ];
+      } else if (Array.isArray(config.externals)) {
+        config.externals.push('@rentalshop/database');
+      } else {
+        config.externals = [
+          config.externals,
+          '@rentalshop/database'
+        ];
+      }
+    }
+    
     // Optimize bundle size
     if (!dev && !isServer) {
       config.optimization.splitChunks = {

@@ -97,14 +97,17 @@ export {
 } from './pricing-calculator';
 
 // Main subscription manager (consolidates all subscription functionality)
-export * from './subscription-manager';
+// MOVED to server.ts - imports @rentalshop/database (server-only)
+// Use: import { ... } from '@rentalshop/utils/server'
+// export * from './subscription-manager';
 
 // Subscription renewal functionality (now consolidated in subscription-manager.ts)
-export type {
-  SubscriptionRenewalConfig,
-  SubscriptionRenewalResult,
-  RenewalStats
-} from './subscription-manager';
+// MOVED to server.ts - imports @rentalshop/database (server-only)
+// export type {
+//   SubscriptionRenewalConfig,
+//   SubscriptionRenewalResult,
+//   RenewalStats
+// } from './subscription-manager';
 
 // Individual utilities (only export unique functions to avoid conflicts)
 export {
@@ -156,7 +159,9 @@ export * from './currency';
 export * from './payment-gateways';
 
 // Order utilities
-export * from './order-number-manager';
+// MOVED to server.ts - imports @rentalshop/database (server-only)
+// Use: import { ... } from '@rentalshop/utils/server'
+// export * from './order-number-manager';
 
 // Date utilities
 export * from './date';
@@ -175,10 +180,14 @@ export * from './bank-qr';
 
 // Audit utilities
 export * from './audit-config';
-export * from './audit-helper';
+// MOVED to server.ts - imports @rentalshop/database (server-only)
+// Use: import { ... } from '@rentalshop/utils/server'
+// export * from './audit-helper';
 
 // Request logging utilities
-export * from './request-logger';
+// MOVED to server.ts - imports @rentalshop/database (server-only)
+// Use: import { ... } from '@rentalshop/utils/server'
+// export * from './request-logger';
 
 // File logger utilities (Pino) - SERVER ONLY
 // Note: Logger uses Node.js modules (fs, worker_threads) and should only be imported server-side
