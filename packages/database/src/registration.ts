@@ -356,7 +356,7 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
   }
 
   // 2. Find outlet if outletCode provided
-  let outlet = null;
+  let outlet: { id: string; name: string } | null = null;
   if (data.outletCode) {
     outlet = await tx.outlet.findUnique({
       where: { 
@@ -395,6 +395,11 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
         }
       });
     }
+  }
+
+  // At this point, outlet is guaranteed to be non-null
+  if (!outlet) {
+    throw new Error('Failed to find or create outlet');
   }
 
   // 3. Create outlet user

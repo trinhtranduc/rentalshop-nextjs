@@ -472,7 +472,7 @@ export async function checkDuplicate(email?: string, phone?: string, excludeId?:
     return null;
   }
 
-  const conditions = [];
+  const conditions: Array<{ email?: string; phone?: string }> = [];
   
   if (email) {
     conditions.push({ email });

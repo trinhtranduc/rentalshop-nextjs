@@ -433,7 +433,7 @@ export async function createProduct(input: any): Promise<any> {
   }
 
   // Find category by id if provided
-  let category = null;
+  let category: { id: string } | null = null;
   if (input.categoryId) {
     category = await prisma.category.findUnique({
       where: { id: input.categoryId }
@@ -511,11 +511,11 @@ export async function updateProduct(
   }
 
   // Handle category update if categoryId is provided
-  let categoryId = undefined;
+  let categoryId: string | undefined = undefined;
   if (input.categoryId !== undefined) {
     if (input.categoryId === null || input.categoryId === 0) {
       // Remove category
-      categoryId = null;
+      categoryId = undefined;
     } else {
       // Find category by id
       const category = await prisma.category.findUnique({

@@ -292,7 +292,7 @@ export async function generateAllProductEmbeddings(
       // Process products in parallel within batch for faster processing
       // Use Promise.all with controlled concurrency to avoid overwhelming the API
       const embeddings = await Promise.all(
-        batch.map(async (product: { images: any; id: number }) => {
+        batch.map(async (product: { images: any; id: number; name?: string; merchantId?: number; merchant?: { id: number }; categoryId?: number; category?: { id: number } }) => {
         try {
           const images = parseProductImages(product.images);
           const imageUrl = images[0];
