@@ -126,31 +126,31 @@ const nextConfig = {
         crypto: false,
       };
       
-      config.externals = config.externals || [];
-      if (typeof config.externals === 'function') {
-        const originalExternals = config.externals;
-        config.externals = [
-          originalExternals,
-          ({ request }, callback) => {
-            // Prevent bundling server-only packages
-            if (request === '@rentalshop/database' || 
-                request?.startsWith('@rentalshop/database/') ||
-                request === '@rentalshop/utils/server' ||
-                request?.startsWith('@rentalshop/utils/server/')) {
-              return callback(null, `commonjs ${request}`);
-            }
-            callback();
+      // Use regex pattern to match server-only packages
+      const serverOnlyPackages = [
+        /^@rentalshop\/database$/,
+        /^@rentalshop\/database\//,
+        /^@rentalshop\/utils\/server$/,
+        /^@rentalshop\/utils\/server\//,
+        /^@prisma\/client$/,
+        /^@prisma\/engines/,
+      ];
+      
+      const originalExternals = config.externals;
+      config.externals = [
+        ...(Array.isArray(originalExternals) ? originalExternals : [originalExternals]),
+        ({ request }, callback) => {
+          // Check if request matches any server-only package pattern
+          if (serverOnlyPackages.some(pattern => pattern.test(request))) {
+            return callback(null, `commonjs ${request}`);
           }
-        ];
-      } else if (Array.isArray(config.externals)) {
-        config.externals.push('@rentalshop/database', '@rentalshop/utils/server');
-      } else {
-        config.externals = [
-          config.externals,
-          '@rentalshop/database',
-          '@rentalshop/utils/server'
-        ];
-      }
+          // Call original externals if it's a function
+          if (typeof originalExternals === 'function') {
+            return originalExternals({ request }, callback);
+          }
+          callback();
+        }
+      ];
     }
     
     // Optimize bundle size
