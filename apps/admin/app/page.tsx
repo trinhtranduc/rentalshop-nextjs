@@ -4,19 +4,21 @@ import { redirect } from 'next/navigation';
 /**
  * Root page - Server component for Vercel deployment
  * 
- * This ensures at least one serverless page is built.
- * Performs server-side redirect based on authentication status.
+ * SOLUTION BASED ON GITHUB ISSUES & VERCEL DOCS:
+ * - Vercel requires at least ONE page that renders actual content (not just redirect)
+ * - Status page (/status) already provides this requirement
+ * - Root page can use redirect() since status page ensures serverless function exists
  * 
- * IMPORTANT: 
- * - This page performs server-side work (reading cookies) which requires
- *   server-side execution, ensuring it's built as a serverless function.
- * - Uses Next.js redirect() which is a server action that throws, ensuring
- *   the page cannot be statically generated.
- * - The combination of dynamic = 'force-dynamic', runtime = 'nodejs', and
- *   server-side work ensures Vercel recognizes this as a serverless page.
+ * WHY THIS WORKS:
+ * 1. Status page (/status) renders actual content - satisfies Vercel requirement
+ * 2. Root page uses redirect() - clean and simple
+ * 3. Both have dynamic = 'force-dynamic' - ensures serverless functions
+ * 4. API route (/api/health) also provides serverless function
  * 
- * NOTE: If Vercel still doesn't recognize this as serverless, check /status page
- * which renders actual content.
+ * KEY INSIGHT:
+ * - Vercel needs at least ONE page with actual content rendering
+ * - Status page fulfills this requirement
+ * - Root page can safely use redirect() without breaking build
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -24,17 +26,10 @@ export const revalidate = 0;
 
 export default async function AdminHomePage() {
   // Perform actual server-side work to ensure this is a serverless function
-  // Reading cookies requires server-side execution and cannot be statically generated
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
   
-  // Use Next.js redirect() which is a server action
-  // This throws internally, ensuring the page is server-rendered
-  // Vercel will recognize this as a serverless function because:
-  // 1. It uses dynamic = 'force-dynamic'
-  // 2. It uses runtime = 'nodejs'
-  // 3. It performs server-side work (reading cookies)
-  // 4. It uses redirect() which requires server-side execution
+  // Use Next.js redirect() - this is safe because /status page ensures serverless function exists
   if (!token) {
     redirect('/login');
   }
