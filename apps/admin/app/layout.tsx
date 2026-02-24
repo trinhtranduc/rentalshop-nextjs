@@ -51,6 +51,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // CRITICAL: Perform server-side work to ensure this is a serverless function
+  // Client app layout reads cookies server-side - this ensures Vercel recognizes serverless function
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  
   // Get messages and locale from i18n.ts configuration
   const messages = await getMessages();
 
