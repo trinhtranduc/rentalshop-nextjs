@@ -1,24 +1,17 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 /**
  * Root page - Server component for Vercel deployment
  * 
- * SOLUTION BASED ON GITHUB ISSUES & VERCEL DOCS:
- * - Vercel requires at least ONE page that renders actual content (not just redirect)
- * - Status page (/status) already provides this requirement
- * - Root page can use redirect() since status page ensures serverless function exists
+ * CRITICAL: Vercel requires at least ONE page that renders actual content.
+ * Root page MUST render content (not just redirect) to ensure serverless function is built.
  * 
- * WHY THIS WORKS:
- * 1. Status page (/status) renders actual content - satisfies Vercel requirement
- * 2. Root page uses redirect() - clean and simple
- * 3. Both have dynamic = 'force-dynamic' - ensures serverless functions
- * 4. API route (/api/health) also provides serverless function
- * 
- * KEY INSIGHT:
- * - Vercel needs at least ONE page with actual content rendering
- * - Status page fulfills this requirement
- * - Root page can safely use redirect() without breaking build
+ * SOLUTION: Render loading state with server-side data, then use meta refresh for redirect.
+ * This ensures:
+ * 1. Page renders actual content (Vercel requirement)
+ * 2. Server-side work is performed (cookies, timestamp)
+ * 3. Dynamic rendering is forced (dynamic = 'force-dynamic')
+ * 4. Page cannot be statically optimized
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -29,10 +22,52 @@ export default async function AdminHomePage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
   
-  // Use Next.js redirect() - this is safe because /status page ensures serverless function exists
-  if (!token) {
-    redirect('/login');
-  }
+  // Get server-side data to ensure dynamic rendering
+  const timestamp = new Date().toISOString();
+  const redirectTo = token ? '/dashboard' : '/login';
   
-  redirect('/dashboard');
+  // CRITICAL: Render actual content (not just redirect) so Vercel recognizes this as serverless
+  // Vercel only counts pages that render content as serverless functions
+  return (
+    <>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontFamily: 'system-ui, sans-serif',
+        backgroundColor: '#f3f4f6'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }}></div>
+          <p style={{ color: '#6b7280', margin: 0 }}>Redirecting...</p>
+          <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>
+            Server rendered at: {timestamp}
+          </p>
+        </div>
+      </div>
+      <meta httpEquiv="refresh" content={`0;url=${redirectTo}`} />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `setTimeout(() => { window.location.href = '${redirectTo}'; }, 100);`,
+        }}
+      />
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `
+      }} />
+    </>
+  );
 } 
