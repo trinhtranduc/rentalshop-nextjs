@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 /**
  * Root page - Server component for Vercel deployment
@@ -28,13 +27,17 @@ export default async function AdminHomePage() {
   // Determine redirect destination based on auth status
   const redirectTo = token ? '/dashboard' : '/login';
   
+  // Get current timestamp to ensure dynamic rendering
+  const timestamp = new Date().toISOString();
+  
   // Render actual content to ensure Vercel recognizes this as a serverless page
-  // Using client-side redirect via meta refresh to avoid Next.js optimization
+  // Using client-side redirect after server render to avoid Next.js optimization
   return (
     <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-action-primary mx-auto mb-4"></div>
         <p className="text-text-secondary">Redirecting...</p>
+        <p className="text-xs text-text-tertiary mt-2">Server rendered at: {timestamp}</p>
         <script
           dangerouslySetInnerHTML={{
             __html: `setTimeout(() => { window.location.href = '${redirectTo}'; }, 100);`,
