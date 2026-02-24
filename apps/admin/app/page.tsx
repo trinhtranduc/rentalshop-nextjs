@@ -7,9 +7,8 @@ import { redirect } from 'next/navigation';
  * This ensures at least one serverless page is built.
  * Performs server-side redirect based on authentication status.
  * 
- * IMPORTANT: This page must perform actual server-side work (reading cookies)
- * and use redirect() to ensure it's built as a serverless function.
- * The redirect() function in Next.js ensures this is a server-rendered page.
+ * IMPORTANT: This page renders actual content first, then redirects.
+ * This ensures Vercel recognizes it as a serverless page.
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,11 +19,47 @@ export default async function AdminHomePage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
   
-  // Use Next.js redirect() which ensures server-side rendering
-  // This is different from client-side redirects - it's a server action
-  if (!token) {
-    redirect('/login');
-  }
+  // Render actual content first to ensure Vercel recognizes this as a serverless page
+  // Then use meta refresh for redirect (client-side redirect after server render)
+  const redirectTo = token ? '/dashboard' : '/login';
   
-  redirect('/dashboard');
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta httpEquiv="refresh" content={`0;url=${redirectTo}`} />
+        <title>Redirecting...</title>
+      </head>
+      <body>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          fontFamily: 'system-ui, sans-serif',
+          backgroundColor: '#f3f4f6'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px'
+            }}></div>
+            <p style={{ color: '#6b7280', margin: 0 }}>Redirecting...</p>
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            ` }} />
+          </div>
+        </div>
+      </body>
+    </html>
+  );
 } 
