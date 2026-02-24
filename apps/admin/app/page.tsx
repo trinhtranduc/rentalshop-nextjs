@@ -33,63 +33,12 @@ export default async function AdminHomePage() {
     timeStyle: 'long'
   });
   
-  // Determine redirect target
-  const redirectTo = hasAuth ? '/dashboard' : '/login';
+  // CRITICAL: Use Next.js redirect() directly
+  // redirect() throws internally, ensuring this is a serverless function
+  // This is the proper Next.js pattern for server-side redirects
+  if (!hasAuth) {
+    redirect('/login');
+  }
   
-  // CRITICAL: Render actual content from server (Vercel requirement)
-  // Use Next.js redirect() AFTER rendering to ensure serverless function
-  // This ensures Vercel recognizes this as a serverless page
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, sans-serif',
-      backgroundColor: '#f3f4f6',
-      padding: '20px'
-    }}>
-      <div style={{
-        textAlign: 'center',
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        maxWidth: '400px',
-        width: '100%'
-      }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '16px', color: '#111827' }}>
-          Admin Portal
-        </h1>
-        <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-          {hasAuth ? 'Redirecting to dashboard...' : 'Redirecting to login...'}
-        </p>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: hasAuth ? '4px solid #10b981' : '4px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px'
-        }}></div>
-        <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '16px' }}>
-          Server time: {serverTime}
-        </p>
-        <p style={{ fontSize: '11px', color: '#d1d5db', marginTop: '8px' }}>
-          Timestamp: {timestamp}
-        </p>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `
-        }} />
-      </div>
-      {/* Use Next.js redirect() - this throws internally but ensures serverless function */}
-      {redirect(redirectTo)}
-    </div>
-  );
+  redirect('/dashboard');
 } 
