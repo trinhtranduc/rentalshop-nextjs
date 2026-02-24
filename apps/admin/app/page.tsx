@@ -8,10 +8,10 @@ import { redirect } from 'next/navigation';
  * Performs server-side redirect based on authentication status.
  * 
  * IMPORTANT: 
- * - This page performs server-side work (reading cookies) which requires
- *   server-side execution, ensuring it's built as a serverless function.
- * - Uses Next.js redirect() which is a server action that throws, ensuring
- *   the page cannot be statically generated.
+ * - This page MUST render actual content (not just redirect) for Vercel
+ *   to recognize it as a serverless page.
+ * - Uses client-side redirect after server-side check to ensure the page
+ *   is actually rendered as a server component.
  * - The combination of dynamic = 'force-dynamic', runtime = 'nodejs', and
  *   server-side work ensures Vercel recognizes this as a serverless page.
  */
@@ -25,16 +25,22 @@ export default async function AdminHomePage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
   
-  // Use Next.js redirect() which is a server action
-  // This throws internally, ensuring the page is server-rendered
-  // Vercel will recognize this as a serverless function because:
-  // 1. It uses dynamic = 'force-dynamic'
-  // 2. It uses runtime = 'nodejs'
-  // 3. It performs server-side work (reading cookies)
-  // 4. It uses redirect() which requires server-side execution
-  if (!token) {
-    redirect('/login');
-  }
+  // Determine redirect destination based on auth status
+  const redirectTo = token ? '/dashboard' : '/login';
   
-  redirect('/dashboard');
+  // Render actual content to ensure Vercel recognizes this as a serverless page
+  // Using client-side redirect via meta refresh to avoid Next.js optimization
+  return (
+    <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-action-primary mx-auto mb-4"></div>
+        <p className="text-text-secondary">Redirecting...</p>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `setTimeout(() => { window.location.href = '${redirectTo}'; }, 100);`,
+          }}
+        />
+      </div>
+    </div>
+  );
 } 
