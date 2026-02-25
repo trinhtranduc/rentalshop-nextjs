@@ -46,6 +46,10 @@ export const metadata: Metadata = {
   },
 }
 
+// CRITICAL: Force dynamic rendering to ensure Vercel detects serverless functions
+// This works together with the API route to ensure at least one serverless function is built
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: {
