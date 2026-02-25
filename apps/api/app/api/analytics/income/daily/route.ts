@@ -292,10 +292,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         } else {
           // Đơn chưa tồn tại: thêm mới vào danh sách
-          const orderWithRelations = order as any; // findManyLightweight includes customer and outlet
-          const customerName = orderWithRelations.customer 
-            ? `${orderWithRelations.customer.firstName || ''} ${orderWithRelations.customer.lastName || ''}`.trim()
-            : undefined;
+          // IMPORTANT: findManyLightweight flattens customer/outlet data into direct fields
+          // Use customerName, customerPhone, outletName (NOT order.customer.firstName)
+          const orderWithRelations = order as any;
           
           const orderIndex = dailyData.orders.length;
           dailyData.orders.push({
@@ -307,9 +306,10 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             revenueType: event.revenueType,
             description: event.description,
             revenueDate: event.date.toISOString(),
-            customerName,
-            customerPhone: orderWithRelations.customer?.phone || undefined,
-            outletName: orderWithRelations.outlet?.name,
+            // Use flattened fields from findManyLightweight (dòng 1745-1750 trong order.ts)
+            customerName: orderWithRelations.customerName || undefined,
+            customerPhone: orderWithRelations.customerPhone || undefined,
+            outletName: orderWithRelations.outletName || undefined,
             totalAmount: order.totalAmount || 0,
             depositAmount: order.depositAmount || 0,
             securityDeposit: order.securityDeposit || 0,
