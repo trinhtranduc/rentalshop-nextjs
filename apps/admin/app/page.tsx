@@ -6,18 +6,23 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminHomeClient from './AdminHomeClient';
 
+/**
+ * Root page for admin app
+ * CRITICAL: Must render actual content (not just redirect) for Vercel to detect as serverless function
+ * Vercel does not detect pages that only redirect as serverless functions
+ */
 export default async function AdminHomePage() {
   // Check authentication server-side
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
   
-  // Server-side redirect based on authentication
-  if (token) {
-    redirect('/dashboard');
-  } else {
-    redirect('/login');
-  }
-  
-  // This won't render, but needed for TypeScript
-  return <AdminHomeClient />;
+  // CRITICAL: Render actual content first, then redirect client-side
+  // This ensures Vercel detects this as a serverless function
+  // If we only redirect, Vercel may not detect it
+  return (
+    <AdminHomeClient 
+      isAuthenticated={!!token}
+      redirectTo={token ? '/dashboard' : '/login'}
+    />
+  );
 } 
