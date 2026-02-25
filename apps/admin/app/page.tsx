@@ -10,18 +10,13 @@ export default function AdminHomePage() {
 
   useEffect(() => {
     // Don't redirect while loading to avoid race conditions
-    if (loading) {
-      console.log('⏳ Admin Home: Auth still loading, waiting...');
-      return;
-    }
+    if (loading) return;
     
     // Check if user is already authenticated
     if (user) {
-      console.log('✅ Admin Home: User authenticated, redirecting to dashboard...');
       // Redirect to dashboard if already logged in
       router.push('/dashboard');
     } else {
-      console.log('❌ Admin Home: User not authenticated, redirecting to login...');
       // Redirect to login if not authenticated
       router.push('/login');
     }
