@@ -7,6 +7,10 @@ import AdminLayout from './components/AdminLayout'
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 
+// Force dynamic rendering for Vercel serverless deployment
+// This ensures Vercel detects this as a serverless function
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
