@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import BlogPostClient from './BlogPostClient';
 import type { Post } from '@rentalshop/types';
+import { postsApi } from '@rentalshop/utils';
 
 // Force dynamic rendering - don't pre-render during build
 // This prevents Prisma Client initialization errors during build
@@ -9,28 +10,41 @@ export const dynamic = 'force-dynamic';
 
 async function fetchBlogPost(slug: string) {
   try {
-    // Dynamic import to avoid Prisma Client initialization during build
-    const { db } = await import('@rentalshop/database');
-    
     // Try all locales to find the published post
+    // Use postsApi.getPostBySlug() - same pattern as dashboard/page.tsx uses analyticsApi
     const locales: ('en' | 'vi' | 'zh' | 'ko' | 'ja')[] = ['vi', 'en', 'zh', 'ko', 'ja'];
     
     for (const locale of locales) {
       try {
-        const result = await db.posts.findBySlug(slug, locale);
-        // Check if post exists and is published
-        if (result && result.status === 'PUBLISHED' && result.publishedAt) {
-          return result;
+        console.log(`🌐 Fetching blog post: slug=${slug}, locale=${locale}`);
+        
+        // Use postsApi.getPostBySlug() - same pattern as dashboard uses analyticsApi
+        const result = await postsApi.getPostBySlug(slug, locale);
+        
+        console.log('📦 Parsed result:', {
+          success: result.success,
+          code: result.code,
+          message: result.message,
+          hasData: !!result.data,
+          locale
+        });
+        
+        if (result.success && result.data) {
+          // API already filters for PUBLISHED posts, so we can return it
+          console.log('✅ Found blog post:', result.data.title, 'in locale:', locale);
+          return result.data;
         }
       } catch (err) {
         // Continue to next locale if this one fails
+        console.error(`❌ Error fetching post for locale ${locale}:`, err);
         continue;
       }
     }
     
+    console.error('❌ Blog post not found in any locale:', slug);
     return null;
   } catch (error) {
-    console.error('Error fetching blog post:', error);
+    console.error('❌ Error fetching blog post:', error);
     return null;
   }
 }
