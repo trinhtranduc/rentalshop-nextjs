@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next'
-import { db } from '@rentalshop/database'
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'
   const locales = ['', 'vi', 'en', 'zh', 'ko', 'ja'] // Empty string for default locale
   
@@ -77,50 +76,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   })
 
-  // Add blog posts to sitemap
-  try {
-    // Fetch all published posts for all locales
-    const allLocales: ('en' | 'vi' | 'zh' | 'ko' | 'ja')[] = ['en', 'vi', 'zh', 'ko', 'ja']
-    
-    for (const locale of allLocales) {
-      const postsResult = await db.posts.search({
-        status: 'PUBLISHED',
-        locale,
-        limit: 1000, // Get all published posts
-        sortBy: 'publishedAt',
-        sortOrder: 'desc',
-      })
-
-      if (postsResult.data && postsResult.data.length > 0) {
-        postsResult.data.forEach((post) => {
-          // Only add posts with publishedAt date
-          if (post.publishedAt) {
-            const localePrefix = locale === 'vi' ? '' : `/${locale}` // Default locale is vi
-            const url = `${baseUrl}${localePrefix}/blog/${post.slug}`
-            
-            sitemapEntries.push({
-              url,
-              lastModified: post.updatedAt || post.publishedAt || post.createdAt,
-              changeFrequency: 'weekly' as const,
-              priority: 0.7,
-              alternates: {
-                languages: {
-                  vi: locale === 'vi' ? url : `${baseUrl}/blog/${post.slug}`,
-                  en: locale === 'en' ? url : `${baseUrl}/en/blog/${post.slug}`,
-                  zh: locale === 'zh' ? url : `${baseUrl}/zh/blog/${post.slug}`,
-                  ko: locale === 'ko' ? url : `${baseUrl}/ko/blog/${post.slug}`,
-                  ja: locale === 'ja' ? url : `${baseUrl}/ja/blog/${post.slug}`,
-                },
-              },
-            })
-          }
-        })
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching blog posts for sitemap:', error)
-    // Continue without blog posts if there's an error
-  }
+  // Note: Blog posts are NOT included in sitemap.ts
+  // Blog posts will be discovered and indexed by Google through:
+  // 1. generateMetadata() in blog/[slug]/page.tsx (provides SEO metadata)
+  // 2. Internal links from blog listing page
+  // 3. Sitemap only includes main static routes
   
   return sitemapEntries
 }
