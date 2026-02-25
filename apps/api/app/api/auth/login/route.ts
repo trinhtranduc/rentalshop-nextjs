@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { comparePassword, generateToken, getUserPermissions, ROLE_PERMISSIONS } from '@rentalshop/auth';
+import { ROLE_PERMISSIONS } from '@rentalshop/auth';
+import { comparePassword, generateToken, getUserPermissions } from '@rentalshop/auth/server';
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
