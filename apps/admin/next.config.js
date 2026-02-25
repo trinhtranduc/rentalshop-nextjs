@@ -82,29 +82,21 @@ const nextConfig = {
       };
       
       // Mark server-only packages as external for client-side builds
-      // Replace with empty objects to prevent 'require is not defined' errors
-      config.externals = config.externals || [];
-      if (typeof config.externals === 'function') {
-        const originalExternals = config.externals;
-        config.externals = [
-          originalExternals,
-          ({ request }, callback) => {
-            // Server-only packages that should be stubbed in client builds
-            if (
-              /^@prisma\/(client|engines)/.test(request) ||
-              /^@rentalshop\/(database|utils\/server)/.test(request)
-            ) {
-              return callback(null, '{}');
-            }
-            callback();
+      // This prevents server-only code from being bundled into client code
+      const originalExternals = config.externals;
+      config.externals = [
+        ...(Array.isArray(originalExternals) ? originalExternals : [originalExternals]),
+        ({ request }, callback) => {
+          // Server-only packages that should be stubbed in client builds
+          if (
+            /^@prisma\/(client|engines)/.test(request) ||
+            /^@rentalshop\/(database|utils\/server)/.test(request)
+          ) {
+            return callback(null, '{}');
           }
-        ];
-      } else if (Array.isArray(config.externals)) {
-        config.externals.push(({ request }) => {
-          return /^@prisma\/(client|engines)/.test(request) ||
-                 /^@rentalshop\/(database|utils\/server)/.test(request);
-        });
-      }
+          callback();
+        }
+      ];
     }
     
     return config;
