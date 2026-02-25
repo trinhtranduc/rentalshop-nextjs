@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSubscriptionAccess } from '@rentalshop/utils';
+import { validateSubscriptionAccess } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 import type { AuthUser } from '@rentalshop/types';
 
