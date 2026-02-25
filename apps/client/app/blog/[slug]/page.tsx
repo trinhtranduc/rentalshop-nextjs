@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { db } from '@rentalshop/database';
 import BlogPostClient from './BlogPostClient';
 import type { Post } from '@rentalshop/types';
 
@@ -10,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 async function fetchBlogPost(slug: string) {
   try {
+    // Dynamic import to avoid Prisma Client initialization during build
+    const { db } = await import('@rentalshop/database');
+    
     // Try all locales to find the published post
     const locales: ('en' | 'vi' | 'zh' | 'ko' | 'ja')[] = ['vi', 'en', 'zh', 'ko', 'ja'];
     
