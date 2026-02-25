@@ -4,6 +4,10 @@ import { db } from '@rentalshop/database';
 import BlogPostClient from './BlogPostClient';
 import type { Post } from '@rentalshop/types';
 
+// Force dynamic rendering - don't pre-render during build
+// This prevents Prisma Client initialization errors during build
+export const dynamic = 'force-dynamic';
+
 async function fetchBlogPost(slug: string) {
   try {
     // Try all locales to find the published post
