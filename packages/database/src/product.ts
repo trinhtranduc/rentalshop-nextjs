@@ -172,7 +172,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     });
     
     if (category) {
-      where.categoryId = category.id; // Use CUID
+      where.categoryId = category.id; // Use number ID (Category uses Int id)
     }
   }
 
@@ -433,7 +433,7 @@ export async function createProduct(input: any): Promise<any> {
   }
 
   // Find category by id if provided
-  let category: { id: string } | null = null;
+  let category: { id: number } | null = null;
   if (input.categoryId) {
     category = await prisma.category.findUnique({
       where: { id: input.categoryId }
@@ -511,7 +511,7 @@ export async function updateProduct(
   }
 
   // Handle category update if categoryId is provided
-  let categoryId: string | undefined = undefined;
+  let categoryId: number | undefined = undefined;
   if (input.categoryId !== undefined) {
     if (input.categoryId === null || input.categoryId === 0) {
       // Remove category
@@ -526,7 +526,7 @@ export async function updateProduct(
         throw new Error(`Category with id ${input.categoryId} not found`);
       }
       
-      categoryId = category.id; // Use CUID for database
+      categoryId = category.id; // Use number ID for database
     }
   }
 
@@ -619,7 +619,7 @@ export async function getProductsByCategory(categoryId: number) {
   }
 
   return await prisma.product.findMany({
-    where: { categoryId: category.id }, // Use CUID
+    where: { categoryId: category.id }, // Use number ID (Category uses Int id)
     include: {
       merchant: {
         select: {
@@ -1257,7 +1257,7 @@ export const simplifiedProducts = {
         select: { id: true }
       });
       if (category) {
-        where.categoryId = category.id; // Use CUID
+        where.categoryId = category.id; // Use number ID (Category uses Int id)
       } else {
         // Category not found, return empty result
         return {
