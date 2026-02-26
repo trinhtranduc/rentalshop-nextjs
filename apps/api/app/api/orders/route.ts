@@ -51,6 +51,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       page,
       limit,
       q, 
+      search,
       orderType,
       status,
       merchantId: queryMerchantId,
@@ -64,7 +65,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, orderType, status, 
+      page, limit, q, search, orderType, status, 
       queryMerchantId, queryOutletId, customerId, productId, startDate, endDate,
       sortBy, sortOrder
     });
