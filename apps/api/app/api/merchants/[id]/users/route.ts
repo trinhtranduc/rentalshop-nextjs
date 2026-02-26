@@ -155,7 +155,31 @@ export async function POST(
       }
 
       // Extract validated data
-      const { firstName, lastName, email, phone, role, outletId, password } = parsed.data;
+      // Handle both 'name' and 'firstName'/'lastName' formats
+      let firstName: string;
+      let lastName: string;
+      
+      if (parsed.data.firstName) {
+        // Use firstName/lastName if provided
+        firstName = parsed.data.firstName;
+        lastName = parsed.data.lastName || '';
+      } else if (parsed.data.name) {
+        // Split 'name' into firstName and lastName
+        const nameParts = parsed.data.name.trim().split(/\s+/);
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      } else {
+        // This shouldn't happen due to schema validation, but handle it anyway
+        return NextResponse.json(
+          ResponseBuilder.validationError({
+            fieldErrors: { name: ["Either 'name' or 'firstName' must be provided"] },
+            formErrors: []
+          }),
+          { status: 400 }
+        );
+      }
+      
+      const { email, phone, role, outletId, password } = parsed.data;
 
       // For OUTLET_ADMIN, validate they can only create users for their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN && outletId && outletId !== userScope.outletId) {

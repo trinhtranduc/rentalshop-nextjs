@@ -272,6 +272,7 @@ export const usersQuerySchema = z.object({
   isActive: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   sortBy: z.enum(['email', 'name', 'role', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -279,21 +280,46 @@ export const usersQuerySchema = z.object({
 export const userCreateSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(1, 'Name is required'),
+  // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
+  name: z.string().min(1, 'Name is required').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().optional(), // Allow empty string or undefined
   phone: z.string().optional(),
   role: userRoleEnum,
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
+}).refine((data) => {
+  // Either 'name' or 'firstName' must be provided (lastName is optional)
+  // lastName can be empty string or undefined
+  const hasName = data.name && data.name.trim().length > 0;
+  const hasFirstName = data.firstName && data.firstName.trim().length > 0;
+  return hasName || hasFirstName;
+}, {
+  message: "Either 'name' or 'firstName' must be provided"
 });
 
 export const userUpdateSchema = z.object({
   id: z.coerce.number().int().positive('User ID is required'),
   email: z.string().email('Invalid email address').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
   name: z.string().min(1, 'Name is required').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().optional(), // Allow empty string or undefined
   phone: z.string().optional(),
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
+}).refine((data) => {
+  // Either 'name' or 'firstName' must be provided if name fields are present
+  // If neither is provided, that's okay (update is partial)
+  if (data.name || data.firstName) {
+    const hasName = data.name && data.name.trim().length > 0;
+    const hasFirstName = data.firstName && data.firstName.trim().length > 0;
+    return hasName || hasFirstName;
+  }
+  return true; // No name fields provided, which is fine for partial updates
+}, {
+  message: "Either 'name' or 'firstName' must be provided if updating name"
 });
 
 export type UsersQuery = z.infer<typeof usersQuerySchema>;

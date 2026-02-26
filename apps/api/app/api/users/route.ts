@@ -227,9 +227,37 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
     const isOutletUser = parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF;
 
+    // Handle both 'name' and 'firstName'/'lastName' formats
+    let firstName: string;
+    let lastName: string;
+    
+    if (parsed.data.firstName) {
+      // Use firstName/lastName if provided
+      firstName = parsed.data.firstName;
+      lastName = parsed.data.lastName || '';
+    } else if (parsed.data.name) {
+      // Split 'name' into firstName and lastName
+      const nameParts = parsed.data.name.trim().split(/\s+/);
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    } else {
+      // This shouldn't happen due to schema validation, but handle it anyway
+      return NextResponse.json(
+        ResponseBuilder.validationError({
+          fieldErrors: { name: ["Either 'name' or 'firstName' must be provided"] },
+          formErrors: []
+        }),
+        { status: 400 }
+      );
+    }
+
     const userData = {
-      ...parsed.data,
+      firstName,
+      lastName,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
       password: hashedPassword || parsed.data.password, // Use hashed password if provided
+      role: parsed.data.role,
       merchantId,
       outletId,
       // Auto-verify email for outlet users (they can use any email)
