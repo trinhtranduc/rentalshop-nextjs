@@ -1543,6 +1543,7 @@ export const simplifiedOrders = {
     }
 
     // Handle merchant filter (through outlet relation)
+    // merchantId is Int in schema, so we can use it directly (no conversion needed)
     // This must be combined with search if both are present
     const outletFilter = merchantId ? { outlet: { merchantId } } : null;
 
