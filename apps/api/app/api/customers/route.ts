@@ -171,7 +171,7 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       city,
       state,
       country,
-      search: q || search,
+      q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
       limit: limit || 20
     };

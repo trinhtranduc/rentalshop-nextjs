@@ -48,15 +48,15 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
       );
     }
 
-    const q = parsed.data as any;
+    const queryData = parsed.data;
     
     // Use simplified database API
     const searchFilters: any = {
-      role: q.role,
-      isActive: q.isActive,
-      search: q.search,
-      page: q.page || 1,
-      limit: q.limit || 20
+      role: queryData.role,
+      isActive: queryData.isActive,
+      search: queryData.q || queryData.search, // Support both 'q' and 'search' parameters
+      page: queryData.page || 1,
+      limit: queryData.limit || 20
     };
 
     // Role-based merchant filtering:

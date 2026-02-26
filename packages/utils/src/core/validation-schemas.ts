@@ -150,7 +150,13 @@ export const productsQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   categoryId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
+  merchantId: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   isActive: z.coerce.boolean().optional(),
+  available: z.coerce.boolean().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['name', 'createdAt', 'rentPrice']).default('createdAt'),
@@ -191,9 +197,16 @@ export const customerUpdateSchema = customerCreateSchema.partial().extend({
 
 export const customersQuerySchema = z.object({
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   phone: z.string().optional(),
   email: z.string().optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['firstName', 'lastName', 'phone', 'email', 'createdAt']).default('createdAt'),
@@ -222,6 +235,10 @@ export const ordersQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
+  merchantId: z.coerce.number().int().positive().optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount']).default('createdAt'),
@@ -269,6 +286,7 @@ export const usersQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   role: userRoleEnum.optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   isActive: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),

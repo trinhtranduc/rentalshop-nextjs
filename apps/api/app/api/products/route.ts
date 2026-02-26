@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuilder, processProductImages, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuilder, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { deleteFromS3, commitStagingFiles, generateAccessUrl, uploadToS3, getBucketName } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../lib/image-compression';
@@ -93,7 +93,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       merchantId: filterMerchantId,
       outletId: filterOutletId,
       categoryId,
-      search: q || search,
+      q: q || search, // Pass 'q' parameter (database function prefers 'q' over 'search')
+      search: q || search, // Also pass 'search' for backward compatibility
       available,
       minPrice,
       maxPrice,

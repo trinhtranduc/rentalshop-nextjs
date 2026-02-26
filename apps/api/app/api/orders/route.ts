@@ -77,7 +77,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
-      search: q,
+      q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
       limit: limit || 50,
       sortBy: sortBy || 'createdAt',
