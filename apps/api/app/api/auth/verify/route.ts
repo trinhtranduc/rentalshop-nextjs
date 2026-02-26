@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles, getUserPermissions } from '@rentalshop/auth';
+import { withAuthRoles, getUserPermissions } from '@rentalshop/auth/server';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 

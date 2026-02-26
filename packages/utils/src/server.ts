@@ -25,3 +25,23 @@ export * from './core/request-logger';
 // AWS S3 utilities - SERVER ONLY
 // These use AWS SDK and Node.js modules (fs, stream) which cannot run in browser
 export * from './api/aws-s3';
+
+// CORS utilities - SERVER ONLY
+// These use NextRequest type which is only available in server-side code
+export * from './cors';
+
+// API route helpers - SERVER ONLY
+// These use NextRequest and NextResponse which are only available in server-side code
+export * from './api/route-helpers';
+
+// Validation utilities with server-only dependencies (NextResponse, prisma) - SERVER ONLY
+export { 
+  assertPlanLimit, 
+  checkPlanLimitIfNeeded,
+  getCurrentEntityCounts,
+  getPlanLimitsInfo,
+  validatePlanLimits,
+  validatePlatformAccess,
+  validateProductPublicCheckAccess,
+  validateAddonDeletion
+} from './core/validation';

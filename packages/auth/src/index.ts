@@ -36,6 +36,19 @@ export {
 // Export platform access control (simple helpers, client-safe)
 export * from './platform-access';
 
+// Export permission helpers (client-safe, no database dependencies)
+// Note: These are simple role checks that don't require database access
+import type { UserRole } from '@rentalshop/constants';
+import type { AuthUser } from './types';
+
+function hasAnyRole(user: Pick<AuthUser, 'role'>, allowed: UserRole[]): boolean {
+  return allowed.includes(user.role as UserRole);
+}
+
+export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+}
+
 // ============================================================================
 // SERVER-ONLY EXPORTS
 // ============================================================================

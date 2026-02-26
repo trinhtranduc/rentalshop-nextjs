@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuditLogger, extractAuditContext, AuditContext } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { verifyTokenSimple } from '@rentalshop/auth/server';
 
 // Audit middleware configuration
 export interface AuditMiddlewareConfig {

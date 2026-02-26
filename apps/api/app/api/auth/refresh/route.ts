@@ -3,7 +3,7 @@ import { verifyTokenSimple, generateToken } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { buildSimpleCorsHeaders } from '@rentalshop/utils';
+import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 
 export async function OPTIONS(request: NextRequest) {
   const corsHeaders = buildSimpleCorsHeaders(request);

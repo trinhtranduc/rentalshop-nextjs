@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';

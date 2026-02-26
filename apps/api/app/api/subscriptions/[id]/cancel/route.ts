@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, cancelSubscription } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 

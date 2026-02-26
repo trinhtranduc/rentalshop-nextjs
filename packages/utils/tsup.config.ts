@@ -12,12 +12,15 @@ export default defineConfig({
       'react',
       'react-dom',
       'next',
+      'next/server', // External dependency - should not be bundled
       'zod',
       'date-fns',
       'lucide-react',
       'next-intl',
       // Self-reference - prevent circular resolution during build
-      '@rentalshop/utils/server'
+      '@rentalshop/utils/server',
+      // Auth server exports (built separately)
+      '@rentalshop/auth/server'
     ],
   clean: true, // Clean once for all entries
     sourcemap: true,

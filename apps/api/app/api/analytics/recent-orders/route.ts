@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, ORDER_STATUS} from '@rentalshop/constants';

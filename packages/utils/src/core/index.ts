@@ -148,11 +148,12 @@ export {
 // Export pure utility functions from badge-utils (safe for server-side use)
 export { formatRoleDisplayName } from './badge-utils';
 
-// Validation (plan limits validation now consolidated in validation.ts)
-export * from './validation';
+// Validation schemas (client-safe) - exported from separate file to avoid bundling server-only code
+// Server-only validation functions (with NextResponse, prisma) are exported from server.ts
+export * from './validation-schemas';
 
-// Export assertPlanLimit and checkPlanLimitIfNeeded specifically for API routes
-export { assertPlanLimit, checkPlanLimitIfNeeded } from './validation';
+// Server-only validation functions are exported from server.ts
+// Use: import { assertPlanLimit, checkPlanLimitIfNeeded } from '@rentalshop/utils/server'
 
 // Payment utilities
 export * from './currency';

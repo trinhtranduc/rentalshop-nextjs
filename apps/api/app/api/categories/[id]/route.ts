@@ -1,6 +1,6 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { API, USER_ROLE } from '@rentalshop/constants';
 

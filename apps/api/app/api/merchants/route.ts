@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 // Force TypeScript refresh - address field added
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, SUBSCRIPTION_STATUS, USER_ROLE, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';

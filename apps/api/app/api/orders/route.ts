@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';

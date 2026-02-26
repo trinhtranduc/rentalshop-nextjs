@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
+import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
 import { 
   planLimitAddonCreateSchema,
   planLimitAddonsQuerySchema,

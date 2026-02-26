@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withCustomerExportAuth } from '@rentalshop/auth';
+import { withCustomerExportAuth } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { 
   handleApiError, 

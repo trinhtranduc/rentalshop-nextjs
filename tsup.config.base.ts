@@ -7,7 +7,8 @@ export const createBaseConfig = (entry: string, external: string[] = [], options
     dts: true,
     external: [
       '@rentalshop/ui',
-      '@rentalshop/auth', 
+      '@rentalshop/auth',
+      '@rentalshop/auth/server', // Server-only exports (built separately)
       '@rentalshop/database',
       '@rentalshop/utils',
       ...external

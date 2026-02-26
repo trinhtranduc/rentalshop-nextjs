@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { 
   planLimitAddonUpdateSchema,
   handleApiError,
   ResponseBuilder,
-  validateAddonDeletion,
   sendPlanLimitAddonChangeEmail
 } from '@rentalshop/utils';
+import { validateAddonDeletion } from '@rentalshop/utils/server';
 
 /**
  * Helper to parse and validate addon ID from params

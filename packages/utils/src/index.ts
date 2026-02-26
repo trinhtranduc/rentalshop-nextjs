@@ -23,8 +23,8 @@ export * from './core/error-display';
 // Breadcrumb utilities
 export * from './breadcrumbs';
 
-// CORS utilities
-export * from './cors';
+// CORS utilities - MOVED to server.ts (uses NextRequest type)
+// export * from './cors';
 
 // Performance monitoring
 export * from './performance';
@@ -61,6 +61,13 @@ export * from './plan-features';
 
 // S3 path helper utilities
 export * from './utils/s3-path-helper';
+
+// Re-export client-safe subscription utilities
+export { 
+  formatSubscriptionPeriod, 
+  getSubscriptionStatusBadge,
+  type SubscriptionPeriod 
+} from './client';
 
 // Product image helper utilities (server-only functions exported separately)
 export { 

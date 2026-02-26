@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';

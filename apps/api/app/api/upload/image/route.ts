@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAnyAuth } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth/server';
 import { ResponseBuilder, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';

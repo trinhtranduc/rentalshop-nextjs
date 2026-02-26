@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**

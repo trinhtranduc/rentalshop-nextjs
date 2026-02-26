@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { USER_ROLE } from '@rentalshop/constants';
 import { 

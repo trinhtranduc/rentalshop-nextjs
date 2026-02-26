@@ -6,7 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { verifyTokenSimple } from '@rentalshop/auth';
+import { verifyTokenSimple } from '@rentalshop/auth/server';
 
 export interface AuditContext {
   userId?: string;

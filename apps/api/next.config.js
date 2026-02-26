@@ -21,6 +21,10 @@ const nextConfig = {
         'pino-pretty',
         'pino-roll',
         '@axiomhq/js',
+        // Externalize server-only packages
+        '@rentalshop/utils/server',
+        '@rentalshop/auth/server',
+        '@rentalshop/database',
       ],
     },
   
@@ -45,7 +49,7 @@ const nextConfig = {
   },
   
   transpilePackages: [
-    '@rentalshop/database',
+    // @rentalshop/database removed - it's server-only and in serverComponentsExternalPackages
     '@rentalshop/auth',
     '@rentalshop/middleware',
     '@rentalshop/utils',
@@ -67,6 +71,33 @@ const nextConfig = {
   // Webpack config for Prisma and transformers
   // Based on: https://stackoverflow.com/questions/79315656/nextjs-transformers-module-parse-failed-unexpected-character
   webpack: (config, { isServer }) => {
+    // CRITICAL: Externalize server-only packages for client builds
+    // This prevents client components from bundling server-only code (fs, etc.)
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+      
+      // Mark server-only packages as external for client-side builds
+      const originalExternals = config.externals;
+      config.externals = [
+        ...(Array.isArray(originalExternals) ? originalExternals : [originalExternals]),
+        ({ request }, callback) => {
+          // Server-only packages that should be stubbed in client builds
+          if (
+            /^@prisma\/(client|engines)/.test(request) ||
+            /^@rentalshop\/(database|utils\/server|auth\/server)/.test(request)
+          ) {
+            return callback(null, '{}');
+          }
+          callback();
+        }
+      ];
+    }
+    
     if (isServer) {
       // CRITICAL: External native modules to prevent bundling
       // This ensures native binaries are loaded from node_modules at runtime, not bundled

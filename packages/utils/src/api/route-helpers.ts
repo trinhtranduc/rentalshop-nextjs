@@ -3,7 +3,14 @@
  * Reduces boilerplate code in API routes by providing common patterns
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+// Use generic types instead of Next.js types to avoid build-time errors
+// These are only used in server-side code (API routes)
+// NextRequest extends Request, NextResponse extends Response
+type NextRequest = Request & {
+  headers: Headers;
+  nextUrl?: URL;
+};
+type NextResponse = Response;
 import { z } from 'zod';
 import { ResponseBuilder } from './response-builder';
 import { handleApiError } from '../core/errors';
@@ -13,15 +20,16 @@ import { API } from '@rentalshop/constants';
  * Parse and validate query parameters
  * Returns validated data or error response
  */
-export function parseQueryParams<T extends z.ZodTypeAny>(
+export async function parseQueryParams<T extends z.ZodTypeAny>(
   request: NextRequest,
   schema: T
-): { success: true; data: z.infer<T> } | { success: false; response: NextResponse } {
+): Promise<{ success: true; data: z.infer<T> } | { success: false; response: any }> {
   try {
     const { searchParams } = new URL(request.url);
     const parsed = schema.safeParse(Object.fromEntries(searchParams.entries()));
     
     if (!parsed.success) {
+      const { NextResponse } = await import('next/server');
       return {
         success: false,
         response: NextResponse.json(
@@ -34,6 +42,7 @@ export function parseQueryParams<T extends z.ZodTypeAny>(
     return { success: true, data: parsed.data };
   } catch (error) {
     const { response, statusCode } = handleApiError(error);
+    const { NextResponse } = await import('next/server');
     return {
       success: false,
       response: NextResponse.json(response, { status: statusCode })
@@ -48,12 +57,13 @@ export function parseQueryParams<T extends z.ZodTypeAny>(
 export async function parseRequestBody<T extends z.ZodTypeAny>(
   request: NextRequest,
   schema: T
-): Promise<{ success: true; data: z.infer<T> } | { success: false; response: NextResponse }> {
+): Promise<{ success: true; data: z.infer<T> } | { success: false; response: any }> {
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
     
     if (!parsed.success) {
+      const { NextResponse } = await import('next/server');
       return {
         success: false,
         response: NextResponse.json(
@@ -65,6 +75,7 @@ export async function parseRequestBody<T extends z.ZodTypeAny>(
     
     return { success: true, data: parsed.data };
   } catch (error) {
+    const { NextResponse } = await import('next/server');
     // Handle JSON parse errors
     if (error instanceof SyntaxError) {
       return {
@@ -87,22 +98,24 @@ export async function parseRequestBody<T extends z.ZodTypeAny>(
 /**
  * Create a standardized success response
  */
-export function createSuccessResponse<T>(
+export async function createSuccessResponse<T>(
   data: T,
   code: string = 'SUCCESS',
   status: number = API.STATUS.OK
-): NextResponse {
+): Promise<any> {
+  const { NextResponse } = await import('next/server');
   return NextResponse.json(ResponseBuilder.success(code, data), { status });
 }
 
 /**
  * Create a standardized error response
  */
-export function createErrorResponse(
+export async function createErrorResponse(
   code: string,
   error?: any,
   status: number = API.STATUS.BAD_REQUEST
-): NextResponse {
+): Promise<any> {
+  const { NextResponse } = await import('next/server');
   return NextResponse.json(ResponseBuilder.error(code), { status });
 }
 
@@ -110,7 +123,7 @@ export function createErrorResponse(
  * Wrap route handler with standard error handling
  * This reduces try-catch boilerplate in routes
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<NextResponse>>(
+export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
   handler: T
 ): T {
   return (async (...args: Parameters<T>) => {
@@ -119,6 +132,7 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<NextResp
     } catch (error) {
       console.error('Route handler error:', error);
       const { response, statusCode } = handleApiError(error);
+      const { NextResponse } = await import('next/server');
       return NextResponse.json(response, { status: statusCode });
     }
   }) as T;
@@ -127,11 +141,12 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<NextResp
 /**
  * Helper to create ETag response for caching
  */
-export function createETagResponse(
+export async function createETagResponse(
   data: any,
   request: NextRequest,
   status: number = API.STATUS.OK
-): NextResponse {
+): Promise<any> {
+  const { NextResponse } = await import('next/server');
   const crypto = require('crypto');
   const bodyString = JSON.stringify(data);
   const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
@@ -158,12 +173,13 @@ export function createETagResponse(
  * Helper to check if user can access merchant data
  * Returns merchantId to use or error response
  */
-export function resolveMerchantId(
+export async function resolveMerchantId(
   user: any,
   userScope: any,
   requestedMerchantId?: number
-): { success: true; merchantId: number } | { success: false; response: NextResponse } {
+): Promise<{ success: true; merchantId: number } | { success: false; response: any }> {
   const { USER_ROLE } = require('@rentalshop/constants');
+  const { NextResponse } = await import('next/server');
   
   // For ADMIN users, they can specify merchantId
   if (user.role === USER_ROLE.ADMIN && requestedMerchantId) {

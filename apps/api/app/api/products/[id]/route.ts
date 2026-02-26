@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
-import { withPermissions, hasPermission } from '@rentalshop/auth';
+import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { 
   productUpdateSchema, 
   handleApiError, 

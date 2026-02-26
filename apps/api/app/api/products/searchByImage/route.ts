@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
 import { compressImageForEmbedding } from '../../../../lib/image-compression';

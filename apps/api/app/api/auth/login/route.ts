@@ -5,7 +5,7 @@ import { comparePassword, generateToken, getUserPermissions } from '@rentalshop/
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
-import { buildSimpleCorsHeaders } from '@rentalshop/utils';
+import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 
 export async function OPTIONS(request: NextRequest) {
   try {

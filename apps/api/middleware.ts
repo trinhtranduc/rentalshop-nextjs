@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
-import { generateCorrelationId } from '@rentalshop/utils';
-import { buildCorsHeaders } from '@rentalshop/utils';
+import { generateCorrelationId } from '@rentalshop/utils/server';
+import { buildCorsHeaders } from '@rentalshop/utils/server';
 
 // Protected routes that require authentication
 const protectedRoutes = [

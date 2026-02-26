@@ -8,7 +8,7 @@
 
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
-import { hashPassword } from '@rentalshop/auth';
+import { hashPassword } from '@rentalshop/auth/server';
 import { removeVietnameseDiacritics, ApiError, ErrorCode } from '@rentalshop/utils';
 
 // ============================================================================

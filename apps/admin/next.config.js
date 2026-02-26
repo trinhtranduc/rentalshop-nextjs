@@ -16,7 +16,8 @@ const nextConfig = {
       '@prisma/client', 
       '@prisma/engines',
       '@rentalshop/database',
-      '@rentalshop/utils/server'
+      '@rentalshop/utils/server',
+      '@rentalshop/auth/server'
     ],
   },
   

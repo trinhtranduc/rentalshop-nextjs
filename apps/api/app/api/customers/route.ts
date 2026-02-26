@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { 
   customersQuerySchema, 
   customerCreateSchema, 
   customerUpdateSchema, 
-  checkPlanLimitIfNeeded, 
   handleApiError, 
   ResponseBuilder
 } from '@rentalshop/utils';
+import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import crypto from 'crypto';

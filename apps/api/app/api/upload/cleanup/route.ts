@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { ResponseBuilder, cleanupStagingFiles } from '@rentalshop/utils';
+import { withAuthRoles } from '@rentalshop/auth/server';
+import { ResponseBuilder } from '@rentalshop/utils';
+import { cleanupStagingFiles } from '@rentalshop/utils/server';
 
 /**
  * POST /api/upload/cleanup
