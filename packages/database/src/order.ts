@@ -1489,6 +1489,7 @@ export const simplifiedOrders = {
     startDate?: Date;
     endDate?: Date;
     search?: string;
+    q?: string; // Support 'q' parameter (alias for 'search')
     page?: number;
     limit?: number;
     sortBy?: string;
@@ -1503,6 +1504,7 @@ export const simplifiedOrders = {
       startDate,
       endDate,
       search,
+      q, // Add 'q' parameter support
       page = 1,
       limit = 20,
       sortBy = 'createdAt',
@@ -1548,8 +1550,10 @@ export const simplifiedOrders = {
     const outletFilter = merchantId ? { outlet: { merchantId } } : null;
 
     // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
-    if (search) {
-      const searchTerm = search.trim();
+    // Use 'q' parameter first, fallback to 'search' for backward compatibility
+    const searchQuery = q || search;
+    if (searchQuery) {
+      const searchTerm = searchQuery.trim();
       const normalizedTerm = removeVietnameseDiacritics(searchTerm);
       
       const searchConditions: any[] = [

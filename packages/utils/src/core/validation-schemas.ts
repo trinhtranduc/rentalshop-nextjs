@@ -241,7 +241,7 @@ export const ordersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount']).default('createdAt'),
+  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount', 'pickupPlanAt', 'returnPlanAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
