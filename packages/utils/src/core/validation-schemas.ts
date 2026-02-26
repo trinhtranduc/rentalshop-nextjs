@@ -85,7 +85,8 @@ const outletStockItemSchema = z.object({
   stock: z.number().int().min(0, 'Stock must be non-negative'),
 });
 
-export const productCreateSchema = z.object({
+// Base product schema (without refine) - used for both create and update
+const productBaseSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
   barcode: z.string().optional(),
@@ -94,17 +95,54 @@ export const productCreateSchema = z.object({
   costPrice: z.number().nonnegative('Cost price must be non-negative').optional(),
   deposit: z.number().nonnegative('Deposit must be non-negative').default(0),
   categoryId: z.coerce.number().int().positive().optional(), // Optional - will use default category if not provided
+  totalStock: z.coerce.number().int().min(0, 'Total stock must be non-negative').optional(), // Optional - will be calculated from outletStock if not provided
   images: z.array(z.string().url('Invalid image URL')).optional(),
-  outletStocks: z.array(outletStockItemSchema).optional(), // Optional - can be set later
+  // Support both outletStock (mobile app) and outletStocks (web app) for backward compatibility
+  outletStock: z.array(outletStockItemSchema).optional(), // Mobile app uses this field name
+  outletStocks: z.array(outletStockItemSchema).optional(), // Web app uses this field name (legacy)
+  // Optional pricing configuration (default FIXED if null or undefined)
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().default('FIXED'), // Default to FIXED
+  durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
   durationLimits: z.object({
     min: z.number().int().min(1).optional(),
     max: z.number().int().min(1).optional(),
     unit: z.enum(['hour', 'day', 'week', 'month']).optional(),
   }).optional(),
   isActive: z.boolean().default(true),
+  merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
 });
 
-export const productUpdateSchema = productCreateSchema.partial().extend({
+// Product create schema with refine validation
+export const productCreateSchema = productBaseSchema.refine((data) => {
+  // If pricingType is HOURLY or DAILY, durationConfig is required
+  if (data.pricingType === 'HOURLY' || data.pricingType === 'DAILY') {
+    if (!data.durationConfig) {
+      return false;
+    }
+    // Validate durationConfig JSON structure
+    try {
+      const config = JSON.parse(data.durationConfig);
+      if (!config.minDuration || !config.maxDuration || !config.defaultDuration) {
+        return false;
+      }
+      if (config.minDuration > config.maxDuration) {
+        return false;
+      }
+      if (config.defaultDuration < config.minDuration || config.defaultDuration > config.maxDuration) {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types',
+  path: ['durationConfig']
+});
+
+// Product update schema (uses base schema without refine, so .partial() works)
+export const productUpdateSchema = productBaseSchema.partial().extend({
   id: z.coerce.number().int().positive('Product ID is required'),
 });
 

@@ -448,8 +448,11 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'products');
     if (planLimitError) return planLimitError;
 
+    // Normalize outlet stock: support both outletStock (mobile) and outletStocks (web) for backward compatibility
+    const outletStockData = parsed.data.outletStock || parsed.data.outletStocks || [];
+    
     // Validate outlet stock
-    const outletStock = await validateOutletStock(parsed.data.outletStock || [], merchantId);
+    const outletStock = await validateOutletStock(outletStockData, merchantId);
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
 
     // Commit images to production
@@ -496,7 +499,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       costPrice: parsed.data.costPrice ?? 0,
       deposit: parsed.data.deposit ?? 0,
       images: imagesValue,
-      pricingType: parsed.data.pricingType || null,
+      pricingType: parsed.data.pricingType || 'FIXED', // Default to FIXED if not provided
       durationConfig: parsed.data.durationConfig || null,
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
