@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { getCacheStatistics, resetCacheStatistics } from '../../../../lib/image-search-cache-stats';
 import { getCacheStats } from '../../../../lib/image-search-cache';

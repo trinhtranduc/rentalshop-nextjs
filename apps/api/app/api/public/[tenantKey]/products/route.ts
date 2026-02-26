@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
-import { buildCorsHeaders } from '@rentalshop/utils';
+import { buildCorsHeaders } from '@rentalshop/utils/server';
 
 /**
  * OPTIONS /api/public/[tenantKey]/products

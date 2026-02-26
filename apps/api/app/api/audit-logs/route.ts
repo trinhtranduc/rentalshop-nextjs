@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { AuditLogger } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';

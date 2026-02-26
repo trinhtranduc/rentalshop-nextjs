@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple, assertAnyRole, getUserScope } from '@rentalshop/auth';
+import { verifyTokenSimple, assertAnyRole, getUserScope } from '@rentalshop/auth/server';
 import {API} from '@rentalshop/constants';
 
 export interface AuthMiddlewareConfig {

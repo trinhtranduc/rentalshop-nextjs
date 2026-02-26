@@ -5,9 +5,10 @@
 // This demonstrates the new standardized authentication pattern
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions, hashPassword } from '@rentalshop/auth';
+import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 

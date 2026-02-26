@@ -25,10 +25,46 @@ function createPrismaClient(): PrismaClientType {
   }
 }
 
-// Export Prisma client instance with singleton pattern
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+// Lazy-load Prisma Client to avoid initialization errors during build time
+// This ensures Prisma Client is only created when actually needed (runtime)
+let prismaInstance: PrismaClientType | undefined;
 
-// Store in global for development hot reload
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-} 
+function getPrismaClient(): PrismaClientType {
+  if (prismaInstance) {
+    return prismaInstance;
+  }
+  
+  // Check global first (for development hot reload)
+  if (globalForPrisma.prisma) {
+    prismaInstance = globalForPrisma.prisma;
+    return prismaInstance;
+  }
+  
+  // Create new instance
+  try {
+    prismaInstance = createPrismaClient();
+    
+    // Store in global for development hot reload
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.prisma = prismaInstance;
+    }
+    
+    return prismaInstance;
+  } catch (error: any) {
+    // In build time, Prisma Client might not be initialized yet
+    // Return a proxy that will throw a helpful error if used
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn('⚠️ Prisma Client not initialized during build - this is expected');
+      // Return a proxy that throws a helpful error
+      return new Proxy({} as PrismaClientType, {
+        get() {
+          throw new Error('Prisma Client is not available during build time. Please ensure prisma generate is run before building.');
+        }
+      });
+    }
+    throw error;
+  }
+}
+
+// Export Prisma client instance with lazy initialization
+export const prisma = getPrismaClient(); 

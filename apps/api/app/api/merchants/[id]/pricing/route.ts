@@ -1,7 +1,7 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalshop/types';
 
 // ============================================================================

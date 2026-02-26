@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db, verifyEmailByToken } from '@rentalshop/database';
-import { generateToken } from '@rentalshop/auth';
+import { generateToken } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 
 const verifyEmailSchema = z.object({

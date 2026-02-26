@@ -5,7 +5,7 @@
 import { prisma } from './client';
 import { createUser } from './user';
 import { createSubscription } from './subscription';
-import { hashPassword } from '@rentalshop/auth';
+import { hashPassword } from '@rentalshop/auth/server';
 import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
 

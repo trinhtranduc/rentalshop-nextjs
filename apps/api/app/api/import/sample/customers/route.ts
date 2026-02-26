@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAnyAuth } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth/server';
 import { 
   generateCustomerSampleFile, 
   handleApiError, 

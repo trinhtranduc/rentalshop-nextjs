@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { PerformanceMonitor } from '@rentalshop/utils';

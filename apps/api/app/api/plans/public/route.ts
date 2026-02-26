@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
-import { buildCorsHeaders } from '@rentalshop/utils';
+import { buildCorsHeaders } from '@rentalshop/utils/server';
 /**
  * Helper function to generate pricing object from base price
  */

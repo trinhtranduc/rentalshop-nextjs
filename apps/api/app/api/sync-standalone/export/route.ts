@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { OldServerSyncService, transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';

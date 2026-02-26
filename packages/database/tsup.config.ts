@@ -18,6 +18,7 @@ export default defineConfig({
     '@rentalshop/types',
     '@rentalshop/constants',
     '@rentalshop/auth',
+    '@rentalshop/auth/server', // Server-only exports (built separately)
   ],
   outDir: 'dist',
   sourcemap: true,

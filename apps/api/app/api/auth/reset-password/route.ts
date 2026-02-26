@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, verifyPasswordResetToken, markTokenAsUsed } from '@rentalshop/database';
-import { hashPassword } from '@rentalshop/auth';
+import { hashPassword } from '@rentalshop/auth/server';
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),

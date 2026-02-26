@@ -9,7 +9,7 @@ import type {
   PlanLimitAddonCreateInput, 
   PlanLimitAddonUpdateInput 
 } from '@rentalshop/types';
-import type { PlanLimitAddonsQuery } from '../core/validation';
+import type { PlanLimitAddonsQuery } from '../core/validation-schemas';
 
 export interface PlanLimitAddonsResponse {
   addons: PlanLimitAddon[];

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
+import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';

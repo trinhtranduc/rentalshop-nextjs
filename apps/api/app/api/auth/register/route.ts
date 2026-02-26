@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, createEmailVerification } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '@rentalshop/utils';
-import { hashPassword } from '@rentalshop/auth';
+import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { getDefaultPricingConfig, type BusinessType } from '@rentalshop/constants';

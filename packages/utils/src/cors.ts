@@ -1,4 +1,9 @@
-import { NextRequest } from 'next/server';
+// Use generic Request type instead of NextRequest to avoid build-time errors
+// NextRequest extends Request, so we can use Request type for compatibility
+type NextRequest = Request & {
+  headers: Headers;
+  nextUrl?: URL;
+};
 
 /**
  * Get all allowed CORS origins

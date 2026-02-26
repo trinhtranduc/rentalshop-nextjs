@@ -1,80 +1,21 @@
-// Export core auth utilities
-export * from './auth';
-export * from './password';
-export * from './jwt';
+// ============================================================================
+// CLIENT-SAFE EXPORTS (No server-only dependencies)
+// ============================================================================
+// These exports are safe for client-side use (Vercel deployments)
+// They don't import @rentalshop/database or @rentalshop/utils/server
 
-// Export consolidated authorization system (single source of truth)
-export * from './core';
+// Export permissions and types (client-safe)
+export * from './permissions';
+export { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from './permissions';
 
-// Export platform access control (simple helpers)
-export * from './platform-access';
-
-// NEW: Unified auth wrapper (replaces all scattered auth middleware)
-// This exports all auth middleware functions (withAuthRoles, withPermissions, etc.)
-export * from './unified-auth';
-
-// Re-export specific functions for backward compatibility
-export { 
-  authenticateRequest,
-  getUserScope,
-  hasPermission,
-  hasPermissionSync,
-  canAccessResource,
-  canAccessResourceSync,
-  getUserPermissions,
-  createAuthError,
-  createScopeError,
-  createPermissionError,
-  canCreateOrders,
-  canViewOrders,
-  canUpdateOrders,
-  canDeleteOrders,
-  canManageOrders,
-  canExportOrders,
-  canExportProducts,
-  canExportCustomers,
-  assertAnyRole,
-  hasAnyRole,
-  ROLE_PERMISSIONS,
-  validateMerchantOutletAccess,
-  validateScope,
-  validateMerchantAccess,
-  validateMerchantOutletRoute
-} from './core';
-
-export type {
-  MerchantOutletAuthOptions,
-  MerchantOutletAuthResult,
-  ValidateMerchantAccessResult
-} from './core';
-
-// Export unified auth wrappers (all auth middleware functions)
-// These are exported via "export * from './unified-auth'" above
-// No need to re-export individually
-
-// Export middleware utility functions (not auth wrappers)
-export {
-  authorizeRequest,
-  withAuthAndAuthz,
-  withMerchantScope,
-  withOutletScope,
-  getUserScopeFromRequest,
-  buildSecureWhereClause,
-  validateResourceBelongsToUser,
-  withCustomerExportAuth
-} from './middleware';
-
-// Export specific JWT functions
-export { verifyTokenSimple, generateToken, verifyToken } from './jwt';
-
-// Export types (but exclude AuthResponse to avoid conflicts)
+// Export types (client-safe)
 export type { 
   LoginCredentials, 
   RegisterData, 
   AuthUser 
 } from './types';
 
-// Export app-specific auth modules (with specific exports to avoid conflicts)
+// Export app-specific client auth modules
 export { 
   isAuthenticated as isAuthenticatedClient,
   isAuthenticatedWithVerification as isAuthenticatedWithVerificationClient,
@@ -91,3 +32,30 @@ export {
   isAuthenticatedWithVerification as isAuthenticatedWithVerificationAdmin,
   verifyTokenWithServer as verifyTokenWithServerAdmin
 } from './admin';
+
+// Export platform access control (simple helpers, client-safe)
+export * from './platform-access';
+
+// Export permission helpers (client-safe, no database dependencies)
+// Note: These are simple role checks that don't require database access
+import type { UserRole } from '@rentalshop/constants';
+import type { AuthUser } from './types';
+
+function hasAnyRole(user: Pick<AuthUser, 'role'>, allowed: UserRole[]): boolean {
+  return allowed.includes(user.role as UserRole);
+}
+
+export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+}
+
+// ============================================================================
+// SERVER-ONLY EXPORTS
+// ============================================================================
+// For server-side code (API routes, server components), use:
+// import { ... } from '@rentalshop/auth/server'
+// 
+// This includes:
+// - Database operations (loginUser, registerUser, etc.)
+// - Server-only utilities (authenticateRequest, getUserScope, etc.)
+// - Auth middleware (withAuthRoles, withPermissions, etc.)

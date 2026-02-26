@@ -1,0 +1,32 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && npx prisma generate --schema=./prisma/schema.prisma && SKIP_ENV_VALIDATION=true npx turbo run build --filter=@rentalshop/client",
+  "devCommand": "yarn workspace @rentalshop/client dev",
+  "installCommand": "cd ../.. && yarn install --production=false",
+  "framework": "nextjs",
+  "rewrites": [],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 10
+    }
+  }
+}

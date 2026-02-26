@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { buildCorsHeaders } from '@rentalshop/utils';
+import { buildCorsHeaders } from '@rentalshop/utils/server';
 
 const OLD_SERVER_ENDPOINT = 'https://crm.rentalshop.org';
 

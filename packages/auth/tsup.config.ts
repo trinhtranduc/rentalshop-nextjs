@@ -5,7 +5,8 @@ export default defineConfig({
     index: 'src/index.ts',
     'unified-auth': 'src/unified-auth.ts',
     client: 'src/client/index.ts',
-    admin: 'src/admin/index.ts'
+    admin: 'src/admin/index.ts',
+    server: 'src/server.ts'
   },
   format: ['esm', 'cjs'],
   dts: true,

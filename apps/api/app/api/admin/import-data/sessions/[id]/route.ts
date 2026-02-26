@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth/server';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { db } from '@rentalshop/database';
 import { USER_ROLE } from '@rentalshop/constants';
