@@ -180,7 +180,7 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().optional(),
-  phone: z.string().min(1, 'Phone number is required'),
+  phone: z.string().optional(),
   email: z.string().email('Invalid email address').optional(),
   address: z.string().optional(),
   city: z.string().optional(),
