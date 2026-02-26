@@ -117,7 +117,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const showOutletField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
 
   // Search merchants function for dynamic search (admin only)
-  const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string }>> => {
+  const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string; description?: string }>> => {
     if (!query.trim() || !canSelectMerchant) {
       return [];
     }
@@ -142,10 +142,15 @@ export const UserForm: React.FC<UserFormProps> = ({
           
           const address = addressParts.length > 0 ? addressParts.join(', ') : '';
           
+          // Build description with merchant code and address
+          const descriptionParts = [`Mã: ${merchant.id}`];
+          if (address) descriptionParts.push(address);
+          const description = descriptionParts.join(' • ');
+          
           return {
           value: merchant.id.toString(),
             label: merchant.name, // Name on top (font-medium)
-            description: address // Address below (text-sm text-gray-600)
+            description: description // Merchant code and address below (text-sm text-gray-600)
           };
         });
       }

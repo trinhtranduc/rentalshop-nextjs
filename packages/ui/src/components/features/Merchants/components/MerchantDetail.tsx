@@ -203,6 +203,10 @@ export function MerchantDetail({
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.name}</p>
               </div>
               <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Merchant Code</label>
+                <p className="text-sm text-gray-900 dark:text-white font-mono">{data.merchant.id}</p>
+              </div>
+              <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Email</label>
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.email}</p>
               </div>
