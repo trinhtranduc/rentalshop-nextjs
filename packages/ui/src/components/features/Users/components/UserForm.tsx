@@ -131,10 +131,23 @@ export const UserForm: React.FC<UserFormProps> = ({
       } as any);
       
       if (response.success && response.data) {
-        return (response.data.merchants || []).map(merchant => ({
+        return (response.data.merchants || []).map(merchant => {
+          // Build address for description (displayed below name with different font)
+          const addressParts = [];
+          if (merchant.address) addressParts.push(merchant.address);
+          if (merchant.city) addressParts.push(merchant.city);
+          if (merchant.state) addressParts.push(merchant.state);
+          if (merchant.zipCode) addressParts.push(merchant.zipCode);
+          if (merchant.country) addressParts.push(merchant.country);
+          
+          const address = addressParts.length > 0 ? addressParts.join(', ') : '';
+          
+          return {
           value: merchant.id.toString(),
-          label: merchant.name
-        }));
+            label: merchant.name, // Name on top (font-medium)
+            description: address // Address below (text-sm text-gray-600)
+          };
+        });
       }
       return [];
     } catch (error) {
