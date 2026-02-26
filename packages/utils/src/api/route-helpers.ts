@@ -3,50 +3,51 @@
  * Reduces boilerplate code in API routes by providing common patterns
  */
 
-// Use generic types instead of Next.js types to avoid build-time errors
-// These are only used in server-side code (API routes)
-// NextRequest extends Request, NextResponse extends Response
-type NextRequest = Request & {
-  headers: Headers;
-  nextUrl?: URL;
-};
-type NextResponse = Response;
 import { z } from 'zod';
 import { ResponseBuilder } from './response-builder';
 import { handleApiError } from '../core/errors';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
+import type { ApiRequest, ApiResponse, ValidationResult, MerchantIdResolution, AuthUser, UserScope } from './types';
+import { getNextResponse } from './next-response-helper';
+import { logger } from '../core/logger';
 
 /**
  * Parse and validate query parameters
  * Returns validated data or error response
  */
 export async function parseQueryParams<T extends z.ZodTypeAny>(
-  request: NextRequest,
+  request: ApiRequest,
   schema: T
-): Promise<{ success: true; data: z.infer<T> } | { success: false; response: any }> {
+): Promise<ValidationResult<z.infer<T>>> {
   try {
     const { searchParams } = new URL(request.url);
     const parsed = schema.safeParse(Object.fromEntries(searchParams.entries()));
     
     if (!parsed.success) {
-      const { NextResponse } = await import('next/server');
-      return {
-        success: false,
+      const NextResponse = await getNextResponse();
+      const result: ValidationResult<z.infer<T>> = {
+        success: false as const,
         response: NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
           { status: 400 }
         )
       };
+      return result;
     }
     
-    return { success: true, data: parsed.data };
+    const result: ValidationResult<z.infer<T>> = {
+      success: true as const,
+      data: parsed.data
+    };
+    return result;
   } catch (error) {
     const { response, statusCode } = handleApiError(error);
-    const { NextResponse } = await import('next/server');
-    return {
-      success: false,
+    const NextResponse = await getNextResponse();
+    const result: ValidationResult<z.infer<T>> = {
+      success: false as const,
       response: NextResponse.json(response, { status: statusCode })
     };
+    return result;
   }
 }
 
@@ -55,43 +56,50 @@ export async function parseQueryParams<T extends z.ZodTypeAny>(
  * Returns validated data or error response
  */
 export async function parseRequestBody<T extends z.ZodTypeAny>(
-  request: NextRequest,
+  request: ApiRequest,
   schema: T
-): Promise<{ success: true; data: z.infer<T> } | { success: false; response: any }> {
+): Promise<ValidationResult<z.infer<T>>> {
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
     
     if (!parsed.success) {
-      const { NextResponse } = await import('next/server');
-      return {
-        success: false,
+      const NextResponse = await getNextResponse();
+      const result: ValidationResult<z.infer<T>> = {
+        success: false as const,
         response: NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
           { status: 400 }
         )
       };
+      return result;
     }
     
-    return { success: true, data: parsed.data };
+    const result: ValidationResult<z.infer<T>> = {
+      success: true as const,
+      data: parsed.data
+    };
+    return result;
   } catch (error) {
-    const { NextResponse } = await import('next/server');
+    const NextResponse = await getNextResponse();
     // Handle JSON parse errors
     if (error instanceof SyntaxError) {
-      return {
-        success: false,
+      const result: ValidationResult<z.infer<T>> = {
+        success: false as const,
         response: NextResponse.json(
           ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         )
       };
+      return result;
     }
     
     const { response, statusCode } = handleApiError(error);
-    return {
-      success: false,
+    const result: ValidationResult<z.infer<T>> = {
+      success: false as const,
       response: NextResponse.json(response, { status: statusCode })
     };
+    return result;
   }
 }
 
@@ -102,8 +110,8 @@ export async function createSuccessResponse<T>(
   data: T,
   code: string = 'SUCCESS',
   status: number = API.STATUS.OK
-): Promise<any> {
-  const { NextResponse } = await import('next/server');
+): Promise<ApiResponse> {
+  const NextResponse = await getNextResponse();
   return NextResponse.json(ResponseBuilder.success(code, data), { status });
 }
 
@@ -112,10 +120,10 @@ export async function createSuccessResponse<T>(
  */
 export async function createErrorResponse(
   code: string,
-  error?: any,
+  error?: unknown,
   status: number = API.STATUS.BAD_REQUEST
-): Promise<any> {
-  const { NextResponse } = await import('next/server');
+): Promise<ApiResponse> {
+  const NextResponse = await getNextResponse();
   return NextResponse.json(ResponseBuilder.error(code), { status });
 }
 
@@ -123,16 +131,16 @@ export async function createErrorResponse(
  * Wrap route handler with standard error handling
  * This reduces try-catch boilerplate in routes
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
+export function withErrorHandling<T extends (...args: unknown[]) => Promise<ApiResponse>>(
   handler: T
 ): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await handler(...args);
     } catch (error) {
-      console.error('Route handler error:', error);
+      logger.error({ error }, 'Route handler error');
       const { response, statusCode } = handleApiError(error);
-      const { NextResponse } = await import('next/server');
+      const NextResponse = await getNextResponse();
       return NextResponse.json(response, { status: statusCode });
     }
   }) as T;
@@ -142,11 +150,11 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
  * Helper to create ETag response for caching
  */
 export async function createETagResponse(
-  data: any,
-  request: NextRequest,
+  data: unknown,
+  request: ApiRequest,
   status: number = API.STATUS.OK
-): Promise<any> {
-  const { NextResponse } = await import('next/server');
+): Promise<ApiResponse> {
+  const NextResponse = await getNextResponse();
   const crypto = require('crypto');
   const bodyString = JSON.stringify(data);
   const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
@@ -174,40 +182,49 @@ export async function createETagResponse(
  * Returns merchantId to use or error response
  */
 export async function resolveMerchantId(
-  user: any,
-  userScope: any,
+  user: AuthUser,
+  userScope: UserScope,
   requestedMerchantId?: number
-): Promise<{ success: true; merchantId: number } | { success: false; response: any }> {
-  const { USER_ROLE } = require('@rentalshop/constants');
-  const { NextResponse } = await import('next/server');
+): Promise<MerchantIdResolution> {
+  const NextResponse = await getNextResponse();
   
   // For ADMIN users, they can specify merchantId
   if (user.role === USER_ROLE.ADMIN && requestedMerchantId) {
-    return { success: true, merchantId: requestedMerchantId };
+    const result: MerchantIdResolution = {
+      success: true as const,
+      merchantId: requestedMerchantId
+    };
+    return result;
   }
   
   // For other roles, use their assigned merchantId
   if (userScope.merchantId) {
     // If they requested a different merchantId, deny access
     if (requestedMerchantId && requestedMerchantId !== userScope.merchantId) {
-      return {
-        success: false,
+      const result: MerchantIdResolution = {
+        success: false as const,
         response: NextResponse.json(
           ResponseBuilder.error('CROSS_MERCHANT_ACCESS_DENIED'),
           { status: 403 }
         )
       };
+      return result;
     }
-    return { success: true, merchantId: userScope.merchantId };
+    const result: MerchantIdResolution = {
+      success: true as const,
+      merchantId: userScope.merchantId
+    };
+    return result;
   }
   
   // No merchantId available
-  return {
-    success: false,
+  const result: MerchantIdResolution = {
+    success: false as const,
     response: NextResponse.json(
       ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
       { status: 400 }
     )
   };
+  return result;
 }
 
