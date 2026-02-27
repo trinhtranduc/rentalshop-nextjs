@@ -94,11 +94,16 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       }
       
       // Validate dates are not in the past (normalize to UTC for comparison)
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-      startDate.setUTCHours(0, 0, 0, 0);
+      // Get today's date in UTC (YYYY-MM-DD format)
+      const now = new Date();
+      const todayUTCString = now.toISOString().split('T')[0]; // e.g., "2026-02-27"
+      const todayUTC = new Date(todayUTCString + 'T00:00:00.000Z');
       
-      if (startDate < today) {
+      // Normalize startDate to UTC midnight for comparison
+      const startDateUTC = new Date(startDate);
+      startDateUTC.setUTCHours(0, 0, 0, 0);
+      
+      if (startDateUTC < todayUTC) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_DATE'),
           { status: 400 }
