@@ -249,6 +249,9 @@ const orderItemSchema = z.object({
   productId: z.coerce.number().int().positive('Product is required'),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   unitPrice: z.number().nonnegative('Unit price must be non-negative'),
+  totalPrice: z.number().nonnegative('Total price must be non-negative').optional(), // Optional, can be calculated
+  deposit: z.number().nonnegative('Deposit must be non-negative').optional(), // Optional, deposit per unit
+  notes: z.string().optional(), // Optional notes for this item
   rentDays: z.number().int().min(1).optional(), // For rental orders
 });
 
@@ -261,7 +264,17 @@ const baseOrderSchema = z.object({
   returnPlanAt: z.string().datetime().optional(),
   totalAmount: z.number().nonnegative('Total amount must be non-negative'),
   depositAmount: z.number().nonnegative('Deposit amount must be non-negative').default(0),
+  securityDeposit: z.number().nonnegative('Security deposit must be non-negative').optional(),
+  damageFee: z.number().nonnegative('Damage fee must be non-negative').optional(),
+  lateFee: z.number().nonnegative('Late fee must be non-negative').optional(),
+  discountType: z.string().optional(),
+  discountValue: z.number().nonnegative('Discount value must be non-negative').optional(),
+  discountAmount: z.number().nonnegative('Discount amount must be non-negative').optional(),
+  isReadyToDeliver: z.boolean().optional(),
+  collateralType: z.string().optional(),
+  collateralDetails: z.string().optional(),
   notes: z.string().optional(),
+  pickupNotes: z.string().optional(),
 });
 
 export const orderCreateSchema = baseOrderSchema;
