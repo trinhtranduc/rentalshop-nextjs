@@ -30,9 +30,13 @@ export interface OrderWithRelations {
   collateralType?: string
   collateralDetails?: string
   notes?: string
+  notesImages?: string[] // Array of image URLs for notes
   pickupNotes?: string
+  pickupNotesImages?: string[] // Array of image URLs for pickup notes
   returnNotes?: string
+  returnNotesImages?: string[] // Array of image URLs for return notes
   damageNotes?: string
+  damageNotesImages?: string[] // Array of image URLs for damage notes
   createdAt: Date
   updatedAt: Date
   outletId: number
@@ -106,9 +110,13 @@ const orderSelect = {
   collateralType: true,
   collateralDetails: true,
   notes: true,
+  notesImages: true, // Array of image URLs for notes
   pickupNotes: true,
+  pickupNotesImages: true, // Array of image URLs for pickup notes
   returnNotes: true,
+  returnNotesImages: true, // Array of image URLs for return notes
   damageNotes: true,
+  damageNotesImages: true, // Array of image URLs for damage notes
   createdAt: true,
   updatedAt: true,
   outletId: true,
@@ -198,9 +206,13 @@ function transformOrder(order: any): OrderWithRelations {
     collateralType: order.collateralType || undefined,
     collateralDetails: order.collateralDetails || undefined,
     notes: order.notes || undefined,
+    notesImages: Array.isArray(order.notesImages) ? order.notesImages : undefined,
     pickupNotes: order.pickupNotes || undefined,
+    pickupNotesImages: Array.isArray(order.pickupNotesImages) ? order.pickupNotesImages : undefined,
     returnNotes: order.returnNotes || undefined,
+    returnNotesImages: Array.isArray(order.returnNotesImages) ? order.returnNotesImages : undefined,
     damageNotes: order.damageNotes || undefined,
+    damageNotesImages: Array.isArray(order.damageNotesImages) ? order.damageNotesImages : undefined,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     outletId: order.outletId,
@@ -1829,9 +1841,13 @@ export const simplifiedOrders = {
         collateralType: true,
         collateralDetails: true,
         notes: true,
+        notesImages: true, // Array of image URLs for notes
         pickupNotes: true,
+        pickupNotesImages: true, // Array of image URLs for pickup notes
         returnNotes: true,
+        returnNotesImages: true, // Array of image URLs for return notes
         damageNotes: true,
+        damageNotesImages: true, // Array of image URLs for damage notes
         createdAt: true,
         updatedAt: true,
         outletId: true,
@@ -2251,9 +2267,13 @@ export const simplifiedOrders = {
         collateralType: true,
         collateralDetails: true,
         notes: true,
+        notesImages: true, // Array of image URLs for notes
         pickupNotes: true,
+        pickupNotesImages: true, // Array of image URLs for pickup notes
         returnNotes: true,
+        returnNotesImages: true, // Array of image URLs for return notes
         damageNotes: true,
+        damageNotesImages: true, // Array of image URLs for damage notes
         createdAt: true,
         updatedAt: true,
         outletId: true,

@@ -168,7 +168,7 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
     const description = descriptionParts.join(' • ');
     
     return {
-      value: merchant.id.toString(),
+    value: merchant.id.toString(),
       label: merchant.name,
       description: description
     };

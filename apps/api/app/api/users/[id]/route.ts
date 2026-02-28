@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -99,6 +99,15 @@ export async function PUT(
       const body = await request.json();
       console.log('🔍 PUT /api/users/[id] - Update request body:', body);
 
+      // Validate request body with schema (id comes from URL params, not body)
+      const parsed = userUpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
       // Check if user exists
       const existingUser = await db.users.findById(userId);
       if (!existingUser) {
@@ -111,10 +120,10 @@ export async function PUT(
       // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
       // Check if user is being deactivated (isActive changed from true to false)
-      const isBeingDeactivated = existingUser.isActive && body.isActive === false;
+      const isBeingDeactivated = existingUser.isActive && parsed.data.isActive === false;
 
-      // Update the user using the simplified database API
-      const updatedUser = await db.users.update(userId, body);
+      // Update the user using the simplified database API (use parsed data)
+      const updatedUser = await db.users.update(userId, parsed.data);
       console.log('✅ User updated successfully:', updatedUser);
 
       // If user is being deactivated, invalidate all their sessions to force logout

@@ -238,9 +238,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
       // If available filter is not set or is false, show all products at outlet (including qty = 0)
       // If available filter is true, only show products with stock > 0
       if (available === true) {
-        where.outletStock = {
-          some: {
-            outletId: outlet.id, // Use CUID
+      where.outletStock = {
+        some: {
+          outletId: outlet.id, // Use CUID
             available: { gt: 0 }
           }
         };
@@ -249,8 +249,8 @@ export async function searchProducts(filters: ProductSearchFilter) {
         where.outletStock = {
           some: {
             outletId: outlet.id // Use CUID, no stock filter
-          }
-        };
+        }
+      };
       }
     }
   }
@@ -258,12 +258,12 @@ export async function searchProducts(filters: ProductSearchFilter) {
   // Add availability filter (only if outletId is not specified, as outletId filter already handles available)
   // Only filter when available=true is explicitly set - show all products (including qty = 0 and < 0) otherwise
   if (available === true && !outletId) {
-    where.outletStock = {
-      some: {
-        available: { gt: 0 }
-      }
-    };
-  }
+      where.outletStock = {
+        some: {
+          available: { gt: 0 }
+        }
+      };
+        }
   // If available=false or undefined, don't filter - show all products
 
   // Add price range filters
@@ -1287,12 +1287,12 @@ export const simplifiedProducts = {
         // If available filter is not set or is false, show all products at outlet (including qty = 0)
         // If available filter is true, only show products with available > 0
         if (whereFilters.available === true) {
-          where.outletStock = {
-            some: {
-              outletId: outlet.id, // Use CUID
+        where.outletStock = {
+          some: {
+            outletId: outlet.id, // Use CUID
               available: { gt: 0 }
-            }
-          };
+          }
+        };
         } else {
           // Show all products at outlet, including those with qty = 0
           where.outletStock = {
@@ -1316,12 +1316,12 @@ export const simplifiedProducts = {
     // Availability filter (only if outletId is not specified, as outletId filter already handles available)
     // Only filter when available=true is explicitly set - show all products (including qty = 0 and < 0) otherwise
     if (whereFilters.available === true && !whereFilters.outletId) {
-      where.outletStock = {
-        some: {
-          available: { gt: 0 }
-        }
-      };
-    }
+        where.outletStock = {
+          some: {
+            available: { gt: 0 }
+          }
+        };
+          }
     // If available=false or undefined, don't filter - show all products
     
     // Text search - word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"

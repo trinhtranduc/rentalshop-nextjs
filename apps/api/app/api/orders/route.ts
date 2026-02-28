@@ -434,7 +434,13 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
       notes: parsed.data.notes,
+      notesImages: parsed.data.notesImages || null, // Array of image URLs for notes
       pickupNotes: parsed.data.pickupNotes,
+      pickupNotesImages: parsed.data.pickupNotesImages || null, // Array of image URLs for pickup notes
+      returnNotes: parsed.data.returnNotes,
+      returnNotesImages: parsed.data.returnNotesImages || null, // Array of image URLs for return notes
+      damageNotes: parsed.data.damageNotes,
+      damageNotesImages: parsed.data.damageNotesImages || null, // Array of image URLs for damage notes
       // Add order items with pricing calculation
       orderItems: {
         create: orderItemsData
@@ -595,6 +601,17 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
   console.log(`🔍 PUT /api/orders - UserScope:`, userScope);
   
   try {
+    // Extract id from query params first
+    const { searchParams } = new URL(request.url);
+    const id = parseInt(searchParams.get('id') || '0');
+
+    if (!id) {
+      return NextResponse.json(
+        ResponseBuilder.error('ORDER_ID_REQUIRED'),
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     
     // ✅ Auto-fill outletId from userScope if not provided and user has outletId
@@ -603,6 +620,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       body.outletId = userScope.outletId;
     }
     
+    // Note: orderUpdateSchema does NOT require id field (id comes from query params)
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -610,10 +628,6 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         { status: 400 }
       );
     }
-
-    // Extract id from query params
-    const { searchParams } = new URL(request.url);
-    const id = parseInt(searchParams.get('id') || '0');
 
     if (!id) {
       return NextResponse.json(

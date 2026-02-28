@@ -181,19 +181,24 @@ export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
-  country: z.string().min(2, 'Please select a valid country').optional(),
+  country: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  idNumber: z.string().optional(),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial().extend({
-  id: z.coerce.number().int().positive('Customer ID is required'),
+  isActive: z.boolean().optional(),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
 });
+// ✅ NO id field - id comes from URL params, not body
 
 export const customersQuerySchema = z.object({
   search: z.string().optional(),
@@ -275,12 +280,13 @@ const baseOrderSchema = z.object({
   collateralDetails: z.string().optional(),
   notes: z.string().optional(),
   pickupNotes: z.string().optional(),
+  returnNotes: z.string().optional(),
+  damageNotes: z.string().optional(),
 });
 
 export const orderCreateSchema = baseOrderSchema;
-export const orderUpdateSchema = baseOrderSchema.partial().extend({
-  id: z.coerce.number().int().positive('Order ID is required'),
-});
+export const orderUpdateSchema = baseOrderSchema.partial();
+// ✅ NO id field - id comes from query params, not body
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;
 export type OrderCreateInput = z.infer<typeof orderCreateSchema>;
@@ -330,7 +336,7 @@ export const userCreateSchema = z.object({
 });
 
 export const userUpdateSchema = z.object({
-  id: z.coerce.number().int().positive('User ID is required'),
+  // ✅ NO id field - id comes from URL params, not body
   email: z.string().email('Invalid email address').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
   // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
@@ -340,6 +346,8 @@ export const userUpdateSchema = z.object({
   phone: z.string().optional(),
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
 }).refine((data) => {
   // Either 'name' or 'firstName' must be provided if name fields are present
   // If neither is provided, that's okay (update is partial)
@@ -360,12 +368,19 @@ export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 // Outlet validation schemas
 export const outletsQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
-  search: z.string().optional(),
-  isActive: z.coerce.boolean().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    if (v === 'all') return 'all';
+    return v === 'true';
+  }).optional(),
+  q: z.string().optional(), // Search by outlet name (primary)
+  search: z.string().optional(), // Alias for q (backward compatibility)
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['name', 'createdAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const categoriesQuerySchema = z.object({
@@ -379,18 +394,29 @@ export const categoriesQuerySchema = z.object({
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
-  merchantId: z.coerce.number().int().positive('Merchant is required'),
+  description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
+  // merchantId is optional - will be set from userScope or request body for ADMIN
+  merchantId: z.coerce.number().int().positive().optional(),
 });
 
 export const outletUpdateSchema = z.object({
-  id: z.coerce.number().int().positive('Outlet ID is required'),
+  // ✅ NO id field - id comes from query params, not body
   name: z.string().min(1, 'Outlet name is required').optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
+  description: z.string().optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });
 
 export type OutletsQuery = z.infer<typeof outletsQuerySchema>;
