@@ -199,6 +199,68 @@ yarn test tests/product-availability-overlap.test.ts
 
 ---
 
+### 9. Low Stock Scenario
+**Test:** Sản phẩm có số lượng nhỏ (2 total, đã đặt 1, còn 1 available)
+
+**Input:**
+- `productId`: `1001`
+- `totalStock`: `2`
+- `date`: `"2026-02-27"`
+
+**Orders:**
+- Order: PICKUPED, pickup: 2026-02-25, return: 2026-02-28, quantity: 1
+
+**Expected Result:**
+- `totalRented`: 1
+- `totalReserved`: 0
+- `totalAvailable`: 1 (2 - 1)
+- `isAvailable`: true
+
+---
+
+### 10. Orders Outside Period
+**Test:** Orders không overlap với period được check thì không được tính
+
+**Input:**
+- `date`: `"2026-02-27"`
+- `productId`: `5339`
+- `totalStock`: `10`
+
+**Orders:**
+- Order 1: RETURNED, pickup: 2026-02-20, return: 2026-02-24 (trả trước period) ❌ No overlap
+- Order 2: RESERVED, pickup: 2026-03-01, return: 2026-03-05 (bắt đầu sau period) ❌ No overlap
+- Order 3: PICKUPED, pickup: 2026-02-20, return: 2026-02-25 (trả trước period) ❌ No overlap
+
+**Expected Result:**
+- `totalRented`: 0
+- `totalReserved`: 0
+- `totalAvailable`: 10 (tất cả available)
+- `activeOrders.length`: 0
+
+---
+
+### 11. Mixed Orders
+**Test:** Một số orders overlap, một số không
+
+**Input:**
+- `date`: `"2026-02-27"`
+- `productId`: `5339`
+- `totalStock`: `10`
+
+**Orders:**
+- Order 1: PICKUPED, pickup: 2026-02-25, return: 2026-02-27 ✅ Overlap
+- Order 2: RESERVED, pickup: 2026-02-27, return: 2026-02-29 ✅ Overlap
+- Order 3: RETURNED, pickup: 2026-02-20, return: 2026-02-24 ❌ No overlap
+- Order 4: RESERVED, pickup: 2026-03-01, return: 2026-03-05 ❌ No overlap
+
+**Expected Result:**
+- `totalRented`: 2 (Order 1)
+- `totalReserved`: 1 (Order 2)
+- `totalAvailable`: 7 (10 - 2 - 1)
+- `activeOrders.length`: 2 (Order 1 và 2)
+
+---
+
 ## Test Function Structure
 
 ```typescript
