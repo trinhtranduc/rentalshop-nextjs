@@ -170,7 +170,9 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       // Get orders that have this product and overlap with the target date
       // CRITICAL FIX: Ensure we only get orders from the specific outlet
       // Get ALL orders for this product in the specific outlet (no date filtering)
-      const allOrders = await db.prisma.order.findMany({
+      let allOrders;
+      try {
+        allOrders = await db.prisma.order.findMany({
         where: {
           outletId: finalOutletId,
           orderType: {
@@ -237,7 +239,19 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         orderBy: {
           pickupPlanAt: 'asc'
         }
-      });
+        });
+      } catch (queryError: any) {
+        console.error('Database query error in product availability:', {
+          error: queryError,
+          productId,
+          outletId: finalOutletId,
+          errorName: queryError?.name,
+          errorMessage: queryError?.message,
+          errorCode: queryError?.code,
+          errorMeta: queryError?.meta
+        });
+        throw queryError; // Re-throw to be caught by outer catch block
+      }
 
       // Helper function: Check if order overlaps with requested rental period
       const isOrderActiveInPeriod = (order: any) => {
@@ -441,8 +455,15 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         ResponseBuilder.success('PRODUCT_AVAILABILITY_FOUND', response)
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking product availability:', error);
+      console.error('Error details:', {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+        meta: error?.meta
+      });
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
