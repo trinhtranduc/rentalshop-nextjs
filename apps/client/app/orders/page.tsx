@@ -522,6 +522,7 @@ export default function OrdersPage() {
             showStats={false}
             userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
             onImageSearchResult={handleImageSearchResult}   // 🆕 AI Image Search for products
+            hideCopyPhone={true}                            // ⭐ Hide copy phone button on /orders page
           />
         )}
       </div>

@@ -15,6 +15,8 @@ import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
 import { useCustomerTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumber } from '@rentalshop/utils';
+import { Copy } from 'lucide-react';
+import { useToast } from '@rentalshop/ui';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -35,6 +37,13 @@ export function CustomerTable({
 }: CustomerTableProps) {
   const t = useCustomerTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  const { toastSuccess } = useToast();
+  
+  const handleCopyPhone = (phone: string | null | undefined) => {
+    if (!phone) return;
+    navigator.clipboard.writeText(phone);
+    toastSuccess('Copied', 'Phone number copied to clipboard');
+  };
   
   // Use reusable selection hook
   const {
@@ -173,7 +182,19 @@ export function CustomerTable({
                       <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
                     )}
                     {customer.phone && customer.phone.trim() !== '' && (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{formatPhoneNumber(customer.phone)}</div>
+                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
+                        <span>{formatPhoneNumber(customer.phone)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyPhone(customer.phone || '');
+                          }}
+                          className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                          title="Copy phone number"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
                     )}
                     {(!customer.email || customer.email.trim() === '') && (!customer.phone || customer.phone.trim() === '') && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">N/A</div>

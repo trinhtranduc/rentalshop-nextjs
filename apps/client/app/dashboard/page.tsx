@@ -61,6 +61,7 @@ interface DashboardStats {
   customerGrowth: number;
   futureRevenue: number;
   revenueGrowth: number;
+  ordersGrowth: number;
   customerBase: number;
 }
 
@@ -264,6 +265,7 @@ export default function DashboardPage() {
     customerGrowth: 0,
     futureRevenue: 0,
     revenueGrowth: 0,
+    ordersGrowth: 0,
     customerBase: 0
   });
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
@@ -634,6 +636,7 @@ export default function DashboardPage() {
           customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: 0, // Not available in current API
           revenueGrowth: apiStats.growth?.revenue || 0,
+          ordersGrowth: apiStats.growth?.orders || 0,
           customerBase: growthMetrics.customerBase || 0
         };
         
@@ -672,9 +675,13 @@ export default function DashboardPage() {
       }
 
       if (topCustomersResponse.success && topCustomersResponse.data) {
-        console.log('✅ Top Customers data loaded:', topCustomersResponse.data);
-        console.log('🔍 First customer structure:', topCustomersResponse.data[0]);
-        setTopCustomers(topCustomersResponse.data);
+        // Handle nested data structure: response.data.data contains the array
+        const customersData = Array.isArray(topCustomersResponse.data) 
+          ? topCustomersResponse.data 
+          : (topCustomersResponse.data as any).data || [];
+        console.log('✅ Top Customers data loaded:', customersData);
+        console.log('🔍 First customer structure:', customersData[0]);
+        setTopCustomers(customersData);
       } else {
         console.log('❌ Top Customers failed:', topCustomersResponse);
       }
@@ -1362,11 +1369,11 @@ export default function DashboardPage() {
               <StatCard
                 title={t('stats.totalOrders')}
                 value={currentStats.totalRentals}
-                change=""
+                change={currentStats.ordersGrowth > 0 ? `+${currentStats.ordersGrowth.toFixed(1)}%` : currentStats.ordersGrowth < 0 ? `${currentStats.ordersGrowth.toFixed(1)}%` : ''}
                 description=""
                 tooltip={t('tooltips.totalOrders')}
                 color="text-blue-700"
-                trend="neutral"
+                trend={currentStats.ordersGrowth > 0 ? "up" : currentStats.ordersGrowth < 0 ? "down" : "neutral"}
               />
               <StatCard
                 title={t('stats.completedOrders')}

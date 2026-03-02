@@ -224,6 +224,11 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const { realIncome: lastMonthRevenue } = calculatePeriodRevenueBatch(lastMonthOrdersData, lastMonth, lastMonthEnd);
 
     const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
+    
+    // Calculate orders growth - compare total orders between this month and last month
+    const thisMonthOrdersCount = thisMonthOrders.total || 0;
+    const lastMonthOrdersCount = lastMonthOrders.total || 0;
+    const ordersGrowth = lastMonthOrdersCount > 0 ? ((thisMonthOrdersCount - lastMonthOrdersCount) / lastMonthOrdersCount * 100) : (thisMonthOrdersCount > 0 ? 100 : 0);
 
     // Debug logs to trace the issue
     console.log('🔍 Enhanced Dashboard Debug:', {
@@ -254,7 +259,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         renting: stockMetrics._sum?.renting || 0
       },
       growth: {
-        revenue: Math.round(revenueGrowth * 100) / 100
+        revenue: Math.round(revenueGrowth * 100) / 100,
+        orders: Math.round(ordersGrowth * 100) / 100
       }
     };
 

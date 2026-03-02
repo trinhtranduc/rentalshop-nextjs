@@ -12,7 +12,7 @@ import {
 } from '../../../ui';
 import type { Order, OrderItemWithProduct } from '@rentalshop/types';
 import type { OutletReference, MerchantReference } from '@rentalshop/types';
-import { formatCurrency } from '@rentalshop/utils';
+import { formatCurrency, formatPhoneNumber } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
@@ -271,11 +271,23 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const orderType = order.orderType || 'RENT';
   const orderItems = order.orderItems || [];
   
-  // Get shop name from outlet or merchant
-  const shopName = outlet?.name || merchant?.name || '';
-  // Get phone from outlet or merchant (not email)
-  const phone = (outlet as any)?.phone || '';
-  const address = outlet?.address || '';
+  // Get shop name from order.outlet, outlet prop, or merchant
+  const shopName = order.outlet?.name || outlet?.name || merchant?.name || '';
+  
+  // Get shop phone from order.outlet, outlet prop, or merchant
+  // Note: OutletReference may not have phone, so we use type assertion
+  const shopPhone = (order.outlet as any)?.phone || (outlet as any)?.phone || (merchant as any)?.phone || '';
+  
+  // Get shop address from order.outlet, outlet prop, or merchant
+  const shopAddress = order.outlet?.address || outlet?.address || (merchant as any)?.address || '';
+  
+  // Get customer name from order.customer object or flattened fields
+  const customerName = order.customer 
+    ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'
+    : order.customerName || 'N/A';
+  
+  // Get customer phone from order.customer object or flattened fields
+  const customerPhone = order.customer?.phone || order.customerPhone || '';
 
   // Use centralized date formatting hooks (DRY principle)
   const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
@@ -287,15 +299,23 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const total = subtotal - discount;
 
   return (
-    <div className="bg-white p-4 rounded-lg border font-mono text-sm leading-tight max-w-xl mx-auto">
+    <div className="bg-white p-4 rounded-lg border font-mono text-sm leading-tight max-w-2xl mx-auto">
       {/* Store Header */}
       <div className="text-center font-bold mb-2">
-        {shopName.toUpperCase()}
+        {shopName ? shopName.toUpperCase() : 'RENTAL SHOP'}
       </div>
       <div className="text-center mb-2"></div>
       
-      {phone && <div>{tc('labels.phone')}: {phone}</div>}
-      {address && <div>{tc('labels.address')}: {address}</div>}
+      {shopPhone && (
+        <div className="text-center mb-1">
+          {tc('labels.phone')}: {formatPhoneNumber(shopPhone)}
+        </div>
+      )}
+      {shopAddress && (
+        <div className="text-center mb-1">
+          {tc('labels.address')}: {shopAddress}
+        </div>
+      )}
       
       <div className="text-center mb-2">------------------------------------------------</div>
       <div className="text-center mb-2"></div>
@@ -308,8 +328,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
       
       {/* Customer Info */}
       <div className="mb-2">
-        <div className="font-bold">
-          {t('receipt.customer')}: {order.customerName || 'N/A'} - {order.customerPhone || 'N/A'}
+        <div className="font-bold whitespace-nowrap">
+          {t('receipt.customer')}: {customerName}
+          {customerPhone && ` - ${formatPhoneNumber(customerPhone)}`}
         </div>
       </div>
       <div className="mb-2"></div>

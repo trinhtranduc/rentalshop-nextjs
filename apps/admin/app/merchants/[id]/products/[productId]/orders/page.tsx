@@ -25,14 +25,20 @@ import {
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi, productsApi, formatPhoneNumber } from '@rentalshop/utils';
+import { Copy } from 'lucide-react';
 import { useDedupedApi } from '@rentalshop/hooks';
 
 export default function ProductOrdersPage() {
   const params = useParams();
   const router = useRouter();
-  const { toastError } = useToast();
+  const { toastError, toastSuccess } = useToast();
   const merchantId = params.id as string;
   const productId = params.productId as string;
+  
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    toastSuccess('Copied', 'Phone number copied to clipboard');
+  };
   
   // ============================================================================
   // FETCH PRODUCT DETAILS - Using Official useDedupedApi Hook
@@ -312,9 +318,23 @@ export default function ProductOrdersPage() {
                           <p className="text-sm font-medium text-text-primary">
                             {order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'}
                           </p>
-                          <p className="text-xs text-text-secondary">
-                            {formatPhoneNumber(order.customer?.phone)}
-                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-text-secondary">
+                              {formatPhoneNumber(order.customer?.phone)}
+                            </p>
+                            {order.customer?.phone && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyPhone(order.customer?.phone || '');
+                                }}
+                                className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                                title="Copy phone number"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 

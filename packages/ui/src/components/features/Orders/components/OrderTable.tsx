@@ -4,10 +4,11 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumber } from '@rentalshop/utils';
+import { Copy } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
@@ -22,6 +23,7 @@ interface OrderTableProps {
   onSort?: (column: string) => void;
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
   userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // ⭐ User role for permission checks
+  hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
 
 export const OrderTable = React.memo(function OrderTable({ 
@@ -33,11 +35,18 @@ export const OrderTable = React.memo(function OrderTable({
   sortOrder = 'desc',
   onSort,
   showMerchant = false,
-  userRole = 'OUTLET_STAFF' // Default to most restrictive role
+  userRole = 'OUTLET_STAFF', // Default to most restrictive role
+  hideCopyPhone = false // Default to show copy button
 }: OrderTableProps) {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
+  const { toastSuccess } = useToast();
+  
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    toastSuccess('Copied', 'Phone number copied to clipboard');
+  };
   
   // Use reusable selection hook
   const {
@@ -219,7 +228,7 @@ export const OrderTable = React.memo(function OrderTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px]">
                 {t('customer.label')}
               </th>
               {showMerchant && (
@@ -301,13 +310,25 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Customer */}
-                <td className="px-6 py-3">
+                <td className="px-6 py-3 min-w-[200px]">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
                       {order.customerName || 'N/A'}
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs">
-                      {formatPhoneNumber(order.customerPhone)}
+                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
+                      <span className="whitespace-nowrap">{formatPhoneNumber(order.customerPhone || '')}</span>
+                      {order.customerPhone && !hideCopyPhone && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyPhone(order.customerPhone || '');
+                          }}
+                          className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex-shrink-0"
+                          title="Copy phone number"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </td>
