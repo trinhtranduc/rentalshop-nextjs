@@ -406,8 +406,15 @@ export async function PUT(
 
       console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
 
+      // Add productId from URL params to request body for validation
+      // Schema requires 'id' field for validation, but it's in URL params, not request body
+      const productDataWithId = {
+        ...productDataFromRequest,
+        id: productId
+      };
+
       // Validate and normalize input data
-      const validatedData = productUpdateSchema.parse(productDataFromRequest);
+      const validatedData = productUpdateSchema.parse(productDataWithId);
       const { outletStock, ...productUpdateData } = validatedData;
       
       // Normalize images to array format

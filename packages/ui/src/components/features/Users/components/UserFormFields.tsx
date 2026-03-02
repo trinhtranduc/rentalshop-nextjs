@@ -134,7 +134,7 @@ interface MerchantSelectProps {
   disabled?: boolean;
   canSelect: boolean;
   currentUser?: User | null;
-  onSearch?: (query: string) => Promise<Array<{ value: string; label: string }>>;
+  onSearch?: (query: string) => Promise<Array<{ value: string; label: string; description?: string }>>;
 }
 
 export const MerchantSelect: React.FC<MerchantSelectProps> = ({
@@ -151,17 +151,37 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
   const t = useUsersTranslations();
   
   // Convert merchants to SearchableOption format
-  const merchantOptions = merchants.map(merchant => ({
+  // Preserve description if merchant has address information
+  // Include merchant code in description
+  const merchantOptions = merchants.map(merchant => {
+    const addressParts = [];
+    if (merchant.address) addressParts.push(merchant.address);
+    if (merchant.city) addressParts.push(merchant.city);
+    if (merchant.state) addressParts.push(merchant.state);
+    if (merchant.zipCode) addressParts.push(merchant.zipCode);
+    if (merchant.country) addressParts.push(merchant.country);
+    const address = addressParts.length > 0 ? addressParts.join(', ') : '';
+    
+    // Build description with merchant code and address
+    const descriptionParts = [`Mã: ${merchant.id}`];
+    if (address) descriptionParts.push(address);
+    const description = descriptionParts.join(' • ');
+    
+    return {
     value: merchant.id.toString(),
-    label: merchant.name
-  }));
+      label: merchant.name,
+      description: description
+    };
+  });
   
   // If onSearch is provided, use it for dynamic search, otherwise use static options
+  // Preserve description from search results
   const handleSearch = onSearch ? async (query: string) => {
     const results = await onSearch(query);
     return results.map(r => ({
       value: r.value,
       label: r.label,
+      ...(r.description && { description: r.description }),
       type: 'default' as const
     }));
   } : undefined;

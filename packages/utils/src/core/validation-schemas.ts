@@ -150,7 +150,13 @@ export const productsQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   categoryId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
+  merchantId: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   isActive: z.coerce.boolean().optional(),
+  available: z.coerce.boolean().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['name', 'createdAt', 'rentPrice']).default('createdAt'),
@@ -174,26 +180,38 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().optional(),
-  phone: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email address').optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
-  country: z.string().min(2, 'Please select a valid country').optional(),
+  country: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  idNumber: z.string().optional(),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial().extend({
-  id: z.coerce.number().int().positive('Customer ID is required'),
+  isActive: z.boolean().optional(),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'other']).optional(),
 });
+// ✅ NO id field - id comes from URL params, not body
 
 export const customersQuerySchema = z.object({
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   phone: z.string().optional(),
   email: z.string().optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['firstName', 'lastName', 'phone', 'email', 'createdAt']).default('createdAt'),
@@ -222,9 +240,13 @@ export const ordersQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
+  merchantId: z.coerce.number().int().positive().optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount']).default('createdAt'),
+  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount', 'pickupPlanAt', 'returnPlanAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -232,6 +254,9 @@ const orderItemSchema = z.object({
   productId: z.coerce.number().int().positive('Product is required'),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   unitPrice: z.number().nonnegative('Unit price must be non-negative'),
+  totalPrice: z.number().nonnegative('Total price must be non-negative').optional(), // Optional, can be calculated
+  deposit: z.number().nonnegative('Deposit must be non-negative').optional(), // Optional, deposit per unit
+  notes: z.string().optional(), // Optional notes for this item
   rentDays: z.number().int().min(1).optional(), // For rental orders
 });
 
@@ -244,13 +269,24 @@ const baseOrderSchema = z.object({
   returnPlanAt: z.string().datetime().optional(),
   totalAmount: z.number().nonnegative('Total amount must be non-negative'),
   depositAmount: z.number().nonnegative('Deposit amount must be non-negative').default(0),
+  securityDeposit: z.number().nonnegative('Security deposit must be non-negative').optional(),
+  damageFee: z.number().nonnegative('Damage fee must be non-negative').optional(),
+  lateFee: z.number().nonnegative('Late fee must be non-negative').optional(),
+  discountType: z.string().optional(),
+  discountValue: z.number().nonnegative('Discount value must be non-negative').optional(),
+  discountAmount: z.number().nonnegative('Discount amount must be non-negative').optional(),
+  isReadyToDeliver: z.boolean().optional(),
+  collateralType: z.string().optional(),
+  collateralDetails: z.string().optional(),
   notes: z.string().optional(),
+  pickupNotes: z.string().optional(),
+  returnNotes: z.string().optional(),
+  damageNotes: z.string().optional(),
 });
 
 export const orderCreateSchema = baseOrderSchema;
-export const orderUpdateSchema = baseOrderSchema.partial().extend({
-  id: z.coerce.number().int().positive('Order ID is required'),
-});
+export const orderUpdateSchema = baseOrderSchema.partial();
+// ✅ NO id field - id comes from query params, not body
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;
 export type OrderCreateInput = z.infer<typeof orderCreateSchema>;
@@ -269,9 +305,11 @@ export const usersQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   role: userRoleEnum.optional(),
   search: z.string().optional(),
+  q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   isActive: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+  page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   sortBy: z.enum(['email', 'name', 'role', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -279,21 +317,48 @@ export const usersQuerySchema = z.object({
 export const userCreateSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(1, 'Name is required'),
+  // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
+  name: z.string().min(1, 'Name is required').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().optional(), // Allow empty string or undefined
   phone: z.string().optional(),
   role: userRoleEnum,
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
+}).refine((data) => {
+  // Either 'name' or 'firstName' must be provided (lastName is optional)
+  // lastName can be empty string or undefined
+  const hasName = data.name && data.name.trim().length > 0;
+  const hasFirstName = data.firstName && data.firstName.trim().length > 0;
+  return hasName || hasFirstName;
+}, {
+  message: "Either 'name' or 'firstName' must be provided"
 });
 
 export const userUpdateSchema = z.object({
-  id: z.coerce.number().int().positive('User ID is required'),
+  // ✅ NO id field - id comes from URL params, not body
   email: z.string().email('Invalid email address').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
   name: z.string().min(1, 'Name is required').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().optional(), // Allow empty string or undefined
   phone: z.string().optional(),
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
+  merchantId: z.coerce.number().int().positive().optional(),
+  outletId: z.coerce.number().int().positive().optional(),
+}).refine((data) => {
+  // Either 'name' or 'firstName' must be provided if name fields are present
+  // If neither is provided, that's okay (update is partial)
+  if (data.name || data.firstName) {
+    const hasName = data.name && data.name.trim().length > 0;
+    const hasFirstName = data.firstName && data.firstName.trim().length > 0;
+    return hasName || hasFirstName;
+  }
+  return true; // No name fields provided, which is fine for partial updates
+}, {
+  message: "Either 'name' or 'firstName' must be provided if updating name"
 });
 
 export type UsersQuery = z.infer<typeof usersQuerySchema>;
@@ -303,12 +368,19 @@ export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 // Outlet validation schemas
 export const outletsQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
-  search: z.string().optional(),
-  isActive: z.coerce.boolean().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    if (v === 'all') return 'all';
+    return v === 'true';
+  }).optional(),
+  q: z.string().optional(), // Search by outlet name (primary)
+  search: z.string().optional(), // Alias for q (backward compatibility)
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['name', 'createdAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const categoriesQuerySchema = z.object({
@@ -322,18 +394,29 @@ export const categoriesQuerySchema = z.object({
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
-  merchantId: z.coerce.number().int().positive('Merchant is required'),
+  description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
+  // merchantId is optional - will be set from userScope or request body for ADMIN
+  merchantId: z.coerce.number().int().positive().optional(),
 });
 
 export const outletUpdateSchema = z.object({
-  id: z.coerce.number().int().positive('Outlet ID is required'),
+  // ✅ NO id field - id comes from query params, not body
   name: z.string().min(1, 'Outlet name is required').optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
+  description: z.string().optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });
 
 export type OutletsQuery = z.infer<typeof outletsQuerySchema>;

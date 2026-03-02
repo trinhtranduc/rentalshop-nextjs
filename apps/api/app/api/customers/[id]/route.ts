@@ -140,6 +140,15 @@ export async function PUT(
       const body = await request.json();
       console.log('🔍 PUT /api/customers/[id] - Update request body:', body);
 
+      // Validate request body with schema (id comes from URL params, not body)
+      const parsed = customerUpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
       // Check if customer exists and user has access to it
       const existingCustomer = await db.customers.findById(customerId);
       if (!existingCustomer) {
@@ -161,8 +170,8 @@ export async function PUT(
         );
       }
 
-      // Update the customer using the simplified database API
-      const updatedCustomer = await db.customers.update(customerId, body);
+      // Update the customer using the simplified database API (use parsed data)
+      const updatedCustomer = await db.customers.update(customerId, parsed.data);
       console.log('✅ Customer updated successfully:', updatedCustomer);
 
       // Normalize date fields to UTC ISO strings using toISOString()

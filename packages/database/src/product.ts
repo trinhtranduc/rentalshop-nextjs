@@ -225,7 +225,8 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  // If outletId is specified, only show products that have stock at that outlet
+  // If outletId is specified, filter products by outlet (include all products at that outlet, including qty = 0)
+  // Only filter by stock > 0 if available filter is explicitly set to true
   if (outletId) {
     // Find outlet by id
     const outlet = await prisma.outlet.findUnique({
@@ -234,31 +235,36 @@ export async function searchProducts(filters: ProductSearchFilter) {
     });
     
     if (outlet) {
+      // If available filter is not set or is false, show all products at outlet (including qty = 0)
+      // If available filter is true, only show products with stock > 0
+      if (available === true) {
       where.outletStock = {
         some: {
           outletId: outlet.id, // Use CUID
-          stock: { gt: 0 }
+            available: { gt: 0 }
+          }
+        };
+      } else {
+        // Show all products at outlet, including those with qty = 0
+        where.outletStock = {
+          some: {
+            outletId: outlet.id // Use CUID, no stock filter
         }
       };
+      }
     }
   }
 
-  // Add availability filter
-  if (available !== undefined) {
-    if (available) {
+  // Add availability filter (only if outletId is not specified, as outletId filter already handles available)
+  // Only filter when available=true is explicitly set - show all products (including qty = 0 and < 0) otherwise
+  if (available === true && !outletId) {
       where.outletStock = {
         some: {
           available: { gt: 0 }
         }
       };
-    } else {
-      where.outletStock = {
-        none: {
-          available: { gt: 0 }
         }
-      };
-    }
-  }
+  // If available=false or undefined, don't filter - show all products
 
   // Add price range filters
   if (minPrice !== undefined || maxPrice !== undefined) {
@@ -1271,18 +1277,30 @@ export const simplifiedProducts = {
     }
     
     // Convert outletId (public ID) to CUID and filter by outlet stock
+    // Show all products at outlet (including qty = 0) unless available filter is explicitly set to true
     if (whereFilters.outletId) {
       const outlet = await prisma.outlet.findUnique({
         where: { id: whereFilters.outletId },
         select: { id: true }
       });
       if (outlet) {
+        // If available filter is not set or is false, show all products at outlet (including qty = 0)
+        // If available filter is true, only show products with available > 0
+        if (whereFilters.available === true) {
         where.outletStock = {
           some: {
             outletId: outlet.id, // Use CUID
-            stock: { gt: 0 }
+              available: { gt: 0 }
           }
         };
+        } else {
+          // Show all products at outlet, including those with qty = 0
+          where.outletStock = {
+            some: {
+              outletId: outlet.id // Use CUID, no stock filter
+            }
+          };
+        }
       } else {
         // Outlet not found, return empty result
         return {
@@ -1295,24 +1313,16 @@ export const simplifiedProducts = {
       }
     }
     
-    // Availability filter
-    if (whereFilters.available !== undefined) {
-      if (whereFilters.available) {
+    // Availability filter (only if outletId is not specified, as outletId filter already handles available)
+    // Only filter when available=true is explicitly set - show all products (including qty = 0 and < 0) otherwise
+    if (whereFilters.available === true && !whereFilters.outletId) {
         where.outletStock = {
-          ...(where.outletStock || {}),
           some: {
             available: { gt: 0 }
           }
         };
-      } else {
-        where.outletStock = {
-          ...(where.outletStock || {}),
-          none: {
-            available: { gt: 0 }
           }
-        };
-      }
-    }
+    // If available=false or undefined, don't filter - show all products
     
     // Text search - word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
     // Case-insensitive and diacritics-insensitive

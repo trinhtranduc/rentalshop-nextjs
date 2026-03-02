@@ -2,20 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
 import { z } from 'zod';
 
 // Validation schema for product availability query
+// Support both single date (backward compatibility) and rental period (pickupDate/returnDate)
 const productAvailabilitySchema = z.object({
   productId: z.coerce.number().int().positive('Product ID must be a positive integer'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  // Single date mode (backward compatibility)
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
+  // Rental period mode (preferred for rental orders)
+  pickupDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pickup date must be in YYYY-MM-DD format').optional(),
+  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Return date must be in YYYY-MM-DD format').optional(),
   outletId: z.coerce.number().int().positive().optional() // Required for merchants, auto-filled for outlet users
+}).refine((data) => {
+  // Either 'date' or both 'pickupDate' and 'returnDate' must be provided
+  const hasSingleDate = !!data.date;
+  const hasRentalPeriod = !!(data.pickupDate && data.returnDate);
+  return hasSingleDate || hasRentalPeriod;
+}, {
+  message: "Either 'date' or both 'pickupDate' and 'returnDate' must be provided"
 });
 
 /**
  * GET /api/products/availability
- * Check product availability for a specific date
- * Returns product summary (stock, rented, available) and orders for that date
+ * Check product availability for a specific date or rental period
+ * Returns product summary (stock, rented, available) and orders for that date/period
  * 
  * Authorization: All roles with 'products.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
@@ -24,13 +36,15 @@ const productAvailabilitySchema = z.object({
  * 
  * Query parameters:
  * - productId: Product ID to check availability for
- * - date: Date to check availability (YYYY-MM-DD format)
+ * - date: Date to check availability (YYYY-MM-DD format) - single date mode
+ * - pickupDate: Pickup date for rental period (YYYY-MM-DD format) - rental period mode
+ * - returnDate: Return date for rental period (YYYY-MM-DD format) - rental period mode
  * - outletId: Optional outlet ID (required for outlet users)
  * 
  * Response includes:
  * - Product information
  * - Stock summary (total, rented, available)
- * - Orders for the target date
+ * - Orders for the target date/period
  * - Availability status
  */
 export const GET = withPermissions(['products.view'], { requireActiveSubscription: false })(
@@ -47,13 +61,49 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         );
       }
 
-      const { productId, date, outletId: queryOutletId } = parsed.data;
-      const targetDate = new Date(date);
+      const { productId, date, pickupDate, returnDate, outletId: queryOutletId } = parsed.data;
       
-      // Validate date is not in the past
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (targetDate < today) {
+      // Determine date range: either single date or rental period
+      let startDate: Date;
+      let endDate: Date;
+      let dateString: string;
+      
+      if (date) {
+        // Single date mode (backward compatibility)
+        dateString = date;
+        startDate = new Date(date + 'T00:00:00.000Z');
+        endDate = new Date(date + 'T23:59:59.999Z');
+      } else if (pickupDate && returnDate) {
+        // Rental period mode
+        dateString = `${pickupDate} to ${returnDate}`;
+        startDate = new Date(pickupDate + 'T00:00:00.000Z');
+        endDate = new Date(returnDate + 'T23:59:59.999Z');
+        
+        // Validate rental period: return date must be >= pickup date
+        if (startDate > endDate) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_RENTAL_DATES'),
+            { status: 400 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          ResponseBuilder.error('DATE_REQUIRED'),
+          { status: 400 }
+        );
+      }
+      
+      // Validate dates are not in the past (normalize to UTC for comparison)
+      // Get today's date in UTC (YYYY-MM-DD format)
+      const now = new Date();
+      const todayUTCString = now.toISOString().split('T')[0]; // e.g., "2026-02-27"
+      const todayUTC = new Date(todayUTCString + 'T00:00:00.000Z');
+      
+      // Normalize startDate to UTC midnight for comparison
+      const startDateUTC = new Date(startDate);
+      startDateUTC.setUTCHours(0, 0, 0, 0);
+      
+      if (startDateUTC < todayUTC) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_DATE'),
           { status: 400 }
@@ -110,17 +160,19 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         );
       }
 
-      // Get orders for this product on the target date
-      const startOfDay = new Date(targetDate);
-      startOfDay.setHours(0, 0, 0, 0);
+      // Normalize date range to UTC for comparison
+      const startOfPeriod = new Date(startDate);
+      startOfPeriod.setUTCHours(0, 0, 0, 0);
       
-      const endOfDay = new Date(targetDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const endOfPeriod = new Date(endDate);
+      endOfPeriod.setUTCHours(23, 59, 59, 999);
 
       // Get orders that have this product and overlap with the target date
       // CRITICAL FIX: Ensure we only get orders from the specific outlet
       // Get ALL orders for this product in the specific outlet (no date filtering)
-      const allOrders = await db.prisma.order.findMany({
+      let allOrders;
+      try {
+        allOrders = await db.prisma.order.findMany({
         where: {
           outletId: finalOutletId,
           orderType: {
@@ -187,43 +239,115 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         orderBy: {
           pickupPlanAt: 'asc'
         }
-      });
+        });
+      } catch (queryError: any) {
+        console.error('Database query error in product availability:', {
+          error: queryError,
+          productId,
+          outletId: finalOutletId,
+          errorName: queryError?.name,
+          errorMessage: queryError?.message,
+          errorCode: queryError?.code,
+          errorMeta: queryError?.meta
+        });
+        throw queryError; // Re-throw to be caught by outer catch block
+      }
 
-      // Helper function: Check if order is active on target date
-      const isOrderActiveOnDate = (order: any) => {
+      // Helper function: Check if order overlaps with requested rental period
+      const isOrderActiveInPeriod = (order: any) => {
         const status = order.status;
         
-        // PICKUPED: Order is active if return date hasn't passed (or no return date)
+        // Only check RENT orders for rental availability
+        if (order.orderType !== ORDER_TYPE.RENT) {
+          // For SALE orders, only check if they're RESERVED (not yet completed)
+          return status === ORDER_STATUS.RESERVED;
+        }
+        
+        // Get order's rental period
+        const orderPickup = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
+        const orderReturn = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
+        
+        if (!orderPickup) return false; // No pickup date = not active
+        
+        // ✅ FIX: Use getLocalDateKey to get local date for comparison
+        // This correctly converts UTC datetime to local date (VN UTC+7)
+        // Order pickup: "2026-03-10T17:00:00.000Z" = 11/03 00:00 UTC+7 → "2026-03-11"
+        // This prevents orders from 11/03 being counted for 10/03 availability
+        const orderPickupDateKey = getLocalDateKey(orderPickup);
+        const requestedDateKey = date || pickupDate; // Single date mode or pickup date
+        
+        // Normalize return date to end of day UTC for comparison
+        const orderReturnEnd = orderReturn ? new Date(orderReturn) : null;
+        if (orderReturnEnd) {
+          orderReturnEnd.setUTCHours(23, 59, 59, 999);
+        }
+        
+        // Debug logging for overlap calculation
+        console.log(`[Availability] Checking order ${order.id} (${order.orderNumber}):`, {
+          status,
+          orderPickup: orderPickup?.toISOString(),
+          orderReturn: orderReturn?.toISOString(),
+          orderPickupDateKey,
+          requestedDateKey,
+          orderReturnEnd: orderReturnEnd?.toISOString(),
+          requestedStart: startOfPeriod.toISOString(),
+          requestedEnd: endOfPeriod.toISOString()
+        });
+        
+        // Check overlap: orders overlap if their rental periods intersect
+        // Order is active if:
+        // 1. Order pickup date matches requested date, OR
+        // 2. Order return date is within requested period, OR
+        // 3. Order spans across requested period (pickup before start, return after end)
+        
         if (status === ORDER_STATUS.PICKUPED) {
-          if (!order.returnPlanAt) return true; // No return date = still active
-          return new Date(order.returnPlanAt) >= startOfDay;
+          // Currently rented: active if rental period overlaps with requested period
+          // Check if order is still active during the requested period
+          if (!orderReturnEnd) {
+            // No return date = still active if pickup date matches requested date
+            const isActive = orderPickupDateKey === requestedDateKey;
+            console.log(`[Availability] Order ${order.id} PICKUPED (no return): pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, isActive=${isActive}`);
+            return isActive;
+          }
+          // Order is active if:
+          // 1. Pickup date matches requested date, OR
+          // 2. Return date is within requested period (order ends during period), OR
+          // 3. Order spans across requested period (pickup before, return after)
+          const pickupMatches = orderPickupDateKey === requestedDateKey;
+          const returnInPeriod = orderReturnEnd >= startOfPeriod && orderReturnEnd <= endOfPeriod;
+          const spansAcross = orderPickup < startOfPeriod && orderReturnEnd > endOfPeriod;
+          const isActive = pickupMatches || returnInPeriod || spansAcross;
+          console.log(`[Availability] Order ${order.id} PICKUPED: pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, pickupMatches=${pickupMatches}, returnInPeriod=${returnInPeriod}, spansAcross=${spansAcross}, isActive=${isActive}`);
+          return isActive;
         }
         
-        // RETURNED: Order was active if rental period overlaps with check date
-        if (status === ORDER_STATUS.RETURNED) {
-          const pickupDate = order.pickedUpAt || order.pickupPlanAt;
-          const returnDate = order.returnedAt || order.returnPlanAt;
-          if (!pickupDate) return false;
-          
-          return new Date(pickupDate) <= endOfDay && 
-                 (!returnDate || new Date(returnDate) >= startOfDay);
-        }
-        
-        // RESERVED: Order is active if pickup date passed and return date hasn't
         if (status === ORDER_STATUS.RESERVED) {
-          if (!order.pickupPlanAt) return false;
-          
-          const pickupDate = new Date(order.pickupPlanAt);
-          const returnDate = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
-          
-          return pickupDate <= endOfDay && 
-                 (!returnDate || returnDate >= startOfDay);
+          // Reserved: active if pickup date matches OR period overlaps
+          // Order overlaps if:
+          // 1. Pickup date matches requested date, OR
+          // 2. Return date is within requested period (order spans across or ends during period)
+          // Note: We use date key comparison for pickup date to avoid timezone issues
+          // But we still need to check period overlap for orders that span across
+          const pickupMatches = orderPickupDateKey === requestedDateKey;
+          const returnInPeriod = orderReturnEnd && orderReturnEnd >= startOfPeriod && orderReturnEnd <= endOfPeriod;
+          const spansAcross = orderPickup < startOfPeriod && orderReturnEnd && orderReturnEnd > endOfPeriod;
+          const hasOverlap = pickupMatches || returnInPeriod || spansAcross;
+          console.log(`[Availability] Order ${order.id} RESERVED: pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, pickupMatches=${pickupMatches}, returnInPeriod=${returnInPeriod}, spansAcross=${spansAcross}, hasOverlap=${hasOverlap}`);
+          return hasOverlap;
         }
         
+        if (status === ORDER_STATUS.RETURNED) {
+          // Returned orders should NOT count towards availability
+          // They have already been returned, so products are available again
+          console.log(`[Availability] Order ${order.id} RETURNED: not active (already returned)`);
+          return false;
+        }
+        
+        console.log(`[Availability] Order ${order.id} status ${status}: not active`);
         return false;
       };
       
-      const activeOrders = allOrders.filter(isOrderActiveOnDate);
+      const activeOrders = allOrders.filter(isOrderActiveInPeriod);
 
       // Helper function: Calculate quantity for each order status
       const calculateQuantities = () => {
@@ -266,7 +390,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           outletId: finalOutletId,
           outletName: 'Outlet' // We'll get this from outletStock if needed
         },
-        date: date,
+        date: dateString,
         summary: {
           totalStock: totalStock,
           totalRented: totalRented,
@@ -361,7 +485,9 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       }),
         meta: {
           totalOrders: allOrders.length,
-          date: date,
+          date: dateString,
+          pickupDate: pickupDate || date || null,
+          returnDate: returnDate || null,
           checkedAt: new Date().toISOString()
         }
       };
@@ -370,8 +496,15 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         ResponseBuilder.success('PRODUCT_AVAILABILITY_FOUND', response)
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking product availability:', error);
+      console.error('Error details:', {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+        meta: error?.meta
+      });
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }

@@ -256,9 +256,13 @@ model Order {
   collateralDetails  String?
   collateralImageUrl String?
   notes              String?
+  notesImages        Json?
   pickupNotes        String?
+  pickupNotesImages  Json?
   returnNotes        String?
+  returnNotesImages  Json?
   damageNotes        String?
+  damageNotesImages  Json?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   deletedAt          DateTime?

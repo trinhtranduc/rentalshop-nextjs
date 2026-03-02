@@ -172,8 +172,8 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
       zipCode: parsed.data.zipCode,
       country: parsed.data.country,
       phone: parsed.data.phone,
-      status: parsed.data.status || 'ACTIVE',
       description: parsed.data.description
+      // Note: status field is validated but not stored (database uses isActive instead)
     };
 
     console.log('🔍 Creating outlet with data:', outletData);
@@ -307,8 +307,11 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
       }
     }
 
-    // Prepare update data - exclude isActive for default outlets
-    const updateData = { ...parsed.data };
+    // Prepare update data - exclude status and isActive for default outlets
+    const { status, ...updateDataWithoutStatus } = parsed.data;
+    const updateData = { ...updateDataWithoutStatus };
+    // Note: status field is validated but not stored (database uses isActive instead)
+    
     if (existingOutlet.isDefault && 'isActive' in updateData) {
       delete updateData.isActive;
       console.log('🔍 Removed isActive from update data for default outlet');

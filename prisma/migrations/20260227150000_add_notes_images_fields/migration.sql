@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "notesImages" JSONB,
+ADD COLUMN IF NOT EXISTS "pickupNotesImages" JSONB,
+ADD COLUMN IF NOT EXISTS "returnNotesImages" JSONB,
+ADD COLUMN IF NOT EXISTS "damageNotesImages" JSONB;

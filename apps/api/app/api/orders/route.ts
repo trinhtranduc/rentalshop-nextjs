@@ -51,6 +51,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       page,
       limit,
       q, 
+      search,
       orderType,
       status,
       merchantId: queryMerchantId,
@@ -64,7 +65,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, orderType, status, 
+      page, limit, q, search, orderType, status, 
       queryMerchantId, queryOutletId, customerId, productId, startDate, endDate,
       sortBy, sortOrder
     });
@@ -77,7 +78,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
-      search: q,
+      q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
       limit: limit || 50,
       sortBy: sortBy || 'createdAt',
@@ -353,7 +354,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
-    // Calculate order items with pricing
+    // Process order items - use pricing from request (frontend calculated)
     const orderItemsData = await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
           const product = await db.products.findById(item.productId) as any;
@@ -361,54 +362,32 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             throw new Error(`Product with ID ${item.productId} not found`);
           }
 
-          // Calculate pricing using PricingResolver with product pricing type
-          let pricing;
-          try {
-            // Get product pricing type (defaults to FIXED if null)
-            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
-            
-            // Calculate duration for this item if dates are provided
-            let itemDuration: number | undefined;
-            if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
-              const pickup = new Date(parsed.data.pickupPlanAt);
-              const returnDate = new Date(parsed.data.returnPlanAt);
-              const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
-              itemDuration = duration;
-            }
-            
-            // Calculate pricing based on product pricing type
-            pricing = PricingResolver.calculatePricing(
-              product as Product,
-              merchant,
-              itemDuration,
-              item.quantity
-            );
-          } catch (pricingError) {
-            console.error('Pricing calculation error:', pricingError);
-            // Fallback to provided values (default FIXED)
-        // Note: item.deposit should be deposit per unit, will be multiplied by quantity later
-            pricing = {
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-          deposit: (item.deposit || 0) / (item.quantity || 1), // Extract deposit per unit from provided total
-              pricingType: 'FIXED' as PricingType,
-              duration: undefined,
-              durationUnit: 'rental'
-            };
-          }
+          // ✅ ALWAYS USE PRICING FROM REQUEST (frontend calculated)
+          // Backend trusts frontend pricing - no recalculation
+          const finalUnitPrice = item.unitPrice;
+          const finalTotalPrice = item.totalPrice || (item.quantity * item.unitPrice);
+          // Deposit from request is per unit (frontend calculates total)
+          const finalDeposit = (item.deposit || 0) / (item.quantity || 1);
+          
+          console.log(`✅ Using pricing from request for product ${item.productId}:`, {
+            unitPrice: finalUnitPrice,
+            totalPrice: finalTotalPrice,
+            deposit: finalDeposit,
+            notes: item.notes
+          });
 
           // Calculate rentalDays for this item based on pricing type
           // For FIXED: rentalDays = 1 (per rental)
           // For HOURLY/DAILY: use calculated duration
           let rentalDays: number | null = null;
-          if (pricing.pricingType === 'FIXED') {
-            rentalDays = 1; // Per rental, not time-based
-          } else if (pricing.duration) {
-            rentalDays = pricing.duration; // Use calculated duration from pricing
-          } else if (rentalDuration) {
-            rentalDays = rentalDuration; // Fallback to order-level duration
+          if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+            const pickup = new Date(parsed.data.pickupPlanAt);
+            const returnDate = new Date(parsed.data.returnPlanAt);
+            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
+            const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
+            rentalDays = productPricingType === 'FIXED' ? 1 : duration;
           } else {
-            rentalDays = 1; // Default
+            rentalDays = rentalDuration || 1;
           }
 
           // Snapshot product info to preserve it even if product is deleted later
@@ -418,12 +397,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             productName: product.name || null,
             productBarcode: product.barcode || null,
             productImages: product.images || null,
-            // Order item fields
+            // Order item fields - use pricing from request if provided
             quantity: item.quantity,
-            unitPrice: pricing.unitPrice,
-            totalPrice: pricing.totalPrice,
-        deposit: pricing.deposit, // Deposit per unit (frontend calculates total)
-            notes: item.notes,
+            unitPrice: finalUnitPrice,
+            totalPrice: finalTotalPrice,
+            deposit: finalDeposit, // Deposit per unit
+            notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
             rentalDays: rentalDays
           };
     }) || []);
@@ -455,7 +434,13 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
       notes: parsed.data.notes,
+      notesImages: parsed.data.notesImages || null, // Array of image URLs for notes
       pickupNotes: parsed.data.pickupNotes,
+      pickupNotesImages: parsed.data.pickupNotesImages || null, // Array of image URLs for pickup notes
+      returnNotes: parsed.data.returnNotes,
+      returnNotesImages: parsed.data.returnNotesImages || null, // Array of image URLs for return notes
+      damageNotes: parsed.data.damageNotes,
+      damageNotesImages: parsed.data.damageNotesImages || null, // Array of image URLs for damage notes
       // Add order items with pricing calculation
       orderItems: {
         create: orderItemsData
@@ -616,6 +601,17 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
   console.log(`🔍 PUT /api/orders - UserScope:`, userScope);
   
   try {
+    // Extract id from query params first
+    const { searchParams } = new URL(request.url);
+    const id = parseInt(searchParams.get('id') || '0');
+
+    if (!id) {
+      return NextResponse.json(
+        ResponseBuilder.error('ORDER_ID_REQUIRED'),
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     
     // ✅ Auto-fill outletId from userScope if not provided and user has outletId
@@ -624,6 +620,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       body.outletId = userScope.outletId;
     }
     
+    // Note: orderUpdateSchema does NOT require id field (id comes from query params)
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -631,10 +628,6 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         { status: 400 }
       );
     }
-
-    // Extract id from query params
-    const { searchParams } = new URL(request.url);
-    const id = parseInt(searchParams.get('id') || '0');
 
     if (!id) {
       return NextResponse.json(

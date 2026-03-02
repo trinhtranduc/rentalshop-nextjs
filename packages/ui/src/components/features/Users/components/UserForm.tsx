@@ -117,7 +117,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const showOutletField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
 
   // Search merchants function for dynamic search (admin only)
-  const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string }>> => {
+  const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string; description?: string }>> => {
     if (!query.trim() || !canSelectMerchant) {
       return [];
     }
@@ -131,10 +131,28 @@ export const UserForm: React.FC<UserFormProps> = ({
       } as any);
       
       if (response.success && response.data) {
-        return (response.data.merchants || []).map(merchant => ({
+        return (response.data.merchants || []).map(merchant => {
+          // Build address for description (displayed below name with different font)
+          const addressParts = [];
+          if (merchant.address) addressParts.push(merchant.address);
+          if (merchant.city) addressParts.push(merchant.city);
+          if (merchant.state) addressParts.push(merchant.state);
+          if (merchant.zipCode) addressParts.push(merchant.zipCode);
+          if (merchant.country) addressParts.push(merchant.country);
+          
+          const address = addressParts.length > 0 ? addressParts.join(', ') : '';
+          
+          // Build description with merchant code and address
+          const descriptionParts = [`Mã: ${merchant.id}`];
+          if (address) descriptionParts.push(address);
+          const description = descriptionParts.join(' • ');
+          
+          return {
           value: merchant.id.toString(),
-          label: merchant.name
-        }));
+            label: merchant.name, // Name on top (font-medium)
+            description: description // Merchant code and address below (text-sm text-gray-600)
+          };
+        });
       }
       return [];
     } catch (error) {
