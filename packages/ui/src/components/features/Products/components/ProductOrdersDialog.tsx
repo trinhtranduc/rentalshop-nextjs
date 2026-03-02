@@ -15,7 +15,7 @@ import {
   Badge,
   EmptyState
 } from '@rentalshop/ui';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
 import { 
   ShoppingCart, 
   Calendar, 
@@ -178,7 +178,7 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
                             {order.customer?.firstName} {order.customer?.lastName}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {formatPhoneNumberMasked(order.customer?.phone)}
+                            {formatPhoneNumber(order.customer?.phone)}
                           </p>
                         </div>
                       </div>

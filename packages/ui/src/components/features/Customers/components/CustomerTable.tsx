@@ -14,7 +14,7 @@ import { Customer } from '@rentalshop/types';
 import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
 import { useCustomerTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -173,7 +173,7 @@ export function CustomerTable({
                       <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
                     )}
                     {customer.phone && customer.phone.trim() !== '' && (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{formatPhoneNumberMasked(customer.phone)}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">{formatPhoneNumber(customer.phone)}</div>
                     )}
                     {(!customer.email || customer.email.trim() === '') && (!customer.phone || customer.phone.trim() === '') && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">N/A</div>

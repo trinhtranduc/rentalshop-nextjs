@@ -7,7 +7,7 @@ import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
@@ -307,7 +307,7 @@ export const OrderTable = React.memo(function OrderTable({
                       {order.customerName || 'N/A'}
                     </div>
                     <div className="text-gray-500 dark:text-gray-400 text-xs">
-                      {formatPhoneNumberMasked(order.customerPhone)}
+                      {formatPhoneNumber(order.customerPhone)}
                     </div>
                   </div>
                 </td>

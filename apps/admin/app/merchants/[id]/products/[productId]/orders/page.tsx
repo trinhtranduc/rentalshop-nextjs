@@ -24,7 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
-import { ordersApi, productsApi, formatPhoneNumberMasked } from '@rentalshop/utils';
+import { ordersApi, productsApi, formatPhoneNumber } from '@rentalshop/utils';
 import { useDedupedApi } from '@rentalshop/hooks';
 
 export default function ProductOrdersPage() {
@@ -313,7 +313,7 @@ export default function ProductOrdersPage() {
                             {order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {formatPhoneNumberMasked(order.customer?.phone)}
+                            {formatPhoneNumber(order.customer?.phone)}
                           </p>
                         </div>
                       </div>

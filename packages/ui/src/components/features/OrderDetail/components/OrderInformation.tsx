@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface OrderInformationProps {
@@ -50,7 +50,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
                 <span className="text-sm font-medium">
-                  {formatPhoneNumberMasked(order.customer?.phone || order.customerPhone)}
+                  {formatPhoneNumber(order.customer?.phone || order.customerPhone)}
                 </span>
               </div>
             ) : null}
