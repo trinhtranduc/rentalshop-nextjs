@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
 import { z } from 'zod';
 
 // Validation schema for product availability query
@@ -269,40 +269,81 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         
         if (!orderPickup) return false; // No pickup date = not active
         
-        // Normalize order dates to UTC
-        const orderPickupStart = new Date(orderPickup);
-        orderPickupStart.setUTCHours(0, 0, 0, 0);
+        // ✅ FIX: Use getLocalDateKey to get local date for comparison
+        // This correctly converts UTC datetime to local date (VN UTC+7)
+        // Order pickup: "2026-03-10T17:00:00.000Z" = 11/03 00:00 UTC+7 → "2026-03-11"
+        // This prevents orders from 11/03 being counted for 10/03 availability
+        const orderPickupDateKey = getLocalDateKey(orderPickup);
+        const requestedDateKey = date || pickupDate; // Single date mode or pickup date
         
+        // Normalize return date to end of day UTC for comparison
         const orderReturnEnd = orderReturn ? new Date(orderReturn) : null;
         if (orderReturnEnd) {
           orderReturnEnd.setUTCHours(23, 59, 59, 999);
         }
         
+        // Debug logging for overlap calculation
+        console.log(`[Availability] Checking order ${order.id} (${order.orderNumber}):`, {
+          status,
+          orderPickup: orderPickup?.toISOString(),
+          orderReturn: orderReturn?.toISOString(),
+          orderPickupDateKey,
+          requestedDateKey,
+          orderReturnEnd: orderReturnEnd?.toISOString(),
+          requestedStart: startOfPeriod.toISOString(),
+          requestedEnd: endOfPeriod.toISOString()
+        });
+        
         // Check overlap: orders overlap if their rental periods intersect
         // Order is active if:
-        // 1. Order pickup is within requested period, OR
-        // 2. Order return is within requested period, OR
+        // 1. Order pickup date matches requested date, OR
+        // 2. Order return date is within requested period, OR
         // 3. Order spans across requested period (pickup before start, return after end)
         
         if (status === ORDER_STATUS.PICKUPED) {
-          // Currently rented: active if return date hasn't passed start of requested period
-          if (!orderReturnEnd) return true; // No return date = still active
-          return orderReturnEnd >= startOfPeriod;
+          // Currently rented: active if rental period overlaps with requested period
+          // Check if order is still active during the requested period
+          if (!orderReturnEnd) {
+            // No return date = still active if pickup date matches requested date
+            const isActive = orderPickupDateKey === requestedDateKey;
+            console.log(`[Availability] Order ${order.id} PICKUPED (no return): pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, isActive=${isActive}`);
+            return isActive;
+          }
+          // Order is active if:
+          // 1. Pickup date matches requested date, OR
+          // 2. Return date is within requested period (order ends during period), OR
+          // 3. Order spans across requested period (pickup before, return after)
+          const pickupMatches = orderPickupDateKey === requestedDateKey;
+          const returnInPeriod = orderReturnEnd >= startOfPeriod && orderReturnEnd <= endOfPeriod;
+          const spansAcross = orderPickup < startOfPeriod && orderReturnEnd > endOfPeriod;
+          const isActive = pickupMatches || returnInPeriod || spansAcross;
+          console.log(`[Availability] Order ${order.id} PICKUPED: pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, pickupMatches=${pickupMatches}, returnInPeriod=${returnInPeriod}, spansAcross=${spansAcross}, isActive=${isActive}`);
+          return isActive;
         }
         
         if (status === ORDER_STATUS.RESERVED) {
-          // Reserved: active if rental period overlaps with requested period
-          const hasOverlap = 
-            (orderPickupStart <= endOfPeriod && (!orderReturnEnd || orderReturnEnd >= startOfPeriod));
+          // Reserved: active if pickup date matches OR period overlaps
+          // Order overlaps if:
+          // 1. Pickup date matches requested date, OR
+          // 2. Return date is within requested period (order spans across or ends during period)
+          // Note: We use date key comparison for pickup date to avoid timezone issues
+          // But we still need to check period overlap for orders that span across
+          const pickupMatches = orderPickupDateKey === requestedDateKey;
+          const returnInPeriod = orderReturnEnd && orderReturnEnd >= startOfPeriod && orderReturnEnd <= endOfPeriod;
+          const spansAcross = orderPickup < startOfPeriod && orderReturnEnd && orderReturnEnd > endOfPeriod;
+          const hasOverlap = pickupMatches || returnInPeriod || spansAcross;
+          console.log(`[Availability] Order ${order.id} RESERVED: pickupDateKey=${orderPickupDateKey}, requestedDateKey=${requestedDateKey}, pickupMatches=${pickupMatches}, returnInPeriod=${returnInPeriod}, spansAcross=${spansAcross}, hasOverlap=${hasOverlap}`);
           return hasOverlap;
         }
         
         if (status === ORDER_STATUS.RETURNED) {
-          // Returned: was active if rental period overlapped with requested period
-          if (!orderReturnEnd) return false;
-          return orderPickupStart <= endOfPeriod && orderReturnEnd >= startOfPeriod;
+          // Returned orders should NOT count towards availability
+          // They have already been returned, so products are available again
+          console.log(`[Availability] Order ${order.id} RETURNED: not active (already returned)`);
+          return false;
         }
         
+        console.log(`[Availability] Order ${order.id} status ${status}: not active`);
         return false;
       };
       
