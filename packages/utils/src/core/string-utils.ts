@@ -5,9 +5,11 @@
  */
 
 /**
- * Format phone number for display
+ * Format phone number for display (full number, no masking)
  */
-export const formatPhoneNumber = (phone: string): string => {
+export const formatPhoneNumber = (phone: string | null | undefined): string => {
+  if (!phone) return 'N/A';
+  
   // Remove all non-digit characters
   const cleaned = phone.replace(/\D/g, '');
   

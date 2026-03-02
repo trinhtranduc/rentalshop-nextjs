@@ -34,6 +34,7 @@ interface OrdersProps {
   filterStyle?: 'buttons' | 'dropdown'; // ⭐ Choose UI style
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
   userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // Add user role
+  hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
 
 export const Orders = React.memo(function Orders({ 
@@ -55,7 +56,8 @@ export const Orders = React.memo(function Orders({
   showQuickFilters = true,
   filterStyle = 'dropdown', // ⭐ Default to dropdown (modern pattern)
   showMerchant = false, // ⭐ Default to false (client view)
-  userRole = 'ADMIN' // ⭐ Default to ADMIN for backward compatibility
+  userRole = 'ADMIN', // ⭐ Default to ADMIN for backward compatibility
+  hideCopyPhone = false // ⭐ Default to show copy button
 }: OrdersProps) {
   const t = useOrderTranslations();
   
@@ -143,6 +145,7 @@ export const Orders = React.memo(function Orders({
           onSort={memoizedOnSort}
           showMerchant={showMerchant}
           userRole={userRole}
+          hideCopyPhone={hideCopyPhone}
         />
       </div>
       

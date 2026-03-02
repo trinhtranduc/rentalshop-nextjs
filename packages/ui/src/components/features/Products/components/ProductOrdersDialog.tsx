@@ -15,7 +15,8 @@ import {
   Badge,
   EmptyState
 } from '@rentalshop/ui';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
+import { Copy } from 'lucide-react';
 import { 
   ShoppingCart, 
   Calendar, 
@@ -40,6 +41,10 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+  };
 
   useEffect(() => {
     if (open && product) {
@@ -177,9 +182,23 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
                           <p className="text-sm font-medium text-text-primary">
                             {order.customer?.firstName} {order.customer?.lastName}
                           </p>
-                          <p className="text-xs text-text-secondary">
-                            {formatPhoneNumberMasked(order.customer?.phone)}
-                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-text-secondary">
+                              {formatPhoneNumber(order.customer?.phone)}
+                            </p>
+                            {order.customer?.phone && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyPhone(order.customer?.phone || '');
+                                }}
+                                className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                                title="Copy phone number"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 

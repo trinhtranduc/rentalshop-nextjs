@@ -3,8 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
+import { Copy } from 'lucide-react';
+import { useToast } from '@rentalshop/ui';
 
 interface OrderInformationProps {
   order: OrderWithDetails;
@@ -12,6 +14,12 @@ interface OrderInformationProps {
 
 export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => {
   const t = useOrderTranslations();
+  const { toastSuccess } = useToast();
+  
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    toastSuccess('Copied', 'Phone number copied to clipboard');
+  };
   
   // Use centralized date formatting hooks (DRY principle)
   const formatDate = (dateString: string | Date | undefined) => {
@@ -47,11 +55,20 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
 
             {/* Customer Phone */}
             {(order.customer?.phone && order.customer.phone.trim() !== '') || order.customerPhone ? (
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
-                <span className="text-sm font-medium">
-                  {formatPhoneNumberMasked(order.customer?.phone || order.customerPhone)}
-                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium">
+                    {formatPhoneNumber(order.customer?.phone || order.customerPhone)}
+                  </span>
+                  <button
+                    onClick={() => handleCopyPhone(order.customer?.phone || order.customerPhone || '')}
+                    className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                    title="Copy phone number"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             ) : null}
 

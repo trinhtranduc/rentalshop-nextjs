@@ -3,7 +3,8 @@ import { Package, User, Mail, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickupOrder } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { formatPhoneNumberMasked } from '@rentalshop/utils';
+import { formatPhoneNumber } from '@rentalshop/utils';
+import { Copy } from 'lucide-react';
 
 interface OrdersListProps {
   orders: PickupOrder[];
@@ -19,6 +20,10 @@ export function OrdersList({
   className = '' 
 }: OrdersListProps) {
   const t = useOrderTranslations();
+  
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+  };
   
   if (orders.length === 0) {
     return (
@@ -68,9 +73,23 @@ export function OrdersList({
                 <p className="font-medium text-gray-900">
                   {order.customerName || 'Unknown Customer'}
                 </p>
-                <p className="text-sm text-gray-500">
-                  {formatPhoneNumberMasked(order.customerPhone)}
-                </p>
+                <div className="flex items-center gap-1">
+                  <p className="text-sm text-gray-500">
+                    {formatPhoneNumber(order.customerPhone)}
+                  </p>
+                  {order.customerPhone && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyPhone(order.customerPhone);
+                      }}
+                      className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 rounded"
+                      title="Copy phone number"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

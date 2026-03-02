@@ -114,11 +114,20 @@ export async function GET(
         'userScope.merchantId': userScope.merchantId,
         'userScope.outletId': userScope.outletId,
         'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId
+        'final outletId filter': searchFilters.outletId,
+        'searchFilters': JSON.stringify(searchFilters, null, 2)
       });
 
       // Get orders for this customer with role-based filtering
       const orders = await db.orders.search(searchFilters);
+      
+      console.log(`✅ Customer orders search result:`, {
+        total: orders.total || 0,
+        page: orders.page || page,
+        limit: orders.limit || limit,
+        dataLength: orders.data?.length || 0,
+        hasData: !!(orders.data && orders.data.length > 0)
+      });
 
       // Normalize date fields in order list to UTC ISO strings using toISOString()
       const normalizedOrders = (orders.data || []).map(order => ({
