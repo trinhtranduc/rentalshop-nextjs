@@ -58,9 +58,9 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium">
+                <span className="text-sm font-medium">
                     {formatPhoneNumber(order.customer?.phone || order.customerPhone)}
-                  </span>
+                </span>
                   <button
                     onClick={() => handleCopyPhone(order.customer?.phone || order.customerPhone || '')}
                     className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"

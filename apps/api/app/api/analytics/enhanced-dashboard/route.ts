@@ -239,7 +239,16 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       thisMonthOrdersTotal: thisMonthOrders.total,
       thisMonthOrdersDataLength: thisMonthOrders.data?.length,
       thisMonthRevenue,
-      activeRentalsTotal: activeRentals.total
+      lastMonthOrdersTotal: lastMonthOrders.total,
+      lastMonthOrdersDataLength: lastMonthOrders.data?.length,
+      lastMonthRevenue,
+      thisMonthOrdersCount,
+      lastMonthOrdersCount,
+      revenueGrowth,
+      ordersGrowth,
+      activeRentalsTotal: activeRentals.total,
+      periodType: start.getMonth() === end.getMonth() ? 'month' : 'year',
+      comparisonPeriod: start.getMonth() === end.getMonth() ? 'last month' : 'last year'
     });
 
     const dashboardData = {

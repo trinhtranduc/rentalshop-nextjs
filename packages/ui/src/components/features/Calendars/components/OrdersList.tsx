@@ -74,9 +74,9 @@ export function OrdersList({
                   {order.customerName || 'Unknown Customer'}
                 </p>
                 <div className="flex items-center gap-1">
-                  <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500">
                     {formatPhoneNumber(order.customerPhone)}
-                  </p>
+                </p>
                   {order.customerPhone && (
                     <button
                       onClick={(e) => {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -239,6 +239,12 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       // - RETURNED: KHÔNG tính (đã trả lại)
       // - CANCELLED: KHÔNG tính (đã hoàn lại)
       let totalDepositRefund = 0;
+      // Calculate total collateral (tổng tiền thế chân) - chỉ tính cho đơn đã PICKUPED
+      // LƯU Ý: totalCollateral chỉ tính cho đơn được pickup TRONG period (pickedUpAt trong period)
+      // Không tính cho đơn được pickup trước period dù vẫn đang PICKUPED
+      let totalCollateral = 0;
+      // Calculate total collateral plan (tổng tiền thế chân dự kiến) - chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai
+      let totalCollateralPlan = 0;
       for (const order of allOrders) {
         if (order.orderType !== ORDER_TYPE.RENT) continue;
         
@@ -263,10 +269,65 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           new Date(order.pickedUpAt) <= endOfPeriod
         ) {
           totalDepositRefund += securityDeposit;
+          // Tính tổng tiền thế chân (chỉ cho đơn đã PICKUPED và được pickup trong period)
+          totalCollateral += securityDeposit;
         }
         
         // KHÔNG tính khi RETURNED hoặc CANCELLED (đã trả lại/hoàn lại)
       }
+      
+      // ============================================================================
+      // TÍNH TỔNG TIỀN THẾ CHÂN: Query riêng để đảm bảo tính đúng
+      // ============================================================================
+      // VẤN ĐỀ: findManyLightweight filter theo createdAt, không phải pickedUpAt
+      // Nên cần query riêng với filter pickedUpAt để tính totalCollateral chính xác
+      // Query tất cả orders có status PICKUPED và được pickup trong period
+      const collateralWhereClause: any = {
+        orderType: ORDER_TYPE.RENT,
+        status: ORDER_STATUS.PICKUPED,
+        pickedUpAt: {
+          gte: startOfPeriod,
+          lte: endOfPeriod,
+          not: null
+        },
+        deletedAt: null
+      };
+      
+      // Apply outlet filtering
+      if (outlet) {
+        // Convert outlet.publicId to CUID
+        const outletObj = await db.outlets.findById(outlet.publicId);
+        if (outletObj) {
+          collateralWhereClause.outletId = outletObj.id;
+        }
+      } else if (userScope.merchantId && !selectedOutletIds) {
+        const merchant = await db.merchants.findById(userScope.merchantId);
+        if (merchant && merchant.outlets) {
+          collateralWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+        }
+      } else if (userScope.outletId) {
+        const outletObj = await db.outlets.findById(userScope.outletId);
+        if (outletObj) {
+          collateralWhereClause.outletId = outletObj.id;
+        }
+      }
+      
+      // Query orders trực tiếp từ Prisma để tính totalCollateral chính xác
+      // Sử dụng pickedUpAt filter thay vì createdAt
+      const collateralOrders = await prisma.order.findMany({
+        where: collateralWhereClause,
+        select: {
+          securityDeposit: true,
+          pickedUpAt: true
+        }
+      });
+      
+      // Tính lại totalCollateral từ query riêng
+      totalCollateral = collateralOrders.reduce((sum: number, order: any) => {
+        return sum + (order.securityDeposit || 0);
+      }, 0);
+      
+      console.log(`💰 Total Collateral calculated: ${totalCollateral} from ${collateralOrders.length} PICKUPED orders (pickedUpAt in period ${startOfPeriod.toISOString()} - ${endOfPeriod.toISOString()})`);
 
       // Get order count for the period
         const orderCount = await db.orders.getStats({
@@ -298,7 +359,9 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         realIncome: realIncome,
         futureIncome: futureIncome,
         orderCount: orderCount,
-        depositRefund: totalDepositRefund // Tiền thế chân thu được (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
+        depositRefund: totalDepositRefund, // Tiền thế chân thu được (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
+        totalCollateral: totalCollateral, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+        totalCollateralPlan: totalCollateralPlan // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
       };
 
       // Add outlet info when outletIds parameter is provided
