@@ -15,6 +15,8 @@ const batchAvailabilitySchema = z.object({
   // Legacy format for backward compatibility
   productIds: z.array(z.number().int().positive()).min(1).max(100).optional(),
   quantity: z.coerce.number().min(1).optional(), // Only used if products array is not provided
+  // Order type: RENT requires dates, SALE doesn't need dates
+  orderType: z.enum(['RENT', 'SALE']).optional().default('RENT'),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   // Support single date format (YYYY-MM-DD) for backward compatibility
@@ -24,12 +26,16 @@ const batchAvailabilitySchema = z.object({
   timeZone: z.string().optional().default('UTC'),
   outletId: z.coerce.number().int().positive().optional(),
 }).refine((data) => {
-  // Either 'date' or both 'startDate' and 'endDate' must be provided
+  // For RENT orders: Either 'date' or both 'startDate' and 'endDate' must be provided
+  // For SALE orders: Dates are optional and will be ignored even if provided
+  if (data.orderType === 'SALE') {
+    return true; // SALE doesn't require dates, and dates will be ignored
+  }
   const hasSingleDate = !!data.date;
   const hasRentalPeriod = !!(data.startDate && data.endDate);
   return hasSingleDate || hasRentalPeriod;
 }, {
-  message: "Either 'date' or both 'startDate' and 'endDate' must be provided"
+  message: "For RENT orders: Either 'date' or both 'startDate' and 'endDate' must be provided. For SALE orders, dates are optional and will be ignored."
 }).refine((data) => {
   // Either 'products' array or 'productIds' array must be provided
   return !!(data.products && data.products.length > 0) || !!(data.productIds && data.productIds.length > 0);
@@ -51,13 +57,19 @@ const batchAvailabilitySchema = z.object({
  * Request body:
  * - products: Array of { productId, quantity } objects (max 100 products) - NEW FORMAT
  * - productIds: Array of product IDs (legacy format, requires quantity field)
- * - startDate: ISO datetime string for rental start (optional)
- * - endDate: ISO datetime string for rental end (optional)
- * - date: Single date in YYYY-MM-DD format (optional, for backward compatibility)
+ * - orderType: 'RENT' or 'SALE' (default: 'RENT')
+ * - startDate: ISO datetime string for rental start (required for RENT, optional for SALE)
+ * - endDate: ISO datetime string for rental end (required for RENT, optional for SALE)
+ * - date: Single date in YYYY-MM-DD format (optional, for backward compatibility, RENT only)
  * - quantity: Number of items requested per product (default: 1, only used with legacy productIds format)
  * - includeTimePrecision: Boolean to enable precise hour/minute checking (default: true)
  * - timeZone: Timezone for time calculations (default: "UTC")
  * - outletId: Optional outlet ID (required for merchants/admins)
+ * 
+ * For SALE orders:
+ * - Dates are optional (not needed for stock check)
+ * - Checks RESERVED orders (all) and PICKUPED orders with future pickup dates
+ * - No date-based conflict analysis needed
  * 
  * Response includes:
  * - Array of availability results for each product
@@ -84,6 +96,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       const { 
         products: productsRequest, // New format: array of { productId, quantity }
         productIds, // Legacy format
+        orderType = 'RENT', // Default to RENT for backward compatibility
         startDate, 
         endDate, 
         date, 
@@ -146,37 +159,44 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         );
       }
 
-      // Parse rental dates with timezone support
-      let rentalStart: Date;
-      let rentalEnd: Date;
+      // Parse rental dates with timezone support (only for RENT orders)
+      let rentalStart: Date | null = null;
+      let rentalEnd: Date | null = null;
+      let durationMs = 0;
+      let durationHours = 0;
+      let durationDays = 0;
       
-      if (date) {
-        // Single date mode - check availability for entire day
-        rentalStart = new Date(date + 'T00:00:00.000Z');
-        rentalEnd = new Date(date + 'T23:59:59.999Z');
-      } else if (startDate && endDate) {
-        // Date range mode - precise time checking
-        rentalStart = new Date(startDate);
-        rentalEnd = new Date(endDate);
-      } else {
-        return NextResponse.json(
-          ResponseBuilder.error('DATE_REQUIRED'),
-          { status: 400 }
-        );
-      }
+      if (orderType === 'RENT') {
+        // RENT orders require dates for conflict checking
+        if (date) {
+          // Single date mode - check availability for entire day
+          rentalStart = new Date(date + 'T00:00:00.000Z');
+          rentalEnd = new Date(date + 'T23:59:59.999Z');
+        } else if (startDate && endDate) {
+          // Date range mode - precise time checking
+          rentalStart = new Date(startDate);
+          rentalEnd = new Date(endDate);
+        } else {
+          return NextResponse.json(
+            ResponseBuilder.error('DATE_REQUIRED'),
+            { status: 400 }
+          );
+        }
 
-      // Validate date range
-      if (rentalStart > rentalEnd) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_RENTAL_DATES'),
-          { status: 400 }
-        );
-      }
+        // Validate date range
+        if (rentalStart > rentalEnd) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_RENTAL_DATES'),
+            { status: 400 }
+          );
+        }
 
-      // Calculate precise duration
-      const durationMs = rentalEnd.getTime() - rentalStart.getTime();
-      const durationHours = durationMs / (1000 * 60 * 60);
-      const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+        // Calculate precise duration
+        durationMs = rentalEnd.getTime() - rentalStart.getTime();
+        durationHours = durationMs / (1000 * 60 * 60);
+        durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+      }
+      // SALE orders don't need dates - we check current stock and active orders
 
       // Fetch all products at once for better performance
       // Product.merchantId is Int (number), so we can use userMerchantId directly
@@ -239,42 +259,68 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       );
 
       // Find all conflicting orders for all products at once
-      const conflictingOrders = await db.prisma.order.findMany({
-        where: {
-          orderType: ORDER_TYPE.RENT as any,
-          status: {
-            in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any],
-          },
-          outletId: finalOutletId,
-          OR: [
-            // Pickup during requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalEnd } },
-                { pickupPlanAt: { gte: rentalStart } },
-              ],
-            },
-            // Return during requested period
-            {
-              AND: [
-                { returnPlanAt: { lte: rentalEnd } },
-                { returnPlanAt: { gte: rentalStart } },
-              ],
-            },
-            // Rental spans across requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalStart } },
-                { returnPlanAt: { gte: rentalEnd } },
-              ],
-            },
-          ],
-          orderItems: {
-            some: {
-              productId: { in: productIdsList },
-            },
+      // Different logic for RENT vs SALE orders
+      const now = new Date();
+      const whereClause: any = {
+        outletId: finalOutletId,
+        orderItems: {
+          some: {
+            productId: { in: productIdsList },
           },
         },
+      };
+
+      if (orderType === 'RENT') {
+        // RENT orders: Check date-based conflicts
+        whereClause.orderType = ORDER_TYPE.RENT as any;
+        whereClause.status = {
+          in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any],
+        };
+        whereClause.OR = [
+          // Pickup during requested period
+          {
+            AND: [
+              { pickupPlanAt: { lte: rentalEnd } },
+              { pickupPlanAt: { gte: rentalStart } },
+            ],
+          },
+          // Return during requested period
+          {
+            AND: [
+              { returnPlanAt: { lte: rentalEnd } },
+              { returnPlanAt: { gte: rentalStart } },
+            ],
+          },
+          // Rental spans across requested period
+          {
+            AND: [
+              { pickupPlanAt: { lte: rentalStart } },
+              { returnPlanAt: { gte: rentalEnd } },
+            ],
+          },
+        ];
+      } else if (orderType === 'SALE') {
+        // SALE orders: Check RESERVED and PICKUPED (future) orders
+        // RESERVED: All reserved orders (regardless of date)
+        // PICKUPED: Only future pickup orders (pickupPlanAt >= now)
+        whereClause.orderType = ORDER_TYPE.SALE as any;
+        whereClause.OR = [
+          // All RESERVED orders
+          {
+            status: ORDER_STATUS.RESERVED as any,
+          },
+          // PICKUPED orders with future pickup date
+          {
+            AND: [
+              { status: ORDER_STATUS.PICKUPED as any },
+              { pickupPlanAt: { gte: now } },
+            ],
+          },
+        ];
+      }
+
+      const conflictingOrders = await db.prisma.order.findMany({
+        where: whereClause,
         include: {
           orderItems: {
             where: {
@@ -373,9 +419,17 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
               return;
             }
 
-            // Only count active rental orders
-            if (order.orderType !== ORDER_TYPE.RENT || ![ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED].includes(order.status as any)) {
-              return;
+            // Validate order type and status based on request orderType
+            if (orderType === 'RENT') {
+              // RENT orders: Only count active rental orders
+              if (order.orderType !== ORDER_TYPE.RENT || ![ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED].includes(order.status as any)) {
+                return;
+              }
+            } else if (orderType === 'SALE') {
+              // SALE orders: Only count RESERVED and PICKUPED (future) orders
+              if (order.orderType !== ORDER_TYPE.SALE || ![ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED].includes(order.status as any)) {
+                return;
+              }
             }
 
             order.orderItems.forEach((item: any) => {
@@ -383,52 +437,73 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
               if (item.productId === productId) {
                 outletConflicts.conflictingQuantity += item.quantity;
 
-                // Calculate precise conflict analysis if time precision is enabled
-                const orderPickup = order.pickupPlanAt;
-                const orderReturn = order.returnPlanAt;
+                if (orderType === 'RENT' && rentalStart && rentalEnd) {
+                  // RENT orders: Calculate precise conflict analysis
+                  const orderPickup = order.pickupPlanAt;
+                  const orderReturn = order.returnPlanAt;
 
-                if (orderPickup && orderReturn) {
-                  // Determine conflict type and duration
-                  let conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
-                  let conflictStart: Date;
-                  let conflictEnd: Date;
+                  if (orderPickup && orderReturn) {
+                    // Determine conflict type and duration
+                    let conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+                    let conflictStart: Date;
+                    let conflictEnd: Date;
 
-                  if (orderPickup <= rentalStart && orderReturn >= rentalEnd) {
-                    conflictType = 'complete_overlap';
-                    conflictStart = rentalStart;
-                    conflictEnd = rentalEnd;
-                  } else if (orderPickup <= rentalStart && orderReturn > rentalStart) {
-                    conflictType = 'period_overlap';
-                    conflictStart = rentalStart;
-                    conflictEnd = orderReturn;
-                  } else if (orderPickup < rentalEnd && orderReturn >= rentalEnd) {
-                    conflictType = 'period_overlap';
-                    conflictStart = orderPickup;
-                    conflictEnd = rentalEnd;
-                  } else {
-                    conflictType = 'complete_overlap';
-                    conflictStart = orderPickup;
-                    conflictEnd = orderReturn;
+                    if (orderPickup <= rentalStart && orderReturn >= rentalEnd) {
+                      conflictType = 'complete_overlap';
+                      conflictStart = rentalStart;
+                      conflictEnd = rentalEnd;
+                    } else if (orderPickup <= rentalStart && orderReturn > rentalStart) {
+                      conflictType = 'period_overlap';
+                      conflictStart = rentalStart;
+                      conflictEnd = orderReturn;
+                    } else if (orderPickup < rentalEnd && orderReturn >= rentalEnd) {
+                      conflictType = 'period_overlap';
+                      conflictStart = orderPickup;
+                      conflictEnd = rentalEnd;
+                    } else {
+                      conflictType = 'complete_overlap';
+                      conflictStart = orderPickup;
+                      conflictEnd = orderReturn;
+                    }
+
+                    const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
+                    const conflictHours = conflictMs / (1000 * 60 * 60);
+
+                    outletConflicts.conflicts.push({
+                      orderNumber: order.orderNumber,
+                      customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
+                      pickupDate: orderPickup.toISOString(),
+                      returnDate: orderReturn.toISOString(),
+                      pickupDateLocal: includeTimePrecision
+                        ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                        : orderPickup.toLocaleDateString('en-US'),
+                      returnDateLocal: includeTimePrecision
+                        ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                        : orderReturn.toLocaleDateString('en-US'),
+                      quantity: item.quantity,
+                      conflictDuration: conflictMs,
+                      conflictHours: Math.round(conflictHours * 100) / 100,
+                      conflictType,
+                    });
                   }
-
-                  const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
-                  const conflictHours = conflictMs / (1000 * 60 * 60);
-
+                } else if (orderType === 'SALE') {
+                  // SALE orders: Simple conflict info (no date-based analysis needed)
+                  const orderPickup = order.pickupPlanAt;
                   outletConflicts.conflicts.push({
                     orderNumber: order.orderNumber,
                     customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
-                    pickupDate: orderPickup.toISOString(),
-                    returnDate: orderReturn.toISOString(),
-                    pickupDateLocal: includeTimePrecision
-                      ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
-                      : orderPickup.toLocaleDateString('en-US'),
-                    returnDateLocal: includeTimePrecision
-                      ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
-                      : orderReturn.toLocaleDateString('en-US'),
+                    pickupDate: orderPickup?.toISOString() || '',
+                    returnDate: '', // SALE orders don't have return date
+                    pickupDateLocal: orderPickup
+                      ? (includeTimePrecision
+                          ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                          : orderPickup.toLocaleDateString('en-US'))
+                      : 'N/A',
+                    returnDateLocal: 'N/A',
                     quantity: item.quantity,
-                    conflictDuration: conflictMs,
-                    conflictHours: Math.round(conflictHours * 100) / 100,
-                    conflictType,
+                    conflictDuration: 0,
+                    conflictHours: 0,
+                    conflictType: 'complete_overlap', // All SALE conflicts are complete (no date range)
                   });
                 }
               }
@@ -448,21 +523,24 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
             totalAvailableStock,
             totalRenting,
             requestedQuantity: productQuantity,
-            rentalPeriod: {
-              startDate: rentalStart.toISOString(),
-              endDate: rentalEnd.toISOString(),
-              startDateLocal: includeTimePrecision
-                ? rentalStart.toLocaleString('en-US', { timeZone, hour12: false })
-                : rentalStart.toLocaleDateString('en-US'),
-              endDateLocal: includeTimePrecision
-                ? rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })
-                : rentalEnd.toLocaleDateString('en-US'),
-              durationMs,
-              durationHours: Math.round(durationHours * 100) / 100,
-              durationDays,
-              timeZone,
-              includeTimePrecision,
-            },
+            // Only include rentalPeriod for RENT orders
+            ...(orderType === 'RENT' && rentalStart && rentalEnd ? {
+              rentalPeriod: {
+                startDate: rentalStart.toISOString(),
+                endDate: rentalEnd.toISOString(),
+                startDateLocal: includeTimePrecision
+                  ? rentalStart.toLocaleString('en-US', { timeZone, hour12: false })
+                  : rentalStart.toLocaleDateString('en-US'),
+                endDateLocal: includeTimePrecision
+                  ? rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })
+                  : rentalEnd.toLocaleDateString('en-US'),
+                durationMs,
+                durationHours: Math.round(durationHours * 100) / 100,
+                durationDays,
+                timeZone,
+                includeTimePrecision,
+              },
+            } : {}),
             isAvailable,
             stockAvailable,
             hasNoConflicts: productConflicts.length === 0,
@@ -483,13 +561,19 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
               effectivelyAvailable: effectivelyAvailable,
             },
             totalConflictsFound: outletConflicts.conflicts.length,
-            message: isAvailable
-              ? includeTimePrecision
-                ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
-                : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
-              : stockAvailable
-              ? `Stock available but conflicts during requested period ${includeTimePrecision ? `(${Math.round(durationHours * 100) / 100} hours)` : `(${durationDays} days)`}`
-              : `Insufficient stock: need ${productQuantity}, have ${totalAvailableStock}`,
+            message: orderType === 'RENT' && rentalStart && rentalEnd
+              ? (isAvailable
+                  ? includeTimePrecision
+                    ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
+                    : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
+                  : stockAvailable
+                  ? `Stock available but conflicts during requested period ${includeTimePrecision ? `(${Math.round(durationHours * 100) / 100} hours)` : `(${durationDays} days)`}`
+                  : `Insufficient stock: need ${productQuantity}, have ${totalAvailableStock}`)
+              : (isAvailable
+                  ? `Available: ${effectivelyAvailable} units in stock`
+                  : stockAvailable
+                  ? `Stock available but ${conflictingQuantity} units reserved/picked up`
+                  : `Insufficient stock: need ${productQuantity}, have ${totalAvailableStock}`),
           };
         })
       );
@@ -499,17 +583,20 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           results,
           summary: {
             totalProducts: normalizedProducts.length,
-            availableProducts: results.filter(r => r.isAvailable && !r.error).length,
-            unavailableProducts: results.filter(r => !r.isAvailable && !r.error).length,
-            errorProducts: results.filter(r => r.error).length,
+            availableProducts: results.filter(r => !r.error && 'isAvailable' in r && r.isAvailable).length,
+            unavailableProducts: results.filter(r => !r.error && 'isAvailable' in r && !r.isAvailable).length,
+            errorProducts: results.filter(r => !!r.error).length,
           },
-          rentalPeriod: {
-            startDate: rentalStart.toISOString(),
-            endDate: rentalEnd.toISOString(),
-            durationMs,
-            durationHours: Math.round(durationHours * 100) / 100,
-            durationDays,
-          },
+          // Only include rentalPeriod for RENT orders
+          ...(orderType === 'RENT' && rentalStart && rentalEnd ? {
+            rentalPeriod: {
+              startDate: rentalStart.toISOString(),
+              endDate: rentalEnd.toISOString(),
+              durationMs,
+              durationHours: Math.round(durationHours * 100) / 100,
+              durationDays,
+            },
+          } : {}),
         })
       );
 

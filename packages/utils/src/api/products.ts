@@ -83,9 +83,10 @@ export interface BatchProductAvailabilityRequest {
   // Legacy format: array of product IDs with single quantity for all
   productIds?: number[];
   quantity?: number; // Only used with legacy productIds format
-  startDate?: string;
-  endDate?: string;
-  date?: string; // YYYY-MM-DD format for backward compatibility
+  orderType?: 'RENT' | 'SALE'; // Default: 'RENT'
+  startDate?: string; // Required for RENT orders
+  endDate?: string; // Required for RENT orders
+  date?: string; // YYYY-MM-DD format for backward compatibility (RENT only)
   includeTimePrecision?: boolean;
   timeZone?: string;
   outletId?: number; // Required for MERCHANT and ADMIN roles
