@@ -74,6 +74,44 @@ export interface ProductAvailabilityResponse {
   message: string;
 }
 
+export interface BatchProductAvailabilityRequest {
+  // New format: array of { productId, quantity } - each product can have different quantity
+  products?: Array<{
+    productId: number;
+    quantity: number;
+  }>;
+  // Legacy format: array of product IDs with single quantity for all
+  productIds?: number[];
+  quantity?: number; // Only used with legacy productIds format
+  startDate?: string;
+  endDate?: string;
+  date?: string; // YYYY-MM-DD format for backward compatibility
+  includeTimePrecision?: boolean;
+  timeZone?: string;
+  outletId?: number; // Required for MERCHANT and ADMIN roles
+}
+
+export interface BatchProductAvailabilityResult extends ProductAvailabilityResponse {
+  error?: string;
+}
+
+export interface BatchProductAvailabilityResponse {
+  results: BatchProductAvailabilityResult[];
+  summary: {
+    totalProducts: number;
+    availableProducts: number;
+    unavailableProducts: number;
+    errorProducts: number;
+  };
+  rentalPeriod: {
+    startDate: string;
+    endDate: string;
+    durationMs: number;
+    durationHours: number;
+    durationDays: number;
+  };
+}
+
 /**
  * Products API client for product management operations
  */
@@ -340,6 +378,21 @@ export const productsApi = {
     const url = `${apiUrls.products.availability(productId)}?${params.toString()}`;
     const response = await authenticatedFetch(url);
     return await parseApiResponse<ProductAvailabilityResponse>(response);
+  },
+
+  /**
+   * Check availability for multiple products at once (batch check)
+   * Use case: Cart with multiple products, user changes pickup/return dates,
+   * need to check availability for all products simultaneously
+   */
+  async checkBatchProductAvailability(
+    request: BatchProductAvailabilityRequest
+  ): Promise<ApiResponse<BatchProductAvailabilityResponse>> {
+    const response = await authenticatedFetch(apiUrls.products.batchAvailability, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    return await parseApiResponse<BatchProductAvailabilityResponse>(response);
   },
 
   /**

@@ -68,6 +68,7 @@ export interface ApiUrls {
     bulkUpdate: string;
     bulkImport: string;
     availability: (id: number) => string;
+    batchAvailability: string;
     export: string;
   };
   orders: {
@@ -590,6 +591,7 @@ function createApiUrls(): ApiUrls {
       bulkUpdate: `${base}/api/products/bulk-update`,
       bulkImport: `${base}/api/products/bulk-import`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
+      batchAvailability: `${base}/api/products/batch-availability`,
       export: `${base}/api/products/export`,
     },
     orders: {

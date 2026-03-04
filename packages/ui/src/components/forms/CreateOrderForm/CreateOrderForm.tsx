@@ -37,7 +37,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast, ToastContainer, CustomerDetailDialog } from '@rentalshop/ui';
 
-import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';
+import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest, type BatchProductAvailabilityRequest } from '@rentalshop/utils';
 import { useProductAvailability, useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
@@ -211,6 +211,128 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   // Toast notifications
   const { toastSuccess, toastError, removeToast } = useToast();
 
+  // Batch availability state - cache results when dates change
+  const [batchAvailabilityCache, setBatchAvailabilityCache] = useState<Map<number, ProductAvailabilityStatus>>(new Map());
+  const [isCheckingBatchAvailability, setIsCheckingBatchAvailability] = useState(false);
+
+  // Check batch availability when dates change (for RENT orders with products in cart)
+  useEffect(() => {
+    // Only check batch if:
+    // 1. Order type is RENT
+    // 2. Both pickup and return dates are set
+    // 3. There are products in the cart
+    // 4. Outlet is selected
+    if (
+      formData.orderType === 'RENT' &&
+      formData.pickupPlanAt &&
+      formData.returnPlanAt &&
+      orderItems.length > 0 &&
+      formData.outletId
+    ) {
+      const checkBatchAvailability = async () => {
+        setIsCheckingBatchAvailability(true);
+        try {
+          // Prepare batch request with products and their quantities
+          const batchRequest: BatchProductAvailabilityRequest = {
+            products: orderItems.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity || 1,
+            })),
+            startDate: new Date(formData.pickupPlanAt + 'T00:00:00').toISOString(),
+            endDate: new Date(formData.returnPlanAt + 'T23:59:59').toISOString(),
+            includeTimePrecision: true,
+            timeZone: 'UTC',
+            outletId: formData.outletId,
+          };
+
+          console.log('🔍 Checking batch availability for', orderItems.length, 'products:', batchRequest);
+
+          const batchResponse = await productsApi.checkBatchProductAvailability(batchRequest);
+
+          if (batchResponse.success && batchResponse.data) {
+            // Convert batch results to cache map
+            const cache = new Map<number, ProductAvailabilityStatus>();
+            
+            batchResponse.data.results.forEach((result) => {
+              if (result.error) {
+                cache.set(result.productId, {
+                  status: 'error',
+                  text: `Error: ${result.error}`,
+                  color: 'bg-red-100 text-red-600',
+                  totalStock: 0,
+                  totalAvailableStock: 0,
+                  totalRenting: 0,
+                  effectivelyAvailable: 0,
+                });
+              } else {
+                const totalStock = result.totalStock || 0;
+                const totalAvailableStock = result.totalAvailableStock || 0;
+                const totalRenting = result.totalRenting || 0;
+                const effectivelyAvailable = result.availabilityByOutlet?.[0]?.effectivelyAvailable || totalAvailableStock;
+
+                let status: ProductAvailabilityStatus;
+                if (!result.stockAvailable) {
+                  status = {
+                    status: 'out-of-stock',
+                    text: t('messages.outOfStockWithDetails', { need: result.requestedQuantity, have: totalAvailableStock }),
+                    color: 'bg-red-100 text-red-600',
+                    totalStock,
+                    totalAvailableStock,
+                    totalRenting,
+                    effectivelyAvailable,
+                  };
+                } else if (!result.isAvailable) {
+                  const conflictCount = result.totalConflictsFound || 0;
+                  status = {
+                    status: 'unavailable',
+                    text: conflictCount > 0 
+                      ? t('messages.conflictsDetected', { count: conflictCount })
+                      : t('messages.unavailableForDates'),
+                    color: 'bg-orange-100 text-orange-600',
+                    totalStock,
+                    totalAvailableStock,
+                    totalRenting,
+                    effectivelyAvailable,
+                  };
+                } else {
+                  const conflictCount = result.totalConflictsFound || 0;
+                  status = {
+                    status: 'available',
+                    text: conflictCount > 0 
+                      ? t('messages.availableWithConflicts', { units: effectivelyAvailable, conflicts: conflictCount })
+                      : t('messages.availableWithUnits', { units: effectivelyAvailable }),
+                    color: 'bg-green-100 text-green-600',
+                    totalStock,
+                    totalAvailableStock,
+                    totalRenting,
+                    effectivelyAvailable,
+                  };
+                }
+                cache.set(result.productId, status);
+              }
+            });
+
+            setBatchAvailabilityCache(cache);
+            console.log('✅ Batch availability checked, cached', cache.size, 'results');
+          }
+        } catch (error) {
+          console.error('Error checking batch availability:', error);
+          // Clear cache on error
+          setBatchAvailabilityCache(new Map());
+        } finally {
+          setIsCheckingBatchAvailability(false);
+        }
+      };
+
+      // Debounce batch check
+      const timeoutId = setTimeout(checkBatchAvailability, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Clear cache if conditions not met
+      setBatchAvailabilityCache(new Map());
+    }
+  }, [formData.orderType, formData.pickupPlanAt, formData.returnPlanAt, orderItems, formData.outletId, t]);
+
   // Handle product search and store results
   const handleProductSearch = useCallback(async (query: string) => {
     try {
@@ -251,14 +373,33 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   }, [searchProducts, currency, formData.outletId, t, tp]);
 
   // Create a custom getProductAvailabilityStatus function using new API
+  // First check batch cache, then fallback to individual API call
   const getProductAvailabilityStatus = useCallback(async (
     product: ProductWithStock, 
     startDate?: string, 
     endDate?: string, 
     requestedQuantity: number = BUSINESS.DEFAULT_QUANTITY
   ): Promise<ProductAvailabilityStatus> => {
+    // Check if we have cached batch results for this product
+    // Only use cache if dates match current form dates
+    const currentPickupDate = formData.pickupPlanAt ? new Date(formData.pickupPlanAt + 'T00:00:00').toISOString() : undefined;
+    const currentReturnDate = formData.returnPlanAt ? new Date(formData.returnPlanAt + 'T23:59:59').toISOString() : undefined;
+    
+    if (
+      batchAvailabilityCache.has(product.id) &&
+      startDate === currentPickupDate &&
+      endDate === currentReturnDate &&
+      formData.orderType === 'RENT' &&
+      formData.pickupPlanAt &&
+      formData.returnPlanAt
+    ) {
+      console.log('✅ Using cached batch availability for product:', product.id);
+      return batchAvailabilityCache.get(product.id)!;
+    }
+
+    // Fallback to individual API call if not in cache
     try {
-      console.log('🔍 Checking availability for product:', {
+      console.log('🔍 Checking availability for product (individual API):', {
         productId: product.id,
         productName: product.name,
         startDate,
