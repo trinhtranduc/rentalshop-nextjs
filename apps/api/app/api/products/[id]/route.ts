@@ -805,45 +805,64 @@ export async function DELETE(
       }
 
       // ============================================================================
-      // VALIDATION: Check if product has active orders before deletion (Option 1)
+      // VALIDATION: Check product orders before soft deletion
       // ============================================================================
-      // Block deletion if product has active orders (RESERVED, PICKUPED)
-      // Allow soft delete if only completed/cancelled orders exist (but warn)
+      // Note: This is a SOFT DELETE (sets isActive = false), so we allow deletion
+      // even with active orders. Product will be hidden but data is preserved.
       
-      // Product uses Int ID, so we can directly use productId to query order items
-      // Check for active order items (orders with RESERVED or PICKUPED status)
-      const activeOrderItemCount = await prisma.orderItem.count({
+      // Get detailed order information for better messaging
+      const activeOrders = await prisma.order.findMany({
         where: {
-          productId: productId,
-          order: {
-            status: {
-              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+          orderItems: {
+            some: {
+              productId: productId
+            }
+          },
+          status: {
+            in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+          }
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          orderItems: {
+            where: {
+              productId: productId
+            },
+            select: {
+              quantity: true
             }
           }
         }
       });
 
-      if (activeOrderItemCount > 0) {
-        console.log(`❌ Cannot delete product ${productId}: Has ${activeOrderItemCount} active order item(s)`);
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'BUSINESS_RULE_VIOLATION',
-            message: `Cannot delete product "${existingProduct.name}" because it has ${activeOrderItemCount} active order item(s) (RESERVED or PICKUPED status). Please complete or cancel these orders first.`
-          },
-          { status: API.STATUS.CONFLICT }
-        );
-      }
+      const activeOrderItemCount = activeOrders.reduce((sum, order) => {
+        return sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+      }, 0);
 
-      // Check total order items count for warning (completed/cancelled orders)
+      // Get order numbers for better error message
+      const activeOrderNumbers = activeOrders.map(o => o.orderNumber).join(', ');
+      const reservedCount = activeOrders.filter(o => o.status === ORDER_STATUS.RESERVED).length;
+      const pickedUpCount = activeOrders.filter(o => o.status === ORDER_STATUS.PICKUPED).length;
+
+      // Check total order items count for informational message
       const totalOrderItemCount = await prisma.orderItem.count({
         where: {
           productId: productId
         }
       });
 
-      if (totalOrderItemCount > 0) {
-        console.log(`⚠️ Warning: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
+      // Warn if there are active orders, but allow soft delete
+      if (activeOrderItemCount > 0) {
+        console.log(`⚠️ Warning: Product ${productId} has ${activeOrderItemCount} active order item(s) but will be soft deleted (hidden from listings)`);
+        console.log(`   Active orders: ${activeOrderNumbers}`);
+        console.log(`   - RESERVED: ${reservedCount} order(s)`);
+        console.log(`   - PICKUPED: ${pickedUpCount} order(s)`);
+      }
+
+      if (totalOrderItemCount > 0 && activeOrderItemCount === 0) {
+        console.log(`ℹ️ Info: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
       }
 
       // IMPORTANT: Delete all product images from S3 before soft deleting the product
@@ -912,11 +931,28 @@ export async function DELETE(
         images: imageUrls // Use already parsed imageUrls from above
       };
 
+      // Build informative message based on order status
+      let message = `Sản phẩm "${existingProduct.name}" đã được ẩn khỏi danh sách (soft delete). Dữ liệu vẫn được lưu trữ trong hệ thống.`;
+      
+      if (activeOrderItemCount > 0) {
+        message += `\n\n⚠️ Lưu ý: Sản phẩm này đang có ${activeOrderItemCount} đơn hàng đang hoạt động (${reservedCount} đơn RESERVED, ${pickedUpCount} đơn PICKUPED).`;
+        message += `\nCác đơn hàng: ${activeOrderNumbers}`;
+        message += `\nSản phẩm sẽ không hiển thị trong danh sách nhưng vẫn có thể truy cập qua các đơn hàng hiện có.`;
+      } else if (totalOrderItemCount > 0) {
+        message += `\n\nℹ️ Sản phẩm có ${totalOrderItemCount} đơn hàng trong lịch sử (đã hoàn thành hoặc đã hủy).`;
+      }
+
       return NextResponse.json({
         success: true,
         data: responseProduct,
         code: 'PRODUCT_DELETED_SUCCESS',
-        message: 'Product deleted successfully'
+        message: message,
+        warnings: activeOrderItemCount > 0 ? {
+          activeOrders: activeOrderItemCount,
+          reservedOrders: reservedCount,
+          pickedUpOrders: pickedUpCount,
+          orderNumbers: activeOrderNumbers.split(', ')
+        } : undefined
       });
 
     } catch (error) {
