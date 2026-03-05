@@ -319,9 +319,9 @@ export default function ProductOrdersPage() {
                             {order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'}
                           </p>
                           <div className="flex items-center gap-1">
-                            <p className="text-xs text-text-secondary">
+                          <p className="text-xs text-text-secondary">
                               {formatPhoneNumber(order.customer?.phone)}
-                            </p>
+                          </p>
                             {order.customer?.phone && (
                               <button
                                 onClick={(e) => {

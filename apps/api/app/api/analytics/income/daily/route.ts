@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -183,6 +183,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       dateObj: Date;
       totalRevenue: number; // Tổng doanh thu trong ngày
       depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
+      totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
       orders: Array<{
         id: number;
@@ -256,6 +258,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             dateObj,
             totalRevenue: 0,
             depositRefund: 0, // Tiền thế chân trả lại
+            totalCollateral: 0, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+            totalCollateralPlan: 0, // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
             newOrderCount: 0,
             orders: []
           });
@@ -404,7 +408,141 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           // KHÔNG tính khi RETURNED hoặc CANCELLED (đã trả lại/hoàn lại)
         }
       }
+      
+      // ============================================================================
+      // TÍNH TỔNG TIỀN THẾ CHÂN: Chỉ tính cho đơn đã PICKUPED
+      // ============================================================================
+      if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.PICKUPED) {
+        const securityDeposit = order.securityDeposit || 0;
+        if (securityDeposit > 0 && order.pickedUpAt) {
+          const pickedUpDate = new Date(order.pickedUpAt);
+          if (pickedUpDate >= start && pickedUpDate <= end) {
+            const dateKey = getUTCDateKey(pickedUpDate);
+            if (dailyDataMap.has(dateKey)) {
+              const dailyData = dailyDataMap.get(dateKey)!;
+              dailyData.totalCollateral += securityDeposit;
+            }
+          }
+        }
+      }
     }
+
+    // ============================================================================
+    // TÍNH LẠI TỔNG TIỀN THẾ CHÂN: Query riêng để đảm bảo tính đúng
+    // ============================================================================
+    // VẤN ĐỀ: findManyLightweight filter theo createdAt, không phải pickedUpAt
+    // Nên cần query riêng với filter pickedUpAt để tính totalCollateral chính xác
+    // Query tất cả orders có status PICKUPED và được pickup trong period
+    const collateralWhereClause: any = {
+      orderType: ORDER_TYPE.RENT,
+      status: ORDER_STATUS.PICKUPED,
+      pickedUpAt: {
+        gte: start,
+        lte: end,
+        not: null
+      },
+      deletedAt: null
+    };
+    
+    // Apply outlet filtering
+    if (userScope.outletId) {
+      const outletObj = await db.outlets.findById(userScope.outletId);
+      if (outletObj) {
+        collateralWhereClause.outletId = outletObj.id;
+      }
+    } else if (userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        collateralWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      }
+    }
+    
+    // Query orders trực tiếp từ Prisma để tính totalCollateral chính xác
+    const collateralOrders = await prisma.order.findMany({
+      where: collateralWhereClause,
+      select: {
+        securityDeposit: true,
+        pickedUpAt: true
+      }
+    });
+    
+    // Tính lại totalCollateral và cập nhật vào dailyDataMap
+    // Reset totalCollateral trước
+    for (const dailyData of dailyDataMap.values()) {
+      dailyData.totalCollateral = 0;
+    }
+    
+    // Tính lại từ query riêng
+    for (const order of collateralOrders) {
+      if (order.pickedUpAt) {
+        const pickedUpDate = new Date(order.pickedUpAt);
+        const dateKey = getUTCDateKey(pickedUpDate);
+        if (dailyDataMap.has(dateKey)) {
+          const dailyData = dailyDataMap.get(dateKey)!;
+          dailyData.totalCollateral += (order.securityDeposit || 0);
+        }
+      }
+    }
+    
+    console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in period ${start.toISOString()} - ${end.toISOString()}`);
+
+    // ============================================================================
+    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN: Query riêng cho đơn RESERVED có pickupPlanAt trong tương lai
+    // ============================================================================
+    // Query tất cả orders có status RESERVED, có securityDeposit, và pickupPlanAt trong tương lai
+    const now = new Date();
+    const collateralPlanWhereClause: any = {
+      orderType: ORDER_TYPE.RENT,
+      status: ORDER_STATUS.RESERVED,
+      pickupPlanAt: {
+        gte: now, // Chỉ tính cho đơn có pickupPlanAt trong tương lai
+        not: null
+      },
+      deletedAt: null
+    };
+    
+    // Apply outlet filtering
+    if (userScope.outletId) {
+      const outletObj = await db.outlets.findById(userScope.outletId);
+      if (outletObj) {
+        collateralPlanWhereClause.outletId = outletObj.id;
+      }
+    } else if (userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        collateralPlanWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      }
+    }
+    
+    // Query orders trực tiếp từ Prisma để tính totalCollateralPlan chính xác
+    const collateralPlanOrders = await prisma.order.findMany({
+      where: collateralPlanWhereClause,
+      select: {
+        securityDeposit: true,
+        pickupPlanAt: true
+      }
+    });
+    
+    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo pickupPlanAt
+    // Reset totalCollateralPlan trước
+    for (const dailyData of dailyDataMap.values()) {
+      dailyData.totalCollateralPlan = 0;
+    }
+    
+    // Tính lại từ query riêng - group theo pickupPlanAt date
+    for (const order of collateralPlanOrders) {
+      if (order.pickupPlanAt) {
+        const pickupPlanDate = new Date(order.pickupPlanAt);
+        const dateKey = getUTCDateKey(pickupPlanDate);
+        // Chỉ tính nếu pickupPlanAt nằm trong period được query
+        if (pickupPlanDate >= start && pickupPlanDate <= end && dailyDataMap.has(dateKey)) {
+          const dailyData = dailyDataMap.get(dateKey)!;
+          dailyData.totalCollateralPlan += (order.securityDeposit || 0);
+        }
+      }
+    }
+    
+    console.log(`💰 Daily Total Collateral Plan calculated: ${collateralPlanOrders.length} RESERVED orders (pickupPlanAt in future)`);
 
     // ============================================================================
     // CHUYỂN ĐỔI MAP THÀNH ARRAY VÀ SẮP XẾP THEO NGÀY
@@ -426,6 +564,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           totalDays: dailyDataArray.length,
           totalRevenue: dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0),
           totalDepositRefund: dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0), // Tổng tiền thế chân thu được
+          totalCollateral: dailyDataArray.reduce((sum, day) => sum + (day.totalCollateral || 0), 0), // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+          totalCollateralPlan: dailyDataArray.reduce((sum, day) => sum + (day.totalCollateralPlan || 0), 0), // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
           totalNewOrders: dailyDataArray.reduce((sum, day) => sum + day.newOrderCount, 0),
           totalOrders: dailyDataArray.reduce((sum, day) => sum + day.orders.length, 0)
         }

@@ -96,14 +96,14 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;
+        }
+      } else if (user.role === USER_ROLE.ADMIN) {
+        // ADMIN users see all data (system-wide access)
+        // No additional filtering needed for ADMIN role
+      } else {
+        // All other users without merchant/outlet assignment should see no data
+        return [];
       }
-    } else if (user.role === USER_ROLE.ADMIN) {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-        return { period: '', count: 0, outletId: undefined, outletName: undefined };
-    }
 
     // Add date filtering if provided
     if (startDate || endDate) {
@@ -120,8 +120,9 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       limit: 1000 // Get enough orders to analyze
     });
 
-    // Group orders by time period
-    const groupedOrders: { [key: string]: number } = {};
+    // Group orders by time period and calculate total collateral
+    const groupedOrders: { [key: string]: { count: number; totalCollateral: number; totalCollateralPlan: number } } = {};
+    const now = new Date();
     
     orders.data?.forEach(order => {
       const date = new Date(order.createdAt);
@@ -137,11 +138,33 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         key = `${year}/${month}`;
       }
       
-      groupedOrders[key] = (groupedOrders[key] || 0) + 1;
+      if (!groupedOrders[key]) {
+        groupedOrders[key] = { count: 0, totalCollateral: 0, totalCollateralPlan: 0 };
+      }
+      
+      groupedOrders[key].count += 1;
+      
+      // Tính tổng tiền thế chân (chỉ cho đơn đã PICKUPED)
+      if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.PICKUPED) {
+        const securityDeposit = order.securityDeposit || 0;
+        groupedOrders[key].totalCollateral += securityDeposit;
+      }
+      
+      // Tính tổng tiền thế chân dự kiến (chỉ cho đơn RESERVED có pickupPlanAt trong tương lai)
+      if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.RESERVED) {
+        const securityDeposit = order.securityDeposit || 0;
+        if (securityDeposit > 0 && order.pickupPlanAt) {
+          const pickupPlanDate = new Date(order.pickupPlanAt);
+          if (pickupPlanDate >= now) {
+            // Chỉ tính nếu pickupPlanAt trong tương lai
+            groupedOrders[key].totalCollateralPlan += securityDeposit;
+          }
+        }
+      }
     });
 
       // Convert to array format with outlet info
-      return Object.entries(groupedOrders).map(([period, count]) => {
+      return Object.entries(groupedOrders).map(([period, data]) => {
         // Parse period string to create ISO date (use utility)
         // period is now YYYY/MM/DD or YYYY/MM format
         const periodDate = groupBy === 'day' 
@@ -152,7 +175,9 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         return {
           period, // Keep YYYY/MM/DD or YYYY/MM format for backward compatibility
           dateISO, // Full ISO string for mobile locale formatting (from utility)
-          count,
+          count: data.count,
+          totalCollateral: data.totalCollateral, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+          totalCollateralPlan: data.totalCollateralPlan, // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
           ...(outlet ? { outletId: outlet.publicId, outletName: outlet.name } : {})
         };
       }).sort((a, b) => a.period.localeCompare(b.period));

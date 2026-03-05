@@ -428,6 +428,53 @@ export async function PUT(
         throw new Error('Product not found');
       }
 
+      // ============================================================================
+      // AUTHORIZATION: Check merchant and outlet scope
+      // ============================================================================
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = existingProduct.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      // For OUTLET_ADMIN: Verify product has stock at their outlet (or allow updating if they're adding stock to their outlet)
+      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+        // Check if product currently has stock at user's outlet
+        const hasStockAtOutlet = existingProduct.outletStock?.some(
+          (os: any) => os.outlet?.id === userScope.outletId
+        );
+        
+        // Check if user is trying to add/update stock at their outlet
+        const isUpdatingOwnOutlet = outletStock && Array.isArray(outletStock) && outletStock.some(
+          (os: any) => os.outletId === userScope.outletId
+        );
+        
+        // OUTLET_ADMIN can only update products that:
+        // 1. Already have stock at their outlet, OR
+        // 2. They're adding stock to their outlet in this update
+        if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
+          console.log('❌ OUTLET_ADMIN cannot update product without stock at their outlet:', {
+            productId: productId,
+            userOutletId: userScope.outletId,
+            hasStockAtOutlet: hasStockAtOutlet,
+            isUpdatingOwnOutlet: isUpdatingOwnOutlet,
+            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+
       // Check for duplicate product name if name is being updated
       if (productUpdateData.name && productUpdateData.name !== existingProduct.name) {
         const duplicateProduct = await db.products.findFirst({
@@ -723,45 +770,99 @@ export async function DELETE(
       }
 
       // ============================================================================
-      // VALIDATION: Check if product has active orders before deletion (Option 1)
+      // AUTHORIZATION: Check merchant and outlet scope
       // ============================================================================
-      // Block deletion if product has active orders (RESERVED, PICKUPED)
-      // Allow soft delete if only completed/cancelled orders exist (but warn)
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = existingProduct.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      // For OUTLET_ADMIN: Verify product has stock at their outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+        const hasStockAtOutlet = existingProduct.outletStock?.some(
+          (os: any) => os.outlet?.id === userScope.outletId
+        );
+        if (!hasStockAtOutlet) {
+          console.log('❌ Product does not have stock at user\'s outlet:', {
+            productId: productId,
+            userOutletId: userScope.outletId,
+            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+
+      // ============================================================================
+      // VALIDATION: Check product orders before soft deletion
+      // ============================================================================
+      // Note: This is a SOFT DELETE (sets isActive = false), so we allow deletion
+      // even with active orders. Product will be hidden but data is preserved.
       
-      // Product uses Int ID, so we can directly use productId to query order items
-      // Check for active order items (orders with RESERVED or PICKUPED status)
-      const activeOrderItemCount = await prisma.orderItem.count({
+      // Get detailed order information for better messaging
+      const activeOrders = await prisma.order.findMany({
         where: {
-          productId: productId,
-          order: {
-            status: {
-              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+          orderItems: {
+            some: {
+              productId: productId
+            }
+          },
+          status: {
+            in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+          }
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          orderItems: {
+            where: {
+              productId: productId
+            },
+            select: {
+              quantity: true
             }
           }
         }
       });
 
-      if (activeOrderItemCount > 0) {
-        console.log(`❌ Cannot delete product ${productId}: Has ${activeOrderItemCount} active order item(s)`);
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'BUSINESS_RULE_VIOLATION',
-            message: `Cannot delete product "${existingProduct.name}" because it has ${activeOrderItemCount} active order item(s) (RESERVED or PICKUPED status). Please complete or cancel these orders first.`
-          },
-          { status: API.STATUS.CONFLICT }
-        );
-      }
+      const activeOrderItemCount = activeOrders.reduce((sum, order) => {
+        return sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+      }, 0);
 
-      // Check total order items count for warning (completed/cancelled orders)
+      // Get order numbers for better error message
+      const activeOrderNumbers = activeOrders.map(o => o.orderNumber).join(', ');
+      const reservedCount = activeOrders.filter(o => o.status === ORDER_STATUS.RESERVED).length;
+      const pickedUpCount = activeOrders.filter(o => o.status === ORDER_STATUS.PICKUPED).length;
+
+      // Check total order items count for informational message
       const totalOrderItemCount = await prisma.orderItem.count({
         where: {
           productId: productId
         }
       });
 
-      if (totalOrderItemCount > 0) {
-        console.log(`⚠️ Warning: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
+      // Warn if there are active orders, but allow soft delete
+      if (activeOrderItemCount > 0) {
+        console.log(`⚠️ Warning: Product ${productId} has ${activeOrderItemCount} active order item(s) but will be soft deleted (hidden from listings)`);
+        console.log(`   Active orders: ${activeOrderNumbers}`);
+        console.log(`   - RESERVED: ${reservedCount} order(s)`);
+        console.log(`   - PICKUPED: ${pickedUpCount} order(s)`);
+      }
+
+      if (totalOrderItemCount > 0 && activeOrderItemCount === 0) {
+        console.log(`ℹ️ Info: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
       }
 
       // IMPORTANT: Delete all product images from S3 before soft deleting the product
@@ -830,11 +931,28 @@ export async function DELETE(
         images: imageUrls // Use already parsed imageUrls from above
       };
 
+      // Build informative message based on order status
+      let message = `Sản phẩm "${existingProduct.name}" đã được ẩn khỏi danh sách (soft delete). Dữ liệu vẫn được lưu trữ trong hệ thống.`;
+      
+      if (activeOrderItemCount > 0) {
+        message += `\n\n⚠️ Lưu ý: Sản phẩm này đang có ${activeOrderItemCount} đơn hàng đang hoạt động (${reservedCount} đơn RESERVED, ${pickedUpCount} đơn PICKUPED).`;
+        message += `\nCác đơn hàng: ${activeOrderNumbers}`;
+        message += `\nSản phẩm sẽ không hiển thị trong danh sách nhưng vẫn có thể truy cập qua các đơn hàng hiện có.`;
+      } else if (totalOrderItemCount > 0) {
+        message += `\n\nℹ️ Sản phẩm có ${totalOrderItemCount} đơn hàng trong lịch sử (đã hoàn thành hoặc đã hủy).`;
+      }
+
       return NextResponse.json({
         success: true,
         data: responseProduct,
         code: 'PRODUCT_DELETED_SUCCESS',
-        message: 'Product deleted successfully'
+        message: message,
+        warnings: activeOrderItemCount > 0 ? {
+          activeOrders: activeOrderItemCount,
+          reservedOrders: reservedCount,
+          pickedUpOrders: pickedUpCount,
+          orderNumbers: activeOrderNumbers.split(', ')
+        } : undefined
       });
 
     } catch (error) {

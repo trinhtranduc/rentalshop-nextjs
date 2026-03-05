@@ -39,7 +39,8 @@
     "thisYearRevenue": "Tổng doanh thu trong năm này. Tính từ ngày 1 tháng 1 đến hiện tại.",
     "customerGrowth": "Tỷ lệ tăng trưởng số lượng khách hàng mới. So sánh với kỳ trước.",
     "revenueGrowth": "Tỷ lệ tăng trưởng doanh thu. So sánh với kỳ trước để đánh giá hiệu suất kinh doanh.",
-    "productUtilization": "Tỷ lệ sử dụng sản phẩm. Phần trăm sản phẩm đang được thuê so với tổng số sản phẩm có sẵn."
+    "productUtilization": "Tỷ lệ sử dụng sản phẩm. Phần trăm sản phẩm đang được thuê so với tổng số sản phẩm có sẵn.",
+    "totalCollateral": "Tổng tiền thế chân từ các đơn hàng đã được lấy (PICKUPED). Chỉ tính cho đơn thuê đã được khách hàng lấy hàng."
   },
   "charts": {
     "revenueOverTime": "Doanh thu theo thời gian",
@@ -125,7 +126,8 @@
     "todayReturns": "Trả hàng hôm nay",
     "productUtilization": "Mức sử dụng sản phẩm",
     "revenueGrowth": "Tăng trưởng doanh thu",
-    "customerGrowth": "Tăng trưởng khách hàng"
+    "customerGrowth": "Tăng trưởng khách hàng",
+    "totalCollateral": "Tổng tiền thế chân"
   }
 }
 

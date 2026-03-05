@@ -239,7 +239,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         orderBy: {
           pickupPlanAt: 'asc'
         }
-        });
+      });
       } catch (queryError: any) {
         console.error('Database query error in product availability:', {
           error: queryError,

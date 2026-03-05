@@ -38,7 +38,7 @@ import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS, getOrderStatusClassName } from '@rentalshop/constants';
+import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -63,6 +63,7 @@ interface DashboardStats {
   revenueGrowth: number;
   ordersGrowth: number;
   customerBase: number;
+  totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
 }
 
 interface IncomeData {
@@ -168,7 +169,7 @@ const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick }: {
   title: string;
   value: string | number;
   change: string;
@@ -176,13 +177,18 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend }: 
   tooltip: string;
   color: string;
   trend: 'up' | 'down' | 'neutral';
+  onClick?: () => void;
 }) => {
   const formatMoney = useFormatCurrency();
   const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
   
-  return (
-    <CardClean variant="default" size="md" className="group bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
-      <CardHeaderClean className="pb-3">
+  const cardContent = (
+    <CardClean 
+      variant="default" 
+      size="md" 
+      className={`group bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 h-full flex flex-col ${onClick ? 'hover:border-blue-300' : ''}`}
+    >
+      <CardHeaderClean className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitleClean size="sm" className="text-gray-600 font-medium text-sm flex items-center">
             {title}
@@ -190,7 +196,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend }: 
           </CardTitleClean>
         </div>
       </CardHeaderClean>
-      <CardContentClean className="pt-0">
+      <CardContentClean className="pt-0 flex-1 flex flex-col">
         <p className={`text-3xl font-bold ${color} mb-3`}>
           {typeof value === 'number' 
             ? shouldShowDollar 
@@ -198,29 +204,57 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend }: 
               : value.toLocaleString()
             : value}
         </p>
-        {change && (
-          <div className="flex items-center gap-1.5">
-            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
-              trend === 'up' ? 'bg-green-50 text-green-700' : 
-              trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
-            }`}>
-              {trend === 'up' ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : trend === 'down' ? (
-                <ArrowDownRight className="w-3.5 h-3.5" />
-              ) : (
-                <Minus className="w-3.5 h-3.5" />
-              )}
-              {change}
+        <div className="flex-1 flex flex-col justify-end">
+          {change && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
+                trend === 'up' ? 'bg-green-50 text-green-700' : 
+                trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
+              }`}>
+                {trend === 'up' ? (
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                ) : trend === 'down' ? (
+                  <ArrowDownRight className="w-3.5 h-3.5" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                )}
+                {change}
+              </div>
             </div>
-          </div>
-        )}
-        {description && (
-          <p className="text-gray-500 text-xs mt-2">{description}</p>
-        )}
+          )}
+          {description && (
+            <p className="text-gray-500 text-xs mt-2">{description}</p>
+          )}
+          {onClick && typeof value === 'number' && value > 0 && (
+            <p className="text-xs text-blue-600 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              Click to view details →
+            </p>
+          )}
+        </div>
       </CardContentClean>
     </CardClean>
   );
+
+  if (onClick) {
+    return (
+      <div 
+        onClick={onClick}
+        className="cursor-pointer h-full"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  return <div className="h-full">{cardContent}</div>;
 };
 
 // ============================================================================
@@ -266,7 +300,8 @@ export default function DashboardPage() {
     futureRevenue: 0,
     revenueGrowth: 0,
     ordersGrowth: 0,
-    customerBase: 0
+    customerBase: 0,
+    totalCollateral: 0 // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
   });
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
   const [orderData, setOrderData] = useState<OrderData[]>([]);
@@ -619,6 +654,20 @@ export default function DashboardPage() {
           growthMetrics
         });
         
+        // Calculate total collateral from income data (if available)
+        let totalCollateral = 0;
+        if (incomeResponse.success && incomeResponse.data && Array.isArray(incomeResponse.data)) {
+          console.log('💰 Income Data from API:', incomeResponse.data);
+          console.log('📅 First 3 items:', incomeResponse.data.slice(0, 3));
+          console.log('📅 Last 3 items:', incomeResponse.data.slice(-3));
+          
+          totalCollateral = incomeResponse.data.reduce((sum: number, item: any) => {
+            return sum + (item.totalCollateral || 0);
+          }, 0);
+          
+          console.log('💰 Total Collateral calculated:', totalCollateral);
+        }
+        
         const newStats = {
           // Today metrics - use correct API structure
           todayRevenue: apiStats.today?.revenue || 0,
@@ -637,7 +686,8 @@ export default function DashboardPage() {
           futureRevenue: 0, // Not available in current API
           revenueGrowth: apiStats.growth?.revenue || 0,
           ordersGrowth: apiStats.growth?.orders || 0,
-          customerBase: growthMetrics.customerBase || 0
+          customerBase: growthMetrics.customerBase || 0,
+          totalCollateral: totalCollateral // Calculated from income data
         };
         
         console.log('📊 Setting final stats:', newStats);
@@ -649,10 +699,19 @@ export default function DashboardPage() {
       }
 
       if (incomeResponse.success && incomeResponse.data) {
-        console.log('💰 Income Data from API:', incomeResponse.data);
-        console.log('📅 First 3 items:', incomeResponse.data.slice(0, 3));
-        console.log('📅 Last 3 items:', incomeResponse.data.slice(-3));
         setIncomeData(incomeResponse.data);
+        
+        // Also update totalCollateral when income data is set
+        // This ensures it's updated even if incomeResponse is processed after statsResponse
+        const totalCollateral = incomeResponse.data.reduce((sum: number, item: any) => {
+          return sum + (item.totalCollateral || 0);
+        }, 0);
+        
+        console.log('💰 Updating totalCollateral from income data:', totalCollateral);
+        setStats(prevStats => ({
+          ...prevStats,
+          totalCollateral: totalCollateral
+        }));
       }
 
       if (ordersResponse.success && ordersResponse.data) {
@@ -723,7 +782,9 @@ export default function DashboardPage() {
         customerGrowth: 0,
         futureRevenue: 0,
         revenueGrowth: 0,
-        customerBase: 0
+        ordersGrowth: 0,
+        customerBase: 0,
+        totalCollateral: 0
       });
       setIncomeData([]);
       setOrderData([]);
@@ -734,6 +795,22 @@ export default function DashboardPage() {
       setInitialLoading(false);
     }
   }, [userId, timePeriod, selectedOutletsKey, memoizedSelectedOutlets]); // Use stable values
+
+  // Update totalCollateral when incomeData changes
+  useEffect(() => {
+    if (incomeData.length > 0) {
+      const totalCollateral = incomeData.reduce((sum: number, item: any) => {
+        return sum + (item.totalCollateral || 0);
+      }, 0);
+      
+      console.log('💰 useEffect: Updating totalCollateral from incomeData:', totalCollateral, 'from', incomeData.length, 'items');
+      console.log('💰 First item sample:', incomeData[0]);
+      setStats(prevStats => ({
+        ...prevStats,
+        totalCollateral: totalCollateral
+      }));
+    }
+  }, [incomeData]);
 
   // Main useEffect to fetch dashboard data
   useEffect(() => {
@@ -1007,6 +1084,93 @@ export default function DashboardPage() {
   const currentOrderData = getOrderData();
   const currentTopProducts = getTopProducts();
   const currentTopCustomers = getTopCustomers();
+
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Navigation handlers for stat cards
+  const handleViewActiveRentals = () => {
+    router.push(`/orders?status=${ORDER_STATUS.PICKUPED}`);
+  };
+
+  const handleViewTodayRentals = () => {
+    const today = getTodayDateString();
+    router.push(`/orders?startDate=${today}&endDate=${today}`);
+  };
+
+  const handleViewOverdueReturns = () => {
+    const today = getTodayDateString();
+    router.push(`/orders?status=${ORDER_STATUS.PICKUPED}&endDate=${today}`);
+  };
+
+  // Navigation handlers for month/year view stat cards
+  const handleViewTotalOrders = () => {
+    // Use currentDateRange if available, otherwise calculate from timePeriod
+    let startDate: string;
+    let endDate: string;
+    
+    if (currentDateRange.startDate && currentDateRange.endDate) {
+      startDate = currentDateRange.startDate;
+      endDate = currentDateRange.endDate;
+    } else {
+      // Fallback: calculate from timePeriod
+      const today = new Date();
+      if (timePeriod === 'month') {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        startDate = monthStart.toISOString().split('T')[0];
+        endDate = monthEnd.toISOString().split('T')[0];
+      } else if (timePeriod === 'year') {
+        const currentYear = today.getFullYear();
+        startDate = `${currentYear}-01-01`;
+        endDate = `${currentYear}-12-31`;
+      } else {
+        // Default to today
+        const todayStr = getTodayDateString();
+        startDate = todayStr;
+        endDate = todayStr;
+      }
+    }
+    
+    router.push(`/orders?startDate=${startDate}&endDate=${endDate}`);
+  };
+
+  const handleViewCompletedOrders = () => {
+    // Use currentDateRange if available, otherwise calculate from timePeriod
+    let startDate: string;
+    let endDate: string;
+    
+    if (currentDateRange.startDate && currentDateRange.endDate) {
+      startDate = currentDateRange.startDate;
+      endDate = currentDateRange.endDate;
+    } else {
+      // Fallback: calculate from timePeriod
+      const today = new Date();
+      if (timePeriod === 'month') {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        startDate = monthStart.toISOString().split('T')[0];
+        endDate = monthEnd.toISOString().split('T')[0];
+      } else if (timePeriod === 'year') {
+        const currentYear = today.getFullYear();
+        startDate = `${currentYear}-01-01`;
+        endDate = `${currentYear}-12-31`;
+      } else {
+        // Default to today
+        const todayStr = getTodayDateString();
+        startDate = todayStr;
+        endDate = todayStr;
+      }
+    }
+    
+    router.push(`/orders?status=${ORDER_STATUS.COMPLETED}&startDate=${startDate}&endDate=${endDate}`);
+  };
   
   // Debug: log revenue data for chart
   useEffect(() => {
@@ -1150,7 +1314,7 @@ export default function DashboardPage() {
         {timePeriod === 'today' && (
           <>
             {/* Today's Key Metrics - Simplified Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 items-stretch ${hasFullAnalyticsAccess ? 'md:grid-cols-5' : ''}`}>
               {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
                 <StatCard
                   title={t('stats.todayRevenue')}
@@ -1169,6 +1333,7 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.todayRentals')}
                 color="text-blue-700"
                 trend="neutral"
+                onClick={currentStats.todayRentals > 0 ? handleViewTodayRentals : undefined}
               />
               <StatCard
                 title={t('stats.activeRentals')}
@@ -1178,6 +1343,7 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.activeRentals')}
                 color="text-blue-700"
                 trend="neutral"
+                onClick={currentStats.activeRentals > 0 ? handleViewActiveRentals : undefined}
               />
               <StatCard
                 title={t('stats.overdueReturns')}
@@ -1187,7 +1353,20 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.overdueReturns')}
                 color="text-blue-700"
                 trend="neutral"
+                onClick={currentStats.overdueItems > 0 ? handleViewOverdueReturns : undefined}
               />
+              {/* Total Collateral Card - Show for users with full analytics access */}
+              {hasFullAnalyticsAccess && (
+                <StatCard
+                  title={t('stats.totalCollateral')}
+                  value={currentStats.totalCollateral}
+                  change=""
+                  description=""
+                  tooltip={t('tooltips.totalCollateral')}
+                  color="text-blue-700"
+                  trend="neutral"
+                />
+              )}
             </div>
 
             {/* Today's Operations - 2 Columns - Modern Design */}
@@ -1351,7 +1530,7 @@ export default function DashboardPage() {
         {(timePeriod === 'month' || timePeriod === 'year') && (
           <>
             {/* Business Performance Metrics - Simplified */}
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 items-stretch ${
               !hasFullAnalyticsAccess ? 'md:grid-cols-3' : ''
             }`}>
               {/* Revenue Card - Hidden for users without full analytics access */}
@@ -1374,6 +1553,7 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.totalOrders')}
                 color="text-blue-700"
                 trend={currentStats.ordersGrowth > 0 ? "up" : currentStats.ordersGrowth < 0 ? "down" : "neutral"}
+                onClick={currentStats.totalRentals > 0 ? handleViewTotalOrders : undefined}
               />
               <StatCard
                 title={t('stats.completedOrders')}
@@ -1383,15 +1563,16 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.completedOrders')}
                 color="text-blue-700"
                 trend="neutral"
+                onClick={currentStats.completedRentals > 0 ? handleViewCompletedOrders : undefined}
               />
-              {/* Future Revenue Card - Hidden for users without full analytics access */}
+              {/* Total Collateral Card - Show for all users with analytics access */}
               {hasFullAnalyticsAccess && (
                 <StatCard
-                  title={t('stats.futureRevenue')}
-                  value={currentStats.futureRevenue}
+                  title={t('stats.totalCollateral')}
+                  value={currentStats.totalCollateral}
                   change=""
                   description=""
-                  tooltip={t('tooltips.futureRevenue')}
+                  tooltip={t('tooltips.totalCollateral')}
                   color="text-blue-700"
                   trend="neutral"
                 />
