@@ -428,6 +428,53 @@ export async function PUT(
         throw new Error('Product not found');
       }
 
+      // ============================================================================
+      // AUTHORIZATION: Check merchant and outlet scope
+      // ============================================================================
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = existingProduct.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      // For OUTLET_ADMIN: Verify product has stock at their outlet (or allow updating if they're adding stock to their outlet)
+      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+        // Check if product currently has stock at user's outlet
+        const hasStockAtOutlet = existingProduct.outletStock?.some(
+          (os: any) => os.outlet?.id === userScope.outletId
+        );
+        
+        // Check if user is trying to add/update stock at their outlet
+        const isUpdatingOwnOutlet = outletStock && Array.isArray(outletStock) && outletStock.some(
+          (os: any) => os.outletId === userScope.outletId
+        );
+        
+        // OUTLET_ADMIN can only update products that:
+        // 1. Already have stock at their outlet, OR
+        // 2. They're adding stock to their outlet in this update
+        if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
+          console.log('❌ OUTLET_ADMIN cannot update product without stock at their outlet:', {
+            productId: productId,
+            userOutletId: userScope.outletId,
+            hasStockAtOutlet: hasStockAtOutlet,
+            isUpdatingOwnOutlet: isUpdatingOwnOutlet,
+            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+
       // Check for duplicate product name if name is being updated
       if (productUpdateData.name && productUpdateData.name !== existingProduct.name) {
         const duplicateProduct = await db.products.findFirst({
@@ -720,6 +767,41 @@ export async function DELETE(
       const existingProduct = await db.products.findById(productId);
       if (!existingProduct) {
         throw new Error('Product not found');
+      }
+
+      // ============================================================================
+      // AUTHORIZATION: Check merchant and outlet scope
+      // ============================================================================
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = existingProduct.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      // For OUTLET_ADMIN: Verify product has stock at their outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+        const hasStockAtOutlet = existingProduct.outletStock?.some(
+          (os: any) => os.outlet?.id === userScope.outletId
+        );
+        if (!hasStockAtOutlet) {
+          console.log('❌ Product does not have stock at user\'s outlet:', {
+            productId: productId,
+            userOutletId: userScope.outletId,
+            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
       }
 
       // ============================================================================

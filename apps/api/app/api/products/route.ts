@@ -452,6 +452,35 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // Normalize outlet stock: support both outletStock (mobile) and outletStocks (web) for backward compatibility
     const outletStockData = parsed.data.outletStock || parsed.data.outletStocks || [];
     
+    // ============================================================================
+    // AUTHORIZATION: Check outlet scope for OUTLET_ADMIN
+    // ============================================================================
+    // For OUTLET_ADMIN: Only allow creating products with stock at their outlet
+    if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+      if (!outletStockData || !Array.isArray(outletStockData) || outletStockData.length === 0) {
+        return NextResponse.json(
+          ResponseBuilder.error('OUTLET_STOCK_REQUIRED'),
+          { status: 400 }
+        );
+      }
+      
+      // Check if all outlet stocks are for user's outlet
+      const invalidOutlets = outletStockData.filter(
+        (os: any) => os.outletId !== userScope.outletId
+      );
+      
+      if (invalidOutlets.length > 0) {
+        console.log('❌ OUTLET_ADMIN cannot create product with stock at other outlets:', {
+          userOutletId: userScope.outletId,
+          invalidOutlets: invalidOutlets.map((os: any) => os.outletId)
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+    
     // Validate outlet stock
     const outletStock = await validateOutletStock(outletStockData, merchantId);
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
