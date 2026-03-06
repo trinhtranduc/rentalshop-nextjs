@@ -645,26 +645,35 @@ export const simplifiedCustomers = {
     }
     
     // Text search across multiple fields (case-insensitive and diacritics-insensitive)
-    if (whereFilters.search) {
-      const searchTerm = whereFilters.search.trim();
-      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-      
-      const searchConditions: any[] = [
-        { firstName: { contains: searchTerm, mode: 'insensitive' } },
-        { lastName: { contains: searchTerm, mode: 'insensitive' } },
-        { email: { contains: searchTerm, mode: 'insensitive' } },
-        { phone: { contains: searchTerm, mode: 'insensitive' } }
-      ];
-      
-      // Add normalized search for name fields if different from original
-      if (normalizedTerm !== searchTerm) {
-        searchConditions.push(
-          { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
-          { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
-        );
+    // Support both 'search' and 'q' parameters (q takes precedence if both provided)
+    const searchQuery = whereFilters.q || whereFilters.search;
+    if (searchQuery) {
+      const searchTerm = String(searchQuery).trim();
+      if (searchTerm) {
+        const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+        
+        const searchConditions: any[] = [
+          { firstName: { contains: searchTerm, mode: 'insensitive' } },
+          { lastName: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+          { phone: { contains: searchTerm, mode: 'insensitive' } }
+        ];
+        
+        // Add normalized search for name fields if different from original
+        if (normalizedTerm !== searchTerm) {
+          searchConditions.push(
+            { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
+            { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
+          );
+        }
+        
+        // Merge with existing OR conditions if any
+        if (where.OR) {
+          where.OR = [...where.OR, ...searchConditions];
+        } else {
+          where.OR = searchConditions;
+        }
       }
-      
-      where.OR = searchConditions;
     }
 
     // Specific field filters (case-insensitive and diacritics-insensitive for text fields)
