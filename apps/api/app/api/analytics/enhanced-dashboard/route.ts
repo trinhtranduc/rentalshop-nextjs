@@ -224,7 +224,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const { realIncome: lastMonthRevenue } = calculatePeriodRevenueBatch(lastMonthOrdersData, lastMonth, lastMonthEnd);
 
     const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
-    
+
     // Calculate orders growth - compare total orders between this month and last month
     const thisMonthOrdersCount = thisMonthOrders.total || 0;
     const lastMonthOrdersCount = lastMonthOrders.total || 0;

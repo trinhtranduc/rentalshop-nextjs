@@ -337,18 +337,19 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name, email, phone, or idNumber (case-insensitive and diacritics-insensitive)
+  // Search query for name and phone only (case-insensitive and diacritics-insensitive)
+  // Search only starts from 2 characters minimum
   if (q && q.trim()) {
     const searchQuery = q.trim();
     // Normalize Vietnamese text to support search without diacritics
     const normalizedQuery = removeVietnameseDiacritics(searchQuery);
     
     // Search with both original and normalized terms to support diacritics-insensitive search
+    // Only search in firstName, lastName, and phone
     const searchConditions: any[] = [
       { firstName: { contains: searchQuery, mode: 'insensitive' } },
       { lastName: { contains: searchQuery, mode: 'insensitive' } },
-      { email: { contains: searchQuery, mode: 'insensitive' } },
-      { phone: { contains: searchQuery } } // Phone numbers are usually exact match
+      { phone: { contains: searchQuery } } // Phone numbers search
     ];
     
     // Add normalized search if different from original
@@ -644,18 +645,20 @@ export const simplifiedCustomers = {
       where.isActive = true; // Default: only show active customers
     }
     
-    // Text search across multiple fields (case-insensitive and diacritics-insensitive)
+    // Text search in name and phone only (case-insensitive and diacritics-insensitive)
     // Support both 'search' and 'q' parameters (q takes precedence if both provided)
+    // Search only starts from 2 characters minimum
     const searchQuery = whereFilters.q || whereFilters.search;
     if (searchQuery) {
       const searchTerm = String(searchQuery).trim();
-      if (searchTerm) {
+      // Only perform search if search term has at least 2 characters
+      if (searchTerm && searchTerm.length >= 2) {
         const normalizedTerm = removeVietnameseDiacritics(searchTerm);
         
+        // Only search in firstName, lastName, and phone
         const searchConditions: any[] = [
           { firstName: { contains: searchTerm, mode: 'insensitive' } },
           { lastName: { contains: searchTerm, mode: 'insensitive' } },
-          { email: { contains: searchTerm, mode: 'insensitive' } },
           { phone: { contains: searchTerm, mode: 'insensitive' } }
         ];
         
@@ -674,6 +677,8 @@ export const simplifiedCustomers = {
           where.OR = searchConditions;
         }
       }
+      // If search term is less than 2 characters, ignore search and return empty results
+      // (This prevents performance issues with single character searches)
     }
 
     // Specific field filters (case-insensitive and diacritics-insensitive for text fields)
