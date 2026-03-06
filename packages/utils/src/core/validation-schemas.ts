@@ -279,9 +279,13 @@ const baseOrderSchema = z.object({
   collateralType: z.string().optional(),
   collateralDetails: z.string().optional(),
   notes: z.string().optional(),
+  notesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for notes
   pickupNotes: z.string().optional(),
+  pickupNotesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for pickup notes
   returnNotes: z.string().optional(),
+  returnNotesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for return notes
   damageNotes: z.string().optional(),
+  damageNotesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for damage notes
 });
 
 export const orderCreateSchema = baseOrderSchema;

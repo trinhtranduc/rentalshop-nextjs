@@ -100,24 +100,137 @@ export const ordersApi = {
 
   /**
    * Create a new order
+   * Supports both JSON and FormData formats
+   * - JSON: For simple order creation without images
+   * - FormData: For order creation with image uploads (notesImages, pickupNotesImages, etc.)
    */
-  async createOrder(orderData: OrderCreateInput): Promise<ApiResponse<Order>> {
-    const response = await authenticatedFetch(apiUrls.orders.create, {
-      method: 'POST',
-      body: JSON.stringify(orderData),
-    });
-    return await parseApiResponse<Order>(response);
+  async createOrder(
+    orderData: OrderCreateInput,
+    files?: {
+      notesImages?: File[];
+      pickupNotesImages?: File[];
+      returnNotesImages?: File[];
+      damageNotesImages?: File[];
+    }
+  ): Promise<ApiResponse<Order>> {
+    // If files are provided, use FormData
+    if (files && (
+      files.notesImages?.length || 
+      files.pickupNotesImages?.length || 
+      files.returnNotesImages?.length || 
+      files.damageNotesImages?.length
+    )) {
+      const formData = new FormData();
+      
+      // Add order data as JSON string
+      formData.append('data', JSON.stringify(orderData));
+      
+      // Add files if provided
+      if (files.notesImages) {
+        files.notesImages.forEach(file => {
+          formData.append('notesImages', file);
+        });
+      }
+      if (files.pickupNotesImages) {
+        files.pickupNotesImages.forEach(file => {
+          formData.append('pickupNotesImages', file);
+        });
+      }
+      if (files.returnNotesImages) {
+        files.returnNotesImages.forEach(file => {
+          formData.append('returnNotesImages', file);
+        });
+      }
+      if (files.damageNotesImages) {
+        files.damageNotesImages.forEach(file => {
+          formData.append('damageNotesImages', file);
+        });
+      }
+
+      // Send multipart request
+      const response = await authenticatedFetch(apiUrls.orders.create, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header for FormData - browser will set it with boundary
+      });
+      
+      return await parseApiResponse<Order>(response);
+    } else {
+      // Use JSON for simple order creation
+      const response = await authenticatedFetch(apiUrls.orders.create, {
+        method: 'POST',
+        body: JSON.stringify(orderData),
+      });
+      return await parseApiResponse<Order>(response);
+    }
   },
 
   /**
    * Update an existing order
+   * Supports both JSON and FormData formats
+   * - JSON: For simple updates without images
+   * - FormData: For updates with image uploads (notesImages, pickupNotesImages, etc.)
    */
-  async updateOrder(orderId: number, orderData: OrderUpdateInput): Promise<ApiResponse<Order>> {
-    const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
-      method: 'PUT',
-      body: JSON.stringify(orderData),
-    });
-    return await parseApiResponse<Order>(response);
+  async updateOrder(
+    orderId: number, 
+    orderData: OrderUpdateInput, 
+    files?: {
+      notesImages?: File[];
+      pickupNotesImages?: File[];
+      returnNotesImages?: File[];
+      damageNotesImages?: File[];
+    }
+  ): Promise<ApiResponse<Order>> {
+    // If files are provided, use FormData
+    if (files && (
+      files.notesImages?.length || 
+      files.pickupNotesImages?.length || 
+      files.returnNotesImages?.length || 
+      files.damageNotesImages?.length
+    )) {
+      const formData = new FormData();
+      
+      // Add order data as JSON string
+      formData.append('data', JSON.stringify(orderData));
+      
+      // Add files if provided
+      if (files.notesImages) {
+        files.notesImages.forEach(file => {
+          formData.append('notesImages', file);
+        });
+      }
+      if (files.pickupNotesImages) {
+        files.pickupNotesImages.forEach(file => {
+          formData.append('pickupNotesImages', file);
+        });
+      }
+      if (files.returnNotesImages) {
+        files.returnNotesImages.forEach(file => {
+          formData.append('returnNotesImages', file);
+        });
+      }
+      if (files.damageNotesImages) {
+        files.damageNotesImages.forEach(file => {
+          formData.append('damageNotesImages', file);
+        });
+      }
+
+      // Send multipart request
+      const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
+        method: 'PUT',
+        body: formData,
+        // Don't set Content-Type header for FormData - browser will set it with boundary
+      });
+      
+      return await parseApiResponse<Order>(response);
+    } else {
+      // Use JSON for simple updates
+      const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
+        method: 'PUT',
+        body: JSON.stringify(orderData),
+      });
+      return await parseApiResponse<Order>(response);
+    }
   },
 
   /**

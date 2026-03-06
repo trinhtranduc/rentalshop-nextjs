@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { 
+  ordersQuerySchema, 
+  orderCreateSchema, 
+  orderUpdateSchema, 
+  PricingResolver, 
+  calculateDurationInUnit, 
+  getDurationUnitLabel, 
+  ResponseBuilder, 
+  handleApiError, 
+  formatFullName, 
+  parseProductImages,
+  generateStagingKey,
+  generateFileName,
+  splitKeyIntoParts,
+  extractStagingKeysFromUrls,
+  mapStagingUrlsToProductionUrls
+} from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
+import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
+import { compressImageTo1MB } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -202,8 +220,140 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 });
 
 /**
+ * Helper function to validate image file
+ */
+function validateImage(file: File): { isValid: boolean; error?: string } {
+  const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
+  
+  const fileTypeLower = file.type.toLowerCase().trim();
+  const fileNameLower = file.name.toLowerCase().trim();
+  
+  const isValidMimeType = fileTypeLower ? ALLOWED_TYPES.some(type => 
+    fileTypeLower === type.toLowerCase()
+  ) : false;
+  
+  const isValidExtension = ALLOWED_EXTENSIONS.some(ext => 
+    fileNameLower.endsWith(ext)
+  );
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return {
+      isValid: false,
+      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')} or extensions: ${ALLOWED_EXTENSIONS.join(',')}. File type: "${file.type}", File name: "${file.name}"`
+    };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`
+    };
+  }
+  
+  if (file.size < 100) {
+    return {
+      isValid: false,
+      error: 'File size is too small, file may be corrupted'
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Upload order notes images to S3
+ */
+async function uploadOrderNotesImages(
+  imageFiles: File[],
+  merchantId: number
+): Promise<{ stagingKeys: string[]; urls: string[] }> {
+  const stagingKeys: string[] = [];
+  const urls: string[] = [];
+
+  for (const file of imageFiles) {
+    if (!file || file.size === 0) continue;
+
+    const validation = validateImage(file);
+    if (!validation.isValid) {
+      throw new Error(validation.error || 'IMAGE_VALIDATION_FAILED');
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+
+    if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
+      throw new Error('IMAGE_TOO_LARGE');
+    }
+
+    const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'order-note-image');
+    const stagingKey = generateStagingKey(fileName);
+    const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+
+    const uploadResult = await uploadToS3(buffer, {
+      folder,
+      fileName: finalFileName,
+      contentType: 'image/jpeg',
+      preserveOriginalName: false
+    });
+
+    if (!uploadResult.success || !uploadResult.data) {
+      throw new Error('IMAGE_UPLOAD_FAILED');
+    }
+
+    stagingKeys.push(uploadResult.data.key);
+    urls.push(uploadResult.data.url);
+  }
+
+  return { stagingKeys, urls };
+}
+
+/**
+ * Commit staging images to production and return production URLs
+ */
+async function commitOrderNotesImages(
+  imageUrls: string[],
+  uploadedStagingKeys: string[],
+  merchantId: number
+): Promise<string[]> {
+  if (!imageUrls || imageUrls.length === 0) return [];
+
+  const extractedStagingKeys = extractStagingKeysFromUrls(imageUrls);
+  const stagingKeys = [
+    ...uploadedStagingKeys,
+    ...extractedStagingKeys.filter(key => !uploadedStagingKeys.includes(key))
+  ];
+
+  if (stagingKeys.length === 0) return imageUrls;
+
+  // Use orders folder structure: orders/merchant-{id}/notes/
+  const ordersFolder = `orders/merchant-${merchantId}/notes/`;
+
+  const commitResult = await commitStagingFiles(stagingKeys, ordersFolder);
+
+  if (!commitResult.success) {
+    console.error('Failed to commit staging files:', commitResult.errors);
+    return imageUrls; // Fallback to original URLs
+  }
+
+  const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+  if (!cloudfrontDomain) {
+    console.error('AWS_CLOUDFRONT_DOMAIN not configured');
+    return imageUrls;
+  }
+
+  const productionUrls = commitResult.committedKeys.map(key => 
+    `https://${cloudfrontDomain}/${key}`
+  );
+
+  return mapStagingUrlsToProductionUrls(imageUrls, commitResult.committedKeys, productionUrls);
+}
+
+/**
  * POST /api/orders
  * Create a new order using simplified database API
+ * Supports both JSON and FormData formats (similar to product creation)
  * 
  * Authorization: All roles with 'orders.create' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
@@ -214,7 +364,129 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
   console.log(`🔍 POST /api/orders - UserScope:`, userScope);
   
   try {
-    const body = await request.json();
+    // Check if request is FormData or JSON
+    const contentType = request.headers.get('content-type') || '';
+    const isFormData = contentType.includes('multipart/form-data');
+    
+    let body: any;
+    
+    if (isFormData) {
+      // Parse multipart form data
+      console.log('🔍 Processing multipart form data with image uploads');
+      const formData = await request.formData();
+      
+      // Extract JSON data from 'data' field
+      const jsonDataStr = formData.get('data') as string;
+      if (!jsonDataStr) {
+        return NextResponse.json(
+          ResponseBuilder.error('MISSING_ORDER_DATA'),
+          { status: 400 }
+        );
+      }
+      
+      try {
+        body = JSON.parse(jsonDataStr);
+      } catch (parseError) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_JSON_DATA'),
+          { status: 400 }
+        );
+      }
+      
+      // Get merchantId for image uploads
+      const userMerchantId = userScope.merchantId;
+      if (!userMerchantId && user.role !== USER_ROLE.ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
+          { status: 400 }
+        );
+      }
+      
+      // Upload and process notesImages
+      const notesImageFiles = formData.getAll('notesImages') as File[];
+      if (notesImageFiles.length > 0) {
+        try {
+          const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
+          const productionUrls = await commitOrderNotesImages(
+            uploadResult.urls,
+            uploadResult.stagingKeys,
+            userMerchantId || 0
+          );
+          body.notesImages = productionUrls;
+        } catch (error: any) {
+          console.error('❌ Error uploading notesImages:', error);
+          return NextResponse.json(
+            ResponseBuilder.error('NOTES_IMAGES_UPLOAD_FAILED'),
+            { status: 500 }
+          );
+        }
+      }
+      
+      // Upload and process pickupNotesImages
+      const pickupNotesImageFiles = formData.getAll('pickupNotesImages') as File[];
+      if (pickupNotesImageFiles.length > 0) {
+        try {
+          const uploadResult = await uploadOrderNotesImages(pickupNotesImageFiles, userMerchantId || 0);
+          const productionUrls = await commitOrderNotesImages(
+            uploadResult.urls,
+            uploadResult.stagingKeys,
+            userMerchantId || 0
+          );
+          body.pickupNotesImages = productionUrls;
+        } catch (error: any) {
+          console.error('❌ Error uploading pickupNotesImages:', error);
+          return NextResponse.json(
+            ResponseBuilder.error('PICKUP_NOTES_IMAGES_UPLOAD_FAILED'),
+            { status: 500 }
+          );
+        }
+      }
+      
+      // Upload and process returnNotesImages
+      const returnNotesImageFiles = formData.getAll('returnNotesImages') as File[];
+      if (returnNotesImageFiles.length > 0) {
+        try {
+          const uploadResult = await uploadOrderNotesImages(returnNotesImageFiles, userMerchantId || 0);
+          const productionUrls = await commitOrderNotesImages(
+            uploadResult.urls,
+            uploadResult.stagingKeys,
+            userMerchantId || 0
+          );
+          body.returnNotesImages = productionUrls;
+        } catch (error: any) {
+          console.error('❌ Error uploading returnNotesImages:', error);
+          return NextResponse.json(
+            ResponseBuilder.error('RETURN_NOTES_IMAGES_UPLOAD_FAILED'),
+            { status: 500 }
+          );
+        }
+      }
+      
+      // Upload and process damageNotesImages
+      const damageNotesImageFiles = formData.getAll('damageNotesImages') as File[];
+      if (damageNotesImageFiles.length > 0) {
+        try {
+          const uploadResult = await uploadOrderNotesImages(damageNotesImageFiles, userMerchantId || 0);
+          const productionUrls = await commitOrderNotesImages(
+            uploadResult.urls,
+            uploadResult.stagingKeys,
+            userMerchantId || 0
+          );
+          body.damageNotesImages = productionUrls;
+        } catch (error: any) {
+          console.error('❌ Error uploading damageNotesImages:', error);
+          return NextResponse.json(
+            ResponseBuilder.error('DAMAGE_NOTES_IMAGES_UPLOAD_FAILED'),
+            { status: 500 }
+          );
+        }
+      }
+      
+      console.log('🔍 POST /api/orders - Processed FormData with images');
+    } else {
+      // Parse JSON request body (backward compatibility)
+      body = await request.json();
+    }
     
     // ✅ Auto-fill outletId from userScope if not provided
     if (!body.outletId && userScope.outletId) {
@@ -434,13 +706,13 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
       notes: parsed.data.notes,
-      notesImages: parsed.data.notesImages || null, // Array of image URLs for notes
+      notesImages: (parsed.data.notesImages as string[] | undefined) || null, // Array of image URLs for notes
       pickupNotes: parsed.data.pickupNotes,
-      pickupNotesImages: parsed.data.pickupNotesImages || null, // Array of image URLs for pickup notes
+      pickupNotesImages: (parsed.data.pickupNotesImages as string[] | undefined) || null, // Array of image URLs for pickup notes
       returnNotes: parsed.data.returnNotes,
-      returnNotesImages: parsed.data.returnNotesImages || null, // Array of image URLs for return notes
+      returnNotesImages: (parsed.data.returnNotesImages as string[] | undefined) || null, // Array of image URLs for return notes
       damageNotes: parsed.data.damageNotes,
-      damageNotesImages: parsed.data.damageNotesImages || null, // Array of image URLs for damage notes
+      damageNotesImages: (parsed.data.damageNotesImages as string[] | undefined) || null, // Array of image URLs for damage notes
       // Add order items with pricing calculation
       orderItems: {
         create: orderItemsData
@@ -728,7 +1000,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
 
     // Extract only basic fields for update (avoid complex orderItems)
     const updateData: any = {
-      status: parsed.data.status,
+      status: (parsed.data as any).status,
       totalAmount: parsed.data.totalAmount,
       depositAmount: parsed.data.depositAmount,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : undefined,

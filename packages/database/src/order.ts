@@ -361,9 +361,13 @@ export async function updateOrder(
     collateralType: string
     collateralDetails: string
     notes: string
+    notesImages?: string[] | null
     pickupNotes: string
+    pickupNotesImages?: string[] | null
     returnNotes: string
+    returnNotesImages?: string[] | null
     damageNotes: string
+    damageNotesImages?: string[] | null
     customerId: number
     outletId: number
     orderItems?: Array<{
@@ -395,8 +399,9 @@ export async function updateOrder(
     'securityDeposit', 'damageFee', 'lateFee', 'discountType', 
     'discountValue', 'discountAmount', 'pickupPlanAt', 'returnPlanAt',
     'pickedUpAt', 'returnedAt', 'rentalDuration', 'isReadyToDeliver',
-    'collateralType', 'collateralDetails', 'notes', 'pickupNotes',
-    'returnNotes', 'damageNotes'
+    'collateralType', 'collateralDetails', 'notes', 'notesImages',
+    'pickupNotes', 'pickupNotesImages', 'returnNotes', 'returnNotesImages',
+    'damageNotes', 'damageNotesImages'
   ];
   
   // Build update data - filter to only valid fields

@@ -231,9 +231,13 @@ export interface OrderInput {
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  notesImages?: string[] | null;
   pickupNotes?: string;
+  pickupNotesImages?: string[] | null;
   returnNotes?: string;
+  returnNotesImages?: string[] | null;
   damageNotes?: string;
+  damageNotesImages?: string[] | null;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
