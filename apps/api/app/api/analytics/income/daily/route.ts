@@ -51,21 +51,43 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       );
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Parse date string - treat as UTC date to match database timezone
+    // Similar to calendar API: parse as UTC, then use wider range to capture all potentially relevant orders
+    // "2026-03-07" should be treated as 2026-03-07 00:00:00 UTC
+    // But orders are stored with time component (e.g., "2026-03-07T17:00:00.000Z" = 2026-03-08 00:00:00 VN)
+    // So we need a wider range to capture all potentially relevant orders
+    const startOfDayUTC = new Date(startDate + 'T00:00:00.000Z');
+    const endOfDayUTC = new Date(endDate + 'T23:59:59.999Z');
     
-    // Set time to end of day for end date
-    end.setHours(23, 59, 59, 999);
+    // Use wider UTC range to capture orders that might shift due to timezone
+    // Previous day's start UTC to capture orders that might be in previous UTC day but local date matches
+    const previousDayStartUTC = new Date(startOfDayUTC);
+    previousDayStartUTC.setUTCDate(previousDayStartUTC.getUTCDate() - 1);
+    // Next day's end UTC to capture orders that might be in next UTC day but local date matches
+    const nextDayEndUTC = new Date(endOfDayUTC);
+    nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
+    
+    // Use the wider range for query, but keep original range for filtering
+    const queryStart = previousDayStartUTC;
+    const queryEnd = nextDayEndUTC;
+    const filterStart = startOfDayUTC;
+    const filterEnd = endOfDayUTC;
+    
+    console.log('📅 Daily Income date range (UTC):', { 
+      dateStr: `${startDate} to ${endDate}`,
+      queryRange: `${queryStart.toISOString()} to ${queryEnd.toISOString()}`,
+      filterRange: `${filterStart.toISOString()} to ${filterEnd.toISOString()}`
+    });
     
     // Validate date range
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    if (isNaN(filterStart.getTime()) || isNaN(filterEnd.getTime())) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_DATE_FORMAT'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
 
-    if (start > end) {
+    if (filterStart > filterEnd) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_INPUT'),
         { status: API.STATUS.BAD_REQUEST }
@@ -75,34 +97,38 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     // ============================================================================
     // XÂY DỰNG ĐIỀU KIỆN QUERY: Lấy các đơn có thay đổi trạng thái trong khoảng thời gian
     // ============================================================================
+    // IMPORTANT: Use OR conditions to include orders created BEFORE period but picked up/returned DURING period
     // Đảm bảo chỉ lấy đơn phát sinh trong ngày (có thay đổi trạng thái):
     // - CREATE: Đơn được tạo (createdAt trong khoảng)
-    // - PICKUPED: Đơn được lấy (pickedUpAt trong khoảng)
-    // - RETURNED: Đơn được trả (returnedAt trong khoảng)
+    // - PICKUPED: Đơn được lấy (pickedUpAt trong khoảng) - CRITICAL: includes orders created before period
+    // - RETURNED: Đơn được trả (returnedAt trong khoảng) - CRITICAL: includes orders created/picked up before period
     // - CANCELLED: Đơn bị hủy (status = CANCELLED và updatedAt trong khoảng)
     // - COMPLETED: Đơn bán hoàn thành (SALE orders, status = COMPLETED và updatedAt trong khoảng)
-    const whereClause: any = {
+    const ordersWhereClause: any = {
+      deletedAt: null, // Exclude soft-deleted orders
       OR: [
-        // Đơn được tạo trong khoảng thời gian
+        // Đơn được tạo trong khoảng thời gian (use wider range for query)
         {
           createdAt: {
-            gte: start,
-            lte: end
+            gte: queryStart,
+            lte: queryEnd
           }
         },
-        // Đơn được lấy trong khoảng thời gian
+        // Đơn được lấy trong khoảng thời gian (CRITICAL: includes orders created before period)
+        // Use wider range to capture orders that might shift due to timezone
         {
           pickedUpAt: {
-            gte: start,
-            lte: end,
+            gte: queryStart,
+            lte: queryEnd,
             not: null
           }
         },
-        // Đơn được trả trong khoảng thời gian
+        // Đơn được trả trong khoảng thời gian (CRITICAL: includes orders created/picked up before period)
+        // Use wider range to capture orders that might shift due to timezone
         {
           returnedAt: {
-            gte: start,
-            lte: end,
+            gte: queryStart,
+            lte: queryEnd,
             not: null
           }
         },
@@ -110,8 +136,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         {
           AND: [
             { status: ORDER_STATUS.CANCELLED },
-            { updatedAt: { gte: start, lte: end } },
-            { deletedAt: null } // Loại bỏ đơn đã xóa mềm
+            { updatedAt: { gte: queryStart, lte: queryEnd } }
           ]
         },
         // Đơn bán hoàn thành trong khoảng thời gian
@@ -119,8 +144,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           AND: [
             { orderType: ORDER_TYPE.SALE },
             { status: ORDER_STATUS.COMPLETED },
-            { updatedAt: { gte: start, lte: end } },
-            { deletedAt: null }
+            { updatedAt: { gte: queryStart, lte: queryEnd } }
           ]
         }
       ]
@@ -129,48 +153,60 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     // ============================================================================
     // ÁP DỤNG LỌC THEO PHẠM VI NGƯỜI DÙNG
     // ============================================================================
-    // Build filters for db API
-    const orderFilters: any = {
-      startDate: start,
-      endDate: end,
-      limit: 10000 // Large limit to get all orders
-    };
-
     if (userScope.outletId) {
       // Nhân viên cửa hàng: chỉ xem đơn của cửa hàng mình
-      orderFilters.outletId = userScope.outletId;
+      const outletObj = await db.outlets.findById(userScope.outletId);
+      if (outletObj) {
+        ordersWhereClause.outletId = outletObj.id;
+      }
     } else if (userScope.merchantId) {
       // Chủ cửa hàng: xem đơn của tất cả cửa hàng trong merchant
-      orderFilters.merchantId = userScope.merchantId;
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        ordersWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      }
     }
     // ADMIN: không có filter (xem tất cả dữ liệu)
 
     // ============================================================================
     // LẤY TẤT CẢ ĐƠN HÀNG CÓ THAY ĐỔI TRẠNG THÁI TRONG KHOẢNG THỜI GIAN
     // ============================================================================
-    // Use findManyLightweight to get all fields including securityDeposit and damageFee
-    const allOrdersResult = await db.orders.findManyLightweight(orderFilters);
-    
-    // Filter orders based on OR conditions (createdAt, pickedUpAt, returnedAt, etc.)
-    const allOrders = allOrdersResult.data.filter((order: any) => {
-      const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
-      const orderPickedUpAt = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
-      const orderReturnedAt = order.returnedAt ? new Date(order.returnedAt) : null;
-      const orderUpdatedAt = order.updatedAt ? new Date(order.updatedAt) : null;
-
-      return (
-        // Created in period
-        (orderCreatedAt && orderCreatedAt >= start && orderCreatedAt <= end) ||
-        // Picked up in period
-        (orderPickedUpAt && orderPickedUpAt >= start && orderPickedUpAt <= end) ||
-        // Returned in period
-        (orderReturnedAt && orderReturnedAt >= start && orderReturnedAt <= end) ||
-        // Cancelled in period
-        (order.status === ORDER_STATUS.CANCELLED && orderUpdatedAt && orderUpdatedAt >= start && orderUpdatedAt <= end) ||
-        // SALE completed in period
-        (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.COMPLETED && orderUpdatedAt && orderUpdatedAt >= start && orderUpdatedAt <= end)
-      );
+    // Query directly from Prisma with OR conditions to get ALL orders with events in period
+    // This ensures orders created before period but picked up/returned during period are included
+    const allOrders = await prisma.order.findMany({
+      where: ordersWhereClause,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true
+          }
+        }
+      },
+      take: 10000 // Large limit to get all orders
     });
+
+    console.log(`💰 Daily Income: Found ${allOrders.length} orders with events in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // Use getOrderRevenueEvents from revenue-calculator.ts (single source of truth)
 
@@ -235,12 +271,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
 
       // Lấy tất cả revenue events của đơn này dựa trên timestamp trong khoảng
       // Use getOrderRevenueEvents from revenue-calculator.ts (single source of truth)
-      const revenueEvents = getOrderRevenueEvents(orderData, start, end);
+      // Use filterStart and filterEnd (not queryStart/queryEnd) to only include events in the actual period
+      const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd);
 
       // Xử lý từng revenue event
       for (const event of revenueEvents) {
-        // Chỉ bao gồm nếu ngày revenue trong khoảng
-        if (event.date < start || event.date > end) {
+        // Chỉ bao gồm nếu ngày revenue trong khoảng filter (actual period)
+        if (event.date < filterStart || event.date > filterEnd) {
           continue;
         }
 
@@ -340,7 +377,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       // (vì đơn tạo hôm nay vẫn được tính dù sau đó bị lấy/trả/hủy)
       if (order.createdAt) {
         const createdDate = new Date(order.createdAt);
-        if (createdDate >= start && createdDate <= end) {
+        if (createdDate >= filterStart && createdDate <= filterEnd) {
           const dateKey = getUTCDateKey(createdDate);
           const orderKey = `${order.orderNumber}-${dateKey}`;
           
@@ -381,7 +418,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             order.createdAt
           ) {
             const createdDate = new Date(order.createdAt);
-            if (createdDate >= start && createdDate <= end) {
+            if (createdDate >= filterStart && createdDate <= filterEnd) {
               const dateKey = getUTCDateKey(createdDate);
               if (dailyDataMap.has(dateKey)) {
                 const dailyData = dailyDataMap.get(dateKey)!;
@@ -396,7 +433,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             order.pickedUpAt
           ) {
             const pickedUpDate = new Date(order.pickedUpAt);
-            if (pickedUpDate >= start && pickedUpDate <= end) {
+            if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
               const dateKey = getUTCDateKey(pickedUpDate);
               if (dailyDataMap.has(dateKey)) {
                 const dailyData = dailyDataMap.get(dateKey)!;
@@ -416,7 +453,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         const securityDeposit = order.securityDeposit || 0;
         if (securityDeposit > 0 && order.pickedUpAt) {
           const pickedUpDate = new Date(order.pickedUpAt);
-          if (pickedUpDate >= start && pickedUpDate <= end) {
+          if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
             const dateKey = getUTCDateKey(pickedUpDate);
             if (dailyDataMap.has(dateKey)) {
               const dailyData = dailyDataMap.get(dateKey)!;
@@ -437,8 +474,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       orderType: ORDER_TYPE.RENT,
       status: ORDER_STATUS.PICKUPED,
       pickedUpAt: {
-        gte: start,
-        lte: end,
+        gte: queryStart,
+        lte: queryEnd,
         not: null
       },
       deletedAt: null
@@ -484,7 +521,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
     
-    console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in period ${start.toISOString()} - ${end.toISOString()}`);
+    console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // ============================================================================
     // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN: Query riêng cho đơn RESERVED có pickupPlanAt trong tương lai
@@ -534,8 +571,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       if (order.pickupPlanAt) {
         const pickupPlanDate = new Date(order.pickupPlanAt);
         const dateKey = getUTCDateKey(pickupPlanDate);
-        // Chỉ tính nếu pickupPlanAt nằm trong period được query
-        if (pickupPlanDate >= start && pickupPlanDate <= end && dailyDataMap.has(dateKey)) {
+        // Chỉ tính nếu pickupPlanAt nằm trong period được filter (actual period)
+        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd && dailyDataMap.has(dateKey)) {
           const dailyData = dailyDataMap.get(dateKey)!;
           dailyData.totalCollateralPlan += (order.securityDeposit || 0);
         }

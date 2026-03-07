@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -33,8 +33,43 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       );
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Parse and normalize dates to UTC to match database timezone
+    // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
+    // If date string is YYYY-MM-DD format, parse directly as UTC
+    // If date string includes time, parse and extract UTC components
+    let start: Date;
+    let end: Date;
+    
+    // Check if date string is YYYY-MM-DD format (date only, no time)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      // Parse directly as UTC date components
+      const [year, month, day] = startDate.split('-').map(Number);
+      start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    } else {
+      // Parse as datetime string and extract UTC components
+      const startDateObj = new Date(startDate);
+      start = new Date(Date.UTC(
+        startDateObj.getUTCFullYear(),
+        startDateObj.getUTCMonth(),
+        startDateObj.getUTCDate(),
+        0, 0, 0, 0
+      ));
+    }
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      // Parse directly as UTC date components
+      const [year, month, day] = endDate.split('-').map(Number);
+      end = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    } else {
+      // Parse as datetime string and extract UTC components
+      const endDateObj = new Date(endDate);
+      end = new Date(Date.UTC(
+        endDateObj.getUTCFullYear(),
+        endDateObj.getUTCMonth(),
+        endDateObj.getUTCDate(),
+        23, 59, 59, 999
+      ));
+    }
 
     // Parse outletIds if provided (for MERCHANT comparison mode)
     let selectedOutletIds: number[] | null = null;
@@ -144,12 +179,14 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       const ordersWhereClause: any = {
         deletedAt: null, // Exclude soft-deleted orders
         OR: [
-          // Orders created in period
+          // Orders created in period (use wider range to capture timezone shifts)
           { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
           // Orders picked up in period (CRITICAL: includes orders created before period)
-          { pickedUpAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
+          // Use wider range: previous day start to next day end to capture timezone shifts
+          { pickedUpAt: { gte: new Date(startOfPeriod.getTime() - 24 * 60 * 60 * 1000), lte: new Date(endOfPeriod.getTime() + 24 * 60 * 60 * 1000), not: null } },
           // Orders returned in period (CRITICAL: includes orders created/picked up before period)
-          { returnedAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
+          // Use wider range: previous day start to next day end to capture timezone shifts
+          { returnedAt: { gte: new Date(startOfPeriod.getTime() - 24 * 60 * 60 * 1000), lte: new Date(endOfPeriod.getTime() + 24 * 60 * 60 * 1000), not: null } },
           // Orders cancelled in period
           { updatedAt: { gte: startOfPeriod, lte: endOfPeriod }, status: ORDER_STATUS.CANCELLED as any },
           // Orders with future pickup plan in period
@@ -372,21 +409,30 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     
     if (groupBy === 'month') {
       // Generate monthly data
-      const current = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+      // Use UTC components to avoid timezone issues
+      const startYear = start.getUTCFullYear();
+      const startMonth = start.getUTCMonth();
+      const endYear = end.getUTCFullYear();
+      const endMonth = end.getUTCMonth();
       
-      while (current <= endMonth) {
-        const year = current.getFullYear();
-        const month = current.getMonth();
+      // Create UTC dates for iteration
+      let current = new Date(Date.UTC(startYear, startMonth, 1, 0, 0, 0, 0));
+      const endMonthDate = new Date(Date.UTC(endYear, endMonth, 1, 0, 0, 0, 0));
+      
+      while (current <= endMonthDate) {
+        const year = current.getUTCFullYear();
+        const month = current.getUTCMonth();
         
         // Format as mm/yy (e.g., "11/25")
         const monthStr = String(month + 1).padStart(2, '0');
         const yearStr = String(year).slice(-2); // Last 2 digits of year
         const periodLabel = `${monthStr}/${yearStr}`;
         
-        // Calculate start and end of month
-        const startOfMonth = new Date(year, month, 1);
-        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        // Calculate start and end of month in UTC to match database timezone
+        // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
+        // Create UTC dates directly to avoid timezone issues
+        const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+        const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
 
         // Process each outlet separately if outletIds provided, otherwise process aggregated
         if (selectedOutletIds && outletsToProcess.length > 0) {
@@ -399,18 +445,19 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           await processOutletIncome(null, startOfMonth, endOfMonth, periodLabel, year, 'month');
         }
 
-        // Move to next month
-        current.setMonth(current.getMonth() + 1);
+        // Move to next month (in UTC)
+        current = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
       }
     } else if (groupBy === 'day') {
       // Generate daily data
-      const current = new Date(start);
+      // Use UTC components to avoid timezone issues
+      let current = new Date(start);
       const endDay = new Date(end);
       
       while (current <= endDay) {
-        const year = current.getFullYear();
-        const month = current.getMonth();
-        const day = current.getDate();
+        const year = current.getUTCFullYear();
+        const month = current.getUTCMonth();
+        const day = current.getUTCDate();
         
         // Format as dd/mm/yy (e.g., "21/11/25")
         const dayStr = String(day).padStart(2, '0');
@@ -418,9 +465,11 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         const yearStr = String(year).slice(-2); // Last 2 digits of year
         const periodLabel = `${dayStr}/${monthStr}/${yearStr}`;
         
-        // Calculate start and end of day
-        const startOfDay = new Date(year, month, day, 0, 0, 0);
-        const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+        // Calculate start and end of day in UTC to match database timezone
+        // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
+        // Create UTC dates directly to avoid timezone issues
+        const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
 
         // Process each outlet separately if outletIds provided, otherwise process aggregated
         if (selectedOutletIds && outletsToProcess.length > 0) {
@@ -433,8 +482,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           await processOutletIncome(null, startOfDay, endOfDay, periodLabel, year, 'day');
         }
 
-        // Move to next day
-        current.setDate(current.getDate() + 1);
+        // Move to next day (in UTC)
+        current = new Date(Date.UTC(year, month, day + 1, 0, 0, 0, 0));
       }
     }
 
