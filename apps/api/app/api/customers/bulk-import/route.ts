@@ -76,18 +76,6 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           continue;
         }
 
-        // Log row 1509 for debugging
-        if (rowNumber === 1509) {
-          console.log('🔍 Debug row 1509:', {
-            customerData,
-            firstName,
-            phone: customerData.phone,
-            email: customerData.email,
-            dateOfBirth: customerData.dateOfBirth,
-            idType: customerData.idType
-          });
-        }
-
         // Validate customer data with schema
         const validationResult = customerCreateSchema.safeParse(customerData);
         if (!validationResult.success) {
@@ -289,6 +277,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     try {
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
+        const transactionSkipped: Array<{ row: number; reason: string }> = [];
 
         for (const validatedCustomer of customersToImport) {
           try {
@@ -314,14 +303,21 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
           imported.push(customer);
         } catch (error: any) {
-            // If ANY error during transaction, throw to rollback entire transaction
-            // Format user-friendly error message
+            // If duplicate (P2002), skip and continue instead of throwing
+            if (error.code === 'P2002') {
+              // Unique constraint violation - skip this customer and continue
+              transactionSkipped.push({
+                row: validatedCustomer.rowNumber,
+                reason: 'Customer with this phone number or email already exists'
+              });
+              console.log(`Skipping duplicate customer at row ${validatedCustomer.rowNumber}`);
+              continue; // Skip this customer and continue with next
+            }
+            
+            // For other errors, throw to rollback transaction
             let errorMessage = 'Failed to import customer';
             
-            if (error.code === 'P2002') {
-              // Unique constraint violation (should not happen as we checked, but handle just in case)
-              errorMessage = 'Customer with this phone number or email already exists';
-            } else if (error.code === 'P2003') {
+            if (error.code === 'P2003') {
               // Foreign key constraint violation
               errorMessage = 'Invalid merchant reference';
             } else if (error.message) {
@@ -358,13 +354,16 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           }
         }
 
-        return { imported };
+        return { imported, skipped: transactionSkipped };
       });
+
+      // Combine pre-transaction skipped with transaction skipped
+      const allSkipped = [...skipped, ...(results.skipped || [])];
 
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMERS_IMPORTED', {
           imported: results.imported.length,
-          skipped: skipped.length,
+          skipped: allSkipped.length,
           failed: 0,
           total: customers.length,
           errors: []

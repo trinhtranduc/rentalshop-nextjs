@@ -454,6 +454,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
+        const transactionSkipped: Array<{ row: number; reason: string }> = [];
 
         for (const validatedProduct of productsToImport) {
           try {
@@ -489,7 +490,18 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
           imported.push(product);
         } catch (error: any) {
-            // Format error and throw to rollback entire transaction (all-or-nothing)
+            // If duplicate (P2002), skip and continue instead of throwing
+            if (error.code === 'P2002') {
+              // Unique constraint violation - skip this product and continue
+              transactionSkipped.push({
+                row: validatedProduct.rowNumber,
+                reason: 'Product with this barcode or name already exists'
+              });
+              console.log(`Skipping duplicate product at row ${validatedProduct.rowNumber}`);
+              continue; // Skip this product and continue with next
+            }
+            
+            // For other errors, throw to rollback transaction
             const errorMessage = formatPrismaError(error);
             console.error(`Error importing product at row ${validatedProduct.rowNumber}:`, {
               message: error.message,
@@ -502,16 +514,19 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           }
         }
 
-        return { imported };
+        return { imported, skipped: transactionSkipped };
       }, {
         maxWait: 10000, // Wait up to 10 seconds to acquire transaction lock
         timeout: estimatedTimeout // Dynamic timeout based on product count
       });
 
+      // Combine pre-transaction skipped with transaction skipped
+      const allSkipped = [...skipped, ...(results.skipped || [])];
+
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
           imported: results.imported.length,
-          skipped: skipped.length,
+          skipped: allSkipped.length,
           failed: 0,
           total: products.length,
           errors: []
