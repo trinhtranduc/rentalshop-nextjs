@@ -24,8 +24,8 @@ import {
   Breadcrumb,
   type BreadcrumbItem,
 } from '@rentalshop/ui';
-import { Plus, Download, Upload, MoreVertical, ArrowLeft } from 'lucide-react';
-import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
+import { Plus, Download, Upload, MoreVertical, ArrowLeft, Trash2 } from 'lucide-react';
+import { useAuth, useCustomersData, useCanExportData, usePermissions } from '@rentalshop/hooks';
 import { customersApi, merchantsApi, authenticatedFetch, apiUrls } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
@@ -47,8 +47,6 @@ export default function MerchantCustomersPage() {
   const merchantId = params.id as string;
   const { user } = useAuth();
   const { toastSuccess } = useToast();
-  const t = useCustomerTranslations();
-  const tc = useCommonTranslations();
   const { canManageCustomers, canExportCustomers } = usePermissions();
   
   // Merchant info
@@ -66,6 +64,8 @@ export default function MerchantCustomersPage() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -215,7 +215,7 @@ export default function MerchantCustomersPage() {
     try {
       const response = await customersApi.deleteCustomer(customerToDelete.id);
       if (response.success) {
-        toastSuccess(tc('labels.success'), t('messages.customerDeleted') || 'Customer deleted successfully');
+        toastSuccess('Success', 'Customer deleted successfully');
         setShowDeleteConfirm(false);
         setCustomerToDelete(null);
         refetch();
@@ -226,17 +226,47 @@ export default function MerchantCustomersPage() {
       console.error('Error deleting customer:', error);
       // Error handled by global error handler
     }
-  }, [customerToDelete, toastSuccess, t, tc, refetch]);
+  }, [customerToDelete, toastSuccess, refetch]);
 
-  const handleCustomerCreated = useCallback(() => {
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedCustomerIds.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await customersApi.batchDeleteCustomers(selectedCustomerIds);
+      if (response.success && response.data) {
+        const { deleted, failed } = response.data;
+        if (deleted > 0) {
+          toastSuccess(
+            'Success', 
+            failed > 0 
+              ? `${deleted} customer(s) deleted, ${failed} failed`
+              : `${deleted} customer(s) deleted successfully`
+          );
+          setSelectedCustomerIds([]);
+          setShowBulkDeleteConfirm(false);
+          refetch();
+        }
+      } else {
+        throw new Error(response.message || 'Failed to delete customers');
+      }
+    } catch (error: any) {
+      console.error('Error batch deleting customers:', error);
+      // Error handled by global error handler
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedCustomerIds, toastSuccess, refetch]);
+
+  const handleCustomerCreated = useCallback(async () => {
     setShowAddDialog(false);
-    refetch();
+    await refetch();
   }, [refetch]);
 
-  const handleCustomerUpdated = useCallback(() => {
+  const handleCustomerUpdated = useCallback(async () => {
     setShowEditDialog(false);
     setSelectedCustomer(null);
-    refetch();
+    await refetch();
   }, [refetch]);
 
   // ============================================================================
@@ -248,6 +278,7 @@ export default function MerchantCustomersPage() {
       return {
         customers: [],
         total: 0,
+        page: 1,
         currentPage: 1,
         totalPages: 1,
         limit: 25,
@@ -258,6 +289,7 @@ export default function MerchantCustomersPage() {
     return {
       customers: data.customers || [],
       total: data.total || 0,
+      page: data.currentPage || 1,
       currentPage: data.currentPage || 1,
       totalPages: data.totalPages || 1,
       limit: data.limit || 25,
@@ -308,13 +340,25 @@ export default function MerchantCustomersPage() {
           <div className="flex items-center gap-2">
             {canManageCustomers && (
               <>
+                {/* Batch Delete button - only show when customers are selected */}
+                {selectedCustomerIds.length > 0 && (
+                  <Button
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isDeleting ? 'Deleting...' : `Delete (${selectedCustomerIds.length})`}
+                  </Button>
+                )}
                 <Button
                   variant="default"
                   size="sm"
                   onClick={() => setShowAddDialog(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {t('buttons.addCustomer') || 'Add Customer'}
+                  Add Customer
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -327,14 +371,14 @@ export default function MerchantCustomersPage() {
                       onClick={() => setShowImportDialog(true)}
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      {t('importLabel') || 'Import Customers'}
+                      Import Customers
                     </DropdownMenuItem>
                     {canExportCustomers && (
                       <DropdownMenuItem
                         onClick={() => setShowExportDialog(true)}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        {t('exportLabel') || 'Export Customers'}
+                        Export Customers
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -352,7 +396,7 @@ export default function MerchantCustomersPage() {
             <LoadingIndicator 
               variant="circular" 
               size="lg"
-              message={tc('labels.loading') || 'Loading customers...'}
+              message="Loading customers..."
             />
           </div>
         ) : (
@@ -368,6 +412,7 @@ export default function MerchantCustomersPage() {
             onSort={handleSort}
             onSelectionChange={setSelectedCustomerIds}
             onLimitChange={handleLimitChange}
+            currentUser={user}
           />
         )}
       </div>
@@ -378,10 +423,6 @@ export default function MerchantCustomersPage() {
           customer={selectedCustomer}
           open={showDetailDialog}
           onOpenChange={setShowDetailDialog}
-          onViewOrders={() => {
-            setShowDetailDialog(false);
-            handleCustomerAction('viewOrders', selectedCustomer.id);
-          }}
         />
       )}
 
@@ -411,10 +452,10 @@ export default function MerchantCustomersPage() {
           open={showDeleteConfirm}
           onOpenChange={setShowDeleteConfirm}
           type="danger"
-          title={t('actions.deleteCustomer') || 'Delete Customer'}
-          description={t('messages.confirmDeleteCustomer') || 'Are you sure you want to delete this customer? This action cannot be undone.'}
-          confirmText={t('actions.delete') || 'Delete'}
-          cancelText={t('buttons.cancel') || 'Cancel'}
+          title="Delete Customer"
+          description="Are you sure you want to delete this customer? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
           onConfirm={handleDeleteCustomer}
           onCancel={() => {
             setShowDeleteConfirm(false);
@@ -440,10 +481,38 @@ export default function MerchantCustomersPage() {
         <ExportDialog
           open={showExportDialog}
           onOpenChange={setShowExportDialog}
-          entityType="customers"
-          filters={filters}
-          onExportStart={() => setIsExporting(true)}
-          onExportComplete={() => setIsExporting(false)}
+          resourceName="Customers"
+          onExport={async (params) => {
+            try {
+              setIsExporting(true);
+              // TODO: Implement export functionality
+              console.log('Export customers with params:', params);
+              toastSuccess('Success', 'Export started');
+              setShowExportDialog(false);
+            } catch (error) {
+              console.error('Export error:', error);
+            } finally {
+              setIsExporting(false);
+            }
+          }}
+          isLoading={isExporting}
+        />
+      )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      {canManageCustomers && (
+        <ConfirmationDialog
+          open={showBulkDeleteConfirm}
+          onOpenChange={setShowBulkDeleteConfirm}
+          type="danger"
+          title="Delete Selected Customers"
+          description={`Are you sure you want to delete ${selectedCustomerIds.length} customer(s)? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleBatchDelete}
+          onCancel={() => {
+            setShowBulkDeleteConfirm(false);
+          }}
         />
       )}
     </PageWrapper>

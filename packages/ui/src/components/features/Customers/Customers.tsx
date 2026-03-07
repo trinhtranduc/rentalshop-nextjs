@@ -16,7 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import type { Customer, CustomerFilters } from '@rentalshop/types';
-import { useUserRole, useCustomerTranslations } from '@rentalshop/hooks';
+import { useUserRole, useCustomerTranslations, usePermissions } from '@rentalshop/hooks';
 
 // Data interface for customers list
 export interface CustomersData {
@@ -92,6 +92,7 @@ export const Customers: React.FC<CustomersProps> = ({
   
   // User role check for permissions
   const { canManageUsers } = useUserRole(currentUser);
+  const { canManageCustomers } = usePermissions();
   
   // Get translations
   const t = useCustomerTranslations();
@@ -179,6 +180,7 @@ export const Customers: React.FC<CustomersProps> = ({
             sortBy={filters.sortBy || "createdAt"}
             sortOrder={filters.sortOrder || "desc"}
             onSort={memoizedOnSort}
+            canManageCustomers={canManageCustomers}
           />
         ) : (
           <EmptyState

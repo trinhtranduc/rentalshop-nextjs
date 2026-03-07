@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import { Input } from './input';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { cn } from '@rentalshop/ui';
 
@@ -28,6 +29,13 @@ export function Pagination({
   const t = useCommonTranslations();
   // Optimistic state for immediate visual feedback
   const [optimisticPage, setOptimisticPage] = useState<number | null>(null);
+  // Input state for items per page
+  const [limitInput, setLimitInput] = useState<string>(limit.toString());
+  
+  // Update limit input when limit changes externally
+  useEffect(() => {
+    setLimitInput(limit.toString());
+  }, [limit]);
   
   // Clear optimistic state when actual page changes
   useEffect(() => {
@@ -40,6 +48,36 @@ export function Pagination({
   const handlePageClick = (pageNum: number) => {
     setOptimisticPage(pageNum); // 1. Immediate visual feedback
     onPageChange(pageNum); // 2. Trigger navigation
+  };
+
+  // Handle limit input change
+  const handleLimitInputChange = (value: string) => {
+    // Only allow numbers
+    const numericValue = value.replace(/[^0-9]/g, '');
+    setLimitInput(numericValue);
+  };
+
+  // Handle limit input submit
+  const handleLimitInputSubmit = () => {
+    if (!limitInput) return;
+    
+    const limitNum = parseInt(limitInput, 10);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 5000) {
+      // Invalid limit, reset to current limit
+      setLimitInput(limit.toString());
+      return;
+    }
+    
+    if (onLimitChange) {
+      onLimitChange(limitNum);
+    }
+  };
+
+  // Handle Enter key in limit input
+  const handleLimitInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleLimitInputSubmit();
+    }
   };
   
   // Display page (use optimistic if available, otherwise actual)
@@ -97,17 +135,63 @@ export function Pagination({
         {onLimitChange && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">{t('pagination.itemsPerPage') || 'Items per page'}:</span>
-            <Select value={limit.toString()} onValueChange={(value) => onLimitChange(parseInt(value))}>
-              <SelectTrigger className="w-20 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={limitInput}
+                onChange={(e) => handleLimitInputChange(e.target.value)}
+                onKeyDown={handleLimitInputKeyDown}
+                onBlur={handleLimitInputSubmit}
+                className="w-16 h-8 text-center text-sm px-2"
+                min={1}
+                max={5000}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLimitInputSubmit}
+                disabled={!limitInput || parseInt(limitInput, 10) < 1 || parseInt(limitInput, 10) > 5000}
+                className="h-8 px-2"
+              >
+                Apply
+              </Button>
+            </div>
+            {/* Quick select buttons for common values */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onLimitChange(10)}
+                className={cn("h-7 px-2 text-xs", limit === 10 && "bg-gray-100 dark:bg-gray-800")}
+              >
+                10
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onLimitChange(25)}
+                className={cn("h-7 px-2 text-xs", limit === 25 && "bg-gray-100 dark:bg-gray-800")}
+              >
+                25
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onLimitChange(50)}
+                className={cn("h-7 px-2 text-xs", limit === 50 && "bg-gray-100 dark:bg-gray-800")}
+              >
+                50
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onLimitChange(100)}
+                className={cn("h-7 px-2 text-xs", limit === 100 && "bg-gray-100 dark:bg-gray-800")}
+              >
+                100
+              </Button>
+            </div>
           </div>
         )}
       </div>

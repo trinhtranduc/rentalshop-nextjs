@@ -212,6 +212,17 @@ export const customersApi = {
   },
 
   /**
+   * Batch delete customers
+   */
+  async batchDeleteCustomers(customerIds: number[]): Promise<CustomerApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.customers.batchDelete, {
+      method: 'POST',
+      body: JSON.stringify({ customerIds }),
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
    * Bulk import customers
    */
   async bulkImport(customers: CustomerInput[]): Promise<CustomerApiResponse> {

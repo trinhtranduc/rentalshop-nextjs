@@ -88,6 +88,7 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    batchDelete: string;
     stats: string;
     export: string;
     bulkImport: string;
@@ -612,6 +613,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/customers`,
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
+      batchDelete: `${base}/api/customers/batch-delete`,
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
       bulkImport: `${base}/api/customers/bulk-import`,
