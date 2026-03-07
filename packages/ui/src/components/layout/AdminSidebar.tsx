@@ -28,7 +28,8 @@ import {
   Bell,
   RefreshCw,
   FolderTree,
-  Tag
+  Tag,
+  UserCircle
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -82,6 +83,11 @@ const adminMenuItems: MenuItem[] = [
     label: 'Orders',
     href: '/orders',
     icon: ShoppingCart,
+  },
+  {
+    label: 'Customers',
+    href: '/customers',
+    icon: UserCircle,
   },
   {
     label: 'Users',

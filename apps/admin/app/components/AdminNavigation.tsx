@@ -18,7 +18,8 @@ import {
   Clock,
   UserPlus,
   TrendingUp,
-  FileText
+  FileText,
+  UserCircle
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -94,7 +95,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
     {
       name: 'Customers',
       href: '/customers',
-      icon: Users,
+      icon: UserCircle,
       current: pathname.startsWith('/customers')
     },
     {
