@@ -29,7 +29,7 @@ import type { CustomerCreateInput } from '@rentalshop/types';
 import { importInChunks, type ChunkedImportProgress, type ChunkedImportItem } from '../../Import/chunked-import';
 
 const MAX_ROWS = 20000;
-const IMPORT_CHUNK_SIZE = 200; // Reduced from 3000 to avoid transaction timeout
+const IMPORT_CHUNK_SIZE = 1000; // Increased to 1000 rows per chunk for better performance
 const PREVIEW_MAX_ROWS = 200;
 
 function normalizeImportPhone(value: unknown): string | undefined {
