@@ -590,6 +590,7 @@ function createApiUrls(): ApiUrls {
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
       bulkImport: `${base}/api/products/bulk-import`,
+      batchDelete: `${base}/api/products/batch-delete`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
       batchAvailability: `${base}/api/products/batch-availability`,
       export: `${base}/api/products/export`,

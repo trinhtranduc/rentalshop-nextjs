@@ -323,6 +323,29 @@ export const productsApi = {
   },
 
   /**
+   * Batch delete multiple products
+   */
+  async batchDeleteProducts(productIds: number[]): Promise<ApiResponse<{
+    deleted: number;
+    failed: number;
+    total: number;
+    deletedProducts?: Array<{ id: number; name: string }>;
+    errors?: Array<{ id: number; name: string; error: string }>;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.products.batchDelete, {
+      method: 'POST',
+      body: JSON.stringify({ productIds }),
+    });
+    return await parseApiResponse<{
+      deleted: number;
+      failed: number;
+      total: number;
+      deletedProducts?: Array<{ id: number; name: string }>;
+      errors?: Array<{ id: number; name: string; error: string }>;
+    }>(response);
+  },
+
+  /**
    * Get products by category
    */
   async getProductsByCategory(categoryId: number): Promise<ApiResponse<Product[]>> {

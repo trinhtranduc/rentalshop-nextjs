@@ -171,14 +171,32 @@ function normalizeProductData(productData: any, merchantId: number, outletId: nu
     stock = 0;
   }
 
+  // Helper function to parse price (handles 0, null, undefined, string)
+  const parsePrice = (value: any): number => {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+    // If already a number, return it (including 0)
+    if (typeof value === 'number') {
+      return isNaN(value) ? 0 : Math.max(0, value); // Ensure non-negative
+    }
+    // If string, try to parse
+    const str = String(value).trim();
+    if (str === '' || str === 'null' || str === 'undefined') {
+      return 0;
+    }
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? 0 : Math.max(0, parsed); // Ensure non-negative
+  };
+
   return {
     name: productData.name,
     description: productData.description || '',
     barcode,
-    rentPrice: productData.rentPrice || 0,
-    salePrice: productData.salePrice || 0,
-    costPrice: productData.costPrice || 0,
-    deposit: productData.deposit || 0,
+    rentPrice: parsePrice(productData.rentPrice),
+    salePrice: parsePrice(productData.salePrice),
+    costPrice: parsePrice(productData.costPrice),
+    deposit: parsePrice(productData.deposit),
     totalStock: stock,
     pricingType: productData.pricingType || null,
     durationConfig: productData.durationConfig || null,
