@@ -66,6 +66,15 @@ export async function parseExcelFile(
 
     // Convert sheet to JSON (header row is first row by default)
     const headerRowIndex = options.headerRowIndex ?? 0;
+    
+    // Parse with raw: true first to get raw cell values (preserves leading zeros for text-formatted cells)
+    const jsonDataRaw = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1, // Use array of arrays format
+      defval: '', // Default value for empty cells
+      raw: true // Get raw values (preserves string format)
+    }) as any[][];
+    
+    // Also parse with raw: false for non-phone fields (numbers, dates, etc.)
     const jsonData = XLSX.utils.sheet_to_json(worksheet, {
       header: 1, // Use array of arrays format
       defval: '', // Default value for empty cells
@@ -117,13 +126,26 @@ export async function parseExcelFile(
       const cell = worksheet[cellAddress];
       if (!cell) return null;
       
-      // If cell has w (formatted text), use it; otherwise use v (raw value) as string
-      // cell.w preserves the display format, which includes leading zeros if cell is formatted as text
+      // Check cell type: 's' = string, 'n' = number, 'b' = boolean, etc.
+      // If cell is string type, cell.v will be the string value (may have leading zeros)
+      // If cell is number type, cell.v is number and leading zeros are lost
+      // cell.w is the formatted display text (preserves format if cell is formatted as text)
+      
+      // Priority: use cell.w if available (formatted text, preserves leading zeros for text-formatted cells)
       if (cell.w) {
-        return cell.w; // Formatted text (preserves leading zeros if formatted as text)
-      } else if (cell.v !== undefined && cell.v !== null) {
+        return cell.w;
+      }
+      
+      // If cell type is string, cell.v is the string value (may have leading zeros)
+      if (cell.t === 's' && typeof cell.v === 'string') {
+        return cell.v;
+      }
+      
+      // If cell type is number, leading zeros are already lost, but convert to string anyway
+      if (cell.v !== undefined && cell.v !== null) {
         return String(cell.v);
       }
+      
       return null;
     };
 
@@ -145,17 +167,26 @@ export async function parseExcelFile(
 
       // Convert row to object
       const rowData: any = {};
+      const rawRow = jsonDataRaw[excelRowIndex] || []; // Get raw row for phone fields
+      
       headers.forEach((header, colIndex) => {
-        const cellValue = row[colIndex];
+        const cellValue = row[colIndex]; // Parsed value (from raw: false)
+        const rawCellValue = rawRow[colIndex]; // Raw value (from raw: true)
         
         // Convert empty strings to undefined
         if (cellValue === '' || cellValue === null || cellValue === undefined) {
           rowData[header] = undefined;
         } else {
-          // For phone fields, read raw cell text to preserve leading zeros
+          // For phone fields, use raw value to preserve leading zeros
           if (isPhoneField(header)) {
-            const rawText = getRawCellText(excelRowIndex, colIndex);
-            rowData[header] = rawText ? rawText.trim() : String(cellValue).trim();
+            // Use raw value if available (preserves string format and leading zeros)
+            if (rawCellValue !== undefined && rawCellValue !== null && rawCellValue !== '') {
+              rowData[header] = String(rawCellValue).trim();
+            } else {
+              // Fallback: try to get from cell directly
+              const rawText = getRawCellText(excelRowIndex, colIndex);
+              rowData[header] = rawText ? rawText.trim() : String(cellValue).trim();
+            }
           } else {
             const stringValue = String(cellValue).trim();
             // Try to parse as number if it looks like a number (for non-phone fields)
