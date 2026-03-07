@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
-import { deleteFromS3, extractS3KeyFromUrl, parseProductImages } from '@rentalshop/utils/server';
+import { ResponseBuilder, handleApiError, parseProductImages } from '@rentalshop/utils';
+import { deleteFromS3, extractS3KeyFromUrl } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -17,7 +17,10 @@ const batchDeleteSchema = z.object({
 
 /**
  * POST /api/products/batch-delete
- * Soft delete multiple products in batch
+ * Delete multiple products in batch (hard delete)
+ * - Always hard delete products (permanently remove, including S3 images and Qdrant embeddings)
+ * - Order items store product info separately (productId, productName, productBarcode, productImages)
+ *   so product records can be safely deleted without losing order history
  * 
  * Authorization: Users with 'products.manage' permission can delete products
  */
@@ -51,31 +54,33 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     }
 
     // Fetch all products to validate
+    // Note: Product.id is the public ID (Int), not a CUID
     const products = await prisma.product.findMany({
       where: {
-        publicId: { in: productIds },
+        id: { in: productIds },
         isActive: true, // Only active products
       },
       include: {
         merchant: {
           select: {
-            id: true,
-            publicId: true,
+            id: true, // Merchant.id is also Int (public ID)
           },
         },
       },
     });
 
     // Check if all products exist
-    const foundIds = new Set(products.map(p => p.publicId));
+    const foundIds = new Set(products.map(p => p.id));
     const notFoundIds = productIds.filter(id => !foundIds.has(id));
     
     if (notFoundIds.length > 0) {
+      const errorResponse = ResponseBuilder.error('PRODUCTS_NOT_FOUND');
       return NextResponse.json(
-        ResponseBuilder.error('PRODUCTS_NOT_FOUND', {
-          notFoundIds,
-          message: `Products with IDs ${notFoundIds.join(', ')} not found or already deleted`
-        }),
+        {
+          ...errorResponse,
+          data: { notFoundIds },
+          error: `Products with IDs ${notFoundIds.join(', ')} not found or already deleted`
+        },
         { status: 404 }
       );
     }
@@ -85,10 +90,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     
     if (user.role !== USER_ROLE.ADMIN) {
       for (const product of products) {
-        const productMerchantId = product.merchant?.publicId;
+        const productMerchantId = product.merchant?.id; // Merchant.id is Int (public ID)
         if (productMerchantId !== userMerchantId) {
           unauthorizedProducts.push({
-            id: product.publicId,
+            id: product.id, // Product.id is Int (public ID)
             name: product.name,
           });
         }
@@ -96,75 +101,76 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     }
 
     if (unauthorizedProducts.length > 0) {
+      const errorResponse = ResponseBuilder.error('UNAUTHORIZED_TO_DELETE_SOME_PRODUCTS');
       return NextResponse.json(
-        ResponseBuilder.error('UNAUTHORIZED_TO_DELETE_SOME_PRODUCTS', {
-          unauthorizedProducts,
-          message: `You don't have permission to delete ${unauthorizedProducts.length} product(s)`
-        }),
+        {
+          ...errorResponse,
+          data: { unauthorizedProducts },
+          error: `You don't have permission to delete ${unauthorizedProducts.length} product(s)`
+        },
         { status: API.STATUS.FORBIDDEN }
       );
     }
 
     // All validations passed - proceed with batch delete
+    // Always hard delete products (order items store product info separately)
     const deletedProducts: Array<{ id: number; name: string }> = [];
     const errors: Array<{ id: number; name: string; error: string }> = [];
 
-    // Process each product deletion with better error handling
+    // Process hard delete for all products
     for (const product of products) {
       try {
-        // Delete product images from S3 (non-blocking - continue even if S3 fails)
+        // Delete product images from S3
         const imageUrls = parseProductImages(product.images);
         if (imageUrls.length > 0) {
-          const deletePromises = imageUrls.map(async (imageUrl) => {
+          const deletePromises = imageUrls.map(async (imageUrl: string) => {
             try {
               const s3Key = extractS3KeyFromUrl(imageUrl);
               if (s3Key) {
                 await deleteFromS3(s3Key);
-                console.log(`✅ Deleted image from S3: ${s3Key} for product ${product.publicId}`);
+                console.log(`✅ Deleted image from S3: ${s3Key} for product ${product.id}`);
               }
             } catch (error: any) {
               // Log but don't fail the entire deletion if S3 fails
-              console.error(`⚠️ Warning: Failed to delete image ${imageUrl} for product ${product.publicId}:`, error?.message || error);
+              console.error(`⚠️ Warning: Failed to delete image ${imageUrl} for product ${product.id}:`, error?.message || error);
             }
           });
           // Don't await - let it run in background, don't block deletion
           Promise.all(deletePromises).catch((error) => {
-            console.error(`⚠️ Warning: Some S3 deletions failed for product ${product.publicId}:`, error);
+            console.error(`⚠️ Warning: Some S3 deletions failed for product ${product.id}:`, error);
           });
         }
 
-        // Delete embeddings from Qdrant (background job - non-blocking)
+        // Delete embeddings from Qdrant
         try {
           const { getVectorStore } = await import('@rentalshop/database/server');
           const vectorStore = getVectorStore();
           // Fire and forget - don't block deletion if Qdrant fails
-          vectorStore.deleteProductEmbeddings(product.publicId).catch((error: any) => {
-            console.error(`⚠️ Warning: Failed to delete embeddings for product ${product.publicId}:`, error?.message || error);
+          vectorStore.deleteProductEmbeddings(product.id).catch((error: any) => {
+            console.error(`⚠️ Warning: Failed to delete embeddings for product ${product.id}:`, error?.message || error);
           });
         } catch (error: any) {
           // Log but don't fail - Qdrant is optional
-          console.error(`⚠️ Warning: Could not start embedding deletion for product ${product.publicId}:`, error?.message || error);
+          console.error(`⚠️ Warning: Could not start embedding deletion for product ${product.id}:`, error?.message || error);
         }
 
-        // Soft delete by setting isActive to false (this is the critical operation)
-        await prisma.product.update({
+        // Hard delete: permanently remove product from database
+        await prisma.product.delete({
           where: { id: product.id },
-          data: { isActive: false },
         });
 
         deletedProducts.push({
-          id: product.publicId,
+          id: product.id, // Product.id is Int (public ID)
           name: product.name,
         });
       } catch (error: any) {
-        // Only database errors should cause failure
         const errorMessage = error?.message || 'Failed to delete product';
         errors.push({
-          id: product.publicId,
+          id: product.id, // Product.id is Int (public ID)
           name: product.name,
           error: errorMessage,
         });
-        console.error(`❌ Error deleting product ${product.publicId}:`, {
+        console.error(`❌ Error deleting product ${product.id}:`, {
           message: errorMessage,
           code: error?.code,
           name: error?.name,
@@ -177,11 +183,13 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // If all products failed, return error
     if (deletedProducts.length === 0 && errors.length > 0) {
       const firstError = errors[0];
+      const errorResponse = ResponseBuilder.error('BATCH_DELETE_FAILED');
       return NextResponse.json(
-        ResponseBuilder.error('BATCH_DELETE_FAILED', {
-          message: `Failed to delete all products. First error: ${firstError.error}`,
-          errors,
-        }),
+        {
+          ...errorResponse,
+          data: { errors },
+          error: `Failed to delete all products. First error: ${firstError.error}`
+        },
         { status: 500 }
       );
     }

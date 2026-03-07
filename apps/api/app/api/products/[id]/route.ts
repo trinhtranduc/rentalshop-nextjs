@@ -724,7 +724,10 @@ export async function PUT(
 
 /**
  * DELETE /api/products/[id]
- * Delete product by ID (soft delete)
+ * Delete product by ID (hard delete)
+ * - Always hard delete products (permanently remove, including S3 images and Qdrant embeddings)
+ * - Order items store product info separately (productId, productName, productBarcode, productImages)
+ *   so product records can be safely deleted without losing order history
  * 
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
@@ -805,68 +808,19 @@ export async function DELETE(
       }
 
       // ============================================================================
-      // VALIDATION: Check product orders before soft deletion
+      // DELETE PRODUCT (Hard Delete)
       // ============================================================================
-      // Note: This is a SOFT DELETE (sets isActive = false), so we allow deletion
-      // even with active orders. Product will be hidden but data is preserved.
+      // Note: Order items store product info separately (productId, productName, productBarcode, productImages)
+      // so product records can be safely deleted without losing order history
       
-      // Get detailed order information for better messaging
-      const activeOrders = await prisma.order.findMany({
-        where: {
-          orderItems: {
-            some: {
-              productId: productId
-            }
-          },
-            status: {
-              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
-          }
-        },
-        select: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          orderItems: {
-            where: {
-              productId: productId
-            },
-            select: {
-              quantity: true
-            }
-          }
-        }
-      });
+      // Get product info before deletion for response
+      const productInfo = {
+        id: productId, // publicId from route params
+        name: existingProduct.name,
+        images: existingProduct.images,
+      };
 
-      const activeOrderItemCount = activeOrders.reduce((sum, order) => {
-        return sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-      }, 0);
-
-      // Get order numbers for better error message
-      const activeOrderNumbers = activeOrders.map(o => o.orderNumber).join(', ');
-      const reservedCount = activeOrders.filter(o => o.status === ORDER_STATUS.RESERVED).length;
-      const pickedUpCount = activeOrders.filter(o => o.status === ORDER_STATUS.PICKUPED).length;
-
-      // Check total order items count for informational message
-      const totalOrderItemCount = await prisma.orderItem.count({
-        where: {
-          productId: productId
-        }
-      });
-
-      // Warn if there are active orders, but allow soft delete
-      if (activeOrderItemCount > 0) {
-        console.log(`⚠️ Warning: Product ${productId} has ${activeOrderItemCount} active order item(s) but will be soft deleted (hidden from listings)`);
-        console.log(`   Active orders: ${activeOrderNumbers}`);
-        console.log(`   - RESERVED: ${reservedCount} order(s)`);
-        console.log(`   - PICKUPED: ${pickedUpCount} order(s)`);
-      }
-
-      if (totalOrderItemCount > 0 && activeOrderItemCount === 0) {
-        console.log(`ℹ️ Info: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
-      }
-
-      // IMPORTANT: Delete all product images from S3 before soft deleting the product
-      // This prevents orphaned images in S3 storage
+      // Always hard delete (order items store product info separately)
       const imageUrls = parseProductImages(existingProduct.images);
 
       // Delete all product images from S3 storage
@@ -900,16 +854,12 @@ export async function DELETE(
         
         console.log(`📊 Image deletion summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
         
-        // Continue with product deletion even if some images failed to delete
-        // This ensures product is deleted even if S3 cleanup has issues
         if (failCount > 0) {
           console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3. Product will still be deleted.`);
         }
-      } else {
-        console.log('ℹ️ No images to delete for product', productId);
       }
 
-      // Delete embeddings from Qdrant (background job)
+      // Delete embeddings from Qdrant
       try {
         const { getVectorStore } = await import('@rentalshop/database/server');
         const vectorStore = getVectorStore();
@@ -921,38 +871,25 @@ export async function DELETE(
         // Don't fail the request if embedding deletion fails
       }
 
-      // Soft delete by setting isActive to false
-      const deletedProduct = await db.products.update(productId, { isActive: false });
-      console.log('✅ Product soft deleted successfully:', deletedProduct);
-
-      // Return product with parsed images (already parsed above)
-      const responseProduct = {
-        ...deletedProduct,
-        images: imageUrls // Use already parsed imageUrls from above
-      };
-
-      // Build informative message based on order status
-      let message = `Sản phẩm "${existingProduct.name}" đã được ẩn khỏi danh sách (soft delete). Dữ liệu vẫn được lưu trữ trong hệ thống.`;
+      // Hard delete: permanently remove product from database
+      await prisma.product.delete({
+        where: { id: productId },
+      });
       
-      if (activeOrderItemCount > 0) {
-        message += `\n\n⚠️ Lưu ý: Sản phẩm này đang có ${activeOrderItemCount} đơn hàng đang hoạt động (${reservedCount} đơn RESERVED, ${pickedUpCount} đơn PICKUPED).`;
-        message += `\nCác đơn hàng: ${activeOrderNumbers}`;
-        message += `\nSản phẩm sẽ không hiển thị trong danh sách nhưng vẫn có thể truy cập qua các đơn hàng hiện có.`;
-      } else if (totalOrderItemCount > 0) {
-        message += `\n\nℹ️ Sản phẩm có ${totalOrderItemCount} đơn hàng trong lịch sử (đã hoàn thành hoặc đã hủy).`;
-      }
+      console.log('✅ Product hard deleted successfully:', productInfo);
+
+      // Return product info (without dates since it's deleted)
+      const responseProduct = {
+        id: productInfo.id,
+        name: productInfo.name,
+        images: imageUrls
+      };
 
       return NextResponse.json({
         success: true,
         data: responseProduct,
         code: 'PRODUCT_DELETED_SUCCESS',
-        message: message,
-        warnings: activeOrderItemCount > 0 ? {
-          activeOrders: activeOrderItemCount,
-          reservedOrders: reservedCount,
-          pickedUpOrders: pickedUpCount,
-          orderNumbers: activeOrderNumbers.split(', ')
-        } : undefined
+        message: `Product "${existingProduct.name}" has been permanently deleted from the system.`
       });
 
     } catch (error) {

@@ -55,7 +55,7 @@ export default function MerchantProductsPage() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-
+  
   // ============================================================================
   // URL PARAMS - Single Source of Truth
   // ============================================================================
@@ -65,19 +65,19 @@ export default function MerchantProductsPage() {
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
-
+  
   // ============================================================================
   // FETCH MERCHANT INFO
   // ============================================================================
   
   React.useEffect(() => {
     const fetchMerchantInfo = async () => {
-      try {
+    try {
         setMerchantLoading(true);
-        const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
-        if (merchantData.success && merchantData.data) {
-          setMerchantName(merchantData.data.name);
-        }
+      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+      if (merchantData.success && merchantData.data) {
+        setMerchantName(merchantData.data.name);
+      }
       } catch (error) {
         console.error('Error fetching merchant info:', error);
       } finally {
@@ -123,7 +123,7 @@ export default function MerchantProductsPage() {
     
     Object.entries(updates).forEach(([key, value]) => {
       if (value === undefined || value === '' || value === null) {
-        params.delete(key);
+          params.delete(key);
       } else {
         params.set(key, String(value));
       }
@@ -285,10 +285,10 @@ export default function MerchantProductsPage() {
   // ============================================================================
   // RENDER
   // ============================================================================
-  
-  return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-      <PageHeader className="flex-shrink-0">
+
+    return (
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
@@ -365,19 +365,19 @@ export default function MerchantProductsPage() {
           </div>
         ) : (
           /* Products Content - Only render when data is loaded */
-          <Products
-            data={productData}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-            onProductAction={handleProductAction}
-            onPageChange={handlePageChange}
-            onSort={handleSort}
+        <Products
+          data={productData}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onSearchChange={handleSearchChange}
+          onClearFilters={handleClearFilters}
+          onProductAction={handleProductAction}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
             onSelectionChange={setSelectedProductIds}
             onLimitChange={handleLimitChange}
             currentUser={user}
-          />
+        />
         )}
       </div>
 
