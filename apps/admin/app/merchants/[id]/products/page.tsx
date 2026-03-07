@@ -10,9 +10,15 @@ import {
   type BreadcrumbItem,
   Button,
   ConfirmationDialog,
-  useToast
+  useToast,
+  ImportProductDialog,
+  ExportDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@rentalshop/ui';
-import { Package, Trash2 } from 'lucide-react';
+import { Package, Trash2, Upload, Download, MoreVertical, Plus } from 'lucide-react';
 import { merchantsApi, productsApi } from '@rentalshop/utils';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import type { ProductFilters } from '@rentalshop/types';
@@ -32,7 +38,7 @@ export default function MerchantProductsPage() {
   const merchantId = params.id as string;
   const { user } = useAuth();
   const { toastSuccess } = useToast();
-  const { canManageProducts } = usePermissions();
+  const { canManageProducts, canExportProducts } = usePermissions();
   
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -55,6 +61,9 @@ export default function MerchantProductsPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -234,6 +243,38 @@ export default function MerchantProductsPage() {
     }
   }, [selectedProductIds, toastSuccess, fetchData]);
 
+  const handleImportSuccess = useCallback(() => {
+    toastSuccess('Success', 'Products imported successfully');
+    setShowImportDialog(false);
+    fetchData();
+  }, [toastSuccess, fetchData]);
+
+  const handleExportProducts = useCallback(async (params: any) => {
+    setIsExporting(true);
+    try {
+      const blob = await productsApi.exportProducts(params);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toastSuccess('Success', 'Export completed successfully');
+      setShowExportDialog(false);
+      setSelectedProductIds([]);
+    } catch (error: any) {
+      console.error('Export error:', error);
+      // Error handled by global error handler
+    } finally {
+      setIsExporting(false);
+    }
+  }, [toastSuccess]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -269,18 +310,65 @@ export default function MerchantProductsPage() {
       <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
-          {/* Batch Delete button - only show when products are selected and user can manage products */}
-          {canManageProducts && selectedProductIds.length > 0 && (
-            <Button
-              onClick={() => setShowBulkDeleteConfirm(true)}
-              variant="destructive"
-              size="sm"
-              disabled={isDeleting}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {isDeleting ? 'Deleting...' : `Delete (${selectedProductIds.length})`}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {canManageProducts && (
+              <>
+                {/* Batch Delete button - only show when products are selected */}
+                {selectedProductIds.length > 0 && (
+                  <Button
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isDeleting ? 'Deleting...' : `Delete (${selectedProductIds.length})`}
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => setShowImportDialog(true)}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Products
+                    </DropdownMenuItem>
+                    {canExportProducts && (
+                      <DropdownMenuItem
+                        onClick={() => setShowExportDialog(true)}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export Products
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            {/* Show export dropdown if user can export but cannot manage */}
+            {!canManageProducts && canExportProducts && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowExportDialog(true)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Products
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </PageHeader>
 
@@ -320,6 +408,27 @@ export default function MerchantProductsPage() {
           onCancel={() => {
             setShowBulkDeleteConfirm(false);
           }}
+        />
+      )}
+
+      {/* Import Product Dialog */}
+      {canManageProducts && (
+        <ImportProductDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
+
+      {/* Export Product Dialog */}
+      {canExportProducts && (
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          resourceName="Products"
+          isLoading={isExporting}
+          selectedCount={selectedProductIds.length}
+          onExport={handleExportProducts}
         />
       )}
     </PageWrapper>
