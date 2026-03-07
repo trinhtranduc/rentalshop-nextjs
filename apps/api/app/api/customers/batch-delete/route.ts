@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
  * Batch delete schema
  */
 const batchDeleteSchema = z.object({
-  customerIds: z.array(z.number().int().positive()).min(1, 'At least one customer ID is required').max(100, 'Cannot delete more than 100 customers at once'),
+  customerIds: z.array(z.number().int().positive()).min(1, 'At least one customer ID is required').max(5000, 'Cannot delete more than 5000 customers at once'),
 });
 
 /**
