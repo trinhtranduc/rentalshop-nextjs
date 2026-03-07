@@ -146,6 +146,7 @@ export const productsApi = {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('q', filters.search); // Use 'q' parameter like orders
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString()); // Filter by merchant
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.available !== undefined) params.append('available', filters.available.toString());
