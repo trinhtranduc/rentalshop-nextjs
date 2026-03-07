@@ -793,7 +793,7 @@ export async function DELETE(
         );
         if (!hasStockAtOutlet) {
           console.log('❌ Product does not have stock at user\'s outlet:', {
-            productId: productId,
+          productId: productId,
             userOutletId: userScope.outletId,
             availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
           });
@@ -818,8 +818,8 @@ export async function DELETE(
               productId: productId
             }
           },
-          status: {
-            in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+            status: {
+              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
           }
         },
         select: {

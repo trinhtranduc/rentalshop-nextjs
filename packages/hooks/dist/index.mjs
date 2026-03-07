@@ -4039,7 +4039,13 @@ function usePermissions() {
   }, [user?.permissions]);
   const hasPermission = useMemo(() => {
     return (permission) => {
-      if (!user || !permissions.length) {
+      if (!user) {
+        return false;
+      }
+      if (user.role === "ADMIN" && (!permissions || permissions.length === 0)) {
+        return true;
+      }
+      if (!permissions || !permissions.length) {
         return false;
       }
       if (permissions.includes(permission)) {

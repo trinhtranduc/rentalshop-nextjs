@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
  * Batch delete schema
  */
 const batchDeleteSchema = z.object({
-  customerIds: z.array(z.number().int().positive()).min(1, 'At least one customer ID is required').max(5000, 'Cannot delete more than 5000 customers at once'),
+  customerIds: z.array(z.number().int().positive()).min(1, 'At least one customer ID is required').max(3000, 'Cannot delete more than 3000 customers at once'),
 });
 
 /**
@@ -116,8 +116,10 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Check for active orders before deletion
+    // Check for ACTIVE orders before deletion (only RESERVED and PICKUPED)
+    // Allow soft delete for customers with COMPLETED/CANCELLED orders (preserve history)
     const customersWithActiveOrders: Array<{ id: number; name: string; orderCount: number }> = [];
+    const customersToDelete: Array<{ id: number; name: string }> = [];
     
     for (const customer of customers) {
       const activeOrdersCount = await prisma.order.count({
@@ -129,14 +131,22 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       });
 
       if (activeOrdersCount > 0) {
+        // Block deletion if customer has active orders
         customersWithActiveOrders.push({
           id: customer.id,
           name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
           orderCount: activeOrdersCount,
         });
+      } else {
+        // Allow soft delete if no active orders (even if has completed/cancelled orders)
+        customersToDelete.push({
+          id: customer.id,
+          name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
+        });
       }
     }
 
+    // Return error if any customers have active orders
     if (customersWithActiveOrders.length > 0) {
       return NextResponse.json(
         {
@@ -149,7 +159,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // All validations passed - proceed with batch delete in transaction
+    // All validations passed - proceed with soft delete (set deletedAt and isActive: false)
     const deletedCustomers: Array<{ id: number; name: string }> = [];
     const errors: Array<{ id: number; name: string; error: string }> = [];
 
@@ -157,20 +167,23 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       // Use transaction to ensure all-or-nothing deletion
       await prisma.$transaction(
         async (tx) => {
-          for (const customer of customers) {
+          for (const customer of customersToDelete) {
             try {
+              // Soft delete: set deletedAt and isActive: false
+              // Note: deletedAt will be available after Prisma migration
               await tx.customer.update({
-                where: { id: customer.id }, // Use CUID
-                data: { isActive: false },
+                where: { id: customer.id },
+                data: { 
+                  // @ts-ignore - deletedAt will be available after migration
+                  deletedAt: new Date(),
+                  isActive: false 
+                },
               });
-              deletedCustomers.push({
-                id: customer.id,
-                name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
-              });
+              deletedCustomers.push(customer);
             } catch (error: any) {
               errors.push({
                 id: customer.id,
-                name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
+                name: customer.name,
                 error: error.message || 'Failed to delete customer',
               });
               // If any customer fails, throw to rollback transaction

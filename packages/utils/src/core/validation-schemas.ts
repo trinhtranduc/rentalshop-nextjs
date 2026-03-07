@@ -157,7 +157,7 @@ export const productsQuerySchema = z.object({
   available: z.coerce.boolean().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['name', 'createdAt', 'rentPrice']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -212,7 +212,7 @@ export const customersQuerySchema = z.object({
   country: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['firstName', 'lastName', 'phone', 'email', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -244,7 +244,7 @@ export const ordersQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
   productId: z.coerce.number().int().positive().optional(),
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount', 'pickupPlanAt', 'returnPlanAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -311,7 +311,7 @@ export const usersQuerySchema = z.object({
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   isActive: z.coerce.boolean().optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   sortBy: z.enum(['email', 'name', 'role', 'createdAt']).default('createdAt'),
@@ -383,7 +383,7 @@ export const outletsQuerySchema = z.object({
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).optional(),
 });
 
@@ -391,7 +391,7 @@ export const categoriesQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
 
@@ -444,7 +444,7 @@ export const plansQuerySchema = z.object({
   search: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
   billingCycle: z.enum(['monthly', 'yearly']).optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['name', 'price', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -477,7 +477,7 @@ export const planLimitAddonsQuerySchema = z.object({
   search: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['id', 'createdAt', 'updatedAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
@@ -504,7 +504,7 @@ export const planVariantsQuerySchema = z.object({
   search: z.string().optional(),
   isActive: z.coerce.boolean().optional(),
   billingCycle: z.enum(['monthly', 'yearly']).optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['name', 'price', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -543,7 +543,7 @@ export const subscriptionsQuerySchema = z.object({
   planId: z.string().optional(),
   planVariantId: z.string().optional(),
   search: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(5000).default(50),
+  limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   sortBy: z.enum(['createdAt', 'currentPeriodEnd', 'amount', 'status']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),

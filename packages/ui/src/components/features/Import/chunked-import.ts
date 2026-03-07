@@ -70,15 +70,15 @@ export async function importInChunks<T>(
     try {
       const response = await importChunk(chunk.map(item => item.payload), chunkIndex);
 
-      onProgress?.({
-        currentChunk: chunkIndex + 1,
-        totalChunks: chunks.length,
-        processedRows: Math.min((chunkIndex + 1) * chunkSize, items.length),
-        totalRows: items.length,
-      });
+    onProgress?.({
+      currentChunk: chunkIndex + 1,
+      totalChunks: chunks.length,
+      processedRows: Math.min((chunkIndex + 1) * chunkSize, items.length),
+      totalRows: items.length,
+    });
 
       // If API call failed completely (network error, server error, etc.)
-      if (!response.success || !response.data) {
+    if (!response.success || !response.data) {
         // If this is a critical error (not just some rows failed), stop importing
         // Otherwise, continue with next chunk
         const errorMessage = response.message || 'Import chunk failed';
@@ -96,21 +96,21 @@ export async function importInChunks<T>(
         // Continue with next chunk instead of stopping
         // This allows partial success when some chunks fail
         continue;
-      }
+    }
 
-      const chunkErrors = (response.data.errors || []).map(error => {
-        const matchedRow = chunk[error.row - 1];
+    const chunkErrors = (response.data.errors || []).map(error => {
+      const matchedRow = chunk[error.row - 1];
 
-        return {
-          row: matchedRow?.originalRow || error.row,
-          error: error.error,
-        };
-      });
+      return {
+        row: matchedRow?.originalRow || error.row,
+        error: error.error,
+      };
+    });
 
-      result.imported += response.data.imported || 0;
-      result.skipped += response.data.skipped || 0;
-      result.failed += response.data.failed || 0;
-      result.errors.push(...chunkErrors);
+    result.imported += response.data.imported || 0;
+    result.skipped += response.data.skipped || 0;
+    result.failed += response.data.failed || 0;
+    result.errors.push(...chunkErrors);
 
       // Continue with next chunk even if some rows failed
       // Only stop if ALL rows in chunk failed (which is unlikely with transaction timeout)

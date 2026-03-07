@@ -46,7 +46,7 @@ export default function MerchantCustomersPage() {
   const searchParams = useSearchParams();
   const merchantId = params.id as string;
   const { user } = useAuth();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const { canManageCustomers, canExportCustomers } = usePermissions();
   
   // Merchant info
@@ -224,9 +224,12 @@ export default function MerchantCustomersPage() {
       }
     } catch (error: any) {
       console.error('Error deleting customer:', error);
-      // Error handled by global error handler
+      toastError(
+        'Error',
+        error?.message || error?.response?.data?.message || 'Failed to delete customer'
+      );
     }
-  }, [customerToDelete, toastSuccess, refetch]);
+  }, [customerToDelete, toastSuccess, toastError, refetch]);
 
   const handleBatchDelete = useCallback(async () => {
     if (selectedCustomerIds.length === 0) return;
@@ -235,28 +238,54 @@ export default function MerchantCustomersPage() {
     try {
       const response = await customersApi.batchDeleteCustomers(selectedCustomerIds);
       if (response.success && response.data) {
-        const { deleted, failed } = response.data;
+        const { deleted, failed, skipped } = response.data;
         if (deleted > 0) {
           toastSuccess(
             'Success', 
             failed > 0 
               ? `${deleted} customer(s) deleted, ${failed} failed`
+              : skipped > 0
+              ? `${deleted} customer(s) deleted, ${skipped} skipped (have active orders)`
               : `${deleted} customer(s) deleted successfully`
           );
           setSelectedCustomerIds([]);
           setShowBulkDeleteConfirm(false);
           refetch();
+        } else {
+          // No customers were deleted
+          toastError('Error', 'No customers were deleted');
         }
       } else {
-        throw new Error(response.message || 'Failed to delete customers');
+        // Handle specific error codes from API response
+        // ApiResponse has code field when success is false
+        const errorResponse = response as any;
+        if (errorResponse.code === 'CUSTOMERS_HAVE_ACTIVE_ORDERS') {
+          // For error responses, data may contain error details
+          const errorData = errorResponse.data || {};
+          const customersWithOrders = (errorData as any).customersWithActiveOrders || [];
+          const customerNames = customersWithOrders
+            .slice(0, 5)
+            .map((c: any) => c.name)
+            .join(', ');
+          const moreCount = customersWithOrders.length > 5 ? ` and ${customersWithOrders.length - 5} more` : '';
+          toastError(
+            'Cannot Delete Customers',
+            `${errorResponse.message || 'Cannot delete customers with active orders'}\n\nCustomers with active orders: ${customerNames}${moreCount}`
+          );
+        } else {
+          toastError('Error', errorResponse.message || 'Failed to delete customers');
+        }
       }
     } catch (error: any) {
       console.error('Error batch deleting customers:', error);
-      // Error handled by global error handler
+      toastError(
+        'Error',
+        error?.message || error?.response?.data?.message || 'An unexpected error occurred while deleting customers'
+      );
     } finally {
       setIsDeleting(false);
     }
-  }, [selectedCustomerIds, toastSuccess, refetch]);
+  }, [selectedCustomerIds, toastSuccess, toastError, refetch]);
 
   const handleCustomerCreated = useCallback(async () => {
     setShowAddDialog(false);
