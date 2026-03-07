@@ -62,6 +62,7 @@ interface ImportCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportSuccess?: () => void;
+  merchantId?: number; // Optional merchantId for admin context
 }
 
 /**
@@ -71,7 +72,8 @@ interface ImportCustomerDialogProps {
 export function ImportCustomerDialog({
   open,
   onOpenChange,
-  onImportSuccess
+  onImportSuccess,
+  merchantId
 }: ImportCustomerDialogProps) {
   const t = useTranslations('customers.import');
   const { toastSuccess, toastError } = useToast();
@@ -364,7 +366,9 @@ export function ImportCustomerDialog({
           dateOfBirth: row.dateofbirth || row.dateOfBirth,
           idNumber: row.idnumber || row.idNumber,
           idType: row.idtype || row.idType,
-          notes: row.notes
+          notes: row.notes,
+          // Add merchantId if provided (for admin context when importing from merchant page)
+          ...(merchantId && { merchantId })
         };
 
         // Remove empty fields (but keep firstName)

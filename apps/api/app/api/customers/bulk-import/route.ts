@@ -6,7 +6,7 @@ import {
   ResponseBuilder,
   customerCreateSchema
 } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
 const MAX_IMPORT_ROWS = 3000;
@@ -40,7 +40,11 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const { customers } = parsed.data;
 
     // Resolve merchant ID
-    const merchantId = userScope.merchantId;
+    // Allow ADMIN to override merchantId from customer data (for admin context)
+    let merchantId = userScope.merchantId;
+    if (user.role === USER_ROLE.ADMIN && (customers[0] as any)?.merchantId) {
+      merchantId = (customers[0] as any).merchantId;
+    }
     if (!merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_ID_REQUIRED'),

@@ -482,6 +482,7 @@ export default function MerchantCustomersPage() {
             setShowImportDialog(false);
             refetch();
           }}
+          merchantId={parseInt(merchantId)}
         />
       )}
 
