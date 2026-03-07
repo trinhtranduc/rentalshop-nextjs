@@ -76,15 +76,40 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           continue;
         }
 
+        // Log row 1509 for debugging
+        if (rowNumber === 1509) {
+          console.log('🔍 Debug row 1509:', {
+            customerData,
+            firstName,
+            phone: customerData.phone,
+            email: customerData.email,
+            dateOfBirth: customerData.dateOfBirth,
+            idType: customerData.idType
+          });
+        }
+
         // Validate customer data with schema
         const validationResult = customerCreateSchema.safeParse(customerData);
         if (!validationResult.success) {
+          // Format detailed validation errors
+          const errorMessages = validationResult.error.errors.map(e => {
+            const field = e.path.join('.') || 'unknown';
+            return `${field}: ${e.message}`;
+          });
+          
           validationErrors.push({ 
             row: rowNumber, 
-            error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+            error: errorMessages.join('; ') || 'Validation failed'
           });
-            continue;
-          }
+          
+          // Log for debugging
+          console.error(`Validation error at row ${rowNumber}:`, {
+            errors: validationResult.error.errors,
+            customerData: customerData
+          });
+          
+          continue;
+        }
 
         // Ensure merchantId is set
         const customerInput = {
@@ -131,24 +156,39 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         let errorMessage = 'Failed to validate customer';
         
         if (error.message) {
-          // Check if it's a technical error or user-friendly
-          const technicalErrors = [
-            'Invalid value provided',
-            'Expected',
-            'prisma',
-            'Prisma',
-            'invocation',
-            'route.js'
-          ];
-          
-          const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-          
-          if (isTechnicalError) {
-            // Technical error - use generic message
-            errorMessage = 'Invalid data format or missing required information';
+          // Check if it's a Zod validation error
+          if (error.name === 'ZodError' && error.errors) {
+            const zodErrors = error.errors.map((e: any) => {
+              const field = e.path.join('.') || 'unknown';
+              return `${field}: ${e.message}`;
+            });
+            errorMessage = zodErrors.join('; ');
           } else {
-            // User-friendly error - use as is
-            errorMessage = error.message;
+            // Check if it's a technical error or user-friendly
+            const technicalErrors = [
+              'Invalid value provided',
+              'Expected',
+              'prisma',
+              'Prisma',
+              'invocation',
+              'route.js'
+            ];
+            
+            const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
+            
+            if (isTechnicalError) {
+              // Technical error - use generic message but include field info if available
+              errorMessage = 'Invalid data format or missing required information';
+              
+              // Try to extract field name from error message
+              const fieldMatch = error.message.match(/(?:at|for|field)\s+["']?(\w+)["']?/i);
+              if (fieldMatch) {
+                errorMessage = `Invalid ${fieldMatch[1]} format or missing required information`;
+              }
+            } else {
+              // User-friendly error - use as is
+              errorMessage = error.message;
+            }
           }
         }
         
@@ -160,7 +200,9 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         // Log technical details for debugging
         console.error(`Error validating customer at row ${rowNumber}:`, {
           message: error.message,
+          name: error.name,
           code: error.code,
+          customerData: customerData,
           stack: error.stack
         });
       }
