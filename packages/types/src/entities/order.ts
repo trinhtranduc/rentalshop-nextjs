@@ -58,6 +58,13 @@ export interface Order extends BaseEntityWithOutlet {
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  notesImages?: string[];
+  pickupNotes?: string;
+  pickupNotesImages?: string[];
+  returnNotes?: string;
+  returnNotesImages?: string[];
+  damageNotes?: string;
+  damageNotesImages?: string[];
   
   // Discount properties
   discountType?: 'amount' | 'percentage';
@@ -231,9 +238,13 @@ export interface OrderInput {
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  notesImages?: string[] | null;
   pickupNotes?: string;
+  pickupNotesImages?: string[] | null;
   returnNotes?: string;
+  returnNotesImages?: string[] | null;
   damageNotes?: string;
+  damageNotesImages?: string[] | null;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -343,6 +354,13 @@ export interface OrderListItem {
   totalAmount: number;
   depositAmount: number;
   notes?: string;
+  notesImages?: string[];
+  pickupNotes?: string;
+  pickupNotesImages?: string[];
+  returnNotes?: string;
+  returnNotesImages?: string[];
+  damageNotes?: string;
+  damageNotesImages?: string[];
   createdAt: Date | string;
   updatedAt: Date | string;
   
@@ -421,9 +439,13 @@ export interface OrderWithDetails {
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
+  notesImages?: string[];
   pickupNotes?: string;
+  pickupNotesImages?: string[];
   returnNotes?: string;
+  returnNotesImages?: string[];
   damageNotes?: string;
+  damageNotesImages?: string[];
   createdAt: Date | string;
   updatedAt: Date | string;
   

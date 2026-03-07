@@ -25,7 +25,7 @@ import {
 } from '@rentalshop/utils';
 import { productsApi } from '@rentalshop/utils';
 
-const MAX_ROWS = 1000;
+const MAX_ROWS = 3000;
 
 interface ImportProductDialogProps {
   open: boolean;

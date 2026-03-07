@@ -9,8 +9,13 @@ import {
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
+const MAX_IMPORT_ROWS = 3000;
+
 const bulkImportSchema = z.object({
-  products: z.array(z.any()).min(1, 'At least one product is required')
+  products: z
+    .array(z.any())
+    .min(1, 'At least one product is required')
+    .max(MAX_IMPORT_ROWS, `Maximum allowed is ${MAX_IMPORT_ROWS} rows`)
 });
 
 // ============================================================================

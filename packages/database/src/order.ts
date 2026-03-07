@@ -361,9 +361,13 @@ export async function updateOrder(
     collateralType: string
     collateralDetails: string
     notes: string
+    notesImages?: string[] | null
     pickupNotes: string
+    pickupNotesImages?: string[] | null
     returnNotes: string
+    returnNotesImages?: string[] | null
     damageNotes: string
+    damageNotesImages?: string[] | null
     customerId: number
     outletId: number
     orderItems?: Array<{
@@ -395,8 +399,9 @@ export async function updateOrder(
     'securityDeposit', 'damageFee', 'lateFee', 'discountType', 
     'discountValue', 'discountAmount', 'pickupPlanAt', 'returnPlanAt',
     'pickedUpAt', 'returnedAt', 'rentalDuration', 'isReadyToDeliver',
-    'collateralType', 'collateralDetails', 'notes', 'pickupNotes',
-    'returnNotes', 'damageNotes'
+    'collateralType', 'collateralDetails', 'notes', 'notesImages',
+    'pickupNotes', 'pickupNotesImages', 'returnNotes', 'returnNotesImages',
+    'damageNotes', 'damageNotesImages'
   ];
   
   // Build update data - filter to only valid fields
@@ -1622,9 +1627,13 @@ export const simplifiedOrders = {
           collateralType: true,
           collateralDetails: true,
           notes: true,
+          notesImages: true,
           pickupNotes: true,
+          pickupNotesImages: true,
           returnNotes: true,
+          returnNotesImages: true,
           damageNotes: true,
+          damageNotesImages: true,
           createdAt: true,
           updatedAt: true,
           deletedAt: true, // Include deletedAt in response
@@ -1749,9 +1758,13 @@ export const simplifiedOrders = {
       collateralType: order.collateralType,
       collateralDetails: order.collateralDetails,
       notes: order.notes,
+      notesImages: Array.isArray(order.notesImages) ? order.notesImages : undefined,
       pickupNotes: order.pickupNotes,
+      pickupNotesImages: Array.isArray(order.pickupNotesImages) ? order.pickupNotesImages : undefined,
       returnNotes: order.returnNotes,
+      returnNotesImages: Array.isArray(order.returnNotesImages) ? order.returnNotesImages : undefined,
       damageNotes: order.damageNotes,
+      damageNotesImages: Array.isArray(order.damageNotesImages) ? order.damageNotesImages : undefined,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       

@@ -96,14 +96,14 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;
-        }
-      } else if (user.role === USER_ROLE.ADMIN) {
-        // ADMIN users see all data (system-wide access)
-        // No additional filtering needed for ADMIN role
-      } else {
-        // All other users without merchant/outlet assignment should see no data
-        return [];
       }
+    } else if (user.role === USER_ROLE.ADMIN) {
+      // ADMIN users see all data (system-wide access)
+      // No additional filtering needed for ADMIN role
+    } else {
+      // All other users without merchant/outlet assignment should see no data
+        return [];
+    }
 
     // Add date filtering if provided
     if (startDate || endDate) {

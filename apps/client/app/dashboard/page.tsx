@@ -205,26 +205,26 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
             : value}
         </p>
         <div className="flex-1 flex flex-col justify-end">
-          {change && (
+        {change && (
             <div className="flex items-center gap-1.5 mb-2">
-              <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
-                trend === 'up' ? 'bg-green-50 text-green-700' : 
-                trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
-              }`}>
-                {trend === 'up' ? (
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                ) : trend === 'down' ? (
-                  <ArrowDownRight className="w-3.5 h-3.5" />
-                ) : (
-                  <Minus className="w-3.5 h-3.5" />
-                )}
-                {change}
-              </div>
+            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
+              trend === 'up' ? 'bg-green-50 text-green-700' : 
+              trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              {trend === 'up' ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : trend === 'down' ? (
+                <ArrowDownRight className="w-3.5 h-3.5" />
+              ) : (
+                <Minus className="w-3.5 h-3.5" />
+              )}
+              {change}
             </div>
-          )}
-          {description && (
-            <p className="text-gray-500 text-xs mt-2">{description}</p>
-          )}
+          </div>
+        )}
+        {description && (
+          <p className="text-gray-500 text-xs mt-2">{description}</p>
+        )}
           {onClick && typeof value === 'number' && value > 0 && (
             <p className="text-xs text-blue-600 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
               Click to view details →
@@ -1365,7 +1365,7 @@ export default function DashboardPage() {
                   tooltip={t('tooltips.totalCollateral')}
                   color="text-blue-700"
                   trend="neutral"
-                />
+              />
               )}
             </div>
 
