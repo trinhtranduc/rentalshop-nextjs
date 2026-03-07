@@ -636,6 +636,9 @@ export const simplifiedCustomers = {
     // Build where clause
     const where: any = {};
     
+    // Exclude soft-deleted customers (deletedAt is null)
+    where.deletedAt = null;
+    
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     // Default to active customers only unless explicitly requesting all
