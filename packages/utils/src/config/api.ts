@@ -67,6 +67,7 @@ export interface ApiUrls {
     updateStock: (id: number) => string;
     bulkUpdate: string;
     bulkImport: string;
+    batchDelete: string;
     availability: (id: number) => string;
     batchAvailability: string;
     export: string;
