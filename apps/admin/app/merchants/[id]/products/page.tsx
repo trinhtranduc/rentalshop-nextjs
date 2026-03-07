@@ -195,6 +195,10 @@ export default function MerchantProductsPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleSort = useCallback((column: string) => {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
     updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
@@ -309,7 +313,7 @@ export default function MerchantProductsPage() {
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full">
-          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
             {canManageProducts && (
               <>
@@ -383,6 +387,7 @@ export default function MerchantProductsPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           onSelectionChange={setSelectedProductIds}
+          onLimitChange={handleLimitChange}
           title="Merchant Products"
           subtitle={`Manage products for ${merchantName}`}
           showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
