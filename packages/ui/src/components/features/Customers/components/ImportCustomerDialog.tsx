@@ -26,8 +26,11 @@ import {
 } from '@rentalshop/utils';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerCreateInput } from '@rentalshop/types';
+import { importInChunks, type ChunkedImportProgress, type ChunkedImportItem } from '../../Import/chunked-import';
 
-const MAX_ROWS = 3000;
+const MAX_ROWS = 20000;
+const IMPORT_CHUNK_SIZE = 3000;
+const PREVIEW_MAX_ROWS = 200;
 
 interface ImportCustomerDialogProps {
   open: boolean;
@@ -63,6 +66,7 @@ export function ImportCustomerDialog({
     errors?: Array<{ row: number; error: string }>;
   } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
+  const [importProgress, setImportProgress] = useState<ChunkedImportProgress | null>(null);
 
   // Field mapping for CSV headers to customer fields
   const customerFieldMapping: Record<string, string[]> = {
@@ -257,6 +261,7 @@ export function ImportCustomerDialog({
     setErrors([]);
     setDuplicates([]);
     setImportResult(null);
+    setImportProgress(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -270,11 +275,12 @@ export function ImportCustomerDialog({
 
     setImporting(true);
     setImportResult(null);
+    setImportProgress(null);
 
     try {
       // Filter out rows with errors and duplicates
       const validData = previewData.filter((row, index) => {
-        const rowNumber = index + 1; // Display row number (start from 1)
+        const rowNumber = row._originalRow || index + 1;
         const hasError = errors.some(e => e.row === rowNumber);
         const isDuplicate = duplicates.some(d => d.row === rowNumber);
         return !hasError && !isDuplicate;
@@ -287,7 +293,7 @@ export function ImportCustomerDialog({
       }
 
       // Convert to customer input format
-      const customers: any[] = validData.map((row) => {
+      const customers: ChunkedImportItem<any>[] = validData.map((row) => {
         const firstName = (row.firstname || row.firstName || '').trim();
         
         // Ensure firstName is not empty (should be filtered by validation, but double check)
@@ -318,44 +324,40 @@ export function ImportCustomerDialog({
           }
         });
 
-        return customer;
+        return {
+          originalRow: row._originalRow || 1,
+          payload: customer
+        };
       }).filter(c => c !== null); // Filter out null entries
 
-      // Call bulk import API
-      const response = await customersApi.importCustomers(customers);
+      const chunkedResult = await importInChunks(
+        customers,
+        IMPORT_CHUNK_SIZE,
+        async chunk => customersApi.importCustomers(chunk),
+        setImportProgress
+      );
 
-      if (response.success && response.data) {
-        setImportResult({
-          imported: response.data.imported || 0,
-          skipped: response.data.skipped || 0,
-          failed: response.data.failed || 0,
-          total: response.data.total || customers.length,
-          errors: response.data.errors || []
-        });
+      setImportResult(chunkedResult);
 
-        if (response.data.imported > 0) {
-          toastSuccess(t('success'));
-          // Close dialog and reload page on successful import
-          if (onImportSuccess) {
-            onImportSuccess();
-          }
-          // Close dialog after a short delay to show success message
-          setTimeout(() => {
-            setFile(null);
-            setPreviewData([]);
-            setHeaders([]);
-            setErrors([]);
-            setDuplicates([]);
-            setImportResult(null);
-            onOpenChange(false);
-          }, 1000);
+      if (chunkedResult.imported > 0 && chunkedResult.failed === 0) {
+        toastSuccess(t('success'));
+        if (onImportSuccess) {
+          onImportSuccess();
         }
-
-        if (response.data.failed > 0) {
-          toastError(t('failed'));
-        }
-      } else {
-        throw new Error(response.message || 'Import failed');
+        setTimeout(() => {
+          setFile(null);
+          setPreviewData([]);
+          setHeaders([]);
+          setErrors([]);
+          setDuplicates([]);
+          setImportResult(null);
+          setImportProgress(null);
+          onOpenChange(false);
+        }, 1000);
+      } else if (chunkedResult.imported > 0 && chunkedResult.failed > 0) {
+        toastError(`Import stopped at chunk ${importProgress?.currentChunk || '?'}. Some rows were already imported.`);
+      } else if (chunkedResult.failed > 0) {
+        toastError(t('failed'));
       }
     } catch (error: any) {
       console.error('Error importing customers:', error);
@@ -405,6 +407,7 @@ export function ImportCustomerDialog({
       setErrors([]);
       setDuplicates([]);
       setImportResult(null);
+      setImportProgress(null);
       onOpenChange(false);
     }
   };
@@ -418,7 +421,7 @@ export function ImportCustomerDialog({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Các bản ghi trùng lặp sẽ được bỏ qua.
+            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Hệ thống sẽ tự chia thành từng đợt {IMPORT_CHUNK_SIZE} dòng khi import.
           </DialogDescription>
         </DialogHeader>
 
@@ -505,7 +508,14 @@ export function ImportCustomerDialog({
                 headers={headers}
                 errors={errors}
                 duplicates={duplicates}
+                maxRows={PREVIEW_MAX_ROWS}
               />
+            </div>
+          )}
+
+          {importing && importProgress && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+              Đang import đợt {importProgress.currentChunk}/{importProgress.totalChunks} ({importProgress.processedRows}/{importProgress.totalRows} dòng)
             </div>
           )}
 
