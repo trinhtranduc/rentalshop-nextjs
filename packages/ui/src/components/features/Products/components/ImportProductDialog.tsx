@@ -312,7 +312,7 @@ export function ImportProductDialog({
           const parsed = parseFloat(str);
           return isNaN(parsed) ? 0 : parsed;
         };
-
+        
         const product: any = {
           name: row.name || '',
           description: row.description || '',

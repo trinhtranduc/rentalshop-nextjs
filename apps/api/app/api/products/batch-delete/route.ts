@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
  * Batch delete schema
  */
 const batchDeleteSchema = z.object({
-  productIds: z.array(z.number().int().positive()).min(1, 'At least one product ID is required').max(5000, 'Cannot delete more than 5000 products at once'),
+  productIds: z.array(z.number().int().positive()).min(1, 'At least one product ID is required').max(3000, 'Cannot delete more than 3000 products at once'),
 });
 
 /**
@@ -109,10 +109,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const deletedProducts: Array<{ id: number; name: string }> = [];
     const errors: Array<{ id: number; name: string; error: string }> = [];
 
-    // Process each product deletion
+    // Process each product deletion with better error handling
     for (const product of products) {
       try {
-        // Delete product images from S3
+        // Delete product images from S3 (non-blocking - continue even if S3 fails)
         const imageUrls = parseProductImages(product.images);
         if (imageUrls.length > 0) {
           const deletePromises = imageUrls.map(async (imageUrl) => {
@@ -122,25 +122,31 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                 await deleteFromS3(s3Key);
                 console.log(`✅ Deleted image from S3: ${s3Key} for product ${product.publicId}`);
               }
-            } catch (error) {
-              console.error(`Error deleting image ${imageUrl} for product ${product.publicId}:`, error);
+            } catch (error: any) {
+              // Log but don't fail the entire deletion if S3 fails
+              console.error(`⚠️ Warning: Failed to delete image ${imageUrl} for product ${product.publicId}:`, error?.message || error);
             }
           });
-          await Promise.all(deletePromises);
+          // Don't await - let it run in background, don't block deletion
+          Promise.all(deletePromises).catch((error) => {
+            console.error(`⚠️ Warning: Some S3 deletions failed for product ${product.publicId}:`, error);
+          });
         }
 
-        // Delete embeddings from Qdrant (background job)
+        // Delete embeddings from Qdrant (background job - non-blocking)
         try {
           const { getVectorStore } = await import('@rentalshop/database/server');
           const vectorStore = getVectorStore();
+          // Fire and forget - don't block deletion if Qdrant fails
           vectorStore.deleteProductEmbeddings(product.publicId).catch((error: any) => {
-            console.error(`Error deleting embeddings for product ${product.publicId}:`, error);
+            console.error(`⚠️ Warning: Failed to delete embeddings for product ${product.publicId}:`, error?.message || error);
           });
-        } catch (error) {
-          console.error('Error starting embedding deletion:', error);
+        } catch (error: any) {
+          // Log but don't fail - Qdrant is optional
+          console.error(`⚠️ Warning: Could not start embedding deletion for product ${product.publicId}:`, error?.message || error);
         }
 
-        // Soft delete by setting isActive to false
+        // Soft delete by setting isActive to false (this is the critical operation)
         await prisma.product.update({
           where: { id: product.id },
           data: { isActive: false },
@@ -151,17 +157,36 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           name: product.name,
         });
       } catch (error: any) {
+        // Only database errors should cause failure
+        const errorMessage = error?.message || 'Failed to delete product';
         errors.push({
           id: product.publicId,
           name: product.name,
-          error: error.message || 'Failed to delete product',
+          error: errorMessage,
         });
-        console.error(`Error deleting product ${product.publicId}:`, error);
+        console.error(`❌ Error deleting product ${product.publicId}:`, {
+          message: errorMessage,
+          code: error?.code,
+          name: error?.name,
+        });
       }
     }
 
-    console.log(`✅ Batch deleted ${deletedProducts.length} products successfully`);
+    console.log(`✅ Batch deleted ${deletedProducts.length} products successfully (${errors.length} failed)`);
 
+    // If all products failed, return error
+    if (deletedProducts.length === 0 && errors.length > 0) {
+      const firstError = errors[0];
+      return NextResponse.json(
+        ResponseBuilder.error('BATCH_DELETE_FAILED', {
+          message: `Failed to delete all products. First error: ${firstError.error}`,
+          errors,
+        }),
+        { status: 500 }
+      );
+    }
+
+    // If some succeeded, return partial success
     return NextResponse.json(
       ResponseBuilder.success('PRODUCTS_BATCH_DELETED_SUCCESS', {
         deleted: deletedProducts.length,
@@ -172,7 +197,29 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       })
     );
   } catch (error: any) {
-    console.error('❌ Error in batch delete products:', error);
+    console.error('❌ Error in batch delete products:', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack?.substring(0, 500), // Limit stack trace length
+    });
+    
+    // Check for specific error types that should return SERVICE_UNAVAILABLE
+    if (
+      error?.code === 'P1001' || // Prisma connection error
+      error?.code === 'ECONNREFUSED' || // Connection refused
+      error?.message?.includes('timeout') ||
+      error?.message?.includes('TIMEOUT') ||
+      error?.code === 'ETIMEDOUT' ||
+      error?.status === 502 || // Bad Gateway
+      error?.code === 502
+    ) {
+      return NextResponse.json(
+        ResponseBuilder.error('SERVICE_UNAVAILABLE'),
+        { status: 503 }
+      );
+    }
+    
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

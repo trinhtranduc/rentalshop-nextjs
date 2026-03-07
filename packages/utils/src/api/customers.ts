@@ -13,6 +13,7 @@ import { apiUrls } from '../config/api';
 
 export interface CustomerApiResponse<T = any> {
   success: boolean;
+  code?: string;           // Error/Success code for translation
   data?: T;
   message?: string;
   error?: any;

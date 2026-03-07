@@ -388,9 +388,9 @@ export const OrderTable = React.memo(function OrderTable({
                 <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
-                      <Button
+                    <Button
                         variant="ghost"
-                        size="sm"
+                      size="sm"
                         className="h-8 w-8 p-0"
                         onClick={() => setOpenDropdownId(order.id)}
                       >
@@ -407,16 +407,16 @@ export const OrderTable = React.memo(function OrderTable({
                         setOpenDropdownId(null);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
-                        {t('actions.view')}
+                      {t('actions.view')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         onOrderAction('edit', order.orderNumber);
                         setOpenDropdownId(null);
                       }}
                       disabled={order.status !== 'RESERVED'}
-                      >
+                    >
                         <Edit className="h-4 w-4 mr-2" />
-                        {t('actions.edit')}
+                      {t('actions.edit')}
                       </DropdownMenuItem>
                       {/* View Customer - Only show if customerId exists */}
                       {order.customerId && (
@@ -431,35 +431,35 @@ export const OrderTable = React.memo(function OrderTable({
                           </DropdownMenuItem>
                         </>
                       )}
-                      {/* Show Delete button:
-                          - ADMIN: can delete any order regardless of status
-                          - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
-                          - OUTLET_STAFF: cannot delete orders */}
-                      {(
-                        userRole !== 'OUTLET_STAFF' && 
-                        (isAdmin || order.status === 'CANCELLED')
-                      ) && (
+                    {/* Show Delete button:
+                        - ADMIN: can delete any order regardless of status
+                        - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
+                        - OUTLET_STAFF: cannot delete orders */}
+                    {(
+                      userRole !== 'OUTLET_STAFF' && 
+                      (isAdmin || order.status === 'CANCELLED')
+                    ) && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🗑️ Delete button clicked:', { 
-                                orderNumber: order.orderNumber, 
-                                userRole, 
-                                status: order.status 
-                              });
-                              onOrderAction('delete', order.orderNumber);
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🗑️ Delete button clicked:', { 
+                            orderNumber: order.orderNumber, 
+                            userRole, 
+                            status: order.status 
+                          });
+                          onOrderAction('delete', order.orderNumber);
                               setOpenDropdownId(null);
-                            }}
+                        }}
                             className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                          >
+                      >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            {t('actions.delete')}
+                        {t('actions.delete')}
                           </DropdownMenuItem>
                         </>
-                      )}
+                    )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

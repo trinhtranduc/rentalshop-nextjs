@@ -306,14 +306,14 @@ export function ImportCustomerDialog({
     setFile(null);
     setPreviewData([]);
     setHeaders([]);
-      setErrors([]);
-      setDuplicates([]);
-      setImportResult(null);
-      setImportProgress(null);
+    setErrors([]);
+    setDuplicates([]);
+    setImportResult(null);
+    setImportProgress(null);
       setChunkLogs([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleImport = async () => {
@@ -824,19 +824,19 @@ export function ImportCustomerDialog({
                       <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">
                         Chi tiết lỗi ({importResult.errors.length} lỗi):
                       </h4>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCopyAllErrors}
-                        className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copy All
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyAllErrors}
+                      className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy All
+                    </Button>
+                  </div>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {importResult.errors.map((err, index) => (
+                    {importResult.errors.map((err, index) => (
                         <div 
                           key={index} 
                           className="text-sm p-2 bg-white dark:bg-gray-800 rounded border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"
@@ -847,8 +847,8 @@ export function ImportCustomerDialog({
                             </span>
                             <span className="flex-1">{err.error}</span>
                           </div>
-                        </div>
-                      ))}
+                      </div>
+                    ))}
                     </div>
                   </div>
 

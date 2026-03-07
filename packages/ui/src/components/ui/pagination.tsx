@@ -62,7 +62,7 @@ export function Pagination({
     if (!limitInput) return;
     
     const limitNum = parseInt(limitInput, 10);
-    if (isNaN(limitNum) || limitNum < 1 || limitNum > 5000) {
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 3000) {
       // Invalid limit, reset to current limit
       setLimitInput(limit.toString());
       return;
@@ -85,19 +85,21 @@ export function Pagination({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
+    // Use displayPage for consistent page number calculation
+    const activePage = displayPage;
     
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      if (currentPage <= 3) {
+      if (activePage <= 3) {
         for (let i = 1; i <= 4; i++) {
           pages.push(i);
         }
         pages.push('...');
         pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
+      } else if (activePage >= totalPages - 2) {
         pages.push(1);
         pages.push('...');
         for (let i = totalPages - 3; i <= totalPages; i++) {
@@ -106,7 +108,7 @@ export function Pagination({
       } else {
         pages.push(1);
         pages.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        for (let i = activePage - 1; i <= activePage + 1; i++) {
           pages.push(i);
         }
         pages.push('...');
@@ -145,13 +147,13 @@ export function Pagination({
                 onBlur={handleLimitInputSubmit}
                 className="w-16 h-8 text-center text-sm px-2"
                 min={1}
-                max={5000}
+                max={3000}
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLimitInputSubmit}
-                disabled={!limitInput || parseInt(limitInput, 10) < 1 || parseInt(limitInput, 10) > 5000}
+                disabled={!limitInput || parseInt(limitInput, 10) < 1 || parseInt(limitInput, 10) > 3000}
                 className="h-8 px-2"
               >
                 Apply

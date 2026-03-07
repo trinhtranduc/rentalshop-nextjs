@@ -225,12 +225,14 @@ model Customer {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
   merchantId  Int
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
   @@unique([merchantId, phone])
   @@index([merchantId, firstName, lastName])
+  @@index([deletedAt])
 }
 
 model Order {

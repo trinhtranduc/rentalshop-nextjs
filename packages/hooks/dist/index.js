@@ -4134,7 +4134,13 @@ function usePermissions() {
   }, [user?.permissions]);
   const hasPermission = (0, import_react7.useMemo)(() => {
     return (permission) => {
-      if (!user || !permissions.length) {
+      if (!user) {
+        return false;
+      }
+      if (user.role === "ADMIN" && (!permissions || permissions.length === 0)) {
+        return true;
+      }
+      if (!permissions || !permissions.length) {
         return false;
       }
       if (permissions.includes(permission)) {

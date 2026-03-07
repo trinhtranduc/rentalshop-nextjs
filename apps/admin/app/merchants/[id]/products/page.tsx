@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   PageWrapper,
@@ -16,11 +16,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  LoadingIndicator,
 } from '@rentalshop/ui';
-import { Package, Trash2, Upload, Download, MoreVertical, Plus } from 'lucide-react';
+import { Package, Trash2, Upload, Download, MoreVertical } from 'lucide-react';
 import { merchantsApi, productsApi } from '@rentalshop/utils';
-import { useAuth, usePermissions } from '@rentalshop/hooks';
+import { useAuth, useProductsData, usePermissions } from '@rentalshop/hooks';
 import type { ProductFilters } from '@rentalshop/types';
 
 /**
@@ -28,7 +29,10 @@ import type { ProductFilters } from '@rentalshop/types';
  * 
  * Architecture:
  * ✅ URL params as single source of truth
- * ✅ Breadcrumb navigation
+ * ✅ Clean data fetching with useProductsData hook
+ * ✅ Filter products by merchantId
+ * ✅ Shareable URLs (bookmarkable filters)
+ * ✅ Browser back/forward support
  */
 export default function MerchantProductsPage() {
   const params = useParams();
@@ -37,9 +41,21 @@ export default function MerchantProductsPage() {
   const searchParams = useSearchParams();
   const merchantId = params.id as string;
   const { user } = useAuth();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const { canManageProducts, canExportProducts } = usePermissions();
   
+  // Merchant info
+  const [merchantName, setMerchantName] = useState<string>('');
+  const [merchantLoading, setMerchantLoading] = useState(true);
+  
+  // Dialog states
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
   // ============================================================================
   // URL PARAMS - Single Source of Truth
   // ============================================================================
@@ -49,133 +65,75 @@ export default function MerchantProductsPage() {
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
-  
-  // ============================================================================
-  // LOCAL STATE
-  // ============================================================================
-  
-  const [products, setProducts] = useState<any[]>([]);
-  const [merchantName, setMerchantName] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
-  useEffect(() => {
-    fetchData();
+  // ============================================================================
+  // FETCH MERCHANT INFO
+  // ============================================================================
+  
+  React.useEffect(() => {
+    const fetchMerchantInfo = async () => {
+      try {
+        setMerchantLoading(true);
+        const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+        if (merchantData.success && merchantData.data) {
+          setMerchantName(merchantData.data.name);
+        }
+      } catch (error) {
+        console.error('Error fetching merchant info:', error);
+      } finally {
+        setMerchantLoading(false);
+      }
+    };
+    fetchMerchantInfo();
   }, [merchantId]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch merchant info
-      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
-      
-      if (merchantData.success && merchantData.data) {
-        setMerchantName(merchantData.data.name);
-      }
-
-      // Fetch products
-      const productsRes = await merchantsApi.products.list(parseInt(merchantId));
-      const productsData = await productsRes.json();
-      console.log('📦 Products API response:', productsData);
-
-      if (productsData.success) {
-        // API returns data as direct array OR data.products
-        const productsList = Array.isArray(productsData.data) 
-          ? productsData.data 
-          : productsData.data?.products || [];
-        setProducts(productsList);
-        console.log('📦 Products set, count:', productsList.length);
-      } else {
-        setError(productsData.message || 'Failed to fetch products');
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ============================================================================
-  // CLIENT-SIDE FILTERING & PAGINATION
+  // DATA FETCHING - Filter by merchantId
   // ============================================================================
   
-  const filteredProducts = useMemo(() => {
-    let filtered = products;
-    
-    if (search) {
-      filtered = filtered.filter((p: any) => 
-        p.name?.toLowerCase().includes(search.toLowerCase()) ||
-        p.barcode?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    // Apply sorting
-    filtered.sort((a: any, b: any) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-      const order = sortOrder === 'desc' ? -1 : 1;
-      return (aVal > bVal ? 1 : -1) * order;
-    });
-    
-    return filtered;
-  }, [products, search, sortBy, sortOrder]);
+  // ✅ SIMPLE: Memoize filters - include merchantId filter
+  const filters: ProductFilters = useMemo(() => ({
+    q: search || undefined,
+    search: search || undefined,
+    merchantId: parseInt(merchantId), // Filter by merchant
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [merchantId, search, page, limit, sortBy, sortOrder]);
 
-  const productData = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-    const total = filteredProducts.length;
-    const totalPages = Math.ceil(total / limit);
-    
-    return {
-      products: paginatedProducts,
-      items: paginatedProducts, // Alias for compatibility
-      total,
-      page,
-      currentPage: page,
-      totalPages,
-      limit,
-      hasMore: endIndex < total
-    };
-  }, [filteredProducts, page, limit]);
+  const { data, loading, error, refetch } = useProductsData({ filters });
+  
+  // Debug: Log data state
+  console.log('📦 Merchant Products Page - Data state:', {
+    merchantId,
+    hasData: !!data,
+    productsCount: data?.products?.length || 0,
+    total: data?.total,
+    currentPage: data?.currentPage,
+    loading
+  });
 
   // ============================================================================
-  // URL UPDATE HELPER
+  // URL UPDATE HELPER - Update URL = Update Everything
   // ============================================================================
   
   const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      // Special handling for page: always set it, even if it's 1
-      if (key === 'page') {
-        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
-        if (pageNum > 0) {
-          params.set(key, pageNum.toString());
-        } else {
-          params.delete(key);
-        }
-      } else if (value && value !== '' && value !== 'all') {
-        params.set(key, value.toString());
-      } else {
+      if (value === undefined || value === '' || value === null) {
         params.delete(key);
+      } else {
+        params.set(key, String(value));
       }
     });
     
-    const newURL = `${pathname}?${params.toString()}`;
-    router.push(newURL, { scroll: false });
-  }, [pathname, router, searchParams]);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // ============================================================================
-  // HANDLERS
+  // EVENT HANDLERS
   // ============================================================================
   
   const handleSearchChange = useCallback((searchValue: string) => {
@@ -184,6 +142,7 @@ export default function MerchantProductsPage() {
 
   const handleFiltersChange = useCallback((newFilters: ProductFilters) => {
     const updates: Record<string, string | number | undefined> = { page: 1 };
+    // Add any filter updates here if needed
     updateURL(updates);
   }, [updateURL]);
 
@@ -234,24 +193,27 @@ export default function MerchantProductsPage() {
           );
           setSelectedProductIds([]);
           setShowBulkDeleteConfirm(false);
-          fetchData(); // Refresh products list
+          refetch();
         }
       } else {
         throw new Error(response.message || 'Failed to delete products');
       }
     } catch (error: any) {
       console.error('Error batch deleting products:', error);
-      // Error handled by global error handler
+      toastError(
+        'Error',
+        error?.message || error?.response?.data?.message || 'Failed to delete products'
+      );
     } finally {
       setIsDeleting(false);
     }
-  }, [selectedProductIds, toastSuccess, fetchData]);
+  }, [selectedProductIds, toastSuccess, toastError, refetch]);
 
   const handleImportSuccess = useCallback(() => {
     toastSuccess('Success', 'Products imported successfully');
     setShowImportDialog(false);
-    fetchData();
-  }, [toastSuccess, fetchData]);
+    refetch();
+  }, [toastSuccess, refetch]);
 
   const handleExportProducts = useCallback(async (params: any) => {
     setIsExporting(true);
@@ -280,40 +242,55 @@ export default function MerchantProductsPage() {
   }, [toastSuccess]);
 
   // ============================================================================
+  // TRANSFORM DATA FOR UI
+  // ============================================================================
+  
+  const productData = useMemo(() => {
+    if (!data) {
+      return {
+        products: [],
+        items: [], // Alias for compatibility
+        total: 0,
+        page: 1,
+        currentPage: 1,
+        totalPages: 1,
+        limit: 25,
+        hasMore: false,
+      };
+    }
+
+    return {
+      products: data.products || [],
+      items: data.products || [], // Alias for compatibility
+      total: data.total || 0,
+      page: data.currentPage || 1,
+      currentPage: data.currentPage || 1,
+      totalPages: data.totalPages || 1,
+      limit: data.limit || 25,
+      hasMore: data.hasMore || false
+    };
+  }, [data]);
+
+  // ============================================================================
+  // BREADCRUMB
+  // ============================================================================
+  
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Merchants', href: '/merchants' },
+    { label: merchantName || 'Merchant', href: `/merchants/${merchantId}` },
+    { label: 'Products' }
+  ];
+
+  // ============================================================================
   // RENDER
   // ============================================================================
-
-  // Breadcrumb items
-  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => [
-    { label: 'Merchants', href: '/merchants' },
-    { label: merchantName || `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
-    { label: 'Products', icon: <Package className="w-4 h-4" /> }
-  ], [merchantId, merchantName]);
-
-  if (error) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
-        </PageHeader>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">⚠️</div>
-            <h3 className="text-lg font-medium mb-2">Error Loading Products</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
-          </div>
-        </div>
-      </PageWrapper>
-    );
-  }
-
-  const filters = { search, page, limit, sortBy, sortOrder };
-
+  
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full">
-        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
             {canManageProducts && (
               <>
@@ -376,27 +353,32 @@ export default function MerchantProductsPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        <Products
-          data={productData}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-          onProductAction={handleProductAction}
-          onPageChange={handlePageChange}
-          onSort={handleSort}
-          onSelectionChange={setSelectedProductIds}
-          onLimitChange={handleLimitChange}
-          title="Merchant Products"
-          subtitle={`Manage products for ${merchantName}`}
-          showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
-          showAddButton={true}
-          addButtonText="Add Product"
-          exportButtonText="Export Products"
-          showStats={true}
-          currentUser={user}
-        />
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Center Loading Indicator - Shows when waiting for API */}
+        {loading && !data ? (
+          <div className="h-full flex items-center justify-center bg-white z-10">
+            <LoadingIndicator 
+              variant="circular" 
+              size="lg"
+              message="Loading products..."
+            />
+          </div>
+        ) : (
+          /* Products Content - Only render when data is loaded */
+          <Products
+            data={productData}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearchChange={handleSearchChange}
+            onClearFilters={handleClearFilters}
+            onProductAction={handleProductAction}
+            onPageChange={handlePageChange}
+            onSort={handleSort}
+            onSelectionChange={setSelectedProductIds}
+            onLimitChange={handleLimitChange}
+            currentUser={user}
+          />
+        )}
       </div>
 
       {/* Bulk Delete Confirmation Dialog */}

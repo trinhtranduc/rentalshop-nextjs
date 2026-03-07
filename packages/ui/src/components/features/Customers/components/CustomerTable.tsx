@@ -270,17 +270,17 @@ export function CustomerTable({
                       {/* Show delete option only if user has permission */}
                       {canManageCustomers && (
                         <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              onCustomerAction('delete', customer.id);
-                              setOpenDropdownId(null);
-                            }}
-                            className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('actions.deleteCustomer')}
-                          </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          onCustomerAction('delete', customer.id);
+                          setOpenDropdownId(null);
+                        }}
+                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t('actions.deleteCustomer')}
+                      </DropdownMenuItem>
                         </>
                       )}
                     </DropdownMenuContent>
