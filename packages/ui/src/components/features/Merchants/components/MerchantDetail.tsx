@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '../../../ui';
-import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown } from 'lucide-react';
+import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown, UserCircle } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
 import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
@@ -176,6 +176,13 @@ export function MerchantDetail({
                   >
                     <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
                     <span>Manage Orders</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/customers')}
+                    className="cursor-pointer"
+                  >
+                    <UserCircle className="mr-2 h-4 w-4 text-teal-600" />
+                    <span>Manage Customers</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
