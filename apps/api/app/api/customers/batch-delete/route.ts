@@ -16,7 +16,9 @@ const batchDeleteSchema = z.object({
 
 /**
  * POST /api/customers/batch-delete
- * Soft delete multiple customers in batch
+ * Delete multiple customers in batch
+ * - Soft delete if customer has orders (preserve history)
+ * - Hard delete if customer has no orders (permanently remove)
  * 
  * Authorization: Users with 'customers.manage' permission can delete customers
  */
@@ -116,12 +118,13 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Check for ACTIVE orders before deletion (only RESERVED and PICKUPED)
-    // Allow soft delete for customers with COMPLETED/CANCELLED orders (preserve history)
+    // Check for orders: if customer has ANY orders, use soft delete; otherwise hard delete
     const customersWithActiveOrders: Array<{ id: number; name: string; orderCount: number }> = [];
-    const customersToDelete: Array<{ id: number; name: string }> = [];
+    const customersToSoftDelete: Array<{ id: number; name: string; orderCount: number }> = [];
+    const customersToHardDelete: Array<{ id: number; name: string }> = [];
     
     for (const customer of customers) {
+      // Check for active orders (RESERVED or PICKUPED) - block deletion
       const activeOrdersCount = await prisma.order.count({
         where: {
           customerId: customer.id,
@@ -138,11 +141,28 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           orderCount: activeOrdersCount,
         });
       } else {
-        // Allow soft delete if no active orders (even if has completed/cancelled orders)
-        customersToDelete.push({
-          id: customer.id,
-          name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
+        // Check if customer has ANY orders (any status)
+        const totalOrdersCount = await prisma.order.count({
+          where: {
+            customerId: customer.id,
+            deletedAt: null,
+          },
         });
+
+        if (totalOrdersCount > 0) {
+          // Soft delete if customer has orders (preserve history)
+          customersToSoftDelete.push({
+            id: customer.id,
+            name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
+            orderCount: totalOrdersCount,
+          });
+        } else {
+          // Hard delete if customer has no orders
+          customersToHardDelete.push({
+            id: customer.id,
+            name: `${customer.firstName} ${customer.lastName}`.trim() || 'Unknown',
+          });
+        }
       }
     }
 
@@ -159,18 +179,18 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // All validations passed - proceed with soft delete (set deletedAt and isActive: false)
-    const deletedCustomers: Array<{ id: number; name: string }> = [];
+    // All validations passed - proceed with soft delete (for customers with orders) and hard delete (for customers without orders)
+    const softDeletedCustomers: Array<{ id: number; name: string }> = [];
+    const hardDeletedCustomers: Array<{ id: number; name: string }> = [];
     const errors: Array<{ id: number; name: string; error: string }> = [];
 
     try {
       // Use transaction to ensure all-or-nothing deletion
       await prisma.$transaction(
         async (tx) => {
-          for (const customer of customersToDelete) {
+          // Soft delete customers with orders
+          for (const customer of customersToSoftDelete) {
             try {
-              // Soft delete: set deletedAt and isActive: false
-              // Note: deletedAt will be available after Prisma migration
               await tx.customer.update({
                 where: { id: customer.id },
                 data: { 
@@ -179,14 +199,30 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
                   isActive: false 
                 },
               });
-              deletedCustomers.push(customer);
+              softDeletedCustomers.push(customer);
             } catch (error: any) {
               errors.push({
                 id: customer.id,
                 name: customer.name,
-                error: error.message || 'Failed to delete customer',
+                error: error.message || 'Failed to soft delete customer',
               });
-              // If any customer fails, throw to rollback transaction
+              throw error;
+            }
+          }
+
+          // Hard delete customers without orders
+          for (const customer of customersToHardDelete) {
+            try {
+              await tx.customer.delete({
+                where: { id: customer.id },
+              });
+              hardDeletedCustomers.push(customer);
+            } catch (error: any) {
+              errors.push({
+                id: customer.id,
+                name: customer.name,
+                error: error.message || 'Failed to hard delete customer',
+              });
               throw error;
             }
           }
@@ -197,13 +233,17 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         }
       );
 
-      console.log(`✅ Batch deleted ${deletedCustomers.length} customers successfully`);
+      const totalDeleted = softDeletedCustomers.length + hardDeletedCustomers.length;
+      console.log(`✅ Batch deleted ${totalDeleted} customers: ${softDeletedCustomers.length} soft deleted, ${hardDeletedCustomers.length} hard deleted`);
 
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMERS_BATCH_DELETED_SUCCESS', {
-          deleted: deletedCustomers.length,
+          deleted: totalDeleted,
+          softDeleted: softDeletedCustomers.length,
+          hardDeleted: hardDeletedCustomers.length,
           total: customerIds.length,
-          deletedCustomers,
+          softDeletedCustomers,
+          hardDeletedCustomers,
           errors,
         })
       );

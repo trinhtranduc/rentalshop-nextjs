@@ -105,20 +105,57 @@ export async function findById(id: number) {
     }
   });
 
-  // Get orders count separately (orders are related through outlets)
+  // Get counts separately with proper filters (exclude soft-deleted records)
   if (merchant) {
-    const ordersCount = await prisma.order.count({
-      where: {
-        outlet: {
-          merchantId: id
+    const [customersCount, productsCount, ordersCount, outletsCount, usersCount] = await Promise.all([
+      // Count only active customers (not soft-deleted)
+      prisma.customer.count({
+        where: {
+          merchantId: id,
+          deletedAt: null,
+          isActive: true
         }
-      }
-    });
+      }),
+      // Count only active products
+      prisma.product.count({
+        where: {
+          merchantId: id,
+          isActive: true
+        }
+      }),
+      // Count only non-deleted orders (orders are related through outlets)
+      prisma.order.count({
+        where: {
+          outlet: {
+            merchantId: id
+          },
+          deletedAt: null
+        }
+      }),
+      // Count only active outlets
+      prisma.outlet.count({
+        where: {
+          merchantId: id,
+          isActive: true
+        }
+      }),
+      // Count only active users (not soft-deleted)
+      prisma.user.count({
+        where: {
+          merchantId: id,
+          deletedAt: null,
+          isActive: true
+        }
+      })
+    ]);
 
     return {
       ...merchant,
       _count: {
-        ...merchant._count,
+        outlets: outletsCount,
+        users: usersCount,
+        products: productsCount,
+        customers: customersCount,
         orders: ordersCount
       }
     };
@@ -326,14 +363,6 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
               }
             }
           }
-        },
-        _count: {
-          select: {
-            outlets: true,
-            users: true,
-            products: true,
-            customers: true
-          }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -343,8 +372,66 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     prisma.merchant.count({ where })
   ]);
 
+  // Calculate counts separately with proper filters (exclude soft-deleted records)
+  const merchantsWithCounts = await Promise.all(
+    merchants.map(async (merchant) => {
+      const [outletsCount, usersCount, productsCount, customersCount, ordersCount] = await Promise.all([
+        // Count only active outlets
+        prisma.outlet.count({
+          where: {
+            merchantId: merchant.id,
+            isActive: true
+          }
+        }),
+        // Count only active users (not soft-deleted)
+        prisma.user.count({
+          where: {
+            merchantId: merchant.id,
+            deletedAt: null,
+            isActive: true
+          }
+        }),
+        // Count only active products
+        prisma.product.count({
+          where: {
+            merchantId: merchant.id,
+            isActive: true
+          }
+        }),
+        // Count only active customers (not soft-deleted)
+        prisma.customer.count({
+          where: {
+            merchantId: merchant.id,
+            deletedAt: null,
+            isActive: true
+          }
+        }),
+        // Count only non-deleted orders (orders are related through outlets)
+        prisma.order.count({
+          where: {
+            outlet: {
+              merchantId: merchant.id
+            },
+            deletedAt: null
+          }
+        })
+      ]);
+
+      return {
+        ...merchant,
+        _count: {
+          outlets: outletsCount,
+          users: usersCount,
+          products: productsCount,
+          customers: customersCount,
+          orders: ordersCount
+        }
+      };
+    })
+  );
+
   return {
-    data: merchants,
+    data: merchantsWithCounts,
     total,
     page,
     limit,
