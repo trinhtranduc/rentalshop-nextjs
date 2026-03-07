@@ -140,26 +140,32 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
       // Calculate income using getOrderRevenueForDate (single source of truth)
       // Query all orders that have events or future plans in this period
+      // IMPORTANT: Use OR conditions to include orders created BEFORE period but picked up/returned DURING period
       const ordersWhereClause: any = {
+        deletedAt: null, // Exclude soft-deleted orders
         OR: [
           // Orders created in period
           { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
-          // Orders picked up in period
-          { pickedUpAt: { gte: startOfPeriod, lte: endOfPeriod } },
-          // Orders returned in period
-          { returnedAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          // Orders picked up in period (CRITICAL: includes orders created before period)
+          { pickedUpAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
+          // Orders returned in period (CRITICAL: includes orders created/picked up before period)
+          { returnedAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
           // Orders cancelled in period
           { updatedAt: { gte: startOfPeriod, lte: endOfPeriod }, status: ORDER_STATUS.CANCELLED as any },
           // Orders with future pickup plan in period
-          { pickupPlanAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          { pickupPlanAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
           // Orders with future return plan in period
-          { returnPlanAt: { gte: startOfPeriod, lte: endOfPeriod } }
+          { returnPlanAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } }
         ]
       };
 
       // Apply outlet filtering
       if (outlet) {
-        ordersWhereClause.outletId = outlet.id;
+        // Convert outlet.publicId to CUID
+        const outletObj = await db.outlets.findById(outlet.publicId);
+        if (outletObj) {
+          ordersWhereClause.outletId = outletObj.id;
+        }
       } else if (userScope.merchantId && !selectedOutletIds) {
         const merchant = await db.merchants.findById(userScope.merchantId);
         if (merchant && merchant.outlets) {
@@ -172,40 +178,31 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         }
       }
 
-      // Query all relevant orders using db API to get all fields including securityDeposit and damageFee
-      // Use findManyLightweight which includes securityDeposit and damageFee
-      const allOrdersResult = await db.orders.findManyLightweight({
-        ...(outlet ? { outletId: typeof outlet.id === 'string' ? parseInt(outlet.id as any) : outlet.id } : {}),
-        ...(userScope.merchantId && !selectedOutletIds ? { merchantId: userScope.merchantId } : {}),
-        ...(userScope.outletId && !outlet ? { outletId: userScope.outletId } : {}),
-        startDate: startOfPeriod,
-        endDate: endOfPeriod,
-        limit: 10000 // Large limit to get all orders
-      });
-
-      // Filter orders based on OR conditions (createdAt, pickedUpAt, returnedAt, etc.)
-      const allOrders = allOrdersResult.data.filter((order: any) => {
-        const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
-        const orderPickedUpAt = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
-        const orderReturnedAt = order.returnedAt ? new Date(order.returnedAt) : null;
-        const orderUpdatedAt = order.updatedAt ? new Date(order.updatedAt) : null;
-        const orderPickupPlanAt = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
-        const orderReturnPlanAt = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
-
-        return (
-          // Created in period
-          (orderCreatedAt && orderCreatedAt >= startOfPeriod && orderCreatedAt <= endOfPeriod) ||
-          // Picked up in period
-          (orderPickedUpAt && orderPickedUpAt >= startOfPeriod && orderPickedUpAt <= endOfPeriod) ||
-          // Returned in period
-          (orderReturnedAt && orderReturnedAt >= startOfPeriod && orderReturnedAt <= endOfPeriod) ||
-          // Cancelled in period
-          (order.status === ORDER_STATUS.CANCELLED && orderUpdatedAt && orderUpdatedAt >= startOfPeriod && orderUpdatedAt <= endOfPeriod) ||
-          // Future pickup plan in period
-          (orderPickupPlanAt && orderPickupPlanAt >= startOfPeriod && orderPickupPlanAt <= endOfPeriod) ||
-          // Future return plan in period
-          (orderReturnPlanAt && orderReturnPlanAt >= startOfPeriod && orderReturnPlanAt <= endOfPeriod)
-        );
+      // Query directly from Prisma with OR conditions to get ALL orders with events in period
+      // This ensures orders created before period but picked up/returned during period are included
+      const allOrders = await prisma.order.findMany({
+        where: ordersWhereClause,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          lateFee: true,
+          discountType: true,
+          discountValue: true,
+          discountAmount: true,
+          pickupPlanAt: true,
+          returnPlanAt: true,
+          pickedUpAt: true,
+          returnedAt: true,
+          createdAt: true,
+          updatedAt: true
+        },
+        take: 10000 // Large limit to get all orders
       });
 
       // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
@@ -279,8 +276,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       // ============================================================================
       // TÍNH TỔNG TIỀN THẾ CHÂN: Query riêng để đảm bảo tính đúng
       // ============================================================================
-      // VẤN ĐỀ: findManyLightweight filter theo createdAt, không phải pickedUpAt
-      // Nên cần query riêng với filter pickedUpAt để tính totalCollateral chính xác
+      // Query riêng với filter pickedUpAt để tính totalCollateral chính xác
+      // Đảm bảo chỉ tính orders được pickup TRONG period (không tính orders được pickup trước period)
       // Query tất cả orders có status PICKUPED và được pickup trong period
       const collateralWhereClause: any = {
         orderType: ORDER_TYPE.RENT,
