@@ -50,6 +50,7 @@ export interface CustomersProps {
   addButtonText?: string;
   exportButtonText?: string;
   showStats?: boolean;
+  showMerchantColumn?: boolean; // Show merchant column (for admin customers page)
   currentUser?: any;
   onExport?: () => void;
   className?: string;
@@ -85,6 +86,7 @@ export const Customers: React.FC<CustomersProps> = ({
   addButtonText = "Add Customer",
   exportButtonText = "Export Customers",
   showStats = false,
+  showMerchantColumn = false,
   currentUser,
   onExport,
   className = ""
@@ -181,6 +183,7 @@ export const Customers: React.FC<CustomersProps> = ({
             sortOrder={filters.sortOrder || "desc"}
             onSort={memoizedOnSort}
             canManageCustomers={canManageCustomers}
+            showMerchantColumn={showMerchantColumn}
           />
         ) : (
           <EmptyState

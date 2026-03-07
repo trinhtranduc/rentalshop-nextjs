@@ -393,6 +393,7 @@ export default function AdminCustomersPage() {
             onSort={handleSort}
             onSelectionChange={setSelectedCustomerIds}
             onLimitChange={handleLimitChange}
+            showMerchantColumn={true}
             currentUser={user}
           />
         )}

@@ -26,6 +26,7 @@ interface CustomerTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
   canManageCustomers?: boolean; // Permission to manage customers (show delete option)
+  showMerchantColumn?: boolean; // Show merchant column (for admin customers page)
 }
 
 export function CustomerTable({ 
@@ -35,7 +36,8 @@ export function CustomerTable({
   sortBy = 'createdAt', 
   sortOrder = 'desc',
   onSort,
-  canManageCustomers = false
+  canManageCustomers = false,
+  showMerchantColumn = false
 }: CustomerTableProps) {
   const t = useCustomerTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
@@ -126,6 +128,11 @@ export function CustomerTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('fields.location')}
               </th>
+              {showMerchantColumn && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Merchant
+                </th>
+              )}
               <th 
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -219,6 +226,19 @@ export function CustomerTable({
                     )}
                   </div>
                 </td>
+                
+                {/* Merchant */}
+                {showMerchantColumn && (
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {customer.merchant?.name ? (
+                        <div className="font-medium">{customer.merchant.name}</div>
+                      ) : (
+                        <span className="text-gray-500 dark:text-gray-400">N/A</span>
+                      )}
+                    </div>
+                  </td>
+                )}
                 
                 {/* Created Date */}
                 <td className="px-6 py-4 whitespace-nowrap">
