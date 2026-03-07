@@ -313,30 +313,10 @@ export default function MerchantCustomersPage() {
   // ============================================================================
   
   return (
-    <PageWrapper>
-      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
-      
-      <PageHeader>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push(`/merchants/${merchantId}`)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <PageTitle>
-                {merchantLoading ? 'Loading...' : `${merchantName} - Customers`}
-              </PageTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {customerData.total} {customerData.total === 1 ? 'customer' : 'customers'}
-              </p>
-            </div>
-          </div>
-          
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
             {canManageCustomers && (
               <>
@@ -389,10 +369,10 @@ export default function MerchantCustomersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 relative overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+          <div className="h-full flex items-center justify-center bg-white z-10">
             <LoadingIndicator 
               variant="circular" 
               size="lg"

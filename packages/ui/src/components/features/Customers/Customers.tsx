@@ -127,7 +127,7 @@ export const Customers: React.FC<CustomersProps> = ({
   const memoizedOnSort = React.useCallback(onSort, [onSort]);
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-4">
         <CustomerPageHeader
@@ -196,7 +196,7 @@ export const Customers: React.FC<CustomersProps> = ({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {customers.length > 0 && totalCustomers > limit && (
+      {(customers.length > 0 || onLimitChange) && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}
