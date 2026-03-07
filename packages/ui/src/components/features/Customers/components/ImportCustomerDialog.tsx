@@ -346,7 +346,8 @@ export function ImportCustomerDialog({
 
       // Convert to customer input format
       const customers: ChunkedImportItem<any>[] = validData.map((row) => {
-        const firstName = (row.firstname || row.firstName || '').trim();
+        // Convert to string first (Excel parser may return number)
+        const firstName = String(row.firstname || row.firstName || '').trim();
         
         // Ensure firstName is not empty (should be filtered by validation, but double check)
         if (!firstName) {
@@ -355,18 +356,19 @@ export function ImportCustomerDialog({
 
         const customer: any = {
           firstName: firstName,
-          lastName: row.lastname || row.lastName,
-          email: row.email,
+          // Convert to string for all text fields (Excel parser may return numbers)
+          lastName: row.lastname || row.lastName ? String(row.lastname || row.lastName).trim() : undefined,
+          email: row.email ? String(row.email).trim() : undefined,
           phone: normalizeImportPhone(row.phone),
-          address: row.address,
-          city: row.city,
-          state: row.state,
-          zipCode: row.zipcode || row.zipCode,
-          country: row.country,
+          address: row.address ? String(row.address).trim() : undefined,
+          city: row.city ? String(row.city).trim() : undefined,
+          state: row.state ? String(row.state).trim() : undefined,
+          zipCode: row.zipcode || row.zipCode ? String(row.zipcode || row.zipCode).trim() : undefined,
+          country: row.country ? String(row.country).trim() : undefined,
           dateOfBirth: row.dateofbirth || row.dateOfBirth,
-          idNumber: row.idnumber || row.idNumber,
-          idType: row.idtype || row.idType,
-          notes: row.notes,
+          idNumber: row.idnumber || row.idNumber ? String(row.idnumber || row.idNumber).trim() : undefined,
+          idType: row.idtype || row.idType ? String(row.idtype || row.idType).trim() : undefined,
+          notes: row.notes ? String(row.notes).trim() : undefined,
           // Add merchantId if provided (for admin context when importing from merchant page)
           ...(merchantId && { merchantId })
         };
