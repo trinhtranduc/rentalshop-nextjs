@@ -34,6 +34,7 @@ interface ImportProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportSuccess?: () => void;
+  merchantId?: number; // Optional merchantId for admin context
 }
 
 /**
@@ -43,7 +44,8 @@ interface ImportProductDialogProps {
 export function ImportProductDialog({
   open,
   onOpenChange,
-  onImportSuccess
+  onImportSuccess,
+  merchantId
 }: ImportProductDialogProps) {
   const t = useTranslations('products.import');
   const { toastSuccess, toastError } = useToast();
@@ -327,6 +329,8 @@ export function ImportProductDialog({
           deposit: parsePrice(row.deposit),
           stock: stock,
           // pricingType and durationConfig use default values (not included in import)
+          // Add merchantId if provided (for admin context when importing from merchant page)
+          ...(merchantId && { merchantId })
         };
 
         // Remove empty string fields (but keep 0 values for prices)

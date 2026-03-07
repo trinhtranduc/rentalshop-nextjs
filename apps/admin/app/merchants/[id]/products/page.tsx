@@ -404,6 +404,7 @@ export default function MerchantProductsPage() {
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
           onImportSuccess={handleImportSuccess}
+          merchantId={parseInt(merchantId)}
         />
       )}
 
