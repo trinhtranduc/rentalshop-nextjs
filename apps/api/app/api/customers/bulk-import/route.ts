@@ -212,20 +212,23 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Step 3: Check for duplicates and filter them out
+    // Step 3: Check for duplicates and handle reactivation/update
     const customersToImport: any[] = [];
+    const customersToUpdate: Array<{ row: number; customerId: number; data: any; dateOfBirth: Date | null }> = [];
     const skipped: Array<{ row: number; reason: string }> = [];
 
     // Check duplicates before transaction
     // IMPORTANT: Only check duplicates within the same merchant (merchantId scope)
     // Customers with different merchantId or null merchantId are NOT considered duplicates
+    // SOLUTION: Check both active and inactive customers, reactivate inactive ones
     for (const validatedCustomer of validatedCustomers) {
       try {
         // Check if customer with same phone or email already exists IN THIS MERCHANT ONLY
-        // This ensures duplicate check is scoped to merchant, not system-wide
+        // Check BOTH active and inactive customers (but exclude soft-deleted)
         const whereClause: any = {
           merchantId: merchant.id, // Only check within this merchant (merchant.id is publicId/Int)
           deletedAt: null // Exclude soft-deleted customers
+          // NOTE: Don't filter by isActive - we want to find inactive customers to reactivate
         };
 
         const orConditions: any[] = [];
@@ -246,7 +249,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           whereClause.OR = orConditions;
 
           // Debug: Log the duplicate check query
-          console.log('🔍 Checking duplicate customer:', {
+          console.log('🔍 Checking duplicate customer (including inactive):', {
             merchantId: merchant.id,
             phone: validatedCustomer.data.phone,
             email: validatedCustomer.data.email,
@@ -259,21 +262,37 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
           if (existingCustomer) {
             // Debug: Log found duplicate
-            console.log('❌ Duplicate customer found:', {
+            console.log('🔍 Existing customer found:', {
               existingCustomerId: existingCustomer.id,
               existingMerchantId: existingCustomer.merchantId,
               existingPhone: existingCustomer.phone,
               existingEmail: existingCustomer.email,
+              existingIsActive: existingCustomer.isActive,
               newPhone: validatedCustomer.data.phone,
               newEmail: validatedCustomer.data.email,
               merchantId: merchant.id
             });
 
-            skipped.push({
-              row: validatedCustomer.rowNumber,
-              reason: 'Customer with this phone number or email already exists in this merchant'
-            });
-            continue;
+            // SOLUTION: Reactivate and update inactive customers
+            if (!existingCustomer.isActive) {
+              // Customer is inactive - reactivate and update
+              console.log('✅ Reactivating inactive customer:', existingCustomer.id);
+              customersToUpdate.push({
+                row: validatedCustomer.rowNumber,
+                customerId: existingCustomer.id,
+                data: validatedCustomer.data,
+                dateOfBirth: validatedCustomer.dateOfBirth
+              });
+              continue;
+            } else {
+              // Customer is active - skip (already exists)
+              console.log('⚠️ Active customer already exists - skipping:', existingCustomer.id);
+              skipped.push({
+                row: validatedCustomer.rowNumber,
+                reason: 'Customer with this phone number or email already exists (active) in this merchant'
+              });
+              continue;
+            }
           } else {
             // Debug: No duplicate found
             console.log('✅ No duplicate found for customer:', {
@@ -295,11 +314,12 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       }
     }
 
-    // Step 4: Import non-duplicate customers in a single transaction
-    if (customersToImport.length === 0) {
+    // Step 4: Import new customers and update/reactivate inactive customers in a single transaction
+    if (customersToImport.length === 0 && customersToUpdate.length === 0) {
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMERS_IMPORTED', {
           imported: 0,
+          updated: 0,
           skipped: skipped.length,
           failed: 0,
           total: customers.length,
@@ -311,7 +331,42 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     try {
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
+        const updated: any[] = [];
         const transactionSkipped: Array<{ row: number; reason: string }> = [];
+
+        // First, update/reactivate inactive customers
+        for (const customerToUpdate of customersToUpdate) {
+          try {
+            const updatedCustomer = await tx.customer.update({
+              where: { id: customerToUpdate.customerId },
+              data: {
+                firstName: customerToUpdate.data.firstName || '',
+                lastName: customerToUpdate.data.lastName ? String(customerToUpdate.data.lastName).trim() || null : null,
+                phone: customerToUpdate.data.phone ? String(customerToUpdate.data.phone).trim() || null : null,
+                email: customerToUpdate.data.email ? String(customerToUpdate.data.email).trim() || null : null,
+                address: customerToUpdate.data.address ? String(customerToUpdate.data.address).trim() || null : null,
+                city: customerToUpdate.data.city ? String(customerToUpdate.data.city).trim() || null : null,
+                state: customerToUpdate.data.state ? String(customerToUpdate.data.state).trim() || null : null,
+                zipCode: customerToUpdate.data.zipCode ? String(customerToUpdate.data.zipCode).trim() || null : null,
+                country: customerToUpdate.data.country ? String(customerToUpdate.data.country).trim() || null : null,
+                idNumber: customerToUpdate.data.idNumber ? String(customerToUpdate.data.idNumber).trim() || null : null,
+                notes: customerToUpdate.data.notes ? String(customerToUpdate.data.notes).trim() || null : null,
+                dateOfBirth: customerToUpdate.dateOfBirth,
+                idType: customerToUpdate.data.idType || null,
+                isActive: true, // Reactivate customer
+                deletedAt: null // Clear soft delete if any
+              }
+            });
+            updated.push(updatedCustomer);
+            console.log(`✅ Reactivated and updated customer at row ${customerToUpdate.row}:`, updatedCustomer.id);
+          } catch (error: any) {
+            console.error(`Error updating customer at row ${customerToUpdate.row}:`, error);
+            transactionSkipped.push({
+              row: customerToUpdate.row,
+              reason: 'Failed to update/reactivate customer'
+            });
+          }
+        }
 
         for (const validatedCustomer of customersToImport) {
           try {
@@ -388,7 +443,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           }
         }
 
-        return { imported, skipped: transactionSkipped };
+        return { imported, updated, skipped: transactionSkipped };
       });
 
       // Combine pre-transaction skipped with transaction skipped
@@ -397,6 +452,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMERS_IMPORTED', {
           imported: results.imported.length,
+          updated: results.updated.length,
           skipped: allSkipped.length,
           failed: 0,
           total: customers.length,
