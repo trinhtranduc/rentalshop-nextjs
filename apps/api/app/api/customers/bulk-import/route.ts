@@ -42,8 +42,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     // Resolve merchant ID
     // Allow ADMIN to override merchantId from customer data (for admin context)
     let merchantId = userScope.merchantId;
-    if (user.role === USER_ROLE.ADMIN && customers[0]?.merchantId) {
-      merchantId = customers[0].merchantId;
+    if (user.role === USER_ROLE.ADMIN && (customers[0] as any)?.merchantId) {
+      merchantId = (customers[0] as any).merchantId;
     }
     if (!merchantId) {
       return NextResponse.json(
