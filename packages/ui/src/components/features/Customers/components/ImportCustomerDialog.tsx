@@ -29,7 +29,7 @@ import type { CustomerCreateInput } from '@rentalshop/types';
 import { importInChunks, type ChunkedImportProgress, type ChunkedImportItem } from '../../Import/chunked-import';
 
 const MAX_ROWS = 20000;
-const IMPORT_CHUNK_SIZE = 3000;
+const IMPORT_CHUNK_SIZE = 200; // Reduced from 3000 to avoid transaction timeout
 const PREVIEW_MAX_ROWS = 200;
 
 function normalizeImportPhone(value: unknown): string | undefined {
@@ -93,6 +93,15 @@ export function ImportCustomerDialog({
   } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [importProgress, setImportProgress] = useState<ChunkedImportProgress | null>(null);
+  const [chunkLogs, setChunkLogs] = useState<Array<{
+    chunk: number;
+    status: 'processing' | 'success' | 'failed' | 'partial';
+    imported: number;
+    skipped: number;
+    failed: number;
+    errors?: Array<{ row: number; error: string }>;
+    message?: string;
+  }>>([]);
 
   // Field mapping for CSV headers to customer fields
   const customerFieldMapping: Record<string, string[]> = {
@@ -296,13 +305,14 @@ export function ImportCustomerDialog({
     setFile(null);
     setPreviewData([]);
     setHeaders([]);
-    setErrors([]);
-    setDuplicates([]);
-    setImportResult(null);
-    setImportProgress(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+      setErrors([]);
+      setDuplicates([]);
+      setImportResult(null);
+      setImportProgress(null);
+      setChunkLogs([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
   };
 
   const handleImport = async () => {
@@ -314,6 +324,7 @@ export function ImportCustomerDialog({
     setImporting(true);
     setImportResult(null);
     setImportProgress(null);
+    setChunkLogs([]);
 
     try {
       // Filter out rows with errors and duplicates
@@ -371,7 +382,87 @@ export function ImportCustomerDialog({
       const chunkedResult = await importInChunks(
         customers,
         IMPORT_CHUNK_SIZE,
-        async chunk => customersApi.importCustomers(chunk),
+        async (chunk, chunkIndex) => {
+          const currentChunk = chunkIndex + 1;
+          // Log chunk start
+          setChunkLogs(prev => [...prev, {
+            chunk: currentChunk,
+            status: 'processing',
+            imported: 0,
+            skipped: 0,
+            failed: 0,
+            message: `Đang xử lý đợt ${currentChunk}...`
+          }]);
+
+          try {
+            const response = await customersApi.importCustomers(chunk);
+            
+            if (response.success && response.data) {
+              const status = response.data.failed === 0 && (response.data.errors?.length || 0) === 0
+                ? 'success'
+                : (response.data.imported === 0 ? 'failed' : 'partial');
+              
+              const chunkResult = {
+                chunk: currentChunk,
+                status,
+                imported: response.data.imported || 0,
+                skipped: response.data.skipped || 0,
+                failed: response.data.failed || 0,
+                errors: response.data.errors || [],
+                message: status === 'success' 
+                  ? `Đợt ${currentChunk} thành công: ${response.data.imported} dòng`
+                  : status === 'failed'
+                  ? `Đợt ${currentChunk} thất bại: ${response.data.failed} dòng`
+                  : `Đợt ${currentChunk} một phần: ${response.data.imported} thành công, ${response.data.failed} thất bại`
+              };
+
+              chunkResults.push(chunkResult);
+              setChunkLogs(prev => {
+                const newLogs = [...prev];
+                newLogs[newLogs.length - 1] = chunkResult;
+                return newLogs;
+              });
+
+              return response;
+            } else {
+              const chunkResult = {
+                chunk: currentChunk,
+                status: 'failed' as const,
+                imported: 0,
+                skipped: 0,
+                failed: chunk.length,
+                message: `Đợt ${currentChunk} thất bại: ${response.message || 'Lỗi không xác định'}`
+              };
+
+              chunkResults.push(chunkResult);
+              setChunkLogs(prev => {
+                const newLogs = [...prev];
+                newLogs[newLogs.length - 1] = chunkResult;
+                return newLogs;
+              });
+
+              return response;
+            }
+          } catch (error: any) {
+            const chunkResult = {
+              chunk: currentChunk,
+              status: 'failed' as const,
+              imported: 0,
+              skipped: 0,
+              failed: chunk.length,
+              message: `Đợt ${currentChunk} thất bại: ${error.message || 'Lỗi không xác định'}`
+            };
+
+            chunkResults.push(chunkResult);
+            setChunkLogs(prev => {
+              const newLogs = [...prev];
+              newLogs[newLogs.length - 1] = chunkResult;
+              return newLogs;
+            });
+
+            throw error;
+          }
+        },
         setImportProgress
       );
 
@@ -390,6 +481,7 @@ export function ImportCustomerDialog({
           setDuplicates([]);
           setImportResult(null);
           setImportProgress(null);
+          setChunkLogs([]);
           onOpenChange(false);
         }, 1000);
       } else if (chunkedResult.imported > 0 && chunkedResult.failed > 0) {
@@ -446,6 +538,7 @@ export function ImportCustomerDialog({
       setDuplicates([]);
       setImportResult(null);
       setImportProgress(null);
+      setChunkLogs([]);
       onOpenChange(false);
     }
   };
@@ -459,7 +552,7 @@ export function ImportCustomerDialog({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Hệ thống sẽ tự chia thành từng đợt {IMPORT_CHUNK_SIZE} dòng khi import.
+            Tải lên file CSV hoặc Excel (tối đa {MAX_ROWS} dòng). Hệ thống sẽ tự động chia thành từng đợt {IMPORT_CHUNK_SIZE} dòng và import tuần tự để tránh timeout.
           </DialogDescription>
         </DialogHeader>
 
@@ -551,9 +644,58 @@ export function ImportCustomerDialog({
             </div>
           )}
 
+          {/* Progress Section */}
           {importing && importProgress && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-              Đang import đợt {importProgress.currentChunk}/{importProgress.totalChunks} ({importProgress.processedRows}/{importProgress.totalRows} dòng)
+            <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/10 p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Đang import đợt {importProgress.currentChunk}/{importProgress.totalChunks}
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  {importProgress.processedRows}/{importProgress.totalRows} dòng ({Math.round((importProgress.processedRows / importProgress.totalRows) * 100)}%)
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 dark:bg-blue-400 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${(importProgress.processedRows / importProgress.totalRows) * 100}%` }}
+                />
+              </div>
+
+              {/* Chunk Logs */}
+              {chunkLogs.length > 0 && (
+                <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                  <div className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    Chi tiết từng đợt:
+                  </div>
+                  {chunkLogs.map((log, index) => (
+                    <div 
+                      key={index}
+                      className={`text-xs p-2 rounded border ${
+                        log.status === 'success' 
+                          ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
+                          : log.status === 'failed'
+                          ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+                          : log.status === 'partial'
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
+                          : 'bg-blue-100 dark:bg-blue-800/20 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Đợt {log.chunk}:</span>
+                        <span>{log.message}</span>
+                      </div>
+                      {(log.imported > 0 || log.skipped > 0 || log.failed > 0) && (
+                        <div className="mt-1 text-xs opacity-75">
+                          ✓ {log.imported} | ⊘ {log.skipped} | ✗ {log.failed}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -617,27 +759,99 @@ export function ImportCustomerDialog({
 
               {/* Error Details */}
               {showErrors && importResult.errors && importResult.errors.length > 0 && (
-                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800 max-h-60 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">Chi tiết lỗi:</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyAllErrors}
-                      className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy All
-                    </Button>
+                <div className="mt-4 space-y-3">
+                  <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">
+                        Chi tiết lỗi ({importResult.errors.length} lỗi):
+                      </h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopyAllErrors}
+                        className="h-7 px-2 text-xs text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy All
+                      </Button>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {importResult.errors.map((err, index) => (
+                        <div 
+                          key={index} 
+                          className="text-sm p-2 bg-white dark:bg-gray-800 rounded border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium text-red-900 dark:text-red-100 min-w-[60px]">
+                              Dòng {err.row}:
+                            </span>
+                            <span className="flex-1">{err.error}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {importResult.errors.map((err, index) => (
-                      <div key={index} className="text-sm text-red-800 dark:text-red-200">
-                        <span className="font-medium">Dòng {err.row}:</span> {err.error}
+
+                  {/* Chunk Summary */}
+                  {chunkLogs.length > 0 && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900/10 rounded-lg border border-gray-200 dark:border-gray-800">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                        Tóm tắt theo đợt:
+                      </h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {chunkLogs.map((log, index) => (
+                          <div 
+                            key={index}
+                            className={`text-xs p-2 rounded border ${
+                              log.status === 'success' 
+                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                                : log.status === 'failed'
+                                ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                                : log.status === 'partial'
+                                ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800'
+                                : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium">Đợt {log.chunk}</span>
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                log.status === 'success' 
+                                  ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                  : log.status === 'failed'
+                                  ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                                  : log.status === 'partial'
+                                  ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                              }`}>
+                                {log.status === 'success' ? 'Thành công' : 
+                                 log.status === 'failed' ? 'Thất bại' : 
+                                 log.status === 'partial' ? 'Một phần' : 'Đang xử lý'}
+                              </span>
+                            </div>
+                            <div className="text-xs opacity-75 mt-1">
+                              {log.message}
+                            </div>
+                            {(log.errors && log.errors.length > 0) && (
+                              <div className="mt-2 pt-2 border-t border-current opacity-50">
+                                <div className="text-xs font-medium mb-1">Lỗi trong đợt này:</div>
+                                {log.errors.slice(0, 3).map((error, errIndex) => (
+                                  <div key={errIndex} className="text-xs">
+                                    • Dòng {error.row}: {error.error}
+                                  </div>
+                                ))}
+                                {log.errors.length > 3 && (
+                                  <div className="text-xs italic">
+                                    ... và {log.errors.length - 3} lỗi khác
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
