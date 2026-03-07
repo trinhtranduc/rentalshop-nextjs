@@ -52,7 +52,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
 
-    // Get merchant CUID (for database operations)
+    // Get merchant by publicId (merchant.id is Int, not CUID)
     const merchant = await db.merchants.findById(merchantId);
     if (!merchant) {
       return NextResponse.json(
@@ -217,11 +217,15 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const skipped: Array<{ row: number; reason: string }> = [];
 
     // Check duplicates before transaction
+    // IMPORTANT: Only check duplicates within the same merchant (merchantId scope)
+    // Customers with different merchantId or null merchantId are NOT considered duplicates
     for (const validatedCustomer of validatedCustomers) {
       try {
-        // Check if customer with same phone or email already exists
+        // Check if customer with same phone or email already exists IN THIS MERCHANT ONLY
+        // This ensures duplicate check is scoped to merchant, not system-wide
         const whereClause: any = {
-          merchantId: merchant.id
+          merchantId: merchant.id, // Only check within this merchant (merchant.id is publicId/Int)
+          deletedAt: null // Exclude soft-deleted customers
         };
 
         const orConditions: any[] = [];
@@ -241,16 +245,42 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         if (orConditions.length > 0) {
           whereClause.OR = orConditions;
 
+          // Debug: Log the duplicate check query
+          console.log('🔍 Checking duplicate customer:', {
+            merchantId: merchant.id,
+            phone: validatedCustomer.data.phone,
+            email: validatedCustomer.data.email,
+            whereClause
+          });
+
           const existingCustomer = await prisma.customer.findFirst({
             where: whereClause
           });
 
           if (existingCustomer) {
+            // Debug: Log found duplicate
+            console.log('❌ Duplicate customer found:', {
+              existingCustomerId: existingCustomer.id,
+              existingMerchantId: existingCustomer.merchantId,
+              existingPhone: existingCustomer.phone,
+              existingEmail: existingCustomer.email,
+              newPhone: validatedCustomer.data.phone,
+              newEmail: validatedCustomer.data.email,
+              merchantId: merchant.id
+            });
+
             skipped.push({
               row: validatedCustomer.rowNumber,
-              reason: 'Customer with this phone number or email already exists'
+              reason: 'Customer with this phone number or email already exists in this merchant'
             });
             continue;
+          } else {
+            // Debug: No duplicate found
+            console.log('✅ No duplicate found for customer:', {
+              phone: validatedCustomer.data.phone,
+              email: validatedCustomer.data.email,
+              merchantId: merchant.id
+            });
           }
         }
 

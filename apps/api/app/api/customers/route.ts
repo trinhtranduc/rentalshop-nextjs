@@ -93,9 +93,11 @@ function createETagResponse(data: any, request: NextRequest, status: number = AP
 }
 
 function resolveMerchantId(user: any, userScope: any, requestedMerchantId?: number) {
-  if (user.role === USER_ROLE.ADMIN && requestedMerchantId) {
+  // ADMIN can access all merchants (merchantId can be undefined) or specific merchant
+  if (user.role === USER_ROLE.ADMIN) {
     return { success: true as const, merchantId: requestedMerchantId };
   }
+  // Non-ADMIN users must have merchantId
   if (userScope.merchantId) {
     if (requestedMerchantId && requestedMerchantId !== userScope.merchantId) {
       return {
@@ -155,17 +157,18 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
     } = queryResult.data;
 
     // Resolve merchantId using helper
+    // ADMIN can access all merchants (merchantId can be undefined) or specific merchant
     const merchantResult = resolveMerchantId(user, userScope, merchantId);
     if (!merchantResult.success) {
       return merchantResult.response;
     }
 
     const filterMerchantId = merchantResult.merchantId;
-    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
+    console.log('🔍 Using merchantId for filtering:', filterMerchantId || 'ALL (ADMIN)', 'for user role:', user.role);
 
     // Build search filters
-    const searchFilters = {
-      merchantId: filterMerchantId,
+    // Only include merchantId if it's provided (ADMIN can omit to see all merchants)
+    const searchFilters: any = {
       outletId,
       isActive,
       city,
@@ -175,6 +178,11 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       page: page || 1,
       limit: limit || 20
     };
+
+    // Only add merchantId filter if provided (ADMIN can omit to see all merchants)
+    if (filterMerchantId !== undefined) {
+      searchFilters.merchantId = filterMerchantId;
+    }
 
     // Use simplified database API
     const result = await db.customers.search(searchFilters);
@@ -237,16 +245,17 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const parsed = bodyResult.data;
     
     // Debug: Log received data
+    const parsedWithMerchantId = parsed as any;
     console.log('🔍 POST /api/customers - Received data:', {
-      hasMerchantId: 'merchantId' in parsed,
-      merchantId: parsed.merchantId,
+      hasMerchantId: 'merchantId' in parsedWithMerchantId,
+      merchantId: parsedWithMerchantId.merchantId,
       userRole: user.role,
       userScopeMerchantId: userScope.merchantId,
       parsedKeys: Object.keys(parsed)
     });
 
     // Resolve merchantId using helper
-    const merchantResult = resolveMerchantId(user, userScope, parsed.merchantId);
+    const merchantResult = resolveMerchantId(user, userScope, parsedWithMerchantId.merchantId);
     if (!merchantResult.success) {
       return merchantResult.response;
     }
