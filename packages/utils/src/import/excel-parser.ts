@@ -95,12 +95,45 @@ export async function parseExcelFile(
       String(h || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
     );
 
+    // Identify phone fields (preserve string format, don't convert to number)
+    const phoneFieldPatterns = ['phone', 'sdt', 'dien_thoai', 'dien_thoai', 'mobile', 'tel'];
+    const isPhoneField = (header: string): boolean => {
+      return phoneFieldPatterns.some(pattern => header.includes(pattern));
+    };
+
+    // Get phone column indices for raw cell reading
+    const phoneColumnIndices: number[] = [];
+    headers.forEach((header, colIndex) => {
+      if (isPhoneField(header)) {
+        phoneColumnIndices.push(colIndex);
+      }
+    });
+
+    // Helper to get raw cell text (preserves leading zeros)
+    const getRawCellText = (rowIndex: number, colIndex: number): string | null => {
+      // Use XLSX utility to encode cell address properly (handles columns > 26)
+      const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+      
+      const cell = worksheet[cellAddress];
+      if (!cell) return null;
+      
+      // If cell has w (formatted text), use it; otherwise use v (raw value) as string
+      // cell.w preserves the display format, which includes leading zeros if cell is formatted as text
+      if (cell.w) {
+        return cell.w; // Formatted text (preserves leading zeros if formatted as text)
+      } else if (cell.v !== undefined && cell.v !== null) {
+        return String(cell.v);
+      }
+      return null;
+    };
+
     // Get data rows (skip header row)
     const dataRows = jsonData.slice(headerRowIndex + 1);
 
     // Parse data rows
     dataRows.forEach((row, index) => {
       const actualRowIndex = headerRowIndex + 1 + index + 1; // +1 for Excel row number (1-based)
+      const excelRowIndex = headerRowIndex + 1 + index; // Excel row index (0-based for cell access)
 
       // Skip empty rows if option is enabled
       if (options.skipEmptyRows !== false) {
@@ -119,17 +152,23 @@ export async function parseExcelFile(
         if (cellValue === '' || cellValue === null || cellValue === undefined) {
           rowData[header] = undefined;
         } else {
-          // Try to parse as number if it looks like a number
-          const stringValue = String(cellValue).trim();
-          if (stringValue && !isNaN(Number(stringValue)) && stringValue !== '') {
-            // Check if it's a decimal number
-            if (stringValue.includes('.')) {
-              rowData[header] = parseFloat(stringValue);
-            } else {
-              rowData[header] = parseInt(stringValue, 10);
-            }
+          // For phone fields, read raw cell text to preserve leading zeros
+          if (isPhoneField(header)) {
+            const rawText = getRawCellText(excelRowIndex, colIndex);
+            rowData[header] = rawText ? rawText.trim() : String(cellValue).trim();
           } else {
-            rowData[header] = stringValue;
+            const stringValue = String(cellValue).trim();
+            // Try to parse as number if it looks like a number (for non-phone fields)
+            if (stringValue && !isNaN(Number(stringValue)) && stringValue !== '') {
+              // Check if it's a decimal number
+              if (stringValue.includes('.')) {
+                rowData[header] = parseFloat(stringValue);
+              } else {
+                rowData[header] = parseInt(stringValue, 10);
+              }
+            } else {
+              rowData[header] = stringValue;
+            }
           }
         }
       });
