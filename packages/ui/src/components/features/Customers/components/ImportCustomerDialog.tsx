@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { 
   Dialog, 
@@ -76,6 +76,7 @@ export function ImportCustomerDialog({
   const t = useTranslations('customers.import');
   const { toastSuccess, toastError } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chunkLogsEndRef = useRef<HTMLDivElement>(null);
   
   const [file, setFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<Array<Record<string, any>>>([]);
@@ -416,7 +417,6 @@ export function ImportCustomerDialog({
                   : `Đợt ${currentChunk} một phần: ${response.data.imported} thành công, ${response.data.failed} thất bại`
               };
 
-              chunkResults.push(chunkResult);
               setChunkLogs(prev => {
                 const newLogs = [...prev];
                 newLogs[newLogs.length - 1] = chunkResult;
@@ -434,7 +434,6 @@ export function ImportCustomerDialog({
                 message: `Đợt ${currentChunk} thất bại: ${response.message || 'Lỗi không xác định'}`
               };
 
-              chunkResults.push(chunkResult);
               setChunkLogs(prev => {
                 const newLogs = [...prev];
                 newLogs[newLogs.length - 1] = chunkResult;
@@ -453,7 +452,6 @@ export function ImportCustomerDialog({
               message: `Đợt ${currentChunk} thất bại: ${error.message || 'Lỗi không xác định'}`
             };
 
-            chunkResults.push(chunkResult);
             setChunkLogs(prev => {
               const newLogs = [...prev];
               newLogs[newLogs.length - 1] = chunkResult;
@@ -542,6 +540,13 @@ export function ImportCustomerDialog({
       onOpenChange(false);
     }
   };
+
+  // Auto-scroll to latest chunk log
+  useEffect(() => {
+    if (chunkLogsEndRef.current && importing) {
+      chunkLogsEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [chunkLogs, importing]);
 
   // Calculate valid count
   const validCount = previewData.length - errors.length - duplicates.length;
@@ -664,36 +669,90 @@ export function ImportCustomerDialog({
                 />
               </div>
 
-              {/* Chunk Logs */}
+              {/* Chunk Status List */}
               {chunkLogs.length > 0 && (
-                <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                <div className="mt-3 space-y-2">
                   <div className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                    Chi tiết từng đợt:
+                    Trạng thái từng đợt ({chunkLogs.length}/{importProgress.totalChunks}):
                   </div>
-                  {chunkLogs.map((log, index) => (
-                    <div 
-                      key={index}
-                      className={`text-xs p-2 rounded border ${
-                        log.status === 'success' 
-                          ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
-                          : log.status === 'failed'
-                          ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
-                          : log.status === 'partial'
-                          ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
-                          : 'bg-blue-100 dark:bg-blue-800/20 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Đợt {log.chunk}:</span>
-                        <span>{log.message}</span>
-                      </div>
-                      {(log.imported > 0 || log.skipped > 0 || log.failed > 0) && (
-                        <div className="mt-1 text-xs opacity-75">
-                          ✓ {log.imported} | ⊘ {log.skipped} | ✗ {log.failed}
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {chunkLogs.map((log, index) => (
+                      <div 
+                        key={`${log.chunk}-${index}`}
+                        ref={index === chunkLogs.length - 1 ? chunkLogsEndRef : null}
+                        className={`p-3 rounded-lg border transition-all ${
+                          log.status === 'success' 
+                            ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                            : log.status === 'failed'
+                            ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                            : log.status === 'partial'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800'
+                            : 'bg-blue-100 dark:bg-blue-800/20 border-blue-300 dark:border-blue-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">
+                              Đợt {log.chunk}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              log.status === 'success' 
+                                ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                : log.status === 'failed'
+                                ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                                : log.status === 'partial'
+                                ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+                                : 'bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-200'
+                            }`}>
+                              {log.status === 'success' ? '✓ Thành công' : 
+                               log.status === 'failed' ? '✗ Thất bại' : 
+                               log.status === 'partial' ? '⚠ Một phần' : '⏳ Đang xử lý'}
+                            </span>
+                          </div>
+                          <span className={`text-xs ${
+                            log.status === 'success' 
+                              ? 'text-green-700 dark:text-green-300'
+                              : log.status === 'failed'
+                              ? 'text-red-700 dark:text-red-300'
+                              : log.status === 'partial'
+                              ? 'text-yellow-700 dark:text-yellow-300'
+                              : 'text-blue-700 dark:text-blue-300'
+                          }`}>
+                            {log.message}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        
+                        {/* Result Details */}
+                        {(log.imported > 0 || log.skipped > 0 || log.failed > 0) && (
+                          <div className="mt-2 pt-2 border-t border-current/20">
+                            <div className="flex items-center gap-4 text-xs">
+                              {log.imported > 0 && (
+                                <div className="flex items-center gap-1 text-green-700 dark:text-green-300">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  <span className="font-medium">{log.imported}</span>
+                                  <span>thành công</span>
+                                </div>
+                              )}
+                              {log.skipped > 0 && (
+                                <div className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                                  <AlertCircle className="h-3 w-3" />
+                                  <span className="font-medium">{log.skipped}</span>
+                                  <span>bỏ qua</span>
+                                </div>
+                              )}
+                              {log.failed > 0 && (
+                                <div className="flex items-center gap-1 text-red-700 dark:text-red-300">
+                                  <XCircle className="h-3 w-3" />
+                                  <span className="font-medium">{log.failed}</span>
+                                  <span>thất bại</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -797,13 +856,13 @@ export function ImportCustomerDialog({
                   {chunkLogs.length > 0 && (
                     <div className="p-4 bg-gray-50 dark:bg-gray-900/10 rounded-lg border border-gray-200 dark:border-gray-800">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                        Tóm tắt theo đợt:
+                        Chi tiết từng đợt ({chunkLogs.length} đợt):
                       </h4>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
                         {chunkLogs.map((log, index) => (
                           <div 
                             key={index}
-                            className={`text-xs p-2 rounded border ${
+                            className={`p-3 rounded-lg border ${
                               log.status === 'success' 
                                 ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
                                 : log.status === 'failed'
@@ -813,35 +872,78 @@ export function ImportCustomerDialog({
                                 : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
                             }`}
                           >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium">Đợt {log.chunk}</span>
-                              <span className={`px-2 py-0.5 rounded text-xs ${
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm">
+                                  Đợt {log.chunk}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  log.status === 'success' 
+                                    ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                    : log.status === 'failed'
+                                    ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                                    : log.status === 'partial'
+                                    ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                                }`}>
+                                  {log.status === 'success' ? '✓ Thành công' : 
+                                   log.status === 'failed' ? '✗ Thất bại' : 
+                                   log.status === 'partial' ? '⚠ Một phần' : '⏳ Đang xử lý'}
+                                </span>
+                              </div>
+                              <span className={`text-xs ${
                                 log.status === 'success' 
-                                  ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                  ? 'text-green-700 dark:text-green-300'
                                   : log.status === 'failed'
-                                  ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                                  ? 'text-red-700 dark:text-red-300'
                                   : log.status === 'partial'
-                                  ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
-                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                                  ? 'text-yellow-700 dark:text-yellow-300'
+                                  : 'text-gray-700 dark:text-gray-300'
                               }`}>
-                                {log.status === 'success' ? 'Thành công' : 
-                                 log.status === 'failed' ? 'Thất bại' : 
-                                 log.status === 'partial' ? 'Một phần' : 'Đang xử lý'}
+                                {log.message}
                               </span>
                             </div>
-                            <div className="text-xs opacity-75 mt-1">
-                              {log.message}
+                            
+                            {/* Result Details */}
+                            <div className="mt-2 pt-2 border-t border-current/20">
+                              <div className="flex items-center gap-4 text-xs">
+                                {log.imported > 0 && (
+                                  <div className="flex items-center gap-1 text-green-700 dark:text-green-300">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    <span className="font-medium">{log.imported}</span>
+                                    <span>thành công</span>
+                                  </div>
+                                )}
+                                {log.skipped > 0 && (
+                                  <div className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                                    <AlertCircle className="h-3 w-3" />
+                                    <span className="font-medium">{log.skipped}</span>
+                                    <span>bỏ qua</span>
+                                  </div>
+                                )}
+                                {log.failed > 0 && (
+                                  <div className="flex items-center gap-1 text-red-700 dark:text-red-300">
+                                    <XCircle className="h-3 w-3" />
+                                    <span className="font-medium">{log.failed}</span>
+                                    <span>thất bại</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                            
+                            {/* Errors in this chunk */}
                             {(log.errors && log.errors.length > 0) && (
-                              <div className="mt-2 pt-2 border-t border-current opacity-50">
-                                <div className="text-xs font-medium mb-1">Lỗi trong đợt này:</div>
+                              <div className="mt-2 pt-2 border-t border-current/20">
+                                <div className="text-xs font-medium mb-1 text-red-700 dark:text-red-300">
+                                  Lỗi trong đợt này ({log.errors.length}):
+                                </div>
                                 {log.errors.slice(0, 3).map((error, errIndex) => (
-                                  <div key={errIndex} className="text-xs">
+                                  <div key={errIndex} className="text-xs text-red-600 dark:text-red-400">
                                     • Dòng {error.row}: {error.error}
                                   </div>
                                 ))}
                                 {log.errors.length > 3 && (
-                                  <div className="text-xs italic">
+                                  <div className="text-xs italic text-red-600 dark:text-red-400">
                                     ... và {log.errors.length - 3} lỗi khác
                                   </div>
                                 )}
