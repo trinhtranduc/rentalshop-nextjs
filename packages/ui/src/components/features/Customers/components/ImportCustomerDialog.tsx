@@ -27,7 +27,7 @@ import {
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerCreateInput } from '@rentalshop/types';
 
-const MAX_ROWS = 1000;
+const MAX_ROWS = 3000;
 
 interface ImportCustomerDialogProps {
   open: boolean;
