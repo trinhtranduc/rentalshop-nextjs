@@ -32,6 +32,32 @@ const MAX_ROWS = 20000;
 const IMPORT_CHUNK_SIZE = 3000;
 const PREVIEW_MAX_ROWS = 200;
 
+function normalizeImportPhone(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  // Convert to string and remove spaces, hyphens, parentheses
+  let normalizedPhone = String(value).trim().replace(/[\s\-()]/g, '');
+  
+  if (!normalizedPhone) {
+    return undefined;
+  }
+
+  // Restore leading zero for Vietnamese phone numbers
+  // Vietnamese phone numbers: 0[3|5|7|8|9][0-9]{8} (10 digits total)
+  // If Excel parsed as number, leading zero is lost → 9 digits starting with 3,5,7,8,9
+  if (normalizedPhone.length === 9) {
+    const firstDigit = normalizedPhone[0];
+    // If starts with Vietnamese mobile prefixes (3, 5, 7, 8, 9), add leading zero
+    if (['3', '5', '7', '8', '9'].includes(firstDigit)) {
+      normalizedPhone = '0' + normalizedPhone;
+    }
+  }
+
+  return normalizedPhone;
+}
+
 interface ImportCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -140,11 +166,18 @@ export function ImportCustomerDialog({
           headers = Object.keys(mapped[0]);
         }
 
-        // Add row numbers
-        mappedData = mapped.map((row, index) => ({
-          ...row,
-          _originalRow: index + 1
-        }));
+        // Add row numbers and preserve phone as string (don't normalize in preview)
+        mappedData = mapped.map((row, index) => {
+          const processedRow: Record<string, any> = {
+            ...row,
+            _originalRow: index + 1
+          };
+          // Convert phone to string for preview (preserve original format, don't normalize)
+          if (processedRow.phone !== undefined && processedRow.phone !== null && processedRow.phone !== '') {
+            processedRow.phone = String(processedRow.phone);
+          }
+          return processedRow;
+        });
 
         // Convert parse errors
         parseErrors = result.errors.map(e => ({
@@ -179,10 +212,15 @@ export function ImportCustomerDialog({
         // Map data to customer format
           mappedData = result.data.map((row, index) => {
           const mapped = mapCSVRow(row, headerMapping);
-          return {
+          const processedRow: Record<string, any> = {
             ...mapped,
             _originalRow: index + 1 // Store display row number (start from 1)
           };
+          // Convert phone to string for preview (preserve original format, don't normalize)
+          if (processedRow.phone !== undefined && processedRow.phone !== null && processedRow.phone !== '') {
+            processedRow.phone = String(processedRow.phone);
+          }
+          return processedRow;
         });
 
           headers = result.headers;
@@ -214,7 +252,7 @@ export function ImportCustomerDialog({
           
           // Check for duplicate phones
           // Convert to string first (Excel parser may return number for phone)
-          const phone = String(row.phone || '').trim();
+          const phone = normalizeImportPhone(row.phone);
           if (phone) {
             if (phoneMap.has(phone)) {
               const existingRows = phoneMap.get(phone)!;
@@ -305,7 +343,7 @@ export function ImportCustomerDialog({
           firstName: firstName,
           lastName: row.lastname || row.lastName,
           email: row.email,
-          phone: row.phone,
+          phone: normalizeImportPhone(row.phone),
           address: row.address,
           city: row.city,
           state: row.state,
