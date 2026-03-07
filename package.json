@@ -82,6 +82,7 @@
     "verify:embeddings-quality": "tsx scripts/verify-embeddings-quality.ts",
     "test:qdrant": "tsx scripts/test-qdrant-connection.ts",
     "test:qdrant-railway": "tsx scripts/test-qdrant-railway.ts",
+    "test:analytics-income-timezone": "tsx scripts/test-analytics-income-timezone.ts",
     "verify:railway-setup": "tsx scripts/verify-railway-setup.ts",
     "posts:delete-all": "node scripts/delete-all-posts-categories-tags.js",
     "posts:convert-to-md": "node scripts/convert-json-articles-to-markdown.js",
