@@ -25,6 +25,7 @@ interface CustomerTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  canManageCustomers?: boolean; // Permission to manage customers (show delete option)
 }
 
 export function CustomerTable({ 
@@ -33,7 +34,8 @@ export function CustomerTable({
   onSelectionChange,
   sortBy = 'createdAt', 
   sortOrder = 'desc',
-  onSort
+  onSort,
+  canManageCustomers = false
 }: CustomerTableProps) {
   const t = useCustomerTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
@@ -265,17 +267,22 @@ export function CustomerTable({
                         <ShoppingBag className="h-4 w-4 mr-2" />
                         {t('actions.viewOrders')}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          onCustomerAction('delete', customer.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t('actions.deleteCustomer')}
-                      </DropdownMenuItem>
+                      {/* Show delete option only if user has permission */}
+                      {canManageCustomers && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onCustomerAction('delete', customer.id);
+                              setOpenDropdownId(null);
+                            }}
+                            className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {t('actions.deleteCustomer')}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

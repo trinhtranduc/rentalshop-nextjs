@@ -7,10 +7,20 @@ import {
   PageHeader,
   Products,
   Breadcrumb,
-  type BreadcrumbItem
+  type BreadcrumbItem,
+  Button,
+  ConfirmationDialog,
+  useToast,
+  ImportProductDialog,
+  ExportDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@rentalshop/ui';
-import { Package } from 'lucide-react';
-import { merchantsApi } from '@rentalshop/utils';
+import { Package, Trash2, Upload, Download, MoreVertical, Plus } from 'lucide-react';
+import { merchantsApi, productsApi } from '@rentalshop/utils';
+import { useAuth, usePermissions } from '@rentalshop/hooks';
 import type { ProductFilters } from '@rentalshop/types';
 
 /**
@@ -26,6 +36,9 @@ export default function MerchantProductsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const merchantId = params.id as string;
+  const { user } = useAuth();
+  const { toastSuccess } = useToast();
+  const { canManageProducts, canExportProducts } = usePermissions();
   
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -45,6 +58,12 @@ export default function MerchantProductsPage() {
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -118,6 +137,7 @@ export default function MerchantProductsPage() {
     
     return {
       products: paginatedProducts,
+      items: paginatedProducts, // Alias for compatibility
       total,
       page,
       currentPage: page,
@@ -193,6 +213,68 @@ export default function MerchantProductsPage() {
     }
   }, [router, merchantId]);
 
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedProductIds.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await productsApi.batchDeleteProducts(selectedProductIds);
+      if (response.success && response.data) {
+        const { deleted, failed } = response.data;
+        if (deleted > 0) {
+          toastSuccess(
+            'Success', 
+            failed > 0 
+              ? `${deleted} product(s) deleted, ${failed} failed`
+              : `${deleted} product(s) deleted successfully`
+          );
+          setSelectedProductIds([]);
+          setShowBulkDeleteConfirm(false);
+          fetchData(); // Refresh products list
+        }
+      } else {
+        throw new Error(response.message || 'Failed to delete products');
+      }
+    } catch (error: any) {
+      console.error('Error batch deleting products:', error);
+      // Error handled by global error handler
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedProductIds, toastSuccess, fetchData]);
+
+  const handleImportSuccess = useCallback(() => {
+    toastSuccess('Success', 'Products imported successfully');
+    setShowImportDialog(false);
+    fetchData();
+  }, [toastSuccess, fetchData]);
+
+  const handleExportProducts = useCallback(async (params: any) => {
+    setIsExporting(true);
+    try {
+      const blob = await productsApi.exportProducts(params);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toastSuccess('Success', 'Export completed successfully');
+      setShowExportDialog(false);
+      setSelectedProductIds([]);
+    } catch (error: any) {
+      console.error('Export error:', error);
+      // Error handled by global error handler
+    } finally {
+      setIsExporting(false);
+    }
+  }, [toastSuccess]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -226,7 +308,68 @@ export default function MerchantProductsPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        <div className="flex items-center justify-between w-full">
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+          <div className="flex items-center gap-2">
+            {canManageProducts && (
+              <>
+                {/* Batch Delete button - only show when products are selected */}
+                {selectedProductIds.length > 0 && (
+                  <Button
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isDeleting ? 'Deleting...' : `Delete (${selectedProductIds.length})`}
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => setShowImportDialog(true)}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Products
+                    </DropdownMenuItem>
+                    {canExportProducts && (
+                      <DropdownMenuItem
+                        onClick={() => setShowExportDialog(true)}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export Products
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            {/* Show export dropdown if user can export but cannot manage */}
+            {!canManageProducts && canExportProducts && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowExportDialog(true)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Products
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
@@ -239,6 +382,7 @@ export default function MerchantProductsPage() {
           onProductAction={handleProductAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          onSelectionChange={setSelectedProductIds}
           title="Merchant Products"
           subtitle={`Manage products for ${merchantName}`}
           showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
@@ -246,8 +390,47 @@ export default function MerchantProductsPage() {
           addButtonText="Add Product"
           exportButtonText="Export Products"
           showStats={true}
+          currentUser={user}
         />
       </div>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      {canManageProducts && (
+        <ConfirmationDialog
+          open={showBulkDeleteConfirm}
+          onOpenChange={setShowBulkDeleteConfirm}
+          type="danger"
+          title="Delete Selected Products"
+          description={`Are you sure you want to delete ${selectedProductIds.length} product(s)? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleBatchDelete}
+          onCancel={() => {
+            setShowBulkDeleteConfirm(false);
+          }}
+        />
+      )}
+
+      {/* Import Product Dialog */}
+      {canManageProducts && (
+        <ImportProductDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
+
+      {/* Export Product Dialog */}
+      {canExportProducts && (
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          resourceName="Products"
+          isLoading={isExporting}
+          selectedCount={selectedProductIds.length}
+          onExport={handleExportProducts}
+        />
+      )}
     </PageWrapper>
   );
 }

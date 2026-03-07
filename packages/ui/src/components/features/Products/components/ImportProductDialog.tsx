@@ -295,17 +295,36 @@ export function ImportProductDialog({
           stock = 0;
         }
         
+        // Helper function to parse price (handles 0, empty string, null, undefined)
+        const parsePrice = (value: any): number => {
+          if (value === null || value === undefined || value === '') {
+            return 0;
+          }
+          // If already a number, return it (including 0)
+          if (typeof value === 'number') {
+            return isNaN(value) ? 0 : value;
+          }
+          // If string, try to parse
+          const str = String(value).trim();
+          if (str === '' || str === 'null' || str === 'undefined') {
+            return 0;
+          }
+          const parsed = parseFloat(str);
+          return isNaN(parsed) ? 0 : parsed;
+        };
+
         const product: any = {
           name: row.name || '',
           description: row.description || '',
           barcode: barcode,
           // Nếu không có danh mục thì dùng "default"
-          categoryName: (row.categoryname || row.categoryName || '').trim() || 'default',
-          // Giá nếu không có thì để 0
-          rentPrice: row.rentprice || row.rentPrice ? parseFloat(String(row.rentprice || row.rentPrice)) : 0,
-          salePrice: row.saleprice || row.salePrice ? parseFloat(String(row.saleprice || row.salePrice)) : 0,
-          costPrice: row.costprice || row.costPrice ? parseFloat(String(row.costprice || row.costPrice)) : 0,
-          deposit: row.deposit ? parseFloat(String(row.deposit)) : 0,
+          categoryName: (row.categoryName || row.categoryname || '').trim() || 'default',
+          // Parse giá đúng cách (bao gồm cả trường hợp giá = 0)
+          // Note: After mapExcelColumnsToFields, field names are camelCase (rentPrice, not rentprice)
+          rentPrice: parsePrice(row.rentPrice ?? row.rentprice),
+          salePrice: parsePrice(row.salePrice ?? row.saleprice),
+          costPrice: parsePrice(row.costPrice ?? row.costprice),
+          deposit: parsePrice(row.deposit),
           stock: stock,
           // pricingType and durationConfig use default values (not included in import)
         };

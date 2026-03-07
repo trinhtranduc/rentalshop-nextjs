@@ -67,6 +67,7 @@ export interface ApiUrls {
     updateStock: (id: number) => string;
     bulkUpdate: string;
     bulkImport: string;
+    batchDelete: string;
     availability: (id: number) => string;
     batchAvailability: string;
     export: string;
@@ -87,6 +88,7 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    batchDelete: string;
     stats: string;
     export: string;
     bulkImport: string;
@@ -590,6 +592,7 @@ function createApiUrls(): ApiUrls {
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
       bulkImport: `${base}/api/products/bulk-import`,
+      batchDelete: `${base}/api/products/batch-delete`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
       batchAvailability: `${base}/api/products/batch-availability`,
       export: `${base}/api/products/export`,
@@ -610,6 +613,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/customers`,
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
+      batchDelete: `${base}/api/customers/batch-delete`,
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
       bulkImport: `${base}/api/customers/bulk-import`,

@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@rentalshop/ui';
-import { Plus, Download, MoreVertical, Upload } from 'lucide-react';
+import { Plus, Download, MoreVertical, Upload, Trash2 } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useOutletsData, useCategoriesData } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
@@ -83,6 +83,8 @@ export default function ProductsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [imageSearchResults, setImageSearchResults] = useState<Product[] | null>(null);
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // ============================================================================
   // FETCH CATEGORIES & OUTLETS - Using Official Hooks
@@ -331,6 +333,38 @@ export default function ProductsPage() {
     }
   }, [productToDelete, toastSuccess, refetch, t]);
 
+  // Handle batch delete
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedProductIds.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await productsApi.batchDeleteProducts(selectedProductIds);
+      if (response.success && response.data) {
+        const { deleted, failed } = response.data;
+        if (deleted > 0) {
+          toastSuccess(
+            t('messages.deleteSuccess'), 
+            failed > 0 
+              ? `${deleted} sản phẩm đã được xóa, ${failed} sản phẩm thất bại`
+              : `${deleted} sản phẩm đã được xóa thành công`
+          );
+          setSelectedProductIds([]);
+          refetch();
+        }
+        if (failed > 0 && deleted === 0) {
+          toastSuccess(t('messages.deleteSuccess'), `${failed} sản phẩm xóa thất bại`);
+        }
+        setShowBatchDeleteConfirm(false);
+      }
+      // Error automatically handled by useGlobalErrorHandler
+    } catch (error) {
+      // Error automatically handled by useGlobalErrorHandler
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedProductIds, toastSuccess, refetch, t]);
+
   // Handle product creation from add dialog
   const handleProductCreated = useCallback(async (productData: any, files?: File[]) => {
     try {
@@ -404,6 +438,18 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
+            {/* Batch Delete button - only show when items are selected and user can manage products */}
+            {canManageProducts && selectedProductIds.length > 0 && (
+              <Button
+                onClick={() => setShowBatchDeleteConfirm(true)}
+                variant="destructive"
+                size="sm"
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isDeleting ? tc('labels.deleting') || 'Đang xóa...' : `${tc('actions.delete') || 'Xóa'} (${selectedProductIds.length})`}
+              </Button>
+            )}
             {/* Export button - only show when items are selected */}
             {canExport && selectedProductIds.length > 0 && (
               <Button
@@ -575,6 +621,21 @@ export default function ProductsPage() {
         onCancel={() => {
           setShowDeleteConfirm(false);
           setProductToDelete(null);
+        }}
+      />
+
+      {/* Batch Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showBatchDeleteConfirm}
+        onOpenChange={setShowBatchDeleteConfirm}
+        type="danger"
+        title={tc('actions.delete') || 'Xóa sản phẩm'}
+        description={`Bạn có chắc chắn muốn xóa ${selectedProductIds.length} sản phẩm đã chọn? Hành động này không thể hoàn tác.`}
+        confirmText={tc('actions.delete') || 'Xóa'}
+        cancelText={tc('buttons.cancel')}
+        onConfirm={handleBatchDelete}
+        onCancel={() => {
+          setShowBatchDeleteConfirm(false);
         }}
       />
 

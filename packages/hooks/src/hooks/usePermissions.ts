@@ -108,7 +108,18 @@ export function usePermissions() {
    */
   const hasPermission = useMemo(() => {
     return (permission: Permission): boolean => {
-      if (!user || !permissions.length) {
+      if (!user) {
+        return false;
+      }
+      
+      // ✅ FALLBACK: ADMIN role has all permissions if permissions array is empty
+      // This handles cases where permissions haven't been set up yet
+      if (user.role === 'ADMIN' && (!permissions || permissions.length === 0)) {
+        return true; // Admin has all permissions by default
+      }
+      
+      // If no permissions array, deny (except for ADMIN above)
+      if (!permissions || !permissions.length) {
         return false;
       }
       
