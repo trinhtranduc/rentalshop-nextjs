@@ -51,6 +51,7 @@ export interface CustomersProps {
   exportButtonText?: string;
   showStats?: boolean;
   showMerchantColumn?: boolean; // Show merchant column (for admin customers page)
+  showMerchantFilter?: boolean; // Show merchant filter (for admin customers page)
   currentUser?: any;
   onExport?: () => void;
   className?: string;
@@ -87,6 +88,7 @@ export const Customers: React.FC<CustomersProps> = ({
   exportButtonText = "Export Customers",
   showStats = false,
   showMerchantColumn = false,
+  showMerchantFilter = false,
   currentUser,
   onExport,
   className = ""
@@ -166,6 +168,7 @@ export const Customers: React.FC<CustomersProps> = ({
                 onFiltersChange={memoizedOnFiltersChange}
                 onSearchChange={memoizedOnSearchChange}
                 onClearFilters={memoizedOnClearFilters}
+                showMerchantFilter={showMerchantFilter}
               />
             </div>
           </CardContent>

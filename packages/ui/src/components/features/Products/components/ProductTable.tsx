@@ -25,6 +25,7 @@ interface ProductTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  showMerchantColumn?: boolean; // Show merchant column (for admin products page)
 }
 
 export function ProductTable({ 
@@ -33,7 +34,8 @@ export function ProductTable({
   onSelectionChange,
   sortBy = 'name', 
   sortOrder = 'asc',
-  onSort 
+  onSort,
+  showMerchantColumn = false
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
   const { canManageProducts, canViewProducts, canDeleteOrders } = usePermissions();
@@ -148,6 +150,13 @@ export function ProductTable({
                 </div>
               </th>
               
+              {/* Merchant */}
+              {showMerchantColumn && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Merchant
+                </th>
+              )}
+              
               {/* Category */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {tc('labels.category')}
@@ -256,6 +265,15 @@ export function ProductTable({
                     </div>
                   </div>
                 </td>
+                
+                {/* Merchant */}
+                {showMerchantColumn && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {(product as any).merchant?.name || 'N/A'}
+                    </div>
+                  </td>
+                )}
                 
                 {/* Category */}
                 <td className="px-6 py-4 whitespace-nowrap">

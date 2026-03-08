@@ -6,13 +6,8 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  Customers,
-  CustomersLoading,
+  Products,
   useToast,
-  CustomerDetailDialog,
-  AddCustomerDialog,
-  EditCustomerDialog,
-  ImportCustomerDialog,
   ConfirmationDialog,
   Button,
   LoadingIndicator,
@@ -23,42 +18,39 @@ import {
   DropdownMenuTrigger,
   Breadcrumb,
   type BreadcrumbItem,
+  ImportProductDialog,
 } from '@rentalshop/ui';
 import { Plus, Download, Upload, MoreVertical, Trash2 } from 'lucide-react';
-import { useAuth, useCustomersData, useCanExportData, usePermissions } from '@rentalshop/hooks';
-import { customersApi, authenticatedFetch, apiUrls } from '@rentalshop/utils';
-import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
+import { useAuth, useProductsData, usePermissions } from '@rentalshop/hooks';
+import { productsApi } from '@rentalshop/utils';
+import type { ProductFilters, ProductWithDetails } from '@rentalshop/types';
 
 /**
- * ✅ ADMIN CUSTOMERS PAGE (All Merchants)
+ * ✅ ADMIN PRODUCTS PAGE (All Merchants)
  * 
  * Architecture:
  * ✅ URL params as single source of truth
- * ✅ Clean data fetching with useCustomersData hook
- * ✅ Show customers from ALL merchants (no merchantId filter)
+ * ✅ Clean data fetching with useProductsData hook
+ * ✅ Show products from ALL merchants (no merchantId filter)
  * ✅ Shareable URLs (bookmarkable filters)
  * ✅ Browser back/forward support
  * ✅ ADMIN only access
  */
-export default function AdminCustomersPage() {
+export default function AdminProductsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
-  const { canManageCustomers, canExportCustomers } = usePermissions();
+  const { canManageProducts, canExportProducts } = usePermissions();
   
   // Dialog states
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -78,7 +70,7 @@ export default function AdminCustomersPage() {
   // ============================================================================
   
   // ✅ SIMPLE: Memoize filters - NO merchantId filter (show all merchants)
-  const filters: CustomerFilters = useMemo(() => ({
+  const filters: ProductFilters = useMemo(() => ({
     q: search || undefined,
     search: search || undefined,
     merchantId: merchantIdFilter, // Optional filter by merchant (for admin)
@@ -88,12 +80,12 @@ export default function AdminCustomersPage() {
     sortOrder
   }), [merchantIdFilter, search, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error, refetch } = useCustomersData({ filters });
+  const { data, loading, error, refetch } = useProductsData({ filters });
   
   // Debug: Log data state
-  console.log('📊 Admin Customers Page - Data state:', {
+  console.log('📊 Admin Products Page - Data state:', {
     hasData: !!data,
-    customersCount: data?.customers?.length || 0,
+    productsCount: data?.products?.length || 0,
     total: data?.total,
     currentPage: data?.currentPage,
     loading
@@ -125,10 +117,12 @@ export default function AdminCustomersPage() {
     updateURL({ q: searchValue, page: 1 });
   }, [updateURL]);
 
-  const handleFiltersChange = useCallback((newFilters: CustomerFilters) => {
+  const handleFiltersChange = useCallback((newFilters: ProductFilters) => {
     const updates: Record<string, string | number | undefined> = { 
       page: 1,
-      merchantId: newFilters.merchantId
+      merchantId: newFilters.merchantId,
+      categoryId: newFilters.categoryId,
+      outletId: newFilters.outletId
     };
     updateURL(updates);
   }, [updateURL]);
@@ -150,138 +144,100 @@ export default function AdminCustomersPage() {
     updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
 
-  const handleCustomerAction = useCallback(async (action: string, customerId: number) => {
-    const customer = data?.customers.find(c => c.id === customerId);
+  const handleProductAction = useCallback(async (action: string, productId: number) => {
+    const product = data?.products.find(p => p.id === productId);
     
     switch (action) {
       case 'view':
-        if (customer) {
-          setSelectedCustomer(customer);
-          setShowDetailDialog(true);
-        }
+        // Navigate to product detail page
+        router.push(`/products/${productId}`);
         break;
         
       case 'edit':
-        if (customer) {
-          setSelectedCustomer(customer);
-          setShowEditDialog(true);
+        // Navigate to product edit page
+        if (product?.merchantId) {
+          router.push(`/merchants/${product.merchantId}/products/${productId}`);
         }
         break;
         
       case 'delete':
-        if (customer) {
-          setCustomerToDelete(customer);
+        if (product) {
+          setProductToDelete(product);
           setShowDeleteConfirm(true);
         }
         break;
         
-      case 'viewOrders':
-        // Navigate to orders page filtered by customer
-        router.push(`/orders?customerId=${customerId}`);
-        break;
-        
       default:
-        console.log('Customer action:', action, customerId);
+        console.log('Product action:', action, productId);
     }
-  }, [data?.customers, router]);
+  }, [data?.products, router]);
 
-  const handleDeleteCustomer = useCallback(async () => {
-    if (!customerToDelete) return;
+  const handleDeleteProduct = useCallback(async () => {
+    if (!productToDelete) return;
     
     try {
-      const response = await customersApi.deleteCustomer(customerToDelete.id);
+      const response = await productsApi.deleteProduct(productToDelete.id);
       if (response.success) {
-        toastSuccess('Success', 'Customer deleted successfully');
+        toastSuccess('Success', 'Product deleted successfully');
         setShowDeleteConfirm(false);
-        setCustomerToDelete(null);
+        setProductToDelete(null);
         refetch();
       } else {
-        throw new Error(response.message || 'Failed to delete customer');
+        throw new Error(response.message || 'Failed to delete product');
       }
     } catch (error: any) {
-      console.error('Error deleting customer:', error);
+      console.error('Error deleting product:', error);
       toastError(
         'Error',
-        error?.message || error?.response?.data?.message || 'Failed to delete customer'
+        error?.message || error?.response?.data?.message || 'Failed to delete product'
       );
     }
-  }, [customerToDelete, toastSuccess, toastError, refetch]);
+  }, [productToDelete, toastSuccess, toastError, refetch]);
 
   const handleBatchDelete = useCallback(async () => {
-    if (selectedCustomerIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     
     setIsDeleting(true);
     try {
-      const response = await customersApi.batchDeleteCustomers(selectedCustomerIds);
+      const response = await productsApi.batchDeleteProducts(selectedProductIds);
       if (response.success && response.data) {
-        const { deleted, failed, skipped } = response.data;
+        const { deleted } = response.data;
         if (deleted > 0) {
           toastSuccess(
             'Success', 
-            failed > 0 
-              ? `${deleted} customer(s) deleted, ${failed} failed`
-              : skipped > 0
-              ? `${deleted} customer(s) deleted, ${skipped} skipped (have active orders)`
-              : `${deleted} customer(s) deleted successfully`
+            `${deleted} product(s) deleted successfully`
           );
-          setSelectedCustomerIds([]);
+          setSelectedProductIds([]);
           setShowBulkDeleteConfirm(false);
           refetch();
         } else {
-          // No customers were deleted
-          toastError('Error', 'No customers were deleted');
+          toastError('Error', 'No products were deleted');
         }
       } else {
-        // Handle specific error codes from API response
-        // ApiResponse has code field when success is false
         const errorResponse = response as any;
-        if (errorResponse.code === 'CUSTOMERS_HAVE_ACTIVE_ORDERS') {
-          // For error responses, data may contain error details
-          const errorData = errorResponse.data || {};
-          const customersWithOrders = (errorData as any).customersWithActiveOrders || [];
-          const customerNames = customersWithOrders
-            .slice(0, 5)
-            .map((c: any) => c.name)
-            .join(', ');
-          const moreCount = customersWithOrders.length > 5 ? ` and ${customersWithOrders.length - 5} more` : '';
-          toastError(
-            'Cannot Delete Customers',
-            `${errorResponse.message || 'Cannot delete customers with active orders'}\n\nCustomers with active orders: ${customerNames}${moreCount}`
-          );
-        } else {
-          toastError('Error', errorResponse.message || 'Failed to delete customers');
-        }
+        toastError('Error', errorResponse.message || 'Failed to delete products');
       }
     } catch (error: any) {
-      console.error('Error batch deleting customers:', error);
+      console.error('Error batch deleting products:', error);
       toastError(
         'Error',
-        error?.message || error?.response?.data?.message || 'An unexpected error occurred while deleting customers'
+        error?.message || error?.response?.data?.message || 'An unexpected error occurred while deleting products'
       );
     } finally {
       setIsDeleting(false);
     }
-  }, [selectedCustomerIds, toastSuccess, toastError, refetch]);
-
-  const handleCustomerCreated = useCallback(async () => {
-    setShowAddDialog(false);
-    await refetch();
-  }, [refetch]);
-
-  const handleCustomerUpdated = useCallback(async () => {
-    setShowEditDialog(false);
-    setSelectedCustomer(null);
-    await refetch();
-  }, [refetch]);
+  }, [selectedProductIds, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
   // ============================================================================
   
-  const customerData = useMemo(() => {
+  const productData = useMemo(() => {
+    const products = data?.products || [];
     if (!data) {
       return {
-        customers: [],
+        products: [],
+        items: [],
         total: 0,
         page: 1,
         currentPage: 1,
@@ -292,7 +248,8 @@ export default function AdminCustomersPage() {
     }
 
     return {
-      customers: data.customers || [],
+      products,
+      items: products, // Required by ProductSearchResult
       total: data.total || 0,
       page: data.currentPage || 1,
       currentPage: data.currentPage || 1,
@@ -308,7 +265,7 @@ export default function AdminCustomersPage() {
   
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Customers' }
+    { label: 'Products' }
   ];
 
   // ============================================================================
@@ -321,10 +278,10 @@ export default function AdminCustomersPage() {
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
-            {canManageCustomers && (
+            {canManageProducts && (
               <>
-                {/* Batch Delete button - only show when customers are selected */}
-                {selectedCustomerIds.length > 0 && (
+                {/* Batch Delete button - only show when products are selected */}
+                {selectedProductIds.length > 0 && (
                   <Button
                     onClick={() => setShowBulkDeleteConfirm(true)}
                     variant="destructive"
@@ -332,17 +289,9 @@ export default function AdminCustomersPage() {
                     disabled={isDeleting}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {isDeleting ? 'Deleting...' : `Delete (${selectedCustomerIds.length})`}
+                    {isDeleting ? 'Deleting...' : `Delete (${selectedProductIds.length})`}
                   </Button>
                 )}
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setShowAddDialog(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Customer
-                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
@@ -354,14 +303,14 @@ export default function AdminCustomersPage() {
                       onClick={() => setShowImportDialog(true)}
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Import Customers
+                      Import Products
                     </DropdownMenuItem>
-                    {canExportCustomers && (
+                    {canExportProducts && (
                       <DropdownMenuItem
                         onClick={() => setShowExportDialog(true)}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        Export Customers
+                        Export Products
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -379,21 +328,21 @@ export default function AdminCustomersPage() {
             <LoadingIndicator 
               variant="circular" 
               size="lg"
-              message="Loading customers..."
+              message="Loading products..."
             />
           </div>
         ) : (
-          /* Customers Content - Only render when data is loaded */
-          <Customers
-            data={customerData}
+          /* Products Content - Only render when data is loaded */
+          <Products
+            data={productData}
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onSearchChange={handleSearchChange}
             onClearFilters={handleClearFilters}
-            onCustomerAction={handleCustomerAction}
+            onProductAction={handleProductAction}
             onPageChange={handlePageChange}
             onSort={handleSort}
-            onSelectionChange={setSelectedCustomerIds}
+            onSelectionChange={setSelectedProductIds}
             onLimitChange={handleLimitChange}
             showMerchantColumn={true}
             showMerchantFilter={true}
@@ -402,56 +351,27 @@ export default function AdminCustomersPage() {
         )}
       </div>
 
-      {/* Customer Detail Dialog */}
-      {selectedCustomer && (
-        <CustomerDetailDialog
-          customer={selectedCustomer}
-          open={showDetailDialog}
-          onOpenChange={setShowDetailDialog}
-        />
-      )}
-
-      {/* Add Customer Dialog */}
-      {canManageCustomers && (
-        <AddCustomerDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          onCustomerCreated={handleCustomerCreated}
-          // No merchantId - admin can choose merchant when creating
-        />
-      )}
-
-      {/* Edit Customer Dialog */}
-      {canManageCustomers && selectedCustomer && (
-        <EditCustomerDialog
-          customer={selectedCustomer}
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          onCustomerUpdated={handleCustomerUpdated}
-        />
-      )}
-
       {/* Delete Confirmation Dialog */}
-      {canManageCustomers && (
+      {canManageProducts && (
         <ConfirmationDialog
           open={showDeleteConfirm}
           onOpenChange={setShowDeleteConfirm}
           type="danger"
-          title="Delete Customer"
-          description="Are you sure you want to delete this customer? This action cannot be undone."
+          title="Delete Product"
+          description="Are you sure you want to delete this product? This action cannot be undone."
           confirmText="Delete"
           cancelText="Cancel"
-          onConfirm={handleDeleteCustomer}
+          onConfirm={handleDeleteProduct}
           onCancel={() => {
             setShowDeleteConfirm(false);
-            setCustomerToDelete(null);
+            setProductToDelete(null);
           }}
         />
       )}
 
-      {/* Import Customer Dialog */}
-      {canManageCustomers && (
-        <ImportCustomerDialog
+      {/* Import Product Dialog */}
+      {canManageProducts && (
+        <ImportProductDialog
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
           onImportSuccess={() => {
@@ -463,16 +383,16 @@ export default function AdminCustomersPage() {
       )}
 
       {/* Export Dialog */}
-      {canExportCustomers && (
+      {canExportProducts && (
         <ExportDialog
           open={showExportDialog}
           onOpenChange={setShowExportDialog}
-          resourceName="Customers"
+          resourceName="Products"
           onExport={async (params) => {
             try {
               setIsExporting(true);
               // TODO: Implement export functionality
-              console.log('Export customers with params:', params);
+              console.log('Export products with params:', params);
               toastSuccess('Success', 'Export started');
               setShowExportDialog(false);
             } catch (error) {
@@ -486,13 +406,13 @@ export default function AdminCustomersPage() {
       )}
 
       {/* Bulk Delete Confirmation Dialog */}
-      {canManageCustomers && (
+      {canManageProducts && (
         <ConfirmationDialog
           open={showBulkDeleteConfirm}
           onOpenChange={setShowBulkDeleteConfirm}
           type="danger"
-          title="Delete Selected Customers"
-          description={`Are you sure you want to delete ${selectedCustomerIds.length} customer(s)? This action cannot be undone.`}
+          title="Delete Selected Products"
+          description={`Are you sure you want to delete ${selectedProductIds.length} product(s)? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           onConfirm={handleBatchDelete}

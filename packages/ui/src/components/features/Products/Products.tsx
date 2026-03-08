@@ -47,6 +47,8 @@ interface ProductsProps {
   addButtonText?: string;
   exportButtonText?: string;
   showStats?: boolean;
+  showMerchantColumn?: boolean; // Show merchant column (for admin products page)
+  showMerchantFilter?: boolean; // Show merchant filter (for admin products page)
   currentUser?: any;
   onExport?: () => void;
   className?: string;
@@ -83,6 +85,8 @@ export function Products({
   addButtonText = "Add Product",
   exportButtonText = "Export Products",
   showStats = false,
+  showMerchantColumn = false,
+  showMerchantFilter = false,
   currentUser,
   onExport,
   className = ""
@@ -162,6 +166,7 @@ export function Products({
                 onSearchChange={memoizedOnSearchChange}
                 onClearFilters={memoizedOnClearFilters}
                 onImageSearchResult={onImageSearchResult}
+                showMerchantFilter={showMerchantFilter}
               />
             </div>
           </CardContent>
@@ -178,6 +183,7 @@ export function Products({
             sortBy={filters.sortBy || "name"}
             sortOrder={filters.sortOrder || "asc"}
             onSort={memoizedOnSort}
+            showMerchantColumn={showMerchantColumn}
           />
         ) : (
           <EmptyState

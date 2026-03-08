@@ -100,15 +100,25 @@ export const customersApi = {
     const params = new URLSearchParams();
     
     if (filters.q) params.append('q', filters.q);
+    if (filters.search) params.append('search', filters.search);
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
     if (filters.city) params.append('city', filters.city);
     if (filters.state) params.append('state', filters.state);
     if (filters.country) params.append('country', filters.country);
     if (filters.idType) params.append('idType', filters.idType);
     
+    // ✅ Add page, sortBy, sortOrder parameters
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+    
     params.append('limit', (filters.limit || 20).toString());
-    params.append('offset', (filters.offset || 0).toString());
+    // Keep offset for backward compatibility, but page takes precedence
+    if (filters.offset && !filters.page) {
+      params.append('offset', filters.offset.toString());
+    }
     params.append('_t', Date.now().toString()); // Cache-busting parameter
 
     const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);

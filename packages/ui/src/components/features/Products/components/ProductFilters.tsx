@@ -5,7 +5,7 @@ import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
-import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useOutletsData, useCategoriesData, useMerchantsData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Search, Sparkles } from 'lucide-react';
 import { ImageSearchDialog } from './ImageSearchDialog';
 
@@ -15,6 +15,7 @@ interface ProductFiltersProps {
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
   onImageSearchResult?: (products: any[]) => void;
+  showMerchantFilter?: boolean; // Show merchant filter (for admin products page)
 }
 
 /**
@@ -30,7 +31,7 @@ interface ProductFiltersProps {
  * - Clean and minimal UI
  * - Responsive grid layout
  */
-export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters, onImageSearchResult }: ProductFiltersProps) {
+export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters, onImageSearchResult, showMerchantFilter = false }: ProductFiltersProps) {
   // Get translations
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -41,6 +42,10 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
   // ✅ MODERN: Use deduplicated hooks for filter data
   const { outlets, loading: loadingOutlets } = useOutletsData();
   const { categories, loading: loadingCategories } = useCategoriesData();
+  const { data: merchantsData, loading: loadingMerchants } = useMerchantsData({ 
+    filters: { page: 1, limit: 1000 }, 
+    enabled: showMerchantFilter 
+  });
 
   // Debug logging
   console.log('🔍 ProductFilters: Categories data:', {
@@ -50,6 +55,26 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     loading: loadingCategories,
     firstCategory: categories?.[0]?.name || 'none'
   });
+
+  // Prepare merchant options for SearchableSelect
+  const merchantOptions = React.useMemo(() => {
+    const merchants = merchantsData?.merchants || [];
+    
+    if (!Array.isArray(merchants) || merchants.length === 0) {
+      return [];
+    }
+    
+    const allOption = { value: '0', label: 'All Merchants', subtitle: 'All Merchants' };
+    const merchantOpts = merchants
+      .filter((merchant: any) => merchant && merchant.id)
+      .map((merchant: any) => ({
+        value: merchant.id.toString(),
+        label: merchant.name || 'Unnamed Merchant',
+        subtitle: merchant.name || 'Unnamed Merchant'
+      }));
+    
+    return [allOption, ...merchantOpts];
+  }, [merchantsData?.merchants, loadingMerchants]);
 
   // Prepare category options for SearchableSelect
   const categoryOptions = React.useMemo(() => {
@@ -126,8 +151,18 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     onFiltersChange({ categoryId: value });
   }, [onFiltersChange]);
 
+  const handleMerchantChange = useCallback((value: number | undefined) => {
+    // Handle undefined or 0 (when "all" is selected)
+    if (!value || value === 0) {
+      onFiltersChange({ merchantId: undefined });
+      return;
+    }
+    // value is already a number from SearchableSelect
+    onFiltersChange({ merchantId: value });
+  }, [onFiltersChange]);
+
   // Check if any filters are active
-  const hasActiveFilters = !!(filters.search || filters.categoryId);
+  const hasActiveFilters = !!(filters.search || filters.categoryId || filters.merchantId);
 
   // ============================================================================
   // RENDER - Compact inline filters (Following Orders pattern)
@@ -187,6 +222,34 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         }}
         categoryId={filters.categoryId}
       />
+
+      {/* Merchant Filter - Only show for admin */}
+      {showMerchantFilter && (
+        <>
+          {merchantOptions.length > 0 && (
+            <SearchableSelect
+              value={filters.merchantId}
+              onChange={(value) => handleMerchantChange(value)}
+              options={merchantOptions}
+              placeholder={loadingMerchants ? 'Loading...' : 'All Merchants'}
+              searchPlaceholder="Search merchants..."
+              className="w-[200px]"
+              emptyText="No merchants found"
+              disabled={loadingMerchants}
+            />
+          )}
+          {merchantOptions.length === 0 && !loadingMerchants && (
+            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+              No merchants available
+            </div>
+          )}
+          {loadingMerchants && (
+            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+              Loading...
+            </div>
+          )}
+        </>
+      )}
 
       {/* Category Filter - SearchableSelect for better UX with many categories */}
       {categoryOptions.length > 0 && (
