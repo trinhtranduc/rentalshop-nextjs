@@ -287,11 +287,11 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             } else {
               // Customer is active - skip (already exists)
               console.log('⚠️ Active customer already exists - skipping:', existingCustomer.id);
-              skipped.push({
-                row: validatedCustomer.rowNumber,
+            skipped.push({
+              row: validatedCustomer.rowNumber,
                 reason: 'Customer with this phone number or email already exists (active) in this merchant'
-              });
-              continue;
+            });
+            continue;
             }
           } else {
             // Debug: No duplicate found

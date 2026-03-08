@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useCallback } from 'react';
-import { Input, Button } from '@rentalshop/ui';
+import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { CustomerFilters } from '@rentalshop/types';
-import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useCustomerTranslations, useCommonTranslations, useMerchantsData } from '@rentalshop/hooks';
 
 interface CustomerSearchProps {
   filters: CustomerFilters;
   onFiltersChange: (filters: CustomerFilters) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
+  showMerchantFilter?: boolean; // Show merchant filter (for admin customers page)
 }
 
 /**
@@ -18,10 +19,36 @@ interface CustomerSearchProps {
  * - h-10 height
  * - No labels, clean inline
  */
-export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onClearFilters }: CustomerSearchProps) {
+export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onClearFilters, showMerchantFilter = false }: CustomerSearchProps) {
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
   const [localSearch, setLocalSearch] = React.useState<string>(filters.search || '');
+  
+  // Fetch merchants for filter (only if showMerchantFilter is true)
+  const { data: merchantsData, loading: loadingMerchants } = useMerchantsData({ 
+    filters: { page: 1, limit: 1000 }, 
+    enabled: showMerchantFilter 
+  });
+  
+  // Prepare merchant options for SearchableSelect
+  const merchantOptions = React.useMemo(() => {
+    const merchants = merchantsData?.merchants || [];
+    
+    if (!Array.isArray(merchants) || merchants.length === 0) {
+      return [];
+    }
+    
+    const allOption = { value: '0', label: 'All Merchants', subtitle: 'All Merchants' };
+    const merchantOpts = merchants
+      .filter((merchant: any) => merchant && merchant.id)
+      .map((merchant: any) => ({
+        value: merchant.id.toString(),
+        label: merchant.name || 'Unnamed Merchant',
+        subtitle: merchant.name || 'Unnamed Merchant'
+      }));
+    
+    return [allOption, ...merchantOpts];
+  }, [merchantsData?.merchants, loadingMerchants]);
   
   // Sync với filters.search khi thay đổi từ bên ngoài (ví dụ: clear filters)
   React.useEffect(() => {
@@ -40,6 +67,16 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
       onSearchChange(localSearch);
     }
   };
+
+  const handleMerchantChange = useCallback((value: number | undefined) => {
+    // Handle undefined or 0 (when "all" is selected)
+    if (!value || value === 0) {
+      onFiltersChange({ merchantId: undefined });
+      return;
+    }
+    // value is already a number from SearchableSelect
+    onFiltersChange({ merchantId: value });
+  }, [onFiltersChange]);
 
   return (
     <>
@@ -69,8 +106,36 @@ export function CustomerSearch({ filters, onFiltersChange, onSearchChange, onCle
         </div>
       </div>
 
+      {/* Merchant Filter - Only show for admin */}
+      {showMerchantFilter && (
+        <>
+          {merchantOptions.length > 0 && (
+            <SearchableSelect
+              value={filters.merchantId}
+              onChange={(value) => handleMerchantChange(value)}
+              options={merchantOptions}
+              placeholder={loadingMerchants ? 'Loading...' : 'All Merchants'}
+              searchPlaceholder="Search merchants..."
+              className="w-[200px]"
+              emptyText="No merchants found"
+              disabled={loadingMerchants}
+            />
+          )}
+          {merchantOptions.length === 0 && !loadingMerchants && (
+            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+              No merchants available
+            </div>
+          )}
+          {loadingMerchants && (
+            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+              Loading...
+            </div>
+          )}
+        </>
+      )}
+
       {/* Clear Search */}
-      {filters.search && onClearFilters && (
+      {(filters.search || filters.merchantId) && onClearFilters && (
         <Button
           variant="outline"
           size="sm"

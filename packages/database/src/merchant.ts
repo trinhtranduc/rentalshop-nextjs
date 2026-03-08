@@ -126,12 +126,12 @@ export async function findById(id: number) {
       }),
       // Count only non-deleted orders (orders are related through outlets)
       prisma.order.count({
-        where: {
-          outlet: {
-            merchantId: id
+      where: {
+        outlet: {
+          merchantId: id
           },
           deletedAt: null
-        }
+      }
       }),
       // Count only active outlets
       prisma.outlet.count({

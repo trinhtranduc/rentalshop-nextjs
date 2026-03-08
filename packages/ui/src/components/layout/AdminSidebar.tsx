@@ -90,6 +90,11 @@ const adminMenuItems: MenuItem[] = [
     icon: UserCircle,
   },
   {
+    label: 'Products',
+    href: '/products',
+    icon: Package,
+  },
+  {
     label: 'Users',
     href: '/users',
     icon: Users,

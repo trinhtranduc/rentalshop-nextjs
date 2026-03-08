@@ -136,7 +136,7 @@ export function Pagination({
         </div>
         {onLimitChange && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">{t('pagination.itemsPerPage') || 'Items per page'}:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Items per page:</span>
             <div className="flex items-center gap-1">
               <Input
                 type="text"
@@ -219,10 +219,17 @@ export function Pagination({
                     variant={displayPage === page ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handlePageClick(page as number)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handlePageClick(page as number);
+                      }
+                    }}
                     className={cn(
                       "w-10 h-10 p-0 relative",
                       optimisticPage === page && "ring-2 ring-blue-500 ring-offset-1"
                     )}
+                    tabIndex={0}
                   >
                     {page}
                   </Button>
