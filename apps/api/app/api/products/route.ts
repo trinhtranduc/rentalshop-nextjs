@@ -575,53 +575,47 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       console.error('Error syncing totalStock:', error);
     }
 
-    // Generate embedding for image search (background job)
+    // -------------------------------------------------------------------------
+    // Flow: Product images -> Qdrant (for image search)
+    // 1. generateProductEmbedding(productId) runs in background
+    // 2. Fetches product, parses image URLs -> for each URL: fetch image -> Python API /embed -> vector
+    // 3. vectorStore.storeProductImagesEmbeddings() -> Qdrant upsert (collection from QDRANT_COLLECTION_ENV)
+    // 4. db.products.update(embeddingGeneratedAt) to mark done
+    // -------------------------------------------------------------------------
     if (committedImageUrls.length > 0) {
-      console.log(`🔄 Triggering embedding generation for product ${product.id} (${committedImageUrls.length} image(s))...`);
-      console.log(`   Product ID (publicId): ${product.id}`);
-      console.log(`   Image URLs:`, committedImageUrls.map((url: string) => url.substring(0, 60) + '...'));
-      
-      // Check environment variables before starting
+      console.log(`[Qdrant] 🔄 Step 0: Triggering embedding job for product ${product.id} (${committedImageUrls.length} image(s))`);
+      console.log(`[Qdrant]    Product ID (publicId): ${product.id}`);
+      console.log(`[Qdrant]    Image URLs:`, committedImageUrls.map((url: string) => url.substring(0, 60) + '...'));
+
       const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
       const qdrantUrl = process.env.QDRANT_URL;
-      console.log(`   Environment check:`, {
+      const collectionEnv = process.env.QDRANT_COLLECTION_ENV;
+      console.log(`[Qdrant]    Env check:`, {
         PYTHON_EMBEDDING_API_URL: pythonApiUrl ? `${pythonApiUrl.substring(0, 50)}...` : '❌ NOT SET',
         QDRANT_URL: qdrantUrl ? `${qdrantUrl.substring(0, 50)}...` : '❌ NOT SET',
-        NODE_ENV: process.env.NODE_ENV || 'undefined',
-        APP_ENV: process.env.APP_ENV || 'undefined'
+        QDRANT_COLLECTION_ENV: collectionEnv || 'not set',
+        NODE_ENV: process.env.NODE_ENV || 'undefined'
       });
-      
+
       try {
         const { generateProductEmbedding } = await import('@rentalshop/database/server');
-        console.log(`   ✅ Successfully imported generateProductEmbedding function`);
-        
-        // Run in background (don't block response)
+        console.log(`[Qdrant]    Import OK, starting background job (non-blocking)`);
+
         generateProductEmbedding(product.id)
           .then(() => {
-            console.log(`✅ Embedding generation completed for product ${product.id}`);
+            console.log(`[Qdrant] ✅ Step 0 done: Embedding job completed for product ${product.id}`);
           })
           .catch((error: any) => {
-            console.error(`❌ Error generating embedding for product ${product.id}:`, error);
-            console.error('   Error message:', error?.message);
-            console.error('   Error name:', error?.name);
-            console.error('   Error code:', error?.code);
-            console.error('   Stack:', error?.stack);
-            console.error('   Environment at error time:', {
-              PYTHON_EMBEDDING_API_URL: process.env.PYTHON_EMBEDDING_API_URL ? 'SET' : 'NOT SET',
-              QDRANT_URL: process.env.QDRANT_URL ? 'SET' : 'NOT SET'
-            });
+            console.error(`[Qdrant] ❌ Step 0 failed: Embedding job for product ${product.id}:`, error?.message || error);
+            console.error(`[Qdrant]    name: ${error?.name}, code: ${error?.code}`);
+            if (error?.stack) console.error(`[Qdrant]    stack:`, error.stack);
           });
       } catch (error: any) {
-        console.error('❌ Error starting embedding generation:', error);
-        console.error('   Error message:', error?.message);
-        console.error('   Error name:', error?.name);
-        console.error('   Stack:', error?.stack);
-        console.error('   This usually means the import failed or environment variables are missing');
-        // Don't fail the request if embedding generation fails
+        console.error(`[Qdrant] ❌ Failed to start embedding job:`, error?.message);
+        console.error(`[Qdrant]    (import or env issue)`);
       }
     } else {
-      console.log(`⚠️ Product ${product.id} has no images, skipping embedding generation`);
-      console.log(`   committedImageUrls length: ${committedImageUrls.length}`);
+      console.log(`[Qdrant] ⚠️ Product ${product.id} has no images, skip embedding`);
     }
 
     return NextResponse.json({

@@ -420,22 +420,21 @@ export class ProductVectorStore {
     }));
 
     try {
-      console.log(`📤 Upserting ${points.length} point(s) to Qdrant collection: ${this.collectionName}`);
+      const pointIds = points.map((p: { id: string }) => p.id);
+      console.log(`[Qdrant] Upsert ${points.length} point(s) → collection=${this.collectionName}, ids=${pointIds.join(', ')}`);
       await this.client.upsert(this.collectionName, {
         points
       });
-      console.log(`✅ Successfully upserted ${points.length} point(s) to Qdrant`);
+      console.log(`[Qdrant] Upsert OK: ${points.length} point(s) saved`);
     } catch (error: any) {
-      // If collection doesn't exist, try to initialize and retry
       if (error?.status === 404 || error?.message?.includes('not found')) {
-        console.log('⚠️ Collection not found, initializing...');
+        console.log(`[Qdrant] Collection ${this.collectionName} not found, initializing then retry upsert`);
         try {
           await this.initialize();
-          // Retry upsert after initialization
           await this.client.upsert(this.collectionName, {
             points
           });
-          console.log('✅ Successfully stored embeddings after initialization');
+          console.log(`[Qdrant] Retry upsert OK: ${points.length} point(s)`);
         } catch (initError) {
           console.error('Error initializing collection:', initError);
           throw initError;
