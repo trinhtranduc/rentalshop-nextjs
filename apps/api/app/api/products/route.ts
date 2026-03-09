@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuilder, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages } from '@rentalshop/utils';
-import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
+import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { deleteFromS3, commitStagingFiles, generateAccessUrl, uploadToS3, getBucketName } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 /**
  * GET /api/products
@@ -541,6 +554,16 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }))
       }
     });
+
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logCreate({
+      entityType: 'Product',
+      entityId: String(product.id),
+      entityName: product.name,
+      newValues: { name: product.name, rentPrice: product.rentPrice, salePrice: product.salePrice, merchantId: merchant.id },
+      description: `Product created: ${product.name}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log create failed:', err));
 
     // Sync totalStock
     try {

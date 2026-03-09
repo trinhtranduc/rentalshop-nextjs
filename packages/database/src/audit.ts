@@ -27,7 +27,7 @@ export interface AuditContext {
 }
 
 export interface AuditLogData {
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'VIEW' | 'EXPORT' | 'IMPORT' | 'CUSTOM';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'LOGIN' | 'LOGOUT' | 'VIEW' | 'EXPORT' | 'IMPORT' | 'CUSTOM';
   entityType: string;
   entityId: string;
   entityName?: string;
@@ -37,6 +37,7 @@ export interface AuditLogData {
   severity?: 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
   category?: 'GENERAL' | 'SECURITY' | 'BUSINESS' | 'SYSTEM' | 'COMPLIANCE';
   description?: string;
+  outcome?: 'success' | 'failure';
   context: AuditContext;
 }
 
@@ -64,47 +65,43 @@ export class AuditLogger {
     this.prisma = prisma;
   }
 
-  // Get next public ID
-  private async getNextPublicId(): Promise<number> {
-    // Temporarily disabled - AuditLog model not in schema
-    return 1;
-  }
-
-  // Main logging method
+  // Main logging method - append-only write to AuditLog table
   async log(data: AuditLogData): Promise<void> {
     try {
-      console.log('🔍 AuditLogger.log - Starting audit log creation...');
-      const id = await this.getNextPublicId();
-      console.log('🔍 AuditLogger.log - Got id:', id);
-      
-      // Validate foreign key IDs to prevent constraint violations
       const validatedUserId = await this.validateUserId(data.context.userId);
       const validatedMerchantId = await this.validateMerchantId(data.context.merchantId);
       const validatedOutletId = await this.validateOutletId(data.context.outletId);
-      
-      console.log('🔍 AuditLogger.log - About to create audit log with data:', {
-        id,
-        action: data.action,
-        entityType: data.entityType,
-        entityId: data.entityId,
-        userId: validatedUserId,
-        merchantId: validatedMerchantId,
-        outletId: validatedOutletId
+
+      const detailsPayload = {
+        oldValues: data.oldValues,
+        newValues: data.newValues,
+        changes: data.changes,
+        merchantId: validatedMerchantId ?? undefined,
+        outletId: validatedOutletId ?? undefined,
+        requestId: data.context.requestId,
+        outcome: data.outcome ?? 'success',
+        entityName: data.entityName,
+        severity: data.severity,
+        category: data.category,
+        description: data.description
+      };
+
+      await this.prisma.auditLog.create({
+        data: {
+          entityType: data.entityType,
+          entityId: data.entityId,
+          action: data.action,
+          details: JSON.stringify(detailsPayload),
+          userId: validatedUserId,
+          ipAddress: data.context.ipAddress ?? null,
+          userAgent: data.context.userAgent ?? null,
+          ...(validatedMerchantId != null && { merchantId: validatedMerchantId }),
+          ...(validatedOutletId != null && { outletId: validatedOutletId })
+        } as Parameters<typeof this.prisma.auditLog.create>[0]['data']
       });
-      
-      // Temporarily disabled - AuditLog model not in schema
-      console.log('🔍 Audit log would be created:', {
-        id,
-        action: data.action,
-        entityType: data.entityType,
-        entityId: data.entityId
-      });
-      console.log('✅ AuditLogger.log - Audit log created successfully');
     } catch (error) {
       // Don't throw errors from audit logging to avoid breaking main operations
-      console.error('❌ AuditLogger.log - Audit logging failed:', error);
-      console.error('❌ AuditLogger.log - Error details:', error instanceof Error ? error.message : String(error));
-      console.error('❌ AuditLogger.log - Error stack:', error instanceof Error ? error.stack : undefined);
+      console.error('AuditLogger.log - Audit logging failed:', error);
     }
   }
 
@@ -298,16 +295,12 @@ export class AuditLogger {
     hasMore: boolean;
   }> {
     const where: any = {};
-    
     if (filter.action) where.action = filter.action;
     if (filter.entityType) where.entityType = filter.entityType;
     if (filter.entityId) where.entityId = filter.entityId;
     if (filter.userId) where.userId = filter.userId;
-    if (filter.merchantId) where.merchantId = filter.merchantId;
-    if (filter.outletId) where.outletId = filter.outletId;
-    if (filter.severity) where.severity = filter.severity;
-    if (filter.category) where.category = filter.category;
-    
+    if (filter.merchantId != null) where.merchantId = filter.merchantId;
+    if (filter.outletId != null) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       const normalizedStart = filter.startDate ? normalizeStartDate(filter.startDate) : null;
@@ -316,47 +309,76 @@ export class AuditLogger {
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
-    const limit = filter.limit || 50;
+    const limit = Math.min(filter.limit || 50, 100);
     const offset = filter.offset || 0;
 
-    // Temporarily disabled - AuditLog model not in schema
-    const logs: any[] = [];
-    const total = 0;
+    const [logs, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset
+      }),
+      this.prisma.auditLog.count({ where })
+    ]);
 
-    // Transform logs to include parsed JSON fields
-    const transformedLogs = logs.map(log => ({
-      id: log.id,
-      action: log.action,
-      entityType: log.entityType,
-      entityId: log.entityId,
-      entityName: log.entityName,
-      user: log.user ? {
-        id: log.user.id,
-        email: log.user.email,
-        name: `${log.user.firstName} ${log.user.lastName}`,
-        role: log.user.role
-      } : null,
-      merchant: log.merchant ? {
-        id: log.merchant.id,
-        name: log.merchant.name
-      } : null,
-      outlet: log.outlet ? {
-        id: log.outlet.id,
-        name: log.outlet.name
-      } : null,
-      oldValues: log.oldValues ? JSON.parse(log.oldValues) : null,
-      newValues: log.newValues ? JSON.parse(log.newValues) : null,
-      changes: log.changes ? JSON.parse(log.changes) : null,
-      ipAddress: log.ipAddress,
-      userAgent: log.userAgent,
-      sessionId: log.sessionId,
-      requestId: log.requestId,
-      metadata: log.metadata ? JSON.parse(log.metadata) : null,
-      severity: log.severity,
-      category: log.category,
-      description: log.description,
-      createdAt: log.createdAt
-    }));
+    type LogWithRelations = (typeof logs)[number];
+    const transformedLogs = logs.map((log: LogWithRelations) => {
+      let details: Record<string, any> = {};
+      try {
+        details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details ?? {};
+      } catch {
+        details = {};
+      }
+      const logAny = log as LogWithRelations & {
+        user?: { id: number; email: string; firstName: string | null; lastName: string | null; role: string };
+        merchant?: { id: number; name: string };
+        outlet?: { id: number; name: string };
+        merchantId?: number | null;
+        outletId?: number | null;
+      };
+      return {
+        id: log.id,
+        action: log.action,
+        entityType: log.entityType,
+        entityId: log.entityId,
+        entityName: details.entityName ?? null,
+        user: logAny.user
+          ? {
+              id: logAny.user.id,
+              email: logAny.user.email,
+              name: `${logAny.user.firstName ?? ''} ${logAny.user.lastName ?? ''}`.trim(),
+              role: logAny.user.role
+            }
+          : null,
+        merchantId: logAny.merchantId ?? details.merchantId ?? null,
+        outletId: logAny.outletId ?? details.outletId ?? null,
+        merchant: logAny.merchant ? { id: logAny.merchant.id, name: logAny.merchant.name } : null,
+        outlet: logAny.outlet ? { id: logAny.outlet.id, name: logAny.outlet.name } : null,
+        oldValues: details.oldValues ?? null,
+        newValues: details.newValues ?? null,
+        changes: details.changes ?? null,
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
+        requestId: details.requestId ?? null,
+        outcome: details.outcome ?? 'success',
+        severity: details.severity ?? null,
+        category: details.category ?? null,
+        description: details.description ?? null,
+        createdAt: log.createdAt
+      };
+    });
 
     return {
       logs: transformedLogs,
@@ -372,12 +394,13 @@ export class AuditLogger {
     logsByEntity: Record<string, number>;
     logsBySeverity: Record<string, number>;
     logsByCategory: Record<string, number>;
-    recentActivity: number; // Last 24 hours
+    recentActivity: number;
   }> {
     const where: any = {};
-    
-    if (filter.merchantId) where.merchantId = filter.merchantId;
-    if (filter.outletId) where.outletId = filter.outletId;
+    if (filter.userId) where.userId = filter.userId;
+    if (filter.entityType) where.entityType = filter.entityType;
+    if (filter.merchantId != null) where.merchantId = filter.merchantId;
+    if (filter.outletId != null) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       const normalizedStart = filter.startDate ? normalizeStartDate(filter.startDate) : null;
@@ -386,32 +409,40 @@ export class AuditLogger {
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
-    // Temporarily disabled - AuditLog model not in schema
-    const totalLogs = 0;
-    const actionStats: any[] = [];
-    const entityStats: any[] = [];
-    const severityStats: any[] = [];
-    const categoryStats: any[] = [];
-    const recentActivity = 0;
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const recentWhere = { ...where, createdAt: { gte: oneDayAgo } };
+
+    const [totalLogs, actionStats, entityStats, recentActivity] = await Promise.all([
+      this.prisma.auditLog.count({ where }),
+      this.prisma.auditLog.groupBy({
+        by: ['action'],
+        where,
+        _count: { action: true }
+      }),
+      this.prisma.auditLog.groupBy({
+        by: ['entityType'],
+        where,
+        _count: { entityType: true }
+      }),
+      this.prisma.auditLog.count({ where: recentWhere })
+    ]);
+
+    const logsByAction = actionStats.reduce((acc, item) => {
+      acc[item.action] = item._count.action;
+      return acc;
+    }, {} as Record<string, number>);
+    const logsByEntity = entityStats.reduce((acc, item) => {
+      acc[item.entityType] = item._count.entityType;
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
       totalLogs,
-      logsByAction: actionStats.reduce((acc, item) => {
-        acc[item.action] = item._count.action;
-        return acc;
-      }, {} as Record<string, number>),
-      logsByEntity: entityStats.reduce((acc, item) => {
-        acc[item.entityType] = item._count.entityType;
-        return acc;
-      }, {} as Record<string, number>),
-      logsBySeverity: severityStats.reduce((acc, item) => {
-        acc[item.severity] = item._count.severity;
-        return acc;
-      }, {} as Record<string, number>),
-      logsByCategory: categoryStats.reduce((acc, item) => {
-        acc[item.category] = item._count.category;
-        return acc;
-      }, {} as Record<string, number>),
+      logsByAction,
+      logsByEntity,
+      logsBySeverity: {},
+      logsByCategory: {},
       recentActivity
     };
   }

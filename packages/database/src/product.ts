@@ -1066,6 +1066,26 @@ export const simplifiedProducts = {
   },
 
   /**
+   * Restore product (set isActive true - for products deactivated instead of hard-deleted)
+   */
+  restore: async (id: number) => {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, isActive: true }
+    });
+    if (!product) throw new Error(`Product with id ${id} not found`);
+    if (product.isActive) throw new Error(`Product with id ${id} is already active`);
+    return await prisma.product.update({
+      where: { id },
+      data: { isActive: true },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } }
+      }
+    });
+  },
+
+  /**
    * Find product by barcode (simplified API)
    */
   findByBarcode: async (barcode: string) => {

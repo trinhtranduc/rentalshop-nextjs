@@ -10,6 +10,7 @@ import {
   CustomersLoading,
   useToast,
   CustomerDetailDialog,
+  ChangeHistoryDialog,
   AddCustomerDialog,
   EditCustomerDialog,
   ImportCustomerDialog,
@@ -61,6 +62,7 @@ export default function AdminCustomersPage() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -274,6 +276,27 @@ export default function AdminCustomersPage() {
     await refetch();
   }, [refetch]);
 
+  const loadCustomerHistory = useCallback(async () => {
+    if (!selectedCustomer?.id) return { success: false, data: [], pagination: { total: 0 } };
+    const res = await authenticatedFetch(apiUrls.customers.history(selectedCustomer.id));
+    return res as { success: boolean; data: any[]; pagination?: { total: number } };
+  }, [selectedCustomer?.id]);
+
+  const handleRevertCustomer = useCallback(
+    async (log: { id: number }) => {
+      if (!selectedCustomer?.id) return;
+      const base = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = (await authenticatedFetch(`${base}/api/customers/${selectedCustomer.id}/revert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auditLogId: log.id })
+      })) as { success?: boolean; message?: string };
+      if (!res.success) throw new Error((res as any)?.message || 'Revert failed');
+      toastSuccess('Reverted', 'Customer reverted to previous state.');
+    },
+    [selectedCustomer?.id, toastSuccess]
+  );
+
   // ============================================================================
   // TRANSFORM DATA FOR UI
   // ============================================================================
@@ -408,6 +431,17 @@ export default function AdminCustomersPage() {
           customer={selectedCustomer}
           open={showDetailDialog}
           onOpenChange={setShowDetailDialog}
+          onViewHistory={() => setShowHistoryDialog(true)}
+        />
+      )}
+
+      {selectedCustomer && (
+        <ChangeHistoryDialog
+          open={showHistoryDialog}
+          onClose={() => setShowHistoryDialog(false)}
+          title="Customer change history"
+          loadHistory={loadCustomerHistory}
+          onRevert={handleRevertCustomer}
         />
       )}
 

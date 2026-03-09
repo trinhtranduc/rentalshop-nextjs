@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
 import {API} from '@rentalshop/constants';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 /**
  * GET /api/customers/[id]
@@ -172,6 +186,16 @@ export async function PUT(
 
       // Update the customer using the simplified database API (use parsed data)
       const updatedCustomer = await db.customers.update(customerId, parsed.data);
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Customer',
+        entityId: String(customerId),
+        entityName: [existingCustomer.firstName, existingCustomer.lastName].filter(Boolean).join(' ') || existingCustomer.phone || String(customerId),
+        oldValues: existingCustomer as Record<string, any>,
+        newValues: updatedCustomer as Record<string, any>,
+        description: `Customer updated`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log update failed:', err));
       console.log('✅ Customer updated successfully:', updatedCustomer);
 
       // Normalize date fields to UTC ISO strings using toISOString()
@@ -280,6 +304,15 @@ export async function DELETE(
 
       // Soft delete by setting isActive to false
       const deletedCustomer = await db.customers.update(customerId, { isActive: false });
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logDelete({
+        entityType: 'Customer',
+        entityId: String(customerId),
+        entityName: [existingCustomer.firstName, existingCustomer.lastName].filter(Boolean).join(' ') || existingCustomer.phone || String(customerId),
+        oldValues: existingCustomer as Record<string, any>,
+        description: `Customer deleted`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log delete failed:', err));
       console.log('✅ Customer soft deleted successfully:', deletedCustomer);
 
       // Normalize date fields to UTC ISO strings using toISOString()

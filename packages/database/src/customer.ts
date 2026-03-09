@@ -621,6 +621,23 @@ export const simplifiedCustomers = {
   },
 
   /**
+   * Restore soft-deleted customer (set deletedAt null, isActive true)
+   */
+  restore: async (id: number) => {
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true, isActive: true }
+    });
+    if (!customer) throw new Error(`Customer with id ${id} not found`);
+    if (!customer.deletedAt && customer.isActive) throw new Error(`Customer with id ${id} is not deleted`);
+    return await prisma.customer.update({
+      where: { id },
+      data: { deletedAt: null, isActive: true },
+      include: { merchant: { select: { id: true, name: true } } }
+    });
+  },
+
+  /**
    * Search customers with pagination (simplified API)
    */
   search: async (filters: any) => {

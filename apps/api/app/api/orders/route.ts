@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { 
   ordersQuerySchema, 
@@ -19,13 +19,26 @@ import {
   extractStagingKeysFromUrls,
   mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
-import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
+import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 /**
  * GET /api/orders
@@ -723,6 +736,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     
     // Use simplified database API
     const order = await db.orders.create(orderData);
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logCreate({
+      entityType: 'Order',
+      entityId: String(order.id),
+      entityName: order.orderNumber || String(order.id),
+      newValues: { orderNumber: order.orderNumber, orderType: order.orderType, status: order.status, outletId: order.outletId, customerId: order.customerId },
+      description: `Order created: ${order.orderNumber || order.id}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log create failed:', err));
     console.log('✅ Order created successfully:', order);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
@@ -1015,6 +1037,16 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
     
     // Use simplified database API with basic update
     const updatedOrder = await db.orders.update(id, updateData);
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logUpdate({
+      entityType: 'Order',
+      entityId: String(id),
+      entityName: existingOrder.orderNumber || String(id),
+      oldValues: existingOrder as Record<string, any>,
+      newValues: updatedOrder as Record<string, any>,
+      description: `Order updated: ${existingOrder.orderNumber || id}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log update failed:', err));
     console.log('✅ Order updated successfully:', updatedOrder);
 
     return NextResponse.json({

@@ -6,11 +6,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
-import { captureAuditContext } from '@rentalshop/middleware';
+import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 export interface UserFilters {
   role?: UserRole;
@@ -252,7 +264,16 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     }
 
     const newUser = await db.users.create(userData);
-    
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logCreate({
+      entityType: 'User',
+      entityId: String(newUser.id),
+      entityName: newUser.email,
+      newValues: { email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName, role: newUser.role, merchantId: newUser.merchantId, outletId: newUser.outletId },
+      description: `User created: ${newUser.email}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log create failed:', err));
+
     console.log(`✅ Created user: ${newUser.email} (ID: ${newUser.id})`);
 
     return NextResponse.json({
@@ -334,7 +355,19 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
 
     const updatedUser = await db.users.update(id, updateData);
-    
+    const auditHelper = createAuditHelper(prisma);
+    const { password: _p1, ...existingSafe } = existingUser as any;
+    const { password: _p2, ...updatedSafe } = updatedUser as any;
+    await auditHelper.logUpdate({
+      entityType: 'User',
+      entityId: String(id),
+      entityName: updatedUser.email,
+      oldValues: existingSafe,
+      newValues: updatedSafe,
+      description: `User updated: ${updatedUser.email}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log update failed:', err));
+
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
 
     // If user is being deactivated, invalidate all their sessions to force logout
@@ -441,7 +474,17 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     // Soft delete user (preserves order history and frees addon slot)
     // Soft deleted users are automatically excluded from queries and plan limit counts
     const deletedUser = await db.users.softDelete(userId);
-    
+    const auditHelper = createAuditHelper(prisma);
+    const { password: _p, ...existingSafe } = existingUser as any;
+    await auditHelper.logDelete({
+      entityType: 'User',
+      entityId: String(userId),
+      entityName: existingUser.email,
+      oldValues: existingSafe,
+      description: `User deleted: ${existingUser.email}`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log delete failed:', err));
+
     console.log(`✅ User soft deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({

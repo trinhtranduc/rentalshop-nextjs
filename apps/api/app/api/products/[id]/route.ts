@@ -15,9 +15,22 @@ import {
   extractStagingKeysFromUrls,
   mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
-import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl } from '@rentalshop/utils/server';
+import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 /**
  * Helper function to validate image file
@@ -536,6 +549,16 @@ export async function PUT(
 
       // Update the product using the simplified database API with nested write
       const updatedProduct = await db.products.update(productId, finalUpdateData);
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Product',
+        entityId: String(productId),
+        entityName: existingProduct.name,
+        oldValues: existingProduct as Record<string, any>,
+        newValues: updatedProduct as Record<string, any>,
+        description: `Product updated: ${existingProduct.name}`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log update failed:', err));
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
       // Sync Product.totalStock = sum of all OutletStock.stock
@@ -812,6 +835,16 @@ export async function DELETE(
       // ============================================================================
       // Note: Order items store product info separately (productId, productName, productBarcode, productImages)
       // so product records can be safely deleted without losing order history
+
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logDelete({
+        entityType: 'Product',
+        entityId: String(productId),
+        entityName: existingProduct.name,
+        oldValues: existingProduct as Record<string, any>,
+        description: `Product deleted: ${existingProduct.name}`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log delete failed:', err));
       
       // Get product info before deletion for response
       const productInfo = {
