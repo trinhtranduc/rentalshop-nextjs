@@ -27,7 +27,9 @@ import {
   Wrench,
   Key,
   Download,
-  AlertTriangle
+  AlertTriangle,
+  ScrollText,
+  Trash2
 } from 'lucide-react';
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -87,7 +89,8 @@ export function TopNavigation({
       subItems: [
         { href: '/system/backup', label: 'Backup Management', icon: Database },
         { href: '/system/integrity', label: 'Data Integrity', icon: ShieldCheck },
-        { href: '/system/audit-logs', label: 'Audit Logs', icon: FileText }
+        { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
+        { href: '/system/deleted-records', label: 'Deleted Records', icon: Trash2 }
       ]
     },
 
