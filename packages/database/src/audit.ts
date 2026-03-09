@@ -324,7 +324,9 @@ export class AuditLogger {
               lastName: true,
               role: true
             }
-          }
+          },
+          merchant: { select: { id: true, name: true } },
+          outlet: { select: { id: true, name: true } }
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
