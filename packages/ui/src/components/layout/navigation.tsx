@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Tag,
   ShoppingCart,
-  Building2
+  Building2,
+  ScrollText,
+  Trash2
 } from 'lucide-react'
 import { Button } from '@rentalshop/ui'
 
@@ -54,6 +56,8 @@ export function Navigation({
     { href: '/products', label: 'Products', icon: Store },
     { href: '/categories', label: 'Categories', icon: Tag },
     { href: '/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
+    { href: '/system/deleted-records', label: 'Deleted Records', icon: Trash2 },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
 

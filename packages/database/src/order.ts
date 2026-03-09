@@ -907,6 +907,22 @@ export const simplifiedOrders = {
   },
 
   /**
+   * Restore soft-deleted order (clear deletedAt)
+   */
+  restore: async (id: number) => {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true }
+    });
+    if (!order) throw new Error(`Order with id ${id} not found`);
+    if (!order.deletedAt) throw new Error(`Order with id ${id} is not deleted`);
+    return await prisma.order.update({
+      where: { id },
+      data: { deletedAt: null }
+    });
+  },
+
+  /**
    * Delete order (simplified API) - DEPRECATED, use softDelete instead
    */
   delete: async (id: number) => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { 
   ResponseBuilder, 
   handleApiError, 
@@ -12,11 +12,24 @@ import {
   extractStagingKeysFromUrls,
   mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
-import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
+import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 
 /**
  * Helper function to validate image file
@@ -537,6 +550,16 @@ export const PUT = async (
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logUpdate({
+        entityType: 'Order',
+        entityId: String(orderIdNum),
+        entityName: existingOrder.orderNumber || String(orderIdNum),
+        oldValues: existingOrder as Record<string, any>,
+        newValues: updatedOrder as Record<string, any>,
+        description: `Order updated: ${existingOrder.orderNumber || orderIdNum}`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log update failed:', err));
       console.log('✅ Order updated successfully:', updatedOrder);
 
       // Get full order details after update (with all relations)
@@ -754,6 +777,15 @@ export const DELETE = async (
 
       // Soft delete the order
       await db.orders.softDelete(orderIdNum);
+      const auditHelper = createAuditHelper(prisma);
+      await auditHelper.logDelete({
+        entityType: 'Order',
+        entityId: String(orderIdNum),
+        entityName: existingOrder.orderNumber || String(orderIdNum),
+        oldValues: existingOrder as Record<string, any>,
+        description: `Order deleted: ${existingOrder.orderNumber || orderIdNum}`,
+        context: buildAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log delete failed:', err));
       console.log('✅ Order soft deleted successfully:', orderIdNum);
 
       return NextResponse.json(

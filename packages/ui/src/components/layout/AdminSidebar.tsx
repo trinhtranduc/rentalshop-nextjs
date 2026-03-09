@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
@@ -29,7 +29,9 @@ import {
   RefreshCw,
   FolderTree,
   Tag,
-  UserCircle
+  UserCircle,
+  ScrollText,
+  Trash2
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -135,6 +137,16 @@ const adminMenuItems: MenuItem[] = [
         label: 'Plans', 
         href: '/plans', 
         icon: Package 
+      },
+      { 
+        label: 'Audit Logs', 
+        href: '/system/audit-logs', 
+        icon: ScrollText 
+      },
+      { 
+        label: 'Deleted Records', 
+        href: '/system/deleted-records', 
+        icon: Trash2 
       }
     ]
   },
@@ -159,6 +171,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const pathname = usePathname();
   const { navigatingTo, navigate, prefetch } = useOptimisticNavigation();
+
+  // Auto-expand Settings when on system pages (e.g. /system/audit-logs, /system/deleted-records)
+  useEffect(() => {
+    if (pathname.startsWith('/system') && !expandedItems.includes('/settings')) {
+      setExpandedItems(prev => (prev.includes('/settings') ? prev : [...prev, '/settings']));
+    }
+  }, [pathname]);
 
   const toggleExpanded = (href: string) => {
     setExpandedItems(prev => 

@@ -16,7 +16,9 @@ import {
   BarChart3,
   Shield,
   Calendar,
-  Clock
+  Clock,
+  ScrollText,
+  Trash2
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -55,6 +57,8 @@ export function ServerTopNavigation({
     { href: '/plans', label: 'Plans', icon: Package },
     { href: '/subscriptions', label: 'Subscriptions', icon: Clock },
     { href: '/payments', label: 'Payments', icon: CreditCard },
+    { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
+    { href: '/system/deleted-records', label: 'Deleted Records', icon: Trash2 },
     { href: '/settings', label: 'Settings', icon: Settings },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/security', label: 'Security', icon: Shield },

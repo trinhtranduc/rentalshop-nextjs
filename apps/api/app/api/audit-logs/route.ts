@@ -1,67 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { prisma } from '@rentalshop/database';
-import { AuditLogger } from '@rentalshop/database';
+import { getAuditLogger, prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/audit-logs - Get audit logs with filtering and pagination
- * REFACTORED: Now uses unified withAuthRoles pattern
+ * ADMIN: all logs; MERCHANT: filtered by merchantId; OUTLET_ADMIN: filtered by outletId
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
-  console.log(`🔍 GET /api/audit-logs - Admin: ${user.email}`);
-  
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   try {
-
     const { searchParams } = new URL(request.url);
-    
-    // Parse filter parameters
-    const filter = {
-      search: searchParams.get('q') || searchParams.get('search') || undefined,
+    const filter: Record<string, any> = {
       action: searchParams.get('action') || undefined,
       entityType: searchParams.get('entityType') || undefined,
       entityId: searchParams.get('entityId') || undefined,
       userId: searchParams.get('userId') ? parseInt(searchParams.get('userId')!) : undefined,
       merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
       outletId: searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!) : undefined,
-      severity: searchParams.get('severity') || undefined,
-      category: searchParams.get('category') || undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
+      limit: Math.min(parseInt(searchParams.get('limit') || '50') || 50, 100),
+      offset: Math.max(0, parseInt(searchParams.get('offset') || '0') || 0)
     };
 
-    // Validate limit and offset
-    if (filter.limit > 100) filter.limit = 100;
-    if (filter.offset < 0) filter.offset = 0;
+    // Role-based scope: non-ADMIN users only see their scope
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (userScope.merchantId != null) filter.merchantId = userScope.merchantId;
+      if (userScope.outletId != null) filter.outletId = userScope.outletId;
+    }
 
-    // TODO: Fix AuditLogger constructor - needs proper PrismaClient type
-    // const auditLogger = new AuditLogger(db);
-    // For now, return placeholder data
-    const result = {
-      logs: [],
-      total: 0,
-      hasMore: false
-    };
-    // const result = await auditLogger.getAuditLogs(filter);
-
+    const auditLogger = getAuditLogger(prisma);
+    const result = await auditLogger.getAuditLogs(filter);
     return NextResponse.json({
       success: true,
       data: result.logs,
-      pagination: {
-        total: result.total,
-        limit: filter.limit,
-        offset: filter.offset,
-        hasMore: result.hasMore
-      }
+      pagination: { total: result.total, limit: filter.limit, offset: filter.offset, hasMore: result.hasMore }
     });
-
   } catch (error) {
     console.error('Error fetching audit logs:', error);
-    
-    // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

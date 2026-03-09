@@ -19,7 +19,9 @@ import {
   UserPlus,
   TrendingUp,
   FileText,
-  UserCircle
+  UserCircle,
+  ScrollText,
+  Trash2
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -109,6 +111,18 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       href: '/posts',
       icon: FileText,
       current: pathname.startsWith('/posts')
+    },
+    {
+      name: 'Audit Logs',
+      href: '/system/audit-logs',
+      icon: ScrollText,
+      current: pathname.startsWith('/system/audit-logs')
+    },
+    {
+      name: 'Deleted Records',
+      href: '/system/deleted-records',
+      icon: Trash2,
+      current: pathname.startsWith('/system/deleted-records')
     },
     {
       name: 'Settings',

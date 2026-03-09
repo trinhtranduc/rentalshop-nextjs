@@ -656,6 +656,10 @@ export const simplifiedUsers = {
     return await softDeleteUser(id);
   },
 
+  restore: async (id: number) => {
+    return await restoreUser(id);
+  },
+
   /**
    * Delete user (hard delete) (simplified API)
    * Hard delete removes user from database permanently.

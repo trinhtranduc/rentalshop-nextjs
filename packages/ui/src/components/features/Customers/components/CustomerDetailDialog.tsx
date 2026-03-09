@@ -10,7 +10,7 @@ import {
   DialogFooter,
   Button
 } from '@rentalshop/ui';
-import { Trash2 } from 'lucide-react';
+import { Trash2, History } from 'lucide-react';
 import type { Customer } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
@@ -20,13 +20,15 @@ interface CustomerDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   customer?: Customer | null;
   onDelete?: (customerId: number) => Promise<void>;
+  onViewHistory?: () => void;
 }
 
 export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   open,
   onOpenChange,
   customer,
-  onDelete
+  onDelete,
+  onViewHistory
 }) => {
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
@@ -149,7 +151,17 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
           </div>
 
           <DialogFooter className="px-6 py-4 border-t flex justify-between">
-            <div>
+            <div className="flex space-x-2">
+              {onViewHistory && (
+                <Button
+                  variant="outline"
+                  onClick={onViewHistory}
+                  className="flex items-center space-x-2"
+                >
+                  <History className="w-4 h-4" />
+                  <span>View History</span>
+                </Button>
+              )}
               {onDelete && (
                 <Button
                   variant="destructive"

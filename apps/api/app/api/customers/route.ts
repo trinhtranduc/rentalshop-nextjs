@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { 
   customersQuerySchema, 
   customerCreateSchema, 
@@ -8,9 +8,22 @@ import {
   handleApiError, 
   ResponseBuilder
 } from '@rentalshop/utils';
-import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
+import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
+
+function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
+  return {
+    userId: String(user.id),
+    userEmail: user.email,
+    userRole: user.role,
+    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    requestId: request.headers.get('x-request-id') || undefined
+  };
+}
 import crypto from 'crypto';
 import { z } from 'zod';
 
@@ -337,6 +350,15 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     
     // Use simplified database API
     const customer = await db.customers.create(customerData);
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logCreate({
+      entityType: 'Customer',
+      entityId: String(customer.id),
+      entityName: [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.phone || customer.email || String(customer.id),
+      newValues: { firstName: customer.firstName, lastName: customer.lastName, phone: customer.phone, email: customer.email, merchantId: customer.merchantId },
+      description: `Customer created`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log create failed:', err));
     console.log('✅ Customer created successfully:', customer);
 
     // Normalize date fields to UTC ISO strings using toISOString()
@@ -479,6 +501,16 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
     
     // Use simplified database API
     const updatedCustomer = await db.customers.update(id, parsed);
+    const auditHelper = createAuditHelper(prisma);
+    await auditHelper.logUpdate({
+      entityType: 'Customer',
+      entityId: String(id),
+      entityName: [existingCustomer.firstName, existingCustomer.lastName].filter(Boolean).join(' ') || existingCustomer.phone || String(id),
+      oldValues: existingCustomer as Record<string, any>,
+      newValues: updatedCustomer as Record<string, any>,
+      description: `Customer updated`,
+      context: buildAuditContext(request, user, userScope)
+    }).catch((err) => console.error('Audit log update failed:', err));
     console.log('✅ Customer updated successfully:', updatedCustomer);
 
     // Normalize date fields to UTC ISO strings using toISOString()

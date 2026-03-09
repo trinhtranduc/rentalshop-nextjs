@@ -88,6 +88,7 @@ export interface ApiUrls {
     create: string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    history: (id: number) => string;
     batchDelete: string;
     stats: string;
     export: string;
@@ -271,6 +272,7 @@ export interface ApiUrls {
     stats: string;
     health: string;
     logs: string;
+    deletedRecords: string;
   };
   notifications: {
     list: string;
@@ -613,6 +615,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/customers`,
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
+      history: (id: number) => `${base}/api/customers/${id}/history`,
       batchDelete: `${base}/api/customers/batch-delete`,
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
@@ -796,6 +799,7 @@ function createApiUrls(): ApiUrls {
     stats: `${base}/api/system/stats`,
     health: `${base}/api/system/health`,
     logs: `${base}/api/system/logs`,
+    deletedRecords: `${base}/api/deleted-records`,
   },
     notifications: {
       list: `${base}/api/notifications`,

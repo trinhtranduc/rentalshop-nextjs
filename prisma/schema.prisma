@@ -104,6 +104,7 @@ model Merchant {
   products        Product[]
   subscription    Subscription?
   users           User[]
+  auditLogs       AuditLog[]
   requestLogs     RequestLog[]     @relation("RequestLogs")
   planLimitAddons PlanLimitAddon[]
   referredBy      Merchant?        @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
@@ -133,6 +134,7 @@ model Outlet {
   avatar       String?
   bankAccounts BankAccount[]
   orders       Order[]
+  auditLogs    AuditLog[]
   merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products     OutletStock[]
   users        User[]
@@ -439,21 +441,27 @@ model PlanLimitAddon {
 }
 
 model AuditLog {
-  id         Int      @id @default(autoincrement())
-  entityType String
-  entityId   String
-  action     String
-  details    String
-  userId     Int?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id])
+  id          Int       @id @default(autoincrement())
+  entityType  String
+  entityId    String
+  action      String
+  details     String
+  userId      Int?
+  merchantId  Int?
+  outletId    Int?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  user        User?     @relation(fields: [userId], references: [id])
+  merchant    Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  outlet      Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@index([merchantId, createdAt])
+  @@index([outletId, createdAt])
 }
 
 model RequestLog {

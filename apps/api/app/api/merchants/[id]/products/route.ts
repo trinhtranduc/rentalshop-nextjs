@@ -109,6 +109,8 @@ export async function POST(
       const body = await request.json();
       const { name, description, barcode, categoryId, rentPrice, salePrice, deposit, totalStock, images } = body;
 
+      const imageUrls = Array.isArray(images) ? images : images ? [images] : [];
+
       // Create new product
       const newProduct = await db.products.create({
         name,
@@ -120,10 +122,22 @@ export async function POST(
         deposit,
         totalStock,
         // ✅ STANDARDIZED: Always store as array, Prisma will serialize to JSON
-        images: Array.isArray(images) ? images : images ? [images] : [],
+        images: imageUrls,
         merchantId: merchant.id,
         isActive: true
       });
+
+      // Push to Qdrant for image search (same as POST /api/products)
+      if (imageUrls.length > 0 && newProduct?.id) {
+        try {
+          const { generateProductEmbedding } = await import('@rentalshop/database/server');
+          generateProductEmbedding(newProduct.id)
+            .then(() => console.log(`✅ Embedding generated for product ${newProduct.id}`))
+            .catch((err: unknown) => console.error(`❌ Embedding generation failed for product ${newProduct.id}:`, err));
+        } catch (err) {
+          console.error('Failed to start embedding generation:', err);
+        }
+      }
 
       return NextResponse.json({
         success: true,

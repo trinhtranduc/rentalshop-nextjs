@@ -40,6 +40,7 @@ export * from './components/features/ApiManagement';
 export * from './components/features/SystemLogs';
 export * from './components/features/Security';
 export * from './components/features/AuditLogs';
+export * from './components/features/ChangeHistory';
 
 // TODO: Uncomment when component files are created
 export * from './components/features/OrderDetail';
