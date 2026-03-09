@@ -51,44 +51,22 @@ import { AuditLogDetail } from '@rentalshop/ui';
 // Quick filter buttons for common scenarios
 const QuickFilters = ({ onApplyFilter }: { onApplyFilter: (filter: Partial<AuditLogFilter>) => void }) => {
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onApplyFilter({ severity: 'CRITICAL' })}
-        className="flex items-center gap-1"
-      >
-        <XCircle className="w-3 h-3" />
-        Critical Only
+    <div className="flex flex-wrap gap-1.5">
+      <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => onApplyFilter({ severity: 'CRITICAL' })}>
+        <XCircle className="w-3 h-3 mr-1" />
+        Critical
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onApplyFilter({ category: 'SECURITY' })}
-        className="flex items-center gap-1"
-      >
-        <Shield className="w-3 h-3" />
-        Security Events
+      <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => onApplyFilter({ category: 'SECURITY' })}>
+        <Shield className="w-3 h-3 mr-1" />
+        Security
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onApplyFilter({ action: 'DELETE' })}
-        className="flex items-center gap-1"
-      >
-        <AlertTriangle className="w-3 h-3" />
+      <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => onApplyFilter({ action: 'DELETE' })}>
+        <AlertTriangle className="w-3 h-3 mr-1" />
         Deletions
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onApplyFilter({ 
-          startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        })}
-        className="flex items-center gap-1"
-      >
-        <Clock className="w-3 h-3" />
-        Last 24 Hours
+      <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={() => onApplyFilter({ startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })}>
+        <Clock className="w-3 h-3 mr-1" />
+        Last 24h
       </Button>
     </div>
   );
@@ -131,26 +109,26 @@ const StatsCards = ({ stats }: { stats: AuditLogStats | null }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
       {statCards.map((stat, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-secondary mb-1">
+        <Card key={index} className="hover:shadow-sm transition-shadow">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-text-secondary truncate">
                   {stat.title}
                 </p>
-                <p className="text-2xl font-bold text-text-primary">
+                <p className="text-lg font-bold text-text-primary leading-tight">
                   {stat.value}
                 </p>
                 {stat.subtitle && (
-                  <p className="text-xs text-text-tertiary mt-1">
+                  <p className="text-[10px] text-text-tertiary">
                     {stat.subtitle}
                   </p>
                 )}
               </div>
-              <div className={`${stat.bgColor} ${stat.color} p-3 rounded-lg`}>
-                <stat.icon className="w-6 h-6" />
+              <div className={`${stat.bgColor} ${stat.color} p-2 rounded-md flex-shrink-0`}>
+                <stat.icon className="w-4 h-4" />
               </div>
             </div>
           </CardContent>
@@ -185,15 +163,16 @@ function ActionBadge({ action }: { action: string }) {
     CREATE: 'bg-green-100 text-green-800 border-green-200',
     UPDATE: 'bg-blue-100 text-blue-800 border-blue-200',
     DELETE: 'bg-red-100 text-red-800 border-red-200',
+    RESTORE: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     LOGIN: 'bg-purple-100 text-purple-800 border-purple-200',
     LOGOUT: 'bg-gray-100 text-gray-800 border-gray-200',
     VIEW: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   }[action] || 'bg-gray-100 text-gray-800 border-gray-200';
 
-  return <Badge className={config}>{action}</Badge>;
+  return <Badge className={`text-[10px] px-1.5 py-0 ${config}`}>{action}</Badge>;
 }
 
-// Enhanced Log Row
+// Compact table row for audit log
 function AuditLogRow({ log, onViewDetails }: { log: AuditLog; onViewDetails: (log: AuditLog) => void }) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -205,77 +184,65 @@ function AuditLogRow({ log, onViewDetails }: { log: AuditLog; onViewDetails: (lo
   };
 
   return (
-    <Card className="mb-3 hover:shadow-md transition-all hover:border-action-primary/20">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <ActionBadge action={log.action} />
-              <SeverityBadge severity={log.severity} />
-              <Badge variant="outline" className="text-xs">
-                {log.category}
-              </Badge>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-text-primary">
-                  {log.entityType}
-                </span>
-                <span className="text-text-secondary">→</span>
-                <span className="text-text-primary truncate">
-                  {log.entityName || log.entityId}
-                </span>
-              </div>
-              
-              {log.description && (
-                <p className="text-sm text-text-secondary line-clamp-2">
-                  {log.description}
-                </p>
-              )}
-              
-              <div className="flex items-center gap-4 text-xs text-text-tertiary mt-2">
-                {log.user && (
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    <span>{log.user.name}</span>
-                    <Badge variant="outline" className="text-xs ml-1">
-                      {log.user.role}
-                    </Badge>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>{formatDate(log.createdAt)}</span>
-                </div>
-                
-                {log.ipAddress && (
-                  <div className="flex items-center gap-1">
-                    <Database className="w-3 h-3" />
-                    <span>{log.ipAddress}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewDetails(log)}
-            className="flex-shrink-0"
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            Details
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <tr
+      className="border-b border-border hover:bg-bg-secondary/50 transition-colors group"
+    >
+      <td className="py-2 px-3 text-xs whitespace-nowrap">
+        <ActionBadge action={log.action} />
+      </td>
+      <td className="py-2 px-3 text-xs">
+        <span className="font-medium text-text-primary">{log.entityType}</span>
+        <span className="text-text-secondary mx-1">·</span>
+        <span className="text-text-primary truncate max-w-[140px] inline-block align-bottom" title={log.entityName || log.entityId}>
+          {log.entityName || log.entityId}
+        </span>
+      </td>
+      <td className="py-2 px-3 text-xs text-text-secondary line-clamp-1 max-w-[180px]" title={log.description}>
+        {log.description || '—'}
+      </td>
+      <td className="py-2 px-3 text-xs text-text-tertiary">
+        {log.user ? (
+          <span className="truncate max-w-[100px] inline-block" title={log.user.name}>
+            {log.user.name}
+          </span>
+        ) : '—'}
+      </td>
+      <td className="py-2 px-3 text-xs text-text-secondary">
+        {log.merchant ? (
+          <span className="truncate max-w-[120px] inline-block" title={log.merchant.name}>
+            {log.merchant.name}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        )}
+      </td>
+      <td className="py-2 px-3 text-xs text-text-secondary">
+        {log.outlet ? (
+          <span className="truncate max-w-[120px] inline-block" title={log.outlet.name}>
+            {log.outlet.name}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        )}
+      </td>
+      <td className="py-2 px-3 text-xs text-text-tertiary whitespace-nowrap">
+        {formatDate(log.createdAt)}
+      </td>
+      <td className="py-2 px-3 text-right">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs opacity-70 group-hover:opacity-100"
+          onClick={() => onViewDetails(log)}
+        >
+          <Eye className="w-3.5 h-3.5" />
+        </Button>
+      </td>
+    </tr>
   );
 }
 
-// Enhanced Filters Component
+// Filters Component - prominent, always visible, apply on change or via Apply
 function EnhancedFilters({ 
   filter, 
   onFilterChange, 
@@ -285,8 +252,11 @@ function EnhancedFilters({
   onFilterChange: (filter: AuditLogFilter) => void; 
   onReset: () => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [localFilter, setLocalFilter] = useState(filter);
+
+  useEffect(() => {
+    setLocalFilter(filter);
+  }, [filter.limit, filter.offset, filter.action, filter.merchantId, filter.outletId]);
 
   const handleApply = () => {
     onFilterChange(localFilter);
@@ -300,144 +270,161 @@ function EnhancedFilters({
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
+    <Card className="mb-4 border-2 border-action-primary/20 bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-950/20 dark:to-transparent shadow-sm">
+      <CardHeader className="py-3 px-4 border-b border-border">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filters
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <div className="p-1.5 rounded-md bg-action-primary/10">
+              <Filter className="w-4 h-4 text-action-primary" />
+            </div>
+            Bộ lọc Audit Logs
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? 'Collapse' : 'Expand'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onReset}>
+              Reset
+            </Button>
+            <Button size="sm" onClick={handleApply} className="bg-action-primary hover:opacity-90">
+              Áp dụng
+            </Button>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="py-4 px-4">
         <div className="space-y-4">
-          {/* Always visible filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Action</label>
-              <Select
-                value={localFilter.action || 'all'}
-                onValueChange={(value) => updateFilter('action', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All actions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All actions</SelectItem>
-                  <SelectItem value="CREATE">CREATE</SelectItem>
-                  <SelectItem value="UPDATE">UPDATE</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                  <SelectItem value="LOGIN">LOGIN</SelectItem>
-                  <SelectItem value="LOGOUT">LOGOUT</SelectItem>
-                  <SelectItem value="VIEW">VIEW</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Severity</label>
-              <Select
-                value={localFilter.severity || 'all'}
-                onValueChange={(value) => updateFilter('severity', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All severities" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All severities</SelectItem>
-                  <SelectItem value="INFO">INFO</SelectItem>
-                  <SelectItem value="WARNING">WARNING</SelectItem>
-                  <SelectItem value="ERROR">ERROR</SelectItem>
-                  <SelectItem value="CRITICAL">CRITICAL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
-              <Select
-                value={localFilter.category || 'all'}
-                onValueChange={(value) => updateFilter('category', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  <SelectItem value="GENERAL">GENERAL</SelectItem>
-                  <SelectItem value="SECURITY">SECURITY</SelectItem>
-                  <SelectItem value="BUSINESS">BUSINESS</SelectItem>
-                  <SelectItem value="SYSTEM">SYSTEM</SelectItem>
-                  <SelectItem value="COMPLIANCE">COMPLIANCE</SelectItem>
-                </SelectContent>
-              </Select>
+          <div>
+            <p className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">Nhanh</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Action</label>
+                <Select
+                  value={localFilter.action || 'all'}
+                  onValueChange={(value) => updateFilter('action', value)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All actions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="CREATE">CREATE</SelectItem>
+                    <SelectItem value="UPDATE">UPDATE</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                    <SelectItem value="RESTORE">RESTORE</SelectItem>
+                    <SelectItem value="LOGIN">LOGIN</SelectItem>
+                    <SelectItem value="LOGOUT">LOGOUT</SelectItem>
+                    <SelectItem value="VIEW">VIEW</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Severity</label>
+                <Select
+                  value={localFilter.severity || 'all'}
+                  onValueChange={(value) => updateFilter('severity', value)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All severities" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="INFO">INFO</SelectItem>
+                    <SelectItem value="WARNING">WARNING</SelectItem>
+                    <SelectItem value="ERROR">ERROR</SelectItem>
+                    <SelectItem value="CRITICAL">CRITICAL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Category</label>
+                <Select
+                  value={localFilter.category || 'all'}
+                  onValueChange={(value) => updateFilter('category', value)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="GENERAL">GENERAL</SelectItem>
+                    <SelectItem value="SECURITY">SECURITY</SelectItem>
+                    <SelectItem value="BUSINESS">BUSINESS</SelectItem>
+                    <SelectItem value="SYSTEM">SYSTEM</SelectItem>
+                    <SelectItem value="COMPLIANCE">COMPLIANCE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Merchant ID</label>
+                <Input
+                  type="number"
+                  placeholder="ID merchant"
+                  className="h-9"
+                  value={localFilter.merchantId ?? ''}
+                  onChange={(e) => updateFilter('merchantId', e.target.value ? e.target.value : undefined)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Outlet ID</label>
+                <Input
+                  type="number"
+                  placeholder="ID outlet"
+                  className="h-9"
+                  value={localFilter.outletId ?? ''}
+                  onChange={(e) => updateFilter('outletId', e.target.value ? e.target.value : undefined)}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Expandable filters */}
-          {isExpanded && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Entity Type</label>
+          <div className="pt-3 border-t border-border">
+            <p className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">Chi tiết</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Entity Type</label>
                 <Input
-                  placeholder="e.g., User, Product"
+                  placeholder="User, Product, Order..."
+                  className="h-9"
                   value={localFilter.entityType || ''}
                   onChange={(e) => updateFilter('entityType', e.target.value)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Entity ID</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Entity ID</label>
                 <Input
-                  placeholder="Enter entity ID"
+                  placeholder="ID thực thể"
+                  className="h-9"
                   value={localFilter.entityId || ''}
                   onChange={(e) => updateFilter('entityId', e.target.value)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">User ID</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">User ID</label>
                 <Input
-                  placeholder="Enter user ID"
-                  value={localFilter.userId || ''}
-                  onChange={(e) => updateFilter('userId', e.target.value)}
+                  type="number"
+                  placeholder="ID user"
+                  className="h-9"
+                  value={localFilter.userId ?? ''}
+                  onChange={(e) => updateFilter('userId', e.target.value ? e.target.value : undefined)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Start Date</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Từ ngày</label>
                 <Input
                   type="datetime-local"
+                  className="h-9 text-xs"
                   value={localFilter.startDate || ''}
                   onChange={(e) => updateFilter('startDate', e.target.value)}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">End Date</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-text-secondary">Đến ngày</label>
                 <Input
                   type="datetime-local"
+                  className="h-9 text-xs"
                   value={localFilter.endDate || ''}
                   onChange={(e) => updateFilter('endDate', e.target.value)}
                 />
               </div>
             </div>
-          )}
-
-          <div className="flex items-center justify-between pt-4 border-t">
-            <Button variant="outline" onClick={onReset}>
-              Reset All
-            </Button>
-            <Button onClick={handleApply}>
-              Apply Filters
-            </Button>
           </div>
         </div>
       </CardContent>
@@ -452,7 +439,7 @@ export default function SystemAuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [filter, setFilter] = useState<AuditLogFilter>({
-    limit: 20,
+    limit: 50,
     offset: 0
   });
   
@@ -460,7 +447,7 @@ export default function SystemAuditLogsPage() {
     pagination,
     handlePageChange,
     updatePaginationFromResponse
-  } = usePagination({ initialLimit: 20, initialOffset: 0 });
+  } = usePagination({ initialLimit: 50, initialOffset: 0 });
   
   const { toastError } = useToast();
 
@@ -514,7 +501,7 @@ export default function SystemAuditLogsPage() {
 
   // Handle filter reset
   const handleFilterReset = () => {
-    const resetFilter = { limit: 20, offset: 0 };
+    const resetFilter = { limit: pagination.limit, offset: 0 };
     setFilter(resetFilter);
     loadAuditLogs(resetFilter);
   };
@@ -543,23 +530,41 @@ export default function SystemAuditLogsPage() {
   }, []);
 
   return (
-    <PageWrapper maxWidth="7xl" padding="md" spacing="md">
+    <PageWrapper maxWidth="7xl" padding="sm" spacing="sm">
       <PageHeader>
-        <div className="flex items-center justify-between">
-          <PageTitle subtitle="Track all system changes, user actions, and security events across the platform">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <PageTitle subtitle="Track system changes and security events">
             <div className="flex items-center gap-2">
-              <Shield className="w-8 h-8 text-action-primary" />
-              System Audit Logs
+              <Shield className="w-6 h-6 text-action-primary" />
+              <span className="text-lg">Audit Logs</span>
             </div>
           </PageTitle>
           <div className="flex items-center gap-2">
+            <Select
+              value={String(pagination.limit)}
+              onValueChange={(v) => {
+                const limit = Number(v);
+                setFilter((f) => ({ ...f, limit, offset: 0 }));
+                loadAuditLogs({ ...filter, limit, offset: 0 });
+              }}
+            >
+              <SelectTrigger className="w-[100px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               size="sm"
+              className="h-8"
               onClick={() => loadAuditLogs()}
               disabled={loading}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
@@ -567,72 +572,80 @@ export default function SystemAuditLogsPage() {
       </PageHeader>
       
       <PageContent>
-        {/* Stats Cards */}
         <StatsCards stats={stats} />
 
-        {/* Quick Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium mb-2">Quick Filters</h3>
-                <QuickFilters onApplyFilter={handleQuickFilter} />
-              </div>
+        {/* Quick Filters - compact */}
+        <Card className="mb-4">
+          <CardContent className="py-2 px-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-text-secondary mr-1">Quick:</span>
+              <QuickFilters onApplyFilter={handleQuickFilter} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Enhanced Filters */}
         <EnhancedFilters
           filter={filter}
           onFilterChange={handleFilterChange}
           onReset={handleFilterReset}
         />
 
-        {/* Audit Logs List */}
+        {/* Audit Logs Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                <span>Audit Logs</span>
-                <Badge variant="outline" className="ml-2">
+                <Activity className="w-4 h-4" />
+                <span>Logs</span>
+                <Badge variant="outline" className="text-xs">
                   {pagination.total} total
                 </Badge>
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-action-primary" />
-                <p className="text-text-secondary">Loading audit logs...</p>
+              <div className="text-center py-8">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-action-primary" />
+                <p className="text-sm text-text-secondary">Loading...</p>
               </div>
             ) : logs.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 mx-auto mb-4 text-text-tertiary" />
-                <p className="text-text-secondary text-lg mb-2">No audit logs found</p>
-                <p className="text-text-tertiary text-sm">
-                  Try adjusting your filters or check back later
-                </p>
+              <div className="text-center py-8">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-text-tertiary" />
+                <p className="text-sm text-text-secondary">No audit logs found</p>
               </div>
             ) : (
-              <div className="space-y-0">
-                {logs.map((log) => (
-                  <AuditLogRow
-                    key={log.id}
-                    log={log}
-                    onViewDetails={handleViewDetails}
-                  />
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-border bg-bg-secondary/50 text-xs font-medium text-text-secondary uppercase tracking-wide">
+                      <th className="py-2 px-3 w-[90px]">Action</th>
+                      <th className="py-2 px-3 min-w-[140px]">Entity</th>
+                      <th className="py-2 px-3 min-w-[120px]">Description</th>
+                      <th className="py-2 px-3 w-[90px]">User</th>
+                      <th className="py-2 px-3 w-[100px]">Merchant</th>
+                      <th className="py-2 px-3 w-[100px]">Outlet</th>
+                      <th className="py-2 px-3 w-[110px]">Time</th>
+                      <th className="py-2 px-3 w-[44px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((log) => (
+                      <AuditLogRow
+                        key={log.id}
+                        log={log}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="mt-6">
+          <div className="mt-4">
             <Pagination
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
@@ -644,7 +657,6 @@ export default function SystemAuditLogsPage() {
           </div>
         )}
 
-        {/* Audit Log Detail Modal */}
         {selectedLog && (
           <AuditLogDetail
             log={selectedLog}
