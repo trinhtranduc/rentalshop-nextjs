@@ -152,7 +152,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'INVALID_LIMIT': 'Invalid limit parameter',
   'INVALID_MIN_SIMILARITY': 'Invalid minimum similarity parameter',
   'SEARCH_FAILED': 'Image search failed. The search service may be unavailable.',
-  'SEARCH_TIMEOUT': 'Image search timed out. Please try again with a smaller image.',
+  'SEARCH_TIMEOUT': 'Image search timed out after 60 seconds. Try a smaller image or check the search service.',
   
   // Default
   'UNKNOWN_ERROR': 'An unknown error occurred',
