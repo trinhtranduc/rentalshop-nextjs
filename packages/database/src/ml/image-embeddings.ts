@@ -216,20 +216,22 @@ export class FashionImageEmbedding {
 
   /**
    * Generate embedding từ image URL
+   * Flow: fetch image -> buffer -> generateEmbeddingFromBuffer -> Python API /embed -> normalized vector
    */
   async generateEmbedding(imageUrl: string): Promise<number[]> {
     try {
+      console.log(`[Embedding] Fetch image: ${imageUrl.substring(0, 60)}...`);
       const response = await fetch(imageUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.statusText}`);
       }
-      
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      
+      const sizeKB = (buffer.length / 1024).toFixed(1);
+      console.log(`[Embedding] Fetched ${sizeKB}KB, calling Python API`);
       return this.generateEmbeddingFromBuffer(buffer);
     } catch (error) {
-      console.error('Error generating embedding:', error);
+      console.error('[Embedding] generateEmbedding failed:', (error as Error)?.message);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Embedding generation failed: ${errorMessage}`);
     }

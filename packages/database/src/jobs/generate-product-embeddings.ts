@@ -17,43 +17,38 @@ import { parseProductImages } from '@rentalshop/utils';
  * @param productId - Product ID (number)
  */
 export async function generateProductEmbedding(productId: number): Promise<void> {
+  const jobStart = Date.now();
   try {
-    // Fetch product
+    console.log(`[Embedding] Step 1: Fetch product ${productId}`);
     const product = await db.products.findById(productId);
     if (!product) {
       throw new Error(`Product ${productId} not found`);
     }
+    console.log(`[Embedding] Step 1 done: product "${product.name}" (id=${product.id})`);
 
-    // Parse images (support multiple formats)
     const images = parseProductImages(product.images);
-
     if (images.length === 0) {
-      console.log(`⚠️ Product ${productId} has no images, skipping`);
+      console.log(`[Embedding] ⚠️ Product ${productId} has no images, skipping`);
       return;
     }
+    console.log(`[Embedding] Step 2: Parsed ${images.length} image URL(s)`);
 
-    // Get merchantId - ensure we get the correct publicId (number)
     const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
     const categoryId = (product as any).categoryId ?? (product as any).category?.id;
-    
-    console.log(`🔄 Generating embeddings for product ${productId} (${images.length} image(s))...`);
-    console.log(`   Product details:`, {
-      id: product.id,
+
+    console.log(`[Embedding] Step 3: Config check`, {
+      productId: product.id,
       name: product.name,
       merchantId: merchantId,
       categoryId: categoryId,
       imagesCount: images.length
     });
 
-    // Check Python API configuration
-    // USE_PYTHON_EMBEDDING_API defaults to true (Python embedding service is the default)
     const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
-    console.log(`   Python API config:`, {
-      PYTHON_EMBEDDING_API_URL: pythonApiUrl || 'NOT SET'
-    });
+    console.log(`[Embedding]    PYTHON_EMBEDDING_API_URL: ${pythonApiUrl ? 'SET' : 'NOT SET'}`);
 
     if (!pythonApiUrl) {
-      console.error(`❌ PYTHON_EMBEDDING_API_URL is not set!`);
+      console.error(`[Embedding] ❌ PYTHON_EMBEDDING_API_URL is not set!`);
       console.error(`   This is required for generating embeddings`);
       console.error(`   Current environment variables:`);
       console.error(`     - QDRANT_COLLECTION_ENV: ${process.env.QDRANT_COLLECTION_ENV || 'not set'}`);
@@ -65,41 +60,33 @@ export async function generateProductEmbedding(productId: number): Promise<void>
       throw new Error('PYTHON_EMBEDDING_API_URL must be set to generate embeddings');
     }
 
-    // Initialize services
+    console.log(`[Embedding] Step 4: Init embedding service + vector store`);
     const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
-    
-    // Log collection name for debugging
-    console.log(`   🔍 Vector store collection: ${(vectorStore as any).collectionName}`);
-    console.log(`   🔍 Environment variables:`, {
-      QDRANT_COLLECTION_ENV: process.env.QDRANT_COLLECTION_ENV || 'not set',
-      APP_ENV: process.env.APP_ENV || 'not set',
-      NODE_ENV: process.env.NODE_ENV || 'not set'
-    });
+    const collectionName = (vectorStore as any).collectionName;
+    console.log(`[Embedding]    Collection: ${collectionName}, QDRANT_COLLECTION_ENV: ${process.env.QDRANT_COLLECTION_ENV || 'not set'}`);
 
-    // Initialize collection if needed (creates collection and indexes)
     try {
       await vectorStore.initialize();
+      console.log(`[Embedding] Step 4 done: Qdrant collection ready`);
     } catch (error) {
-      console.error(`⚠️ Failed to initialize Qdrant collection:`, error);
-      // Continue anyway - collection might already exist
+      console.warn(`[Embedding] Step 4: Init collection warning (may already exist):`, (error as Error)?.message);
     }
 
-    // Generate embeddings for all images
+    console.log(`[Embedding] Step 5: Generate vectors via Python API (${images.length} image(s))`);
     const embeddings = await Promise.all(
       images.map(async (imageUrl, index) => {
         try {
           if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
-            console.log(`⚠️ Product ${productId}, image ${index + 1}: Invalid URL, skipping`);
+            console.log(`[Embedding]    Image ${index + 1}: invalid URL, skip`);
             return null;
           }
 
-          // Generate embedding via Python API
-          console.log(`   🔄 Generating embedding for image ${index + 1}/${images.length}: ${imageUrl.substring(0, 60)}...`);
+          console.log(`[Embedding]    Image ${index + 1}/${images.length}: fetch + embed ${imageUrl.substring(0, 55)}...`);
           const embeddingStartTime = Date.now();
           const embedding = await embeddingService.generateEmbedding(imageUrl);
           const embeddingDuration = Date.now() - embeddingStartTime;
-          console.log(`   ✅ Embedding generated for image ${index + 1} (${embeddingDuration}ms, dimension: ${embedding.length})`);
+          console.log(`[Embedding]    Image ${index + 1} done: ${embeddingDuration}ms, dim=${embedding.length}`);
 
           // Get merchantId - ensure we get the correct publicId (number)
           // Product from db.products.findById may have merchantId directly or via merchant.id
@@ -123,13 +110,12 @@ export async function generateProductEmbedding(productId: number): Promise<void>
             }
           };
         } catch (error) {
-          console.error(`❌ Error generating embedding for product ${productId}, image ${index + 1}:`, error);
+          console.error(`[Embedding]    Image ${index + 1} failed:`, (error as Error)?.message);
           return null;
         }
       })
     );
 
-    // Filter out nulls (errors)
     const validEmbeddings = embeddings.filter(e => e !== null) as Array<{
       imageId: string;
       embedding: number[];
@@ -137,50 +123,42 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     }>;
 
     if (validEmbeddings.length === 0) {
-      console.log(`⚠️ Product ${productId}: No valid embeddings generated`);
+      console.log(`[Embedding] ⚠️ Step 5: No valid embeddings for product ${productId}`);
       return;
     }
+    console.log(`[Embedding] Step 5 done: ${validEmbeddings.length} vector(s)`);
 
-    // Store all embeddings in batch
-    console.log(`💾 Storing ${validEmbeddings.length} embedding(s) to Qdrant...`);
-    console.log(`   Collection: ${(vectorStore as any).collectionName}`);
-    console.log(`   Product ID: ${product.id} (publicId)`);
-    console.log(`   Embeddings to store:`, validEmbeddings.map(e => ({
-      imageId: e.imageId,
-      productId: e.metadata.productId,
-      imageUrl: e.metadata.imageUrl?.substring(0, 60) + '...'
-    })));
-    
+    console.log(`[Embedding] Step 6: Upsert to Qdrant (${collectionName}), productId=${product.id}`);
+    console.log(`[Embedding]    Point IDs:`, validEmbeddings.map(e => e.imageId));
+
     try {
       await vectorStore.storeProductImagesEmbeddings(validEmbeddings);
-      console.log(`✅ Successfully stored ${validEmbeddings.length} embedding(s) to Qdrant for product ${productId}`);
-      
-      // Update product to mark embedding as generated
+      const step6Ms = Date.now() - jobStart;
+      console.log(`[Embedding] Step 6 done: upserted ${validEmbeddings.length} point(s) in ${step6Ms}ms`);
+
       try {
         await db.products.update(productId, {
           embeddingGeneratedAt: new Date()
         });
-        console.log(`✅ Updated product ${productId} with embeddingGeneratedAt timestamp`);
+        console.log(`[Embedding] Step 7: Set embeddingGeneratedAt for product ${productId}`);
       } catch (updateError) {
-        console.warn(`⚠️ Failed to update embeddingGeneratedAt for product ${productId}:`, updateError);
-        // Don't throw - embedding was stored successfully
+        console.warn(`[Embedding] Step 7: Update embeddingGeneratedAt failed:`, (updateError as Error)?.message);
       }
-      
-      // Verify by checking collection info
+
       try {
         const collectionInfo = await vectorStore.getCollectionInfo();
-        console.log(`📊 Qdrant collection now has ${collectionInfo.points_count || 0} total points`);
+        console.log(`[Embedding] Step 8: Collection ${collectionName} points_count=${collectionInfo.points_count ?? '?'}`);
       } catch (verifyError) {
-        console.warn(`⚠️ Could not verify collection info:`, verifyError);
+        console.warn(`[Embedding] Step 8: getCollectionInfo failed:`, (verifyError as Error)?.message);
       }
+
+      console.log(`[Embedding] ✅ Job done for product ${productId} in ${Date.now() - jobStart}ms`);
     } catch (storeError: any) {
-      console.error(`❌ Error storing embeddings to Qdrant:`, storeError);
-      console.error(`   Error message:`, storeError?.message);
-      console.error(`   Error stack:`, storeError?.stack);
-      throw storeError; // Re-throw to be caught by caller
+      console.error(`[Embedding] ❌ Step 6 failed (Qdrant upsert):`, storeError?.message);
+      throw storeError;
     }
   } catch (error) {
-    console.error(`❌ Error generating embedding for product ${productId}:`, error);
+    console.error(`[Embedding] ❌ Job failed for product ${productId}:`, (error as Error)?.message);
     throw error;
   }
 }

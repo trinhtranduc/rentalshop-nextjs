@@ -318,6 +318,9 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // This reduces network latency from 3 calls to 1 call
       console.log('🔄 Step 3: Processing complete search in Python service...');
       
+      const PYTHON_SEARCH_TIMEOUT_MS = 60000; // 60s (embedding + Qdrant + DB can be slow on cold start)
+      let searchStartTime = 0;
+      
       try {
         const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL || 'http://localhost:8000';
         const baseUrl = pythonApiUrl.startsWith('http') 
@@ -344,9 +347,9 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
 
         // Call Python /search endpoint (handles everything)
         // OPTIMIZATION: Use connection pooling to reduce network latency
-        const searchStartTime = Date.now();
+        searchStartTime = Date.now();
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        const timeoutId = setTimeout(() => controller.abort(), PYTHON_SEARCH_TIMEOUT_MS);
         
         const response = await fetchWithPooling(`${baseUrl}/search`, {
           method: 'POST',
@@ -443,22 +446,39 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           })
         );
       } catch (error: any) {
-        console.error('❌ Step 3: Complete search failed:', error?.message);
+        const errorMessage = error?.message ?? String(error);
+        console.error('❌ Step 3: Complete search failed:', errorMessage);
         console.error('   Error details:', {
           name: error?.name,
-          message: error?.message,
+          message: errorMessage,
           stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
         });
         
         if (error.name === 'AbortError') {
+          const waitedMs = Date.now() - searchStartTime;
+          const timeoutMessage = `Image search timed out after ${Math.round(PYTHON_SEARCH_TIMEOUT_MS / 1000)} seconds. Try a smaller image or check the search service.`;
+          console.error(`⏱️ Python /search timed out after ${waitedMs}ms (limit: ${PYTHON_SEARCH_TIMEOUT_MS}ms). Check Python logs for slow step: embedding / Qdrant / DB.`);
           return NextResponse.json(
-            ResponseBuilder.error('SEARCH_TIMEOUT'),
+            {
+              ...ResponseBuilder.error('SEARCH_TIMEOUT'),
+              message: timeoutMessage,
+              details: timeoutMessage,
+              debug: {
+                waitedMs,
+                timeoutMs: PYTHON_SEARCH_TIMEOUT_MS,
+                hint: 'Check Python service logs for which step is slow: embedding, Qdrant search, or DB fetch.',
+              },
+            },
             { status: 503 }
           );
         }
         
         return NextResponse.json(
-          ResponseBuilder.error('SEARCH_FAILED'),
+          {
+            ...ResponseBuilder.error('SEARCH_FAILED'),
+            message: errorMessage,
+            details: errorMessage
+          },
           { status: 503 }
         );
       }
