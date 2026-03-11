@@ -520,38 +520,42 @@ export async function searchProductsByImage(
   
   const compStart = performance.now();
   
-  // Import compressImage dynamically to avoid issues
+  // Only run client-side compression in browser (browser-image-compression requires DOM/worker)
   let compressedFile = imageFile;
-  try {
-    const { compressImage } = await import('../api/upload');
-    compressedFile = await compressImage(imageFile, {
-      maxSizeMB: 0.1,          // 100KB max (enough for CLIP model)
-      maxWidthOrHeight: 512,   // CLIP uses 224x224, so 512 is safe
-      useWebWorker: true,      // Don't block UI
-      quality: 0.8,           // Good quality
-      onProgress: (p) => {
-        if (onProgress) {
-          onProgress({ stage: 'compressing', percentage: Math.round(p * 0.3) });
+  if (typeof window !== 'undefined') {
+    try {
+      const { compressImage } = await import('../api/upload');
+      compressedFile = await compressImage(imageFile, {
+        maxSizeMB: 0.1,          // 100KB max (enough for CLIP model)
+        maxWidthOrHeight: 512,   // CLIP uses 224x224, so 512 is safe
+        useWebWorker: true,      // Don't block UI
+        quality: 0.8,           // Good quality
+        onProgress: (p) => {
+          if (onProgress) {
+            onProgress({ stage: 'compressing', percentage: Math.round(p * 0.3) });
+          }
+          console.log(`   ⏳ Compressing... ${Math.round(p)}%`);
         }
-        console.log(`   ⏳ Compressing... ${Math.round(p)}%`);
-      }
-    });
-    
-    const compDuration = performance.now() - compStart;
-    const reductionPercent = Math.round((1 - compressedFile.size / imageFile.size) * 100);
-    const savedKB = (imageFile.size - compressedFile.size) / 1024;
-    
-    console.log(`   ✅ Compression completed!`);
-    console.log(`   ⏱️  Duration: ${compDuration.toFixed(0)}ms`);
-    console.log(`   📦 Compressed size: ${(compressedFile.size/1024).toFixed(1)}KB`);
-    console.log(`   💾 Saved: ${savedKB.toFixed(1)}KB (${reductionPercent}% reduction)`);
-    console.log(`   🎯 Compression ratio: ${(imageFile.size / compressedFile.size).toFixed(2)}x`);
-  } catch (error) {
-    const compDuration = performance.now() - compStart;
-    console.log(`   ❌ Compression failed after ${compDuration.toFixed(0)}ms`);
-    console.warn('   ⚠️  Error:', error);
-    console.log(`   📤 Using original file (${(imageFile.size/1024).toFixed(1)}KB)`);
-    compressedFile = imageFile;
+      });
+      
+      const compDuration = performance.now() - compStart;
+      const reductionPercent = Math.round((1 - compressedFile.size / imageFile.size) * 100);
+      const savedKB = (imageFile.size - compressedFile.size) / 1024;
+      
+      console.log(`   ✅ Compression completed!`);
+      console.log(`   ⏱️  Duration: ${compDuration.toFixed(0)}ms`);
+      console.log(`   📦 Compressed size: ${(compressedFile.size/1024).toFixed(1)}KB`);
+      console.log(`   💾 Saved: ${savedKB.toFixed(1)}KB (${reductionPercent}% reduction)`);
+      console.log(`   🎯 Compression ratio: ${(imageFile.size / compressedFile.size).toFixed(2)}x`);
+    } catch (error) {
+      const compDuration = performance.now() - compStart;
+      console.log(`   ❌ Compression failed after ${compDuration.toFixed(0)}ms`);
+      console.warn('   ⚠️  Error:', error);
+      console.log(`   📤 Using original file (${(imageFile.size/1024).toFixed(1)}KB)`);
+      compressedFile = imageFile;
+    }
+  } else {
+    console.log(`   ⏭️ Skipping client compression (non-browser env); using original file`);
   }
   
   // Stage 2: API Call (30-90%)

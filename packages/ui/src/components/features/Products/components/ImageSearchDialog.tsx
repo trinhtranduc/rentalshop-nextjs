@@ -110,6 +110,8 @@ export function ImageSearchDialog({
     setIsSearching(true);
     setSearchResults([]);
     setSearchProgress({ stage: 'compressing', percentage: 0 });
+    // Use selected file preview as query image (API does not return queryImage)
+    setQueryImageUrl(previewUrl);
 
     try {
       const response = await searchProductsByImage(selectedFile, {
@@ -127,7 +129,7 @@ export function ImageSearchDialog({
       if (response.success && response.data) {
         const products = response.data.products || [];
         setSearchResults(products);
-        setQueryImageUrl(response.data.queryImage);
+        // Keep query image as previewUrl (selected file); API does not return queryImage
         
         if (products.length > 0) {
           toastSuccess(
@@ -148,7 +150,7 @@ export function ImageSearchDialog({
     } finally {
       setIsSearching(false);
     }
-  }, [selectedFile, categoryId, toastSuccess, toastError, onSearchResult, t]);
+  }, [selectedFile, previewUrl, categoryId, toastSuccess, toastError, onSearchResult, t]);
 
   // Handle clear
   const handleClear = useCallback(() => {

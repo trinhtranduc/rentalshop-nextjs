@@ -443,22 +443,32 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           })
         );
       } catch (error: any) {
-        console.error('❌ Step 3: Complete search failed:', error?.message);
+        const errorMessage = error?.message ?? String(error);
+        console.error('❌ Step 3: Complete search failed:', errorMessage);
         console.error('   Error details:', {
           name: error?.name,
-          message: error?.message,
+          message: errorMessage,
           stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
         });
         
         if (error.name === 'AbortError') {
+          const timeoutMessage = 'Image search timed out after 30 seconds. Try a smaller image or check the search service.';
           return NextResponse.json(
-            ResponseBuilder.error('SEARCH_TIMEOUT'),
+            {
+              ...ResponseBuilder.error('SEARCH_TIMEOUT'),
+              message: timeoutMessage,
+              details: timeoutMessage
+            },
             { status: 503 }
           );
         }
         
         return NextResponse.json(
-          ResponseBuilder.error('SEARCH_FAILED'),
+          {
+            ...ResponseBuilder.error('SEARCH_FAILED'),
+            message: errorMessage,
+            details: errorMessage
+          },
           { status: 503 }
         );
       }
