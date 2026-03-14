@@ -17,7 +17,7 @@ import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/cl
 import { formatPhoneNumber } from '@rentalshop/utils';
 import { Copy } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { Eye, Edit, Trash2, MoreVertical, User } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
 interface OrderTableProps {
@@ -49,7 +49,6 @@ export const OrderTable = React.memo(function OrderTable({
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
   const { toastSuccess } = useToast();
-  const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   
   const handleCopyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
@@ -384,84 +383,50 @@ export const OrderTable = React.memo(function OrderTable({
                   {formatDateTime(order.createdAt)}
                 </td>
                 
-                {/* Actions - Dropdown Menu */}
+                {/* Actions - View & Edit outside (icon + label), Delete in dropdown */}
                 <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
+                  <div className="flex items-center justify-end gap-2">
                     <Button
-                        variant="ghost"
+                      variant="ghost"
                       size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setOpenDropdownId(order.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end"
-                      open={openDropdownId === order.id}
-                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? order.id : null)}
+                      className="h-8 gap-1.5 rounded-md border border-gray-200 px-3 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                      onClick={() => onOrderAction('view', order.orderNumber)}
                     >
-                      <DropdownMenuItem onClick={() => {
-                        onOrderAction('view', order.orderNumber);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />
-                      {t('actions.view')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        onOrderAction('edit', order.orderNumber);
-                        setOpenDropdownId(null);
-                      }}
-                      disabled={order.status !== 'RESERVED'}
+                      <Eye className="h-4 w-4 shrink-0" />
+                      <span>{t('actions.view')}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-8 gap-1.5 rounded-md border border-gray-200 px-3 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 ${order.status !== 'RESERVED' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => order.status === 'RESERVED' && onOrderAction('edit', order.orderNumber)}
                     >
-                        <Edit className="h-4 w-4 mr-2" />
-                      {t('actions.edit')}
-                      </DropdownMenuItem>
-                      {/* View Customer - Only show if customerId exists */}
-                      {order.customerId && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => {
-                            onOrderAction('viewCustomer', order.customerId!);
-                            setOpenDropdownId(null);
-                          }}>
-                            <User className="h-4 w-4 mr-2" />
-                            {t('actions.viewCustomer') || 'View Customer'}
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    {/* Show Delete button:
-                        - ADMIN: can delete any order regardless of status
-                        - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
-                        - OUTLET_STAFF: cannot delete orders */}
-                    {(
-                      userRole !== 'OUTLET_STAFF' && 
-                      (isAdmin || order.status === 'CANCELLED')
-                    ) && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('🗑️ Delete button clicked:', { 
-                            orderNumber: order.orderNumber, 
-                            userRole, 
-                            status: order.status 
-                          });
-                          onOrderAction('delete', order.orderNumber);
-                              setOpenDropdownId(null);
-                        }}
+                      <Edit className="h-4 w-4 shrink-0" />
+                      <span>{t('actions.edit')}</span>
+                    </Button>
+                    {(userRole !== 'OUTLET_STAFF' && (isAdmin || order.status === 'CANCELLED')) ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-md border border-gray-200 p-0 shrink-0 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800" title={t('actions.delete')}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onOrderAction('delete', order.orderNumber);
+                            }}
                             className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                      >
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
-                        {t('actions.delete')}
+                            {t('actions.delete')}
                           </DropdownMenuItem>
-                        </>
-                    )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             );

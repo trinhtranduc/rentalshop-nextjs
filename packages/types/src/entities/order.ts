@@ -651,6 +651,17 @@ export interface OrderData {
   updatedAt: Date | string;
   outletName: string;
   isReadyToDeliver: boolean;
+  notes?: string;
+  notesImages?: string[];
+  pickupNotes?: string;
+  pickupNotesImages?: string[];
+  returnNotes?: string;
+  returnNotesImages?: string[];
+  damageNotes?: string;
+  damageNotesImages?: string[];
+  bailAmount?: number;
+  material?: string;
+  damageFee?: number;
 }
 
 // ============================================================================

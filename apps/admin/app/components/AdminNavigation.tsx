@@ -21,7 +21,8 @@ import {
   FileText,
   UserCircle,
   ScrollText,
-  Trash2
+  Trash2,
+  Activity
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -119,6 +120,12 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       current: pathname.startsWith('/system/audit-logs')
     },
     {
+      name: 'Request Logs',
+      href: '/request-logs',
+      icon: Activity,
+      current: pathname.startsWith('/request-logs')
+    },
+    {
       name: 'Deleted Records',
       href: '/system/deleted-records',
       icon: Trash2,
@@ -144,7 +151,8 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
         item.href !== '/payments' &&
-        item.href !== '/posts'
+        item.href !== '/posts' &&
+        item.href !== '/request-logs'
       );
     } else if (userRole === 'OUTLET_STAFF') {
       // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments, blog (limited permissions)
@@ -154,11 +162,12 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
         item.href !== '/payments' &&
-        item.href !== '/posts'
+        item.href !== '/posts' &&
+        item.href !== '/request-logs'
       );
     } else if (userRole === 'MERCHANT') {
-      // MERCHANT cannot see blog (ADMIN only)
-      return items.filter(item => item.href !== '/posts');
+      // MERCHANT cannot see blog, request logs (ADMIN only)
+      return items.filter(item => item.href !== '/posts' && item.href !== '/request-logs');
     }
     
     // ADMIN can see all items including Blog

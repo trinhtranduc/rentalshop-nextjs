@@ -22,6 +22,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     const merchantId = searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!, 10) : undefined;
     const outletId = searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!, 10) : undefined;
     const statusCode = searchParams.get('statusCode') ? parseInt(searchParams.get('statusCode')!, 10) : undefined;
+    const statusCodeMin = searchParams.get('statusCodeMin') ? parseInt(searchParams.get('statusCodeMin')!, 10) : undefined;
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
     const search = searchParams.get('search') || undefined;
@@ -59,6 +60,8 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
 
     if (statusCode) {
       where.statusCode = statusCode;
+    } else if (statusCodeMin != null) {
+      where.statusCode = { gte: statusCodeMin };
     }
 
     if (startDate || endDate) {

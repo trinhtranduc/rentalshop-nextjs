@@ -237,37 +237,6 @@ export default function AdminOrdersPage() {
         router.push(`/orders/${orderNumberOrCustomerId}/edit`);
         break;
         
-      case 'viewCustomer':
-        // Navigate to client customer page
-        // Get client URL from environment or construct from current origin
-        const customerId = orderNumberOrCustomerId;
-        let clientUrl = '';
-        
-        if (typeof window !== 'undefined') {
-          // Try environment variable first
-          if (process.env.NEXT_PUBLIC_CLIENT_URL) {
-            clientUrl = process.env.NEXT_PUBLIC_CLIENT_URL;
-          } else {
-            // Fallback: construct client URL from current origin
-            // If admin is on port 3001, client might be on 3000, or vice versa
-            const origin = window.location.origin;
-            // Remove /admin path if exists
-            const baseUrl = origin.replace(/\/admin$/, '').replace(/\/admin\//, '/');
-            // In development, try to switch port (3001 -> 3000)
-            if (origin.includes(':3001')) {
-              clientUrl = origin.replace(':3001', ':3000');
-            } else if (origin.includes(':3000')) {
-              clientUrl = origin; // Already on client port
-            } else {
-              clientUrl = baseUrl; // Production: same domain
-            }
-          }
-          
-          // Open customer page in new tab
-          window.open(`${clientUrl}/customers/${customerId}`, '_blank');
-        }
-        break;
-        
       case 'delete':
         // Find order by number to get ID
         const order = data?.orders.find(o => o.orderNumber === orderNumberOrCustomerId);
