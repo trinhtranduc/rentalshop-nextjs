@@ -2,6 +2,7 @@ import CONSTANTS from '@rentalshop/constants';
 import type { User, LoginCredentials } from '@rentalshop/types';
 import type { ApiResponse, ErrorCode } from './errors';
 import { analyzeError } from './errors'; // Import analyzeError for handleApiErrorForUI
+import { getApiBaseUrl } from '../config/api';
 
 const API = CONSTANTS.API;
 
@@ -22,54 +23,25 @@ const API = CONSTANTS.API;
 // ============================================================================
 
 /**
- * Create API URL with proper base URL
+ * Create API URL with proper base URL.
+ * Uses getApiBaseUrl() when NEXT_PUBLIC_API_URL is not set so that admin/client
+ * on localhost still call dev-api.anyrent.shop (or env-based default) instead of same-origin.
  */
 export const createApiUrl = (endpoint: string): string => {
   // Check if it's already a full URL
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     return endpoint;
   }
-  
-  // Get base URL from environment
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  
+
   // Remove leading slash if present for processing
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  
-  // If NEXT_PUBLIC_API_URL is set, always use it for API calls
-  if (baseUrl) {
-    // Ensure baseUrl doesn't end with / and cleanEndpoint doesn't start with /
-    const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '');
-    const normalizedEndpoint = cleanEndpoint.replace(/^\/+/, '');
-    
-    const fullUrl = `${normalizedBaseUrl}/${normalizedEndpoint}`;
-    
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-      console.log('🔍 createApiUrl debug:', {
-        originalEndpoint: endpoint,
-        cleanEndpoint: normalizedEndpoint,
-        NEXT_PUBLIC_API_URL: baseUrl,
-        normalizedBaseUrl,
-        finalUrl: fullUrl
-      });
-    }
-    
-    return fullUrl;
-  }
-  
-  // No NEXT_PUBLIC_API_URL set - use relative path for local development
-  // If endpoint already starts with /api/, return as is
-  if (endpoint.startsWith('/api/')) {
-    return endpoint;
-  }
-  
-  // Otherwise, prepend /api/ if not already present
-  if (cleanEndpoint.startsWith('api/')) {
-    return `/${cleanEndpoint}`;
-  }
-  
-  // Default to relative API path
-  return `/api/${cleanEndpoint}`;
+  const normalizedEndpoint = cleanEndpoint.replace(/^\/+/, '');
+
+  // Prefer NEXT_PUBLIC_API_URL; otherwise use same env-based logic as api config (e.g. dev-api.anyrent.shop when local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || getApiBaseUrl();
+
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+  return `${normalizedBaseUrl}/${normalizedEndpoint}`;
 };
 
 /**

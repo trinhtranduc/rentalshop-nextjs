@@ -7,12 +7,16 @@ import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/income/daily - Lấy doanh thu theo ngày với chi tiết đơn hàng
- * 
+ *
+ * Query params:
+ * - startDate, endDate (required): YYYY-MM-DD
+ * - includeExpectedPickups (optional): 'true' | '1' → thêm đơn dự kiến lấy hôm nay (pickupPlanAt trong khoảng, status=RESERVED), doanh thu=0
+ *
  * TRẢ VỀ:
  * - Doanh thu tổng theo từng ngày
- * - Danh sách đơn hàng với doanh thu từng đơn
+ * - Danh sách đơn hàng với doanh thu từng đơn (kèm đơn dự kiến lấy nếu includeExpectedPickups=true)
  * - Số đơn mới được tạo trong ngày
- * 
+ *
  * QUY TẮC TÍNH DOANH THU:
  * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
  *    - LƯU Ý: Nếu pickup cùng ngày với tạo đơn, KHÔNG tạo deposit event riêng (đã bao gồm trong pickup revenue)
@@ -43,6 +47,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const includeExpectedPickups = ['true', '1'].includes(
+      (searchParams.get('includeExpectedPickups') || '').toLowerCase()
+    );
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -220,8 +227,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       totalRevenue: number; // Tổng doanh thu trong ngày
       depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
+      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến phải trả (đơn có pickupPlanAt trong ngày, RESERVED/PICKUPED)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
+      pickupOrderCount: number; // Số đơn lấy hàng trong ngày (pickedUpAt)
+      returnOrderCount: number; // Số đơn trả hàng trong ngày (returnedAt)
+      cancelledOrderCount: number; // Số đơn hủy trong ngày
       orders: Array<{
         id: number;
         orderNumber: string;
@@ -241,8 +251,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }>;
     }>();
 
-    // Theo dõi đơn đã được đếm để tránh đếm trùng
+    // Theo dõi đơn đã được đếm để tránh đếm trùng (theo từng ngày)
     const newOrdersCounted = new Set<string>();
+    const pickupOrdersCounted = new Set<string>();
+    const returnOrdersCounted = new Set<string>();
+    const cancelledOrdersCounted = new Set<string>();
     // Theo dõi đơn đã được thêm vào danh sách orders để tránh duplicate
     // Key: `${order.id}-${dateKey}` -> order entry trong danh sách
     const ordersInList = new Map<string, {
@@ -294,10 +307,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             dateISO: dateISO,
             dateObj,
             totalRevenue: 0,
-            depositRefund: 0, // Tiền thế chân trả lại
-            totalCollateral: 0, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-            totalCollateralPlan: 0, // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
+            depositRefund: 0,
+            totalCollateral: 0,
+            totalCollateralPlan: 0,
             newOrderCount: 0,
+            pickupOrderCount: 0,
+            returnOrderCount: 0,
+            cancelledOrderCount: 0,
             orders: []
           });
         }
@@ -462,6 +478,67 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         }
       }
+
+      // ============================================================================
+      // ĐẾM ĐƠN LẤY (pickup): pickedUpAt trong ngày
+      // ============================================================================
+      if (order.pickedUpAt) {
+        const pickedUpDate = new Date(order.pickedUpAt);
+        if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
+          const dateKey = getUTCDateKey(pickedUpDate);
+          const orderKey = `pickup-${order.id}-${dateKey}`;
+          if (!pickupOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
+            dailyDataMap.get(dateKey)!.pickupOrderCount += 1;
+            pickupOrdersCounted.add(orderKey);
+          }
+        }
+      }
+
+      // ============================================================================
+      // ĐẾM ĐƠN TRẢ (return): returnedAt trong ngày
+      // ============================================================================
+      if (order.returnedAt) {
+        const returnedDate = new Date(order.returnedAt);
+        if (returnedDate >= filterStart && returnedDate <= filterEnd) {
+          const dateKey = getUTCDateKey(returnedDate);
+          const orderKey = `return-${order.id}-${dateKey}`;
+          if (!returnOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
+            dailyDataMap.get(dateKey)!.returnOrderCount += 1;
+            returnOrdersCounted.add(orderKey);
+          }
+        }
+      }
+
+      // ============================================================================
+      // ĐẾM ĐƠN HỦY (cancelled): status CANCELLED và updatedAt trong ngày
+      // ============================================================================
+      if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
+        const updatedDate = new Date(order.updatedAt);
+        if (updatedDate >= filterStart && updatedDate <= filterEnd) {
+          const dateKey = getUTCDateKey(updatedDate);
+          const orderKey = `cancelled-${order.id}-${dateKey}`;
+          if (!cancelledOrdersCounted.has(orderKey)) {
+            if (!dailyDataMap.has(dateKey)) {
+              dailyDataMap.set(dateKey, {
+                date: dateKey,
+                dateISO: normalizeDateToISO(updatedDate),
+                dateObj: new Date(normalizeDateToISO(updatedDate)),
+                totalRevenue: 0,
+                depositRefund: 0,
+                totalCollateral: 0,
+                totalCollateralPlan: 0,
+                newOrderCount: 0,
+                pickupOrderCount: 0,
+                returnOrderCount: 0,
+                cancelledOrderCount: 0,
+                orders: []
+              });
+            }
+            dailyDataMap.get(dateKey)!.cancelledOrderCount += 1;
+            cancelledOrdersCounted.add(orderKey);
+          }
+        }
+      }
     }
 
     // ============================================================================
@@ -524,15 +601,15 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // ============================================================================
-    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN: Query riêng cho đơn RESERVED có pickupPlanAt trong tương lai
+    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN PHẢI TRẢ: đơn có pickupPlanAt trong khoảng request (RESERVED hoặc PICKUPED)
     // ============================================================================
-    // Query tất cả orders có status RESERVED, có securityDeposit, và pickupPlanAt trong tương lai
-    const now = new Date();
+    // Để biết cần phải trả lại bao nhiêu tiền cho khách: tổng securityDeposit của đơn có pickupPlanAt trong [startDate,endDate] và đang giữ cọc (RESERVED hoặc PICKUPED)
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
-      status: ORDER_STATUS.RESERVED,
+      status: { in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED] },
       pickupPlanAt: {
-        gte: now, // Chỉ tính cho đơn có pickupPlanAt trong tương lai
+        gte: filterStart,
+        lte: filterEnd,
         not: null
       },
       deletedAt: null
@@ -560,26 +637,139 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     });
     
-    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo pickupPlanAt
+    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo pickupPlanAt (trong khoảng request)
     // Reset totalCollateralPlan trước
     for (const dailyData of dailyDataMap.values()) {
       dailyData.totalCollateralPlan = 0;
     }
     
-    // Tính lại từ query riêng - group theo pickupPlanAt date
     for (const order of collateralPlanOrders) {
       if (order.pickupPlanAt) {
         const pickupPlanDate = new Date(order.pickupPlanAt);
         const dateKey = getUTCDateKey(pickupPlanDate);
-        // Chỉ tính nếu pickupPlanAt nằm trong period được filter (actual period)
-        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd && dailyDataMap.has(dateKey)) {
-          const dailyData = dailyDataMap.get(dateKey)!;
-          dailyData.totalCollateralPlan += (order.securityDeposit || 0);
+        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd) {
+          if (!dailyDataMap.has(dateKey)) {
+            dailyDataMap.set(dateKey, {
+              date: dateKey,
+              dateISO: normalizeDateToISO(pickupPlanDate),
+              dateObj: new Date(normalizeDateToISO(pickupPlanDate)),
+              totalRevenue: 0,
+              depositRefund: 0,
+              totalCollateral: 0,
+              totalCollateralPlan: 0,
+              newOrderCount: 0,
+              pickupOrderCount: 0,
+              returnOrderCount: 0,
+              cancelledOrderCount: 0,
+              orders: []
+            });
+          }
+          dailyDataMap.get(dateKey)!.totalCollateralPlan += (order.securityDeposit || 0);
         }
       }
     }
     
-    console.log(`💰 Daily Total Collateral Plan calculated: ${collateralPlanOrders.length} RESERVED orders (pickupPlanAt in future)`);
+    console.log(`💰 Daily Total Collateral Plan (expected to refund): ${collateralPlanOrders.length} orders with pickupPlanAt in period`);
+
+    // ============================================================================
+    // ĐƠN DỰ KIẾN LẤY HÔM NAY (includeExpectedPickups): RESERVED, pickupPlanAt trong khoảng, doanh thu = 0
+    // ============================================================================
+    if (includeExpectedPickups) {
+      const expectedPickupWhereClause: any = {
+        orderType: ORDER_TYPE.RENT,
+        status: ORDER_STATUS.RESERVED,
+        pickupPlanAt: {
+          gte: filterStart,
+          lte: filterEnd,
+          not: null
+        },
+        deletedAt: null
+      };
+      if (userScope.outletId) {
+        const outletObj = await db.outlets.findById(userScope.outletId);
+        if (outletObj) {
+          expectedPickupWhereClause.outletId = outletObj.id;
+        }
+      } else if (userScope.merchantId) {
+        const merchant = await db.merchants.findById(userScope.merchantId);
+        if (merchant && merchant.outlets) {
+          expectedPickupWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+        }
+      }
+
+      const expectedPickupOrders = await prisma.order.findMany({
+        where: expectedPickupWhereClause,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          pickupPlanAt: true,
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+              phone: true
+            }
+          },
+          outlet: {
+            select: { name: true }
+          }
+        }
+      });
+
+      for (const order of expectedPickupOrders) {
+        if (!order.pickupPlanAt) continue;
+        const pickupPlanDate = new Date(order.pickupPlanAt);
+        const dateKey = getUTCDateKey(pickupPlanDate);
+        const dateISO = normalizeDateToISO(pickupPlanDate);
+        const dateObj = new Date(dateISO);
+
+        if (!dailyDataMap.has(dateKey)) {
+          dailyDataMap.set(dateKey, {
+            date: dateKey,
+            dateISO,
+            dateObj,
+            totalRevenue: 0,
+            depositRefund: 0,
+            totalCollateral: 0,
+            totalCollateralPlan: 0,
+            newOrderCount: 0,
+            pickupOrderCount: 0,
+            returnOrderCount: 0,
+            cancelledOrderCount: 0,
+            orders: []
+          });
+        }
+        const dailyData = dailyDataMap.get(dateKey)!;
+        const customer = order.customer;
+        const customerName = customer
+          ? [customer.firstName, customer.lastName].filter(Boolean).join(' ') || undefined
+          : undefined;
+        dailyData.orders.push({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          status: order.status,
+          revenue: 0,
+          revenueType: 'EXPECTED_PICKUP',
+          description: 'Expected pickup (not yet picked up)',
+          revenueDate: order.pickupPlanAt.toISOString(),
+          customerName,
+          customerPhone: customer?.phone ?? undefined,
+          outletName: order.outlet?.name ?? undefined,
+          totalAmount: order.totalAmount || 0,
+          depositAmount: order.depositAmount || 0,
+          securityDeposit: order.securityDeposit || 0,
+          damageFee: order.damageFee || 0
+        });
+      }
+      console.log(`💰 Daily Income: includeExpectedPickups=true, added ${expectedPickupOrders.length} expected pickup orders (revenue=0)`);
+    }
 
     // ============================================================================
     // CHUYỂN ĐỔI MAP THÀNH ARRAY VÀ SẮP XẾP THEO NGÀY
@@ -592,6 +782,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         // dateISO: Full ISO string at midnight UTC (for locale formatting)
       }));
 
+    const totalRevenue = dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0);
+    const totalDepositRefund = dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0);
+    const totalCollateral = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateral || 0), 0);
+    const totalCollateralPlan = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateralPlan || 0), 0);
+
     return NextResponse.json(
       ResponseBuilder.success('DAILY_INCOME_SUCCESS', {
         startDate: startDate,
@@ -599,10 +794,21 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         days: dailyDataArray,
         summary: {
           totalDays: dailyDataArray.length,
-          totalRevenue: dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0),
-          totalDepositRefund: dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0), // Tổng tiền thế chân thu được
-          totalCollateral: dailyDataArray.reduce((sum, day) => sum + (day.totalCollateral || 0), 0), // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-          totalCollateralPlan: dailyDataArray.reduce((sum, day) => sum + (day.totalCollateralPlan || 0), 0), // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
+          // 1. Tổng đơn phát sinh: đơn mới, đơn lấy, đơn trả, đơn hủy
+          orderCounts: {
+            new: dailyDataArray.reduce((sum, day) => sum + day.newOrderCount, 0),
+            pickup: dailyDataArray.reduce((sum, day) => sum + (day.pickupOrderCount || 0), 0),
+            return: dailyDataArray.reduce((sum, day) => sum + (day.returnOrderCount || 0), 0),
+            cancelled: dailyDataArray.reduce((sum, day) => sum + (day.cancelledOrderCount || 0), 0)
+          },
+          // 2. Tổng doanh thu, doanh thu thực tế (trừ tiền thế chân thu được), tổng tiền thế chân
+          totalRevenue,
+          totalActualRevenue: totalRevenue - totalDepositRefund, // Doanh thu thực tế (trừ phần tiền thế chân thu được)
+          totalCollateral, // Tổng tiền thế chân đang giữ (đơn đã PICKUPED)
+          totalDepositRefund, // Tổng tiền thế chân thu được trong kỳ (RESERVED/PICKUPED)
+          // 3. Tổng tiền thế chân dự kiến phải trả (đơn có pickupPlanAt trong khoảng request)
+          totalCollateralPlanExpectedToRefund: totalCollateralPlan,
+          totalCollateralPlan, // Alias, cùng giá trị
           totalNewOrders: dailyDataArray.reduce((sum, day) => sum + day.newOrderCount, 0),
           totalOrders: dailyDataArray.reduce((sum, day) => sum + day.orders.length, 0)
         }

@@ -221,6 +221,10 @@ export function MerchantDetail({
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</label>
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
               </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address || '—'}</p>
+              </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
                 <p className={`text-sm ${data.merchant.isActive ? 'text-green-600' : 'text-red-600'}`}>
@@ -247,12 +251,6 @@ export function MerchantDetail({
                     </p>
                   </div>
                 </>
-              )}
-              {data.merchant.address && (
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
-                  <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address}</p>
-                </div>
               )}
               {data.merchant.description && (
                 <div className="md:col-span-2">
