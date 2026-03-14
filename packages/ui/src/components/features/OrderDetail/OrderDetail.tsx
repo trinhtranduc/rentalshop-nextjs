@@ -9,6 +9,7 @@ import type { OrderWithDetails } from '@rentalshop/types';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
 import { OrderInformation } from './components/OrderInformation';
 import { OrderProductsList } from './components/OrderProductsList';
+import { NotesSection } from './components/NotesSection';
 import { OrderSummaryCard } from './components/OrderSummaryCard';
 import { OrderSettingsCard } from './components/OrderSettingsCard';
 import { OrderActionsSection } from './components/OrderActionsSection';
@@ -19,10 +20,11 @@ interface OrderDetailProps {
   order: OrderWithDetails;
   onEdit?: (order: OrderWithDetails) => void;
   onCancel?: (order: OrderWithDetails) => void;
+  onDelete?: (order: OrderWithDetails) => void;
   onStatusChange?: (orderId: number, status: string) => void;
   onPickup?: (orderId: number, data: any) => Promise<void> | void; // Can be async
   onReturn?: (orderId: number, data: any) => Promise<void> | void; // Can be async
-  onSaveSettings?: (settings: SettingsForm) => Promise<void>;
+  onSaveSettings?: (settings: SettingsForm, pendingFiles?: OrderNotesPendingFiles) => Promise<void>;
   onPrint?: () => void; // Print handler - opens receipt preview modal
   loading?: boolean;
   showActions?: boolean;
@@ -36,6 +38,21 @@ interface SettingsForm {
   collateralDetails: string;
   collateralImageUrl?: string;
   notes: string;
+  notesImages?: string[];
+  pickupNotes?: string;
+  pickupNotesImages?: string[];
+  returnNotes?: string;
+  returnNotesImages?: string[];
+  damageNotes?: string;
+  damageNotesImages?: string[];
+}
+
+/** Pending new image files to upload when saving order settings */
+export interface OrderNotesPendingFiles {
+  notesImages?: File[];
+  pickupNotesImages?: File[];
+  returnNotesImages?: File[];
+  damageNotesImages?: File[];
 }
 
 // Skeleton component for OrderDetail
@@ -229,13 +246,21 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     'Other'
   ];
   
+  const orderAny = order as OrderWithDetails & { notesImages?: string[]; pickupNotesImages?: string[]; returnNotesImages?: string[]; damageNotesImages?: string[] };
   const [settingsForm, setSettingsForm] = useState<SettingsForm>({
     damageFee: order.damageFee || 0,
     securityDeposit: order.securityDeposit || 0,
     collateralType: order.collateralType || 'Other',
     collateralDetails: order.collateralDetails || '',
     collateralImageUrl: (order as any).collateralImageUrl || '',
-    notes: order.notes || ''
+    notes: order.notes || '',
+    notesImages: Array.isArray(orderAny.notesImages) ? orderAny.notesImages : [],
+    pickupNotes: order.pickupNotes ?? '',
+    pickupNotesImages: Array.isArray(orderAny.pickupNotesImages) ? orderAny.pickupNotesImages : [],
+    returnNotes: order.returnNotes ?? '',
+    returnNotesImages: Array.isArray(orderAny.returnNotesImages) ? orderAny.returnNotesImages : [],
+    damageNotes: order.damageNotes ?? '',
+    damageNotesImages: Array.isArray(orderAny.damageNotesImages) ? orderAny.damageNotesImages : []
   });
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [tempSettings, setTempSettings] = useState<SettingsForm>(settingsForm);
@@ -258,13 +283,21 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   // Update settings when order changes
   useEffect(() => {
     if (order) {
+      const o = order as OrderWithDetails & { notesImages?: string[]; pickupNotesImages?: string[]; returnNotesImages?: string[]; damageNotesImages?: string[] };
       const newSettings: SettingsForm = {
         damageFee: order.damageFee || 0,
         securityDeposit: order.securityDeposit || 0,
         collateralType: order.collateralType || 'Other',
         collateralDetails: order.collateralDetails || '',
         collateralImageUrl: (order as any).collateralImageUrl || '',
-        notes: order.notes || ''
+        notes: order.notes || '',
+        notesImages: Array.isArray(o.notesImages) ? o.notesImages : [],
+        pickupNotes: order.pickupNotes ?? '',
+        pickupNotesImages: Array.isArray(o.pickupNotesImages) ? o.pickupNotesImages : [],
+        returnNotes: order.returnNotes ?? '',
+        returnNotesImages: Array.isArray(o.returnNotesImages) ? o.returnNotesImages : [],
+        damageNotes: order.damageNotes ?? '',
+        damageNotesImages: Array.isArray(o.damageNotesImages) ? o.damageNotesImages : []
       };
       setSettingsForm(newSettings);
       setTempSettings(newSettings);
@@ -355,26 +388,20 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     // No toast for every change - only show feedback when saving
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (settings: SettingsForm, pendingFiles?: OrderNotesPendingFiles) => {
     if (onSaveSettings) {
       setIsSavingSettings(true);
-      // Removed toastInfo - only show success/error, not loading state
-      
       try {
-        await onSaveSettings(tempSettings);
-        // Success toast will be shown by parent component (page.tsx)
-        // Don't duplicate toast here
-        setSettingsForm(tempSettings);
+        await onSaveSettings(settings, pendingFiles);
+        setSettingsForm(settings);
         setIsEditingSettings(false);
       } catch (error) {
         // Error toast will be shown by parent component (page.tsx)
-        // Don't duplicate toast here
       } finally {
         setIsSavingSettings(false);
       }
     } else {
-      // No API call, just local update
-      setSettingsForm(tempSettings);
+      setSettingsForm(settings);
       setIsEditingSettings(false);
     }
   };
@@ -537,6 +564,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
 
             {/* Products List - Using new component with translations */}
             <OrderProductsList order={order} />
+
+            {/* Notes & images */}
+            <NotesSection order={order} />
           </div>
 
                     {/* Right Column - Order Summary & Settings */}

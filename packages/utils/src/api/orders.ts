@@ -359,7 +359,7 @@ export const ordersApi = {
   },
 
   /**
-   * Update order settings (damage fee, security deposit, collateral, notes)
+   * Update order settings (damage fee, security deposit, collateral, notes, notes images)
    */
   async updateOrderSettings(orderId: number, settings: {
     damageFee?: number;
@@ -367,6 +367,13 @@ export const ordersApi = {
     collateralType?: string;
     collateralDetails?: string;
     notes?: string;
+    notesImages?: string[];
+    pickupNotes?: string;
+    pickupNotesImages?: string[];
+    returnNotes?: string;
+    returnNotesImages?: string[];
+    damageNotes?: string;
+    damageNotesImages?: string[];
   }): Promise<ApiResponse<Order>> {
     const response = await authenticatedFetch(apiUrls.orders.update(orderId), {
       method: 'PUT',

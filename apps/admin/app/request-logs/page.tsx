@@ -45,6 +45,7 @@ export default function RequestLogsPage() {
   const method = searchParams.get('method') || '';
   const path = searchParams.get('path') || '';
   const statusCode = searchParams.get('statusCode') || '';
+  const statusCodeMin = searchParams.get('statusCodeMin') || '';
   const userId = searchParams.get('userId') || '';
   const search = searchParams.get('search') || '';
   const startDate = searchParams.get('startDate') || '';
@@ -52,11 +53,12 @@ export default function RequestLogsPage() {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
 
-  // Build filters
+  // Build filters (statusCodeMin takes precedence for "errors only" - 4xx, 5xx)
   const filters: RequestLogsFilters = useMemo(() => ({
     method: method || undefined,
     path: path || undefined,
     statusCode: statusCode ? parseInt(statusCode) : undefined,
+    statusCodeMin: statusCodeMin ? parseInt(statusCodeMin) : undefined,
     userId: userId ? parseInt(userId) : undefined,
     search: search || undefined,
     startDate: startDate || undefined,
@@ -65,9 +67,39 @@ export default function RequestLogsPage() {
     offset: (page - 1) * limit,
     sortBy: 'createdAt',
     sortOrder: 'desc',
-  }), [method, path, statusCode, userId, search, startDate, endDate, page, limit]);
+  }), [method, path, statusCode, statusCodeMin, userId, search, startDate, endDate, page, limit]);
 
-  // Fetch logs
+  // Stable key so we only refetch when filter values change, not when object reference changes
+  const filterKey = useMemo(
+    () => JSON.stringify({ method, path, statusCode, statusCodeMin, userId, search, startDate, endDate, page, limit }),
+    [method, path, statusCode, statusCodeMin, userId, search, startDate, endDate, page, limit]
+  );
+
+  // Fetch logs only when filterKey changes (avoids loop from toastError/filters reference changes)
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchRequestLogs(filters)
+      .then((response) => {
+        if (!cancelled) {
+          setLogs(response.logs);
+          setPagination(response.pagination);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to fetch request logs:', error);
+          toastError('Failed to load request logs');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps -- filters derived from URL; toastError stable enough
+
   const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -82,11 +114,6 @@ export default function RequestLogsPage() {
     }
   }, [filters, toastError]);
 
-  // Load logs on mount and when filters change
-  useEffect(() => {
-    loadLogs();
-  }, [loadLogs]);
-
   // Update URL params when filters change
   const updateFilters = useCallback((newFilters: Partial<RequestLogsFilters>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -97,8 +124,10 @@ export default function RequestLogsPage() {
     if (newFilters.path) params.set('path', newFilters.path);
     else params.delete('path');
     
-    if (newFilters.statusCode) params.set('statusCode', newFilters.statusCode.toString());
+    if (newFilters.statusCode != null) params.set('statusCode', newFilters.statusCode.toString());
     else params.delete('statusCode');
+    if (newFilters.statusCodeMin != null) params.set('statusCodeMin', newFilters.statusCodeMin.toString());
+    else params.delete('statusCodeMin');
     
     if (newFilters.userId) params.set('userId', newFilters.userId.toString());
     else params.delete('userId');

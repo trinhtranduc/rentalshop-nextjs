@@ -53,6 +53,8 @@ export interface RequestLogsFilters {
   merchantId?: number;
   outletId?: number;
   statusCode?: number;
+  /** Minimum status code (e.g. 400 for "errors only" - 4xx and 5xx) */
+  statusCodeMin?: number;
   startDate?: string; // ISO format
   endDate?: string; // ISO format
   search?: string;
@@ -77,6 +79,7 @@ export async function fetchRequestLogs(
   if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
   if (filters.outletId) params.append('outletId', filters.outletId.toString());
   if (filters.statusCode) params.append('statusCode', filters.statusCode.toString());
+  if (filters.statusCodeMin != null) params.append('statusCodeMin', filters.statusCodeMin.toString());
   if (filters.startDate) params.append('startDate', filters.startDate);
   if (filters.endDate) params.append('endDate', filters.endDate);
   if (filters.search) params.append('search', filters.search);

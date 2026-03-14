@@ -31,7 +31,8 @@ import {
   Tag,
   UserCircle,
   ScrollText,
-  Trash2
+  Trash2,
+  Activity
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -144,6 +145,11 @@ const adminMenuItems: MenuItem[] = [
         icon: ScrollText 
       },
       { 
+        label: 'Request Logs', 
+        href: '/request-logs', 
+        icon: Activity 
+      },
+      { 
         label: 'Deleted Records', 
         href: '/system/deleted-records', 
         icon: Trash2 
@@ -172,9 +178,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const pathname = usePathname();
   const { navigatingTo, navigate, prefetch } = useOptimisticNavigation();
 
-  // Auto-expand Settings when on system pages (e.g. /system/audit-logs, /system/deleted-records)
+  // Auto-expand Settings when on system pages or request-logs
   useEffect(() => {
-    if (pathname.startsWith('/system') && !expandedItems.includes('/settings')) {
+    if ((pathname.startsWith('/system') || pathname.startsWith('/request-logs')) && !expandedItems.includes('/settings')) {
       setExpandedItems(prev => (prev.includes('/settings') ? prev : [...prev, '/settings']));
     }
   }, [pathname]);

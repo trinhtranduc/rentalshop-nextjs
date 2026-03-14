@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Input, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Button } from '@rentalshop/ui';
-import { Search, X } from 'lucide-react';
+import { Input, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Button, Badge } from '@rentalshop/ui';
+import { Search, X, AlertCircle } from 'lucide-react';
 import type { RequestLogsFilters } from '@rentalshop/utils';
 
 interface RequestLogsFiltersProps {
@@ -21,22 +21,25 @@ export function RequestLogsFilters({
     method: filters.method || '',
     path: filters.path || '',
     statusCode: filters.statusCode?.toString() || '',
+    errorsOnly: !!filters.statusCodeMin,
     userId: filters.userId?.toString() || '',
     search: filters.search || '',
     startDate: filters.startDate || '',
     endDate: filters.endDate || '',
   });
 
-  // Debounce search
+  // Debounce search – only sync when value actually differs (avoids unnecessary router.push on mount)
   useEffect(() => {
+    const normalizedLocal = (localFilters.search || '').trim();
+    const normalizedProps = (filters.search || '').trim();
+    if (normalizedLocal === normalizedProps) return;
+
     const timer = setTimeout(() => {
-      if (localFilters.search !== filters.search) {
-        onFiltersChange({ search: localFilters.search || undefined });
-      }
+      onFiltersChange({ search: localFilters.search?.trim() || undefined });
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [localFilters.search]);
+  }, [localFilters.search]); // Intentionally not including filters.search to avoid loop
 
   const handleFilterChange = (key: string, value: string) => {
     setLocalFilters((prev) => ({ ...prev, [key]: value }));
@@ -46,7 +49,11 @@ export function RequestLogsFilters({
     } else if (key === 'path') {
       onFiltersChange({ path: value || undefined });
     } else if (key === 'statusCode') {
-      onFiltersChange({ statusCode: value ? parseInt(value) : undefined });
+      onFiltersChange({ statusCode: value ? parseInt(value) : undefined, statusCodeMin: undefined });
+    } else if (key === 'errorsOnly') {
+      const enabled = value === 'true';
+      setLocalFilters((prev) => ({ ...prev, errorsOnly: enabled, statusCode: enabled ? '' : prev.statusCode }));
+      onFiltersChange(enabled ? { statusCodeMin: 400, statusCode: undefined } : { statusCodeMin: undefined });
     } else if (key === 'userId') {
       onFiltersChange({ userId: value ? parseInt(value) : undefined });
     } else if (key === 'startDate') {
@@ -61,6 +68,7 @@ export function RequestLogsFilters({
       method: '',
       path: '',
       statusCode: '',
+      errorsOnly: false,
       userId: '',
       search: '',
       startDate: '',
@@ -70,6 +78,7 @@ export function RequestLogsFilters({
       method: undefined,
       path: undefined,
       statusCode: undefined,
+      statusCodeMin: undefined,
       userId: undefined,
       search: undefined,
       startDate: undefined,
@@ -77,17 +86,43 @@ export function RequestLogsFilters({
     });
   };
 
+  const toggleErrorsOnly = () => {
+    const next = !localFilters.errorsOnly;
+    setLocalFilters((prev) => ({ ...prev, errorsOnly: next, statusCode: next ? '' : prev.statusCode }));
+    onFiltersChange(next ? { statusCodeMin: 400, statusCode: undefined } : { statusCodeMin: undefined });
+  };
+
   const hasActiveFilters = 
     localFilters.method ||
     localFilters.path ||
     localFilters.statusCode ||
+    localFilters.errorsOnly ||
     localFilters.userId ||
     localFilters.search ||
     localFilters.startDate ||
     localFilters.endDate;
 
+  // Sync errorsOnly from URL when filters change
+  useEffect(() => {
+    setLocalFilters((prev) => ({ ...prev, errorsOnly: !!filters.statusCodeMin }));
+  }, [filters.statusCodeMin]);
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <Button
+          type="button"
+          variant={localFilters.errorsOnly ? 'default' : 'outline'}
+          size="sm"
+          onClick={toggleErrorsOnly}
+        >
+          <AlertCircle className="h-4 w-4 mr-2" />
+          API errors only (4xx, 5xx)
+        </Button>
+        {localFilters.errorsOnly && (
+          <Badge variant="secondary">Showing only failed requests</Badge>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Method</label>
@@ -121,14 +156,22 @@ export function RequestLogsFilters({
         <div>
           <label className="block text-sm font-medium mb-1">Status Code</label>
           <Select
-            value={localFilters.statusCode || 'all'}
-            onValueChange={(value) => handleFilterChange('statusCode', value === 'all' ? '' : value)}
+            value={localFilters.errorsOnly ? 'errors' : (localFilters.statusCode || 'all')}
+            onValueChange={(value) => {
+              if (value === 'errors') {
+                if (!localFilters.errorsOnly) toggleErrorsOnly();
+              } else {
+                handleFilterChange('statusCode', value === 'all' ? '' : value);
+                if (localFilters.errorsOnly) toggleErrorsOnly();
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="All status codes" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
+              <SelectItem value="errors">API errors (4xx, 5xx)</SelectItem>
               <SelectItem value="200">200 OK</SelectItem>
               <SelectItem value="201">201 Created</SelectItem>
               <SelectItem value="400">400 Bad Request</SelectItem>

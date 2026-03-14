@@ -197,49 +197,64 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleSaveSettings = async (data: {
-    damageFee: number;
-    securityDeposit: number;
-    collateralType: string;
-    collateralDetails: string;
-    notes: string;
-  }) => {
-    if (!order) {
-      // Error automatically handled by useGlobalErrorHandler
-      return;
+  const handleSaveSettings = async (
+    data: {
+      damageFee: number;
+      securityDeposit: number;
+      collateralType: string;
+      collateralDetails: string;
+      notes: string;
+      notesImages?: string[];
+      pickupNotes?: string;
+      pickupNotesImages?: string[];
+      returnNotes?: string;
+      returnNotesImages?: string[];
+      damageNotes?: string;
+      damageNotesImages?: string[];
+    },
+    pendingFiles?: {
+      notesImages?: File[];
+      pickupNotesImages?: File[];
+      returnNotesImages?: File[];
+      damageNotesImages?: File[];
     }
+  ) => {
+    if (!order) return;
 
     try {
       setActionLoading(true);
 
-      // Only send the fields that need to be updated
       const updateData = {
         damageFee: data.damageFee,
         securityDeposit: data.securityDeposit,
         collateralType: data.collateralType,
         collateralDetails: data.collateralDetails,
-        notes: data.notes
+        notes: data.notes,
+        notesImages: data.notesImages,
+        pickupNotes: data.pickupNotes,
+        pickupNotesImages: data.pickupNotesImages,
+        returnNotes: data.returnNotes,
+        returnNotesImages: data.returnNotesImages,
+        damageNotes: data.damageNotes,
+        damageNotesImages: data.damageNotesImages
       };
 
       const result = await ordersApi.updateOrderSettings(order.id, updateData);
+      if (!result.success) throw new Error(result.error || 'Failed to save order settings');
 
-      console.log('🔍 OrderDetailPage: Update settings result:', {
-        success: result.success,
-        hasData: !!result.data,
-        orderItems: result.data?.orderItems,
-        firstItem: result.data?.orderItems?.[0],
-        firstItemProduct: result.data?.orderItems?.[0]?.product,
-        firstItemProductName: (result.data?.orderItems?.[0] as any)?.productName
-      });
-
-      if (result.success) {
-        // Refetch order data to ensure we have the latest state from server
-        await refetchOrder();
-        // Single toast notification - success only
-        toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
-      } else {
-        throw new Error(result.error || 'Failed to save order settings');
+      const hasPendingFiles =
+        pendingFiles &&
+        (pendingFiles.notesImages?.length ||
+          pendingFiles.pickupNotesImages?.length ||
+          pendingFiles.returnNotesImages?.length ||
+          pendingFiles.damageNotesImages?.length);
+      if (hasPendingFiles && pendingFiles) {
+        const uploadResult = await ordersApi.updateOrder(order.id, {}, pendingFiles);
+        if (!uploadResult.success) throw new Error(uploadResult.error || 'Failed to upload images');
       }
+
+      await refetchOrder();
+      toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
     } catch (err) {
       console.error('Error saving order settings:', err);
       // Error automatically handled by useGlobalErrorHandler
