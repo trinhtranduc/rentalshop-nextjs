@@ -233,7 +233,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       totalRevenue: number; // Tổng doanh thu trong ngày
       depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến phải trả (đơn có pickupPlanAt trong ngày, RESERVED/PICKUPED)
+      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến trả (đơn PICKUPED có returnPlanAt trong ngày)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
       pickupOrderCount: number; // Số đơn lấy hàng trong ngày (pickedUpAt)
       returnOrderCount: number; // Số đơn trả hàng trong ngày (returnedAt)
@@ -616,13 +616,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // ============================================================================
-    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN PHẢI TRẢ: đơn có pickupPlanAt trong khoảng request (RESERVED hoặc PICKUPED)
+    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN TRẢ: tiền thế chân dự kiến trả trong tương lai cho đơn dự kiến trả trong kỳ
     // ============================================================================
-    // Để biết cần phải trả lại bao nhiêu tiền cho khách: tổng securityDeposit của đơn có pickupPlanAt trong [startDate,endDate] và đang giữ cọc (RESERVED hoặc PICKUPED)
+    // Chỉ đơn đang thuê (PICKUPED) có lịch trả hàng (returnPlanAt) trong [startDate,endDate] — khi khách trả sẽ hoàn cọc
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
-      status: { in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED] },
-      pickupPlanAt: {
+      status: ORDER_STATUS.PICKUPED,
+      returnPlanAt: {
         gte: filterStart,
         lte: filterEnd,
         not: null
@@ -648,26 +648,26 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       where: collateralPlanWhereClause,
       select: {
         securityDeposit: true,
-        pickupPlanAt: true
+        returnPlanAt: true
       }
     });
     
-    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo pickupPlanAt (trong khoảng request)
+    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo returnPlanAt (trong khoảng request)
     // Reset totalCollateralPlan trước
     for (const dailyData of dailyDataMap.values()) {
       dailyData.totalCollateralPlan = 0;
     }
     
     for (const order of collateralPlanOrders) {
-      if (order.pickupPlanAt) {
-        const pickupPlanDate = new Date(order.pickupPlanAt);
-        const dateKey = getUTCDateKey(pickupPlanDate);
-        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd) {
+      if (order.returnPlanAt) {
+        const returnPlanDate = new Date(order.returnPlanAt);
+        const dateKey = getUTCDateKey(returnPlanDate);
+        if (returnPlanDate >= filterStart && returnPlanDate <= filterEnd) {
           if (!dailyDataMap.has(dateKey)) {
             dailyDataMap.set(dateKey, {
               date: dateKey,
-              dateISO: normalizeDateToISO(pickupPlanDate),
-              dateObj: new Date(normalizeDateToISO(pickupPlanDate)),
+              dateISO: normalizeDateToISO(returnPlanDate),
+              dateObj: new Date(normalizeDateToISO(returnPlanDate)),
               totalRevenue: 0,
               depositRefund: 0,
               totalCollateral: 0,
@@ -684,7 +684,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
     
-    console.log(`💰 Daily Total Collateral Plan (expected to refund): ${collateralPlanOrders.length} orders with pickupPlanAt in period`);
+    console.log(`💰 Daily Total Collateral Plan (expected to refund): ${collateralPlanOrders.length} orders with returnPlanAt in period`);
 
     // ============================================================================
     // TỔNG DOANH THU DỰ KIẾN (totalRevenuePlan): thu từ RESERVED sắp lấy - trừ tiền thế chân sẽ hoàn (PICKUPED sắp trả)
@@ -975,7 +975,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           totalRevenue, // Tổng tiền thu trong kỳ (đã thu + đã hoàn)
           totalActualRevenue: totalRevenue - totalDepositRefund, // Doanh thu thực tế (trừ tiền thế chân thu được)
           totalCollateral, // Tổng tiền thế chân đang giữ (đơn đã PICKUPED)
-          totalCollateralPlanExpectedToRefund: totalCollateralPlan, // Số tiền chuẩn bị trả lại cho khách (đơn có pickupPlanAt trong kỳ)
+          totalCollateralPlanExpectedToRefund: totalCollateralPlan, // Tiền thế chân dự kiến trả (đơn dự kiến trả trong kỳ, returnPlanAt)
           totalRevenuePlan, // Doanh thu dự kiến: thu từ RESERVED sắp lấy (totalAmount - depositAmount) - trừ thế chân sẽ hoàn (PICKUPED sắp trả)
           totalDepositRefund, // (internal) dùng cho totalActualRevenue
           totalCollateralPlan, // Alias totalCollateralPlanExpectedToRefund

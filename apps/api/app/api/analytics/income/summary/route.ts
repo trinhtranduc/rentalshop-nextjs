@@ -255,10 +255,11 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
 
+    // Tiền thế chân dự kiến trả trong tương lai = đơn đang thuê (PICKUPED) có lịch trả hàng (returnPlanAt) trong kỳ
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
-      status: { in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED] },
-      pickupPlanAt: { gte: filterStart, lte: filterEnd, not: null },
+      status: ORDER_STATUS.PICKUPED,
+      returnPlanAt: { gte: filterStart, lte: filterEnd, not: null },
       deletedAt: null
     };
     if (userScope.outletId) {
@@ -270,19 +271,19 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     }
     const collateralPlanOrders = await prisma.order.findMany({
       where: collateralPlanWhereClause,
-      select: { securityDeposit: true, pickupPlanAt: true }
+      select: { securityDeposit: true, returnPlanAt: true }
     });
     for (const d of dailyDataMap.values()) d.totalCollateralPlan = 0;
     for (const order of collateralPlanOrders) {
-      if (order.pickupPlanAt) {
-        const pickupPlanDate = new Date(order.pickupPlanAt);
-        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd) {
-          const dateKey = getUTCDateKey(pickupPlanDate);
+      if (order.returnPlanAt) {
+        const returnPlanDate = new Date(order.returnPlanAt);
+        if (returnPlanDate >= filterStart && returnPlanDate <= filterEnd) {
+          const dateKey = getUTCDateKey(returnPlanDate);
           if (!dailyDataMap.has(dateKey)) {
             dailyDataMap.set(dateKey, {
               date: dateKey,
-              dateISO: normalizeDateToISO(pickupPlanDate),
-              dateObj: new Date(normalizeDateToISO(pickupPlanDate)),
+              dateISO: normalizeDateToISO(returnPlanDate),
+              dateObj: new Date(normalizeDateToISO(returnPlanDate)),
               totalRevenue: 0,
               depositRefund: 0,
               totalCollateral: 0,
