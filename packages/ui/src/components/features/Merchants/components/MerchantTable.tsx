@@ -51,7 +51,7 @@ export function MerchantTable({
       return <StatusBadge status="inactive" type="entity" size="sm" />;
     }
     // Get status from subscription (single source of truth - always exists)
-    const status = merchant.subscription?.status;
+    const status = merchant.subscription?.status ?? 'trial';
     return <StatusBadge status={status} type="subscription" size="sm" />;
   };
 
@@ -100,7 +100,11 @@ export function MerchantTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-bg-card">
-              {merchants.map((merchant) => (
+              {merchants.map((merchant) => {
+                const fullAddress = [merchant.address, merchant.city, merchant.state, merchant.zipCode, merchant.country]
+                  .filter(Boolean)
+                  .join(', ');
+                return (
                 <tr 
                   key={merchant.id} 
                   className="hover:bg-bg-secondary transition-colors"
@@ -117,9 +121,16 @@ export function MerchantTable({
                         <div className="text-sm font-medium text-text-primary">
                           {merchant.name}
                         </div>
-                        <div className="text-sm text-text-tertiary">
-                          {merchant.email || 'No email'}
-                        </div>
+                        {merchant.phone && (
+                          <div className="text-xs text-text-tertiary mt-0.5">
+                            {merchant.phone}
+                          </div>
+                        )}
+                        {fullAddress && (
+                          <div className="text-xs text-text-tertiary mt-0.5">
+                            {fullAddress}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -201,7 +212,8 @@ export function MerchantTable({
                     </DropdownMenu>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -223,7 +223,11 @@ export function MerchantDetail({
               </div>
               <div className="md:col-span-2">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address || '—'}</p>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {[data.merchant.address, data.merchant.city, data.merchant.state, data.merchant.zipCode, data.merchant.country]
+                    .filter(Boolean)
+                    .join(', ') || '—'}
+                </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>

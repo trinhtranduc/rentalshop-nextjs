@@ -10,12 +10,13 @@ import { API } from '@rentalshop/constants';
  *
  * Query params:
  * - startDate, endDate (required): YYYY-MM-DD
- * - includeExpectedPickups (optional): 'true' | '1' → thêm đơn dự kiến lấy hôm nay (pickupPlanAt trong khoảng, status=RESERVED), doanh thu=0
+ * - plan (optional): 'true' | '1' → thêm đơn dự kiến lấy (pickupPlanAt trong khoảng, RESERVED) và đơn dự kiến trả (returnPlanAt trong khoảng, PICKUPED), doanh thu=0.
  *
  * TRẢ VỀ:
  * - Doanh thu tổng theo từng ngày
- * - Danh sách đơn hàng với doanh thu từng đơn (kèm đơn dự kiến lấy nếu includeExpectedPickups=true)
+ * - Danh sách đơn hàng với doanh thu từng đơn (kèm đơn dự kiến lấy/trả nếu plan=true)
  * - Số đơn mới được tạo trong ngày
+ * - Mỗi order trong days[].orders có outletId, customerId, createdAt, pickupPlanAt, returnPlanAt (ISO) để mobile deep link và hiển thị
  *
  * QUY TẮC TÍNH DOANH THU:
  * 1. Đơn cọc (RESERVED - khi tạo đơn): depositAmount
@@ -38,6 +39,10 @@ import { API } from '@rentalshop/constants';
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Xem toàn bộ analytics (analytics.view.revenue)
  * - OUTLET_STAFF: Chỉ xem doanh thu theo ngày (analytics.view.revenue.daily)
  * - Nguồn phân quyền: ROLE_PERMISSIONS trong packages/auth/src/core.ts
+ *
+ * PHẠM VI OUTLET (compatible current API):
+ * - Không có outletId trong scope (ADMIN, MERCHANT) → trả về dữ liệu tất cả outlet trong phạm vi (ADMIN = toàn hệ thống, MERCHANT = tất cả outlet của merchant).
+ * - Có outletId trong scope (OUTLET_ADMIN, OUTLET_STAFF) → chỉ trả về dữ liệu của outlet đó.
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
@@ -47,9 +52,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const includeExpectedPickups = ['true', '1'].includes(
-      (searchParams.get('includeExpectedPickups') || '').toLowerCase()
-    );
+    const plan = ['true', '1'].includes((searchParams.get('plan') || '').toLowerCase());
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -158,22 +161,22 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     };
 
     // ============================================================================
-    // ÁP DỤNG LỌC THEO PHẠM VI NGƯỜI DÙNG
+    // ÁP DỤNG LỌC THEO PHẠM VI NGƯỜI DÙNG (compatible: không có outletId → tất cả outlet trong scope)
     // ============================================================================
     if (userScope.outletId) {
-      // Nhân viên cửa hàng: chỉ xem đơn của cửa hàng mình
+      // OUTLET_ADMIN / OUTLET_STAFF: chỉ xem đơn của cửa hàng mình
       const outletObj = await db.outlets.findById(userScope.outletId);
       if (outletObj) {
         ordersWhereClause.outletId = outletObj.id;
       }
     } else if (userScope.merchantId) {
-      // Chủ cửa hàng: xem đơn của tất cả cửa hàng trong merchant
+      // MERCHANT: xem đơn của tất cả outlet thuộc merchant (trả về tất cả outlet trong phạm vi)
       const merchant = await db.merchants.findById(userScope.merchantId);
       if (merchant && merchant.outlets) {
         ordersWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
       }
     }
-    // ADMIN: không có filter (xem tất cả dữ liệu)
+    // ADMIN: không thêm filter outletId → trả về tất cả outlet (toàn hệ thống)
 
     // ============================================================================
     // LẤY TẤT CẢ ĐƠN HÀNG CÓ THAY ĐỔI TRẠNG THÁI TRONG KHOẢNG THỜI GIAN
@@ -195,6 +198,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         discountType: true,
         discountValue: true,
         discountAmount: true,
+        outletId: true,
+        customerId: true,
         pickupPlanAt: true,
         returnPlanAt: true,
         pickedUpAt: true,
@@ -208,7 +213,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             lastName: true,
             phone: true
           }
-        }
+        },
+        outlet: { select: { id: true, name: true } }
       },
       take: 10000 // Large limit to get all orders
     });
@@ -227,7 +233,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       totalRevenue: number; // Tổng doanh thu trong ngày
       depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến phải trả (đơn có pickupPlanAt trong ngày, RESERVED/PICKUPED)
+      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến trả (đơn PICKUPED có returnPlanAt trong ngày)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
       pickupOrderCount: number; // Số đơn lấy hàng trong ngày (pickedUpAt)
       returnOrderCount: number; // Số đơn trả hàng trong ngày (returnedAt)
@@ -237,17 +243,22 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         orderNumber: string;
         orderType: string;
         status: string;
-        revenue: number; // Doanh thu của sự kiện này
-        revenueType: string; // Loại doanh thu (RENT_DEPOSIT, RENT_PICKUP, etc.)
-        description: string; // Mô tả sự kiện
-        revenueDate: string; // ISO string với timestamp đầy đủ
+        revenue: number;
+        revenueType: string;
+        description: string;
+        revenueDate: string;
+        customerId?: number | null;
         customerName?: string;
         customerPhone?: string;
+        outletId: number;
         outletName?: string;
+        createdAt?: string; // ISO – for mobile display
+        pickupPlanAt?: string | null; // ISO – for mobile display
+        returnPlanAt?: string | null; // ISO – for mobile display
         totalAmount: number;
         depositAmount: number;
-        securityDeposit: number; // Tiền cọc an toàn
-        damageFee: number; // Phí hư hỏng
+        securityDeposit: number;
+        damageFee: number;
       }>;
     }>();
 
@@ -349,10 +360,10 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           }
         } else {
           // Đơn chưa tồn tại: thêm mới vào danh sách
-          // IMPORTANT: findManyLightweight flattens customer/outlet data into direct fields
-          // Use customerName, customerPhone, outletName (NOT order.customer.firstName)
-          const orderWithRelations = order as any;
-          
+          const customer = order.customer;
+          const customerName = customer
+            ? [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || undefined
+            : undefined;
           const orderIndex = dailyData.orders.length;
           dailyData.orders.push({
             id: order.id,
@@ -363,10 +374,14 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             revenueType: event.revenueType,
             description: event.description,
             revenueDate: event.date.toISOString(),
-            // Use flattened fields from findManyLightweight (dòng 1745-1750 trong order.ts)
-            customerName: orderWithRelations.customerName || undefined,
-            customerPhone: orderWithRelations.customerPhone || undefined,
-            outletName: orderWithRelations.outletName || undefined,
+            customerId: order.customerId ?? undefined,
+            customerName,
+            customerPhone: customer?.phone ?? undefined,
+            outletId: order.outletId,
+            outletName: (order as { outlet?: { name: string } }).outlet?.name ?? undefined,
+            createdAt: order.createdAt?.toISOString(),
+            pickupPlanAt: order.pickupPlanAt?.toISOString() ?? null,
+            returnPlanAt: order.returnPlanAt?.toISOString() ?? null,
             totalAmount: order.totalAmount || 0,
             depositAmount: order.depositAmount || 0,
             securityDeposit: order.securityDeposit || 0,
@@ -601,13 +616,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // ============================================================================
-    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN PHẢI TRẢ: đơn có pickupPlanAt trong khoảng request (RESERVED hoặc PICKUPED)
+    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN TRẢ: tiền thế chân dự kiến trả trong tương lai cho đơn dự kiến trả trong kỳ
     // ============================================================================
-    // Để biết cần phải trả lại bao nhiêu tiền cho khách: tổng securityDeposit của đơn có pickupPlanAt trong [startDate,endDate] và đang giữ cọc (RESERVED hoặc PICKUPED)
+    // Chỉ đơn đang thuê (PICKUPED) có lịch trả hàng (returnPlanAt) trong [startDate,endDate] — khi khách trả sẽ hoàn cọc
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
-      status: { in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED] },
-      pickupPlanAt: {
+      status: ORDER_STATUS.PICKUPED,
+      returnPlanAt: {
         gte: filterStart,
         lte: filterEnd,
         not: null
@@ -633,26 +648,26 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       where: collateralPlanWhereClause,
       select: {
         securityDeposit: true,
-        pickupPlanAt: true
+        returnPlanAt: true
       }
     });
     
-    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo pickupPlanAt (trong khoảng request)
+    // Tính totalCollateralPlan và cập nhật vào dailyDataMap theo returnPlanAt (trong khoảng request)
     // Reset totalCollateralPlan trước
     for (const dailyData of dailyDataMap.values()) {
       dailyData.totalCollateralPlan = 0;
     }
     
     for (const order of collateralPlanOrders) {
-      if (order.pickupPlanAt) {
-        const pickupPlanDate = new Date(order.pickupPlanAt);
-        const dateKey = getUTCDateKey(pickupPlanDate);
-        if (pickupPlanDate >= filterStart && pickupPlanDate <= filterEnd) {
+      if (order.returnPlanAt) {
+        const returnPlanDate = new Date(order.returnPlanAt);
+        const dateKey = getUTCDateKey(returnPlanDate);
+        if (returnPlanDate >= filterStart && returnPlanDate <= filterEnd) {
           if (!dailyDataMap.has(dateKey)) {
             dailyDataMap.set(dateKey, {
               date: dateKey,
-              dateISO: normalizeDateToISO(pickupPlanDate),
-              dateObj: new Date(normalizeDateToISO(pickupPlanDate)),
+              dateISO: normalizeDateToISO(returnPlanDate),
+              dateObj: new Date(normalizeDateToISO(returnPlanDate)),
               totalRevenue: 0,
               depositRefund: 0,
               totalCollateral: 0,
@@ -669,12 +684,66 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
     
-    console.log(`💰 Daily Total Collateral Plan (expected to refund): ${collateralPlanOrders.length} orders with pickupPlanAt in period`);
+    console.log(`💰 Daily Total Collateral Plan (expected to refund): ${collateralPlanOrders.length} orders with returnPlanAt in period`);
 
     // ============================================================================
-    // ĐƠN DỰ KIẾN LẤY HÔM NAY (includeExpectedPickups): RESERVED, pickupPlanAt trong khoảng, doanh thu = 0
+    // TỔNG DOANH THU DỰ KIẾN (totalRevenuePlan): thu từ RESERVED sắp lấy - trừ tiền thế chân sẽ hoàn (PICKUPED sắp trả)
     // ============================================================================
-    if (includeExpectedPickups) {
+    const now = new Date();
+    const revenuePlanWhereClause: any = {
+      orderType: ORDER_TYPE.RENT,
+      status: ORDER_STATUS.RESERVED,
+      pickupPlanAt: { gt: now, not: null },
+      deletedAt: null
+    };
+    if (userScope.outletId) {
+      const outletObj = await db.outlets.findById(userScope.outletId);
+      if (outletObj) revenuePlanWhereClause.outletId = outletObj.id;
+    } else if (userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        revenuePlanWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      }
+    }
+    const revenuePlanOrders = await prisma.order.findMany({
+      where: revenuePlanWhereClause,
+      select: { totalAmount: true, depositAmount: true }
+    });
+    const revenuePlanFromReserved = revenuePlanOrders.reduce(
+      (sum, o) => sum + Math.max(0, (o.totalAmount || 0) - (o.depositAmount || 0)),
+      0
+    );
+
+    // Đơn PICKUPED sắp trả: trừ tiền thế chân sẽ hoàn lại khách
+    const refundPlanWhereClause: any = {
+      orderType: ORDER_TYPE.RENT,
+      status: ORDER_STATUS.PICKUPED,
+      returnPlanAt: { gt: now, not: null },
+      deletedAt: null
+    };
+    if (userScope.outletId) {
+      const outletObj = await db.outlets.findById(userScope.outletId);
+      if (outletObj) refundPlanWhereClause.outletId = outletObj.id;
+    } else if (userScope.merchantId) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
+        refundPlanWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      }
+    }
+    const refundPlanOrders = await prisma.order.findMany({
+      where: refundPlanWhereClause,
+      select: { securityDeposit: true }
+    });
+    const collateralRefundPlan = refundPlanOrders.reduce((sum, o) => sum + (o.securityDeposit || 0), 0);
+    const totalRevenuePlan = revenuePlanFromReserved - collateralRefundPlan;
+
+    console.log(`💰 Daily Total Revenue Plan: ${totalRevenuePlan} (reserved +${revenuePlanFromReserved} - pickuped refund ${collateralRefundPlan})`);
+
+    // ============================================================================
+    // ĐƠN DỰ KIẾN LẤY + DỰ KIẾN TRẢ (plan=true): RESERVED pickupPlanAt / PICKUPED returnPlanAt trong khoảng, doanh thu = 0
+    // ============================================================================
+    if (plan) {
+      // 1) Đơn dự kiến lấy: RESERVED, pickupPlanAt trong khoảng
       const expectedPickupWhereClause: any = {
         orderType: ORDER_TYPE.RENT,
         status: ORDER_STATUS.RESERVED,
@@ -704,11 +773,15 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           orderNumber: true,
           orderType: true,
           status: true,
+          outletId: true,
+          customerId: true,
           totalAmount: true,
           depositAmount: true,
           securityDeposit: true,
           damageFee: true,
+          createdAt: true,
           pickupPlanAt: true,
+          returnPlanAt: true,
           customer: {
             select: {
               firstName: true,
@@ -716,9 +789,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
               phone: true
             }
           },
-          outlet: {
-            select: { name: true }
-          }
+          outlet: { select: { id: true, name: true } }
         }
       });
 
@@ -759,16 +830,115 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           revenueType: 'EXPECTED_PICKUP',
           description: 'Expected pickup (not yet picked up)',
           revenueDate: order.pickupPlanAt.toISOString(),
+          customerId: order.customerId ?? undefined,
           customerName,
           customerPhone: customer?.phone ?? undefined,
+          outletId: order.outletId,
           outletName: order.outlet?.name ?? undefined,
+          createdAt: order.createdAt?.toISOString(),
+          pickupPlanAt: order.pickupPlanAt?.toISOString() ?? null,
+          returnPlanAt: order.returnPlanAt?.toISOString() ?? null,
           totalAmount: order.totalAmount || 0,
           depositAmount: order.depositAmount || 0,
           securityDeposit: order.securityDeposit || 0,
           damageFee: order.damageFee || 0
         });
       }
-      console.log(`💰 Daily Income: includeExpectedPickups=true, added ${expectedPickupOrders.length} expected pickup orders (revenue=0)`);
+      console.log(`💰 Daily Income: plan=true, added ${expectedPickupOrders.length} expected pickup orders (revenue=0)`);
+
+      // 2) Đơn dự kiến trả: PICKUPED, returnPlanAt trong khoảng
+      const expectedReturnWhereClause: any = {
+        orderType: ORDER_TYPE.RENT,
+        status: ORDER_STATUS.PICKUPED,
+        returnPlanAt: {
+          gte: filterStart,
+          lte: filterEnd,
+          not: null
+        },
+        deletedAt: null
+      };
+      if (userScope.outletId) {
+        const outletObj = await db.outlets.findById(userScope.outletId);
+        if (outletObj) expectedReturnWhereClause.outletId = outletObj.id;
+      } else if (userScope.merchantId) {
+        const merchant = await db.merchants.findById(userScope.merchantId);
+        if (merchant && merchant.outlets) {
+          expectedReturnWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+        }
+      }
+      const expectedReturnOrders = await prisma.order.findMany({
+        where: expectedReturnWhereClause,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          outletId: true,
+          customerId: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          createdAt: true,
+          pickupPlanAt: true,
+          returnPlanAt: true,
+          customer: {
+            select: { firstName: true, lastName: true, phone: true }
+          },
+          outlet: { select: { id: true, name: true } }
+        }
+      });
+      for (const order of expectedReturnOrders) {
+        if (!order.returnPlanAt) continue;
+        const returnPlanDate = new Date(order.returnPlanAt);
+        const dateKey = getUTCDateKey(returnPlanDate);
+        const dateISO = normalizeDateToISO(returnPlanDate);
+        const dateObj = new Date(dateISO);
+        if (!dailyDataMap.has(dateKey)) {
+          dailyDataMap.set(dateKey, {
+            date: dateKey,
+            dateISO,
+            dateObj,
+            totalRevenue: 0,
+            depositRefund: 0,
+            totalCollateral: 0,
+            totalCollateralPlan: 0,
+            newOrderCount: 0,
+            pickupOrderCount: 0,
+            returnOrderCount: 0,
+            cancelledOrderCount: 0,
+            orders: []
+          });
+        }
+        const dailyData = dailyDataMap.get(dateKey)!;
+        const customer = order.customer;
+        const customerName = customer
+          ? [customer.firstName, customer.lastName].filter(Boolean).join(' ') || undefined
+          : undefined;
+        dailyData.orders.push({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          status: order.status,
+          revenue: 0,
+          revenueType: 'EXPECTED_RETURN',
+          description: 'Expected return (not yet returned)',
+          revenueDate: order.returnPlanAt.toISOString(),
+          customerId: order.customerId ?? undefined,
+          customerName,
+          customerPhone: customer?.phone ?? undefined,
+          outletId: order.outletId,
+          outletName: order.outlet?.name ?? undefined,
+          createdAt: order.createdAt?.toISOString(),
+          pickupPlanAt: order.pickupPlanAt?.toISOString() ?? null,
+          returnPlanAt: order.returnPlanAt?.toISOString() ?? null,
+          totalAmount: order.totalAmount || 0,
+          depositAmount: order.depositAmount || 0,
+          securityDeposit: order.securityDeposit || 0,
+          damageFee: order.damageFee || 0
+        });
+      }
+      console.log(`💰 Daily Income: plan=true, added ${expectedReturnOrders.length} expected return orders (revenue=0)`);
     }
 
     // ============================================================================
@@ -801,14 +971,14 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             return: dailyDataArray.reduce((sum, day) => sum + (day.returnOrderCount || 0), 0),
             cancelled: dailyDataArray.reduce((sum, day) => sum + (day.cancelledOrderCount || 0), 0)
           },
-          // 2. Tổng doanh thu, doanh thu thực tế (trừ tiền thế chân thu được), tổng tiền thế chân
-          totalRevenue,
-          totalActualRevenue: totalRevenue - totalDepositRefund, // Doanh thu thực tế (trừ phần tiền thế chân thu được)
+          // 2. Doanh thu & tiền thế chân (theo chuẩn rental metrics)
+          totalRevenue, // Tổng tiền thu trong kỳ (đã thu + đã hoàn)
+          totalActualRevenue: totalRevenue - totalDepositRefund, // Doanh thu thực tế (trừ tiền thế chân thu được)
           totalCollateral, // Tổng tiền thế chân đang giữ (đơn đã PICKUPED)
-          totalDepositRefund, // Tổng tiền thế chân thu được trong kỳ (RESERVED/PICKUPED)
-          // 3. Tổng tiền thế chân dự kiến phải trả (đơn có pickupPlanAt trong khoảng request)
-          totalCollateralPlanExpectedToRefund: totalCollateralPlan,
-          totalCollateralPlan, // Alias, cùng giá trị
+          totalCollateralPlanExpectedToRefund: totalCollateralPlan, // Tiền thế chân dự kiến trả (đơn dự kiến trả trong kỳ, returnPlanAt)
+          totalRevenuePlan, // Doanh thu dự kiến: thu từ RESERVED sắp lấy (totalAmount - depositAmount) - trừ thế chân sẽ hoàn (PICKUPED sắp trả)
+          totalDepositRefund, // (internal) dùng cho totalActualRevenue
+          totalCollateralPlan, // Alias totalCollateralPlanExpectedToRefund
           totalNewOrders: dailyDataArray.reduce((sum, day) => sum + day.newOrderCount, 0),
           totalOrders: dailyDataArray.reduce((sum, day) => sum + day.orders.length, 0)
         }
