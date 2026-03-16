@@ -10,6 +10,10 @@ interface MerchantHeaderProps {
 }
 
 export function MerchantHeader({ merchant, stats, showStats = false }: MerchantHeaderProps) {
+  const fullAddress = [merchant.address, merchant.city, merchant.state, merchant.zipCode, merchant.country]
+    .filter(Boolean)
+    .join(', ');
+
   // If showStats is false, only show merchant info, hide stat cards
   if (!showStats) {
     return (
@@ -19,8 +23,8 @@ export function MerchantHeader({ merchant, stats, showStats = false }: MerchantH
             <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Merchant</p>
             <p className="text-base font-bold text-gray-900 dark:text-white">{merchant.name}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{merchant.email}</p>
-            {merchant.address && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 pt-1">{merchant.address}</p>
+            {fullAddress && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 pt-1">{fullAddress}</p>
             )}
           </div>
         </CardContent>
@@ -37,8 +41,8 @@ export function MerchantHeader({ merchant, stats, showStats = false }: MerchantH
             <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Merchant</p>
             <p className="text-base font-bold text-gray-900 dark:text-white">{merchant.name}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{merchant.email}</p>
-            {merchant.address && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 pt-1">{merchant.address}</p>
+            {fullAddress && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 pt-1">{fullAddress}</p>
             )}
           </div>
         </CardContent>
