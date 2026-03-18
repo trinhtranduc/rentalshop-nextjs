@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -97,11 +97,7 @@ export async function PUT(
         const oldPlan = await db.plans.findById(merchant.subscription.planId);
         const newPlan = await db.plans.findById(planId);
         
-        // Normalize billingInterval format (API uses 'month', changePlan expects 'monthly')
-        const normalizedBillingInterval = billingInterval === 'month' ? 'monthly' : 
-                                         billingInterval === 'quarter' ? 'quarterly' :
-                                         billingInterval === 'semi_annual' ? 'semi_annual' :
-                                         billingInterval === 'annual' ? 'annual' : 'monthly';
+        const normalizedBillingInterval = normalizeBillingInterval(billingInterval);
         
         // Use changePlan() function which includes email notification
         console.log('📧 Using changePlan() function to update subscription with email notification...', {

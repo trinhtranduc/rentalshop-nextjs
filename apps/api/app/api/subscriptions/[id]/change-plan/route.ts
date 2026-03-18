@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -24,7 +24,7 @@ async function handleChangePlan(
       const body = await request.json();
     // Support both 'planId' and 'newPlanId' for compatibility
     const planId = body.planId || body.newPlanId;
-    const billingInterval = body.billingInterval || body.interval || 'monthly';
+    const billingInterval = normalizeBillingInterval(body.billingInterval || body.interval);
 
       if (!planId) {
         return NextResponse.json(ResponseBuilder.error('PLAN_ID_REQUIRED'), { status: 400 });

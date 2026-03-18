@@ -158,6 +158,7 @@ export * from './validation-schemas';
 // Payment utilities
 export * from './currency';
 export * from './payment-gateways';
+export * from './billing-interval';
 
 // Order utilities
 // MOVED to server.ts - imports @rentalshop/database (server-only)
