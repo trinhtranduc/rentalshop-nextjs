@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { plansApi, stripeApi, subscriptionsApi } from '@rentalshop/utils';
-import { useToast } from '@rentalshop/ui';
 import {
   Card,
   CardHeader,
@@ -10,51 +9,35 @@ import {
   CardContent,
   Button,
   Badge,
-  StatusBadge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  Input,
   Label,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   PageWrapper,
-  Breadcrumb,
   PageLoadingIndicator
 } from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   CreditCard,
   CheckCircle,
   Star,
   Zap,
   Shield,
-  Users,
   Building,
   Package,
-  DollarSign,
-  Calendar,
   ArrowRight,
-  Check,
-  X
+  Check
 } from 'lucide-react';
 import type { Plan, Subscription } from '@rentalshop/types';
 
 export default function PlansPage() {
-  const { toastSuccess } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,7 +91,7 @@ export default function PlansPage() {
             basePrice: data.planPrice,
             currency: data.planCurrency
           }
-        } as any;
+        } as unknown as Subscription;
         setCurrentSubscription(subscription);
       }
 
@@ -165,6 +148,7 @@ export default function PlansPage() {
         planId: selectedPlan.id,
         successUrl,
         cancelUrl,
+        billingInterval: purchaseData.billingCycle,
       });
 
       if (result.success && result.data?.url) {
@@ -225,8 +209,8 @@ export default function PlansPage() {
               <div>
                 <h3 className="font-medium text-blue-800">Current Plan</h3>
                 <p className="text-sm text-blue-700">
-                  You're currently on the <strong>{currentSubscription.plan?.name}</strong> plan.
-                  {currentSubscription.status === 'trial' && ' Your trial ends soon.'}
+                  You&apos;re currently on the <strong>{currentSubscription.plan?.name}</strong> plan.
+                  {String(currentSubscription.status).toLowerCase() === 'trial' && ' Your trial ends soon.'}
                 </p>
               </div>
             </div>

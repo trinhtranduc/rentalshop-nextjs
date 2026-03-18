@@ -369,10 +369,39 @@ model Plan {
   deletedAt     DateTime?
   Merchant      Merchant[]
   subscriptions Subscription[]
+  stripePrices  PlanStripePrice[]
 
   @@index([isActive])
   @@index([sortOrder])
   @@index([deletedAt])
+}
+
+/// Billing intervals supported for Stripe Prices (Plan-level)
+enum PlanBillingInterval {
+  monthly
+  quarterly
+  semi_annual
+  annual
+}
+
+/// Map Plan ↔ Stripe Price IDs by billing interval.
+/// This supports: Basic/Pro each having 4 Stripe prices (monthly/quarterly/semi_annual/annual).
+model PlanStripePrice {
+  id             Int                @id @default(autoincrement())
+  planId         Int
+  billingInterval PlanBillingInterval
+  stripePriceId  String             @unique
+  currency       String?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  plan           Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, billingInterval])
+  @@index([planId])
+  @@index([billingInterval])
+  @@index([isActive])
 }
 
 model Subscription {

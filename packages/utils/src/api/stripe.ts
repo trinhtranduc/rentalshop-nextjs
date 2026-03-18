@@ -6,6 +6,7 @@ export interface CreateCheckoutSessionInput {
   planId: number;
   successUrl: string;
   cancelUrl: string;
+  billingInterval?: string;
   // Admin-only override (optional)
   merchantId?: number;
 }

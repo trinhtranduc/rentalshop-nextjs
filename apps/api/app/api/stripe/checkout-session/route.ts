@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
+import type { UserScope } from '@rentalshop/auth/server';
+import type { AuthUser } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { USER_ROLE, API } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
 import { getStripe } from '../../../../lib/stripe';
 
 interface CheckoutSessionBody {
   planId: number;
   successUrl: string;
   cancelUrl: string;
+  billingInterval?: string;
+  merchantId?: number; // ADMIN-only override
 }
 
 export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
-  async (request: NextRequest, ctx: any) => {
+  async (request: NextRequest, ctx: { user: AuthUser; userScope: UserScope }) => {
     try {
       const { user, userScope } = ctx;
       const body = (await request.json()) as Partial<CheckoutSessionBody>;
@@ -35,8 +39,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
 
       const merchantId =
         user.role === USER_ROLE.ADMIN
-          ? (body as any).merchantId ?? null
-          : (userScope as any)?.merchantId ?? null;
+          ? body.merchantId ?? null
+          : userScope?.merchantId ?? null;
 
       if (!merchantId || !Number.isFinite(merchantId)) {
         return NextResponse.json(ResponseBuilder.error('MERCHANT_ID_REQUIRED'), {
@@ -48,8 +52,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
 
       const merchant = (await db.prisma.merchant.findUnique({
         where: { id: Number(merchantId) },
-        select: { id: true, name: true, email: true, stripeCustomerId: true } as any,
-      })) as any;
+        select: { id: true, name: true, email: true, stripeCustomerId: true },
+      }));
 
       if (!merchant) {
         return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), {
@@ -59,8 +63,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
 
       const plan = (await db.prisma.plan.findUnique({
         where: { id: Number(body.planId) },
-        select: { id: true, name: true, trialDays: true, stripePriceId: true, currency: true } as any,
-      })) as any;
+        select: { id: true, name: true, trialDays: true, stripePriceId: true, currency: true },
+      }));
 
       if (!plan) {
         return NextResponse.json(ResponseBuilder.error('PLAN_NOT_FOUND'), {
@@ -68,7 +72,22 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
         });
       }
 
-      if (!plan.stripePriceId) {
+      // Resolve Stripe Price ID:
+      // - Prefer PlanStripePrice mapping by selected billing interval (Hướng A)
+      // - Fallback to legacy Plan.stripePriceId for backward compatibility
+      const requestedInterval = normalizeBillingInterval(body.billingInterval || 'monthly');
+      const mapped = await db.prisma.planStripePrice.findFirst({
+        where: {
+          planId: plan.id,
+          billingInterval: requestedInterval,
+          isActive: true,
+        },
+        select: { stripePriceId: true },
+      });
+
+      const stripePriceId: string | null = mapped?.stripePriceId ?? plan.stripePriceId ?? null;
+
+      if (!stripePriceId) {
         return NextResponse.json(ResponseBuilder.error('PLAN_STRIPE_PRICE_ID_NOT_SET'), {
           status: API.STATUS.BAD_REQUEST,
         });
@@ -87,17 +106,16 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
 
         customerId = customer.id;
 
-        // Prisma client may not be regenerated yet for stripeCustomerId field
         await db.prisma.merchant.update({
           where: { id: merchant.id },
-          data: { stripeCustomerId: customerId } as any,
+          data: { stripeCustomerId: customerId },
         });
       }
 
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer: customerId,
-        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        line_items: [{ price: stripePriceId, quantity: 1 }],
         success_url: body.successUrl,
         cancel_url: body.cancelUrl,
         allow_promotion_codes: true,
@@ -105,6 +123,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
         metadata: {
           merchantId: String(merchant.id),
           planId: String(plan.id),
+          billingInterval: requestedInterval,
         },
         subscription_data: plan.trialDays
           ? {
@@ -112,12 +131,14 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
               metadata: {
                 merchantId: String(merchant.id),
                 planId: String(plan.id),
+                billingInterval: requestedInterval,
               },
             }
           : {
               metadata: {
                 merchantId: String(merchant.id),
                 planId: String(plan.id),
+                billingInterval: requestedInterval,
               },
             },
       });

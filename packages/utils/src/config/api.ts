@@ -124,6 +124,7 @@ export interface ApiUrls {
     delete: (id: number) => string;
     stats: string;
     public: string;
+    stripePrices: (id: number) => string;
   };
   planVariants: {
     list: string;
@@ -651,6 +652,7 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/plans/${id}`,
       stats: `${base}/api/plans/stats`,
       public: `${base}/api/plans/public`,
+      stripePrices: (id: number) => `${base}/api/plans/${id}/stripe-prices`,
     },
     planVariants: {
       list: `${base}/api/plan-variants`,

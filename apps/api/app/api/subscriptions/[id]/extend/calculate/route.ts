@@ -5,7 +5,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder, formatCurrency } from '@rentalshop/utils';
+import {
+  handleApiError,
+  ResponseBuilder,
+  formatCurrency,
+  normalizeBillingInterval,
+  calculateSubscriptionPrice,
+  calculateExtensionTotal,
+} from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -31,6 +38,7 @@ async function handleCalculateExtensionPrice(
     // Get newEndDate from query params
     const { searchParams } = new URL(request.url);
     const newEndDateStr = searchParams.get('newEndDate');
+    const requestedIntervalRaw = searchParams.get('billingInterval');
 
     if (!newEndDateStr) {
       return NextResponse.json(
@@ -71,6 +79,13 @@ async function handleCalculateExtensionPrice(
       );
     }
 
+    // db.subscriptions.findById() may return a narrowed Plan type in TS,
+    // but runtime includes full plan fields (basePrice/currency). Cast locally.
+    const subscriptionAny = subscription as unknown as { billingInterval?: unknown; plan?: unknown };
+    const planAny = subscriptionAny.plan as
+      | { id?: number; name?: string; basePrice?: number; currency?: string }
+      | undefined;
+
     // Get active addons for merchant
     const addons = await db.planLimitAddons.findActiveByMerchant(subscription.merchantId);
     const totalAddonLimits = await db.planLimitAddons.calculateTotal(subscription.merchantId);
@@ -79,7 +94,9 @@ async function handleCalculateExtensionPrice(
     const oldEndDate = subscription.currentPeriodEnd 
       ? new Date(subscription.currentPeriodEnd) 
       : new Date();
-    const extensionDays = Math.ceil((newEndDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24));
+    const extensionDays = Math.ceil(
+      (newEndDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     if (extensionDays <= 0) {
       return NextResponse.json(
@@ -90,8 +107,12 @@ async function handleCalculateExtensionPrice(
 
     // Calculate plan price per day
     // Use current billing interval or default to monthly
-    const billingInterval = subscription.billingInterval || 'monthly';
-    const plan = subscription.plan;
+    const billingInterval = normalizeBillingInterval(
+      requestedIntervalRaw ||
+        (typeof subscriptionAny.billingInterval === 'string' ? subscriptionAny.billingInterval : undefined) ||
+        'monthly'
+    );
+    const plan = planAny || {};
     
     // Get monthly price from plan
     const monthlyPrice = plan.basePrice || 0;
@@ -105,27 +126,33 @@ async function handleCalculateExtensionPrice(
     const usedDays = Math.max(0, Math.ceil((now.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24)));
     const remainingDays = Math.max(0, Math.ceil((oldEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     
-    // Calculate period price based on billing interval
-    const getPeriodPrice = (interval: string): number => {
-      switch (interval) {
-        case 'monthly': return monthlyPrice;
-        case 'quarterly': return monthlyPrice * 3;
-        case 'semi_annual': return monthlyPrice * 6 * 0.95; // 5% discount
-        case 'annual': return monthlyPrice * 12 * 0.90; // 10% discount
-        default: return monthlyPrice;
-      }
-    };
-    
-    const periodPrice = getPeriodPrice(billingInterval);
-    const dailyPrice = periodPrice / currentPeriodDays;
+    // Shared pure logic (no API call): keep extension proration consistent everywhere.
+    const extensionCalc = calculateExtensionTotal({
+      oldEndDate,
+      newEndDate,
+      plan: { basePrice: plan.basePrice || 0 },
+      selectedInterval: billingInterval,
+    });
+
+    const periodPrice = extensionCalc.selectedIntervalPrice;
+    const selectedPeriodDays = extensionCalc.selectedIntervalDays;
+    const dailyPrice = periodPrice / selectedPeriodDays;
     
     // Calculate used value and remaining value
-    const usedValue = (usedDays / currentPeriodDays) * periodPrice;
-    const remainingValue = remainingDays > 0 ? (remainingDays / currentPeriodDays) * periodPrice : 0;
+    // Keep "used/remaining" values based on CURRENT active period (informational).
+    // This is not subtracted from extension total (consistent with previous behavior).
+    const currentPeriodPrice = calculateSubscriptionPrice(
+      plan as unknown as { basePrice?: number },
+      normalizeBillingInterval(
+        typeof subscriptionAny.billingInterval === 'string' ? subscriptionAny.billingInterval : 'monthly'
+      ) as unknown as never
+    );
+    const usedValue = (usedDays / currentPeriodDays) * currentPeriodPrice;
+    const remainingValue = remainingDays > 0 ? (remainingDays / currentPeriodDays) * currentPeriodPrice : 0;
     
     // Calculate extension price
-    // Formula: (Extension Days / Period Days) * Period Price
-    const extensionPrice = (extensionDays / currentPeriodDays) * periodPrice;
+    // Formula: (Extension Days / Selected Interval Days) * Selected Interval Price
+    const extensionPrice = extensionCalc.extensionPrice;
     
     // Total price = extension price only (remaining value is still being used)
     const totalPrice = extensionPrice;
@@ -141,6 +168,7 @@ async function handleCalculateExtensionPrice(
         newEndDate: newEndDate.toISOString(),
         extensionDays,
         currentPeriodDays,
+        selectedPeriodDays,
         usedDays,
         remainingDays,
         monthlyPrice,
@@ -159,10 +187,10 @@ async function handleCalculateExtensionPrice(
             periodDays: currentPeriodDays,
             usedDays: usedDays,
             remainingDays: remainingDays,
-            periodPrice: periodPrice,
+            periodPrice: currentPeriodPrice,
             usedValue: usedValue,
             remainingValue: remainingValue,
-            dailyPrice: dailyPrice
+            dailyPrice: currentPeriodPrice / currentPeriodDays
           },
           extension: {
             days: extensionDays,
@@ -171,9 +199,9 @@ async function handleCalculateExtensionPrice(
           total: totalPrice
         },
         formula: {
-          step1: `Current Plan (${plan.name}): ${usedDays} days used / ${currentPeriodDays} days = ${formatCurrency(usedValue, plan.currency || 'VND' as any)} used, ${remainingDays} days remaining = ${formatCurrency(remainingValue, plan.currency || 'VND' as any)} remaining (still in use)`,
-          step2: `Extension: ${extensionDays} days / ${currentPeriodDays} days × ${formatCurrency(periodPrice, plan.currency || 'VND' as any)} = ${formatCurrency(extensionPrice, plan.currency || 'VND' as any)}`,
-          step3: `Total: Extension Price = ${formatCurrency(extensionPrice, plan.currency || 'VND' as any)} (Remaining value ${formatCurrency(remainingValue, plan.currency || 'VND' as any)} continues to be used)`
+          step1: `Current Plan (${plan.name}): ${usedDays} days used / ${currentPeriodDays} days = ${formatCurrency(usedValue, (plan.currency || 'VND') as never)} used, ${remainingDays} days remaining = ${formatCurrency(remainingValue, (plan.currency || 'VND') as never)} remaining (still in use)`,
+          step2: `Extension: ${extensionDays} days / ${selectedPeriodDays} days × ${formatCurrency(periodPrice, (plan.currency || 'VND') as never)} = ${formatCurrency(extensionPrice, (plan.currency || 'VND') as never)}`,
+          step3: `Total: Extension Price = ${formatCurrency(extensionPrice, (plan.currency || 'VND') as never)} (Remaining value ${formatCurrency(remainingValue, (plan.currency || 'VND') as never)} continues to be used)`
         },
         addons: {
           count: addons.length,
@@ -202,7 +230,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, context) => {
+  return withAuthRoles(['ADMIN'])(async (request) => {
     return handleCalculateExtensionPrice(request, { params });
   })(request);
 }

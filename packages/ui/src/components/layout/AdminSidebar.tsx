@@ -32,7 +32,8 @@ import {
   UserCircle,
   ScrollText,
   Trash2,
-  Activity
+  Activity,
+  DollarSign
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -81,6 +82,23 @@ const adminMenuItems: MenuItem[] = [
         icon: CreditCard 
       }
     ]
+  },
+  {
+    label: 'Plans',
+    href: '/plans',
+    icon: Package,
+    subItems: [
+      {
+        label: 'Plans',
+        href: '/plans',
+        icon: Package,
+      },
+      {
+        label: 'Stripe Billing',
+        href: '/plans/billing',
+        icon: DollarSign,
+      },
+    ],
   },
   {
     label: 'Orders',
@@ -133,11 +151,6 @@ const adminMenuItems: MenuItem[] = [
         label: 'Admin Info', 
         href: '/settings/admin', 
         icon: User 
-      },
-      { 
-        label: 'Plans', 
-        href: '/plans', 
-        icon: Package 
       },
       { 
         label: 'Audit Logs', 

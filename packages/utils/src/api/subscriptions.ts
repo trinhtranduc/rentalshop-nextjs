@@ -143,7 +143,10 @@ export const subscriptionsApi = {
    */
   async calculateExtensionPrice(
     id: number,
-    newEndDate: Date | string
+    newEndDate: Date | string,
+    options?: {
+      billingInterval?: string;
+    }
   ): Promise<ApiResponse<{
     subscriptionId: number;
     planId: number;
@@ -181,7 +184,11 @@ export const subscriptionsApi = {
       ? newEndDate 
       : newEndDate.toISOString().split('T')[0];
     
-    const url = `${apiUrls.subscriptions.calculateExtension(id)}?newEndDate=${encodeURIComponent(dateStr)}`;
+    const params = new URLSearchParams({ newEndDate: dateStr });
+    if (options?.billingInterval) {
+      params.set('billingInterval', options.billingInterval);
+    }
+    const url = `${apiUrls.subscriptions.calculateExtension(id)}?${params.toString()}`;
     const response = await authenticatedFetch(url);
     return await parseApiResponse(response);
   },

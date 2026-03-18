@@ -25,6 +25,7 @@ export * from './request-logs';
 export * from './settings';
 export * from './subscriptions';
 export * from './stripe';
+export * from './plan-stripe-prices';
 export * from './plan-limit-addons';
 export * from './system';
 export * from './calendar';
