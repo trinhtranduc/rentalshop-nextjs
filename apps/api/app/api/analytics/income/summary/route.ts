@@ -255,7 +255,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       }
     }
 
-    // Tiền thế chân dự kiến trả trong tương lai = đơn đang thuê (PICKUPED) có lịch trả hàng (returnPlanAt) trong kỳ
+    // totalCollateralPlanExpectedToRefund = tổng cọc sẽ hoàn lại khách trong kỳ (chỉ đơn thuê đang cho mượn có lịch trả hàng trong kỳ)
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
       status: ORDER_STATUS.PICKUPED,
