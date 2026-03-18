@@ -477,17 +477,7 @@ export function ImportCustomerDialog({
         if (onImportSuccess) {
           onImportSuccess();
         }
-        setTimeout(() => {
-          setFile(null);
-          setPreviewData([]);
-          setHeaders([]);
-          setErrors([]);
-          setDuplicates([]);
-          setImportResult(null);
-          setImportProgress(null);
-          setChunkLogs([]);
-          onOpenChange(false);
-        }, 1000);
+        // Giữ dialog mở để user xem kết quả, xem chi tiết lỗi/trùng, rồi bấm Đóng khi xong
       } else if (chunkedResult.imported > 0 && chunkedResult.failed > 0) {
         toastError(`Import stopped at chunk ${importProgress?.currentChunk || '?'}. Some rows were already imported.`);
       } else if (chunkedResult.failed > 0) {
@@ -517,6 +507,52 @@ export function ImportCustomerDialog({
     }
   };
 
+  const handleDownloadReport = () => {
+    if (!importResult) return;
+    const date = new Date().toLocaleString('vi-VN');
+    const total = importResult.imported + importResult.skipped + importResult.failed;
+    let report = `BÁO CÁO KẾT QUẢ IMPORT KHÁCH HÀNG\n`;
+    report += `${'='.repeat(50)}\n`;
+    report += `Ngày: ${date}\n`;
+    report += `File: ${file?.name ?? '—'}\n\n`;
+    report += `TỔNG QUAN\n`;
+    report += `  Thành công: ${importResult.imported}\n`;
+    report += `  Bỏ qua (trùng): ${importResult.skipped}\n`;
+    report += `  Thất bại: ${importResult.failed}\n`;
+    report += `  Tổng cộng: ${total}\n\n`;
+    if (importResult.errors && importResult.errors.length > 0) {
+      report += `CHI TIẾT LỖI (${importResult.errors.length} lỗi)\n`;
+      report += `${'-'.repeat(50)}\n`;
+      importResult.errors.forEach(err => {
+        report += `  Dòng ${err.row}: ${err.error}\n`;
+      });
+      report += '\n';
+    }
+    if (chunkLogs.length > 0) {
+      report += `CHI TIẾT TỪNG ĐỢT (${chunkLogs.length} đợt)\n`;
+      report += `${'-'.repeat(50)}\n`;
+      chunkLogs.forEach(log => {
+        report += `  Đợt ${log.chunk}: ${log.message}\n`;
+        report += `    Thành công: ${log.imported}, Bỏ qua: ${log.skipped}, Thất bại: ${log.failed}\n`;
+        if (log.errors && log.errors.length > 0) {
+          log.errors.forEach(e => {
+            report += `    - Dòng ${e.row}: ${e.error}\n`;
+          });
+        }
+      });
+    }
+    const blob = new Blob(['\uFEFF' + report], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bao-cao-import-khach-hang-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toastSuccess('Đã tải báo cáo');
+  };
+
   const handleDownloadTemplate = async () => {
     try {
       const blob = await customersApi.downloadSampleFile();
@@ -543,6 +579,7 @@ export function ImportCustomerDialog({
       setImportResult(null);
       setImportProgress(null);
       setChunkLogs([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       onOpenChange(false);
     }
   };
@@ -820,6 +857,19 @@ export function ImportCustomerDialog({
                     {importResult.imported + importResult.skipped + importResult.failed}
                   </div>
                 </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadReport}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Tải báo cáo
+                </Button>
               </div>
 
               {/* Error Details */}

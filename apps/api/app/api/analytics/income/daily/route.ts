@@ -233,7 +233,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       totalRevenue: number; // Tổng doanh thu trong ngày
       depositRefund: number; // Tổng tiền thế chân thu được trong ngày (tính theo ngày phát sinh: RESERVED hoặc PICKUPED)
       totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
-      totalCollateralPlan: number; // Tổng tiền thế chân dự kiến trả (đơn PICKUPED có returnPlanAt trong ngày)
+      totalCollateralPlan: number; // Tổng cọc sẽ hoàn trong ngày (đơn thuê đang cho mượn có lịch trả hàng trong ngày)
       newOrderCount: number; // Số đơn mới được tạo trong ngày
       pickupOrderCount: number; // Số đơn lấy hàng trong ngày (pickedUpAt)
       returnOrderCount: number; // Số đơn trả hàng trong ngày (returnedAt)
@@ -616,9 +616,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     console.log(`💰 Daily Total Collateral recalculated: ${collateralOrders.length} PICKUPED orders in query range ${queryStart.toISOString()} - ${queryEnd.toISOString()}`);
 
     // ============================================================================
-    // TÍNH TỔNG TIỀN THẾ CHÂN DỰ KIẾN TRẢ: tiền thế chân dự kiến trả trong tương lai cho đơn dự kiến trả trong kỳ
+    // totalCollateralPlanExpectedToRefund: Tổng cọc sẽ hoàn lại khách trong kỳ
     // ============================================================================
-    // Chỉ đơn đang thuê (PICKUPED) có lịch trả hàng (returnPlanAt) trong [startDate,endDate] — khi khách trả sẽ hoàn cọc
+    // Chỉ đơn thuê đang cho mượn (PICKUPED, đang giữ cọc) có lịch trả hàng (returnPlanAt) trong kỳ. Khi khách trả hàng, cần hoàn lại tiền cọc.
     const collateralPlanWhereClause: any = {
       orderType: ORDER_TYPE.RENT,
       status: ORDER_STATUS.PICKUPED,
@@ -975,7 +975,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           totalRevenue, // Tổng tiền thu trong kỳ (đã thu + đã hoàn)
           totalActualRevenue: totalRevenue - totalDepositRefund, // Doanh thu thực tế (trừ tiền thế chân thu được)
           totalCollateral, // Tổng tiền thế chân đang giữ (đơn đã PICKUPED)
-          totalCollateralPlanExpectedToRefund: totalCollateralPlan, // Tiền thế chân dự kiến trả (đơn dự kiến trả trong kỳ, returnPlanAt)
+          totalCollateralPlanExpectedToRefund: totalCollateralPlan, // Tổng cọc sẽ hoàn lại khách: chỉ đơn thuê đang cho mượn (PICKUPED) có lịch trả hàng (returnPlanAt) trong kỳ
           totalRevenuePlan, // Doanh thu dự kiến: thu từ RESERVED sắp lấy (totalAmount - depositAmount) - trừ thế chân sẽ hoàn (PICKUPED sắp trả)
           totalDepositRefund, // (internal) dùng cho totalActualRevenue
           totalCollateralPlan, // Alias totalCollateralPlanExpectedToRefund

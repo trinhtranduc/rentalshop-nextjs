@@ -71,6 +71,8 @@ model Merchant {
   name            String
   email           String           @unique
   phone           String?
+  /// Stripe customer id for subscription billing
+  stripeCustomerId String?         @unique
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
   tenantKey       String?          @unique
@@ -354,6 +356,8 @@ model Plan {
   description   String
   basePrice     Float
   currency      String         @default("USD")
+  /// Stripe Price ID for subscription checkout (mode=subscription)
+  stripePriceId String?        @unique
   trialDays     Int            @default(14)
   limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
   features      String         @default("[]")
@@ -375,6 +379,8 @@ model Subscription {
   id                 Int                    @id @default(autoincrement())
   merchantId         Int                    @unique
   planId             Int
+  /// Stripe Subscription ID for syncing status/periods via webhooks
+  stripeSubscriptionId String?              @unique
   status             String                 @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime

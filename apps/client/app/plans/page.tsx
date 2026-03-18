@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { plansApi, subscriptionsApi } from '@rentalshop/utils';
+import { plansApi, stripeApi, subscriptionsApi } from '@rentalshop/utils';
 import { useToast } from '@rentalshop/ui';
 import {
   Card,
@@ -155,22 +155,39 @@ export default function PlansPage() {
 
   const handleConfirmPurchase = async () => {
     try {
-      const result = await subscriptionsApi.create({
-        merchantId: 1, // TODO: Get from user context
-        planId: selectedPlan?.id || 0,
-        status: 'active',
-        billingInterval: purchaseData.billingCycle === 'monthly' ? 'month' : 
-                        purchaseData.billingCycle === 'quarterly' ? 'quarter' : 'year'
+      if (!selectedPlan) return;
+
+      const origin = window.location.origin;
+      const successUrl = `${origin}/plans?stripe=success`;
+      const cancelUrl = `${origin}/plans?stripe=cancel`;
+
+      const result = await stripeApi.createCheckoutSession({
+        planId: selectedPlan.id,
+        successUrl,
+        cancelUrl,
       });
 
-      if (result.success) {
-        // Redirect to subscription page
-        window.location.href = '/subscription';
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+        return;
       }
       // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error purchasing plan:', err);
       // Error automatically handled by useGlobalErrorHandler
+    }
+  };
+
+  const handleManageBilling = async () => {
+    try {
+      const origin = window.location.origin;
+      const returnUrl = `${origin}/plans`;
+      const result = await stripeApi.createBillingPortal({ returnUrl });
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+      }
+    } catch (err) {
+      console.error('Error opening billing portal:', err);
     }
   };
 
@@ -212,6 +229,11 @@ export default function PlansPage() {
                   {currentSubscription.status === 'trial' && ' Your trial ends soon.'}
                 </p>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="outline" onClick={handleManageBilling}>
+                Manage billing
+              </Button>
             </div>
           </CardContent>
         </Card>
