@@ -228,7 +228,10 @@ export default function SubscriptionsPage() {
           result = await subscriptionsApi.cancel(subscription.id, reason);
           break;
         case 'changePlan':
-          result = await subscriptionsApi.changePlan(subscription.id, confirmData.newPlanId);
+          result = await subscriptionsApi.changePlan(subscription.id, confirmData.newPlanId, {
+            billingInterval: confirmData.interval,
+            reason,
+          });
           break;
         default:
           return;

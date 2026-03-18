@@ -109,10 +109,31 @@ export const subscriptionsApi = {
   /**
    * Change subscription plan
    */
-  async changePlan(id: number, newPlanId: number): Promise<ApiResponse<Subscription>> {
+  async changePlan(
+    id: number,
+    newPlanId: number,
+    options?: {
+      billingInterval?: string;
+      startDate?: string | Date;
+      reason?: string;
+      sendEmail?: boolean;
+      customPrice?: number;
+    }
+  ): Promise<ApiResponse<Subscription>> {
+    const payload: any = { newPlanId };
+
+    if (options?.billingInterval) payload.billingInterval = options.billingInterval;
+    if (options?.startDate) {
+      payload.startDate =
+        options.startDate instanceof Date ? options.startDate.toISOString() : options.startDate;
+    }
+    if (options?.reason) payload.reason = options.reason;
+    if (typeof options?.sendEmail === 'boolean') payload.sendEmail = options.sendEmail;
+    if (typeof options?.customPrice === 'number') payload.customPrice = options.customPrice;
+
     const response = await authenticatedFetch(`${apiUrls.subscriptions.update(id)}/change-plan`, {
       method: 'POST',
-      body: JSON.stringify({ newPlanId }),
+      body: JSON.stringify(payload),
     });
     return await parseApiResponse<Subscription>(response);
   },
