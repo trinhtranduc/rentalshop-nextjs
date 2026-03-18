@@ -18,6 +18,20 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
 
     // Get recent audit logs
     const auditLogs = await db.auditLogs.findMany({
+      include: {
+        outlet: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        merchant: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
       orderBy: {
         createdAt: 'desc'
       },
@@ -80,6 +94,8 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         action,
         description,
         type,
+        outletName: log.outlet?.name || (details as any).outletName || null,
+        merchantName: log.merchant?.name || (details as any).merchantName || null,
         createdAt: log.createdAt,
         entityType: log.entityType
       };

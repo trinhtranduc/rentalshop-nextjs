@@ -589,8 +589,14 @@ export default function AdminDashboard() {
             id: m.id,
             name: m.name,
             createdAt: m.createdAt,
-            subscriptionStatus: m.subscriptionStatus,
-            plan: m.plan?.name || 'N/A'
+            phone: m.phone,
+            address: m.address,
+            city: m.city,
+            state: m.state,
+            zipCode: m.zipCode,
+            country: m.country,
+            subscriptionStatus: m.subscription?.status ?? 'trial',
+            plan: m.subscription?.plan?.name || 'No Plan'
           }));
         setNewMerchants(newMerchantsData);
 
@@ -883,7 +889,17 @@ export default function AdminDashboard() {
                           </div>
                           <div>
                             <div className="font-medium text-sm">{merchant.name}</div>
-                            <div className="text-xs text-gray-500">{merchant.plan}</div>
+                            {merchant.phone && (
+                              <div className="text-xs text-gray-500">{merchant.phone}</div>
+                            )}
+                            {(() => {
+                              const fullAddress = [merchant.address, merchant.city, merchant.state, merchant.zipCode, merchant.country]
+                                .filter(Boolean)
+                                .join(', ');
+                              return fullAddress ? (
+                                <div className="text-xs text-gray-500">{fullAddress}</div>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                         <div className="text-right">
