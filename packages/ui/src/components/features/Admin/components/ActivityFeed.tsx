@@ -12,6 +12,8 @@ interface ActivityItem {
   description: string;
   icon?: LucideIcon;
   type: 'success' | 'warning' | 'error' | 'info';
+  outletName?: string | null;
+  merchantName?: string | null;
 }
 
 interface ActivityFeedProps {
@@ -102,6 +104,11 @@ export default function ActivityFeed({
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-text-primary">{activity.user}</span>
                     <span className="text-sm text-text-secondary">{activity.action}</span>
+                    {activity.outletName && (
+                      <span className="text-xs text-text-tertiary truncate">
+                        @ {activity.outletName}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-text-secondary mt-1">{activity.description}</p>
                   <p className="text-xs text-text-tertiary mt-1">{activity.timestamp}</p>
