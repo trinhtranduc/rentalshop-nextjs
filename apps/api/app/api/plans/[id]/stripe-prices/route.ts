@@ -10,6 +10,14 @@ function isInterval(value: string): value is Interval {
   return value === 'monthly' || value === 'quarterly' || value === 'semi_annual' || value === 'annual';
 }
 
+type PrismaStripePriceClient = {
+  planStripePrice: {
+    findMany: (args: unknown) => Promise<unknown>;
+    upsert: (args: unknown) => Promise<unknown>;
+  };
+  $transaction: <T>(fn: (tx: PrismaStripePriceClient) => Promise<T>) => Promise<T>;
+};
+
 /**
  * GET /api/plans/[id]/stripe-prices
  * ADMIN-only. Returns Stripe price mappings for a plan.
@@ -27,12 +35,7 @@ export async function GET(
         return NextResponse.json(ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'), { status: API.STATUS.BAD_REQUEST });
       }
 
-      const prismaAny = db.prisma as unknown as {
-        planStripePrice: {
-          findMany: (args: unknown) => Promise<unknown>;
-          upsert: (args: unknown) => Promise<unknown>;
-        };
-      };
+      const prismaAny = db.prisma as unknown as PrismaStripePriceClient;
 
       const items = await prismaAny.planStripePrice.findMany({
         where: { planId, isActive: true },
@@ -77,12 +80,7 @@ export async function PUT(
         return NextResponse.json(ResponseBuilder.error('INVALID_PLAN_ID_FORMAT'), { status: API.STATUS.BAD_REQUEST });
       }
 
-      const prismaAny = db.prisma as unknown as {
-        planStripePrice: {
-          findMany: (args: unknown) => Promise<unknown>;
-          upsert: (args: unknown) => Promise<unknown>;
-        };
-      };
+      const prismaAny = db.prisma as unknown as PrismaStripePriceClient;
 
       const body = (await request.json()) as {
         currency?: string;
@@ -104,9 +102,11 @@ export async function PUT(
         });
       }
 
-      await Promise.all(
-        entries.map(([billingInterval, stripePriceId]) =>
-          prismaAny.planStripePrice.upsert({
+      // Save overwrites by (planId, billingInterval); same stripePriceId may appear in multiple slots.
+      // Atomic save: either all intervals are updated, or none.
+      await prismaAny.$transaction(async (tx) => {
+        for (const [billingInterval, stripePriceId] of entries) {
+          await tx.planStripePrice.upsert({
             where: { planId_billingInterval: { planId, billingInterval } },
             create: {
               planId,
@@ -121,9 +121,9 @@ export async function PUT(
               isActive: true,
               updatedAt: new Date(),
             },
-          })
-        )
-      );
+          });
+        }
+      });
 
       const items = await prismaAny.planStripePrice.findMany({
         where: { planId, isActive: true },

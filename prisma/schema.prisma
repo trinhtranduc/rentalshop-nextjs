@@ -390,7 +390,7 @@ model PlanStripePrice {
   id             Int                @id @default(autoincrement())
   planId         Int
   billingInterval PlanBillingInterval
-  stripePriceId  String             @unique
+  stripePriceId  String             // no unique: allow same price in multiple plan/interval slots; save overwrites by (planId, billingInterval)
   currency       String?
   isActive       Boolean            @default(true)
   createdAt      DateTime           @default(now())
