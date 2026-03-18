@@ -2562,6 +2562,8 @@
 "@rentalshop/auth@file:packages/auth":
   version "1.0.0"
   dependencies:
+    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-b09b2277-1ad7-4bba-a4e8-0d774ee6fe5f-1773819986214/node_modules/@rentalshop/database"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-b09b2277-1ad7-4bba-a4e8-0d774ee6fe5f-1773819986214/node_modules/@rentalshop/utils"
     bcryptjs "^3.0.2"
     jsonwebtoken "^9.0.0"
     next-auth "^4.24.0"
@@ -2587,22 +2589,22 @@
 "@rentalshop/hooks@file:packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-cbfc3347-dbcc-4aff-81d8-d3c95057a343-1771469986597/node_modules/@rentalshop/constants"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-cbfc3347-dbcc-4aff-81d8-d3c95057a343-1771469986597/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-cbfc3347-dbcc-4aff-81d8-d3c95057a343-1771469986597/node_modules/@rentalshop/utils"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-adc4ea42-f90e-403f-979c-14f80766663f-1773819986215/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-adc4ea42-f90e-403f-979c-14f80766663f-1773819986215/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-adc4ea42-f90e-403f-979c-14f80766663f-1773819986215/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-303496bb-f9f0-4958-9366-c90ccbac03cf-1771469986598/node_modules/@rentalshop/auth"
-    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-303496bb-f9f0-4958-9366-c90ccbac03cf-1771469986598/node_modules/@rentalshop/database"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-303496bb-f9f0-4958-9366-c90ccbac03cf-1771469986598/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-303496bb-f9f0-4958-9366-c90ccbac03cf-1771469986598/node_modules/@rentalshop/utils"
+    "@rentalshop/auth" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-3e07738b-72f8-4ae0-8028-d9ffe4085cb1-1773819986216/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-3e07738b-72f8-4ae0-8028-d9ffe4085cb1-1773819986216/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-3e07738b-72f8-4ae0-8028-d9ffe4085cb1-1773819986216/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-3e07738b-72f8-4ae0-8028-d9ffe4085cb1-1773819986216/node_modules/@rentalshop/utils"
 
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-0458e784-7c1c-43ef-a301-0bf82e3e1c23-1771469986597/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-61b4adbd-7c20-41ca-a1e4-80bf43c980e9-1773819986215/node_modules/@rentalshop/constants"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"
@@ -2613,9 +2615,9 @@
     "@radix-ui/react-slot" "^1.1.2"
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-dea25922-b7fd-4cf7-8656-54b225ff47ad-1771469986598/node_modules/@rentalshop/constants"
-    "@rentalshop/hooks" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-dea25922-b7fd-4cf7-8656-54b225ff47ad-1771469986598/node_modules/@rentalshop/hooks"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-dea25922-b7fd-4cf7-8656-54b225ff47ad-1771469986598/node_modules/@rentalshop/types"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-9ebddf25-d571-49b1-913f-3a8765e53021-1773819986216/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-9ebddf25-d571-49b1-913f-3a8765e53021-1773819986216/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-9ebddf25-d571-49b1-913f-3a8765e53021-1773819986216/node_modules/@rentalshop/types"
     "@tiptap/extension-code-block" "^2.1.13"
     "@tiptap/extension-image" "^2.1.13"
     "@tiptap/extension-link" "^2.1.13"
@@ -2645,8 +2647,8 @@
     "@aws-sdk/client-ses" "^3.921.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
     "@axiomhq/js" "^1.0.0"
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-415c4d11-401f-4e08-895d-e328a1e82c4b-1771469986596/node_modules/@rentalshop/constants"
-    "@rentalshop/env" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-415c4d11-401f-4e08-895d-e328a1e82c4b-1771469986596/node_modules/@rentalshop/env"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-522f1014-e278-4ce2-8b46-ed45a0cab35c-1773819986214/node_modules/@rentalshop/constants"
+    "@rentalshop/env" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-522f1014-e278-4ce2-8b46-ed45a0cab35c-1773819986214/node_modules/@rentalshop/env"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
     pino "^9.0.0"
@@ -10247,6 +10249,11 @@ stripe@^14.0.0:
   dependencies:
     "@types/node" ">=8.1.0"
     qs "^6.11.0"
+
+stripe@^20.4.1:
+  version "20.4.1"
+  resolved "https://registry.yarnpkg.com/stripe/-/stripe-20.4.1.tgz#547d8a22a97e85a239895f0ffe14de21d96f060a"
+  integrity sha512-axCguHItc8Sxt0HC6aSkdVRPffjYPV7EQqZRb2GkIa8FzWDycE7nHJM19C6xAIynH1Qp1/BHiopSi96jGBxT0w==
 
 strnum@^2.1.0:
   version "2.1.1"

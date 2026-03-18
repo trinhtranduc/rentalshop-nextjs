@@ -296,6 +296,9 @@ export function SubscriptionChangePlanDialog({
     };
   };
 
+  const computedEndDate = calculateEndDate(startDate, selectedInterval);
+  const computedDuration = calculateDuration(startDate, selectedInterval);
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
@@ -343,6 +346,31 @@ export function SubscriptionChangePlanDialog({
                 onChange={(e) => setStartDate(e.target.value + 'T00:00:00')}
                 className="w-full text-sm"
               />
+            </div>
+          </div>
+
+          {/* End Date (computed) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">End Date</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={computedEndDate ? computedEndDate.toISOString().split('T')[0] : ''}
+                readOnly
+                className="w-full text-sm bg-muted/30"
+              />
+              {computedDuration && (
+                <div className="text-[10px] text-muted-foreground">
+                  Duration: {computedDuration.months} month{computedDuration.months !== 1 ? 's' : ''} (~{computedDuration.days} days)
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium"> </Label>
+              <div className="h-9 flex items-center text-xs text-muted-foreground">
+                {computedEndDate ? `Ends on ${formatDate(computedEndDate)}` : 'Select start date to calculate end date'}
+              </div>
             </div>
           </div>
 

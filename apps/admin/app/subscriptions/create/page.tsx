@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { subscriptionsApi } from '@rentalshop/utils';
+import { stripeApi, subscriptionsApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
   PageWrapper,
@@ -56,15 +56,24 @@ export default function CreateSubscriptionPage() {
   const handleSubmit = async (data: SubscriptionCreateInput) => {
     try {
       setSubmitting(true);
-      
-      const result = await subscriptionsApi.create(data);
 
-      if (result.success && result.data) {
-        // Redirect to subscription detail page
-        router.push(`/admin/subscriptions/${result.data.id}`);
-      } else {
-        alert(`Error creating subscription: ${result.message}`);
+      const origin = window.location.origin;
+      const successUrl = `${origin}/admin/subscriptions?stripe=success`;
+      const cancelUrl = `${origin}/admin/subscriptions/create?stripe=cancel`;
+
+      const result = await stripeApi.createCheckoutSession({
+        merchantId: data.merchantId,
+        planId: data.planId,
+        successUrl,
+        cancelUrl,
+      });
+
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+        return;
       }
+
+      alert(`Error creating checkout session: ${result.message}`);
     } catch (error) {
       console.error('Error creating subscription:', error);
       alert('Error creating subscription. Please try again.');
