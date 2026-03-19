@@ -46,7 +46,9 @@ const publicRoutes = [
 // Admin-only routes
 const adminRoutes = [
   '/api/admin',
-  '/api/plans', // Plans are admin-only (except /api/plans/public)
+  // NOTE:
+  // '/api/plans' is protected/filtered by route-level auth (withAuthRoles in `apps/api/app/api/plans/route.ts`).
+  // Middleware should not hard-block MERCHANT here, otherwise merchants cannot renew subscriptions.
   // Removed /api/users since it now has proper role-based authorization
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
