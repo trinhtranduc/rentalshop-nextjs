@@ -117,6 +117,28 @@
     "used": "Đã dùng",
     "remaining": "Còn lại"
   },
+  "bottomBar": {
+    "title": "Gói dịch vụ không còn hiệu lực",
+    "expiredHint": "Gói của bạn đã hết hạn hoặc tạm khóa. Gia hạn để tiếp tục dùng đầy đủ tính năng.",
+    "noSubscriptionHint": "Chưa có gói đăng ký đang hoạt động. Chọn gói để tiếp tục.",
+    "ariaLabel": "Thông báo gia hạn đăng ký",
+    "viewDetails": "Chi tiết",
+    "modalTitle": "Chọn gói cước",
+    "modalDescription": "Chọn chu kỳ thanh toán và thanh toán an toàn để khôi phục quyền truy cập.",
+    "outletUserHint": "Chỉ chủ cửa hàng (Merchant) mới có thể thanh toán gia hạn. Hãy nhờ chủ shop gia hạn, hoặc mở trang Đăng ký để xem chi tiết.",
+    "popular": "Phổ biến",
+    "perMonth": "mỗi tháng",
+    "selected": "Đã chọn",
+    "tapToSelect": "Chạm để chọn",
+    "billingCycle": "Chu kỳ thanh toán",
+    "cycleMonthly": "Hàng tháng — {price}",
+    "cycleQuarterly": "Hàng quý — {price}",
+    "cycleYearly": "Hàng năm — {price} (giảm 10%)",
+    "close": "Đóng",
+    "redirecting": "Đang chuyển…",
+    "payNow": "Thanh toán ngay",
+    "goToSubscription": "Mở trang đăng ký"
+  },
   "banner": {
     "expiringSoon": "Gói đăng ký sắp hết hạn",
     "expiresOn": "Gói đăng ký của bạn sẽ hết hạn vào {date}. Hãy xem xét gia hạn để tránh gián đoạn dịch vụ.",

@@ -142,15 +142,19 @@ async function handleChangePlan(
     }
 }
 
+const changePlanAuth = withAuthRoles(['ADMIN', 'MERCHANT'], {
+  requireActiveSubscription: false,
+});
+
 /**
  * POST /api/subscriptions/[id]/change-plan
- * Change subscription plan
+ * Change subscription plan (allowed when expired so merchant can recover)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, context) => {
+  return changePlanAuth(async (request, context) => {
     return handleChangePlan(request, { params }, context);
   })(request);
 }
@@ -163,7 +167,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, context) => {
+  return changePlanAuth(async (request, context) => {
     return handleChangePlan(request, { params }, context);
   })(request);
 }

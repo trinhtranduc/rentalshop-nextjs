@@ -117,6 +117,28 @@
     "used": "Used",
     "remaining": "Remaining"
   },
+  "bottomBar": {
+    "title": "Subscription inactive",
+    "expiredHint": "Your plan has ended or access is paused. Renew to use all features again.",
+    "noSubscriptionHint": "No active subscription. Choose a plan to continue.",
+    "ariaLabel": "Subscription renewal notice",
+    "viewDetails": "Details",
+    "modalTitle": "Choose a plan",
+    "modalDescription": "Select a billing cycle and pay securely to restore access.",
+    "outletUserHint": "Only the shop owner (Merchant) can complete payment. Ask them to renew, or open Subscription for details.",
+    "popular": "Popular",
+    "perMonth": "per month",
+    "selected": "Selected",
+    "tapToSelect": "Tap to select",
+    "billingCycle": "Billing cycle",
+    "cycleMonthly": "Monthly — {price}",
+    "cycleQuarterly": "Quarterly — {price}",
+    "cycleYearly": "Yearly — {price} (10% off)",
+    "close": "Close",
+    "redirecting": "Redirecting…",
+    "payNow": "Pay now",
+    "goToSubscription": "Open subscription page"
+  },
   "banner": {
     "expiringSoon": "Subscription Expiring Soon",
     "expiresOn": "Your subscription expires on {date}. Consider renewing to avoid service interruption.",

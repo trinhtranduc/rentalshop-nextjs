@@ -8,6 +8,8 @@ import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS,
 /**
  * POST /api/subscriptions/[id]/renew
  * Renew subscription with payment tracking
+ *
+ * requireActiveSubscription: false — Renewal is how users recover after expiry; gate must not block it.
  */
 export async function POST(
   request: NextRequest,
@@ -17,7 +19,9 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT], {
+    requireActiveSubscription: false,
+  })(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(subscriptionId)) {

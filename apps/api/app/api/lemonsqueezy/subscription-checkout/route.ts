@@ -16,7 +16,10 @@ interface SubscriptionCheckoutBody {
   merchantId?: number; // ADMIN-only override
 }
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(
+/** Allow checkout when subscription expired — recovery path; role + scope still enforced in handler. */
+export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT], {
+  requireActiveSubscription: false,
+})(
   async (request: NextRequest, ctx: { user: AuthUser; userScope: UserScope }) => {
     try {
       const { user, userScope } = ctx;

@@ -75,6 +75,11 @@ export function SubscriptionStatusBanner({
     loading
   } = useSubscriptionStatusInfo();
 
+  // Expired / no access: client app uses fixed bottom renewal bar (avoid duplicate alert)
+  if (!loading && !hasAccess) {
+    return null;
+  }
+
   // Only show banner when:
   // 1. Dashboard has finished loading (to avoid flash)
   // 2. User is loaded (to avoid flash during auth)
@@ -269,6 +274,7 @@ export function SubscriptionStatusCard({
   contactPhone = '+840764774647'
 }: SubscriptionStatusCardProps) {
   const t = useSubscriptionTranslations();
+  const formatDate = useFormattedFullDate;
   const {
     statusMessage,
     statusColor,
