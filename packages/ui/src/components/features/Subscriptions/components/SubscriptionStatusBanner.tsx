@@ -21,12 +21,12 @@ import {
   Clock, 
   Shield, 
   XCircle,
-  CheckCircle,
   Info,
   Phone,
   MessageCircle,
   ChevronDown,
-  X
+  X,
+  TrendingUp,
 } from 'lucide-react';
 import { useSubscriptionStatusInfo, useSubscriptionTranslations, useAuth } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
@@ -257,19 +257,10 @@ export function SubscriptionStatusBanner({
                 {t('banner.ctaManageBilling')}
               </Button>
             )}
-            {onUpgrade && (
+            {onUpgrade && (upgradeRequired || isExpired || !hasAccess) && (
               <Button size="sm" variant="outline" onClick={onUpgrade}>
-                {upgradeRequired ? (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    {t('actions.upgradeNow')}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    {t('banner.ctaComparePlans')}
-                  </>
-                )}
+                <TrendingUp className="h-4 w-4 mr-1" />
+                {t('banner.ctaComparePlans')}
               </Button>
             )}
             
@@ -358,7 +349,8 @@ export function SubscriptionStatusCard({
     isRestricted,
     isReadOnly,
     isLimited,
-    isDenied
+    isDenied,
+    isExpired,
   } = useSubscriptionStatusInfo();
 
   // Don't show card if user has full access
@@ -417,19 +409,10 @@ export function SubscriptionStatusCard({
                       {t('banner.ctaManageBilling')}
                     </Button>
                   )}
-                  {onUpgrade && (
+                  {onUpgrade && (upgradeRequired || isExpired || !hasAccess) && (
                     <Button size="sm" variant="outline" onClick={onUpgrade}>
-                      {upgradeRequired ? (
-                        <>
-                          <AlertTriangle className="h-4 w-4 mr-1" />
-                          {t('actions.upgradeNow')}
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          {t('banner.ctaComparePlans')}
-                        </>
-                      )}
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      {t('banner.ctaComparePlans')}
                     </Button>
                   )}
                   

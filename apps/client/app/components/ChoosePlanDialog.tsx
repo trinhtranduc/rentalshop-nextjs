@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { plansApi, lemonsqueezyApi, normalizeBillingInterval } from '@rentalshop/utils';
+import {
+  plansApi,
+  lemonsqueezyApi,
+  sepayApi,
+  normalizeBillingInterval,
+  amountToVndForSepayQr,
+  type SepaySubscriptionTransferQrResponse,
+} from '@rentalshop/utils';
+import { SePayVietQrPanel } from './SePayVietQrPanel';
 import {
   Button,
   Badge,
@@ -82,6 +90,8 @@ export function ChoosePlanDialog({
 }: ChoosePlanDialogProps) {
   const locale = useLocale();
   const t = useTranslations('subscription.choosePlanDialog');
+  const isVietnamCustomer = locale === 'vi';
+  const contactPhone = '+840764774647';
   const { toastError } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +99,14 @@ export function ChoosePlanDialog({
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [billingCycle, setBillingCycle] = useState<UiBillingCycle>('monthly');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [sepayPublic, setSepayPublic] = useState<{
+    vietQrEnabled: boolean;
+    usdVndRate: number;
+  } | null>(null);
+  const [paymentTab, setPaymentTab] = useState<'lemon' | 'sepay'>('lemon');
+  const [sepayQrLoading, setSepayQrLoading] = useState(false);
+  const [sepayQrError, setSepayQrError] = useState<string | null>(null);
+  const [sepayQrData, setSepayQrData] = useState<SepaySubscriptionTransferQrResponse | null>(null);
 
   const formatCurrency = useCallback(
     (amount: number, currency: string = 'USD') =>
@@ -132,9 +150,35 @@ export function ChoosePlanDialog({
       setSelectedPlan(null);
       setCheckoutLoading(false);
       setBillingCycle(subscriptionIntervalToUiCycle(defaultBillingInterval));
+      setPaymentTab('lemon');
+      setSepayQrData(null);
+      setSepayQrError(null);
+      setSepayQrLoading(false);
       void loadPlans();
+      // For Vietnamese customers we intentionally hide SePay and guide via manual transfer.
+      if (isVietnamCustomer) {
+        setSepayPublic({ vietQrEnabled: false, usdVndRate: 25_000 });
+      } else {
+        void sepayApi.getPublicConfig().then((r) => {
+          if (r.success && r.data) {
+            setSepayPublic(r.data);
+          } else {
+            setSepayPublic({ vietQrEnabled: false, usdVndRate: 25_000 });
+          }
+        });
+      }
     }
-  }, [open, loadPlans, defaultBillingInterval]);
+  }, [open, loadPlans, defaultBillingInterval, isVietnamCustomer]);
+
+  useEffect(() => {
+    if (isVietnamCustomer && paymentTab === 'sepay') {
+      setPaymentTab('lemon');
+      return;
+    }
+    if (sepayPublic && !sepayPublic.vietQrEnabled && paymentTab === 'sepay') {
+      setPaymentTab('lemon');
+    }
+  }, [isVietnamCustomer, sepayPublic?.vietQrEnabled, paymentTab, sepayPublic]);
 
   const isCurrentPlan = (plan: Plan) => currentPlanId != null && plan.id === currentPlanId;
 
@@ -151,6 +195,57 @@ export function ChoosePlanDialog({
     if (!selectedPlan) return null;
     return computeEstimatedTotal(selectedPlan.basePrice, billingCycle);
   }, [selectedPlan, billingCycle]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      !selectedPlan ||
+      estimatedTotal == null ||
+      isVietnamCustomer ||
+      paymentTab !== 'sepay' ||
+      !sepayPublic?.vietQrEnabled
+    ) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setSepayQrLoading(true);
+      setSepayQrError(null);
+      const amountVnd = amountToVndForSepayQr(
+        estimatedTotal,
+        selectedPlan.currency,
+        sepayPublic.usdVndRate
+      );
+      const res = await sepayApi.createSubscriptionTransferQr({
+        amountVnd,
+        planId: selectedPlan.id,
+      });
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setSepayQrData(res.data);
+      } else {
+        setSepayQrError(
+          typeof res.message === 'string' ? res.message : t('sepayQrError')
+        );
+        setSepayQrData(null);
+      }
+      setSepayQrLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    open,
+    selectedPlan?.id,
+    selectedPlan?.currency,
+    estimatedTotal,
+    billingCycle,
+    paymentTab,
+    isVietnamCustomer,
+    sepayPublic?.vietQrEnabled,
+    sepayPublic?.usdVndRate,
+    t,
+  ]);
 
   const startLemonCheckout = async () => {
     if (!selectedPlan) return;
@@ -342,31 +437,96 @@ export function ChoosePlanDialog({
                   <p className="text-3xl font-bold text-gray-900">
                     {formatCurrency(estimatedTotal, selectedPlan.currency)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{t('priceNote')}</p>
+                  {paymentTab === 'lemon' && (
+                    <p className="text-xs text-muted-foreground">{t('priceNote')}</p>
+                  )}
+                  {paymentTab === 'sepay' &&
+                    sepayPublic?.vietQrEnabled &&
+                    selectedPlan.currency?.toUpperCase() !== 'VND' && (
+                      <p className="text-xs text-amber-800 mt-2">
+                        {t('sepayConvertNote', { rate: sepayPublic.usdVndRate })}
+                      </p>
+                    )}
                 </div>
 
-                <Button
-                  className="w-full sm:w-auto"
-                  size="lg"
-                  disabled={checkoutLoading}
-                  onClick={() => void startLemonCheckout()}
-                >
-                  {checkoutLoading ? (
-                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5 mr-2" />
-                  )}
-                  {t('lemonCheckoutButton', {
-                    amount: formatCurrency(estimatedTotal, selectedPlan.currency),
-                  })}
-                </Button>
+                {!isVietnamCustomer && sepayPublic?.vietQrEnabled && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={paymentTab === 'lemon' ? 'default' : 'outline'}
+                      onClick={() => setPaymentTab('lemon')}
+                    >
+                      {t('payMethodLemon')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={paymentTab === 'sepay' ? 'default' : 'outline'}
+                      onClick={() => setPaymentTab('sepay')}
+                    >
+                      {t('payMethodSepay')}
+                    </Button>
+                  </div>
+                )}
+
+                {isVietnamCustomer && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-2">
+                    <p className="text-sm font-medium text-amber-900">{t('manualTransferTitle')}</p>
+                    <p className="text-xs text-amber-900/90">{t('manualTransferHint')}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      size="sm"
+                      onClick={() => window.open(`tel:${contactPhone}`, '_blank')}
+                    >
+                      {t('manualTransferCta')}
+                    </Button>
+                  </div>
+                )}
+
+                {paymentTab === 'lemon' && (
+                  <Button
+                    className="w-full sm:w-auto"
+                    size="lg"
+                    disabled={checkoutLoading}
+                    onClick={() => void startLemonCheckout()}
+                  >
+                    {checkoutLoading ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <ExternalLink className="h-5 w-5 mr-2" />
+                    )}
+                    {t('lemonCheckoutButton', {
+                      amount: formatCurrency(estimatedTotal, selectedPlan.currency),
+                    })}
+                  </Button>
+                )}
+
+                {!isVietnamCustomer && paymentTab === 'sepay' && sepayPublic?.vietQrEnabled && (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4">
+                    <SePayVietQrPanel
+                      loading={sepayQrLoading}
+                      errorMessage={sepayQrError}
+                      data={sepayQrData}
+                      usdVndRate={sepayPublic.usdVndRate}
+                      planCurrency={selectedPlan.currency}
+                      showUsdConvertNote
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
         </div>
 
         <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={checkoutLoading}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={checkoutLoading || (paymentTab === 'sepay' && sepayQrLoading)}
+          >
             {t('close')}
           </Button>
         </DialogFooter>

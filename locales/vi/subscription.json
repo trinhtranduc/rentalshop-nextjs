@@ -158,6 +158,11 @@
     "goToSubscription": "Mở trang đăng ký"
   },
   "flow": {
+    "primaryPay": "Thanh toán / đổi gói",
+    "bankTransferOnly": "Đã chuyển khoản?",
+    "amountLabel": "Giá kỳ hiện tại (tạm tính)",
+    "urgentPickOtherPlan": "Chọn gói khác",
+    "urgentBankLink": "Đã chuyển khoản — gửi chứng từ",
     "headerMore": "Thêm",
     "payOnlineTitle": "Thanh toán online (thẻ)",
     "payOnlineHint": "Chọn gói và chu kỳ — bạn sẽ thanh toán trên trang bảo mật.",
@@ -168,7 +173,27 @@
     "recordTransfer": "Báo đã chuyển khoản",
     "healthyHint": "Bạn có thể đổi gói hoặc báo chuyển khoản bất cứ lúc nào tại đây.",
     "payLemonCta": "Thanh toán {amount} trên Lemon Squeezy",
-    "payOnlineSubline": "Dùng gói và chu kỳ hiện tại. Giá cuối xác nhận trên Lemon Squeezy."
+    "payOnlineSubline": "Dùng gói và chu kỳ hiện tại. Giá cuối xác nhận trên Lemon Squeezy.",
+    "paySepayCta": "Thanh toán VietQR / chuyển khoản (VND)",
+    "contactManualCta": "Liên hệ để thanh toán bằng chuyển khoản thủ công",
+    "sepayQrDialogTitle": "VietQR — chuyển khoản",
+    "sepayQrDialogDescription": "Quét mã QR hoặc chuyển khoản thủ công. Ghi đúng nội dung chuyển khoản. Sau khi chuyển, bạn có thể gửi mã giao dịch bên dưới."
+  },
+  "sepayVietQr": {
+    "loading": "Đang tạo mã QR…",
+    "error": "Không tạo được VietQR. Thử lại hoặc dùng Lemon Squeezy.",
+    "hint": "Sao chép đúng nội dung chuyển khoản để chúng tôi đối soát.",
+    "usdConvertNote": "Số tiền VND được ước tính theo USD × {rate} (cấu hình admin). Liên hệ hỗ trợ nếu cần xác nhận.",
+    "amountVnd": "Số tiền (VND)",
+    "bank": "Ngân hàng",
+    "account": "Số tài khoản",
+    "accountName": "Tên chủ tài khoản",
+    "transferContent": "Nội dung chuyển khoản",
+    "copyContent": "Sao chép nội dung",
+    "copyAmount": "Sao chép số tiền",
+    "copiedTitle": "Đã sao chép",
+    "copiedBody": "Đã copy vào clipboard.",
+    "openSubmitProof": "Đã chuyển — gửi mã giao dịch"
   },
   "banner": {
     "ctaManageBilling": "Đăng ký & thanh toán",
@@ -207,6 +232,8 @@
     "noSubscriptionTitle": "Không tìm thấy gói đăng ký",
     "noSubscriptionBody": "Bạn chưa có gói đăng ký đang hoạt động.",
     "subtitle": "Quản lý gói đăng ký và thanh toán",
+    "subtitleSimple": "Thanh toán, đổi gói hoặc xác nhận chuyển khoản.",
+    "renewModalBankOnly": "Chỉ dùng khi bạn đã chuyển khoản. Chúng tôi gia hạn sau khi đối chiếu mã giao dịch.",
     "refresh": "Làm mới",
     "viewHistory": "Xem lịch sử",
     "historyModalDescription": "Lịch sử gói đăng ký và các giao dịch thanh toán.",
@@ -291,7 +318,7 @@
   },
   "choosePlanDialog": {
     "title": "Chọn gói của bạn",
-    "description": "So sánh gói và chọn chu kỳ thanh toán. Bạn sẽ thanh toán trên trang bảo mật.",
+    "description": "Chọn gói và chu kỳ. Thanh toán bằng Lemon Squeezy (thẻ) hoặc VietQR / chuyển khoản (Việt Nam) nếu được bật.",
     "loading": "Đang tải gói…",
     "loadError": "Không tải được danh sách gói. Kiểm tra kết nối và thử lại.",
     "retry": "Thử lại",
@@ -324,7 +351,14 @@
     "checkoutErrorBody": "Không thể bắt đầu thanh toán. Kiểm tra cấu hình gói (variant Lemon Squeezy) hoặc thử lại.",
     "termsHint": "Tiếp tục nghĩa là bạn đồng ý với điều khoản và chính sách thanh toán.",
     "cancel": "Hủy",
-    "payNow": "Thanh toán ngay"
+    "payNow": "Thanh toán ngay",
+    "payMethodLemon": "Thẻ — Lemon Squeezy",
+    "payMethodSepay": "Việt Nam — VietQR / CK",
+    "sepayConvertNote": "VND trên QR là ước tính (USD × {rate}). Liên hệ hỗ trợ nếu cần điều chỉnh.",
+    "sepayQrError": "Không tạo được VietQR. Kiểm tra cấu hình SePay hoặc dùng Lemon Squeezy.",
+    "manualTransferTitle": "Chuyển khoản thủ công",
+    "manualTransferHint": "Ẩn SePay cho Việt Nam. Vui lòng liên hệ để nhận hướng dẫn chuyển khoản.",
+    "manualTransferCta": "Liên hệ để thanh toán thủ công"
   }
 }
 

@@ -26,6 +26,7 @@ export * from './settings';
 export * from './subscriptions';
 export * from './stripe';
 export * from './lemonsqueezy';
+export * from './sepay';
 export * from './plan-stripe-prices';
 export * from './plan-lemon-squeezy-variants';
 export * from './plan-limit-addons';

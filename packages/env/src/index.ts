@@ -88,6 +88,16 @@ const envSchema = z.object({
   LEMON_SQUEEZY_STORE_ID: z.string().optional(),
   LEMON_SQUEEZY_WEBHOOK_SECRET: z.string().optional(),
 
+  /**
+   * SePay VietQR (optional) — static QR image via https://qr.sepay.vn/img
+   * Bank name must match SePay’s list (e.g. Vietcombank). See https://qr.sepay.vn/banks.json
+   */
+  SEPAY_VIETQR_ACCOUNT_NUMBER: z.string().optional(),
+  SEPAY_VIETQR_BANK_NAME: z.string().optional(),
+  SEPAY_VIETQR_ACCOUNT_NAME: z.string().optional(),
+  /** Used when plan currency is not VND (e.g. USD → VND for QR amount). Default 25000 if unset. */
+  SEPAY_USD_VND_RATE: z.string().optional(),
+
   // Subscription gateway selector (optional)
   SUBSCRIPTION_GATEWAY: z.enum(['stripe', 'lemonsqueezy']).optional(),
   
@@ -164,6 +174,10 @@ function parseEnvironment() {
         LEMON_SQUEEZY_API_KEY: buildEnv.LEMON_SQUEEZY_API_KEY,
         LEMON_SQUEEZY_STORE_ID: buildEnv.LEMON_SQUEEZY_STORE_ID,
         LEMON_SQUEEZY_WEBHOOK_SECRET: buildEnv.LEMON_SQUEEZY_WEBHOOK_SECRET,
+        SEPAY_VIETQR_ACCOUNT_NUMBER: buildEnv.SEPAY_VIETQR_ACCOUNT_NUMBER,
+        SEPAY_VIETQR_BANK_NAME: buildEnv.SEPAY_VIETQR_BANK_NAME,
+        SEPAY_VIETQR_ACCOUNT_NAME: buildEnv.SEPAY_VIETQR_ACCOUNT_NAME,
+        SEPAY_USD_VND_RATE: buildEnv.SEPAY_USD_VND_RATE,
         SUBSCRIPTION_GATEWAY: (buildEnv.SUBSCRIPTION_GATEWAY as any) || undefined,
         SENTRY_DSN: buildEnv.SENTRY_DSN,
         SENTRY_ENVIRONMENT: buildEnv.SENTRY_ENVIRONMENT,

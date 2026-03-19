@@ -158,6 +158,11 @@
     "goToSubscription": "Open subscription page"
   },
   "flow": {
+    "primaryPay": "Pay or change plan",
+    "bankTransferOnly": "Paid by bank transfer?",
+    "amountLabel": "Current period price (estimate)",
+    "urgentPickOtherPlan": "Choose another plan",
+    "urgentBankLink": "I already transferred — submit proof",
     "headerMore": "More",
     "payOnlineTitle": "Pay online (card)",
     "payOnlineHint": "Pick a plan and billing cycle — you’ll complete payment on a secure page.",
@@ -168,7 +173,27 @@
     "recordTransfer": "Record bank transfer",
     "healthyHint": "You can change plan or record a transfer anytime from here.",
     "payLemonCta": "Pay {amount} on Lemon Squeezy",
-    "payOnlineSubline": "Uses your current plan and billing period. Final price is confirmed on Lemon Squeezy."
+    "payOnlineSubline": "Uses your current plan and billing period. Final price is confirmed on Lemon Squeezy.",
+    "paySepayCta": "Pay with VietQR / bank transfer (VND)",
+    "contactManualCta": "Contact to pay by bank transfer (manual)",
+    "sepayQrDialogTitle": "VietQR — bank transfer",
+    "sepayQrDialogDescription": "Scan the QR or transfer manually. Use the exact transfer description. After paying, you can submit proof below."
+  },
+  "sepayVietQr": {
+    "loading": "Generating QR…",
+    "error": "Could not generate VietQR. Try again or use Lemon Squeezy.",
+    "hint": "Copy the transfer description exactly — it helps us match your payment.",
+    "usdConvertNote": "VND amount is estimated using USD × {rate} (admin-configured). Confirm with support if unsure.",
+    "amountVnd": "Amount (VND)",
+    "bank": "Bank",
+    "account": "Account number",
+    "accountName": "Account holder",
+    "transferContent": "Transfer description",
+    "copyContent": "Copy description",
+    "copyAmount": "Copy amount",
+    "copiedTitle": "Copied",
+    "copiedBody": "Content copied to clipboard.",
+    "openSubmitProof": "I paid — submit transaction ID"
   },
   "banner": {
     "ctaManageBilling": "Subscription & billing",
@@ -207,6 +232,8 @@
     "noSubscriptionTitle": "No Subscription Found",
     "noSubscriptionBody": "You don't have an active subscription.",
     "subtitle": "Manage your subscription and billing",
+    "subtitleSimple": "Pay, change plan, or confirm a bank transfer.",
+    "renewModalBankOnly": "Use this only after you paid by bank transfer. We extend your subscription after verifying your transaction ID.",
     "refresh": "Refresh",
     "viewHistory": "View History",
     "historyModalDescription": "Past subscription plans and payment transactions.",
@@ -291,7 +318,7 @@
   },
   "choosePlanDialog": {
     "title": "Choose Your Plan",
-    "description": "Compare plans and pick a billing cycle. You will complete payment on a secure page.",
+    "description": "Pick a plan and billing period. Pay with Lemon Squeezy (card) or VietQR / bank transfer (Vietnam) if enabled.",
     "loading": "Loading plans…",
     "loadError": "Could not load plans. Check your connection and try again.",
     "retry": "Retry",
@@ -324,7 +351,14 @@
     "checkoutErrorBody": "Could not start payment. Check plan setup (Lemon Squeezy variant) or try again.",
     "termsHint": "By continuing, you agree to the terms of service and billing policy.",
     "cancel": "Cancel",
-    "payNow": "Pay now"
+    "payNow": "Pay now",
+    "payMethodLemon": "Card — Lemon Squeezy",
+    "payMethodSepay": "Vietnam — VietQR / transfer",
+    "sepayConvertNote": "VND for QR is estimated (USD × {rate}). Adjust with support if needed.",
+    "sepayQrError": "Could not create VietQR. Check SePay settings or try Lemon Squeezy.",
+    "manualTransferTitle": "Bank transfer (manual)",
+    "manualTransferHint": "SePay is hidden for Vietnam. Contact support to get the transfer instructions.",
+    "manualTransferCta": "Contact to pay manually"
   }
 }
 

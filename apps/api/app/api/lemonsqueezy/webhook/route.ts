@@ -98,8 +98,30 @@ export async function POST(request: NextRequest) {
         }
 
         const mappedStatus = mapLemonSubscriptionStatus(sub?.attributes?.status);
-        const currentPeriodStart = sub?.attributes?.renews_at ? new Date(sub.attributes.renews_at) : new Date();
-        const currentPeriodEnd = sub?.attributes?.ends_at ? new Date(sub.attributes.ends_at) : new Date();
+
+        // Lemon semantics (official docs):
+        // - `renews_at`: end of the current billing cycle + next invoice issue time
+        // - `ends_at`: only populated for `expired` / `cancelled` statuses; null for active
+        // Our UI + access logic uses `currentPeriodEnd` to decide EXPIRED/ACTIVE,
+        // so we must map `currentPeriodEnd` from `renews_at` (fallback to `ends_at`).
+        const renewsAt = sub?.attributes?.renews_at ? new Date(sub.attributes.renews_at) : null;
+        const endsAt = sub?.attributes?.ends_at ? new Date(sub.attributes.ends_at) : null;
+        const currentPeriodEnd = renewsAt ?? endsAt ?? new Date();
+
+        // We don't get a reliable "period start" in Lemon active payloads.
+        // For UI purposes only, approximate `currentPeriodStart` by subtracting
+        // interval length from `currentPeriodEnd` using our custom billingInterval.
+        const billingIntervalRaw = custom.billingInterval ?? 'monthly';
+        const months =
+          billingIntervalRaw === 'quarterly'
+            ? 3
+            : billingIntervalRaw === 'semi_annual'
+              ? 6
+              : billingIntervalRaw === 'annual'
+                ? 12
+                : 1;
+        const currentPeriodStart = new Date(currentPeriodEnd);
+        currentPeriodStart.setMonth(currentPeriodStart.getMonth() - months);
 
         const planId = custom.planId;
         if (!planId) break;
@@ -118,8 +140,8 @@ export async function POST(request: NextRequest) {
             cancelAtPeriodEnd: false,
             amount: 0,
             currency: 'USD',
-            interval: 'month',
-            intervalCount: 1,
+            interval: billingIntervalRaw === 'monthly' ? 'monthly' : billingIntervalRaw,
+            intervalCount: months,
             period: 1,
             discount: 0,
             savings: 0,
@@ -130,6 +152,8 @@ export async function POST(request: NextRequest) {
             status: mappedStatus,
             currentPeriodStart,
             currentPeriodEnd,
+            interval: billingIntervalRaw === 'monthly' ? 'monthly' : billingIntervalRaw,
+            intervalCount: months,
             updatedAt: new Date(),
           } as any,
         });

@@ -1256,7 +1256,6 @@ export default function DashboardPage() {
             <SubscriptionStatusBanner
               dismissible
               onPayment={() => router.push('/subscription')}
-              onUpgrade={() => router.push('/subscription?action=plans')}
               dashboardLoaded={!initialLoading}
             />
           </div>
