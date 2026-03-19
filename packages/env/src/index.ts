@@ -82,6 +82,14 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
+  // Lemon Squeezy (optional)
+  LEMON_SQUEEZY_API_KEY: z.string().optional(),
+  LEMON_SQUEEZY_STORE_ID: z.string().optional(),
+  LEMON_SQUEEZY_WEBHOOK_SECRET: z.string().optional(),
+
+  // Subscription gateway selector (optional)
+  SUBSCRIPTION_GATEWAY: z.enum(['stripe', 'lemonsqueezy']).optional(),
   
   // Monitoring (optional)
   SENTRY_DSN: z.string().optional(),
@@ -153,6 +161,10 @@ function parseEnvironment() {
         STRIPE_PUBLISHABLE_KEY: buildEnv.STRIPE_PUBLISHABLE_KEY,
         STRIPE_SECRET_KEY: buildEnv.STRIPE_SECRET_KEY,
         STRIPE_WEBHOOK_SECRET: buildEnv.STRIPE_WEBHOOK_SECRET,
+        LEMON_SQUEEZY_API_KEY: buildEnv.LEMON_SQUEEZY_API_KEY,
+        LEMON_SQUEEZY_STORE_ID: buildEnv.LEMON_SQUEEZY_STORE_ID,
+        LEMON_SQUEEZY_WEBHOOK_SECRET: buildEnv.LEMON_SQUEEZY_WEBHOOK_SECRET,
+        SUBSCRIPTION_GATEWAY: (buildEnv.SUBSCRIPTION_GATEWAY as any) || undefined,
         SENTRY_DSN: buildEnv.SENTRY_DSN,
         SENTRY_ENVIRONMENT: buildEnv.SENTRY_ENVIRONMENT,
       } as any;

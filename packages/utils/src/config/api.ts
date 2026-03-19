@@ -125,6 +125,7 @@ export interface ApiUrls {
     stats: string;
     public: string;
     stripePrices: (id: number) => string;
+    lemonSqueezyVariants: (id: number) => string;
   };
   planVariants: {
     list: string;
@@ -653,6 +654,7 @@ function createApiUrls(): ApiUrls {
       stats: `${base}/api/plans/stats`,
       public: `${base}/api/plans/public`,
       stripePrices: (id: number) => `${base}/api/plans/${id}/stripe-prices`,
+      lemonSqueezyVariants: (id: number) => `${base}/api/plans/${id}/lemon-squeezy-variants`,
     },
     planVariants: {
       list: `${base}/api/plan-variants`,

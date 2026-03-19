@@ -22,6 +22,9 @@ const protectedRoutes = [
 const publicRoutes = [
   '/api/auth',
   '/api/health',
+  // Payment provider webhooks (no JWT; verified via signature in route handler)
+  '/api/stripe/webhook',
+  '/api/lemonsqueezy/webhook',
   '/api/system/health',
   '/api/system/backup',
   '/api/system/integrity',

@@ -50,6 +50,10 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY: z.ZodOptional<z.ZodString>;
     STRIPE_SECRET_KEY: z.ZodOptional<z.ZodString>;
     STRIPE_WEBHOOK_SECRET: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_API_KEY: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_STORE_ID: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_WEBHOOK_SECRET: z.ZodOptional<z.ZodString>;
+    SUBSCRIPTION_GATEWAY: z.ZodOptional<z.ZodEnum<["stripe", "lemonsqueezy"]>>;
     SENTRY_DSN: z.ZodOptional<z.ZodString>;
     SENTRY_ENVIRONMENT: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
@@ -83,6 +87,10 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    LEMON_SQUEEZY_API_KEY?: string | undefined;
+    LEMON_SQUEEZY_STORE_ID?: string | undefined;
+    LEMON_SQUEEZY_WEBHOOK_SECRET?: string | undefined;
+    SUBSCRIPTION_GATEWAY?: "stripe" | "lemonsqueezy" | undefined;
     SENTRY_DSN?: string | undefined;
     SENTRY_ENVIRONMENT?: string | undefined;
 }, {
@@ -116,6 +124,10 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    LEMON_SQUEEZY_API_KEY?: string | undefined;
+    LEMON_SQUEEZY_STORE_ID?: string | undefined;
+    LEMON_SQUEEZY_WEBHOOK_SECRET?: string | undefined;
+    SUBSCRIPTION_GATEWAY?: "stripe" | "lemonsqueezy" | undefined;
     SENTRY_DSN?: string | undefined;
     SENTRY_ENVIRONMENT?: string | undefined;
 }>;
