@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -23,7 +23,7 @@ import {
   PageLoadingIndicator,
 } from '@rentalshop/ui';
 import { AlertTriangle, CheckCircle, CreditCard } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth, useSubscriptionStatusInfo } from '@rentalshop/hooks';
 import { lemonsqueezyApi, publicPlansApi, normalizeBillingInterval } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
@@ -43,6 +43,7 @@ export interface SubscriptionRenewalBottomBarProps {
 export default function SubscriptionRenewalBottomBar({ onInsetChange }: SubscriptionRenewalBottomBarProps) {
   const t = useTranslations('subscription.bottomBar');
   const tActions = useTranslations('subscription.actions');
+  const locale = useLocale();
   const { user } = useAuth();
   const router = useRouter();
   const { loading, hasAccess, status, subscription, refreshStatus } = useSubscriptionStatusInfo();
@@ -88,7 +89,34 @@ export default function SubscriptionRenewalBottomBar({ onInsetChange }: Subscrip
   }, [open, loadPlans]);
 
   const formatCurrency = (amount: number, currency: string = 'USD') =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+    new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { style: 'currency', currency }).format(amount);
+
+  const localizedReason = useMemo(() => {
+    if (status === 'NO_SUBSCRIPTION' || !subscription) {
+      return t('noSubscriptionHint');
+    }
+    const st = String(subscription.status ?? '').toUpperCase();
+    const endRaw = subscription.currentPeriodEnd;
+    if (endRaw && (st === 'EXPIRED' || !hasAccess)) {
+      const end = new Date(endRaw);
+      if (!Number.isNaN(end.getTime()) && end.getTime() < Date.now()) {
+        const days = Math.floor((Date.now() - end.getTime()) / 86400000);
+        if (days <= 0) return t('expiredToday');
+        if (days === 1) return t('expiredOneDayAgo');
+        return t('expiredDaysAgo', { days });
+      }
+    }
+    const sr = subscription.statusReason as string | undefined;
+    if (sr) {
+      const m = sr.match(/^Expired (\d+) days? ago$/i);
+      if (m) {
+        const d = parseInt(m[1], 10);
+        return d === 1 ? t('expiredOneDayAgo') : t('expiredDaysAgo', { days: d });
+      }
+      if (/period end date is missing/i.test(sr)) return t('periodMissing');
+    }
+    return sr || t('expiredHint');
+  }, [subscription, status, hasAccess, t]);
 
   const handleOpenPricing = () => {
     setSelectedPlan(null);
@@ -123,10 +151,6 @@ export default function SubscriptionRenewalBottomBar({ onInsetChange }: Subscrip
     return null;
   }
 
-  const reason =
-    subscription?.statusReason ||
-    (status === 'NO_SUBSCRIPTION' ? t('noSubscriptionHint') : t('expiredHint'));
-
   return (
     <>
       <div
@@ -139,7 +163,7 @@ export default function SubscriptionRenewalBottomBar({ onInsetChange }: Subscrip
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
             <div className="min-w-0">
               <p className="text-sm font-semibold">{t('title')}</p>
-              <p className="text-xs text-amber-900/90 sm:text-sm">{reason}</p>
+              <p className="text-xs text-amber-900/90 sm:text-sm">{localizedReason}</p>
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">

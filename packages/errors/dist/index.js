@@ -44,7 +44,8 @@ var require_detect_domain_locale = __commonJS({
       }
     });
     function detectDomainLocale(domainItems, hostname, detectedLocale) {
-      if (!domainItems) return;
+      if (!domainItems)
+        return;
       if (detectedLocale) {
         detectedLocale = detectedLocale.toLowerCase();
       }
@@ -199,11 +200,14 @@ var require_add_locale = __commonJS({
     var _addpathprefix = require_add_path_prefix();
     var _pathhasprefix = require_path_has_prefix();
     function addLocale(path, locale, defaultLocale, ignorePrefix) {
-      if (!locale || locale === defaultLocale) return path;
+      if (!locale || locale === defaultLocale)
+        return path;
       const lower = path.toLowerCase();
       if (!ignorePrefix) {
-        if ((0, _pathhasprefix.pathHasPrefix)(lower, "/api")) return path;
-        if ((0, _pathhasprefix.pathHasPrefix)(lower, "/" + locale.toLowerCase())) return path;
+        if ((0, _pathhasprefix.pathHasPrefix)(lower, "/api"))
+          return path;
+        if ((0, _pathhasprefix.pathHasPrefix)(lower, "/" + locale.toLowerCase()))
+          return path;
       }
       return (0, _addpathprefix.addPathPrefix)(path, "/" + locale);
     }
@@ -260,7 +264,8 @@ var require_get_hostname = __commonJS({
         hostname = headers.host.toString().split(":", 1)[0];
       } else if (parsed.hostname) {
         hostname = parsed.hostname;
-      } else return;
+      } else
+        return;
       return hostname.toLowerCase();
     }
   }
@@ -583,10 +588,11 @@ var require_constants = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       ACTION_SUFFIX: function() {
@@ -880,10 +886,11 @@ var require_utils = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       fromNodeOutgoingHttpHeaders: function() {
@@ -910,7 +917,8 @@ var require_utils = __commonJS({
           value
         ];
         for (let v of values) {
-          if (typeof v === "undefined") continue;
+          if (typeof v === "undefined")
+            continue;
           if (typeof v === "number") {
             v = v.toString();
           }
@@ -1015,10 +1023,11 @@ var require_error = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       PageSignatureError: function() {
@@ -1081,15 +1090,15 @@ var require_cookies = __commonJS({
       return to;
     };
     var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
-    var src_exports = {};
-    __export2(src_exports, {
+    var src_exports2 = {};
+    __export2(src_exports2, {
       RequestCookies: () => RequestCookies,
       ResponseCookies: () => ResponseCookies,
       parseCookie: () => parseCookie,
       parseSetCookie: () => parseSetCookie,
       stringifyCookie: () => stringifyCookie
     });
-    module2.exports = __toCommonJS2(src_exports);
+    module2.exports = __toCommonJS2(src_exports2);
     function stringifyCookie(c) {
       var _a;
       const attrs = [
@@ -1392,10 +1401,11 @@ var require_cookies2 = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       RequestCookies: function() {
@@ -1420,10 +1430,11 @@ var require_request = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       INTERNALS: function() {
@@ -1442,8 +1453,10 @@ var require_request = __commonJS({
       constructor(input, init = {}) {
         const url = typeof input !== "string" && "url" in input ? input.url : String(input);
         (0, _utils.validateURL)(url);
-        if (input instanceof Request) super(input, init);
-        else super(url, init);
+        if (input instanceof Request)
+          super(input, init);
+        else
+          super(url, init);
         const nextUrl = new _nexturl.NextURL(url, {
           headers: (0, _utils.toNodeOutgoingHttpHeaders)(this.headers),
           nextConfig: init.nextConfig
@@ -1877,9 +1890,9 @@ var require_ua_parser = __commonJS({
             e2.UAParser = UAParser;
           } else {
             if (typeof define === s && define.amd) {
-              define((function() {
+              define(function() {
                 return UAParser;
-              }));
+              });
             } else if (typeof o2 !== b) {
               o2.UAParser = UAParser;
             }
@@ -1913,11 +1926,13 @@ var require_ua_parser = __commonJS({
           i[o2].call(r.exports, r, r.exports, __nccwpck_require__);
           t = false;
         } finally {
-          if (t) delete e[o2];
+          if (t)
+            delete e[o2];
         }
         return r.exports;
       }
-      if (typeof __nccwpck_require__ !== "undefined") __nccwpck_require__.ab = __dirname + "/";
+      if (typeof __nccwpck_require__ !== "undefined")
+        __nccwpck_require__.ab = __dirname + "/";
       var o = __nccwpck_require__(226);
       module2.exports = o;
     })();
@@ -1932,10 +1947,11 @@ var require_user_agent = __commonJS({
       value: true
     });
     function _export(target, all) {
-      for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-      });
+      for (var name in all)
+        Object.defineProperty(target, name, {
+          enumerable: true,
+          get: all[name]
+        });
     }
     _export(exports2, {
       isBot: function() {
@@ -2012,8 +2028,8 @@ var require_server = __commonJS({
 });
 
 // src/index.ts
-var index_exports = {};
-__export(index_exports, {
+var src_exports = {};
+__export(src_exports, {
   ApiError: () => ApiError,
   badRequest: () => badRequest,
   createErrorResponse: () => createErrorResponse,
@@ -2021,7 +2037,7 @@ __export(index_exports, {
   notFound: () => notFound,
   unauthorized: () => unauthorized
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(src_exports);
 var import_server = __toESM(require_server());
 var ApiError = class extends Error {
   constructor(statusCode, message, code) {

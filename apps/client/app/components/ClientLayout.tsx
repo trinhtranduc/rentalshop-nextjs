@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
-import { Menu, X } from 'lucide-react';
-import SubscriptionRenewalBottomBar from './SubscriptionRenewalBottomBar';
+import { Menu } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
@@ -29,7 +28,6 @@ export default function ClientLayout({
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [renewalBarInsetPx, setRenewalBarInsetPx] = useState(0);
   const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
   
@@ -133,7 +131,6 @@ export default function ClientLayout({
 
   return (
     <CurrencyProvider merchantCurrency={merchantCurrency}>
-      <SubscriptionRenewalBottomBar onInsetChange={setRenewalBarInsetPx} />
       <div className="flex h-screen bg-bg-primary">
       {/* Show sidebar on all pages except login */}
       {showSidebar && (
@@ -194,10 +191,7 @@ export default function ClientLayout({
         )}
 
         {/* Page Content */}
-        <main
-          className="flex-1 bg-bg-primary overflow-y-auto min-w-0 transition-[padding]"
-          style={renewalBarInsetPx ? { paddingBottom: renewalBarInsetPx } : undefined}
-        >
+        <main className="flex-1 bg-bg-primary overflow-y-auto min-w-0">
           <div className="w-full min-w-0">
             {children}
           </div>
