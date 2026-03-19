@@ -211,6 +211,39 @@ export const subscriptionsApi = {
   },
 
   /**
+   * Renew subscription (merchant/admin)
+   * NOTE: Current backend requires method + transactionId
+   */
+  async renew(
+    id: number,
+    data: {
+      method: 'STRIPE' | 'TRANSFER';
+      duration?: number;
+      transactionId: string;
+      reference?: string;
+      description?: string;
+      paymentDate?: string | Date;
+    }
+  ): Promise<ApiResponse<any>> {
+    const payload: any = {
+      method: data.method,
+      duration: data.duration ?? 1,
+      transactionId: data.transactionId,
+    };
+    if (data.reference) payload.reference = data.reference;
+    if (data.description) payload.description = data.description;
+    if (data.paymentDate) {
+      payload.paymentDate = data.paymentDate instanceof Date ? data.paymentDate.toISOString() : data.paymentDate;
+    }
+
+    const response = await authenticatedFetch(apiUrls.subscriptions.renew(id), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return await parseApiResponse(response);
+  },
+
+  /**
    * Get subscription status for current user
    * Returns computed subscription status with single source of truth
    */

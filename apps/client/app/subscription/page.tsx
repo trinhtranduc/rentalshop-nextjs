@@ -29,6 +29,11 @@ import {
   Input,
   Label,
   Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   PageWrapper,
   Breadcrumb,
   PageLoadingIndicator
@@ -54,7 +59,7 @@ import type { Subscription, Plan, Payment } from '@rentalshop/types';
 export default function MerchantSubscriptionPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const canExport = useCanExportData();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -62,8 +67,19 @@ export default function MerchantSubscriptionPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showRenewModal, setShowRenewModal] = useState(false);
   const [subscriptionHistory, setSubscriptionHistory] = useState<Subscription[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [renewForm, setRenewForm] = useState({
+    duration: 1,
+    method: 'TRANSFER' as 'TRANSFER',
+    transactionId: '',
+    reference: '',
+    description: '',
+    paymentDate: '',
+  });
+  const [renewSubmitting, setRenewSubmitting] = useState(false);
 
   // Fetch subscription data
   const fetchSubscription = async () => {
@@ -193,6 +209,10 @@ export default function MerchantSubscriptionPage() {
     setShowUpgradeModal(true);
   };
 
+  const handleRenew = () => {
+    setShowRenewModal(true);
+  };
+
   const handleBillingSettings = () => {
     setShowBillingModal(true);
   };
@@ -225,15 +245,21 @@ export default function MerchantSubscriptionPage() {
   };
 
 
-  if (!subscription && !loading) {
+  if (!subscription) {
+    if (loading) {
+      return (
+        <PageWrapper>
+          <PageLoadingIndicator loading />
+          <div className="py-12 text-center text-text-secondary">Loading subscription...</div>
+        </PageWrapper>
+      );
+    }
+
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">No Subscription Found</h2>
         <p className="text-gray-600 mt-2">You don't have an active subscription.</p>
-        <Button 
-          onClick={() => router.push('/plans')}
-          className="mt-4"
-        >
+        <Button onClick={() => router.push('/plans')} className="mt-4">
           <CreditCard className="h-4 w-4 mr-2" />
           Choose a Plan
         </Button>
@@ -281,6 +307,13 @@ export default function MerchantSubscriptionPage() {
             <TrendingUp className="h-4 w-4 mr-2" />
             Upgrade Plan
           </Button>
+          <Button
+            variant={isExpired(subscription.currentPeriodEnd) ? 'default' : 'outline'}
+            onClick={handleRenew}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Renew / Extend
+          </Button>
         </div>
       </div>
 
@@ -326,7 +359,7 @@ export default function MerchantSubscriptionPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">
-                      {formatCurrency(subscription.amount, subscription.plan.currency)}
+                      {formatCurrency(subscription.amount, subscription.plan?.currency)}
                     </div>
                     <div className="text-sm text-gray-500">
                       per {subscription.billingInterval}
@@ -348,7 +381,8 @@ export default function MerchantSubscriptionPage() {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Plan Features</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {getPlanFeatures(subscription.plan).map((feature: string, index: number) => (
+                    {getPlanFeatures((subscription.plan as Plan) || ({ features: [] } as any)).map(
+                      (feature: string, index: number) => (
                       <div key={index} className="flex items-center space-x-2">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span className="text-sm text-gray-700">{feature}</span>
@@ -586,6 +620,130 @@ export default function MerchantSubscriptionPage() {
             </Button>
             <Button onClick={() => router.push('/plans')}>
               View Plans
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Renew / Extend Modal (manual transfer proof) */}
+      <Dialog open={showRenewModal} onOpenChange={setShowRenewModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renew / Extend Subscription</DialogTitle>
+            <DialogDescription>
+              If you paid by bank transfer, enter the transaction ID so we can renew your subscription.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Duration</Label>
+              <Select
+                value={String(renewForm.duration)}
+                onValueChange={(v) => setRenewForm((p) => ({ ...p, duration: parseInt(v) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 month</SelectItem>
+                  <SelectItem value="3">3 months</SelectItem>
+                  <SelectItem value="6">6 months</SelectItem>
+                  <SelectItem value="12">12 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Payment Method</Label>
+              <Select value={renewForm.method} onValueChange={() => {}}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TRANSFER">Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-text-secondary mt-1">
+                Current backend flow uses transaction ID proof for transfers.
+              </p>
+            </div>
+
+            <div>
+              <Label>Transaction ID</Label>
+              <Input
+                value={renewForm.transactionId}
+                onChange={(e) => setRenewForm((p) => ({ ...p, transactionId: e.target.value }))}
+                placeholder="e.g. FT1234567890"
+              />
+            </div>
+
+            <div>
+              <Label>Reference (optional)</Label>
+              <Input
+                value={renewForm.reference}
+                onChange={(e) => setRenewForm((p) => ({ ...p, reference: e.target.value }))}
+                placeholder="Bank reference / note"
+              />
+            </div>
+
+            <div>
+              <Label>Payment Date (optional)</Label>
+              <Input
+                type="date"
+                value={renewForm.paymentDate}
+                onChange={(e) => setRenewForm((p) => ({ ...p, paymentDate: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label>Description (optional)</Label>
+              <Textarea
+                value={renewForm.description}
+                onChange={(e) => setRenewForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Any extra info for support"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenewModal(false)} disabled={renewSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!subscription?.id) return;
+                if (!renewForm.transactionId.trim()) {
+                  toastError('Missing transaction ID', 'Please enter your bank transaction ID.');
+                  return;
+                }
+                setRenewSubmitting(true);
+                try {
+                  const resp = await subscriptionsApi.renew(subscription.id, {
+                    method: 'TRANSFER',
+                    duration: renewForm.duration,
+                    transactionId: renewForm.transactionId.trim(),
+                    reference: renewForm.reference.trim() || undefined,
+                    description: renewForm.description.trim() || undefined,
+                    paymentDate: renewForm.paymentDate ? new Date(renewForm.paymentDate).toISOString() : undefined,
+                  });
+                  if (resp.success) {
+                    toastSuccess('Renewed', 'Your subscription has been renewed.');
+                    setShowRenewModal(false);
+                    await fetchSubscription();
+                  } else {
+                    toastError('Renew failed', resp.message || 'Could not renew subscription');
+                  }
+                } catch (e) {
+                  console.error(e);
+                  toastError('Renew failed', 'Could not renew subscription');
+                } finally {
+                  setRenewSubmitting(false);
+                }
+              }}
+              disabled={renewSubmitting || !subscription?.id}
+            >
+              {renewSubmitting ? 'Submitting...' : 'Submit'}
             </Button>
           </DialogFooter>
         </DialogContent>

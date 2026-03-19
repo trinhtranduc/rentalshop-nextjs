@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { plansApi, stripeApi, subscriptionsApi } from '@rentalshop/utils';
+import { plansApi, subscriptionsApi, lemonsqueezyApi } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -44,7 +44,7 @@ export default function PlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseData, setPurchaseData] = useState({
-    paymentMethod: 'STRIPE',
+    paymentMethod: 'LEMON_SQUEEZY',
     billingInfo: {
       name: '',
       email: '',
@@ -141,16 +141,15 @@ export default function PlansPage() {
       if (!selectedPlan) return;
 
       const origin = window.location.origin;
-      const successUrl = `${origin}/plans?stripe=success`;
-      const cancelUrl = `${origin}/plans?stripe=cancel`;
+      const successUrl = `${origin}/plans?checkout=success`;
+      const cancelUrl = `${origin}/plans?checkout=cancel`;
 
-      const result = await stripeApi.createCheckoutSession({
+      const result = await lemonsqueezyApi.createSubscriptionCheckout({
         planId: selectedPlan.id,
+        billingInterval: purchaseData.billingCycle,
         successUrl,
         cancelUrl,
-        billingInterval: purchaseData.billingCycle,
       });
-
       if (result.success && result.data?.url) {
         window.location.href = result.data.url;
         return;
@@ -159,19 +158,6 @@ export default function PlansPage() {
     } catch (err) {
       console.error('Error purchasing plan:', err);
       // Error automatically handled by useGlobalErrorHandler
-    }
-  };
-
-  const handleManageBilling = async () => {
-    try {
-      const origin = window.location.origin;
-      const returnUrl = `${origin}/plans`;
-      const result = await stripeApi.createBillingPortal({ returnUrl });
-      if (result.success && result.data?.url) {
-        window.location.href = result.data.url;
-      }
-    } catch (err) {
-      console.error('Error opening billing portal:', err);
     }
   };
 
@@ -213,11 +199,6 @@ export default function PlansPage() {
                   {String(currentSubscription.status).toLowerCase() === 'trial' && ' Your trial ends soon.'}
                 </p>
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" onClick={handleManageBilling}>
-                Manage billing
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -425,9 +406,7 @@ export default function PlansPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="STRIPE">Credit Card (Stripe)</SelectItem>
-                  <SelectItem value="PAYPAL">PayPal</SelectItem>
-                  <SelectItem value="TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="LEMON_SQUEEZY">Card / PayPal (Lemon Squeezy)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
