@@ -85,6 +85,7 @@ export function ImportCustomerDialog({
   const [headers, setHeaders] = useState<string[]>([]);
   const [errors, setErrors] = useState<Array<{ row: number; error: string }>>([]);
   const [duplicates, setDuplicates] = useState<Array<{ row: number; reason: string }>>([]);
+  const [duplicateDetails, setDuplicateDetails] = useState<Array<{ value: string; rows: number[] }>>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
@@ -138,6 +139,7 @@ export function ImportCustomerDialog({
     setHeaders([]);
     setErrors([]);
     setDuplicates([]);
+    setDuplicateDetails([]);
     setImportResult(null);
     setLoading(true);
 
@@ -290,7 +292,17 @@ export function ImportCustomerDialog({
           setErrors(prev => [...prev, ...validationErrors]);
         }
 
+        // Build duplicate details so users can quickly inspect duplicated data
+        const duplicateGroups: Array<{ value: string; rows: number[] }> = [];
+        phoneMap.forEach((rows, value) => {
+          if (rows.length > 1) {
+            duplicateGroups.push({ value, rows });
+          }
+        });
+        duplicateGroups.sort((a, b) => b.rows.length - a.rows.length);
+
         setDuplicates(duplicateList);
+        setDuplicateDetails(duplicateGroups);
         setHeaders(headers);
         setPreviewData(mappedData);
       } else {
@@ -310,6 +322,7 @@ export function ImportCustomerDialog({
     setHeaders([]);
     setErrors([]);
     setDuplicates([]);
+    setDuplicateDetails([]);
     setImportResult(null);
     setImportProgress(null);
       setChunkLogs([]);
@@ -405,7 +418,8 @@ export function ImportCustomerDialog({
             const response = await customersApi.importCustomers(chunk);
             
             if (response.success && response.data) {
-              const status = response.data.failed === 0 && (response.data.errors?.length || 0) === 0
+              const status: 'success' | 'failed' | 'partial' =
+                response.data.failed === 0 && (response.data.errors?.length || 0) === 0
                 ? 'success'
                 : (response.data.imported === 0 ? 'failed' : 'partial');
               
@@ -576,6 +590,7 @@ export function ImportCustomerDialog({
       setHeaders([]);
       setErrors([]);
       setDuplicates([]);
+      setDuplicateDetails([]);
       setImportResult(null);
       setImportProgress(null);
       setChunkLogs([]);
@@ -682,6 +697,38 @@ export function ImportCustomerDialog({
           {/* Preview */}
           {previewData.length > 0 && !loading && (
             <div className="flex-1 min-h-0 overflow-y-auto">
+              {duplicateDetails.length > 0 && (
+                <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 p-3">
+                  <div className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
+                    Dữ liệu trùng số điện thoại ({duplicateDetails.length} nhóm)
+                  </div>
+                  <div className="mt-2 max-h-40 overflow-y-auto rounded border border-yellow-200 bg-white dark:bg-gray-900">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-yellow-100 dark:bg-yellow-900/30">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Số điện thoại</th>
+                          <th className="px-3 py-2 text-left">Các dòng trùng</th>
+                          <th className="px-3 py-2 text-right">Số lần</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {duplicateDetails.slice(0, 200).map((item, index) => (
+                          <tr key={`${item.value}-${index}`} className="border-t border-yellow-100 dark:border-yellow-900/30">
+                            <td className="px-3 py-2 font-medium">{item.value}</td>
+                            <td className="px-3 py-2">{item.rows.join(', ')}</td>
+                            <td className="px-3 py-2 text-right">{item.rows.length}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {duplicateDetails.length > 200 && (
+                    <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+                      Hiển thị 200 nhóm đầu tiên. Tổng: {duplicateDetails.length} nhóm trùng.
+                    </div>
+                  )}
+                </div>
+              )}
               <CSVPreviewTable
                 data={previewData}
                 headers={headers}
