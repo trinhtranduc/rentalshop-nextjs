@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { plansApi, stripeApi, subscriptionsApi } from '@rentalshop/utils';
-import { useToast } from '@rentalshop/ui';
+import { plansApi, subscriptionsApi, lemonsqueezyApi } from '@rentalshop/utils';
 import {
   Card,
   CardHeader,
@@ -10,58 +9,42 @@ import {
   CardContent,
   Button,
   Badge,
-  StatusBadge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  Input,
   Label,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   PageWrapper,
-  Breadcrumb,
   PageLoadingIndicator
 } from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   CreditCard,
   CheckCircle,
   Star,
   Zap,
   Shield,
-  Users,
   Building,
   Package,
-  DollarSign,
-  Calendar,
   ArrowRight,
-  Check,
-  X
+  Check
 } from 'lucide-react';
 import type { Plan, Subscription } from '@rentalshop/types';
 
 export default function PlansPage() {
-  const { toastSuccess } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseData, setPurchaseData] = useState({
-    paymentMethod: 'STRIPE',
+    paymentMethod: 'LEMON_SQUEEZY',
     billingInfo: {
       name: '',
       email: '',
@@ -108,7 +91,7 @@ export default function PlansPage() {
             basePrice: data.planPrice,
             currency: data.planCurrency
           }
-        } as any;
+        } as unknown as Subscription;
         setCurrentSubscription(subscription);
       }
 
@@ -158,15 +141,15 @@ export default function PlansPage() {
       if (!selectedPlan) return;
 
       const origin = window.location.origin;
-      const successUrl = `${origin}/plans?stripe=success`;
-      const cancelUrl = `${origin}/plans?stripe=cancel`;
+      const successUrl = `${origin}/plans?checkout=success`;
+      const cancelUrl = `${origin}/plans?checkout=cancel`;
 
-      const result = await stripeApi.createCheckoutSession({
+      const result = await lemonsqueezyApi.createSubscriptionCheckout({
         planId: selectedPlan.id,
+        billingInterval: purchaseData.billingCycle,
         successUrl,
         cancelUrl,
       });
-
       if (result.success && result.data?.url) {
         window.location.href = result.data.url;
         return;
@@ -175,19 +158,6 @@ export default function PlansPage() {
     } catch (err) {
       console.error('Error purchasing plan:', err);
       // Error automatically handled by useGlobalErrorHandler
-    }
-  };
-
-  const handleManageBilling = async () => {
-    try {
-      const origin = window.location.origin;
-      const returnUrl = `${origin}/plans`;
-      const result = await stripeApi.createBillingPortal({ returnUrl });
-      if (result.success && result.data?.url) {
-        window.location.href = result.data.url;
-      }
-    } catch (err) {
-      console.error('Error opening billing portal:', err);
     }
   };
 
@@ -225,15 +195,10 @@ export default function PlansPage() {
               <div>
                 <h3 className="font-medium text-blue-800">Current Plan</h3>
                 <p className="text-sm text-blue-700">
-                  You're currently on the <strong>{currentSubscription.plan?.name}</strong> plan.
-                  {currentSubscription.status === 'trial' && ' Your trial ends soon.'}
+                  You&apos;re currently on the <strong>{currentSubscription.plan?.name}</strong> plan.
+                  {String(currentSubscription.status).toLowerCase() === 'trial' && ' Your trial ends soon.'}
                 </p>
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" onClick={handleManageBilling}>
-                Manage billing
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -441,9 +406,7 @@ export default function PlansPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="STRIPE">Credit Card (Stripe)</SelectItem>
-                  <SelectItem value="PAYPAL">PayPal</SelectItem>
-                  <SelectItem value="TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="LEMON_SQUEEZY">Card / PayPal (Lemon Squeezy)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

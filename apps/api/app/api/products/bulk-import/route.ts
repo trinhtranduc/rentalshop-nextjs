@@ -84,7 +84,7 @@ function formatPrismaError(error: any, productData?: any): string {
 
   // Handle Prisma error codes
   if (error.code === 'P2002') {
-    return 'Product name or barcode already exists';
+    return 'Product barcode already exists';
   }
   if (error.code === 'P2003') {
     return 'Invalid category or merchant reference';
@@ -513,7 +513,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               // Unique constraint violation - skip this product and continue
               transactionSkipped.push({
                 row: validatedProduct.rowNumber,
-                reason: 'Product with this barcode or name already exists'
+                reason: 'Product with this barcode already exists'
               });
               console.log(`Skipping duplicate product at row ${validatedProduct.rowNumber}`);
               continue; // Skip this product and continue with next

@@ -109,10 +109,31 @@ export const subscriptionsApi = {
   /**
    * Change subscription plan
    */
-  async changePlan(id: number, newPlanId: number): Promise<ApiResponse<Subscription>> {
+  async changePlan(
+    id: number,
+    newPlanId: number,
+    options?: {
+      billingInterval?: string;
+      startDate?: string | Date;
+      reason?: string;
+      sendEmail?: boolean;
+      customPrice?: number;
+    }
+  ): Promise<ApiResponse<Subscription>> {
+    const payload: any = { newPlanId };
+
+    if (options?.billingInterval) payload.billingInterval = options.billingInterval;
+    if (options?.startDate) {
+      payload.startDate =
+        options.startDate instanceof Date ? options.startDate.toISOString() : options.startDate;
+    }
+    if (options?.reason) payload.reason = options.reason;
+    if (typeof options?.sendEmail === 'boolean') payload.sendEmail = options.sendEmail;
+    if (typeof options?.customPrice === 'number') payload.customPrice = options.customPrice;
+
     const response = await authenticatedFetch(`${apiUrls.subscriptions.update(id)}/change-plan`, {
       method: 'POST',
-      body: JSON.stringify({ newPlanId }),
+      body: JSON.stringify(payload),
     });
     return await parseApiResponse<Subscription>(response);
   },
@@ -122,7 +143,10 @@ export const subscriptionsApi = {
    */
   async calculateExtensionPrice(
     id: number,
-    newEndDate: Date | string
+    newEndDate: Date | string,
+    options?: {
+      billingInterval?: string;
+    }
   ): Promise<ApiResponse<{
     subscriptionId: number;
     planId: number;
@@ -160,7 +184,11 @@ export const subscriptionsApi = {
       ? newEndDate 
       : newEndDate.toISOString().split('T')[0];
     
-    const url = `${apiUrls.subscriptions.calculateExtension(id)}?newEndDate=${encodeURIComponent(dateStr)}`;
+    const params = new URLSearchParams({ newEndDate: dateStr });
+    if (options?.billingInterval) {
+      params.set('billingInterval', options.billingInterval);
+    }
+    const url = `${apiUrls.subscriptions.calculateExtension(id)}?${params.toString()}`;
     const response = await authenticatedFetch(url);
     return await parseApiResponse(response);
   },
@@ -180,6 +208,39 @@ export const subscriptionsApi = {
       body: JSON.stringify(data),
     });
     return await parseApiResponse<Subscription>(response);
+  },
+
+  /**
+   * Renew subscription (merchant/admin)
+   * NOTE: Current backend requires method + transactionId
+   */
+  async renew(
+    id: number,
+    data: {
+      method: 'STRIPE' | 'TRANSFER';
+      duration?: number;
+      transactionId: string;
+      reference?: string;
+      description?: string;
+      paymentDate?: string | Date;
+    }
+  ): Promise<ApiResponse<any>> {
+    const payload: any = {
+      method: data.method,
+      duration: data.duration ?? 1,
+      transactionId: data.transactionId,
+    };
+    if (data.reference) payload.reference = data.reference;
+    if (data.description) payload.description = data.description;
+    if (data.paymentDate) {
+      payload.paymentDate = data.paymentDate instanceof Date ? data.paymentDate.toISOString() : data.paymentDate;
+    }
+
+    const response = await authenticatedFetch(apiUrls.subscriptions.renew(id), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return await parseApiResponse(response);
   },
 
   /**

@@ -50,6 +50,19 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY: z.ZodOptional<z.ZodString>;
     STRIPE_SECRET_KEY: z.ZodOptional<z.ZodString>;
     STRIPE_WEBHOOK_SECRET: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_API_KEY: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_STORE_ID: z.ZodOptional<z.ZodString>;
+    LEMON_SQUEEZY_WEBHOOK_SECRET: z.ZodOptional<z.ZodString>;
+    /**
+     * SePay VietQR (optional) — static QR image via https://qr.sepay.vn/img
+     * Bank name must match SePay’s list (e.g. Vietcombank). See https://qr.sepay.vn/banks.json
+     */
+    SEPAY_VIETQR_ACCOUNT_NUMBER: z.ZodOptional<z.ZodString>;
+    SEPAY_VIETQR_BANK_NAME: z.ZodOptional<z.ZodString>;
+    SEPAY_VIETQR_ACCOUNT_NAME: z.ZodOptional<z.ZodString>;
+    /** Used when plan currency is not VND (e.g. USD → VND for QR amount). Default 25000 if unset. */
+    SEPAY_USD_VND_RATE: z.ZodOptional<z.ZodString>;
+    SUBSCRIPTION_GATEWAY: z.ZodOptional<z.ZodEnum<["stripe", "lemonsqueezy"]>>;
     SENTRY_DSN: z.ZodOptional<z.ZodString>;
     SENTRY_ENVIRONMENT: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
@@ -83,6 +96,14 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    LEMON_SQUEEZY_API_KEY?: string | undefined;
+    LEMON_SQUEEZY_STORE_ID?: string | undefined;
+    LEMON_SQUEEZY_WEBHOOK_SECRET?: string | undefined;
+    SEPAY_VIETQR_ACCOUNT_NUMBER?: string | undefined;
+    SEPAY_VIETQR_BANK_NAME?: string | undefined;
+    SEPAY_VIETQR_ACCOUNT_NAME?: string | undefined;
+    SEPAY_USD_VND_RATE?: string | undefined;
+    SUBSCRIPTION_GATEWAY?: "stripe" | "lemonsqueezy" | undefined;
     SENTRY_DSN?: string | undefined;
     SENTRY_ENVIRONMENT?: string | undefined;
 }, {
@@ -116,6 +137,14 @@ declare const envSchema: z.ZodObject<{
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    LEMON_SQUEEZY_API_KEY?: string | undefined;
+    LEMON_SQUEEZY_STORE_ID?: string | undefined;
+    LEMON_SQUEEZY_WEBHOOK_SECRET?: string | undefined;
+    SEPAY_VIETQR_ACCOUNT_NUMBER?: string | undefined;
+    SEPAY_VIETQR_BANK_NAME?: string | undefined;
+    SEPAY_VIETQR_ACCOUNT_NAME?: string | undefined;
+    SEPAY_USD_VND_RATE?: string | undefined;
+    SUBSCRIPTION_GATEWAY?: "stripe" | "lemonsqueezy" | undefined;
     SENTRY_DSN?: string | undefined;
     SENTRY_ENVIRONMENT?: string | undefined;
 }>;

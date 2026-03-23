@@ -43,7 +43,8 @@ var postCreateSchema = z2.object({
   tagIds: z2.array(z2.number().int().positive()).optional(),
   featuredImage: z2.string().refine(
     (val) => {
-      if (!val || val === "") return true;
+      if (!val || val === "")
+        return true;
       try {
         new URL(val);
         return true;

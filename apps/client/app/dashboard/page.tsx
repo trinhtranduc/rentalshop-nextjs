@@ -38,7 +38,7 @@ import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -1250,15 +1250,16 @@ export default function DashboardPage() {
         {/* Page Loading Indicator - Floating, non-blocking */}
         <PageLoadingIndicator loading={authLoading || initialLoading || loadingCharts} />
       <PageContent>
-        {/* Subscription Status Banner - Show at top if subscription is expiring or expired */}
-        {/* Only show after dashboard has finished loading to avoid flash */}
-        <div className="mb-6">
-          <SubscriptionStatusBanner
-            onUpgrade={() => router.push('/subscription')}
-            onPayment={() => router.push('/subscription')}
-            dashboardLoaded={!initialLoading}
-          />
-        </div>
+        {/* Subscription banner: merchant-only (billing is org-level, not outlet) */}
+        {user?.role === USER_ROLE.MERCHANT && (
+          <div className="sticky top-0 z-20 -mx-4 px-4 pt-1 pb-3 mb-4 bg-bg-primary/95 backdrop-blur-sm border-b border-border/60 supports-[backdrop-filter]:bg-bg-primary/80">
+            <SubscriptionStatusBanner
+              dismissible
+              onPayment={() => router.push('/subscription')}
+              dashboardLoaded={!initialLoading}
+            />
+          </div>
+        )}
 
         {/* Welcome Header - Modern Style */}
         <div className="mb-8">

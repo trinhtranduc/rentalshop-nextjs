@@ -124,6 +124,8 @@ export interface ApiUrls {
     delete: (id: number) => string;
     stats: string;
     public: string;
+    stripePrices: (id: number) => string;
+    lemonSqueezyVariants: (id: number) => string;
   };
   planVariants: {
     list: string;
@@ -161,6 +163,7 @@ export interface ApiUrls {
     get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
+    renew: (id: number) => string;
     extend: (id: number) => string;
     calculateExtension: (id: number) => string;
     status: string;
@@ -651,6 +654,8 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/plans/${id}`,
       stats: `${base}/api/plans/stats`,
       public: `${base}/api/plans/public`,
+      stripePrices: (id: number) => `${base}/api/plans/${id}/stripe-prices`,
+      lemonSqueezyVariants: (id: number) => `${base}/api/plans/${id}/lemon-squeezy-variants`,
     },
     planVariants: {
       list: `${base}/api/plan-variants`,
@@ -688,6 +693,7 @@ function createApiUrls(): ApiUrls {
       get: (id: number) => `${base}/api/subscriptions/${id}`,
       update: (id: number) => `${base}/api/subscriptions/${id}`,
       delete: (id: number) => `${base}/api/subscriptions/${id}`,
+      renew: (id: number) => `${base}/api/subscriptions/${id}/renew`,
       extend: (id: number) => `${base}/api/subscriptions/${id}/extend`,
       calculateExtension: (id: number) => `${base}/api/subscriptions/${id}/extend/calculate`,
       status: `${base}/api/subscriptions/status`,

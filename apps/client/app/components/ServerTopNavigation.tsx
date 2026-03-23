@@ -15,8 +15,6 @@ import {
   CreditCard,
   ChevronDown,
   Menu,
-  Link2,
-  X,
   UserPlus
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
@@ -36,8 +34,6 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
-  const [isAffiliateBannerDismissed, setIsAffiliateBannerDismissed] = useState(false);
-
   const allNavItems = [
     { href: '/dashboard', label: t('navigation.dashboard'), icon: Home },
     { href: '/orders', label: t('navigation.orders'), icon: ShoppingCart },
@@ -132,57 +128,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
     prefetchRoute(href);
   };
 
-  // Check if affiliate banner was dismissed in localStorage
-  useEffect(() => {
-    const dismissed = localStorage.getItem('affiliate-banner-dismissed');
-    if (dismissed === 'true') {
-      setIsAffiliateBannerDismissed(true);
-    }
-  }, []);
-
-  const handleDismissBanner = () => {
-    setIsAffiliateBannerDismissed(true);
-    localStorage.setItem('affiliate-banner-dismissed', 'true');
-  };
-
-  const handleAffiliateBannerClick = () => {
-    handleTabClick('/affiliate');
-  };
-
   return (
     <>
-      {/* Affiliate Vertical Banner - Top Right */}
-      {!isAffiliateBannerDismissed && (
-              <div 
-          className="fixed top-4 right-4 z-[60] bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg rounded-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-200 group"
-                onClick={handleAffiliateBannerClick}
-              >
-          <div className="flex flex-col items-center justify-center p-3 gap-2 min-w-[60px]">
-            <Link2 className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
-            <div className="flex flex-col items-center gap-1 text-center">
-              <p className="font-semibold text-[11px] uppercase tracking-wider leading-tight">
-                    {tAffiliate('banner.title')}
-                  </p>
-              <p className="text-[9px] text-blue-100 opacity-90 leading-tight">
-                  {tAffiliate('banner.button')}
-              </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDismissBanner();
-                }}
-              className="text-white hover:bg-blue-600/50 h-5 w-5 mt-1"
-                title={tAffiliate('banner.dismiss')}
-              >
-              <X className="w-3 h-3" />
-              </Button>
-          </div>
-        </div>
-      )}
-
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">

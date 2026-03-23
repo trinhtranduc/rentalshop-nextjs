@@ -25,7 +25,7 @@ import { subscriptionsApi } from '@rentalshop/utils';
 import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
 // Type assertion for calculateExtensionPrice (newly added function)
 const api = subscriptionsApi as typeof subscriptionsApi & {
-  calculateExtensionPrice: (id: number, newEndDate: Date | string) => Promise<any>;
+  calculateExtensionPrice: (id: number, newEndDate: Date | string, options?: { billingInterval?: string }) => Promise<any>;
 };
 
 interface SubscriptionExtendDialogEnhancedProps {
@@ -221,10 +221,9 @@ export function SubscriptionExtendDialogEnhanced({
     const calculatePrice = async () => {
       try {
         setCalculating(true);
-        const result = await api.calculateExtensionPrice(
-          subscription.id,
-          newEndDate
-        );
+        const result = await api.calculateExtensionPrice(subscription.id, newEndDate, {
+          billingInterval: billingPeriod,
+        });
 
         if (result.success && result.data) {
           const finalPrice = result.data.totalPrice || result.data.extensionPrice;

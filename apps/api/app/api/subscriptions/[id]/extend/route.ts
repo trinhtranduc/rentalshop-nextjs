@@ -5,7 +5,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder, sendSubscriptionExtensionEmail } from '@rentalshop/utils';
+import type { AuthUser } from '@rentalshop/auth';
+import {
+  handleApiError,
+  ResponseBuilder,
+  sendSubscriptionExtensionEmail,
+  normalizeBillingInterval,
+  calculateExtensionTotal,
+} from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -15,7 +22,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 async function handleExtendSubscription(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } },
-  { user }: { user: any; userScope: any }
+  { user }: { user: AuthUser }
 ) {
   try {
     // Resolve params (handle both Promise and direct object)
@@ -79,6 +86,11 @@ async function handleExtendSubscription(
       );
     }
 
+    // db.subscriptions.findById() may return narrowed TS types,
+    // but runtime includes full subscription + plan fields. Cast locally.
+    const subscriptionAny = subscription as unknown as { billingInterval?: unknown; plan?: unknown };
+    const planAny = subscriptionAny.plan as { basePrice?: number } | undefined;
+
     // Calculate extension duration
     const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
     const extensionDays = Math.ceil((endDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -93,11 +105,29 @@ async function handleExtendSubscription(
     // Auto-calculate amount if not provided
     let calculatedAmount = amount;
     if (calculatedAmount === undefined || calculatedAmount === null) {
-      // Calculate plan price per day
-      const billingInterval = subscription.billingInterval || 'monthly';
-      const monthlyPrice = subscription.plan.basePrice || 0;
-      const dailyPrice = monthlyPrice / 30; // Assuming 30 days per month
-      calculatedAmount = dailyPrice * extensionDays;
+      // Default: use shared pure calculation (consistent with UI + /extend/calculate).
+      // Fallback to a simple monthly proration if anything goes wrong.
+      try {
+        const { searchParams } = new URL(request.url);
+        const requestedIntervalRaw =
+          searchParams.get('billingInterval') ||
+          (typeof subscriptionAny.billingInterval === 'string' ? subscriptionAny.billingInterval : undefined) ||
+          'monthly';
+        const selectedInterval = normalizeBillingInterval(requestedIntervalRaw);
+
+        const extensionCalc = calculateExtensionTotal({
+          oldEndDate,
+          newEndDate: endDate,
+          plan: { basePrice: planAny?.basePrice || 0 },
+          selectedInterval,
+        });
+
+        calculatedAmount = extensionCalc.totalDue;
+      } catch {
+        const monthlyPrice = planAny?.basePrice || 0;
+        const dailyPrice = monthlyPrice / 30;
+        calculatedAmount = dailyPrice * extensionDays;
+      }
       calculatedAmount = Math.round(calculatedAmount * 100) / 100; // Round to 2 decimals
     }
 
@@ -116,7 +146,7 @@ async function handleExtendSubscription(
     // Update subscription period end
     // Đơn giản: chỉ update currentPeriodEnd, không cần update trialEnd
     // Bất kể merchant status là trial hay không, chỉ cần currentPeriodEnd
-    const updateData: any = {
+    const updateData = {
       currentPeriodEnd: endDate,
       updatedAt: new Date()
     };
@@ -141,7 +171,7 @@ async function handleExtendSubscription(
         method,
         description: description || 'Manual extension',
         performedBy: {
-          userId: user.userId || user.id,
+          userId: user.id,
           email: user.email,
           role: user.role,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
@@ -150,7 +180,7 @@ async function handleExtendSubscription(
         severity: 'success',
         category: 'billing'
       },
-      performedBy: user.userId || user.id
+      performedBy: user.id
     });
 
     // DEBUG: Log merchant email status

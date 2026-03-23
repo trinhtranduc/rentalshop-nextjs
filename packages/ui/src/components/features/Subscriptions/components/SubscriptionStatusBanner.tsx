@@ -2,7 +2,7 @@
 // SUBSCRIPTION STATUS BANNER COMPONENT
 // ============================================================================
 
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '../../../ui/alert';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
@@ -21,19 +21,22 @@ import {
   Clock, 
   Shield, 
   XCircle,
-  CheckCircle,
   Info,
   Phone,
   MessageCircle,
-  ChevronDown
+  ChevronDown,
+  X,
+  TrendingUp,
 } from 'lucide-react';
 import { useSubscriptionStatusInfo, useSubscriptionTranslations, useAuth } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { useLocale } from 'next-intl';
+const SUBSCRIPTION_DASHBOARD_BANNER_DISMISS_KEY = 'rentalshop.subscriptionDashboardBanner.dismissed';
 
 interface SubscriptionStatusBannerProps {
   className?: string;
   showActions?: boolean;
+  /** Show close control; dismissal is remembered until subscription fingerprint changes (localStorage) */
+  dismissible?: boolean;
   onUpgrade?: () => void;
   onPayment?: () => void;
   onExport?: () => void;
@@ -44,6 +47,7 @@ interface SubscriptionStatusBannerProps {
 export function SubscriptionStatusBanner({
   className = '',
   showActions = true,
+  dismissible = true,
   onUpgrade,
   onPayment,
   onExport,
@@ -53,7 +57,6 @@ export function SubscriptionStatusBanner({
   const t = useSubscriptionTranslations();
   // Use centralized date formatting hook (DRY principle)
   const formatDate = useFormattedFullDate;
-  const locale = useLocale();
   const { user } = useAuth();
   const {
     statusMessage,
@@ -75,16 +78,48 @@ export function SubscriptionStatusBanner({
     loading
   } = useSubscriptionStatusInfo();
 
-  // Only show banner when:
-  // 1. Dashboard has finished loading (to avoid flash)
-  // 2. User is loaded (to avoid flash during auth)
-  // 3. Not loading subscription data
-  // 4. Have subscription data
-  // 5. Subscription is expired OR expiring soon (<= 7 days)
   const hasSubscriptionData = subscription !== null && subscription !== undefined;
-  // Show if expired OR expiring soon (including negative days for expired subscriptions)
-  const isExpiring = isExpired || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
-  const shouldShow = dashboardLoaded && user && !loading && hasSubscriptionData && isExpiring;
+
+  /** Fingerprint: dismiss resets when merchant / subscription / period / status changes */
+  const dismissFingerprint = useMemo(() => {
+    if (!user?.merchantId || !subscription) return '';
+    const subId = subscription.subscriptionId ?? subscription.id;
+    const periodEnd = subscription.currentPeriodEnd ?? '';
+    const st = subscription.status ?? '';
+    return `${user.merchantId}:${subId}:${periodEnd}:${st}`;
+  }, [user?.merchantId, subscription]);
+
+  const [userDismissed, setUserDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!dismissFingerprint || typeof window === 'undefined') return;
+    try {
+      setUserDismissed(localStorage.getItem(SUBSCRIPTION_DASHBOARD_BANNER_DISMISS_KEY) === dismissFingerprint);
+    } catch {
+      setUserDismissed(false);
+    }
+  }, [dismissFingerprint]);
+
+  const handleDismiss = useCallback(() => {
+    if (!dismissFingerprint || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(SUBSCRIPTION_DASHBOARD_BANNER_DISMISS_KEY, dismissFingerprint);
+    } catch {
+      /* ignore */
+    }
+    setUserDismissed(true);
+  }, [dismissFingerprint]);
+
+  // Attention: no access, expired, expiring soon, or <= 7 days left (with subscription row)
+  const needsAttention =
+    hasSubscriptionData &&
+    (!hasAccess ||
+      isExpired ||
+      isExpiringSoon ||
+      (daysUntilExpiry !== null && daysUntilExpiry <= 7));
+
+  const shouldShow =
+    dashboardLoaded && user && !loading && needsAttention && !(dismissible && userDismissed);
 
   if (!shouldShow) {
     return null;
@@ -118,19 +153,37 @@ export function SubscriptionStatusBanner({
     }
   };
 
-  // Custom styling for expiring soon or expired subscription (light orange/cream background)
-  const isExpiringWarning = isExpired || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
+  // Custom styling for expiring soon, expired, or no access (light orange/cream background)
+  const isExpiringWarning =
+    !hasAccess || isExpired || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
 
   return (
     <Alert 
-      className={`${className} ${
+      className={`relative pr-10 ${className} ${
         isExpiringWarning 
           ? 'bg-orange-50 border-orange-200 text-orange-800 [&>svg]:text-orange-600'
           : getStatusVariant()
       }`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3">
+      {dismissible && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`absolute right-2 top-2 h-8 w-8 shrink-0 ${
+            isExpiringWarning
+              ? 'text-orange-800 hover:bg-orange-100/80 hover:text-orange-950'
+              : 'text-muted-foreground hover:bg-muted'
+          }`}
+          onClick={handleDismiss}
+          aria-label={t('banner.dismissAria')}
+          title={t('banner.dismiss')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start space-x-3">
           {isExpiringWarning ? (
             <AlertTriangle className="w-5 h-5 text-orange-600" />
           ) : (
@@ -140,10 +193,16 @@ export function SubscriptionStatusBanner({
             <AlertTitle className={`flex items-center gap-2 ${
               isExpiringWarning ? 'text-orange-800' : ''
             }`}>
-              {isExpired ? (t('banner.expired') || 'Subscription Expired') : isExpiringWarning ? t('banner.expiringSoon') : 'Subscription Status'}
+              {isExpired
+                ? t('banner.expiredTitle')
+                : !hasAccess
+                  ? t('bottomBar.title')
+                : isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7)
+                  ? t('banner.expiringSoon')
+                  : t('banner.subscriptionStatus')}
               {!isExpiringWarning && (
               <Badge variant={getStatusBadgeVariant()}>
-                {accessLevel.toUpperCase()}
+                {t(`accessLevels.${accessLevel}` as 'accessLevels.full')}
               </Badge>
               )}
             </AlertTitle>
@@ -151,7 +210,9 @@ export function SubscriptionStatusBanner({
               isExpiringWarning ? 'text-orange-700' : ''
             }`}>
               {isExpired ? (
-                t('banner.expired') || 'Your subscription has expired. Please renew to continue using the service.'
+                t('banner.expiredMessage')
+              ) : !hasAccess ? (
+                statusMessage || t('errors.generic')
               ) : isExpiringWarning && subscription?.currentPeriodEnd ? (
                 t('banner.expiresOn', {
                   date: formatDate(subscription.currentPeriodEnd)
@@ -168,10 +229,9 @@ export function SubscriptionStatusBanner({
             {!isExpiringWarning && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
               <div className="mt-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 inline mr-1" />
-                {daysUntilExpiry === 1 
-                  ? 'Còn lại 1 ngày'
-                  : `Còn lại ${daysUntilExpiry} ngày`
-                }
+                {daysUntilExpiry === 1
+                  ? t('expiringSoon.oneDayLeft')
+                  : t('expiringSoon.daysLeft', { days: daysUntilExpiry ?? 0 })}
               </div>
             )}
             
@@ -189,11 +249,18 @@ export function SubscriptionStatusBanner({
         </div>
 
         {showActions && (
-          <div className="flex items-center space-x-2 ml-4">
-            {upgradeRequired && onUpgrade && (
-              <Button size="sm" onClick={onUpgrade}>
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Upgrade Now
+          <div className="flex flex-wrap items-center justify-end gap-2 ml-4 shrink-0">
+            {/* Primary: open subscription page (renew / overview). Secondary: jump straight to plan picker. */}
+            {onPayment && (
+              <Button size="sm" variant="default" onClick={onPayment}>
+                <CreditCard className="h-4 w-4 mr-1" />
+                {t('banner.ctaManageBilling')}
+              </Button>
+            )}
+            {onUpgrade && (upgradeRequired || isExpired || !hasAccess) && (
+              <Button size="sm" variant="outline" onClick={onUpgrade}>
+                <TrendingUp className="h-4 w-4 mr-1" />
+                {t('banner.ctaComparePlans')}
               </Button>
             )}
             
@@ -241,7 +308,7 @@ export function SubscriptionStatusBanner({
             {canExportData && onExport && (
               <Button size="sm" variant="outline" onClick={onExport}>
                 <Download className="w-4 h-4 mr-1" />
-                Export Data
+                {t('actions.exportData')}
               </Button>
             )}
           </div>
@@ -269,6 +336,7 @@ export function SubscriptionStatusCard({
   contactPhone = '+840764774647'
 }: SubscriptionStatusCardProps) {
   const t = useSubscriptionTranslations();
+  const formatDate = useFormattedFullDate;
   const {
     statusMessage,
     statusColor,
@@ -281,7 +349,8 @@ export function SubscriptionStatusCard({
     isRestricted,
     isReadOnly,
     isLimited,
-    isDenied
+    isDenied,
+    isExpired,
   } = useSubscriptionStatusInfo();
 
   // Don't show card if user has full access
@@ -316,7 +385,8 @@ export function SubscriptionStatusCard({
             {getStatusIcon()}
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Subscription Status: {accessLevel.toUpperCase()}
+                {t('banner.subscriptionStatus')}:{' '}
+                {t(`accessLevels.${accessLevel}` as 'accessLevels.full')}
               </h3>
               <p className="text-gray-700 mb-3">
                 {statusMessage}
@@ -325,16 +395,24 @@ export function SubscriptionStatusCard({
               {gracePeriodEnds && (
                 <div className="text-sm text-gray-600 mb-3">
                   <Clock className="w-4 h-4 inline mr-1" />
-                  Grace period ends: {formatDate(gracePeriodEnds)}
+                  {t('banner.gracePeriodEnds', {
+                    date: formatDate(gracePeriodEnds),
+                  })}
                 </div>
               )}
 
               {showActions && (
-                <div className="flex items-center space-x-3">
-                  {upgradeRequired && onUpgrade && (
-                    <Button size="sm" onClick={onUpgrade}>
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Upgrade Now
+                <div className="flex flex-wrap items-center gap-2">
+                  {onPayment && (
+                    <Button size="sm" variant="default" onClick={onPayment}>
+                      <CreditCard className="h-4 w-4 mr-1" />
+                      {t('banner.ctaManageBilling')}
+                    </Button>
+                  )}
+                  {onUpgrade && (upgradeRequired || isExpired || !hasAccess) && (
+                    <Button size="sm" variant="outline" onClick={onUpgrade}>
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      {t('banner.ctaComparePlans')}
                     </Button>
                   )}
                   
@@ -380,8 +458,8 @@ export function SubscriptionStatusCard({
                   
                   {canExportData && onExport && (
                     <Button size="sm" variant="outline" onClick={onExport}>
-                      <Download className="w-4 h-4 mr-1" />
-                      Export Data
+                      <Download className="h-4 w-4 mr-1" />
+                      {t('actions.exportData')}
                     </Button>
                   )}
                 </div>

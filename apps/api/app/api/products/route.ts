@@ -433,20 +433,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
-    // Check duplicate name
-    const existingProduct = await db.products.findFirst({
-      name: parsed.data.name,
-      merchantId: userScope.merchantId,
-      isActive: true
-    });
-
-    if (existingProduct) {
-      return NextResponse.json(
-        ResponseBuilder.error('PRODUCT_NAME_EXISTS'),
-        { status: 409 }
-      );
-    }
-
     // Determine merchantId
     let merchantId = userScope.merchantId;
     if (user.role === USER_ROLE.ADMIN && parsed.data.merchantId) {

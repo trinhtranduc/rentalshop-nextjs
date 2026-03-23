@@ -4,11 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
-import { Menu, X } from 'lucide-react';
-import AffiliateBanner from './AffiliateBanner';
+import { Menu } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
-import { useTranslations } from 'next-intl';
 import type { CurrencyCode } from '@rentalshop/types';
 import { isPublicRoute, isAuthRoute, isPublicInfoRoute } from '../../lib/routes';
 
@@ -27,11 +25,9 @@ export default function ClientLayout({
 }: ClientLayoutProps) {
   const { user, logout, loading, refreshUser } = useAuth();
   const t = useCommonTranslations();
-  const tAffiliate = useTranslations('affiliate');
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAffiliateBannerDismissed, setIsAffiliateBannerDismissed] = useState(false);
   const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
   
@@ -49,21 +45,6 @@ export default function ClientLayout({
   const isBlogPage = pathname?.startsWith('/blog');
   const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isSettingsPage && !isBlogPage;
 
-  // ============================================================================
-  // AFFILIATE BANNER STATE
-  // ============================================================================
-  // Banner always shows - dismiss only hides it for current session
-  // No localStorage persistence - banner will show again on page refresh
-
-  const handleDismissBanner = () => {
-    // Only dismiss for current session - banner will show again on page refresh
-    setIsAffiliateBannerDismissed(true);
-  };
-
-  const handleAffiliateBannerClick = () => {
-    navigateTo('/affiliate/guide');
-  };
-  
   // ============================================================================
   // AUTH STATE
   // ============================================================================
@@ -148,22 +129,9 @@ export default function ClientLayout({
     onSearch?.(query) || console.log('Search query:', query);
   };
 
-  // Check if banner should be shown
-  // Banner only shows on dashboard page (unless dismissed in current session)
-  const isDashboardPage = pathname === '/dashboard';
-  const shouldShowBanner = !isAffiliateBannerDismissed && isDashboardPage && user;
-
   return (
     <CurrencyProvider merchantCurrency={merchantCurrency}>
-      {/* Affiliate Banner - Multiple UI Variants */}
-      {shouldShowBanner && (
-        <AffiliateBanner
-          variant="default" // Options: 'default' | 'minimal' | 'badge' | 'info' | 'promo'
-          onDismiss={handleDismissBanner}
-          onClick={handleAffiliateBannerClick}
-        />
-      )}
-      <div className={`flex h-screen bg-bg-primary ${shouldShowBanner ? 'pt-12' : ''}`}>
+      <div className="flex h-screen bg-bg-primary">
       {/* Show sidebar on all pages except login */}
       {showSidebar && (
         <>

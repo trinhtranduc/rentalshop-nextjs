@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { stripeApi, subscriptionsApi } from '@rentalshop/utils';
+import { stripeApi, merchantsApi, plansApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
   PageWrapper,
@@ -13,10 +13,8 @@ import {
 } from '@rentalshop/ui';
 import { 
   ArrowLeft,
-  Save,
-  X
 } from 'lucide-react';
-import type { SubscriptionCreateInput, Plan, Merchant } from '@rentalshop/types';
+import type { SubscriptionCreateInput, SubscriptionUpdateInput, Plan, Merchant } from '@rentalshop/types';
 
 export default function CreateSubscriptionPage() {
   const router = useRouter();
@@ -31,13 +29,13 @@ export default function CreateSubscriptionPage() {
       setLoading(true);
       
       // Fetch plans
-      const plansResult = await subscriptionsApi.getPlans();
+      const plansResult = await plansApi.getPlans();
       if (plansResult.success && plansResult.data) {
         setPlans(plansResult.data.plans || []);
       }
 
       // Fetch merchants
-      const merchantsResult = await subscriptionsApi.getMerchants();
+      const merchantsResult = await merchantsApi.getMerchants();
       if (merchantsResult.success && merchantsResult.data) {
         setMerchants(merchantsResult.data.merchants || []);
       }
@@ -53,7 +51,7 @@ export default function CreateSubscriptionPage() {
     fetchData();
   }, []);
 
-  const handleSubmit = async (data: SubscriptionCreateInput) => {
+  const handleSubmit = async (data: SubscriptionCreateInput | SubscriptionUpdateInput) => {
     try {
       setSubmitting(true);
 
@@ -61,11 +59,14 @@ export default function CreateSubscriptionPage() {
       const successUrl = `${origin}/admin/subscriptions?stripe=success`;
       const cancelUrl = `${origin}/admin/subscriptions/create?stripe=cancel`;
 
+      const createData = data as SubscriptionCreateInput;
+
       const result = await stripeApi.createCheckoutSession({
-        merchantId: data.merchantId,
-        planId: data.planId,
+        merchantId: createData.merchantId,
+        planId: createData.planId,
         successUrl,
         cancelUrl,
+        billingInterval: (createData as unknown as { billingInterval?: string; interval?: string }).billingInterval || (createData as unknown as { interval?: string }).interval || 'monthly',
       });
 
       if (result.success && result.data?.url) {

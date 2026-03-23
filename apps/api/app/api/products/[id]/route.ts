@@ -488,24 +488,6 @@ export async function PUT(
         }
       }
 
-      // Check for duplicate product name if name is being updated
-      if (productUpdateData.name && productUpdateData.name !== existingProduct.name) {
-        const duplicateProduct = await db.products.findFirst({
-          name: productUpdateData.name,
-          merchantId: userMerchantId,
-          isActive: true,
-          id: { not: productId }
-        });
-
-        if (duplicateProduct) {
-          console.log('❌ Product name already exists:', productUpdateData.name);
-          return NextResponse.json(
-            ResponseBuilder.error('PRODUCT_NAME_EXISTS'),
-            { status: 409 }
-          );
-        }
-      }
-
       // Prepare outletStock nested write if provided
       let finalUpdateData: any = { ...productUpdateData };
       

@@ -3,25 +3,42 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
-import {API} from '@rentalshop/constants';
+import { USER_ROLE } from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+/**
+ * GET: ADMIN (full catalog + inactive) | MERCHANT (active plans only, for upgrade/checkout).
+ * requireActiveSubscription: false so expired merchants can still load plans to renew.
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'], { requireActiveSubscription: false })(
+  async (request: NextRequest, { user }) => {
   try {
     // Get search parameters
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
-    const isActive = searchParams.get('isActive');
+    const isActiveParam = searchParams.get('isActive');
     const isPopular = searchParams.get('isPopular');
-    const includeInactive = searchParams.get('includeInactive');
+    const includeInactiveParam = searchParams.get('includeInactive');
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
     const sortBy = searchParams.get('sortBy') || 'sortOrder';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-    // Build filters - default to active plans only unless explicitly requested
+    const isMerchant = user?.role === USER_ROLE.MERCHANT;
+
+    // Merchants: never expose inactive / draft plans via query manipulation
+    const includeInactive = isMerchant ? false : includeInactiveParam === 'true';
+    const isActive = includeInactive
+      ? undefined
+      : isMerchant
+        ? true
+        : isActiveParam
+          ? isActiveParam === 'true'
+          : true;
+
+    // Build filters - default to active plans only unless explicitly requested (admin only)
     const filters = {
       search: search || undefined,
-      isActive: includeInactive === 'true' ? undefined : (isActive ? isActive === 'true' : true), // Show all if includeInactive=true
+      isActive,
       isPopular: isPopular ? isPopular === 'true' : undefined,
       limit,
       page,
@@ -31,15 +48,17 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
     // Use database function to search plans
     const result = await db.plans.search(filters);
+    const resultLimit = result.limit ?? limit;
+    const resultPage = result.page ?? page;
 
     return NextResponse.json({
       success: true,
       data: {
-        plans: result.plans || result.data,
+        plans: result.data,
         total: result.total,
-        page: result.page || page,
-        limit: result.limit || limit,
-        totalPages: result.totalPages || Math.ceil(result.total / (result.limit || limit)),
+        page: resultPage,
+        limit: resultLimit,
+        totalPages: Math.ceil(result.total / resultLimit) || 1,
         hasMore: result.hasMore
       }
     });
@@ -51,7 +70,8 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  }
+);
 
 export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {

@@ -73,6 +73,8 @@ model Merchant {
   phone           String?
   /// Stripe customer id for subscription billing
   stripeCustomerId String?         @unique
+  /// Lemon Squeezy customer id (optional, synced via webhooks)
+  lemonCustomerId String?          @unique
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
   tenantKey       String?          @unique
@@ -369,10 +371,63 @@ model Plan {
   deletedAt     DateTime?
   Merchant      Merchant[]
   subscriptions Subscription[]
+  stripePrices  PlanStripePrice[]
+  lemonVariants PlanLemonSqueezyVariant[]
 
   @@index([isActive])
   @@index([sortOrder])
   @@index([deletedAt])
+}
+
+/// Billing intervals supported for Stripe Prices (Plan-level)
+enum PlanBillingInterval {
+  monthly
+  quarterly
+  semi_annual
+  annual
+}
+
+/// Map Plan ↔ Stripe Price IDs by billing interval.
+/// This supports: Basic/Pro each having 4 Stripe prices (monthly/quarterly/semi_annual/annual).
+model PlanStripePrice {
+  id             Int                @id @default(autoincrement())
+  planId         Int
+  billingInterval PlanBillingInterval
+  stripePriceId  String             // no unique: allow same price in multiple plan/interval slots; save overwrites by (planId, billingInterval)
+  currency       String?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  plan           Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, billingInterval])
+  @@index([planId])
+  @@index([billingInterval])
+  @@index([isActive])
+}
+
+/// Map Plan ↔ Lemon Squeezy Variant IDs by billing interval.
+/// Each plan can have 4 variants (monthly/quarterly/semi_annual/annual).
+model PlanLemonSqueezyVariant {
+  id             Int                @id @default(autoincrement())
+  planId         Int
+  billingInterval PlanBillingInterval
+  /// Lemon Squeezy Variant ID (numeric string)
+  lemonVariantId String
+  /// Optional override if plan variants belong to a different store
+  lemonStoreId   String?
+  currency       String?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  plan           Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, billingInterval])
+  @@index([planId])
+  @@index([billingInterval])
+  @@index([isActive])
 }
 
 model Subscription {
@@ -381,6 +436,8 @@ model Subscription {
   planId             Int
   /// Stripe Subscription ID for syncing status/periods via webhooks
   stripeSubscriptionId String?              @unique
+  /// Lemon Squeezy Subscription ID for syncing status/periods via webhooks
+  lemonSubscriptionId String?               @unique
   status             String                 @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
@@ -624,6 +681,7 @@ enum PaymentStatus {
 
 enum PaymentMethod {
   STRIPE
+  LEMON_SQUEEZY
   TRANSFER
   MANUAL
   CASH

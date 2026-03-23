@@ -19,9 +19,14 @@ import { API } from '@rentalshop/constants';
  * - They need to see subscription status for their outlet
  * - They work for the merchant, so should have read access
  * - Read-only access, cannot modify subscription
+ *
+ * **requireActiveSubscription: false** — Merchants must still read status when subscription
+ * is expired/paused (banner, renew CTA). JWT + permission checks remain enforced.
  */
 export async function GET(request: NextRequest) {
-  return withPermissions(['billing.view', 'analytics.view'])(async (request, { user, userScope }) => {
+  return withPermissions(['billing.view', 'analytics.view'], {
+    requireActiveSubscription: false,
+  })(async (request, { user, userScope }) => {
     try {
       // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params

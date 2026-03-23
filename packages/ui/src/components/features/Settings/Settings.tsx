@@ -14,6 +14,7 @@ import {
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
+import { USER_ROLE } from '@rentalshop/constants';
 import { useToast } from '@rentalshop/ui';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 
@@ -66,7 +67,7 @@ const createSettingsMenuItems = (t: any) => [
     label: t('menuItems.subscription.label'),
     icon: CreditCard,
     description: t('menuItems.subscription.description'),
-    roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'] // ADMIN, MERCHANT, and OUTLET_ADMIN can access subscription
+    roles: [USER_ROLE.MERCHANT] // Billing/subscription: merchant owner only (outlet users use Settings elsewhere)
   },
   {
     id: 'language',
@@ -98,8 +99,10 @@ export const SettingsComponent: React.FC = () => {
   // Get tab from URL or default to 'profile'
   const tabFromUrl = searchParams.get('tab') || 'profile';
   
-  // Navigation state
-  const [activeSection, setActiveSection] = useState(tabFromUrl);
+  // Avoid showing subscription tab until role is known (outlets must not flash subscription UI)
+  const [activeSection, setActiveSection] = useState(
+    tabFromUrl === 'subscription' ? 'profile' : tabFromUrl
+  );
   
   // Profile editing state
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -155,13 +158,26 @@ export const SettingsComponent: React.FC = () => {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
-  // Sync URL with active section
+  // Sync URL → active section; subscription tab only for MERCHANT after role is loaded
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab') || 'profile';
-    if (tabFromUrl !== activeSection) {
-      setActiveSection(tabFromUrl);
+    const tab = searchParams.get('tab') || 'profile';
+
+    if (tab === 'subscription') {
+      if (!user?.role) {
+        setActiveSection('profile');
+        return;
+      }
+      if (user.role !== USER_ROLE.MERCHANT) {
+        setActiveSection('profile');
+        router.replace('/settings?tab=profile');
+        return;
+      }
+      setActiveSection('subscription');
+      return;
     }
-  }, [searchParams]);
+
+    setActiveSection(tab);
+  }, [searchParams, user?.role, router]);
 
   // Function to change section and update URL
   const handleSectionChange = (section: string) => {
@@ -180,8 +196,14 @@ export const SettingsComponent: React.FC = () => {
     }
   }, [user]);
 
-  // Fetch subscription data
+  // Fetch subscription data (merchant only — matches subscription settings tab visibility)
   useEffect(() => {
+    if (user?.role !== USER_ROLE.MERCHANT) {
+      setSubscriptionData(null);
+      setSubscriptionLoading(false);
+      return;
+    }
+
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -284,7 +306,7 @@ export const SettingsComponent: React.FC = () => {
     };
 
     fetchSubscriptionData();
-  }, []);
+  }, [user?.role]);
 
   // Update form data when user data is loaded
   useEffect(() => {
@@ -595,6 +617,9 @@ export const SettingsComponent: React.FC = () => {
           />
         );
       case 'subscription':
+        if (user?.role !== USER_ROLE.MERCHANT) {
+          return null;
+        }
         return (
           <SubscriptionSection
             subscriptionData={subscriptionData}

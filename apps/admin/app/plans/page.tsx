@@ -6,11 +6,8 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
   Button,
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   Dialog,
   DialogContent,
@@ -28,9 +25,11 @@ import {
   useToast
 } from '@rentalshop/ui';
 import { PlanTable, PlanDialog } from '@rentalshop/ui';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { usePlansData } from '@rentalshop/hooks';
 import type { Plan, PlanCreateInput, PlanUpdateInput } from '@rentalshop/types';
+import type { PlanBillingInterval } from '@rentalshop/utils';
+import { planStripePricesApi } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN PLANS PAGE (URL State Pattern)
@@ -70,6 +69,11 @@ export default function PlansPage() {
   const [loadingViewPlan, setLoadingViewPlan] = useState(false);
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
+  const [showStripePricesDialog, setShowStripePricesDialog] = useState(false);
+  const [stripePricesLoading, setStripePricesLoading] = useState(false);
+  const [stripePricesSaving, setStripePricesSaving] = useState(false);
+  const [stripePrices, setStripePrices] = useState<Partial<Record<PlanBillingInterval, string>>>({});
+  const [stripePricesCurrency, setStripePricesCurrency] = useState<string>('');
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple with Deduplication
@@ -206,6 +210,53 @@ export default function PlansPage() {
     setShowViewDialog(false);
     setSelectedPlan(null);
   }, []);
+
+  const openStripePricesDialog = useCallback(async (plan: Plan) => {
+    setSelectedPlan(plan);
+    setShowStripePricesDialog(true);
+    setStripePricesLoading(true);
+    setStripePricesCurrency(plan.currency || '');
+    try {
+      const resp = await planStripePricesApi.get(plan.id);
+      if (resp.success && resp.data) {
+        const next: Partial<Record<PlanBillingInterval, string>> = {};
+        for (const item of resp.data.items || []) {
+          next[item.billingInterval] = item.stripePriceId;
+          if (item.currency) setStripePricesCurrency(String(item.currency));
+        }
+        setStripePrices(next);
+      } else {
+        setStripePrices({});
+      }
+    } catch (e) {
+      console.error('Failed to load stripe prices:', e);
+      setStripePrices({});
+    } finally {
+      setStripePricesLoading(false);
+    }
+  }, []);
+
+  const handleSaveStripePrices = useCallback(async () => {
+    if (!selectedPlan?.id) return;
+    setStripePricesSaving(true);
+    try {
+      const resp = await planStripePricesApi.upsert(selectedPlan.id, {
+        currency: stripePricesCurrency || undefined,
+        prices: stripePrices,
+      });
+      if (resp.success) {
+        toastSuccess('Saved', 'Stripe prices updated');
+        setShowStripePricesDialog(false);
+      } else {
+        toastError('Save failed', resp.message || 'Could not update Stripe prices');
+      }
+    } catch (e) {
+      console.error('Failed to save stripe prices:', e);
+      toastError('Save failed', 'Could not update Stripe prices');
+    } finally {
+      setStripePricesSaving(false);
+    }
+  }, [selectedPlan?.id, stripePrices, stripePricesCurrency, toastError, toastSuccess]);
 
   const handleCloseEditDialog = useCallback((open: boolean) => {
     console.log('🔒 Edit Dialog onOpenChange:', open);
@@ -526,6 +577,12 @@ export default function PlansPage() {
               <Button variant="outline" onClick={handleCloseViewDialog}>
                 Close
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => openStripePricesDialog(selectedPlan)}
+              >
+                Stripe Prices
+              </Button>
               <Button onClick={() => {
                 if (selectedPlan) {
                   handleEditPlan(selectedPlan);
@@ -534,6 +591,67 @@ export default function PlansPage() {
                 Edit Plan
               </Button>
             </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Stripe Prices Dialog */}
+      {selectedPlan && (
+        <Dialog open={showStripePricesDialog} onOpenChange={setShowStripePricesDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Stripe Prices</DialogTitle>
+            </DialogHeader>
+
+            {stripePricesLoading ? (
+              <div className="py-8 text-sm text-text-secondary">Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-500">Currency (optional)</label>
+                    <Input
+                      value={stripePricesCurrency}
+                      onChange={(e) => setStripePricesCurrency(e.target.value)}
+                      placeholder="VND / USD"
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open('https://dashboard.stripe.com/test/prices', '_blank')}
+                    >
+                      Open Stripe
+                    </Button>
+                  </div>
+                </div>
+
+                {([
+                  ['monthly', 'Monthly'],
+                  ['quarterly', 'Quarterly (3 months)'],
+                  ['semi_annual', 'Semi-annual (6 months)'],
+                  ['annual', 'Annual (12 months)'],
+                ] as Array<[PlanBillingInterval, string]>).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="text-sm font-medium text-gray-500">{label}</label>
+                    <Input
+                      value={stripePrices[key] || ''}
+                      onChange={(e) => setStripePrices((prev) => ({ ...prev, [key]: e.target.value }))}
+                      placeholder="price_..."
+                    />
+                  </div>
+                ))}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setShowStripePricesDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveStripePrices} disabled={stripePricesSaving}>
+                    {stripePricesSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>
