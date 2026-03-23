@@ -201,30 +201,32 @@ export function ImportProductDialog({
       }
 
       if (mappedData.length > 0) {
-        // Check for duplicate names
-        const nameMap = new Map<string, number[]>();
+        // Check for duplicate barcodes within the import file.
+        // Product names are allowed to be duplicated.
+        const barcodeMap = new Map<string, number[]>();
         const duplicateList: Array<{ row: number; reason: string }> = [];
 
         mappedData.forEach((row) => {
           const rowNumber = row._originalRow || 1;
-          const name = (row.name || '').trim();
-          
-          if (name) {
-            if (nameMap.has(name)) {
-              const existingRows = nameMap.get(name)!;
+          const barcode = String(row.barcode || '').trim();
+
+          if (barcode) {
+            if (barcodeMap.has(barcode)) {
+              const existingRows = barcodeMap.get(barcode)!;
               if (existingRows.length === 1) {
                 // Mark first occurrence as duplicate too
                 duplicateList.push({
                   row: existingRows[0],
-                  reason: 'Duplicate product name'
+                  reason: 'Duplicate product barcode'
                 });
               }
               duplicateList.push({
                 row: rowNumber,
-                reason: 'Duplicate product name'
+                reason: 'Duplicate product barcode'
               });
+              existingRows.push(rowNumber);
             } else {
-              nameMap.set(name, [rowNumber]);
+              barcodeMap.set(barcode, [rowNumber]);
             }
           }
         });
@@ -369,7 +371,8 @@ export function ImportProductDialog({
             const response = await productsApi.importProducts(chunk);
             
             if (response.success && response.data) {
-              const status = response.data.failed === 0 && (response.data.errors?.length || 0) === 0
+              const status: 'success' | 'failed' | 'partial' =
+                response.data.failed === 0 && (response.data.errors?.length || 0) === 0
                 ? 'success'
                 : (response.data.imported === 0 ? 'failed' : 'partial');
               
