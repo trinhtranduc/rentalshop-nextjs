@@ -74,11 +74,22 @@ loadEnvFile(envPath);
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import { getEmbeddingService, getVectorStore } from '../packages/database/src/server';
-import { extractKeyFromImageUrl, getBucketName, parseProductImages } from '@rentalshop/utils';
+import { extractKeyFromImageUrl, parseProductImages } from '@rentalshop/utils';
 import { randomUUID } from 'crypto';
 
+function resolveEmbeddingBucketName(): string {
+  const env = (process.env.NODE_ENV || 'development').toLowerCase();
+  if (process.env.AWS_S3_BUCKET_NAME) {
+    return process.env.AWS_S3_BUCKET_NAME;
+  }
+  if (env === 'production' || env === 'prod') {
+    return 'anyrent-images-pro';
+  }
+  return 'anyrent-images-dev';
+}
+
 interface ProductWithImage {
-  id: string; // CUID
+  id: string;
   name: string;
   images: any;
   merchantId: string;
@@ -114,17 +125,9 @@ async function getProductsWithImages(prisma: PrismaClient, merchantId?: number):
   };
 
   if (merchantId) {
-    // Find merchant by publicId (number) - need to get all and filter
-    // Or use a different approach - for now, skip merchant filter if merchantId is provided
-    // TODO: Implement proper merchant lookup by publicId
-    const merchant = await prisma.merchant.findFirst({
-      where: { 
-        // Note: Prisma doesn't have publicId in where, need to fetch all and filter
-        // For now, we'll skip merchant filter
-      }
-    });
-    // For now, skip merchant filtering - will need to implement proper lookup
-    console.warn(`⚠️  Merchant filtering by publicId not yet implemented, processing all products`);
+    // Product.merchantId is Int and references Merchant.id (also Int).
+    // Apply strict merchant scope to avoid accidentally syncing all tenants.
+    where.merchantId = merchantId;
   }
 
   const products = await prisma.product.findMany({
@@ -428,7 +431,7 @@ async function main() {
 
   const vectorStore = getVectorStore();
   const embeddingService = getEmbeddingService();
-  const bucketName = getBucketName();
+  const bucketName = resolveEmbeddingBucketName();
   const awsRegion = process.env.AWS_REGION || 'ap-southeast-1';
 
   console.log(`📦 Collection: ${(vectorStore as any).collectionName}`);

@@ -8,7 +8,34 @@ import { getVectorStore } from '../ml/vector-store';
 import { db } from '../index';
 import { prisma } from '../client';
 import { randomUUID } from 'crypto';
-import { parseProductImages } from '@rentalshop/utils';
+import { extractKeyFromImageUrl, parseProductImages } from '@rentalshop/utils';
+
+function resolveEmbeddingBucketName(): string {
+  const env = (process.env.NODE_ENV || 'development').toLowerCase();
+  if (process.env.AWS_S3_BUCKET_NAME) {
+    return process.env.AWS_S3_BUCKET_NAME;
+  }
+  if (env === 'production' || env === 'prod') {
+    return 'anyrent-images-pro';
+  }
+  return 'anyrent-images-dev';
+}
+
+// In-process dedupe: avoid running concurrent embedding jobs for same product.
+const runningEmbeddingJobs = new Map<number, Promise<void>>();
+const lastEmbeddingCompletedAt = new Map<number, number>();
+
+function getEmbeddingCooldownMs(): number {
+  const configured = process.env.EMBEDDING_REGEN_COOLDOWN_MS;
+  if (configured) {
+    const parsed = Number(configured);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+  const env = (process.env.NODE_ENV || 'development').toLowerCase();
+  return env === 'production' || env === 'prod' ? 300000 : 120000; // 5m prod, 2m dev
+}
 
 /**
  * Generate và store embeddings cho TẤT CẢ images của một product
@@ -16,7 +43,7 @@ import { parseProductImages } from '@rentalshop/utils';
  * 
  * @param productId - Product ID (number)
  */
-export async function generateProductEmbedding(productId: number): Promise<void> {
+async function runGenerateProductEmbedding(productId: number): Promise<void> {
   const jobStart = Date.now();
   try {
     console.log(`[Embedding] Step 1: Fetch product ${productId}`);
@@ -74,47 +101,111 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     }
 
     console.log(`[Embedding] Step 5: Generate vectors via Python API (${images.length} image(s))`);
-    const embeddings = await Promise.all(
-      images.map(async (imageUrl, index) => {
-        try {
-          if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
-            console.log(`[Embedding]    Image ${index + 1}: invalid URL, skip`);
+    const embeddings: Array<{
+      imageId: string;
+      embedding: number[];
+      metadata: {
+        productId: string;
+        imageUrl: string;
+        merchantId: string;
+        categoryId?: string;
+        productName: string;
+      };
+    } | null> = [];
+
+    const buildEmbeddingPayload = (imageUrl: string, embedding: number[]) => {
+      // Get merchantId - ensure we get the correct publicId (number)
+      // Product from db.products.findById may have merchantId directly or via merchant.id
+      const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
+      if (!merchantId) {
+        throw new Error(`Product ${product.id} missing merchantId`);
+      }
+
+      // Get categoryId - ensure we get the correct publicId (number)
+      const categoryId = (product as any).categoryId ?? (product as any).category?.id;
+
+      return {
+        imageId: randomUUID(), // UUID cho mỗi image
+        embedding,
+        metadata: {
+          productId: String(product.id),
+          imageUrl,
+          merchantId: String(merchantId), // Store as string of publicId (number)
+          categoryId: categoryId ? String(categoryId) : undefined,
+          productName: product.name
+        }
+      };
+    };
+
+    const normalizedImageUrls = images
+      .filter((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim() !== '')
+      .map((imageUrl) => imageUrl.trim());
+
+    const imagesWithS3Keys: Array<{ imageUrl: string; s3Key: string }> = [];
+    const imagesWithoutS3Keys: string[] = [];
+    for (const imageUrl of normalizedImageUrls) {
+      const s3Key = extractKeyFromImageUrl(imageUrl);
+      if (s3Key) {
+        imagesWithS3Keys.push({ imageUrl, s3Key });
+      } else {
+        imagesWithoutS3Keys.push(imageUrl);
+      }
+    }
+
+    // Primary path: direct S3 batch embedding (lower transfer + lower compute cost)
+    if (imagesWithS3Keys.length > 0) {
+      const bucketName = resolveEmbeddingBucketName();
+      const awsRegion = process.env.AWS_REGION || 'ap-southeast-1';
+      try {
+        console.log(
+          `[Embedding]    Using s3-batch for ${imagesWithS3Keys.length}/${normalizedImageUrls.length} image(s), bucket=${bucketName}`
+        );
+        const s3Embeddings = await embeddingService.generateEmbeddingsFromS3Keys(
+          imagesWithS3Keys.map((item) => item.s3Key),
+          bucketName,
+          awsRegion
+        );
+
+        // Guard against response mismatch to avoid wrong image-vector pairing.
+        if (s3Embeddings.length !== imagesWithS3Keys.length) {
+          throw new Error(
+            `s3-batch mismatch: expected ${imagesWithS3Keys.length}, got ${s3Embeddings.length}`
+          );
+        }
+
+        s3Embeddings.forEach((embedding, index) => {
+          embeddings.push(buildEmbeddingPayload(imagesWithS3Keys[index].imageUrl, embedding));
+        });
+      } catch (error) {
+        console.warn(
+          `[Embedding]    s3-batch failed, fallback to per-image for keyed images:`,
+          (error as Error)?.message
+        );
+        imagesWithoutS3Keys.push(...imagesWithS3Keys.map((item) => item.imageUrl));
+      }
+    }
+
+    // Fallback path: per-image embedding API
+    if (imagesWithoutS3Keys.length > 0) {
+      const perImageEmbeddings = await Promise.all(
+        imagesWithoutS3Keys.map(async (imageUrl, index) => {
+          try {
+            console.log(
+              `[Embedding]    Fallback image ${index + 1}/${imagesWithoutS3Keys.length}: fetch + embed ${imageUrl.substring(0, 55)}...`
+            );
+            const embeddingStartTime = Date.now();
+            const embedding = await embeddingService.generateEmbedding(imageUrl);
+            const embeddingDuration = Date.now() - embeddingStartTime;
+            console.log(`[Embedding]    Fallback image ${index + 1} done: ${embeddingDuration}ms, dim=${embedding.length}`);
+            return buildEmbeddingPayload(imageUrl, embedding);
+          } catch (error) {
+            console.error(`[Embedding]    Fallback image ${index + 1} failed:`, (error as Error)?.message);
             return null;
           }
-
-          console.log(`[Embedding]    Image ${index + 1}/${images.length}: fetch + embed ${imageUrl.substring(0, 55)}...`);
-          const embeddingStartTime = Date.now();
-          const embedding = await embeddingService.generateEmbedding(imageUrl);
-          const embeddingDuration = Date.now() - embeddingStartTime;
-          console.log(`[Embedding]    Image ${index + 1} done: ${embeddingDuration}ms, dim=${embedding.length}`);
-
-          // Get merchantId - ensure we get the correct publicId (number)
-          // Product from db.products.findById may have merchantId directly or via merchant.id
-          const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
-          if (!merchantId) {
-            throw new Error(`Product ${product.id} missing merchantId`);
-          }
-          
-          // Get categoryId - ensure we get the correct publicId (number)
-          const categoryId = (product as any).categoryId ?? (product as any).category?.id;
-          
-          return {
-            imageId: randomUUID(), // UUID cho mỗi image
-            embedding,
-            metadata: {
-              productId: String(product.id),
-              imageUrl,
-              merchantId: String(merchantId), // Store as string of publicId (number)
-              categoryId: categoryId ? String(categoryId) : undefined,
-              productName: product.name
-            }
-          };
-        } catch (error) {
-          console.error(`[Embedding]    Image ${index + 1} failed:`, (error as Error)?.message);
-          return null;
-        }
-      })
-    );
+        })
+      );
+      embeddings.push(...perImageEmbeddings);
+    }
 
     const validEmbeddings = embeddings.filter(e => e !== null) as Array<{
       imageId: string;
@@ -161,6 +252,45 @@ export async function generateProductEmbedding(productId: number): Promise<void>
     console.error(`[Embedding] ❌ Job failed for product ${productId}:`, (error as Error)?.message);
     throw error;
   }
+}
+
+/**
+ * Public API with in-process dedupe.
+ * If a job for the same product is already running, reuse that promise instead of starting a new one.
+ */
+export async function generateProductEmbedding(productId: number): Promise<void> {
+  const existing = runningEmbeddingJobs.get(productId);
+  if (existing) {
+    console.log(`[Embedding] Reusing in-flight job for product ${productId}`);
+    return existing;
+  }
+
+  const cooldownMs = getEmbeddingCooldownMs();
+  const lastCompleted = lastEmbeddingCompletedAt.get(productId);
+  if (lastCompleted) {
+    const elapsed = Date.now() - lastCompleted;
+    if (elapsed < cooldownMs) {
+      const remainingMs = cooldownMs - elapsed;
+      console.log(
+        `[Embedding] Skipping product ${productId}: cooldown active (${Math.ceil(
+          remainingMs / 1000
+        )}s remaining)`
+      );
+      return;
+    }
+  }
+
+  const job = (async () => {
+    try {
+      await runGenerateProductEmbedding(productId);
+      lastEmbeddingCompletedAt.set(productId, Date.now());
+    } finally {
+      runningEmbeddingJobs.delete(productId);
+    }
+  })();
+
+  runningEmbeddingJobs.set(productId, job);
+  return job;
 }
 
 /**
