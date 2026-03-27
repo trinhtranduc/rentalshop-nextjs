@@ -30,6 +30,8 @@ model User {
   deletedAt              DateTime?
   auditLogs              AuditLog[]
   requestLogs            RequestLog[]           @relation("RequestLogs")
+  /// Google account id (sub) when user signed up or linked Google OAuth
+  googleSub              String?                @unique
   emailVerifications     EmailVerification[]
   createdOrders          Order[]
   passwordResets         PasswordReset[]
@@ -185,6 +187,7 @@ model Product {
   durationConfig     String?
   orderItems         OrderItem[]
   outletStock        OutletStock[]
+  embeddingJobs      EmbeddingJob[]
   category           Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   merchant           Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
@@ -194,6 +197,28 @@ model Product {
   @@index([name])
   @@index([pricingType])
   @@index([embeddingGeneratedAt])
+}
+
+model EmbeddingJob {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  status      String   @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  source      String?  // product-create | product-update | bulk-sync | manual
+  priority    Int      @default(0)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(5)
+  nextRunAt   DateTime @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRunAt])
+  @@index([productId, status])
+  @@index([createdAt])
 }
 
 model OutletStock {

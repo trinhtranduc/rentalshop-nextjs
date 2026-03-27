@@ -655,22 +655,26 @@ export async function PUT(
       if (imageFiles.length > 0 || imagesChanged) {
         console.log(`🔄 Triggering embedding regeneration for product ${productId}...`);
         try {
-          const { generateProductEmbedding } = await import('@rentalshop/database/server');
           const { getVectorStore } = await import('@rentalshop/database/server');
-          
-          // Delete old embeddings first, then generate new ones (sequential to avoid race condition)
-          // Run in background, don't block API response
+
+          // Queue-based regeneration:
+          // 1) delete old vectors now
+          // 2) enqueue a fresh embedding job
+          // 3) opportunistically process one pending job in background
           (async () => {
             try {
-          const vectorStore = getVectorStore();
-              
-              // Step 1: Delete old embeddings first
+              const vectorStore = getVectorStore();
               await vectorStore.deleteProductEmbeddings(productId);
               console.log(`✅ Deleted old embeddings for product ${productId}`);
-          
-              // Step 2: Generate new embeddings after delete completes
-              await generateProductEmbedding(productId);
-              console.log(`✅ Embedding regeneration completed for product ${productId}`);
+
+              await db.embeddingJobs.enqueue({
+                productId,
+                source: 'product-update',
+                priority: 20
+              });
+
+              await db.embeddingJobs.processPending({ batchSize: 1 });
+              console.log(`✅ Embedding regeneration queued/processed for product ${productId}`);
             } catch (error: any) {
               console.error(`❌ Error in embedding regeneration for product ${productId}:`, error);
               console.error('Stack:', error.stack);

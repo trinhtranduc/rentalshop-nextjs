@@ -130,12 +130,17 @@ export async function POST(
       // Push to Qdrant for image search (same as POST /api/products)
       if (imageUrls.length > 0 && newProduct?.id) {
         try {
-          const { generateProductEmbedding } = await import('@rentalshop/database/server');
-          generateProductEmbedding(newProduct.id)
-            .then(() => console.log(`✅ Embedding generated for product ${newProduct.id}`))
-            .catch((err: unknown) => console.error(`❌ Embedding generation failed for product ${newProduct.id}:`, err));
+          await db.embeddingJobs.enqueue({
+            productId: newProduct.id,
+            source: 'merchant-product-create',
+            priority: 10
+          });
+          db.embeddingJobs
+            .processPending({ batchSize: 1 })
+            .then((result: any) => console.log(`✅ Embedding queue processed for product ${newProduct.id}:`, result))
+            .catch((err: unknown) => console.error(`❌ Embedding queue processing failed for product ${newProduct.id}:`, err));
         } catch (err) {
-          console.error('Failed to start embedding generation:', err);
+          console.error('Failed to enqueue embedding generation:', err);
         }
       }
 
