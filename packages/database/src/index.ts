@@ -25,6 +25,7 @@ import { simplifiedSync } from './sync';
 import { simplifiedPosts } from './post';
 import { simplifiedPostCategories } from './post-category';
 import { simplifiedPostTags } from './post-tag';
+import { simplifiedEmbeddingJobs } from './embedding-job';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -183,6 +184,11 @@ const db = {
   // POST TAG OPERATIONS
   // ============================================================================
   postTags: simplifiedPostTags,
+
+  // ============================================================================
+  // EMBEDDING JOB QUEUE OPERATIONS
+  // ============================================================================
+  embeddingJobs: simplifiedEmbeddingJobs,
 };
 
 // ============================================================================

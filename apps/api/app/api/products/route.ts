@@ -584,21 +584,24 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       });
 
       try {
-        const { generateProductEmbedding } = await import('@rentalshop/database/server');
-        console.log(`[Qdrant]    Import OK, starting background job (non-blocking)`);
+        console.log(`[Qdrant]    Enqueue embedding job (non-blocking)`);
+        await db.embeddingJobs.enqueue({
+          productId: product.id,
+          source: 'product-create',
+          priority: 10
+        });
 
-        generateProductEmbedding(product.id)
-          .then(() => {
-            console.log(`[Qdrant] ✅ Step 0 done: Embedding job completed for product ${product.id}`);
+        // Opportunistic processing keeps behavior near-real-time while still queue-based.
+        db.embeddingJobs
+          .processPending({ batchSize: 1 })
+          .then((result: any) => {
+            console.log(`[Qdrant] ✅ Embedding queue processed:`, result);
           })
           .catch((error: any) => {
-            console.error(`[Qdrant] ❌ Step 0 failed: Embedding job for product ${product.id}:`, error?.message || error);
-            console.error(`[Qdrant]    name: ${error?.name}, code: ${error?.code}`);
-            if (error?.stack) console.error(`[Qdrant]    stack:`, error.stack);
+            console.error(`[Qdrant] ❌ Embedding queue processing failed:`, error?.message || error);
           });
       } catch (error: any) {
-        console.error(`[Qdrant] ❌ Failed to start embedding job:`, error?.message);
-        console.error(`[Qdrant]    (import or env issue)`);
+        console.error(`[Qdrant] ❌ Failed to enqueue embedding job:`, error?.message);
       }
     } else {
       console.log(`[Qdrant] ⚠️ Product ${product.id} has no images, skip embedding`);
