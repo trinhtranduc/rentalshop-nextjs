@@ -79,6 +79,28 @@ export const registerSchema = z.object({
   message: "Business name is required for merchant registration"
 });
 
+/** Merchant đăng ký bằng Google ID token (email đã được Google xác minh) */
+export const merchantGoogleRegisterSchema = z.object({
+  idToken: z.string().min(20, 'Invalid Google credential'),
+  businessName: z.string().min(2, 'Business name is required'),
+  phone: z.string().min(8, 'Phone is required'),
+  businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
+  address: z.string().optional(),
+  tenantKey: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z0-9\-]+$/i, 'Tenant key must be alphanumeric')
+    .optional(),
+  referralCode: z.string().min(1).optional(),
+  country: z.string().min(2, 'Please select a valid country').optional(),
+});
+
+export const loginGoogleSchema = z.object({
+  idToken: z.string().min(20, 'Invalid Google credential'),
+});
+
 // Product validation schemas (aligned with API routes and DB types)
 const outletStockItemSchema = z.object({
   outletId: z.coerce.number().int().positive('Outlet is required'),

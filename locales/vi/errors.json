@@ -6,6 +6,9 @@
   "INVALID_TOKEN": "Token xác thực không hợp lệ",
   "TOKEN_EXPIRED": "Token xác thực đã hết hạn",
   "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng",
+  "GOOGLE_ACCOUNT_NOT_LINKED": "Tài khoản này đăng ký bằng email và mật khẩu. Hãy đăng nhập bằng email/mật khẩu hoặc liên hệ hỗ trợ để liên kết Google.",
+  "GOOGLE_TOKEN_INVALID": "Đăng nhập Google không thành công hoặc đã hết hạn. Vui lòng thử lại.",
+  "GOOGLE_AUTH_NOT_CONFIGURED": "Đăng nhập Google chưa được cấu hình trên máy chủ.",
   
   "VALIDATION_ERROR": "Xác thực dữ liệu thất bại",
   "INVALID_INPUT": "Dữ liệu đầu vào không hợp lệ",

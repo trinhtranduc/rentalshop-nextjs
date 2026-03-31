@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift } from "lucide-react";
-import { authApi, isValidEmail } from "@rentalshop/utils";
+import { authApi, isValidEmail, decodeGoogleCredentialPayload, storeAuthData } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
   PRICING_TYPE_OPTIONS
@@ -52,6 +53,8 @@ interface RegisterFormProps {
   user?: any;
   registrationError?: string | null;
   initialStep?: 1 | 2;
+  /** Google OAuth Web Client ID (NEXT_PUBLIC_GOOGLE_CLIENT_ID). If unset, Google signup is hidden. */
+  googleOAuthClientId?: string;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -59,7 +62,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   onNavigate,
   user,
   registrationError,
-  initialStep
+  initialStep,
+  googleOAuthClientId,
 }) => {
   const router = useRouter();
   const [viewPass, setViewPass] = useState(false);
@@ -67,23 +71,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [currentStep, setCurrentStep] = useState(initialStep || 1);
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleIdToken, setGoogleIdToken] = useState<string | null>(null);
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
   
   // Get referralCode from URL query params
   const [referralCode, setReferralCode] = useState<string | null>(null);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const refCode = params.get('referralCode');
-      if (refCode) {
-        setReferralCode(refCode);
-        // Auto-fill referral code in form
-        formik.setFieldValue('referralCode', refCode);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
@@ -100,6 +93,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password")], t('register.passwordMismatch'))
       .required(t('register.confirmPasswordRequired')),
+    name: Yup.string()
+      .min(1, t('register.firstNameRequired') || 'Name is required')
+      .required(t('register.firstNameRequired') || 'Name is required'),
+  });
+
+  const step1ValidationSchemaGoogle = Yup.object({
+    login: Yup.string()
+      .required(t('register.emailRequired') || 'Email is required')
+      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+        if (!value) return false;
+        return isValidEmail(value);
+      }),
+    password: Yup.string().notRequired(),
+    confirmPassword: Yup.string().notRequired(),
     name: Yup.string()
       .min(1, t('register.firstNameRequired') || 'Name is required')
       .required(t('register.firstNameRequired') || 'Name is required'),
@@ -127,6 +134,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       .required(t('register.agreeToTerms')),
   });
 
+  const validationSchema = useMemo(() => {
+    if (currentStep === 2) return step2ValidationSchema;
+    return googleIdToken ? step1ValidationSchemaGoogle : step1ValidationSchema;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Yup schemas recreated when `t` changes
+  }, [currentStep, googleIdToken, t]);
+
   const formik = useFormik<RegisterFormData>({
     initialValues: {
       login: "",
@@ -142,13 +155,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       role: 'MERCHANT',
       referralCode: referralCode || "",
     },
-    validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
+    enableReinitialize: true,
+    validationSchema,
     validateOnBlur: true,
     validateOnChange: true,
     onSubmit: async (values: RegisterFormData) => {
       // Step 1 only advances UI; do not toggle submitting state
       if (currentStep === 1) {
-        // Step 1: Save account data and move to step 2
         setAccountData({
           login: values.login,
           password: values.password,
@@ -161,26 +174,65 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         return;
       }
 
-      // Step 2: Complete registration with all data
       const completeData = { ...accountData, ...values };
-      
+
       try {
-        // Prevent double submission
         if (isSubmitting) {
           return;
         }
         setIsSubmitting(true);
-        // Add timeout to prevent stuck button
         const timeoutId = setTimeout(() => {
           setIsSubmitting(false);
-        }, 10000); // 10 second timeout
-        
-        // Split name into firstName and lastName (same logic as UserForm and CustomerForm)
-        const nameParts = (completeData.name || values.name || '').trim().split(' ').filter(part => part.length > 0);
+        }, 10000);
+
+        if (googleIdToken) {
+          const result = await authApi.registerMerchantGoogle({
+            idToken: googleIdToken,
+            businessName: values.businessName,
+            phone: values.phone.trim(),
+            businessType: values.businessType,
+            pricingType: values.pricingType,
+            address: values.address || undefined,
+            referralCode: values.referralCode?.trim() || referralCode || undefined,
+          });
+          clearTimeout(timeoutId);
+          if (!result.success) {
+            setIsSubmitting(false);
+            return;
+          }
+          const payload = result.data as { token?: string; user?: any } | undefined;
+          if (!payload?.token || !payload.user) {
+            setIsSubmitting(false);
+            return;
+          }
+          storeAuthData(payload.token, payload.user);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth-storage-change'));
+          }
+          toastSuccess(
+            t('register.registrationComplete'),
+            t('register.googleSignedInReady')
+          );
+          formik.resetForm();
+          setGoogleIdToken(null);
+          setCurrentStep(1);
+          setAccountData({});
+          if (onNavigate) {
+            onNavigate('/dashboard');
+          } else {
+            router.replace('/dashboard');
+          }
+          setIsSubmitting(false);
+          return;
+        }
+
+        const nameParts = (completeData.name || values.name || '')
+          .trim()
+          .split(' ')
+          .filter((part) => part.length > 0);
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
-        
-        // Use centralized API directly
+
         const registrationData = {
           name: completeData.name || values.name || '',
           email: completeData.login!,
@@ -193,45 +245,36 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           businessType: values.businessType || 'GENERAL',
           pricingType: values.pricingType || 'FIXED',
           address: values.address || '',
-          referralCode: values.referralCode?.trim() || referralCode || undefined, // Include referral code from form or URL
+          referralCode: values.referralCode?.trim() || referralCode || undefined,
         };
-        
+
         const result = await authApi.register(registrationData);
-        
+        clearTimeout(timeoutId);
+
         if (!result.success) {
-          // Error will be automatically handled by useGlobalErrorHandler
-          // No need to show toast here - it will cause duplicate toasts
           return;
         }
 
-        // Registration successful - ALWAYS redirect to email verification page
-        // Get email from response or use the email from registration data
         const resultData = result.data as any;
-        const userEmail = resultData?.user?.email || completeData.login || registrationData.email;
-        
-        // Reset form after successful registration
+        const userEmail =
+          resultData?.user?.email || completeData.login || registrationData.email;
+
         formik.resetForm();
         setCurrentStep(1);
         setAccountData({});
 
-        // Show success message
         toastSuccess(
-          t('register.registrationComplete'), 
+          t('register.registrationComplete'),
           t('register.checkEmailToActivate')
         );
-        
-        // Always redirect to email verification page after successful registration
+
         const redirectUrl = `/email-verification?email=${encodeURIComponent(userEmail || registrationData.email)}`;
-        console.log('✅ RegisterForm: Registration successful, redirecting to email verification:', redirectUrl);
-        
         if (onNavigate) {
           onNavigate(redirectUrl);
         } else {
           router.replace(redirectUrl);
         }
       } catch (error: any) {
-        // Error automatically handled by useGlobalErrorHandler
-        // No need to show toast here - it will cause duplicate toasts
         console.error('Registration error:', error);
       } finally {
         setIsSubmitting(false);
@@ -239,7 +282,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
   });
 
-  return (
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('referralCode');
+    if (refCode) {
+      setReferralCode(refCode);
+      void formik.setFieldValue('referralCode', refCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const googleClientIdTrimmed = googleOAuthClientId?.trim() || '';
+
+  const cardInner = (
     <div className="w-full max-w-md mx-auto relative z-10">
       <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="text-center">
@@ -283,6 +339,53 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             {/* Step 1: Account Information - Sắp xếp theo UX best practices */}
             {currentStep === 1 && (
               <>
+                {googleClientIdTrimmed ? (
+                  <div className="space-y-3">
+                    <div className="flex w-full justify-center [&>div]:w-full [&_iframe]:!w-full">
+                      <GoogleLogin
+                        onSuccess={(credentialResponse) => {
+                          const cred = credentialResponse.credential;
+                          if (!cred) return;
+                          setGoogleIdToken(cred);
+                          const p = decodeGoogleCredentialPayload(cred);
+                          if (p?.email) void formik.setFieldValue('login', p.email);
+                          const displayName =
+                            p?.name ||
+                            [p?.given_name, p?.family_name].filter(Boolean).join(' ').trim();
+                          if (displayName) void formik.setFieldValue('name', displayName);
+                          void formik.setFieldValue('password', '');
+                          void formik.setFieldValue('confirmPassword', '');
+                        }}
+                        onError={() => {
+                          toastError(t('register.googleSignInFailed'));
+                        }}
+                        useOneTap={false}
+                        text="continue_with"
+                        shape="rectangular"
+                        width="384"
+                      />
+                    </div>
+                    {googleIdToken ? (
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <p className="text-sm text-green-700">{t('register.googleConnected')}</p>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-xs h-auto p-0"
+                          onClick={() => {
+                            setGoogleIdToken(null);
+                            void formik.setFieldValue('login', '');
+                            void formik.setFieldValue('name', '');
+                          }}
+                        >
+                          {t('register.useEmailInstead')}
+                        </Button>
+                      </div>
+                    ) : null}
+                    <p className="text-center text-xs text-gray-500">{t('register.orContinueWithEmail')}</p>
+                  </div>
+                ) : null}
+
                 {/* Personal Information Section */}
                 <div className="space-y-4">
                   {/* Name Field - Single field instead of firstName/lastName */}
@@ -326,7 +429,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.login}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.login && formik.touched.login ? 'border-red-500' : ''}`}
+                        readOnly={!!googleIdToken}
+                        className={`pl-10 ${formik.errors.login && formik.touched.login ? 'border-red-500' : ''} ${googleIdToken ? 'bg-gray-50' : ''}`}
                       />
                     </div>
                     {formik.errors.login && formik.touched.login && (
@@ -335,72 +439,71 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   </div>
                 </div>
 
-                {/* Account Security Section */}
-                <div className="space-y-4">
-                  {/* Password Field */}
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                      {t('register.password')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type={viewPass ? "text" : "password"}
-                        placeholder={t('register.createPassword')}
-                        value={formik.values.password}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        type="button"
-                        onClick={() => setViewPass(!viewPass)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
-                      >
-                        {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </Button>
+                {!googleIdToken ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                        {t('register.password')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Input
+                          id="password"
+                          name="password"
+                          type={viewPass ? 'text' : 'password'}
+                          placeholder={t('register.createPassword')}
+                          value={formik.values.password}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => setViewPass(!viewPass)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
+                        >
+                          {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                      </div>
+                      {formik.errors.password && formik.touched.password && (
+                        <p className="text-red-500 text-sm">{formik.errors.password}</p>
+                      )}
                     </div>
-                    {formik.errors.password && formik.touched.password && (
-                      <p className="text-red-500 text-sm">{formik.errors.password}</p>
-                    )}
-                  </div>
 
-                  {/* Confirm Password Field */}
-                  <div className="space-y-2">
-                    <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                      {t('register.confirmPassword')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type={viewConfirmPass ? "text" : "password"}
-                        placeholder={t('register.confirmYourPassword')}
-                        value={formik.values.confirmPassword}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        type="button"
-                        onClick={() => setViewConfirmPass(!viewConfirmPass)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
-                      >
-                        {viewConfirmPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </Button>
+                    <div className="space-y-2">
+                      <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                        {t('register.confirmPassword')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type={viewConfirmPass ? 'text' : 'password'}
+                          placeholder={t('register.confirmYourPassword')}
+                          value={formik.values.confirmPassword}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => setViewConfirmPass(!viewConfirmPass)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
+                        >
+                          {viewConfirmPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                      </div>
+                      {formik.errors.confirmPassword && formik.touched.confirmPassword && (
+                        <p className="text-red-500 text-sm">{formik.errors.confirmPassword}</p>
+                      )}
                     </div>
-                    {formik.errors.confirmPassword && formik.touched.confirmPassword && (
-                      <p className="text-red-500 text-sm">{formik.errors.confirmPassword}</p>
-                    )}
                   </div>
-                </div>
+                ) : null}
 
                 {/* Submit Button for Step 1 */}
                 <Button
@@ -607,8 +710,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             </div>
           </form>
         </CardContent>
-      </Card>    </div>
+      </Card>
+    </div>
   );
+
+  if (googleClientIdTrimmed) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientIdTrimmed}>
+        {cardInner}
+      </GoogleOAuthProvider>
+    );
+  }
+
+  return cardInner;
 };
 
 export default RegisterForm;

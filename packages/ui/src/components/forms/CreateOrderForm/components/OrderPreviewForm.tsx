@@ -42,7 +42,8 @@ import {
   TableRow,
   TableCell,
   Button,
-  Skeleton
+  Skeleton,
+  ImageLightbox
 } from '@rentalshop/ui';
 import { formatCurrency } from '@rentalshop/utils';
 import { useOrderTranslations } from '@rentalshop/hooks';
@@ -316,15 +317,16 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                         <TableRow key={index} className="border-b">
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                                 {item.product?.images && item.product.images.length > 0 ? (
-                                  <img 
-                                    src={item.product.images[0]} 
+                                  <ImageLightbox
+                                    src={item.product.images[0]}
                                     alt={item.product.name}
-                                    className="w-8 h-8 rounded object-cover"
+                                    triggerClassName="h-10 w-10"
+                                    imgClassName="rounded object-cover"
                                   />
                                 ) : (
-                                  <Package className="w-5 h-5 text-gray-600" />
+                                  <Package className="h-5 w-5 text-gray-600" />
                                 )}
                               </div>
                               <div>

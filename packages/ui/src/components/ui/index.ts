@@ -14,6 +14,8 @@ export { CardClean, CardHeaderClean, CardTitleClean, CardContentClean } from './
 export { CardColorful, CardHeaderColorful, CardTitleColorful, CardContentColorful } from './card-colorful';
 export { CurrencySelector } from './currency-selector';
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
+export { ImageLightbox } from './image-lightbox';
+export type { ImageLightboxProps } from './image-lightbox';
 export { ConfirmationDialog } from './confirmation-dialog';
 export { ConfirmationDialogWithReason } from './confirmation-dialog-with-reason';
 export { Input } from './input';

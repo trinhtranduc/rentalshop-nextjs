@@ -179,6 +179,8 @@
     "noSubscriptionDesc": "You don't have an active subscription plan.",
     "contactAdmin": "Please contact your system administrator to activate a subscription plan.",
     "viewHistory": "View History",
+    "extendOrRenew": "Extend / Bank transfer",
+    "choosePlan": "Choose plan",
     "historyTitle": "Subscription History",
     "historyDescription": "View your past subscription plans and billing history",
     "noHistory": "No subscription history found.",

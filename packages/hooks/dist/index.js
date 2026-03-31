@@ -3996,6 +3996,57 @@ function useAuth() {
       return false;
     }
   }, [translateError]);
+  const loginWithGoogle = (0, import_react5.useCallback)(
+    async (idToken) => {
+      try {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        const { authApi } = await import("@rentalshop/utils");
+        const result = await authApi.loginGoogle(idToken);
+        if (!result.success || !result.data?.token) {
+          setState((prev) => ({
+            ...prev,
+            error: translateError(result),
+            loading: false
+          }));
+          return false;
+        }
+        const data = result.data;
+        (0, import_utils.storeAuthData)(data.token, data.user);
+        const { getAuthToken: getAuthToken2 } = await import("@rentalshop/utils");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        let storedToken = getAuthToken2();
+        if (!storedToken) {
+          (0, import_utils.storeAuthData)(data.token, data.user);
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          storedToken = getAuthToken2();
+          if (!storedToken) {
+            setState((prev) => ({
+              ...prev,
+              error: "Failed to store authentication token",
+              loading: false
+            }));
+            return false;
+          }
+        }
+        setState((prev) => ({
+          ...prev,
+          user: data.user,
+          loading: false,
+          error: null
+        }));
+        return true;
+      } catch (err) {
+        const errorMessage = translateError(err);
+        setState((prev) => ({
+          ...prev,
+          error: errorMessage,
+          loading: false
+        }));
+        return false;
+      }
+    },
+    [translateError]
+  );
   const logout = (0, import_react5.useCallback)(() => {
     (0, import_utils.clearAuthData)();
     setState({
@@ -4103,6 +4154,7 @@ function useAuth() {
     loading: state.loading,
     error: state.error,
     login,
+    loginWithGoogle,
     logout,
     refreshUser,
     clearError

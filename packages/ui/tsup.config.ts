@@ -26,7 +26,8 @@ export default defineConfig({
     'tailwind-merge',
     'next',
     'next/navigation',
-    'next/link'
+    'next/link',
+    '@react-oauth/google'
   ],
   clean: true,
   sourcemap: true,

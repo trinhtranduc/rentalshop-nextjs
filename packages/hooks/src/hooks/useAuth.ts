@@ -162,6 +162,63 @@ export function useAuth() {
     }
   }, [translateError]);
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string): Promise<boolean> => {
+      try {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+
+        const { authApi } = await import('@rentalshop/utils');
+        const result = await authApi.loginGoogle(idToken);
+
+        if (!result.success || !(result.data as any)?.token) {
+          setState((prev) => ({
+            ...prev,
+            error: translateError(result),
+            loading: false,
+          }));
+          return false;
+        }
+
+        const data = result.data as { token: string; user: User };
+        storeAuthData(data.token, data.user);
+
+        const { getAuthToken } = await import('@rentalshop/utils');
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        let storedToken = getAuthToken();
+        if (!storedToken) {
+          storeAuthData(data.token, data.user);
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          storedToken = getAuthToken();
+          if (!storedToken) {
+            setState((prev) => ({
+              ...prev,
+              error: 'Failed to store authentication token',
+              loading: false,
+            }));
+            return false;
+          }
+        }
+
+        setState((prev) => ({
+          ...prev,
+          user: data.user,
+          loading: false,
+          error: null,
+        }));
+        return true;
+      } catch (err) {
+        const errorMessage = translateError(err);
+        setState((prev) => ({
+          ...prev,
+          error: errorMessage,
+          loading: false,
+        }));
+        return false;
+      }
+    },
+    [translateError]
+  );
+
   const logout = useCallback(() => {
     clearAuthData();
     setState({
@@ -304,6 +361,7 @@ export function useAuth() {
     loading: state.loading,
     error: state.error,
     login,
+    loginWithGoogle,
     logout,
     refreshUser,
     clearError,

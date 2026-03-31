@@ -462,6 +462,8 @@ export const simplifiedUsers = {
         emailVerified: true,
         emailVerifiedAt: true,
         passwordChangedAt: true, // ✅ Include passwordChangedAt for token validation
+        permissionsChangedAt: true,
+        googleSub: true,
         createdAt: true,
         updatedAt: true,
         merchantId: true,

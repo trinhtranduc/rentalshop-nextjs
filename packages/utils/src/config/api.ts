@@ -52,6 +52,8 @@ export interface ApiUrls {
     resetPassword: string;
     changePassword: string;
     resendVerification: string;
+    registerMerchantGoogle: string;
+    loginGoogle: string;
   };
   categories: {
     list: string;
@@ -582,6 +584,8 @@ function createApiUrls(): ApiUrls {
       resetPassword: `${base}/api/auth/reset-password`,
       changePassword: `${base}/api/auth/change-password`,
       resendVerification: `${base}/api/auth/resend-verification`,
+      registerMerchantGoogle: `${base}/api/auth/register/merchant-google`,
+      loginGoogle: `${base}/api/auth/login/google`,
     },
     categories: {
       list: `${base}/api/categories`,
