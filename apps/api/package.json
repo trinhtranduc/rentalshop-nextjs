@@ -25,6 +25,7 @@
     "@rentalshop/utils": "file:../../packages/utils",
     "@rentalshop/validation": "file:../../packages/validation",
     "@types/jsonwebtoken": "^9.0.10",
+    "google-auth-library": "^9.14.2",
     "jsonwebtoken": "^9.0.2",
     "next": "^14.2.35",
     "prisma": "6.16.2",

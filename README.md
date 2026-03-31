@@ -346,6 +346,11 @@ yarn db:reset
 yarn db:seed
 ```
 
+### **Google Sign-In (merchant register / login)**
+- **`GOOGLE_CLIENT_ID`** — set on **`apps/api`** so the server can verify Google ID tokens (audience must match).
+- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** — set on **`apps/client`** for the Google button (same OAuth **Web** client ID; do not put client secrets in the client).
+- Placeholders and comments: root **`env.example`**. In Google Cloud Console, add your client origin (e.g. `http://localhost:3000`) under **Authorized JavaScript origins**.
+
 ### **Build & Deploy**
 ```bash
 # Build all packages

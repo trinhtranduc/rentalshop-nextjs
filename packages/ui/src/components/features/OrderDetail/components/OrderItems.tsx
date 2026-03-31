@@ -1,13 +1,42 @@
+'use client';
+
 import React from 'react';
 import { Package, Hash, Image as ImageIcon, Calendar } from 'lucide-react';
 import { formatCurrency } from '@rentalshop/ui';
+import { ImageLightbox } from '../../../ui/image-lightbox';
 import { OrderData } from '@rentalshop/types';
 
 interface OrderItemsProps {
   order: OrderData;
 }
 
-const OrderItem: React.FC<{ item: OrderData['orderItems'][0] }> = ({ item }) => (
+function resolveOrderItemImageUrl(images: unknown): string | null {
+  if (images == null) return null;
+  if (typeof images === 'string') {
+    const s = images.trim();
+    if (!s) return null;
+    if (s.startsWith('[') || s.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
+          return parsed[0];
+        }
+      } catch {
+        return s;
+      }
+    }
+    return s;
+  }
+  if (Array.isArray(images) && typeof images[0] === 'string') {
+    return images[0];
+  }
+  return null;
+}
+
+const OrderItem: React.FC<{ item: OrderData['orderItems'][0] }> = ({ item }) => {
+  const imageSrc = resolveOrderItemImageUrl(item.product.images);
+
+  return (
   <div className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
     <div className="space-y-4">
       {/* Header Row */}
@@ -15,27 +44,18 @@ const OrderItem: React.FC<{ item: OrderData['orderItems'][0] }> = ({ item }) => 
         <div className="flex items-start space-x-4 flex-1 min-w-0">
           {/* Product Image - Enhanced */}
           <div className="flex-shrink-0">
-            {item.product.images ? (
-              <div className="relative">
-                <img 
-                  src={item.product.images} 
+            {imageSrc ? (
+              <div className="h-20 w-20 overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+                <ImageLightbox
+                  src={imageSrc}
                   alt={item.product.name}
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.nextElementSibling?.classList.remove('hidden');
-                  }}
+                  triggerClassName="h-full w-full"
+                  imgClassName="object-cover"
                 />
-                {/* Fallback placeholder - hidden by default */}
-                <div className="hidden w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
-                  <Package className="w-8 h-8 text-gray-400" />
-                </div>
               </div>
             ) : (
-              <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
-                <Package className="w-8 h-8 text-gray-400" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 shadow-sm">
+                <Package className="h-8 w-8 text-gray-400" />
               </div>
             )}
           </div>
@@ -111,7 +131,8 @@ const OrderItem: React.FC<{ item: OrderData['orderItems'][0] }> = ({ item }) => 
       )}
     </div>
   </div>
-);
+  );
+};
 
 export const OrderItems: React.FC<OrderItemsProps> = ({ order }) => (
   <div className="space-y-4">

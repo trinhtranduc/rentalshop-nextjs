@@ -83,6 +83,7 @@ export default function RegisterPage() {
 
       <div className="relative z-10 w-full">
         <RegisterForm 
+          googleOAuthClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}
           initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
           onNavigate={(path) => {
             // Allow external navigations to pass through

@@ -6,6 +6,9 @@
   "INVALID_TOKEN": "Invalid authentication token",
   "TOKEN_EXPIRED": "Authentication token has expired",
   "INVALID_CREDENTIALS": "Invalid email or password",
+  "GOOGLE_ACCOUNT_NOT_LINKED": "This account was created with email and password. Sign in with email and password, or contact support to link Google.",
+  "GOOGLE_TOKEN_INVALID": "Google sign-in failed or expired. Please try again.",
+  "GOOGLE_AUTH_NOT_CONFIGURED": "Google sign-in is not configured on the server.",
   
   "VALIDATION_ERROR": "Input validation failed",
   "INVALID_INPUT": "Invalid input provided",

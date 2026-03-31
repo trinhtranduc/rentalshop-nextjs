@@ -12,7 +12,8 @@ import {
   SearchableSelect,
   Skeleton,
   Button,
-  useFormatCurrency
+  useFormatCurrency,
+  ImageLightbox
 } from '@rentalshop/ui';
 import { useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { 
@@ -496,24 +497,13 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Product Image */}
         <div className="flex-shrink-0">
           {imageUrl ? (
-            <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-blue-100 shadow-sm">
-              <img 
-                src={imageUrl} 
+            <div className="h-16 w-16 overflow-hidden rounded-lg border-2 border-blue-100 shadow-sm">
+              <ImageLightbox
+                src={imageUrl}
                 alt={displayProduct.name || t('messages.product')}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to package icon if image fails to load
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) {
-                    fallback.classList.remove('hidden');
-                    fallback.classList.add('flex');
-                  }
-                }}
+                triggerClassName="h-full w-full"
+                imgClassName="object-cover"
               />
-              <div className="hidden w-full h-16 bg-gray-100 items-center justify-center">
-                <Package className="w-8 h-8 text-gray-400" />
-              </div>
             </div>
           ) : (
             <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border-2 border-blue-100 shadow-sm">

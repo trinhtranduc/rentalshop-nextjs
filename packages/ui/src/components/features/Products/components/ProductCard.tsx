@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
+import { ImageLightbox } from '../../../ui/image-lightbox';
 import { cn } from '../../../../lib/cn';
 import { Eye, Edit, Package } from 'lucide-react';
 import { getProductImageUrl } from '@rentalshop/utils/client';
@@ -162,16 +163,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <Card className={cn('overflow-hidden transition-all hover:shadow-lg', className)}>
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden bg-gray-100">
-          {hasImages ? (
-            <img
+          {hasImages && mainImage ? (
+            <ImageLightbox
               src={mainImage}
               alt={name}
-              className="h-full w-full object-cover transition-transform hover:scale-105"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling?.classList.remove('hidden');
-              }}
+              triggerClassName="h-full w-full min-h-0 min-w-0"
+              imgClassName="object-cover transition-transform hover:scale-105"
             />
           ) : null}
           {/* Placeholder - shown when no images or image fails */}

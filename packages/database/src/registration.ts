@@ -8,6 +8,7 @@ import { createSubscription } from './subscription';
 import { hashPassword } from '@rentalshop/auth/server';
 import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
+import { createMerchantOnboardingSampleData } from './onboarding-sample';
 
 export interface RegistrationInput {
   email: string;
@@ -249,7 +250,21 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 7. Create trial subscription
+  // 8. Seed tiny onboarding sample data (dev + staging only, idempotent)
+  // NOTE: No try/catch here so registration + onboarding data remain atomic in one transaction.
+  const sampleResult = await createMerchantOnboardingSampleData(tx, {
+    merchantId: merchant.id,
+    outletId: outlet.id,
+    categoryId: defaultCategory.id,
+    createdByUserId: user.id
+  });
+  if (sampleResult.created) {
+    console.log(`✅ Onboarding sample data created for merchant ${merchant.id}`);
+  } else {
+    console.log(`ℹ️ Onboarding sample skipped for merchant ${merchant.id}: ${sampleResult.reason}`);
+  }
+
+  // 9. Create trial subscription
   const subscriptionStartDate = new Date();
   const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   const subscription = await tx.subscription.create({

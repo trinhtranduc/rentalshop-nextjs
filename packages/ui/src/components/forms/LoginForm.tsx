@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
@@ -22,6 +23,8 @@ interface LoginFormProps {
   loading?: boolean;
   isAdmin?: boolean;
   onInputChange?: () => void;
+  googleOAuthClientId?: string;
+  onGoogleLogin?: (idToken: string) => Promise<void>;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
@@ -31,9 +34,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
   loading = false,
   isAdmin = false,
   onInputChange,
+  googleOAuthClientId,
+  onGoogleLogin,
 }) => {
   const [viewPass, setViewPass] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const t = useAuthTranslations();
+  const googleClientIdTrimmed = googleOAuthClientId?.trim() || '';
 
   // Validation schema
   const validationSchema = Yup.object({
@@ -104,7 +111,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setViewPass(!viewPass);
   };
 
-  return (
+  const shell = (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
       <style>{`
         @keyframes float {
@@ -199,6 +206,33 @@ const LoginForm: React.FC<LoginFormProps> = ({
               )}
 
               <div className="space-y-4">
+                {googleClientIdTrimmed && !isAdmin && onGoogleLogin ? (
+                  <div className="space-y-3 pb-2">
+                    <div className="flex w-full justify-center [&>div]:w-full [&_iframe]:!w-full">
+                      <GoogleLogin
+                        onSuccess={async (credentialResponse) => {
+                          const cred = credentialResponse.credential;
+                          if (!cred) return;
+                          try {
+                            setGoogleBusy(true);
+                            await onGoogleLogin(cred);
+                          } finally {
+                            setGoogleBusy(false);
+                          }
+                        }}
+                        onError={() => {
+                          setGoogleBusy(false);
+                        }}
+                        useOneTap={false}
+                        text="continue_with"
+                        shape="rectangular"
+                        width="384"
+                      />
+                    </div>
+                    <p className="text-center text-xs text-gray-500">{t('login.orUsePassword')}</p>
+                  </div>
+                ) : null}
+
                 {/* Email Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -289,7 +323,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 <Button
                   type="submit"
                   className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                  disabled={loading}
+                  disabled={loading || googleBusy}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center">
@@ -352,6 +386,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
       </div>
     </div>
   );
+
+  if (googleClientIdTrimmed && !isAdmin) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientIdTrimmed}>
+        {shell}
+      </GoogleOAuthProvider>
+    );
+  }
+
+  return shell;
 };
 
 export default LoginForm; 

@@ -8,6 +8,18 @@ import { postsApi } from '@rentalshop/utils';
 // This prevents Prisma Client initialization errors during build
 export const dynamic = 'force-dynamic';
 
+function toIsoDateTime(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime()) ? value.toISOString() : undefined;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isFinite(d.getTime()) ? d.toISOString() : undefined;
+  }
+  return undefined;
+}
+
 async function fetchBlogPost(slug: string) {
   try {
     // Try all locales to find the published post
@@ -98,8 +110,8 @@ export async function generateMetadata({
       title,
       description,
       type: 'article',
-      publishedTime: post.publishedAt ? post.publishedAt.toISOString() : undefined,
-      modifiedTime: post.updatedAt ? post.updatedAt.toISOString() : undefined,
+      publishedTime: toIsoDateTime((post as any).publishedAt),
+      modifiedTime: toIsoDateTime((post as any).updatedAt),
       images: post.featuredImage ? [post.featuredImage] : undefined,
     },
     twitter: {

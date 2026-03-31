@@ -7,7 +7,14 @@ import { useAuth } from '@rentalshop/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, login, error: authError, loading: authLoading, clearError } = useAuth();
+  const {
+    user,
+    login,
+    loginWithGoogle,
+    error: authError,
+    loading: authLoading,
+    clearError,
+  } = useAuth();
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Redirect to dashboard if user is already logged in
@@ -69,8 +76,25 @@ export default function LoginPage() {
     router.push(path);
   };
 
+  const handleGoogleLogin = async (idToken: string) => {
+    setLocalError(null);
+    clearError();
+    const success = await loginWithGoogle(idToken);
+    if (success) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const { getAuthToken } = await import('@rentalshop/utils');
+      if (!getAuthToken()) {
+        setLocalError('Failed to store authentication token. Please try again.');
+        return;
+      }
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <LoginForm
+      googleOAuthClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}
+      onGoogleLogin={handleGoogleLogin}
       onLogin={handleLogin}
       onNavigate={handleNavigate}
       error={authError || localError}

@@ -17,6 +17,7 @@ import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { getProductImageUrl, useFormattedDateTime } from '@rentalshop/utils/client';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
+import { ImageLightbox } from '../../../ui/image-lightbox';
 
 interface ProductTableProps {
   products: Product[];
@@ -226,31 +227,36 @@ export function ProductTable({
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     {/* Product Thumbnail with fallback placeholder */}
-                    <div className="flex-shrink-0 relative">
+                    <div className="relative flex-shrink-0">
                       {(() => {
                         const imageUrl = getProductImageUrl(product);
-                        const hasValidImage = imageUrl && imageUrl.trim() !== '' && product.images && product.images.length > 0;
-                        
+                        const hasValidImage =
+                          imageUrl &&
+                          imageUrl.trim() !== '' &&
+                          product.images &&
+                          product.images.length > 0;
+
                         return hasValidImage ? (
-                          <img
+                          <ImageLightbox
                             src={imageUrl}
                             alt={product.name}
-                            className="w-10 h-10 object-cover rounded border border-gray-200"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              target.nextElementSibling?.classList.remove('hidden');
-                            }}
+                            triggerClassName="h-10 w-10 rounded border border-gray-200 dark:border-gray-700"
+                            imgClassName="rounded object-cover"
                           />
                         ) : null;
                       })()}
-                      {/* Placeholder - hidden by default if image loads, shown if image fails or no image */}
-                      <div className={`${(() => {
-                        const imageUrl = getProductImageUrl(product);
-                        const hasValidImage = imageUrl && imageUrl.trim() !== '' && product.images && product.images.length > 0;
-                        return hasValidImage ? 'hidden' : '';
-                      })()} w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center`}>
-                        <Package className="w-5 h-5 text-gray-400" />
+                      <div
+                        className={`${(() => {
+                          const imageUrl = getProductImageUrl(product);
+                          const hasValidImage =
+                            imageUrl &&
+                            imageUrl.trim() !== '' &&
+                            product.images &&
+                            product.images.length > 0;
+                          return hasValidImage ? 'hidden' : '';
+                        })()} flex h-10 w-10 items-center justify-center rounded border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800`}
+                      >
+                        <Package className="h-5 w-5 text-gray-400" />
                       </div>
                     </div>
                     <div className="text-sm">

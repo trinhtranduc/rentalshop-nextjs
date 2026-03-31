@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useProductTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../../../ui';
+import { ImageLightbox } from '../../../ui/image-lightbox';
 import type { ProductWithStock } from '@rentalshop/types';
 import { getRentalPriceLabel, formatRentalPrice } from '../utils';
 import { useFormatCurrency } from '@rentalshop/ui';
@@ -227,31 +228,17 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           <h3 className="text-sm font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {imageArray.map((image: string, index: number) => (
-                  <div
-                    key={index}
-                className="aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-border-hover transition-all hover:scale-105"
-                  >
-                    <div className="relative w-full h-full">
-                      <img
-                        src={image}
-                        alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) {
-                        fallback.classList.remove('hidden');
-                        fallback.classList.add('flex');
-                      }
-                        }}
-                      />
-                      {/* Fallback placeholder for this image */}
-                  <div className="hidden absolute inset-0 w-full h-full bg-bg-secondary items-center justify-center">
-                    <Package className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                </div>
-            </div>
+              <div
+                key={index}
+                className="aspect-square rounded-lg overflow-hidden border-2 border-border transition-all hover:border-border-hover"
+              >
+                <ImageLightbox
+                  src={image}
+                  alt={`${product.name} ${index + 1}`}
+                  triggerClassName="h-full w-full"
+                  imgClassName="object-cover transition-transform hover:scale-105"
+                />
+              </div>
             ))}
           </div>
         </div>

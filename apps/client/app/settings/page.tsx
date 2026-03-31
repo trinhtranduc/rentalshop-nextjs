@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Settings, PageWrapper, Breadcrumb } from '@rentalshop/ui';
+import { Settings, PageWrapper } from '@rentalshop/ui';
+import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 
 // ============================================================================
 // CLIENT SETTINGS PAGE
@@ -10,7 +11,11 @@ import { Settings, PageWrapper, Breadcrumb } from '@rentalshop/ui';
 export default function SettingsPage() {
   return (
     <PageWrapper>
-      <Settings />
+      <Settings
+        renderSubscriptionPanel={(props) => (
+          <SettingsSubscriptionMerchantActions {...props} />
+        )}
+      />
     </PageWrapper>
   );
 }

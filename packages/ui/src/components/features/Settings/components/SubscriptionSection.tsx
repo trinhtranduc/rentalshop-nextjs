@@ -27,7 +27,9 @@ import {
   Calendar,
   DollarSign,
   History,
-  Clock
+  Clock,
+  TrendingUp,
+  Landmark
 } from 'lucide-react';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 import { subscriptionsApi } from '@rentalshop/utils';
@@ -41,6 +43,12 @@ export interface SubscriptionSectionProps {
   subscriptionData: any;
   subscriptionLoading: boolean;
   currentUserRole?: string;
+  /** Merchant: open upgrade / change plan (e.g. Lemon Squeezy checkout) */
+  onUpgradeClick?: () => void;
+  /** Merchant: open extend / renew flow (e.g. bank transfer proof) */
+  onExtendClick?: () => void;
+  /** Merchant with no subscription: primary CTA instead of “View invoices” */
+  onChoosePlanClick?: () => void;
 }
 
 // ============================================================================
@@ -50,7 +58,10 @@ export interface SubscriptionSectionProps {
 export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   subscriptionData,
   subscriptionLoading,
-  currentUserRole
+  currentUserRole,
+  onUpgradeClick,
+  onExtendClick,
+  onChoosePlanClick,
 }) => {
   const t = useSettingsTranslations();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -127,6 +138,13 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
     );
   }
 
+  const daysLeft =
+    subscriptionData?.daysRemaining ?? subscriptionData?.daysUntilExpiry;
+  const billingCurrency =
+    subscriptionData?.subscription?.currency ||
+    subscriptionData?.subscription?.plan?.currency ||
+    'USD';
+
   if (subscriptionData?.hasSubscription) {
     return (
       <div className="space-y-6">
@@ -156,7 +174,10 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     <span className="text-sm font-medium text-gray-700">{t('subscription.amount')}</span>
                   </div>
                   <p className="text-base font-semibold text-gray-900">
-                    ${subscriptionData.subscription.amount || '0.00'}
+                    {formatCurrency(
+                      Number(subscriptionData.subscription.amount) || 0,
+                      billingCurrency
+                    )}
                   </p>
                   <p className="text-xs text-gray-600">
                     {subscriptionData.subscription.interval || 'monthly'}
@@ -176,9 +197,9 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                         year: 'numeric' 
                       }) : 'N/A'}
                   </p>
-                  {subscriptionData.daysUntilExpiry && (
+                  {daysLeft != null && daysLeft !== '' && (
                     <p className="text-xs text-gray-600">
-                      {subscriptionData.daysUntilExpiry} {t('subscription.daysRemaining')}
+                      {daysLeft} {t('subscription.daysRemaining')}
                     </p>
                   )}
                 </div>
@@ -202,15 +223,35 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="h-5 w-5 text-yellow-600" />
                     <p className="text-sm text-yellow-800">
-                      {t('subscription.expiresIn')} {subscriptionData.daysUntilExpiry} {t('subscription.daysRemaining')}. 
+                      {t('subscription.expiresIn')} {daysLeft} {t('subscription.daysRemaining')}. 
                       {t('subscription.considerRenewing')}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="mt-6 pt-4 border-t border-gray-200 flex justify-center">
+              {/* Action Buttons — giữ layout cũ, thêm tùy chọn nâng cấp / gia hạn khi app truyền callback */}
+              <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap justify-center gap-2">
+                {onUpgradeClick && (
+                  <Button
+                    variant="default"
+                    onClick={onUpgradeClick}
+                    className="flex items-center gap-2"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    {t('subscription.upgradePlan')}
+                  </Button>
+                )}
+                {onExtendClick && (
+                  <Button
+                    variant="secondary"
+                    onClick={onExtendClick}
+                    className="flex items-center gap-2"
+                  >
+                    <Landmark className="h-4 w-4" />
+                    {t('subscription.extendOrRenew')}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={handleViewHistory}
@@ -304,12 +345,14 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
             <h3 className="text-base font-semibold text-gray-900 mb-2">{t('subscription.noSubscription')}</h3>
             <p className="text-sm text-gray-600 mb-6">{t('subscription.noSubscriptionDesc')}</p>
             
-            {/* Only show action button for ADMIN and MERCHANT roles */}
-            {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
-              <Button>
-                {t('subscription.viewInvoices')}
-              </Button>
-            )}
+            {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') &&
+              (currentUserRole === 'MERCHANT' && onChoosePlanClick ? (
+                <Button onClick={onChoosePlanClick}>
+                  {t('subscription.choosePlan')}
+                </Button>
+              ) : (
+                <Button>{t('subscription.viewInvoices')}</Button>
+              ))}
             
             {/* Show read-only message for OUTLET_ADMIN */}
             {currentUserRole === 'OUTLET_ADMIN' && (

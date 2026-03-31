@@ -20,6 +20,19 @@ export interface RegisterResponse {
   };
 }
 
+/** Body for POST /api/auth/register/merchant-google */
+export interface RegisterMerchantGoogleBody {
+  idToken: string;
+  businessName: string;
+  phone: string;
+  businessType?: 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY';
+  address?: string;
+  tenantKey?: string;
+  referralCode?: string;
+  country?: string;
+}
+
 /**
  * Authentication API client
  */
@@ -49,6 +62,30 @@ export const authApi = {
       body: JSON.stringify(userData),
     });
     return await parseApiResponse<RegisterResponse>(response);
+  },
+
+  /**
+   * Register merchant using Google ID token + business fields (same success shape as login).
+   */
+  async registerMerchantGoogle(
+    body: RegisterMerchantGoogleBody
+  ): Promise<ApiResponse<AuthResponse>> {
+    const response = await publicFetch(apiUrls.auth.registerMerchantGoogle, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return await parseApiResponse<AuthResponse>(response);
+  },
+
+  /**
+   * Login with Google ID token (user must have googleSub set).
+   */
+  async loginGoogle(idToken: string): Promise<ApiResponse<AuthResponse>> {
+    const response = await publicFetch(apiUrls.auth.loginGoogle, {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+    return await parseApiResponse<AuthResponse>(response);
   },
 
   /**

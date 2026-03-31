@@ -87,7 +87,24 @@ const createSettingsMenuItems = (t: any) => [
 // MAIN SETTINGS COMPONENT
 // ============================================================================
 
-export const SettingsComponent: React.FC = () => {
+export interface SubscriptionPanelRenderProps {
+  subscriptionData: any;
+  subscriptionLoading: boolean;
+  onSubscriptionRefresh: () => Promise<void> | void;
+  currentUserRole?: string;
+}
+
+export interface SettingsComponentProps {
+  /**
+   * Optional slot to override the subscription tab UI.
+   * Used by the client app to render the full billing/renew/extend/history experience.
+   */
+  renderSubscriptionPanel?: (props: SubscriptionPanelRenderProps) => React.ReactNode;
+}
+
+export const SettingsComponent: React.FC<SettingsComponentProps> = ({
+  renderSubscriptionPanel,
+}) => {
   const t = useSettingsTranslations();
   const { user, logout, loading, refreshUser } = useAuth();
   const { toastSuccess, toastError } = useToast();
@@ -196,22 +213,20 @@ export const SettingsComponent: React.FC = () => {
     }
   }, [user]);
 
-  // Fetch subscription data (merchant only — matches subscription settings tab visibility)
-  useEffect(() => {
+  const refreshSubscriptionData = async () => {
     if (user?.role !== USER_ROLE.MERCHANT) {
       setSubscriptionData(null);
       setSubscriptionLoading(false);
       return;
     }
 
-    const fetchSubscriptionData = async () => {
-      try {
-        setSubscriptionLoading(true);
-        const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
-        
-        console.log('🔍 Settings - Subscription API response:', response);
-        
-        if (response.success && response.data) {
+    try {
+      setSubscriptionLoading(true);
+      const response = await subscriptionsApi.getCurrentUserSubscriptionStatus();
+      
+      console.log('🔍 Settings - Subscription API response:', response);
+      
+      if (response.success && response.data) {
           // ============================================================================
           // NEW FLAT API RESPONSE MAPPING
           // ============================================================================
@@ -292,20 +307,23 @@ export const SettingsComponent: React.FC = () => {
           };
           
           console.log('✅ Settings - Mapped subscription data:', transformedData);
-          setSubscriptionData(transformedData);
-        } else {
-          console.log('❌ Settings - No subscription data:', response);
-          setSubscriptionData(null);
-        }
-      } catch (error) {
-        console.error('Error fetching subscription data:', error);
+        setSubscriptionData(transformedData);
+      } else {
+        console.log('❌ Settings - No subscription data:', response);
         setSubscriptionData(null);
-      } finally {
-        setSubscriptionLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+      setSubscriptionData(null);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
 
-    fetchSubscriptionData();
+  // Fetch subscription data (merchant only — matches subscription settings tab visibility)
+  useEffect(() => {
+    void refreshSubscriptionData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
   // Update form data when user data is loaded
@@ -620,6 +638,15 @@ export const SettingsComponent: React.FC = () => {
         if (user?.role !== USER_ROLE.MERCHANT) {
           return null;
         }
+        if (renderSubscriptionPanel) {
+          return renderSubscriptionPanel({
+            subscriptionData,
+            subscriptionLoading,
+            onSubscriptionRefresh: refreshSubscriptionData,
+            currentUserRole: user?.role,
+          });
+        }
+
         return (
           <SubscriptionSection
             subscriptionData={subscriptionData}

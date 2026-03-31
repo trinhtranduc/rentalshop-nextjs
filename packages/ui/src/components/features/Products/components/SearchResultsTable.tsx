@@ -15,6 +15,7 @@ import { useProductTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { parseProductImages } from '@rentalshop/utils';
 import { Eye, Edit, ShoppingCart, MoreVertical, Package, Percent } from 'lucide-react';
+import { ImageLightbox } from '../../../ui/image-lightbox';
 
 interface SearchResult extends Product {
   similarity: number;
@@ -142,38 +143,17 @@ export function SearchResultsTable({
                   <td className="p-4">
                     <div className="flex items-center gap-4">
                       {/* Product Image - Larger for better visibility */}
-                      <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                      <div className="flex h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                         {imageUrl ? (
-                          <img
+                          <ImageLightbox
                             src={imageUrl}
                             alt={product.name}
-                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
-                            loading="lazy"
-                            onError={(e) => {
-                              console.error('❌ Image load error:', {
-                                productId: product.id,
-                                imageUrl,
-                                error: e
-                              });
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.classList.add('flex', 'items-center', 'justify-center');
-                              }
-                            }}
-                            onLoad={() => {
-                              if (process.env.NODE_ENV === 'development') {
-                                console.log('✅ Image loaded successfully:', {
-                                  productId: product.id,
-                                  imageUrl
-                                });
-                              }
-                            }}
+                            triggerClassName="h-full w-full"
+                            imgClassName="object-cover transition-transform duration-200 hover:scale-110"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-10 h-10 text-gray-400" />
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Package className="h-10 w-10 text-gray-400" />
                           </div>
                         )}
                       </div>

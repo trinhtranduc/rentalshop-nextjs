@@ -80,6 +80,8 @@ export interface ChoosePlanDialogProps {
   currentPlanId?: number | null;
   /** Pre-select billing cycle from active subscription (renew / upgrade) */
   defaultBillingInterval?: string | null;
+  /** Where Lemon Squeezy should redirect after checkout. */
+  checkoutReturnPath?: string;
 }
 
 export function ChoosePlanDialog({
@@ -87,6 +89,7 @@ export function ChoosePlanDialog({
   onOpenChange,
   currentPlanId,
   defaultBillingInterval,
+  checkoutReturnPath = '/subscription',
 }: ChoosePlanDialogProps) {
   const locale = useLocale();
   const t = useTranslations('subscription.choosePlanDialog');
@@ -250,8 +253,13 @@ export function ChoosePlanDialog({
   const startLemonCheckout = async () => {
     if (!selectedPlan) return;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const successUrl = `${origin}/subscription?checkout=success`;
-    const cancelUrl = `${origin}/subscription?checkout=cancel`;
+    const buildReturnUrl = (checkout: 'success' | 'cancel') => {
+      const url = new URL(checkoutReturnPath, origin);
+      url.searchParams.set('checkout', checkout);
+      return url.toString();
+    };
+    const successUrl = buildReturnUrl('success');
+    const cancelUrl = buildReturnUrl('cancel');
 
     setCheckoutLoading(true);
     try {
