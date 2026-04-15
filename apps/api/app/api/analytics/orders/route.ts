@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/orders - Get order analytics
@@ -43,14 +43,14 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
           selectedOutletIds.map(async (outletId) => {
             try {
               const outlet = await db.outlets.findById(outletId);
-              return outlet ? { id: outlet.id, publicId: outletId, name: outlet.name } : null;
+              return outlet ? { id: outlet.id, publicId: outlet.id, name: outlet.name } : null;
             } catch (error) {
               console.error(`Error fetching outlet ${outletId}:`, error);
               return null;
             }
           })
         );
-        return outlets.filter((o): o is { id: string; publicId: number; name: string } => o !== null);
+        return outlets.filter((o): o is { id: number; publicId: number; name: string } => o !== null);
       }
       
       // Default behavior: get all merchant outlets or single outlet
@@ -59,7 +59,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       if (merchant && merchant.outlets) {
           return merchant.outlets.map((outlet: any) => ({
             id: outlet.id,
-            publicId: outlet.publicId || outlet.id,
+            publicId: outlet.id,
             name: outlet.name
           }));
       }
@@ -68,7 +68,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         if (outlet) {
           return [{
             id: outlet.id,
-            publicId: userScope.outletId,
+            publicId: outlet.id,
             name: outlet.name
           }];
         }
@@ -79,7 +79,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     const outletsToProcess = await getOutletsToProcess();
 
     // Helper function to process orders for a specific outlet
-    const processOutletOrders = async (outlet: { id: string; publicId: number; name: string } | null) => {
+    const processOutletOrders = async (outlet: { id: number; publicId: number; name: string } | null) => {
       // Build where clause for orders
       const orderWhereClause: any = {};
 

@@ -1041,6 +1041,8 @@ export const simplifiedOrders = {
           status: true,
           totalAmount: true,
           depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
           pickupPlanAt: true,
           returnPlanAt: true,
           pickedUpAt: true,
