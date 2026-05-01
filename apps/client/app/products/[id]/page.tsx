@@ -18,8 +18,7 @@ import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
-import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
-import { canManageProducts } from '@rentalshop/auth';
+import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi, usePermissions } from '@rentalshop/hooks';
 import { 
   productsApi, 
   categoriesApi, 
@@ -31,6 +30,7 @@ export default function ProductViewPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { canManageProducts, canAddOrEditProducts } = usePermissions();
   const { toastSuccess, removeToast } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -202,11 +202,13 @@ export default function ProductViewPage() {
               <BarChart3 className="h-4 w-4 mr-2" />
               {t('actions.viewOrders')}
             </Button>
+            {canAddOrEditProducts && (
             <Button onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
               {t('editProduct')}
             </Button>
-            {user && canManageProducts(user) && (
+            )}
+            {user && canManageProducts && (
               <Button 
                 variant="destructive" 
                 onClick={handleDelete}

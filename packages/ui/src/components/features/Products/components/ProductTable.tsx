@@ -16,6 +16,10 @@ import { useProductTranslations, useCommonTranslations, useTableSelection } from
 import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { getProductImageUrl, useFormattedDateTime } from '@rentalshop/utils/client';
+import {
+  resolveProductListStockDisplay,
+  type ProductListStockInput,
+} from '@rentalshop/utils';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 import { ImageLightbox } from '../../../ui/image-lightbox';
 
@@ -27,6 +31,8 @@ interface ProductTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
   showMerchantColumn?: boolean; // Show merchant column (for admin products page)
+  /** When set (product list filter), stock numbers reflect this outlet row only—not merchant-wide rollup. */
+  scopedOutletId?: number;
 }
 
 export function ProductTable({ 
@@ -36,7 +42,8 @@ export function ProductTable({
   sortBy = 'name', 
   sortOrder = 'asc',
   onSort,
-  showMerchantColumn = false
+  showMerchantColumn = false,
+  scopedOutletId
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
   const { canManageProducts, canAddOrEditProducts, canViewProducts, canDeleteOrders } = usePermissions();
@@ -304,26 +311,39 @@ export function ProductTable({
                 </td>
                 
                 <td className="px-6 py-4 whitespace-nowrap">
+                  {(() => {
+                    const stockDisplay = resolveProductListStockDisplay(
+                      product as ProductListStockInput,
+                      scopedOutletId
+                    );
+                    return (
                   <div className="text-sm space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.totalStock')}:</span>
                       <span className="font-medium text-gray-900 dark:text-white">
-                        {(product as any).totalStock ?? product.stock ?? 0}
+                        {stockDisplay.totalStock}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.rentedOut')}:</span>
                       <span className="font-medium text-amber-700 dark:text-amber-400">
-                        {product.renting ?? 0}
+                        {stockDisplay.renting}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.availableStock')}:</span>
                       <span className="font-medium text-green-600 dark:text-green-400">
-                        {product.available ?? 0}
+                        {stockDisplay.available}
                       </span>
                     </div>
+                    {stockDisplay.showBranchesHint ? (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 pt-0.5 max-w-[12rem]" title={t('inventory.stockAllocation')}>
+                        {t('inventory.listRollupHint', { count: stockDisplay.outletBranchCount })}
+                      </p>
+                    ) : null}
                   </div>
+                    );
+                  })()}
                 </td>
                 
                 {/* Status cell hidden as requested */}

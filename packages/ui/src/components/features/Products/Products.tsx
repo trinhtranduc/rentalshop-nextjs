@@ -19,7 +19,8 @@ import {
   ProductSearchResult as ProductData, 
   ProductFilters as ProductFiltersType
 } from '@rentalshop/types';
-import { useUserRole, useProductTranslations } from '@rentalshop/hooks';
+import { resolveScopedOutletIdForProductStock } from '@rentalshop/utils';
+import { usePermissions, useProductTranslations } from '@rentalshop/hooks';
 import { 
   Package as PackageIcon, 
   Download
@@ -92,11 +93,15 @@ export function Products({
   className = ""
 }: ProductsProps) {
   
-  // User role check for permissions
-  const { canManageProducts } = useUserRole(currentUser);
+  const { canAddOrEditProducts } = usePermissions();
   
   // Get translations
   const t = useProductTranslations();
+
+  const scopedOutletIdForStock = resolveScopedOutletIdForProductStock(
+    filters?.outletId,
+    currentUser ?? null
+  );
   
   // Handler for export button
   const handleExport = () => {
@@ -135,7 +140,7 @@ export function Products({
           title={title}
           subtitle={subtitle}
         >
-          {showAddButton && canManageProducts && (
+          {showAddButton && canAddOrEditProducts && (
             <Button
               onClick={handleAddProduct}
               className="flex items-center space-x-2"
@@ -184,6 +189,7 @@ export function Products({
             sortOrder={filters.sortOrder || "asc"}
             onSort={memoizedOnSort}
             showMerchantColumn={showMerchantColumn}
+            scopedOutletId={scopedOutletIdForStock}
           />
         ) : (
           <EmptyState

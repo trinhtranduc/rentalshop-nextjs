@@ -35,6 +35,7 @@
     "@rentalshop/constants": "file:../constants",
     "@rentalshop/hooks": "file:../hooks",
     "@rentalshop/types": "file:../types",
+    "@rentalshop/utils": "file:../utils",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

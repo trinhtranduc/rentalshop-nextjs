@@ -379,12 +379,10 @@ async function validateOutletStock(
  * - Files (optional): File objects in 'images' field
  * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
  * 
- * Authorization: All roles with 'products.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * Authorization: `products.manage` OR `products.create` (e.g. OUTLET_STAFF may create only)
  * Requires active subscription
  */
-export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+export const POST = withPermissions(['products.manage', 'products.create'])(async (request, { user, userScope }) => {
   try {
     // Parse multipart form data
     const formData = await request.formData();
@@ -452,10 +450,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const outletStockData = parsed.data.outletStock || parsed.data.outletStocks || [];
     
     // ============================================================================
-    // AUTHORIZATION: Check outlet scope for OUTLET_ADMIN
+    // AUTHORIZATION: Outlet-scoped roles — stock only at their outlet
     // ============================================================================
-    // For OUTLET_ADMIN: Only allow creating products with stock at their outlet
-    if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+    if (
+      (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+      userScope.outletId
+    ) {
       if (!outletStockData || !Array.isArray(outletStockData) || outletStockData.length === 0) {
         return NextResponse.json(
           ResponseBuilder.error('OUTLET_STOCK_REQUIRED'),
@@ -469,7 +469,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
       
       if (invalidOutlets.length > 0) {
-        console.log('❌ OUTLET_ADMIN cannot create product with stock at other outlets:', {
+        console.log('❌ Outlet user cannot create product with stock at other outlets:', {
           userOutletId: userScope.outletId,
           invalidOutlets: invalidOutlets.map((os: any) => os.outletId)
         });
