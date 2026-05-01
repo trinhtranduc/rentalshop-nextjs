@@ -100,9 +100,7 @@ export async function GET(
  * PUT /api/merchants/[id]/products/[productId]
  * Update product
  * 
- * Authorization: All roles with 'products.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * Authorization: `products.manage` OR `products.update`
  */
 export async function PUT(
   request: NextRequest,
@@ -113,7 +111,7 @@ export async function PUT(
   const merchantPublicId = parseInt(resolvedParams.id);
   const productPublicId = parseInt(resolvedParams.productId);
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage', 'products.update'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(productPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });

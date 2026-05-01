@@ -30,6 +30,8 @@ export type Permission =
   
   // Product Management
   | 'products.manage'
+  | 'products.create'
+  | 'products.update'
   | 'products.view'
   | 'products.export'
   
@@ -171,6 +173,14 @@ export function usePermissions() {
    * Convenience methods for common permission checks
    */
   const canManageProducts = useMemo(() => hasPermission('products.manage'), [hasPermission]);
+  /** Create or edit catalog items (includes OUTLET_STAFF with create/update only; excludes delete/import unless manage) */
+  const canAddOrEditProducts = useMemo(
+    () =>
+      hasPermission('products.manage') ||
+      hasPermission('products.create') ||
+      hasPermission('products.update'),
+    [hasPermission]
+  );
   const canViewProducts = useMemo(() => hasPermission('products.view'), [hasPermission]);
   const canExportProducts = useMemo(() => hasPermission('products.export'), [hasPermission]);
   
@@ -220,6 +230,7 @@ export function usePermissions() {
     
     // Convenience methods for products
     canManageProducts,
+    canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
     

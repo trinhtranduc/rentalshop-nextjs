@@ -59,6 +59,9 @@ export * from './import/sample-generator';
 // Plan features utilities
 export * from './plan-features';
 
+// Product list table — stock rollup vs outlet scope
+export * from './product-list-stock';
+
 // S3 path helper utilities
 export * from './utils/s3-path-helper';
 

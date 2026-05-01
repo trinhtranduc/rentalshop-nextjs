@@ -28,7 +28,7 @@ export function ProductActions({
   onError
 }: ProductActionsProps) {
   // ✅ Use permissions hook for UI control
-  const { canManageProducts, canExportProducts } = usePermissions();
+  const { canManageProducts, canAddOrEditProducts, canExportProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
@@ -62,7 +62,6 @@ export function ProductActions({
     onError?.(error);
   };
 
-  // Filter actions based on user role - OUTLET_STAFF cannot create/update products or manage categories
   const allActions = [
     {
       id: 'add-product',
@@ -71,7 +70,7 @@ export function ProductActions({
       icon: '➕',
       variant: 'default' as const,
       onClick: handleAddProduct,
-      roles: canManageProducts ? ['ALL'] : [] // Use permission check
+      roles: canAddOrEditProducts ? ['ALL'] : []
     },
     {
       id: 'import-products',

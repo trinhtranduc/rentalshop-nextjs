@@ -68,9 +68,19 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
         description: 'Allow viewing product list and details',
       },
       {
+        key: 'products.create',
+        label: 'Create Products',
+        description: 'Allow adding new products (without full manage)',
+      },
+      {
+        key: 'products.update',
+        label: 'Update Products',
+        description: 'Allow editing existing products (without full manage)',
+      },
+      {
         key: 'products.manage',
         label: 'Manage Products',
-        description: 'Allow creating, editing, and deleting products',
+        description: 'Full product management including delete, import, and cost price',
       },
       {
         key: 'products.export',

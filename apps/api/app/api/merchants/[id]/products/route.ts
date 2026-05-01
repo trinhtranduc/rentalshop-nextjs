@@ -83,9 +83,7 @@ export async function GET(
  * POST /api/merchants/[id]/products
  * Create new product with role-based access control
  * 
- * Authorization: All roles with 'products.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * Authorization: `products.manage` OR `products.create`
  * 
  * Security: Validates merchant ownership before creating product
  */
@@ -97,7 +95,7 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage', 'products.create'])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);

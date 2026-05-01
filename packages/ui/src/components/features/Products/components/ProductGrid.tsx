@@ -6,6 +6,7 @@ import { Product } from '@rentalshop/types';
 import { Button } from '../../../ui/button';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
+import { usePermissions } from '@rentalshop/hooks';
 
 interface ProductGridProps {
   products: Product[];
@@ -32,7 +33,7 @@ export function ProductGrid({
   showAddButton = false
 }: ProductGridProps) {
   // ✅ Use permissions hook to check if user can manage products
-  const { canManageProducts } = usePermissions();
+  const { canAddOrEditProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleAddProduct = () => {
@@ -66,7 +67,7 @@ export function ProductGrid({
             Try adjusting your filters or add some products to get started.
           </p>
           {/* ✅ Only show Add Product button if user can manage products */}
-          {showAddButton && canManageProducts && categories.length > 0 && outlets.length > 0 && merchantId && (
+          {showAddButton && canAddOrEditProducts && categories.length > 0 && outlets.length > 0 && merchantId && (
             <Button
               onClick={handleAddProduct}
               className="px-4 py-2"

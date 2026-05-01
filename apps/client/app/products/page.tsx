@@ -69,7 +69,7 @@ export default function ProductsPage() {
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
   // ✅ Use permissions hook to check if user can manage products
-  const { canManageProducts } = usePermissions();
+  const { canManageProducts, canAddOrEditProducts } = usePermissions();
   
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
@@ -462,8 +462,7 @@ export default function ProductsPage() {
                 {` (${selectedProductIds.length})`}
               </Button>
             )}
-            {/* ✅ Only show Add Product button if user can manage products */}
-            {canManageProducts && (
+            {canAddOrEditProducts && (
               <Button 
                 onClick={handleOpenAddDialog}
                 variant="default"
@@ -509,6 +508,7 @@ export default function ProductsPage() {
           /* Products Content - Only render when data is loaded */
           <Products
             data={productData}
+            currentUser={user ?? undefined}
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onSearchChange={handleSearchChange}

@@ -337,6 +337,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
       description: product.description,
       barcode: product.barcode,
       totalStock: product.totalStock,
+      // Align with Product type / list UI: rollup across all outlets
+      stock: product.totalStock ?? 0,
+      renting: totalRenting,
       available: available, // Product-level available = totalStock - sum(renting from all outlets)
       rentPrice: product.rentPrice,
       salePrice: product.salePrice,

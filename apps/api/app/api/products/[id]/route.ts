@@ -217,9 +217,7 @@ export async function GET(
  * - Product data: JSON string in 'data' field
  * - Files (optional): File objects in 'images' field
  * 
- * Authorization: All roles with 'products.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * Authorization: `products.manage` OR `products.update` (e.g. OUTLET_STAFF may update only)
  */
 export async function PUT(
   request: NextRequest,
@@ -229,7 +227,7 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage', 'products.update'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -458,8 +456,11 @@ export async function PUT(
         );
       }
 
-      // For OUTLET_ADMIN: Verify product has stock at their outlet (or allow updating if they're adding stock to their outlet)
-      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+      // For OUTLET_ADMIN / OUTLET_STAFF: same outlet scope as create
+      if (
+        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        userScope.outletId
+      ) {
         // Check if product currently has stock at user's outlet
         const hasStockAtOutlet = existingProduct.outletStock?.some(
           (os: any) => os.outlet?.id === userScope.outletId
@@ -470,11 +471,11 @@ export async function PUT(
           (os: any) => os.outletId === userScope.outletId
         );
         
-        // OUTLET_ADMIN can only update products that:
+        // Outlet-scoped users can only update products that:
         // 1. Already have stock at their outlet, OR
         // 2. They're adding stock to their outlet in this update
         if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
-          console.log('❌ OUTLET_ADMIN cannot update product without stock at their outlet:', {
+          console.log('❌ Outlet user cannot update product without stock at their outlet:', {
             productId: productId,
             userOutletId: userScope.outletId,
             hasStockAtOutlet: hasStockAtOutlet,
@@ -483,6 +484,22 @@ export async function PUT(
           });
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+
+      if (
+        outletStock &&
+        Array.isArray(outletStock) &&
+        outletStock.length > 0 &&
+        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        userScope.outletId
+      ) {
+        const wrongOutlet = outletStock.filter((os: any) => os.outletId !== userScope.outletId);
+        if (wrongOutlet.length > 0) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
           );
         }
