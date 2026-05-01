@@ -39,7 +39,7 @@ export function ProductTable({
   showMerchantColumn = false
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
-  const { canManageProducts, canViewProducts, canDeleteOrders } = usePermissions();
+  const { canManageProducts, canAddOrEditProducts, canViewProducts, canDeleteOrders } = usePermissions();
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
@@ -56,13 +56,6 @@ export function ProductTable({
     handleSelectAll,
     isSelected,
   } = useTableSelection(products, onSelectionChange);
-  
-  // Debug: Log products received
-  console.log('🔍 ProductTable: Received products:', {
-    isArray: Array.isArray(products),
-    length: products?.length,
-    firstProduct: products?.[0]?.name
-  });
   
   if (products.length === 0) {
     return (
@@ -168,10 +161,9 @@ export function ProductTable({
                 {tc('labels.price')}
               </th>
               
-              {/* Stock - Hidden */}
-              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('inventory.title') || t('stock.label')}
-              </th> */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t('inventory.title')}
+              </th>
               
               {/* Status column hidden as requested */}
               {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -311,13 +303,18 @@ export function ProductTable({
                   </div>
                 </td>
                 
-                {/* Stock - Hidden */}
-                {/* <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.totalStock')}:</span>
                       <span className="font-medium text-gray-900 dark:text-white">
                         {(product as any).totalStock ?? product.stock ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.rentedOut')}:</span>
+                      <span className="font-medium text-amber-700 dark:text-amber-400">
+                        {product.renting ?? 0}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -327,7 +324,7 @@ export function ProductTable({
                       </span>
                     </div>
                   </div>
-                </td> */}
+                </td>
                 
                 {/* Status cell hidden as requested */}
                 {/* <td className="px-6 py-4 whitespace-nowrap">
@@ -370,8 +367,8 @@ export function ProductTable({
                       </DropdownMenuItem>
                       )}
                       
-                      {/* ✅ Edit - Only available if user can manage products */}
-                      {canManageProducts && (
+                      {/* ✅ Edit - manage, or staff with products.create/update */}
+                      {canAddOrEditProducts && (
                       <DropdownMenuItem onClick={() => {
                         onProductAction('edit', product.id);
                         setOpenDropdownId(null);
