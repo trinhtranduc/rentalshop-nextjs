@@ -456,28 +456,30 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         
         if (error.name === 'AbortError') {
           const waitedMs = Date.now() - searchStartTime;
-          const timeoutMessage = `Image search timed out after ${Math.round(PYTHON_SEARCH_TIMEOUT_MS / 1000)} seconds. Try a smaller image or check the search service.`;
           console.error(`⏱️ Python /search timed out after ${waitedMs}ms (limit: ${PYTHON_SEARCH_TIMEOUT_MS}ms). Check Python logs for slow step: embedding / Qdrant / DB.`);
           return NextResponse.json(
             {
               ...ResponseBuilder.error('SEARCH_TIMEOUT'),
-              message: timeoutMessage,
-              details: timeoutMessage,
-              debug: {
-                waitedMs,
-                timeoutMs: PYTHON_SEARCH_TIMEOUT_MS,
-                hint: 'Check Python service logs for which step is slow: embedding, Qdrant search, or DB fetch.',
-              },
+              ...(process.env.NODE_ENV === 'development'
+                ? {
+                    debug: {
+                      waitedMs,
+                      timeoutMs: PYTHON_SEARCH_TIMEOUT_MS,
+                      technical: errorMessage,
+                    },
+                  }
+                : {}),
             },
             { status: 503 }
           );
         }
-        
+
         return NextResponse.json(
           {
             ...ResponseBuilder.error('SEARCH_FAILED'),
-            message: errorMessage,
-            details: errorMessage
+            ...(process.env.NODE_ENV === 'development'
+              ? { debug: { technical: errorMessage } }
+              : {}),
           },
           { status: 503 }
         );

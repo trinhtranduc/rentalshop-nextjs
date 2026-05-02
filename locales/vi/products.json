@@ -183,6 +183,9 @@
     "errorInvalidFile": "Vui lòng chọn file hình ảnh",
     "errorFileSize": "Kích thước hình ảnh phải nhỏ hơn 10MB",
     "errorSearchFailed": "Không thể tìm kiếm sản phẩm",
+    "errorFriendlyGeneric": "Hiện không thể tìm theo ảnh. Vui lòng thử lại sau hoặc dùng ô tìm kiếm chữ.",
+    "errorFriendlyTimeout": "Tìm theo ảnh mất quá nhiều thời gian. Hãy thử ảnh nhỏ hơn hoặc thử lại sau.",
+    "errorFriendlyUnavailable": "Tính năng tìm theo ảnh tạm thời không khả dụng. Vui lòng thử lại sau.",
     "success": "Thành công",
     "successFound": "Tìm thấy {count} sản phẩm tương tự",
     "similaritySearch": "Tìm kiếm tương tự"
