@@ -184,6 +184,9 @@
     "errorInvalidFile": "Please select an image file",
     "errorFileSize": "Image size must be less than 10MB",
     "errorSearchFailed": "Failed to search products",
+    "errorFriendlyGeneric": "We couldn't search by image right now. Please try again in a moment, or use text search.",
+    "errorFriendlyTimeout": "The image search took too long. Try a smaller photo, or try again in a few minutes.",
+    "errorFriendlyUnavailable": "Image search is temporarily unavailable. Please try again later.",
     "success": "Success",
     "successFound": "Found {count} similar products",
     "similaritySearch": "Similarity Search"

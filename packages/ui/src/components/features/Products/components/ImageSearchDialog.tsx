@@ -142,11 +142,22 @@ export function ImageSearchDialog({
           toastError(t('imageSearch.noResults'), t('imageSearch.noResultsHint'));
         }
       } else {
-        toastError(t('imageSearch.error'), response.message || t('imageSearch.errorSearchFailed'));
+        let body: string;
+        switch (response.code) {
+          case 'SEARCH_TIMEOUT':
+            body = t('imageSearch.errorFriendlyTimeout');
+            break;
+          case 'SERVICE_UNAVAILABLE':
+            body = t('imageSearch.errorFriendlyUnavailable');
+            break;
+          default:
+            body = t('imageSearch.errorFriendlyGeneric');
+        }
+        toastError(t('imageSearch.error'), body);
       }
     } catch (error: any) {
       console.error('Image search error:', error);
-      toastError(t('imageSearch.error'), error.message || t('imageSearch.errorSearchFailed'));
+      toastError(t('imageSearch.error'), t('imageSearch.errorFriendlyGeneric'));
     } finally {
       setIsSearching(false);
     }

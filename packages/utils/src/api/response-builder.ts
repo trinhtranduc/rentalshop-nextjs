@@ -151,8 +151,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   'IMAGE_VALIDATION_FAILED': 'Invalid or unsupported image file',
   'INVALID_LIMIT': 'Invalid limit parameter',
   'INVALID_MIN_SIMILARITY': 'Invalid minimum similarity parameter',
-  'SEARCH_FAILED': 'Image search failed. The search service may be unavailable.',
-  'SEARCH_TIMEOUT': 'Image search timed out after 60 seconds. Try a smaller image or check the search service.',
+  'SEARCH_FAILED':
+    "We couldn't search by image right now. Please try again in a moment, or use text search.",
+  'SEARCH_TIMEOUT':
+    'The image search took too long. Try a smaller photo, or try again in a few minutes.',
   
   // Default
   'UNKNOWN_ERROR': 'An unknown error occurred',
@@ -227,6 +229,34 @@ const SUCCESS_MESSAGES: Record<string, string> = {
  */
 function getDefaultMessage(code: string): string {
   return ERROR_MESSAGES[code] || SUCCESS_MESSAGES[code] || code;
+}
+
+/**
+ * Maps raw upstream errors (Python, Railway, Qdrant) to a single safe user-facing string.
+ * Use in native clients or anywhere the API still returns a noisy `message`.
+ */
+export function getFriendlyImageSearchUserMessage(input: {
+  code?: string;
+  message?: string;
+}): string {
+  const code = input.code || '';
+  if (code === 'SEARCH_TIMEOUT') return getDefaultMessage('SEARCH_TIMEOUT');
+  if (code === 'SERVICE_UNAVAILABLE') return getDefaultMessage('SERVICE_UNAVAILABLE');
+  if (code === 'SEARCH_FAILED') return getDefaultMessage('SEARCH_FAILED');
+
+  const raw = (input.message || '').toLowerCase();
+  if (
+    raw.includes('application not found') ||
+    raw.includes('python search api') ||
+    raw.includes('unexpected response') ||
+    raw.includes('qdrant') ||
+    raw.includes('404 page not found')
+  ) {
+    return getDefaultMessage('SEARCH_FAILED');
+  }
+
+  if (code && ERROR_MESSAGES[code]) return getDefaultMessage(code);
+  return getDefaultMessage('SEARCH_FAILED');
 }
 
 /**
