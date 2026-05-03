@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -11,7 +12,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import { EditorToolbar } from './EditorToolbar';
-import { uploadImage, getAuthToken } from '@rentalshop/utils';
+import { PostImagePickerDialog } from './PostImagePickerDialog';
 
 interface RichTextEditorProps {
   content?: string; // JSON string from database
@@ -26,6 +27,8 @@ export function RichTextEditor({
   placeholder = 'Start writing...',
   editable = true 
 }: RichTextEditorProps) {
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -34,7 +37,7 @@ export function RichTextEditor({
       }),
       Image.configure({
         inline: true,
-        allowBase64: false, // Force S3 URLs only
+        allowBase64: false, // HTTPS image URLs only (S3 / CloudFront)
         HTMLAttributes: {
           class: 'post-image max-w-full h-auto rounded-lg',
         },
@@ -109,27 +112,6 @@ export function RichTextEditor({
     },
   });
 
-  // Image upload handler
-  const handleImageUpload = async (file: File) => {
-    if (!editor) return;
-
-    try {
-      const token = await getAuthToken();
-      const result = await uploadImage(file, token, {
-        folder: 'blog',
-        quality: 0.85,
-        maxSizeMB: 2, // Larger for blog posts
-      });
-
-      if (result.success && result.data?.url) {
-        // Insert image at current cursor position
-        editor.chain().focus().setImage({ src: result.data.url }).run();
-      }
-    } catch (error) {
-      console.error('Image upload failed:', error);
-    }
-  };
-
   if (!editor) {
     return <div className="p-4">Loading editor...</div>;
   }
@@ -146,15 +128,28 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="flex h-[min(72vh,640px)] min-h-[280px] flex-col overflow-hidden rounded-lg border border-border">
-      {editable && (
-        <div className="shrink-0 border-b border-border bg-bg-secondary">
-          <EditorToolbar editor={editor} onImageUpload={handleImageUpload} />
+    <>
+      <div className="flex h-[min(72vh,640px)] min-h-[280px] flex-col overflow-hidden rounded-lg border border-border">
+        {editable && (
+          <div className="shrink-0 border-b border-border bg-bg-secondary">
+            <EditorToolbar
+              editor={editor}
+              onOpenImagePicker={() => setImagePickerOpen(true)}
+            />
+          </div>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-bg-card">
+          <EditorContent editor={editor} className="h-full focus-within:outline-none" />
         </div>
-      )}
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-bg-card">
-        <EditorContent editor={editor} className="h-full focus-within:outline-none" />
       </div>
-    </div>
+      <PostImagePickerDialog
+        open={imagePickerOpen}
+        onOpenChange={setImagePickerOpen}
+        onPick={(url) => {
+          editor.chain().focus().setImage({ src: url }).run();
+        }}
+        title="Chèn ảnh vào bài viết"
+      />
+    </>
   );
 }

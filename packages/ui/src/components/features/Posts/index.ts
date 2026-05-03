@@ -1,4 +1,5 @@
 export { RichTextEditor } from './RichTextEditor';
+export { PostImagePickerDialog } from './PostImagePickerDialog';
 export { EditorToolbar } from './EditorToolbar';
 export { PostContent } from './PostContent';
 export { PostList } from './PostList';

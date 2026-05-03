@@ -16,11 +16,6 @@ export const createSchemas = (t: any, baseUrl: string) => {
         price: '0',
         priceCurrency: 'VND',
       },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.8',
-        ratingCount: '150',
-      },
       description: t('hero.description'),
       url: baseUrl,
     },
@@ -131,13 +126,6 @@ export const createSchemas = (t: any, baseUrl: string) => {
         opens: '00:00',
         closes: '23:59',
       },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '150',
-        bestRating: '5',
-        worstRating: '1',
-      },
     },
 
     product: {
@@ -148,13 +136,6 @@ export const createSchemas = (t: any, baseUrl: string) => {
       brand: {
         '@type': 'Brand',
         name: 'AnyRent',
-      },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '150',
-        bestRating: '5',
-        worstRating: '1',
       },
       review: [
         {

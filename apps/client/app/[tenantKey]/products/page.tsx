@@ -1,5 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { MerchantHeader } from './components/MerchantHeader';
 import { PublicProductGrid } from './components/PublicProductGrid';
 import { parseApiResponse } from '@rentalshop/utils';
@@ -153,19 +154,49 @@ export default async function PublicProductsPage({
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: { params: Promise<{ tenantKey: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tenantKey: string }>;
+}): Promise<Metadata> {
   const resolvedParams = await params;
   const data = await fetchPublicProducts(resolvedParams.tenantKey, {});
-  
+
   if (!data || !data.merchant) {
     return {
       title: 'Store Not Found',
+      robots: { index: false, follow: false },
     };
   }
 
+  const merchant = data.merchant as { name: string; description?: string; avatar?: string };
+  const path = `/${resolvedParams.tenantKey}/products`;
+  const description =
+    merchant.description || `Browse rental products from ${merchant.name} on AnyRent.`;
+  const avatar = merchant.avatar?.trim();
+  const ogImage =
+    avatar && (avatar.startsWith('http://') || avatar.startsWith('https://'))
+      ? avatar
+      : '/anyrent-iphone-product.jpg';
+
   return {
-    title: `${data.merchant.name} - Products`,
-    description: data.merchant.description || `Browse products from ${data.merchant.name}`,
+    title: `${merchant.name} - Products`,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      title: `${merchant.name} - Products`,
+      description,
+      url: path,
+      type: 'website',
+      images: [{ url: ogImage }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${merchant.name} - Products`,
+      description,
+      images: [ogImage],
+    },
+    robots: { index: true, follow: true },
   };
 }
 

@@ -51,11 +51,6 @@ const envSchema = z.object({
   UPLOAD_PATH: z.string().optional(),
   MAX_FILE_SIZE: z.string().transform(val => parseInt(val, 10)).default('10485760'),
   
-  // Cloudinary (optional)
-  CLOUDINARY_CLOUD_NAME: z.string().optional(),
-  CLOUDINARY_API_KEY: z.string().optional(),
-  CLOUDINARY_API_SECRET: z.string().optional(),
-  
   // Email
   EMAIL_PROVIDER: z.enum(['console', 'ses']).default('console'),
   EMAIL_FROM: z.string().email('EMAIL_FROM must be a valid email').default('noreply@example.com'),
@@ -154,9 +149,6 @@ function parseEnvironment() {
         UPLOAD_PROVIDER: (buildEnv.UPLOAD_PROVIDER as any) || 'local',
         UPLOAD_PATH: buildEnv.UPLOAD_PATH,
         MAX_FILE_SIZE: parseInt(buildEnv.MAX_FILE_SIZE || '10485760', 10),
-        CLOUDINARY_CLOUD_NAME: buildEnv.CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_API_KEY: buildEnv.CLOUDINARY_API_KEY,
-        CLOUDINARY_API_SECRET: buildEnv.CLOUDINARY_API_SECRET,
         EMAIL_PROVIDER: (buildEnv.EMAIL_PROVIDER as any) || 'console',
         EMAIL_FROM: buildEnv.EMAIL_FROM || 'noreply@anyrent.shop',
         AWS_SES_REGION: buildEnv.AWS_SES_REGION || 'us-east-1',

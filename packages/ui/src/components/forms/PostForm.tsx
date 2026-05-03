@@ -21,9 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui';
-import { RichTextEditor, PostContent } from '../features/Posts';
-import { generateSlug, uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { X, Upload, Image as ImageIcon, Loader2, Eye } from 'lucide-react';
+import { RichTextEditor, PostContent, PostImagePickerDialog } from '../features/Posts';
+import { generateSlug } from '@rentalshop/utils';
+import { X, Upload, Eye } from 'lucide-react';
 import type { PostCreateInput, PostUpdateInput, PostCategory, PostTag } from '@rentalshop/types';
 
 interface PostFormProps {
@@ -45,7 +45,7 @@ export function PostForm({
   loading = false,
   mode = 'create',
 }: PostFormProps) {
-  const { toastError, toastSuccess } = useToast();
+  const { toastError } = useToast();
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     slug: initialData.slug || '',
@@ -65,11 +65,9 @@ export function PostForm({
   const [selectedTags, setSelectedTags] = useState<number[]>(formData.tagIds);
   const [tagSearch, setTagSearch] = useState('');
   const [filteredTags, setFilteredTags] = useState(tags);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [featuredImagePickerOpen, setFeaturedImagePickerOpen] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Clear invalid slug on mount if in create mode
   useEffect(() => {
@@ -143,72 +141,6 @@ export function PostForm({
         ? prev.filter((id) => id !== tagId)
         : [...prev, tagId]
     );
-  };
-
-  const handleImageUpload = async (file: File) => {
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toastError('Invalid file type. Please upload an image.');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toastError('Image size must be less than 5MB.');
-      return;
-    }
-
-    setUploadingImage(true);
-    setUploadProgress({ loaded: 0, total: file.size, percentage: 0, stage: 'uploading' });
-
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        toastError('Authentication required. Please log in.');
-        return;
-      }
-
-      const result = await uploadImage(file, token, {
-        folder: 'blog',
-        maxFileSize: 5 * 1024 * 1024, // 5MB
-        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.85,
-        enableCompression: true,
-        compressionQuality: 0.8,
-        maxSizeMB: 2, // Max 2MB after compression
-        onProgress: (progress: UploadProgress) => {
-          setUploadProgress(progress);
-        },
-      });
-
-      if (result.success && result.data?.url) {
-        setFormData((prev) => ({ ...prev, featuredImage: result.data!.url }));
-        toastSuccess('Image uploaded successfully!');
-      } else {
-        toastError(result.error || 'Failed to upload image');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toastError('Failed to upload image. Please try again.');
-    } finally {
-      setUploadingImage(false);
-      setUploadProgress(null);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
   };
 
   return (
@@ -297,64 +229,28 @@ export function PostForm({
               </div>
             )}
 
-            {/* Upload Button */}
             <div className="flex gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImage}
+                onClick={() => setFeaturedImagePickerOpen(true)}
               >
-                {uploadingImage ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Image
-                  </>
-                )}
+                <Upload className="h-4 w-4 mr-2" />
+                Chọn / tải ảnh
               </Button>
-              
-              {/* Manual URL Input */}
               <div className="flex-1">
                 <Input
                   value={formData.featuredImage}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, featuredImage: e.target.value }))
                   }
-                  placeholder="Or enter image URL..."
-                  disabled={uploadingImage}
+                  placeholder="Hoặc dán URL ảnh..."
                 />
               </div>
             </div>
 
-            {/* Upload Progress */}
-            {uploadProgress && uploadingImage && (
-              <div className="mt-2">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-action-primary h-2 rounded-full transition-all"
-                    style={{ width: `${uploadProgress.percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-text-tertiary mt-1">
-                  {uploadProgress.percentage}% uploaded
-                </p>
-              </div>
-            )}
-
             <p className="text-xs text-text-tertiary mt-1">
-              Upload an image or paste an image URL. Max size: 5MB. Recommended: 1920x1080px
+              Upload qua S3 / CloudFront. Tối đa 5MB.
             </p>
           </div>
 
@@ -682,6 +578,13 @@ export function PostForm({
           </div>
         </DialogContent>
       </Dialog>
+
+      <PostImagePickerDialog
+        open={featuredImagePickerOpen}
+        onOpenChange={setFeaturedImagePickerOpen}
+        onPick={(url) => setFormData((prev) => ({ ...prev, featuredImage: url }))}
+        title="Ảnh đại diện bài viết"
+      />
     </form>
   );
 }

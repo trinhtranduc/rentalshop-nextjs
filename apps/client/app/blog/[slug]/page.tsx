@@ -101,11 +101,23 @@ export async function generateMetadata({
 
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || `Read ${post.title} on AnyRent blog`;
-  
+  const blogPath = `/blog/${resolvedParams.slug}`;
+
   return {
     title: `${title} - AnyRent Blog`,
     description,
     keywords: post.seoKeywords ? post.seoKeywords.split(',').map(k => k.trim()).filter(k => k.length > 0) : undefined,
+    alternates: {
+      canonical: blogPath,
+      languages: {
+        'x-default': blogPath,
+        vi: blogPath,
+        en: blogPath,
+        zh: blogPath,
+        ko: blogPath,
+        ja: blogPath,
+      },
+    },
     openGraph: {
       title,
       description,

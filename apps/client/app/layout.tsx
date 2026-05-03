@@ -207,6 +207,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternates: {
         canonical: '/',
         languages: {
+          'x-default': '/',
           'vi': '/vi',
           'en': '/en',
           'zh': '/zh',
@@ -224,7 +225,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: 'Ứng dụng và phần mềm quản lý cửa hàng cho thuê áo dài, áo cưới hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng.',
         images: [
           {
-            url: '/anyrent-logo-light.svg',
+            url: '/anyrent-iphone-product.jpg',
             width: 1200,
             height: 630,
             alt: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê',
@@ -235,7 +236,7 @@ export async function generateMetadata(): Promise<Metadata> {
         card: 'summary_large_image',
         title: 'AnyRent - Phần mềm Quản lý Cho thuê Áo dài, Áo cưới',
         description: 'Ứng dụng và phần mềm quản lý cửa hàng cho thuê áo dài, áo cưới hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện.',
-        images: ['/anyrent-logo-light.svg'],
+        images: ['/anyrent-iphone-product.jpg'],
         creator: '@anyrent',
       },
       robots: {
@@ -310,6 +311,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternates: {
         canonical: '/',
         languages: {
+          'x-default': '/',
           'vi': '/vi',
           'en': '/en',
           'zh': '/zh',
@@ -327,7 +329,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: '领先的租赁店管理软件和租赁管理系统。适用于各种租赁业务的综合解决方案。',
         images: [
           {
-            url: '/anyrent-logo-light.svg',
+            url: '/anyrent-iphone-product.jpg',
             width: 1200,
             height: 630,
             alt: 'AnyRent - 租赁店管理软件',
@@ -338,7 +340,7 @@ export async function generateMetadata(): Promise<Metadata> {
         card: 'summary_large_image',
         title: 'AnyRent - 租赁店管理软件',
         description: '领先的租赁店管理软件和租赁管理系统。',
-        images: ['/anyrent-logo-light.svg'],
+        images: ['/anyrent-iphone-product.jpg'],
         creator: '@anyrent',
       },
       robots: {
@@ -413,6 +415,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternates: {
         canonical: '/',
         languages: {
+          'x-default': '/',
           'vi': '/vi',
           'en': '/en',
           'zh': '/zh',
@@ -430,7 +433,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: '선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 다양한 렌탈 비즈니스를 위한 포괄적인 솔루션.',
         images: [
           {
-            url: '/anyrent-logo-light.svg',
+            url: '/anyrent-iphone-product.jpg',
             width: 1200,
             height: 630,
             alt: 'AnyRent - 렌탈샵 관리 소프트웨어',
@@ -441,7 +444,7 @@ export async function generateMetadata(): Promise<Metadata> {
         card: 'summary_large_image',
         title: 'AnyRent - 렌탈샵 관리 소프트웨어',
         description: '선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템.',
-        images: ['/anyrent-logo-light.svg'],
+        images: ['/anyrent-iphone-product.jpg'],
         creator: '@anyrent',
       },
       robots: {
@@ -516,6 +519,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternates: {
         canonical: '/',
         languages: {
+          'x-default': '/',
           'vi': '/vi',
           'en': '/en',
           'zh': '/zh',
@@ -533,7 +537,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: 'トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。様々なレンタル事業に対応する包括的なソリューション。',
         images: [
           {
-            url: '/anyrent-logo-light.svg',
+            url: '/anyrent-iphone-product.jpg',
             width: 1200,
             height: 630,
             alt: 'AnyRent - レンタルショップ管理ソフトウェア',
@@ -544,7 +548,7 @@ export async function generateMetadata(): Promise<Metadata> {
         card: 'summary_large_image',
         title: 'AnyRent - レンタルショップ管理ソフトウェア',
         description: 'トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。',
-        images: ['/anyrent-logo-light.svg'],
+        images: ['/anyrent-iphone-product.jpg'],
         creator: '@anyrent',
       },
       robots: {
@@ -623,6 +627,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: '/',
       languages: {
+        'x-default': '/',
         'vi': '/vi',
         'en': '/en',
         'zh': '/zh',
@@ -640,7 +645,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system with rental order management, rental inventory management, and customer management.',
       images: [
         {
-          url: '/anyrent-logo-light.svg',
+          url: '/anyrent-iphone-product.jpg',
           width: 1200,
           height: 630,
           alt: 'AnyRent - Rental Shop Management Software',
@@ -651,7 +656,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: 'AnyRent - Rental Shop Management Software',
       description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system.',
-      images: ['/anyrent-logo-light.svg'],
+      images: ['/anyrent-iphone-product.jpg'],
       creator: '@anyrent',
     },
     robots: {

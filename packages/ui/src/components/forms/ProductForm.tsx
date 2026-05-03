@@ -672,13 +672,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )
           }));
           
-          // Show success message based on upload method
           if (uploadResult.data.uploadMethod === 'base64') {
-            console.warn('⚠️ Image uploaded using base64 fallback. Configure Cloudinary for production.');
+            console.warn('⚠️ Image uploaded using base64 fallback. Prefer S3 upload in production.');
           } else if (uploadResult.data.uploadMethod === 'local') {
-            console.warn('⚠️ Image uploaded to local storage. Configure Cloudinary for production.');
+            console.warn('⚠️ Image uploaded to local storage. Prefer S3 in production.');
           } else {
-            console.log('✅ Image uploaded successfully to Cloudinary');
+            console.log('✅ Image uploaded successfully');
           }
           
           // Clean up progress
