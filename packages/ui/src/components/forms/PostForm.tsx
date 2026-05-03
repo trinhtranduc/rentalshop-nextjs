@@ -649,7 +649,9 @@ export function PostForm({
 
             {/* Content */}
             {formData.content ? (
-              <PostContent content={formData.content} />
+              <div className="h-[min(50vh,480px)] min-h-[200px] overflow-y-auto overflow-x-hidden rounded-md border border-border bg-bg-card p-4">
+                <PostContent content={formData.content} />
+              </div>
             ) : (
               <p className="text-text-tertiary italic">No content yet...</p>
             )}

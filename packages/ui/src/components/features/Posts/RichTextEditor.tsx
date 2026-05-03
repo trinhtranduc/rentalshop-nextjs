@@ -104,7 +104,7 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'tiptap-editor focus:outline-none min-h-[400px] p-4',
+        class: 'tiptap-editor focus:outline-none min-h-[12rem] p-4',
       },
     },
   });
@@ -146,12 +146,15 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      {editable && <EditorToolbar editor={editor} onImageUpload={handleImageUpload} />}
-      <EditorContent 
-        editor={editor} 
-        className="focus-within:outline-none"
-      />
+    <div className="flex h-[min(72vh,640px)] min-h-[280px] flex-col overflow-hidden rounded-lg border border-border">
+      {editable && (
+        <div className="shrink-0 border-b border-border bg-bg-secondary">
+          <EditorToolbar editor={editor} onImageUpload={handleImageUpload} />
+        </div>
+      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-bg-card">
+        <EditorContent editor={editor} className="h-full focus-within:outline-none" />
+      </div>
     </div>
   );
 }

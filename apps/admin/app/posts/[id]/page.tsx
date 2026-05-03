@@ -261,7 +261,9 @@ export default function PostDetailPage() {
               <CardTitle>Content</CardTitle>
             </CardHeader>
             <CardContent>
-              <PostContent content={post.content} />
+              <div className="h-[min(72vh,640px)] min-h-[280px] overflow-y-auto overflow-x-hidden rounded-md border border-border bg-bg-card p-4">
+                <PostContent content={post.content} />
+              </div>
             </CardContent>
           </Card>
 
