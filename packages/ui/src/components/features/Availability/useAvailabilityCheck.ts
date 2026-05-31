@@ -45,8 +45,8 @@ export function useAvailabilityCheck({ params, enabled }: UseAvailabilityCheckOp
 
     try {
       const response = await productsApi.checkProductAvailability(params.productId, {
-        startDate: new Date(`${params.pickup}T00:00:00`).toISOString(),
-        endDate: new Date(`${params.returnDate}T23:59:59`).toISOString(),
+        startDate: `${params.pickup}T00:00:00.000Z`,
+        endDate: `${params.returnDate}T23:59:59.999Z`,
         quantity: params.quantity,
         outletId: params.outletId,
         includeTimePrecision: true,

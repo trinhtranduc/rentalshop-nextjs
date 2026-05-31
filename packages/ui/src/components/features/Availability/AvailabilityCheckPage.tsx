@@ -43,8 +43,12 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
   });
   const [activeOrders, setActiveOrders] = useState<Map<number, ActiveOrder[]>>(new Map());
 
-  const pickup = dateRange.from ? dateRange.from.toISOString().split('T')[0] : '';
-  const returnDate = dateRange.to ? dateRange.to.toISOString().split('T')[0] : '';
+  const pickup = dateRange.from
+    ? `${dateRange.from.getFullYear()}-${String(dateRange.from.getMonth() + 1).padStart(2, '0')}-${String(dateRange.from.getDate()).padStart(2, '0')}`
+    : '';
+  const returnDate = dateRange.to
+    ? `${dateRange.to.getFullYear()}-${String(dateRange.to.getMonth() + 1).padStart(2, '0')}-${String(dateRange.to.getDate()).padStart(2, '0')}`
+    : '';
 
   const userOutletId = user?.outletId;
   const showOutletSelect = needsOutletSelection(user?.role, userOutletId);
