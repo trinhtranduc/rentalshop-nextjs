@@ -293,6 +293,7 @@ export async function GET(
               productId: productId,
             },
             select: {
+              productId: true,
               quantity: true,
               rentalDays: true,
             }
