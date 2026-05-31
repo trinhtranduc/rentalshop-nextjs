@@ -261,6 +261,14 @@ export async function GET(
       // - Rental period overlaps with requested period
       // - Order belongs to the SPECIFIC outlet (not all merchant outlets)
       
+      console.log('🔍 Conflict query params:', {
+        outletId: finalOutletId,
+        rentalStart: rentalStart.toISOString(),
+        rentalEnd: rentalEnd.toISOString(),
+        productId,
+        queryVersion: 'v2-simplified-overlap'
+      });
+
       const conflictingOrders = await db.prisma.order.findMany({
         where: {
           orderType: ORDER_TYPE.RENT as any, // Only RENT orders affect rental availability
@@ -269,29 +277,10 @@ export async function GET(
           },
           // CRITICAL FIX: Filter by specific outlet, not all merchant outlets
           outletId: finalOutletId,
-          OR: [
-            // Pickup during requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalEnd } },
-                { pickupPlanAt: { gte: rentalStart } }
-              ]
-            },
-            // Return during requested period  
-            {
-              AND: [
-                { returnPlanAt: { lte: rentalEnd } },
-                { returnPlanAt: { gte: rentalStart } }
-              ]
-            },
-            // Rental spans across requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalStart } },
-                { returnPlanAt: { gte: rentalEnd } }
-              ]
-            }
-          ],
+          deletedAt: null,
+          // Overlap condition: orderPickup < rentalEnd AND orderReturn > rentalStart
+          pickupPlanAt: { lt: rentalEnd },
+          returnPlanAt: { gt: rentalStart },
           orderItems: {
             some: {
               productId: productId,
@@ -304,6 +293,7 @@ export async function GET(
               productId: productId,
             },
             select: {
+              productId: true,
               quantity: true,
               rentalDays: true,
             }
@@ -327,6 +317,11 @@ export async function GET(
           pickupPlanAt: 'asc'
         }
       });
+
+      console.log('🔍 Conflicting orders found:', conflictingOrders.length, conflictingOrders.map(o => ({
+        id: o.id, orderNumber: o.orderNumber, status: o.status, outletId: o.outletId,
+        pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
+      })));
 
       // 6. Calculate conflicts for single outlet with precise time analysis
       const outletConflicts = {

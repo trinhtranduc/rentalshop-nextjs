@@ -120,6 +120,13 @@ export function useBankAccountTranslations() {
 }
 
 /**
+ * Hook for product availability check page translations
+ */
+export function useAvailabilityTranslations() {
+  return useTranslations('availability');
+}
+
+/**
  * Convenience type for translation function
  * Can be used to type the return value of useTranslations
  */

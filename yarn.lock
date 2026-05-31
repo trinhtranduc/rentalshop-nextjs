@@ -2567,8 +2567,8 @@
 "@rentalshop/auth@file:packages/auth":
   version "1.0.0"
   dependencies:
-    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-998e919b-fc9a-4568-af5a-927ab5a1299c-1774267340242/node_modules/@rentalshop/database"
-    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-998e919b-fc9a-4568-af5a-927ab5a1299c-1774267340242/node_modules/@rentalshop/utils"
+    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-3ca2561a-6522-4074-9dbe-3090de8cc892-1777798681272/node_modules/@rentalshop/database"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-auth-1.0.0-3ca2561a-6522-4074-9dbe-3090de8cc892-1777798681272/node_modules/@rentalshop/utils"
     bcryptjs "^3.0.2"
     jsonwebtoken "^9.0.0"
     next-auth "^4.24.0"
@@ -2594,22 +2594,22 @@
 "@rentalshop/hooks@file:packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-6bc11e3a-1e5f-4803-a927-6ec93f9fd758-1774267340242/node_modules/@rentalshop/constants"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-6bc11e3a-1e5f-4803-a927-6ec93f9fd758-1774267340242/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-6bc11e3a-1e5f-4803-a927-6ec93f9fd758-1774267340242/node_modules/@rentalshop/utils"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4f1dd417-1b37-4e5b-859b-1069041dd160-1777798681273/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4f1dd417-1b37-4e5b-859b-1069041dd160-1777798681273/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4f1dd417-1b37-4e5b-859b-1069041dd160-1777798681273/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-4cf0a539-d452-4e8c-bfe5-15f50b9ae281-1774267340244/node_modules/@rentalshop/auth"
-    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-4cf0a539-d452-4e8c-bfe5-15f50b9ae281-1774267340244/node_modules/@rentalshop/database"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-4cf0a539-d452-4e8c-bfe5-15f50b9ae281-1774267340244/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-4cf0a539-d452-4e8c-bfe5-15f50b9ae281-1774267340244/node_modules/@rentalshop/utils"
+    "@rentalshop/auth" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-7733def4-9c8f-468d-98fc-1dfaad9c1dac-1777798681273/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-7733def4-9c8f-468d-98fc-1dfaad9c1dac-1777798681273/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-7733def4-9c8f-468d-98fc-1dfaad9c1dac-1777798681273/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-7733def4-9c8f-468d-98fc-1dfaad9c1dac-1777798681273/node_modules/@rentalshop/utils"
 
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-7a81cd19-62c1-4816-9c71-3a208cdaff88-1774267340242/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-8ffceb61-f921-49ca-b48e-468c2116030e-1777798681272/node_modules/@rentalshop/constants"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"
@@ -2621,9 +2621,10 @@
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
     "@react-oauth/google" "^0.12.1"
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-41ead950-8daa-434d-b096-3d9a1bc94ffd-1774267340244/node_modules/@rentalshop/constants"
-    "@rentalshop/hooks" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-41ead950-8daa-434d-b096-3d9a1bc94ffd-1774267340244/node_modules/@rentalshop/hooks"
-    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-41ead950-8daa-434d-b096-3d9a1bc94ffd-1774267340244/node_modules/@rentalshop/types"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-b8b41ac5-920e-464c-bedf-8435e2cbca27-1777798681274/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-b8b41ac5-920e-464c-bedf-8435e2cbca27-1777798681274/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-b8b41ac5-920e-464c-bedf-8435e2cbca27-1777798681274/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-b8b41ac5-920e-464c-bedf-8435e2cbca27-1777798681274/node_modules/@rentalshop/utils"
     "@tiptap/extension-code-block" "^2.1.13"
     "@tiptap/extension-image" "^2.1.13"
     "@tiptap/extension-link" "^2.1.13"
@@ -2653,8 +2654,8 @@
     "@aws-sdk/client-ses" "^3.921.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
     "@axiomhq/js" "^1.0.0"
-    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-7649867e-fee6-43ad-81c7-77fa4935753b-1774267340242/node_modules/@rentalshop/constants"
-    "@rentalshop/env" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-7649867e-fee6-43ad-81c7-77fa4935753b-1774267340242/node_modules/@rentalshop/env"
+    "@rentalshop/constants" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-a9154082-3ff7-4b45-8055-3d40b51ac92d-1777798681271/node_modules/@rentalshop/constants"
+    "@rentalshop/env" "file:../../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-a9154082-3ff7-4b45-8055-3d40b51ac92d-1777798681271/node_modules/@rentalshop/env"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
     pino "^9.0.0"

@@ -1,0 +1,94 @@
+{
+  "title": "Kiểm tra mẫu còn trống",
+  "subtitle": "Trái: chọn kỳ thuê và mẫu · Phải: xem ảnh và còn trống",
+  "breadcrumb": "Kiểm tra trống",
+  "sections": {
+    "product": "Chọn mẫu",
+    "period": "Kỳ thuê"
+  },
+  "pickupDate": "Ngày nhận",
+  "returnDate": "Ngày trả",
+  "quantity": "Số lượng",
+  "outlet": "Cửa hàng",
+  "selectOutlet": "Chọn cửa hàng",
+  "searchPlaceholder": "Tìm tên, mã, barcode…",
+  "changeProduct": "Đổi mẫu",
+  "noProductsFound": "Không tìm thấy mẫu",
+  "maxProductsReached": "Đã đạt tối đa 20 mẫu",
+  "idle": {
+    "title": "Chọn mẫu và ngày thuê",
+    "description": "Chọn kỳ thuê và mẫu bên trái — kết quả hiện bên phải",
+    "pickDates": "Chọn ngày thuê để kiểm tra"
+  },
+  "product": {
+    "rentPrice": "Giá thuê",
+    "deposit": "Tiền cọc",
+    "category": "Danh mục"
+  },
+  "checking": "Đang kiểm tra…",
+  "missingOutlet": "Chọn cửa hàng để kiểm tra tồn trống",
+  "invalidDates": "Ngày trả không được trước ngày nhận",
+  "status": {
+    "available": "Còn trống",
+    "unavailable": "Hết",
+    "warning": "Còn trống"
+  },
+  "result": {
+    "canRent": "Có thể cho thuê {count} bộ",
+    "cannotRent": "Không đủ hàng",
+    "insufficient": "Cần {need} bộ, chỉ còn {have} bộ trống"
+  },
+  "availableUnits": "Còn {count} bộ",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "Cần {need} bộ, trống {have} bộ trong kỳ này",
+  "conflictsCount": "Có {count} đơn trùng kỳ",
+  "stock": {
+    "total": "Tổng kho",
+    "renting": "Đang thuê",
+    "freeInPeriod": "Trống trong kỳ",
+    "bookedInPeriod": "Đã đặt trong kỳ"
+  },
+  "orders": {
+    "title": "Đơn hàng của mẫu này",
+    "noActiveOrders": "Không có đơn hàng nào đang hoạt động",
+    "viewAll": "Xem đơn hàng ({count})",
+    "ordersLabel": "đơn",
+    "conflicts": "trùng kỳ",
+    "conflictBadge": "Trùng kỳ",
+    "conflictNote": "{count} đơn trùng với kỳ đang kiểm tra",
+    "dialogTitle": "Đơn hàng: {name}",
+    "page": "Trang {current}/{total}",
+    "conflictsCount": "{count} đơn trùng kỳ",
+    "orderNumber": "Mã đơn",
+    "customer": "Khách hàng",
+    "period": "Kỳ thuê",
+    "qty": "SL",
+    "status": "Trạng thái",
+    "statusReserved": "Đã đặt",
+    "statusPickuped": "Đang thuê"
+  },
+  "timeline": {
+    "title": "Lịch thuê",
+    "today": "Hôm nay",
+    "noOrders": "Chưa có đơn nào"
+  },
+  "conflicts": {
+    "title": "Đơn trùng kỳ",
+    "orderNumber": "Mã đơn",
+    "customer": "Khách",
+    "period": "Kỳ thuê",
+    "quantity": "SL"
+  },
+  "actions": {
+    "retry": "Thử lại",
+    "checkAgain": "Kiểm tra lại"
+  },
+  "copy": {
+    "available": "{name} còn trống {count} bộ từ {pickup} đến {return}.",
+    "unavailable": "{name} hết trong kỳ {pickup} – {return} (cần {need}, trống {have})."
+  },
+  "errors": {
+    "checkFailed": "Không thể kiểm tra tồn trống",
+    "loadProductFailed": "Không thể tải thông tin mẫu"
+  }
+}

@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-# Note: /login and /register are allowed for indexing (included in sitemap)
-# They are public pages that users need to find via search
-
-Sitemap: https://anyrent.shop/sitemap.xml
-

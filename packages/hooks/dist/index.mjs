@@ -3665,6 +3665,9 @@ function useErrorTranslations() {
 function useBankAccountTranslations() {
   return n2("bankAccounts");
 }
+function useAvailabilityTranslations() {
+  return n2("availability");
+}
 
 // src/hooks/useApiError.ts
 function useApiError() {
@@ -4128,6 +4131,10 @@ function usePermissions() {
     };
   }, [user, permissions]);
   const canManageProducts = useMemo(() => hasPermission("products.manage"), [hasPermission]);
+  const canAddOrEditProducts = useMemo(
+    () => hasPermission("products.manage") || hasPermission("products.create") || hasPermission("products.update"),
+    [hasPermission]
+  );
   const canViewProducts = useMemo(() => hasPermission("products.view"), [hasPermission]);
   const canExportProducts = useMemo(() => hasPermission("products.export"), [hasPermission]);
   const canManageOrders = useMemo(() => hasPermission("orders.manage"), [hasPermission]);
@@ -4166,6 +4173,7 @@ function usePermissions() {
     // Raw permissions array
     // Convenience methods for products
     canManageProducts,
+    canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
     // Convenience methods for orders
@@ -6020,6 +6028,7 @@ export {
   useAuth,
   useAuthErrorHandler,
   useAuthTranslations,
+  useAvailabilityTranslations,
   useBankAccountTranslations,
   useCalendarTranslations,
   useCanExportData,

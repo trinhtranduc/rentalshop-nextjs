@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Card, 
   CardHeader, 
@@ -69,6 +70,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   showHeader = true,
   inventoryData
 }) => {
+  const router = useRouter();
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const { user } = useAuth();
@@ -251,8 +253,13 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   };
 
   const handleOrderAction = (action: string, orderId: string) => {
-    console.log('Order action:', action, orderId);
-    // TODO: Implement order actions here
+    // orderId here is the orderNumber (e.g., "ORD-004-0028" or "100611")
+    const orderRoute = orderId.replace(/^ORD-/, '');
+    if (action === 'view') {
+      router.push(`/orders/${orderRoute}`);
+    } else if (action === 'edit') {
+      router.push(`/orders/${orderRoute}/edit`);
+    }
   };
 
   const handlePageChange = (page: number) => {

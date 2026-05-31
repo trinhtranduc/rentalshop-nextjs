@@ -56,6 +56,8 @@
       }
     },
     "moduleNameMapper": {
+      "^@rentalshop/(.+)/server$": "<rootDir>/../packages/$1/src/server",
+      "^@rentalshop/(.+)/client$": "<rootDir>/../packages/$1/src/client",
       "^@rentalshop/(.*)$": "<rootDir>/../packages/$1/src",
       "^@/(.*)$": "<rootDir>/../apps/api/$1"
     },

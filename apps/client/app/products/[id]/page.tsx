@@ -17,7 +17,7 @@ import type { BreadcrumbItem } from '@rentalshop/ui';
 import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
 
-import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
+import { Edit, ArrowLeft, Package, BarChart3, Trash2, ClipboardCheck } from 'lucide-react';
 import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi, usePermissions } from '@rentalshop/hooks';
 import { 
   productsApi, 
@@ -197,7 +197,14 @@ export default function ProductViewPage() {
           <div>
             <PageTitle>{product.name}</PageTitle>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/availability?productId=${productId}`)}
+            >
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              {tc('navigation.availabilityCheck')}
+            </Button>
             <Button variant="outline" onClick={handleViewOrders}>
               <BarChart3 className="h-4 w-4 mr-2" />
               {t('actions.viewOrders')}

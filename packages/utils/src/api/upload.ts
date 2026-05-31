@@ -7,6 +7,8 @@ import imageCompression from 'browser-image-compression';
 
 export interface UploadResponse {
   success: boolean;
+  /** API error / success code when present. */
+  code?: string;
   data?: {
     url: string;
     publicId: string;
@@ -335,8 +337,15 @@ function uploadWithProgress(
         }
       } else {
         try {
-          const error = JSON.parse(xhr.responseText);
-          reject(new Error(error.message || 'Upload failed'));
+          const error = JSON.parse(xhr.responseText) as {
+            message?: string;
+            code?: string;
+          };
+          const err = new Error(error.message || 'Upload failed') as Error & {
+            code?: string;
+          };
+          if (error.code) err.code = error.code;
+          reject(err);
         } catch {
           reject(new Error(`Upload failed with status ${xhr.status}`));
         }

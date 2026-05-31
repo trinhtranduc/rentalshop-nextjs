@@ -10,20 +10,10 @@ import { Button } from '../../ui/button';
 
 interface EditorToolbarProps {
   editor: Editor;
-  onImageUpload: (file: File) => void;
+  onOpenImagePicker: () => void;
 }
 
-export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
-  const handleImageClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) onImageUpload(file);
-    };
-    input.click();
-  };
+export function EditorToolbar({ editor, onOpenImagePicker }: EditorToolbarProps) {
 
   return (
     <div className="flex items-center gap-1 p-2 border-b border-border bg-bg-secondary flex-wrap">
@@ -233,7 +223,7 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={handleImageClick}
+        onClick={onOpenImagePicker}
       >
         <Image className="h-4 w-4" />
       </Button>

@@ -1,0 +1,94 @@
+{
+  "title": "Check rental availability",
+  "subtitle": "Left: rental period and product · Right: image and availability",
+  "breadcrumb": "Check availability",
+  "sections": {
+    "product": "Select products",
+    "period": "Rental period"
+  },
+  "pickupDate": "Pickup date",
+  "returnDate": "Return date",
+  "quantity": "Quantity",
+  "outlet": "Outlet",
+  "selectOutlet": "Select outlet",
+  "searchPlaceholder": "Search name, code, barcode…",
+  "changeProduct": "Change product",
+  "noProductsFound": "No products found",
+  "maxProductsReached": "Maximum of 20 products reached",
+  "idle": {
+    "title": "Select products and dates",
+    "description": "Pick dates above, search for a product — results appear below the product image",
+    "pickDates": "Select dates to check availability"
+  },
+  "product": {
+    "rentPrice": "Rent price",
+    "deposit": "Deposit",
+    "category": "Category"
+  },
+  "checking": "Checking availability…",
+  "missingOutlet": "Select an outlet to check availability",
+  "invalidDates": "Return date cannot be before pickup date",
+  "status": {
+    "available": "Available",
+    "unavailable": "Not available",
+    "warning": "Available"
+  },
+  "result": {
+    "canRent": "Can rent {count} unit(s)",
+    "cannotRent": "Insufficient stock",
+    "insufficient": "Need {need}, only {have} available"
+  },
+  "availableUnits": "Available: {count} unit(s)",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "Need {need}, available {have} in this period",
+  "conflictsCount": "{count} conflicting order(s) in this period",
+  "stock": {
+    "total": "Total stock",
+    "renting": "On rent",
+    "freeInPeriod": "Free in period",
+    "bookedInPeriod": "Booked in period"
+  },
+  "orders": {
+    "title": "Orders for this product",
+    "noActiveOrders": "No active orders",
+    "viewAll": "View orders ({count})",
+    "ordersLabel": "orders",
+    "conflicts": "conflicts",
+    "conflictBadge": "Conflict",
+    "conflictNote": "{count} order(s) overlap with the checked period",
+    "dialogTitle": "Orders: {name}",
+    "page": "Page {current}/{total}",
+    "conflictsCount": "{count} conflict(s)",
+    "orderNumber": "Order",
+    "customer": "Customer",
+    "period": "Period",
+    "qty": "Qty",
+    "status": "Status",
+    "statusReserved": "Reserved",
+    "statusPickuped": "Renting"
+  },
+  "timeline": {
+    "title": "Rental schedule",
+    "today": "Today",
+    "noOrders": "No orders yet"
+  },
+  "conflicts": {
+    "title": "Conflicting orders",
+    "orderNumber": "Order",
+    "customer": "Customer",
+    "period": "Period",
+    "quantity": "Qty"
+  },
+  "actions": {
+    "retry": "Try again",
+    "checkAgain": "Check again"
+  },
+  "copy": {
+    "available": "{name} is available ({count} unit(s)) from {pickup} to {return}.",
+    "unavailable": "{name} is not available from {pickup} to {return} (need {need}, available {have})."
+  },
+  "errors": {
+    "checkFailed": "Could not check availability",
+    "loadProductFailed": "Could not load product"
+  }
+}

@@ -31,7 +31,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  FileText
+  FileText,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
@@ -225,7 +226,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
         {description && (
           <p className="text-gray-500 text-xs mt-2">{description}</p>
         )}
-          {onClick && typeof value === 'number' && value > 0 && (
+          {onClick && (
             <p className="text-xs text-blue-600 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
               Click to view details →
             </p>
@@ -308,6 +309,7 @@ export default function DashboardPage() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [todayOrders, setTodayOrders] = useState<any[]>([]);
+  const [activeRentalOrders, setActiveRentalOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
   const [currentDateRange, setCurrentDateRange] = useState<{startDate: string, endDate: string}>({startDate: '', endDate: ''});
   
@@ -748,6 +750,21 @@ export default function DashboardPage() {
       if (dashboardResponse.success && dashboardResponse.data) {
         setTodayOrders(dashboardResponse.data.todayOrders || []);
         setOrderStatusCounts(dashboardResponse.data.orderStatusCounts || {});
+      }
+
+      // Fetch active rental orders (PICKUPED status) for the list section
+      try {
+        const activeRentalsResponse = await ordersApi.searchOrders({
+          status: 'PICKUPED',
+          limit: 10,
+          sortBy: 'pickupPlanAt',
+          sortOrder: 'desc',
+        });
+        if (activeRentalsResponse.success && activeRentalsResponse.data?.orders) {
+          setActiveRentalOrders(activeRentalsResponse.data.orders);
+        }
+      } catch (err) {
+        console.error('Error fetching active rental orders:', err);
       }
 
     } catch (error) {
@@ -1334,7 +1351,7 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.todayRentals')}
                 color="text-blue-700"
                 trend="neutral"
-                onClick={currentStats.todayRentals > 0 ? handleViewTodayRentals : undefined}
+                onClick={handleViewTodayRentals}
               />
               <StatCard
                 title={t('stats.activeRentals')}
@@ -1469,6 +1486,7 @@ export default function DashboardPage() {
                                 {translatedStatus}
                               </span>
                             </div>
+                            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
                           </div>
                         );
                       })}
@@ -1484,43 +1502,84 @@ export default function DashboardPage() {
                 </CardContentClean>
               </CardClean>
 
-              {/* Order Status - Modern Design */}
+              {/* Active Rentals List - Modern Design */}
               <CardClean size="md" className="bg-white shadow-sm">
                 <CardHeaderClean className="pb-4 border-b border-gray-100">
                   <CardTitleClean size="md" className="text-gray-900 font-semibold">
-                    {tc('labels.status')}
+                    {t('stats.activeRentals')} ({activeRentalOrders.length})
                   </CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean className="pt-4">
-                  <div className="space-y-3">
-                    {[
-                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0 },
-                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0 },
-                      { statusKey: 'return', count: orderStatusCounts.returned || 0 },
-                      { statusKey: 'completed', count: orderStatusCounts.completed || 0 },
-                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0 }
-                    ].map((item, index) => {
-                      const dotColor = getStatusDotColor(item.statusKey);
-                      
-                      return (
-                        <div 
-                          key={index} 
-                          className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full ${dotColor} shrink-0 ring-2 ring-offset-2 ring-offset-gray-50 ${dotColor.replace('bg-', 'ring-')}`}></div>
-                            <span className="text-sm font-semibold text-gray-900 capitalize">
-                              {t(`orderStatuses.${item.statusKey}`)}
-                            </span>
+                  {loadingCharts ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                            <div>
+                              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            </div>
                           </div>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-gray-900">{item.count}</span>
-                            <span className="text-xs text-gray-500 font-medium">{t('orderStatuses.ordersCount')}</span>
-                          </div>
+                          <div className="h-4 bg-gray-200 rounded w-16"></div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  ) : activeRentalOrders.length > 0 ? (
+                    <div className="space-y-2">
+                      {activeRentalOrders.slice(0, 6).map(order => {
+                        const orderNumberForRoute = order.orderNumber 
+                          ? order.orderNumber.replace(/^ORD-/, '') 
+                          : order.id.toString();
+                        return (
+                          <div 
+                            key={order.id} 
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                            onClick={() => router.push(`/orders/${orderNumberForRoute}`)}
+                          >
+                            <Package className="w-5 h-5 text-orange-600 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-orange-50 text-orange-700 border-orange-200">
+                                  {to('status.PICKUPED')}
+                                </span>
+                              </div>
+                              {order.pickupPlanAt && order.returnPlanAt ? (
+                                <p className="text-sm text-gray-600">
+                                  {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                </p>
+                              ) : null}
+                              {(order.customerName || order.customer) && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {order.customerName || [order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ')}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {activeRentalOrders.length > 6 && (
+                        <Button
+                          variant="ghost"
+                          className="w-full text-sm text-blue-600 hover:text-blue-700"
+                          onClick={() => router.push(`/orders?status=${ORDER_STATUS.PICKUPED}`)}
+                        >
+                          {tc('buttons.viewAll')} ({activeRentalOrders.length})
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-gray-300" />
+                      </div>
+                      <p className="text-sm">{t('stats.noActiveRentals')}</p>
+                    </div>
+                  )}
                 </CardContentClean>
               </CardClean>
             </div>

@@ -54,11 +54,18 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
       }
 
       // Finally, fetch from API if we have outletId and merchantId
-      if (order.outletId && order.merchant?.id) {
+      // merchantId can come from: order.merchant?.id, order.outlet?.merchant?.id, or user.merchantId
+      const merchantId = (order as any).merchant?.id 
+        || (order.outlet as any)?.merchant?.id 
+        || (order as any).merchantId
+        || user?.merchant?.id 
+        || (user as any)?.merchantId;
+
+      if (order.outletId && merchantId) {
         try {
           setLoadingBankAccount(true);
           const response = await bankAccountsApi.getBankAccounts(
-            order.merchant.id,
+            merchantId,
             order.outletId
           );
           
@@ -90,7 +97,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
     };
 
     fetchDefaultBankAccount();
-  }, [(order.outlet as any)?.defaultBankAccount, order.outletId, order.merchant?.id, (user?.outlet as any)?.defaultBankAccount]);
+  }, [(order.outlet as any)?.defaultBankAccount, order.outletId, (order.outlet as any)?.merchant?.id, (order as any).merchant?.id, user?.merchant?.id, (user?.outlet as any)?.defaultBankAccount]);
   
   // Calculate amount to collect from customer for QR code
   // This should match the "Collection Amount" logic displayed in the UI

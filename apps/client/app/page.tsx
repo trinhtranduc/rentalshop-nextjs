@@ -65,11 +65,6 @@ const LandingPage = () => {
       price: '0',
       priceCurrency: 'VND',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '150',
-    },
     description: t('hero.description'),
     url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
   };
@@ -189,13 +184,6 @@ const LandingPage = () => {
       opens: '00:00',
       closes: '23:59',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '150',
-      bestRating: '5',
-      worstRating: '1',
-    },
   };
 
   // Review Schema with testimonials
@@ -208,13 +196,6 @@ const LandingPage = () => {
     brand: {
       '@type': 'Brand',
       name: 'AnyRent',
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '150',
-      bestRating: '5',
-      worstRating: '1',
     },
     review: [
       {

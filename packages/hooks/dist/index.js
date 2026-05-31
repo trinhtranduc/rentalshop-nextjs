@@ -41,6 +41,7 @@ __export(src_exports, {
   useAuth: () => useAuth,
   useAuthErrorHandler: () => useAuthErrorHandler,
   useAuthTranslations: () => useAuthTranslations,
+  useAvailabilityTranslations: () => useAvailabilityTranslations,
   useBankAccountTranslations: () => useBankAccountTranslations,
   useCalendarTranslations: () => useCalendarTranslations,
   useCanExportData: () => useCanExportData,
@@ -3760,6 +3761,9 @@ function useErrorTranslations() {
 function useBankAccountTranslations() {
   return n2("bankAccounts");
 }
+function useAvailabilityTranslations() {
+  return n2("availability");
+}
 
 // src/hooks/useApiError.ts
 function useApiError() {
@@ -4223,6 +4227,10 @@ function usePermissions() {
     };
   }, [user, permissions]);
   const canManageProducts = (0, import_react7.useMemo)(() => hasPermission("products.manage"), [hasPermission]);
+  const canAddOrEditProducts = (0, import_react7.useMemo)(
+    () => hasPermission("products.manage") || hasPermission("products.create") || hasPermission("products.update"),
+    [hasPermission]
+  );
   const canViewProducts = (0, import_react7.useMemo)(() => hasPermission("products.view"), [hasPermission]);
   const canExportProducts = (0, import_react7.useMemo)(() => hasPermission("products.export"), [hasPermission]);
   const canManageOrders = (0, import_react7.useMemo)(() => hasPermission("orders.manage"), [hasPermission]);
@@ -4261,6 +4269,7 @@ function usePermissions() {
     // Raw permissions array
     // Convenience methods for products
     canManageProducts,
+    canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
     // Convenience methods for orders
@@ -6112,6 +6121,7 @@ function useCategoriesWithFilters(options) {
   useAuth,
   useAuthErrorHandler,
   useAuthTranslations,
+  useAvailabilityTranslations,
   useBankAccountTranslations,
   useCalendarTranslations,
   useCanExportData,

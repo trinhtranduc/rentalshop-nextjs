@@ -66,7 +66,7 @@ export async function validateSubscriptionAccess(
 ): Promise<SubscriptionValidationResult> {
   const {
     requireActiveSubscription = true,
-    allowedStatuses = ['active'],
+    allowedStatuses = ['ACTIVE'],
     checkMerchantStatus = true,
     checkSubscriptionStatus = true,
     autoUpdateExpired = true
@@ -99,7 +99,7 @@ export async function validateSubscriptionAccess(
 
     // Check merchant subscription status (use subscription.status instead of subscriptionStatus)
     if (checkMerchantStatus) {
-      const merchantStatus = merchant.subscription?.status?.toLowerCase();
+      const merchantStatus = merchant.subscription?.status?.toUpperCase();
       if (merchantStatus && !allowedStatuses.includes(merchantStatus)) {
         return {
           isValid: false,
@@ -133,7 +133,7 @@ export async function validateSubscriptionAccess(
           await prisma.subscription.update({
             where: { id: subscription.id },
             data: { 
-              status: 'expired',
+              status: 'EXPIRED',
               updatedAt: now
             }
           });
@@ -141,13 +141,13 @@ export async function validateSubscriptionAccess(
           console.log(`🔄 Auto-updated expired subscription ${subscription.id}`);
           
           // Update the subscription object for response
-          subscription.status = 'expired';
+          subscription.status = 'EXPIRED';
         } catch (error) {
           console.error(`❌ Failed to update expired subscription ${subscription.id}:`, error);
         }
       }
 
-      const subscriptionStatus = subscription.status?.toLowerCase();
+      const subscriptionStatus = subscription.status?.toUpperCase();
       
       // Check if subscription is expired (after potential update)
       if (isExpired) {
@@ -217,7 +217,7 @@ export async function checkSubscriptionExpiry(config: SubscriptionManagerConfig 
     // Find subscriptions that should be expired
     const expiredSubscriptions = await prisma.subscription.findMany({
       where: {
-        status: { in: ['active', 'paused'] },
+        status: { in: ['ACTIVE', 'PAUSED'] },
         currentPeriodEnd: { lt: new Date() }
       },
       include: {
@@ -246,7 +246,7 @@ export async function checkSubscriptionExpiry(config: SubscriptionManagerConfig 
           await prisma.subscription.update({
             where: { id: subscription.id },
             data: { 
-              status: 'expired',
+              status: 'EXPIRED',
               updatedAt: new Date()
             }
           });
@@ -335,16 +335,16 @@ export function canPerformOperation(
   subscriptionStatus: string,
   operation: 'create' | 'read' | 'update' | 'delete' | 'admin'
 ): boolean {
-  const status = subscriptionStatus.toLowerCase();
+  const status = subscriptionStatus.toUpperCase();
   
   switch (status) {
-    case 'active':
+    case 'ACTIVE':
       return true; // All operations allowed
-    case 'paused':
+    case 'PAUSED':
       return ['read'].includes(operation); // Only read operations
-    case 'expired':
-    case 'cancelled':
-    case 'past_due':
+    case 'EXPIRED':
+    case 'CANCELLED':
+    case 'PAST_DUE':
       return false; // No operations allowed
     default:
       return false;
@@ -358,21 +358,21 @@ export function getSubscriptionErrorMessage(
   subscriptionStatus: string,
   merchantStatus?: string
 ): string {
-  const status = subscriptionStatus.toLowerCase();
-  const merchant = merchantStatus?.toLowerCase();
+  const status = subscriptionStatus.toUpperCase();
+  const merchant = merchantStatus?.toUpperCase();
 
-  if (merchant && !['active'].includes(merchant)) {
-    return `Merchant account is ${merchant}. Please contact support.`;
+  if (merchant && !['ACTIVE'].includes(merchant)) {
+    return `Merchant account is ${merchantStatus}. Please contact support.`;
   }
 
   switch (status) {
-    case 'paused':
+    case 'PAUSED':
       return 'Your subscription is paused. Some features may be limited.';
-    case 'expired':
+    case 'EXPIRED':
       return 'Your subscription has expired. Please renew to continue.';
-    case 'cancelled':
+    case 'CANCELLED':
       return 'Your subscription has been cancelled. Please choose a new plan.';
-    case 'past_due':
+    case 'PAST_DUE':
       return 'Payment is past due. Please update your payment method.';
     default:
       return 'Subscription status error. Please contact support.';
@@ -383,16 +383,16 @@ export function getSubscriptionErrorMessage(
  * Get allowed operations for current subscription status
  */
 export function getAllowedOperations(subscriptionStatus: string): string[] {
-  const status = subscriptionStatus.toLowerCase();
+  const status = subscriptionStatus.toUpperCase();
   
   switch (status) {
-    case 'active':
+    case 'ACTIVE':
       return ['create', 'read', 'update', 'delete', 'admin'];
-    case 'paused':
+    case 'PAUSED':
       return ['read'];
-    case 'expired':
-    case 'cancelled':
-    case 'past_due':
+    case 'EXPIRED':
+    case 'CANCELLED':
+    case 'PAST_DUE':
       return [];
     default:
       return [];
@@ -408,7 +408,7 @@ export async function manualExpiryCheck() {
     
     const expiredSubscriptions = await prisma.subscription.findMany({
       where: {
-        status: { in: ['active', 'paused'] },
+        status: { in: ['ACTIVE', 'PAUSED'] },
         currentPeriodEnd: { lt: new Date() }
       }
     });
@@ -428,7 +428,7 @@ export async function manualExpiryCheck() {
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: { 
-            status: 'expired',
+            status: 'EXPIRED',
             updatedAt: new Date()
           }
         });
