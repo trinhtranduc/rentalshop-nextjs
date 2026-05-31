@@ -269,29 +269,10 @@ export async function GET(
           },
           // CRITICAL FIX: Filter by specific outlet, not all merchant outlets
           outletId: finalOutletId,
-          OR: [
-            // Pickup during requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalEnd } },
-                { pickupPlanAt: { gte: rentalStart } }
-              ]
-            },
-            // Return during requested period  
-            {
-              AND: [
-                { returnPlanAt: { lte: rentalEnd } },
-                { returnPlanAt: { gte: rentalStart } }
-              ]
-            },
-            // Rental spans across requested period
-            {
-              AND: [
-                { pickupPlanAt: { lte: rentalStart } },
-                { returnPlanAt: { gte: rentalEnd } }
-              ]
-            }
-          ],
+          deletedAt: null,
+          // Overlap condition: orderPickup < rentalEnd AND orderReturn > rentalStart
+          pickupPlanAt: { lt: rentalEnd },
+          returnPlanAt: { gt: rentalStart },
           orderItems: {
             some: {
               productId: productId,
