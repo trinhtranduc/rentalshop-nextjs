@@ -261,6 +261,14 @@ export async function GET(
       // - Rental period overlaps with requested period
       // - Order belongs to the SPECIFIC outlet (not all merchant outlets)
       
+      console.log('🔍 Conflict query params:', {
+        outletId: finalOutletId,
+        rentalStart: rentalStart.toISOString(),
+        rentalEnd: rentalEnd.toISOString(),
+        productId,
+        queryVersion: 'v2-simplified-overlap'
+      });
+
       const conflictingOrders = await db.prisma.order.findMany({
         where: {
           orderType: ORDER_TYPE.RENT as any, // Only RENT orders affect rental availability
@@ -308,6 +316,11 @@ export async function GET(
           pickupPlanAt: 'asc'
         }
       });
+
+      console.log('🔍 Conflicting orders found:', conflictingOrders.length, conflictingOrders.map(o => ({
+        id: o.id, orderNumber: o.orderNumber, status: o.status, outletId: o.outletId,
+        pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
+      })));
 
       // 6. Calculate conflicts for single outlet with precise time analysis
       const outletConflicts = {
