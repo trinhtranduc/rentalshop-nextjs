@@ -31,7 +31,12 @@
   "status": {
     "available": "Còn trống",
     "unavailable": "Hết",
-    "warning": "Còn trống (có đơn trùng)"
+    "warning": "Còn trống"
+  },
+  "result": {
+    "canRent": "Có thể cho thuê {count} bộ",
+    "cannotRent": "Không đủ hàng",
+    "insufficient": "Cần {need} bộ, chỉ còn {have} bộ trống"
   },
   "availableUnits": "Còn {count} bộ",
   "periodRange": "{pickup} – {return}",

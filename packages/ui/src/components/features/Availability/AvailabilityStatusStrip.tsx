@@ -67,18 +67,11 @@ export const AvailabilityStatusStrip: React.FC<AvailabilityStatusStripProps> = (
   const isAvailable = result.status === 'available' || result.status === 'warning';
   const isWarning = result.status === 'warning';
 
-  const statusLabel =
-    result.status === 'available'
-      ? t('status.available')
-      : result.status === 'warning'
-        ? t('status.warning')
-        : t('status.unavailable');
-
   const Icon =
     result.status === 'unavailable' ? XCircle : result.status === 'warning' ? AlertTriangle : CheckCircle2;
 
   const stripClass = cn(
-    'rounded-lg border px-3 py-3 sm:px-4',
+    'rounded-lg border px-4 py-3',
     isAvailable && !isWarning && 'bg-green-50/90 border-green-200',
     isWarning && 'bg-amber-50/90 border-amber-200',
     !isAvailable && 'bg-red-50/90 border-red-200'
@@ -91,42 +84,47 @@ export const AvailabilityStatusStrip: React.FC<AvailabilityStatusStripProps> = (
         ? 'text-amber-600'
         : 'text-green-600';
 
-  // Calculate booked in period (conflicts only, not renting)
   const conflictsInPeriod = result.totalConflictsFound;
 
   return (
     <div className={stripClass} role="status" aria-live="polite">
-      <div className="flex items-start gap-2.5">
-        <Icon className={cn('w-5 h-5 shrink-0 mt-0.5', iconClass)} />
+      <div className="flex items-start gap-3">
+        <Icon className={cn('w-6 h-6 shrink-0 mt-0.5', iconClass)} />
         <div className="flex-1 min-w-0">
-          {/* Main status line */}
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <p className="font-semibold text-text-primary text-base">{statusLabel}</p>
-            {isAvailable ? (
-              <p className="text-sm text-text-primary">
-                · {t('availableUnits', { count: result.effectivelyAvailable })}
-              </p>
-            ) : (
-              <p className="text-sm text-red-700">
-                · {t('needVsHave', { need: quantity, have: result.effectivelyAvailable })}
-              </p>
-            )}
-          </div>
+          {/* Main result: big number */}
+          {isAvailable ? (
+            <p className="text-lg font-bold text-text-primary">
+              {t('result.canRent', { count: result.effectivelyAvailable })}
+            </p>
+          ) : (
+            <p className="text-lg font-bold text-red-700">
+              {t('result.cannotRent')}
+            </p>
+          )}
 
-          {/* Stats: Tổng kho | Đang thuê chưa trả | Đặt trùng kỳ */}
-          <p className="text-xs text-text-secondary mt-1.5">
-            {t('stock.total')}: {result.totalStock}
+          {/* Stock breakdown with highlighted numbers */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm">
+            <span className="text-text-secondary">
+              {t('stock.total')}: <span className="font-semibold text-text-primary">{result.totalStock}</span>
+            </span>
             {result.totalRenting > 0 && (
-              <span className="ml-2">
-                · {t('stock.renting')}: <span className="font-medium">{result.totalRenting}</span>
+              <span className="text-text-secondary">
+                {t('stock.renting')}: <span className="font-semibold text-orange-600">{result.totalRenting}</span>
               </span>
             )}
             {conflictsInPeriod > 0 && (
-              <span className="ml-2">
-                · {t('stock.bookedInPeriod')}: <span className="text-amber-700 font-medium">{conflictsInPeriod}</span>
+              <span className="text-text-secondary">
+                {t('stock.bookedInPeriod')}: <span className="font-semibold text-amber-700">{conflictsInPeriod}</span>
               </span>
             )}
-          </p>
+          </div>
+
+          {/* Insufficient stock message */}
+          {!isAvailable && (
+            <p className="text-sm text-red-600 mt-1.5">
+              {t('result.insufficient', { need: quantity, have: result.effectivelyAvailable })}
+            </p>
+          )}
         </div>
       </div>
     </div>

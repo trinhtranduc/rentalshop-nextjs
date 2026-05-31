@@ -31,7 +31,12 @@
   "status": {
     "available": "Available",
     "unavailable": "Not available",
-    "warning": "Available with conflicts"
+    "warning": "Available"
+  },
+  "result": {
+    "canRent": "Can rent {count} unit(s)",
+    "cannotRent": "Insufficient stock",
+    "insufficient": "Need {need}, only {have} available"
   },
   "availableUnits": "Available: {count} unit(s)",
   "periodRange": "{pickup} – {return}",
