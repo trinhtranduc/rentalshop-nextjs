@@ -74,13 +74,16 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
         const response = await ordersApi.searchOrders({
           productId,
           outletId: resolvedOutletId,
-          status: ['RESERVED', 'PICKUPED'],
           limit: 50,
           sortBy: 'pickupPlanAt',
           sortOrder: 'asc',
         });
         if (response.success && response.data?.orders) {
-          const orders = toActiveOrders(response.data.orders, pickup, returnDate);
+          // Filter to only active orders (RESERVED + PICKUPED) client-side
+          const activeOnly = response.data.orders.filter(
+            (o: any) => o.status === 'RESERVED' || o.status === 'PICKUPED'
+          );
+          const orders = toActiveOrders(activeOnly, pickup, returnDate);
           setActiveOrders((prev) => new Map(prev).set(productId, orders));
         }
       } catch (err) {

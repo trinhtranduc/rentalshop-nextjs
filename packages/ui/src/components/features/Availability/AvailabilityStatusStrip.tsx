@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { useAvailabilityTranslations } from '@rentalshop/hooks';
-import { CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import type { DerivedAvailabilityResult, AvailabilityDisplayStatus } from './types';
 
@@ -65,24 +65,17 @@ export const AvailabilityStatusStrip: React.FC<AvailabilityStatusStripProps> = (
   if (!result) return null;
 
   const isAvailable = result.status === 'available' || result.status === 'warning';
-  const isWarning = result.status === 'warning';
 
   const Icon =
-    result.status === 'unavailable' ? XCircle : result.status === 'warning' ? AlertTriangle : CheckCircle2;
+    result.status === 'unavailable' ? XCircle : CheckCircle2;
 
   const stripClass = cn(
     'rounded-lg border px-4 py-3',
-    isAvailable && !isWarning && 'bg-green-50/90 border-green-200',
-    isWarning && 'bg-amber-50/90 border-amber-200',
+    isAvailable && 'bg-green-50/90 border-green-200',
     !isAvailable && 'bg-red-50/90 border-red-200'
   );
 
-  const iconClass =
-    result.status === 'unavailable'
-      ? 'text-red-600'
-      : result.status === 'warning'
-        ? 'text-amber-600'
-        : 'text-green-600';
+  const iconClass = isAvailable ? 'text-green-600' : 'text-red-600';
 
   const conflictsInPeriod = result.totalConflictsFound;
 
