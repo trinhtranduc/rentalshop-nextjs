@@ -23,7 +23,8 @@ import {
   Store,
   LogOut,
   Bell,
-  ChevronDown
+  ChevronDown,
+  ClipboardCheck
 } from 'lucide-react';
 
 export interface ClientSidebarProps {
@@ -59,6 +60,11 @@ const getClientMenuItems = (t: any): MenuItem[] => [
     label: t('navigation.orders'),
     href: '/orders',
     icon: ShoppingCart,
+  },
+  {
+    label: t('navigation.availabilityCheck'),
+    href: '/availability',
+    icon: ClipboardCheck,
   },
   {
     label: t('navigation.products'),
@@ -192,6 +198,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
+    if (href === '/availability') {
+      return pathname === '/availability' || pathname.startsWith('/availability');
+    }
     return pathname.startsWith(href);
   };
 
@@ -206,7 +215,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const renderMenuItem = (item: MenuItem, level = 0) => {
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems.includes(item.href);
-    const active = isActive(item.href);
+    const active =
+      isActive(item.href) ||
+      (item.subItems?.some((sub) => isActive(sub.href)) ?? false);
     const isHovered = hoveredTab === item.href;
     const isNavigating = navigatingTo === item.href;
     const Icon = item.icon;
@@ -454,20 +465,6 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               )}
             </div>
           </div>
-        )}
-
-        {onNavigate && (
-          <Button
-            variant="ghost"
-            onClick={() => onNavigate('/settings')}
-            className={cn(
-              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal',
-              isCollapsed && 'justify-center px-2'
-            )}
-          >
-            <Settings className="w-4 h-4" />
-            {!isCollapsed && <span className="ml-2">{t('navigation.settings')}</span>}
-          </Button>
         )}
 
         {onLogout && (

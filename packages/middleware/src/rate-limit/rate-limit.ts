@@ -86,6 +86,28 @@ export const apiRateLimiter = createRateLimiter({
   maxRequests: 100, // 100 requests per minute
 });
 
+// Auth rate limiter - stricter limits for login/register/password reset
+export const authRateLimiter = createRateLimiter({
+  windowMs: 900000, // 15 minutes
+  maxRequests: 10, // 10 attempts per 15 minutes
+  keyGenerator: (req: NextRequest) => {
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : req.ip || 'unknown';
+    return `auth_rate_limit:${ip}`;
+  }
+});
+
+// Password reset rate limiter - very strict
+export const passwordResetRateLimiter = createRateLimiter({
+  windowMs: 3600000, // 1 hour
+  maxRequests: 3, // 3 attempts per hour
+  keyGenerator: (req: NextRequest) => {
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : req.ip || 'unknown';
+    return `password_reset_rate_limit:${ip}`;
+  }
+});
+
 // Clean up old entries periodically (every 5 minutes)
 setInterval(() => {
   const now = Date.now();

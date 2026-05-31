@@ -10,5 +10,7 @@ export * from './rate-limit';
 export { 
   createRateLimiter, 
   searchRateLimiter, 
-  apiRateLimiter 
+  apiRateLimiter,
+  authRateLimiter,
+  passwordResetRateLimiter
 } from './rate-limit';

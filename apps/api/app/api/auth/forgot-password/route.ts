@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, createPasswordResetToken } from '@rentalshop/database';
 import { sendPasswordResetEmail } from '@rentalshop/utils';
+import { passwordResetRateLimiter } from '@rentalshop/middleware';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -29,6 +30,12 @@ const forgetPasswordSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - prevent abuse of password reset
+    const rateLimitResponse = passwordResetRateLimiter(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ============================================================================
     // STEP 1: PARSE REQUEST BODY
     // ============================================================================

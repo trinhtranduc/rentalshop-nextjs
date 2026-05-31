@@ -463,7 +463,7 @@ model Subscription {
   stripeSubscriptionId String?              @unique
   /// Lemon Squeezy Subscription ID for syncing status/periods via webhooks
   lemonSubscriptionId String?               @unique
-  status             String                 @default("trial")
+  status             String                 @default("TRIAL")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   trialStart         DateTime?

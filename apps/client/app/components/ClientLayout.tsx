@@ -41,9 +41,8 @@ export default function ClientLayout({
   const isPublicPage = isPublicRoute(pathname);
   const isFullWidthPage = pathname?.includes('/edit');
   const isAffiliateGuidePage = pathname?.includes('/affiliate/guide');
-  const isSettingsPage = pathname?.includes('/settings');
   const isBlogPage = pathname?.startsWith('/blog');
-  const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isSettingsPage && !isBlogPage;
+  const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isBlogPage;
 
   // ============================================================================
   // AUTH STATE

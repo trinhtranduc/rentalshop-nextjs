@@ -259,8 +259,8 @@ export const ordersQuerySchema = z.object({
   customerId: z.coerce.number().int().positive().optional(),
   status: orderStatusEnum.optional(),
   orderType: orderTypeEnum.optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
+  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),

@@ -33,9 +33,6 @@ declare const envSchema: z.ZodObject<{
     UPLOAD_PROVIDER: z.ZodDefault<z.ZodEnum<["local", "cloudinary", "s3"]>>;
     UPLOAD_PATH: z.ZodOptional<z.ZodString>;
     MAX_FILE_SIZE: z.ZodDefault<z.ZodEffects<z.ZodString, number, string>>;
-    CLOUDINARY_CLOUD_NAME: z.ZodOptional<z.ZodString>;
-    CLOUDINARY_API_KEY: z.ZodOptional<z.ZodString>;
-    CLOUDINARY_API_SECRET: z.ZodOptional<z.ZodString>;
     EMAIL_PROVIDER: z.ZodDefault<z.ZodEnum<["console", "ses"]>>;
     EMAIL_FROM: z.ZodDefault<z.ZodString>;
     AWS_SES_REGION: z.ZodDefault<z.ZodString>;
@@ -89,9 +86,6 @@ declare const envSchema: z.ZodObject<{
     RATE_LIMIT_WINDOW: string;
     RATE_LIMIT_MAX: number;
     UPLOAD_PATH?: string | undefined;
-    CLOUDINARY_CLOUD_NAME?: string | undefined;
-    CLOUDINARY_API_KEY?: string | undefined;
-    CLOUDINARY_API_SECRET?: string | undefined;
     REDIS_URL?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
@@ -120,9 +114,6 @@ declare const envSchema: z.ZodObject<{
     UPLOAD_PROVIDER?: "local" | "cloudinary" | "s3" | undefined;
     UPLOAD_PATH?: string | undefined;
     MAX_FILE_SIZE?: string | undefined;
-    CLOUDINARY_CLOUD_NAME?: string | undefined;
-    CLOUDINARY_API_KEY?: string | undefined;
-    CLOUDINARY_API_SECRET?: string | undefined;
     EMAIL_PROVIDER?: "console" | "ses" | undefined;
     EMAIL_FROM?: string | undefined;
     AWS_SES_REGION?: string | undefined;

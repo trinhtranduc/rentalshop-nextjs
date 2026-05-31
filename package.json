@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "npx prisma generate --schema=./prisma/schema.prisma && turbo run build --concurrency=12",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --concurrency=20",
     "dev:all": "turbo run dev --concurrency=20",
     "dev:all:development": "concurrently -n \"API,ADMIN,CLIENT\" -c \"blue,green,yellow\" \"cd apps/api && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\" \"cd apps/admin && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\" \"cd apps/client && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\"",
     "dev:all:production": "concurrently -n \"API,ADMIN,CLIENT\" -c \"blue,green,yellow\" \"cd apps/api && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\" \"cd apps/admin && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\" \"cd apps/client && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\"",
@@ -19,7 +19,7 @@
     "start": "cd apps/api && NODE_ENV=production node .next/standalone/apps/api/server.js",
     "clean:all": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf apps/*/node_modules && rm -rf packages/*/dist && rm -rf apps/*/dist && rm -rf .turbo",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
+    "type-check": "tsc --noEmit",
     "clean": "turbo run clean",
     "test": "turbo run test",
     "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",

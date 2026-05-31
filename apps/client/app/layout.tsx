@@ -26,6 +26,7 @@ import enLanding from '../../../locales/en/landing.json';
 import enBankAccounts from '../../../locales/en/bankAccounts.json';
 import enFeatures from '../../../locales/en/features.json';
 import enAffiliate from '../../../locales/en/affiliate.json';
+import enAvailability from '../../../locales/en/availability.json';
 
 import viCommon from '../../../locales/vi/common.json';
 import viAuth from '../../../locales/vi/auth.json';
@@ -46,6 +47,7 @@ import viLanding from '../../../locales/vi/landing.json';
 import viBankAccounts from '../../../locales/vi/bankAccounts.json';
 import viFeatures from '../../../locales/vi/features.json';
 import viAffiliate from '../../../locales/vi/affiliate.json';
+import viAvailability from '../../../locales/vi/availability.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../../locales/zh/common.json';
@@ -717,6 +719,7 @@ const messages = {
     bankAccounts: enBankAccounts,
     features: enFeatures,
     affiliate: enAffiliate,
+    availability: enAvailability,
   },
   vi: {
     common: viCommon,
@@ -738,6 +741,7 @@ const messages = {
     bankAccounts: viBankAccounts,
     features: viFeatures,
     affiliate: viAffiliate,
+    availability: viAvailability,
   },
   // Chinese (Simplified) - Landing page only
   zh: {
@@ -760,6 +764,7 @@ const messages = {
     calendar: enCalendar,
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
+    availability: enAvailability,
   },
   // Korean - Landing page only
   ko: {
@@ -782,6 +787,7 @@ const messages = {
     calendar: enCalendar,
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
+    availability: enAvailability,
   },
   // Japanese - Landing page only
   ja: {
@@ -804,6 +810,7 @@ const messages = {
     calendar: enCalendar,
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
+    availability: enAvailability,
   },
 };
 
