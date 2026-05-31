@@ -52,7 +52,10 @@
     "title": "Orders for this product",
     "noActiveOrders": "No active orders",
     "viewAll": "View orders ({count})",
+    "ordersLabel": "orders",
     "conflicts": "conflicts",
+    "conflictBadge": "Conflict",
+    "conflictNote": "{count} order(s) overlap with the checked period",
     "dialogTitle": "Orders: {name}",
     "page": "Page {current}/{total}",
     "conflictsCount": "{count} conflict(s)",
@@ -60,7 +63,9 @@
     "customer": "Customer",
     "period": "Period",
     "qty": "Qty",
-    "status": "Status"
+    "status": "Status",
+    "statusReserved": "Reserved",
+    "statusPickuped": "Renting"
   },
   "timeline": {
     "title": "Rental schedule",

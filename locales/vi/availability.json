@@ -52,15 +52,20 @@
     "title": "Đơn hàng của mẫu này",
     "noActiveOrders": "Không có đơn hàng nào đang hoạt động",
     "viewAll": "Xem đơn hàng ({count})",
+    "ordersLabel": "đơn",
     "conflicts": "trùng kỳ",
+    "conflictBadge": "Trùng kỳ",
+    "conflictNote": "{count} đơn trùng với kỳ đang kiểm tra",
     "dialogTitle": "Đơn hàng: {name}",
     "page": "Trang {current}/{total}",
     "conflictsCount": "{count} đơn trùng kỳ",
     "orderNumber": "Mã đơn",
-    "customer": "Khách",
+    "customer": "Khách hàng",
     "period": "Kỳ thuê",
     "qty": "SL",
-    "status": "Trạng thái"
+    "status": "Trạng thái",
+    "statusReserved": "Đã đặt",
+    "statusPickuped": "Đang thuê"
   },
   "timeline": {
     "title": "Lịch thuê",
