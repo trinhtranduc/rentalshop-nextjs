@@ -323,6 +323,50 @@ export async function GET(
         pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
       })));
 
+      // 5b. Also fetch ALL active orders for this product (for mobile order list display)
+      // This includes orders that may NOT conflict with the requested period
+      const allActiveOrders = await db.prisma.order.findMany({
+        where: {
+          orderType: ORDER_TYPE.RENT as any,
+          status: {
+            in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
+          },
+          outletId: finalOutletId,
+          deletedAt: null,
+          orderItems: {
+            some: {
+              productId: productId,
+            }
+          }
+        },
+        include: {
+          orderItems: {
+            where: {
+              productId: productId,
+            },
+            select: {
+              productId: true,
+              quantity: true,
+              rentalDays: true,
+            }
+          },
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            }
+          }
+        },
+        orderBy: {
+          pickupPlanAt: 'asc'
+        }
+      });
+
+      // Build conflict order IDs set for marking
+      const conflictOrderIds = new Set(conflictingOrders.map(o => o.id));
+
       // 6. Calculate conflicts for single outlet with precise time analysis
       const outletConflicts = {
         outletId: finalOutletId,
@@ -520,6 +564,23 @@ export async function GET(
             effectivelyAvailable: availabilityResult.effectivelyAvailable,
           },
           totalConflictsFound: outletConflicts.conflicts.length,
+          // All active orders for this product (for mobile order list display)
+          // Each order is marked with isConflict flag
+          orders: allActiveOrders.map(order => {
+            const productItems = order.orderItems.filter((item: any) => item.productId === productId);
+            const orderQuantity = productItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+            return {
+              id: order.id,
+              orderNumber: order.orderNumber,
+              status: order.status,
+              customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
+              customerPhone: order.customer?.phone || null,
+              pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+              returnPlanAt: order.returnPlanAt?.toISOString() || null,
+              quantity: orderQuantity,
+              isConflict: conflictOrderIds.has(order.id),
+            };
+          }),
           // Enhanced message with time precision
           message: isAvailable
             ? includeTimePrecision
