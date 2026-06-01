@@ -326,10 +326,9 @@ export async function GET(
       })));
 
       // 5b. Also fetch orders for this product (for mobile order list display)
-      // If includeAllOrders=true, fetch ALL orders (including RETURNED, CANCELLED)
-      // Otherwise, only fetch active orders (RESERVED, PICKUPED)
+      // If includeAllOrders=true, fetch ALL orders (including RETURNED, CANCELLED) of ALL types
+      // Otherwise, only fetch active RENT orders (RESERVED, PICKUPED)
       const ordersWhereClause: any = {
-        orderType: ORDER_TYPE.RENT as any,
         outletId: finalOutletId,
         deletedAt: null,
         orderItems: {
@@ -340,6 +339,7 @@ export async function GET(
       };
       
       if (!includeAllOrders) {
+        ordersWhereClause.orderType = ORDER_TYPE.RENT as any;
         ordersWhereClause.status = {
           in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
         };
@@ -580,6 +580,7 @@ export async function GET(
             return {
               id: order.id,
               orderNumber: order.orderNumber,
+              orderType: order.orderType,
               status: order.status,
               customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
               customerPhone: order.customer?.phone || null,
