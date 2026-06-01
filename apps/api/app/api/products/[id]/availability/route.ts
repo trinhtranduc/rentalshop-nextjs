@@ -15,6 +15,8 @@ const availabilityQuerySchema = z.object({
   // Support for more granular time-based checking
   includeTimePrecision: z.coerce.boolean().optional().default(true),
   timeZone: z.string().optional().default('UTC'), // Support timezone for proper time comparison
+  // Include all orders (RETURNED, CANCELLED, etc.) in response - default false (only active)
+  includeAllOrders: z.coerce.boolean().optional().default(false),
 });
 
 /**
@@ -69,7 +71,7 @@ export async function GET(
         );
       }
 
-      const { startDate, endDate, date, quantity, includeTimePrecision, timeZone } = parsedQuery.data;
+      const { startDate, endDate, date, quantity, includeTimePrecision, timeZone, includeAllOrders } = parsedQuery.data;
 
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
@@ -323,22 +325,28 @@ export async function GET(
         pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
       })));
 
-      // 5b. Also fetch ALL active orders for this product (for mobile order list display)
-      // This includes orders that may NOT conflict with the requested period
-      const allActiveOrders = await db.prisma.order.findMany({
-        where: {
-          orderType: ORDER_TYPE.RENT as any,
-          status: {
-            in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
-          },
-          outletId: finalOutletId,
-          deletedAt: null,
-          orderItems: {
-            some: {
-              productId: productId,
-            }
+      // 5b. Also fetch orders for this product (for mobile order list display)
+      // If includeAllOrders=true, fetch ALL orders (including RETURNED, CANCELLED)
+      // Otherwise, only fetch active orders (RESERVED, PICKUPED)
+      const ordersWhereClause: any = {
+        orderType: ORDER_TYPE.RENT as any,
+        outletId: finalOutletId,
+        deletedAt: null,
+        orderItems: {
+          some: {
+            productId: productId,
           }
-        },
+        }
+      };
+      
+      if (!includeAllOrders) {
+        ordersWhereClause.status = {
+          in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
+        };
+      }
+      
+      const allOrdersForDisplay = await db.prisma.order.findMany({
+        where: ordersWhereClause,
         include: {
           orderItems: {
             where: {
@@ -566,7 +574,7 @@ export async function GET(
           totalConflictsFound: outletConflicts.conflicts.length,
           // All active orders for this product (for mobile order list display)
           // Each order is marked with isConflict flag
-          orders: allActiveOrders.map(order => {
+          orders: allOrdersForDisplay.map(order => {
             const productItems = order.orderItems.filter((item: any) => item.productId === productId);
             const orderQuantity = productItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
             return {
