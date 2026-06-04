@@ -372,6 +372,7 @@ export const userUpdateSchema = z.object({
   phone: z.string().optional(),
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
+  emailVerified: z.boolean().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
 }).refine((data) => {
