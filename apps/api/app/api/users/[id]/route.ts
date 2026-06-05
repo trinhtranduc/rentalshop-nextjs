@@ -122,8 +122,16 @@ export async function PUT(
       // Check if user is being deactivated (isActive changed from true to false)
       const isBeingDeactivated = existingUser.isActive && parsed.data.isActive === false;
 
+      // Handle emailVerified: also set emailVerifiedAt timestamp
+      const updateData: any = { ...parsed.data };
+      if (updateData.emailVerified === true && !existingUser.emailVerified) {
+        updateData.emailVerifiedAt = new Date();
+      } else if (updateData.emailVerified === false) {
+        updateData.emailVerifiedAt = null;
+      }
+
       // Update the user using the simplified database API (use parsed data)
-      const updatedUser = await db.users.update(userId, parsed.data);
+      const updatedUser = await db.users.update(userId, updateData);
       console.log('✅ User updated successfully:', updatedUser);
 
       // If user is being deactivated, invalidate all their sessions to force logout
