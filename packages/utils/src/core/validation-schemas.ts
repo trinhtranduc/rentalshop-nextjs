@@ -479,19 +479,24 @@ export type PlansQuery = z.infer<typeof plansQuerySchema>;
 
 // Plan limit addon schemas
 export const planLimitAddonCreateSchema = z.object({
-  name: z.string().min(1, 'Addon name is required'),
-  description: z.string().optional(),
-  price: z.number().nonnegative('Price must be non-negative'),
-  limits: z.record(z.any()).optional(),
+  merchantId: z.coerce.number().int().positive('Merchant ID is required'),
+  outlets: z.coerce.number().int().min(0).default(0),
+  users: z.coerce.number().int().min(0).default(0),
+  products: z.coerce.number().int().min(0).default(0),
+  customers: z.coerce.number().int().min(0).default(0),
+  orders: z.coerce.number().int().min(0).default(0),
+  notes: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
 });
 
 export const planLimitAddonUpdateSchema = z.object({
   id: z.coerce.number().int().positive('Addon ID is required'),
-  name: z.string().min(1, 'Addon name is required').optional(),
-  description: z.string().optional(),
-  price: z.number().nonnegative('Price must be non-negative').optional(),
-  limits: z.record(z.any()).optional(),
+  outlets: z.coerce.number().int().min(0).optional(),
+  users: z.coerce.number().int().min(0).optional(),
+  products: z.coerce.number().int().min(0).optional(),
+  customers: z.coerce.number().int().min(0).optional(),
+  orders: z.coerce.number().int().min(0).optional(),
+  notes: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
