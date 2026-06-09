@@ -22,6 +22,8 @@ export const PUBLIC_ROUTES = [
   '/blog',
   '/cho-thue-ao-dai',
   '/cho-thue-ao-cuoi',
+  '/cho-thue-trang-thiet-bi',
+  '/cho-thue-trang-phuc',
   '/affiliate',
 ] as const;
 
