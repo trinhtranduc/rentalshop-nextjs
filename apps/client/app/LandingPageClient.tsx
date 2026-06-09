@@ -1669,8 +1669,8 @@ const Footer = React.memo(() => {
   return (
     <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-5 gap-8">
-          <div>
+        <div className="grid md:grid-cols-12 gap-8">
+          <div className="md:col-span-4">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
                 <Store className="w-6 h-6 text-white" />
@@ -1690,7 +1690,7 @@ const Footer = React.memo(() => {
             </div>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
               <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
@@ -1699,7 +1699,7 @@ const Footer = React.memo(() => {
             </ul>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">Ngành nghề</h3>
             <ul className="space-y-2">
               <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo dài</Link></li>
@@ -1709,7 +1709,7 @@ const Footer = React.memo(() => {
             </ul>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
             <ul className="space-y-2">
               <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.faq')}</a></li>
@@ -1718,7 +1718,7 @@ const Footer = React.memo(() => {
             </ul>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
             <ul className="space-y-2">
               <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</Link></li>
