@@ -20,6 +20,9 @@ export const PUBLIC_ROUTES = [
   '/privacy',
   '/features',
   '/blog',
+  '/cho-thue-ao-dai',
+  '/cho-thue-ao-cuoi',
+  '/affiliate',
 ] as const;
 
 /**
