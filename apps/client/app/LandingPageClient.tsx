@@ -1669,7 +1669,7 @@ const Footer = React.memo(() => {
   return (
     <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-5 gap-8">
           <div>
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
@@ -1696,6 +1696,16 @@ const Footer = React.memo(() => {
               <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
               <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</a></li>
               <li><a href="#download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Ngành nghề</h3>
+            <ul className="space-y-2">
+              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo dài</Link></li>
+              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo cưới</Link></li>
+              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê thiết bị</Link></li>
+              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê trang phục</Link></li>
             </ul>
           </div>
           
