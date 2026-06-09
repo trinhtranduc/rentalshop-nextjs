@@ -615,24 +615,41 @@ const LandingPage = () => {
             
             {/* Niche Solutions Links */}
             <div className="mt-16 pt-12 border-t border-gray-200">
-              <h3 className="text-xl font-semibold text-center text-gray-900 mb-6">Giải pháp theo ngành nghề</h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                <Link href="/cho-thue-ao-dai" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition-all">
-                  <span className="text-2xl">👗</span>
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-rose-700">Cho thuê áo dài</span>
-                </Link>
-                <Link href="/cho-thue-ao-cuoi" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all">
-                  <span className="text-2xl">💒</span>
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Cho thuê áo cưới</span>
-                </Link>
-                <Link href="/features" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
-                  <span className="text-2xl">🔧</span>
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">Cho thuê trang thiết bị</span>
-                </Link>
-                <Link href="/features" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-all">
-                  <span className="text-2xl">🎭</span>
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">Cho thuê trang phục</span>
-                </Link>
+              <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-3">Giải pháp theo ngành nghề</h3>
+              <p className="text-center text-gray-500 mb-10 max-w-xl mx-auto">Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-ao-dai" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo dài</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-ao-cuoi" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo cưới</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-trang-thiet-bi" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Thiết bị</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-trang-phuc" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Trang phục</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
               </div>
             </div>
           </div>
@@ -1652,8 +1669,8 @@ const Footer = React.memo(() => {
   return (
     <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div>
+        <div className="grid md:grid-cols-12 gap-8">
+          <div className="md:col-span-4">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
                 <Store className="w-6 h-6 text-white" />
@@ -1673,7 +1690,7 @@ const Footer = React.memo(() => {
             </div>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
               <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
@@ -1682,7 +1699,17 @@ const Footer = React.memo(() => {
             </ul>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold mb-4">Ngành nghề</h3>
+            <ul className="space-y-2">
+              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo dài</Link></li>
+              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo cưới</Link></li>
+              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê thiết bị</Link></li>
+              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê trang phục</Link></li>
+            </ul>
+          </div>
+          
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
             <ul className="space-y-2">
               <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.faq')}</a></li>
@@ -1691,7 +1718,7 @@ const Footer = React.memo(() => {
             </ul>
           </div>
           
-          <div>
+          <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
             <ul className="space-y-2">
               <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</Link></li>
