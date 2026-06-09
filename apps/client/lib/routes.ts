@@ -64,6 +64,16 @@ export function isPublicRoute(pathname: string): boolean {
     return true;
   }
   
+  // Check niche landing pages (e.g., /cho-thue-ao-dai, /cho-thue-ao-cuoi)
+  if (pathname.startsWith('/cho-thue')) {
+    return true;
+  }
+  
+  // Check affiliate pages
+  if (pathname.startsWith('/affiliate')) {
+    return true;
+  }
+  
   // Check public product pages (e.g., /tenant-key/products)
   // Pattern: /[tenantKey]/products
   const publicProductPagePattern = /^\/[a-z0-9\-]+\/products$/i;
