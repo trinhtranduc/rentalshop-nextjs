@@ -612,6 +612,29 @@ const LandingPage = () => {
                 </Link>
               </Button>
             </div>
+            
+            {/* Niche Solutions Links */}
+            <div className="mt-16 pt-12 border-t border-gray-200">
+              <h3 className="text-xl font-semibold text-center text-gray-900 mb-6">Giải pháp theo ngành nghề</h3>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                <Link href="/cho-thue-ao-dai" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition-all">
+                  <span className="text-2xl">👗</span>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-rose-700">Cho thuê áo dài</span>
+                </Link>
+                <Link href="/cho-thue-ao-cuoi" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all">
+                  <span className="text-2xl">💒</span>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Cho thuê áo cưới</span>
+                </Link>
+                <Link href="/features" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
+                  <span className="text-2xl">🔧</span>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">Cho thuê trang thiết bị</span>
+                </Link>
+                <Link href="/features" className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-all">
+                  <span className="text-2xl">🎭</span>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">Cho thuê trang phục</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 
