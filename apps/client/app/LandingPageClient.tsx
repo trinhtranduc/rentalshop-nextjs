@@ -617,27 +617,39 @@ const LandingPage = () => {
             <div className="mt-16 pt-12 border-t border-gray-200">
               <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-3">Giải pháp theo ngành nghề</h3>
               <p className="text-center text-gray-500 mb-10 max-w-xl mx-auto">Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
-                <Link href="/cho-thue-ao-dai" className="group relative p-6 rounded-2xl border border-gray-200 hover:border-rose-400 bg-white hover:bg-gradient-to-br hover:from-rose-50 hover:to-pink-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <div className="text-rose-600 font-bold text-lg mb-2 group-hover:text-rose-700">Áo dài</div>
-                  <p className="text-xs text-gray-500 leading-relaxed">Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.</p>
-                  <span className="absolute bottom-4 right-4 text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium">Xem →</span>
-                </Link>
-                <Link href="/cho-thue-ao-cuoi" className="group relative p-6 rounded-2xl border border-gray-200 hover:border-purple-400 bg-white hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <div className="text-purple-600 font-bold text-lg mb-2 group-hover:text-purple-700">Áo cưới & Váy cưới</div>
-                  <p className="text-xs text-gray-500 leading-relaxed">Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.</p>
-                  <span className="absolute bottom-4 right-4 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium">Xem →</span>
-                </Link>
-                <Link href="/cho-thue-trang-thiet-bi" className="group relative p-6 rounded-2xl border border-gray-200 hover:border-blue-400 bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <div className="text-blue-600 font-bold text-lg mb-2 group-hover:text-blue-700">Trang thiết bị</div>
-                  <p className="text-xs text-gray-500 leading-relaxed">Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.</p>
-                  <span className="absolute bottom-4 right-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium">Xem →</span>
-                </Link>
-                <Link href="/cho-thue-trang-phuc" className="group relative p-6 rounded-2xl border border-gray-200 hover:border-amber-400 bg-white hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <div className="text-amber-600 font-bold text-lg mb-2 group-hover:text-amber-700">Trang phục & Cosplay</div>
-                  <p className="text-xs text-gray-500 leading-relaxed">Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.</p>
-                  <span className="absolute bottom-4 right-4 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium">Xem →</span>
-                </Link>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-ao-dai" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo dài</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-ao-cuoi" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo cưới</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-trang-thiet-bi" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Thiết bị</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
+                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+                  <Link href="/cho-thue-trang-phuc" className="block">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Trang phục</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.</p>
+                    </CardContent>
+                  </Link>
+                </Card>
               </div>
             </div>
           </div>
