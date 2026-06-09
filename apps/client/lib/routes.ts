@@ -20,6 +20,9 @@ export const PUBLIC_ROUTES = [
   '/privacy',
   '/features',
   '/blog',
+  '/cho-thue-ao-dai',
+  '/cho-thue-ao-cuoi',
+  '/affiliate',
 ] as const;
 
 /**
@@ -58,6 +61,16 @@ export function isPublicRoute(pathname: string): boolean {
   
   // Check blog pages (e.g., /blog, /blog/[slug])
   if (pathname.startsWith('/blog')) {
+    return true;
+  }
+  
+  // Check niche landing pages (e.g., /cho-thue-ao-dai, /cho-thue-ao-cuoi)
+  if (pathname.startsWith('/cho-thue')) {
+    return true;
+  }
+  
+  // Check affiliate pages
+  if (pathname.startsWith('/affiliate')) {
     return true;
   }
   
