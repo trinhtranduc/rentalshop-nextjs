@@ -80,15 +80,15 @@ export function ImportProductDialog({
 
   // Field mapping for CSV headers to product fields
   const productFieldMapping: Record<string, string[]> = {
-    name: ['name', 'ten', 'product name', 'product_name', 'ten san pham'],
-    description: ['description', 'mo ta', 'mo_ta', 'desc'],
-    barcode: ['barcode', 'ma vach', 'ma_vach', 'sku', 'code'],
-    categoryName: ['categoryname', 'category name', 'category_name', 'danh muc', 'danh_muc', 'category'],
-    rentPrice: ['rentprice', 'rent price', 'rent_price', 'gia thue', 'gia_thue', 'price'],
-    salePrice: ['saleprice', 'sale price', 'sale_price', 'gia ban', 'gia_ban'],
-    costPrice: ['costprice', 'cost price', 'cost_price', 'gia von', 'gia_von', 'cost'],
-    deposit: ['deposit', 'tien coc', 'tien_coc', 'coc'],
-    stock: ['stock', 'ton kho', 'ton_kho', 'quantity', 'qty', 'so luong', 'so_luong']
+    name: ['name', 'ten', 'tên', 'product name', 'product_name', 'ten san pham', 'tên sản phẩm'],
+    description: ['description', 'mo ta', 'mô tả', 'mo_ta', 'desc'],
+    barcode: ['barcode', 'ma vach', 'mã vạch', 'ma_vach', 'sku', 'code', 'mã'],
+    categoryName: ['categoryname', 'category name', 'category_name', 'danh muc', 'danh_muc', 'danh mục', 'category'],
+    rentPrice: ['rentprice', 'rent price', 'rent_price', 'gia thue', 'gia_thue', 'giá thuê', 'giá_thuê', 'price', 'gia', 'giá'],
+    salePrice: ['saleprice', 'sale price', 'sale_price', 'gia ban', 'gia_ban', 'giá bán'],
+    costPrice: ['costprice', 'cost price', 'cost_price', 'gia von', 'gia_von', 'giá vốn', 'cost'],
+    deposit: ['deposit', 'tien coc', 'tien_coc', 'tiền cọc', 'coc', 'cọc'],
+    stock: ['stock', 'ton kho', 'ton_kho', 'tồn kho', 'quantity', 'qty', 'so luong', 'so_luong', 'số lượng']
     // pricingType and durationConfig are hidden - using default values
   };
 

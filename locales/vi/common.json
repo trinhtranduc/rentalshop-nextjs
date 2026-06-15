@@ -1,4 +1,16 @@
 {
+  "actions": {
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "view": "Xem",
+    "create": "Tạo mới",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "search": "Tìm kiếm",
+    "export": "Xuất",
+    "import": "Nhập"
+  },
   "buttons": {
     "save": "Lưu",
     "cancel": "Hủy",

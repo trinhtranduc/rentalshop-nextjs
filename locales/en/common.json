@@ -1,4 +1,16 @@
 {
+  "actions": {
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search",
+    "export": "Export",
+    "import": "Import"
+  },
   "buttons": {
     "save": "Save",
     "cancel": "Cancel",

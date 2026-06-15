@@ -4,6 +4,7 @@
 // Validate if deleting a plan limit addon would cause limit exceeded
 
 import { ApiError, ErrorCode } from '../errors';
+import { getEntityCountsForAddonDeletion } from './entity-counts';
 import { getPlanLimitsInfo } from './plan-limits';
 import { logger } from '../logger';
 
@@ -60,9 +61,9 @@ export async function validateAddonDeletion(
       addonToRemove
     }, 'validateAddonDeletion called');
 
-    // Get current plan limits (with all active addons)
+    // Limits include active addons; usage excludes soft-deleted user accounts
     const currentPlanInfo = await getPlanLimitsInfo(merchantId);
-    const currentCounts = currentPlanInfo.currentCounts;
+    const currentCounts = await getEntityCountsForAddonDeletion(merchantId);
 
     // FIX: Get base plan limits (before addons) to calculate correctly
     // Current planLimits = base plan + all active addons
