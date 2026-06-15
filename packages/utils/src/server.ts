@@ -39,6 +39,8 @@ export {
   assertPlanLimit, 
   checkPlanLimitIfNeeded,
   getCurrentEntityCounts,
+  getEntityCountsForAddonDeletion,
+  countMerchantUsersForPlanLimit,
   getPlanLimitsInfo,
   validatePlanLimits,
   validatePlatformAccess,
