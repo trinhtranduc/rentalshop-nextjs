@@ -207,8 +207,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
     currency: 'VND',
     limits: {
       outlets: 1,
-      users: 3,
-      products: 500,
+      users: 2,
+      products: 2000,
       customers: 2000,
       orders: 2000
     },
@@ -237,7 +237,7 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
     currency: 'VND',
     limits: {
       outlets: 1,
-      users: 8,
+      users: 4,
       products: 5000,
       customers: 10000,
       orders: 10000
