@@ -208,9 +208,9 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
     limits: {
       outlets: 1,
       users: 2,
-      products: 2000,
-      customers: 2000,
-      orders: 2000
+      products: 3000,
+      customers: 3000,
+      orders: 3000
     },
     features: [
       { name: 'Mobile app access', description: 'Access your business on mobile devices', included: true },
