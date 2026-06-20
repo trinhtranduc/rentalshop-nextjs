@@ -41,6 +41,7 @@ model User {
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
+  refreshTokens          RefreshToken[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -65,6 +66,25 @@ model UserSession {
 
   @@index([userId, isActive])
   @@index([sessionId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  tokenHash   String    @unique
+  deviceId    String?
+  userAgent   String?
+  ipAddress   String?
+  isRevoked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedBy  String?   // Token rotation: points to the new token hash
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked])
+  @@index([tokenHash])
   @@index([expiresAt])
 }
 

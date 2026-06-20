@@ -16,11 +16,12 @@ export function generateSessionId(): string {
 export async function createUserSession(
   userId: number,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
+  expiryDays: number = 7
 ) {
   const sessionId = generateSessionId();
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+  expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
   // Start a transaction to ensure atomicity
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {

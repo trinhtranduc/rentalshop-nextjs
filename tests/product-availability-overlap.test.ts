@@ -24,7 +24,8 @@ const ORDER_TYPE = {
 
 /**
  * Helper function: Check if order overlaps with requested rental period
- * This is the same logic from apps/api/app/api/products/availability/route.ts
+ * This is the CORRECTED logic matching /api/products/[id]/availability
+ * Uses standard interval overlap: orderPickup < periodEnd AND orderReturn > periodStart
  */
 function isOrderActiveInPeriod(
   order: {
@@ -44,47 +45,35 @@ function isOrderActiveInPeriod(
     return status === ORDER_STATUS.RESERVED;
   }
   
+  // RETURNED orders never count
+  if (status === ORDER_STATUS.RETURNED) {
+    return false;
+  }
+  
+  // Only active statuses: RESERVED and PICKUPED
+  if (status !== ORDER_STATUS.PICKUPED && status !== ORDER_STATUS.RESERVED) {
+    return false;
+  }
+  
   // Get order's rental period
   const orderPickup = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
   const orderReturn = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
   
   if (!orderPickup) return false; // No pickup date = not active
   
-  // Normalize order dates to UTC
-  const orderPickupStart = new Date(orderPickup);
-  orderPickupStart.setUTCHours(0, 0, 0, 0);
-  
+  // Normalize orderReturn to end of day for comparison
   const orderReturnEnd = orderReturn ? new Date(orderReturn) : null;
   if (orderReturnEnd) {
     orderReturnEnd.setUTCHours(23, 59, 59, 999);
   }
   
-  // Check overlap: orders overlap if their rental periods intersect
-  // Order is active if:
-  // 1. Order pickup is within requested period, OR
-  // 2. Order return is within requested period, OR
-  // 3. Order spans across requested period (pickup before start, return after end)
-  
-  if (status === ORDER_STATUS.PICKUPED) {
-    // Currently rented: active if return date hasn't passed start of requested period
-    if (!orderReturnEnd) return true; // No return date = still active
-    return orderReturnEnd >= startOfPeriod;
+  if (!orderReturnEnd) {
+    // No return date: consider active if pickup is within or before the period end
+    return orderPickup <= endOfPeriod;
   }
   
-  if (status === ORDER_STATUS.RESERVED) {
-    // Reserved: active if rental period overlaps with requested period
-    const hasOverlap = 
-      (orderPickupStart <= endOfPeriod && (!orderReturnEnd || orderReturnEnd >= startOfPeriod));
-    return hasOverlap;
-  }
-  
-  if (status === ORDER_STATUS.RETURNED) {
-    // Returned: was active if rental period overlapped with requested period
-    if (!orderReturnEnd) return false;
-    return orderPickupStart <= endOfPeriod && orderReturnEnd >= startOfPeriod;
-  }
-  
-  return false;
+  // Standard interval overlap: orderPickup < endOfPeriod AND orderReturnEnd > startOfPeriod
+  return orderPickup < endOfPeriod && orderReturnEnd > startOfPeriod;
 }
 
 /**
@@ -683,6 +672,496 @@ describe('Product Availability Overlap Tests', () => {
       expect(result.totalAvailable).toBe(7); // 10 - 2 - 1 = 7
       expect(result.isAvailable).toBe(true);
       expect(result.activeOrders.length).toBe(2); // Order 1 và 2
+    });
+  });
+
+  // ============================================================================
+  // NEW TEST CASES - Double-Count Prevention & Quantity Checks
+  // ============================================================================
+
+  describe('Double-Count Prevention (Bug Fix)', () => {
+    it('should NOT double-count PICKUPED orders that overlap with period', () => {
+      // This was the bug: if we use totalStock - renting - conflicts,
+      // a PICKUPED order gets counted BOTH in "renting" and "conflicts"
+      // Fix: effectivelyAvailable = totalStock - conflictingQuantity (only)
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      // Scenario: stock=5, 2 units currently PICKUPED (overlap), 1 unit RESERVED (overlap)
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        },
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-02-27T09:00:00.000Z',
+          returnPlanAt: '2026-02-29T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 1 }]
+        }
+      ];
+
+      const stockForTest = 5;
+      const result = calculateProductAvailability(
+        stockForTest,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // Correct: 5 - 2 (PICKUPED) - 1 (RESERVED) = 2 available
+      // Wrong (double-count): 5 - 2 (renting) - 2 (PICKUPED conflict) - 1 (RESERVED) = 0
+      expect(result.totalRented).toBe(2);
+      expect(result.totalReserved).toBe(1);
+      expect(result.totalAvailable).toBe(2); // 5 - 2 - 1 = 2
+      expect(result.isAvailable).toBe(true);
+    });
+
+    it('should correctly calculate when all stock is occupied', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const stockForTest = 3;
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        },
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-02-27T09:00:00.000Z',
+          returnPlanAt: '2026-02-29T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 1 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        stockForTest,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // 3 - 2 - 1 = 0
+      expect(result.totalAvailable).toBe(0);
+      expect(result.isAvailable).toBe(false);
+    });
+  });
+
+  describe('Quantity Validation', () => {
+    it('should report unavailable when requested qty exceeds available', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 8 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock, // 10
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // 10 - 8 = 2 available, but if customer wants 5, not enough
+      expect(result.totalAvailable).toBe(2);
+      expect(result.isAvailable).toBe(true); // isAvailable means > 0
+      // Client-side logic checks: effectivelyAvailable >= requestedQuantity
+      // So requesting 5 would be "unavailable" on client
+    });
+
+    it('should handle multiple items in single order', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [
+            { productId, quantity: 3 },  // same product, 2 line items
+            { productId, quantity: 2 },
+          ]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // Both line items count: 3 + 2 = 5
+      expect(result.totalRented).toBe(5);
+      expect(result.totalAvailable).toBe(5);
+    });
+
+    it('should ignore order items for different products', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const otherProductId = 9999;
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [
+            { productId, quantity: 2 },           // Our product
+            { productId: otherProductId, quantity: 5 }, // Different product
+          ]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // Only count our product
+      expect(result.totalRented).toBe(2);
+      expect(result.totalAvailable).toBe(8);
+    });
+  });
+
+  describe('Boundary Conditions', () => {
+    it('should detect overlap when order return = period start (same day)', () => {
+      // Order returns on the same day the check period starts
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-25T10:00:00.000Z',
+          returnPlanAt: '2026-02-27T00:00:00.000Z', // Returns at start of period
+          orderItems: [{ productId, quantity: 3 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // orderReturnEnd = 2026-02-27T23:59:59.999Z > startOfPeriod = 2026-02-27T00:00:00.000Z
+      // AND orderPickup = 2026-02-25 < endOfPeriod = 2026-02-28T23:59:59.999Z
+      // → overlap!
+      expect(result.totalRented).toBe(3);
+      expect(result.activeOrders.length).toBe(1);
+    });
+
+    it('should NOT detect overlap when order return < period start', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-20T10:00:00.000Z',
+          returnPlanAt: '2026-02-26T10:00:00.000Z', // Returns BEFORE period
+          orderItems: [{ productId, quantity: 3 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // orderReturnEnd = 2026-02-26T23:59:59.999Z < startOfPeriod = 2026-02-27T00:00:00.000Z?
+      // Actually 2026-02-26T23:59:59.999Z is NOT > startOfPeriod 2026-02-27T00:00:00.000Z
+      // So NO overlap
+      expect(result.totalRented).toBe(0);
+      expect(result.activeOrders.length).toBe(0);
+      expect(result.totalAvailable).toBe(10);
+    });
+
+    it('should detect overlap when order pickup = period end (same day)', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-02-28T10:00:00.000Z', // Pickup on last day of period
+          returnPlanAt: '2026-03-02T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 4 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // orderPickup = 2026-02-28T10:00:00.000Z < endOfPeriod = 2026-02-28T23:59:59.999Z ✓
+      // orderReturnEnd = 2026-03-02T23:59:59.999Z > startOfPeriod = 2026-02-27T00:00:00.000Z ✓
+      // → overlap
+      expect(result.totalReserved).toBe(4);
+      expect(result.activeOrders.length).toBe(1);
+    });
+
+    it('should NOT detect overlap when order pickup > period end', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-03-01T10:00:00.000Z', // Starts AFTER period
+          returnPlanAt: '2026-03-05T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 4 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // orderPickup = 2026-03-01 is NOT < endOfPeriod = 2026-02-28T23:59:59.999Z
+      expect(result.totalReserved).toBe(0);
+      expect(result.activeOrders.length).toBe(0);
+    });
+
+    it('should handle zero stock', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const result = calculateProductAvailability(
+        0, // zero stock
+        [],
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      expect(result.totalStock).toBe(0);
+      expect(result.totalAvailable).toBe(0);
+      expect(result.isAvailable).toBe(false);
+    });
+
+    it('should handle no orders (fully available)', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const result = calculateProductAvailability(
+        totalStock,
+        [],
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      expect(result.totalAvailable).toBe(10);
+      expect(result.isAvailable).toBe(true);
+      expect(result.activeOrders.length).toBe(0);
+    });
+  });
+
+  describe('CANCELLED Orders', () => {
+    it('should NOT count CANCELLED orders', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.CANCELLED,
+          pickupPlanAt: '2026-02-27T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 5 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      expect(result.totalRented).toBe(0);
+      expect(result.totalReserved).toBe(0);
+      expect(result.totalAvailable).toBe(10);
+      expect(result.activeOrders.length).toBe(0);
+    });
+  });
+
+  describe('Mixed RENT and SALE Orders', () => {
+    it('should handle both RENT and SALE orders in same period', () => {
+      const pickupDate = '2026-02-27';
+      const returnDate = '2026-02-28';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        // RENT PICKUPED
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-26T10:00:00.000Z',
+          returnPlanAt: '2026-02-28T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        },
+        // SALE RESERVED (counts)
+        {
+          orderType: ORDER_TYPE.SALE,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-02-27T10:00:00.000Z',
+          returnPlanAt: null,
+          orderItems: [{ productId, quantity: 3 }]
+        },
+        // SALE COMPLETED (doesn't count - already reduced stock permanently)
+        {
+          orderType: ORDER_TYPE.SALE,
+          status: ORDER_STATUS.COMPLETED,
+          pickupPlanAt: '2026-02-27T10:00:00.000Z',
+          returnPlanAt: null,
+          orderItems: [{ productId, quantity: 1 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      expect(result.totalRented).toBe(2);  // RENT PICKUPED
+      expect(result.totalReserved).toBe(3); // SALE RESERVED only
+      expect(result.totalAvailable).toBe(5); // 10 - 2 - 3 = 5
+    });
+  });
+
+  describe('Long Rental Period (Week/Month)', () => {
+    it('should correctly handle a 7-day rental period with multiple conflicts', () => {
+      const pickupDate = '2026-03-01';
+      const returnDate = '2026-03-07';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        // Overlaps first 2 days
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-28T10:00:00.000Z',
+          returnPlanAt: '2026-03-02T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        },
+        // Overlaps middle
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-03-03T10:00:00.000Z',
+          returnPlanAt: '2026-03-05T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 3 }]
+        },
+        // Overlaps last 2 days
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-03-06T10:00:00.000Z',
+          returnPlanAt: '2026-03-10T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 1 }]
+        },
+        // NO overlap (before period)
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-02-20T10:00:00.000Z',
+          returnPlanAt: '2026-02-25T17:00:00.000Z',
+          orderItems: [{ productId, quantity: 4 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        totalStock,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // All 3 overlap. The "worst case" for availability is the maximum
+      // simultaneous occupation. But our simple model sums ALL conflicts:
+      // totalRented = 2, totalReserved = 3 + 1 = 4
+      // totalAvailable = 10 - 2 - 4 = 4
+      expect(result.totalRented).toBe(2);
+      expect(result.totalReserved).toBe(4);
+      expect(result.totalAvailable).toBe(4);
+      expect(result.activeOrders.length).toBe(3);
     });
   });
 });
