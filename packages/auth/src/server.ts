@@ -67,4 +67,4 @@ export type {
 } from './core';
 
 // Export specific JWT functions (server-only)
-export { verifyTokenSimple, generateToken, verifyToken } from './jwt';
+export { verifyTokenSimple, generateToken, generateMobileToken, verifyToken, TOKEN_EXPIRY } from './jwt';

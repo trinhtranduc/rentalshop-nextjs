@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth/server';
 import { loginSchema, handleApiError } from '@rentalshop/utils';
-import { apiConfig } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { db } from '@rentalshop/database';
+import { API } from '@rentalshop/constants';
 
 /**
  * @swagger
  * /api/mobile/auth/login:
  *   post:
  *     summary: Mobile user login
- *     description: Authenticate mobile user with email and password
+ *     description: Authenticate mobile user with email and password. Returns access token (7d) and refresh token (30d).
  *     tags: [Mobile, Authentication]
  *     requestBody:
  *       required: true
@@ -20,7 +20,6 @@ import {API} from '@rentalshop/constants';
  *             required:
  *               - email
  *               - password
- *               - deviceId
  *             properties:
  *               email:
  *                 type: string
@@ -34,7 +33,7 @@ import {API} from '@rentalshop/constants';
  *                 example: "password123"
  *               deviceId:
  *                 type: string
- *                 description: Mobile device identifier
+ *                 description: Mobile device identifier (used for refresh token binding)
  *                 example: "device-123456"
  *               pushToken:
  *                 type: string
@@ -53,25 +52,24 @@ import {API} from '@rentalshop/constants';
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Login successful"
+ *                   example: "Mobile login successful"
  *                 data:
  *                   type: object
  *                   properties:
  *                     user:
  *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                         email:
- *                           type: string
- *                         name:
- *                           type: string
- *                         role:
- *                           type: string
  *                     token:
  *                       type: string
+ *                       description: Access token (expires in 7 days)
  *                     refreshToken:
  *                       type: string
+ *                       description: Refresh token (expires in 30 days, use to get new access token)
+ *                     expiresIn:
+ *                       type: string
+ *                       example: "7d"
+ *                     refreshExpiresIn:
+ *                       type: string
+ *                       example: "30d"
  *                     deviceId:
  *                       type: string
  *       400:
@@ -88,23 +86,35 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = loginSchema.parse(body);
     
-    // Login user
+    // Login user (validates credentials, checks subscription, generates access token)
     const result = await loginUser({
       email: validatedData.email,
       password: validatedData.password,
     });
     
-    // Mobile-specific response with refresh token and device info
+    // Generate a proper refresh token (stored in DB, hashed)
+    const deviceId = body.deviceId || null;
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
+    const userAgent = request.headers.get('user-agent') || undefined;
+
+    const refreshToken = await db.refreshTokens.create(result.user.id, {
+      deviceId,
+      userAgent,
+      ipAddress,
+    });
+    
     return NextResponse.json({
       success: true,
       code: 'MOBILE_LOGIN_SUCCESS',
-        message: 'Mobile login successful',
+      message: 'Mobile login successful',
       data: {
         ...result,
-        refreshToken: 'mobile-refresh-token-' + Date.now(), // Generate refresh token
-        deviceId: body.deviceId || 'unknown-device',
-        pushToken: body.pushToken || null
-      }
+        refreshToken,
+        expiresIn: '7d',
+        refreshExpiresIn: '30d',
+        deviceId: deviceId || 'unknown-device',
+        pushToken: body.pushToken || null,
+      },
     });
     
   } catch (error: any) {
@@ -114,4 +124,4 @@ export async function POST(request: NextRequest) {
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-} 
+}

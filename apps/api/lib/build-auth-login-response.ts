@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
-import { generateToken, getUserPermissions } from '@rentalshop/auth/server';
+import { generateToken, generateMobileToken, getUserPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
+import { detectPlatform } from './platform-detector';
 
 type LoginUserRow = NonNullable<Awaited<ReturnType<typeof db.users.findByEmail>>>;
 
@@ -114,7 +115,12 @@ export async function buildAuthLoginSuccessResponse(
     request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
   const userAgent = request.headers.get('user-agent') || undefined;
 
-  const session = await db.sessions.createUserSession(user.id, ipAddress, userAgent);
+  // Detect platform for session and token expiry
+  const platformInfo = detectPlatform(request);
+  const isMobile = platformInfo.platform === 'mobile';
+  const sessionExpiryDays = isMobile ? 30 : 7;
+
+  const session = await db.sessions.createUserSession(user.id, ipAddress, userAgent, sessionExpiryDays);
 
   const passwordChangedAt = (user as any).passwordChangedAt
     ? Math.floor((user as any).passwordChangedAt.getTime() / 1000)
@@ -142,16 +148,27 @@ export async function buildAuthLoginSuccessResponse(
     });
   }
 
-  const token = generateToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-    merchantId: user.merchantId,
-    outletId: user.outletId,
-    sessionId: session.sessionId,
-    passwordChangedAt,
-    permissionsChangedAt,
-  } as any);
+  const token = (() => {
+    const tokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+      sessionId: session.sessionId,
+      passwordChangedAt,
+      permissionsChangedAt,
+    } as any;
+
+    // Mobile gets 30-day token (can't easily refresh without app rebuild)
+    if (isMobile) {
+      console.log('📱 LOGIN: Mobile platform detected, issuing 30-day token');
+      return generateMobileToken(tokenPayload);
+    }
+
+    // Web gets standard 7-day token (has proactive refresh logic)
+    return generateToken(tokenPayload);
+  })();
 
   const getBaseUrl = () =>
     process.env.CLIENT_URL || process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop';

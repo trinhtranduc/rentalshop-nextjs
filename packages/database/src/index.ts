@@ -21,6 +21,7 @@ import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
+import { refreshTokens } from './refresh-tokens';
 import { simplifiedSync } from './sync';
 import { simplifiedPosts } from './post';
 import { simplifiedPostCategories } from './post-category';
@@ -166,6 +167,11 @@ const db = {
   sessions,
 
   // ============================================================================
+  // REFRESH TOKEN OPERATIONS
+  // ============================================================================
+  refreshTokens,
+
+  // ============================================================================
   // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
   // ============================================================================
   sync: simplifiedSync,
@@ -262,6 +268,9 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
 // ============================================================================
 
 export { db, checkDatabaseConnection, generateOrderNumber };
+
+// Export refresh token functions
+export { refreshTokens, createRefreshToken, rotateRefreshToken, revokeRefreshToken, revokeAllUserTokens } from './refresh-tokens';
 
 // Export payment functions
 export { simplifiedPayments } from './payment';

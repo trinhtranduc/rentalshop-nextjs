@@ -4,6 +4,13 @@ import { getSubscriptionError } from '@rentalshop/utils/server';
 // Get JWT secret from environment or use a fallback
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'local-jwt-secret-key-change-this';
 
+// Token expiry configuration
+export const TOKEN_EXPIRY = {
+  ACCESS_TOKEN: '7d',             // Web access token: 7 days
+  ACCESS_TOKEN_MOBILE: '30d',     // Mobile access token: 30 days (mobile can't refresh easily)
+  REFRESH_TOKEN_DAYS: 30,         // Refresh token: 30 days
+} as const;
+
 export interface JWTPayload {
   userId: number;  // This should be the id (number) for consistency
   email: string;
@@ -19,8 +26,19 @@ export interface JWTPayload {
 export const generateToken = (payload: JWTPayload): string => {
   console.log('🔍 JWT GENERATE: Creating token with payload:', JSON.stringify(payload, null, 2));
   console.log('🔍 JWT GENERATE: Using JWT_SECRET:', JWT_SECRET ? `${JWT_SECRET.substring(0, 10)}...` : 'UNDEFINED');
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY.ACCESS_TOKEN });
   console.log('🔍 JWT GENERATE: Generated token:', token ? `${token.substring(0, 20)}...` : 'FAILED');
+  return token;
+};
+
+/**
+ * Generate a token with longer expiry for mobile clients.
+ * Mobile apps can't easily refresh tokens without user interaction,
+ * so we give them 30 days instead of 7 days.
+ */
+export const generateMobileToken = (payload: JWTPayload): string => {
+  console.log('🔍 JWT GENERATE (MOBILE): Creating 30d token');
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY.ACCESS_TOKEN_MOBILE });
   return token;
 };
 
