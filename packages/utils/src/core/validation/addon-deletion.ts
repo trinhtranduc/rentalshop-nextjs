@@ -126,6 +126,10 @@ export async function validateAddonDeletion(
     ];
 
     for (const entityType of entityTypes) {
+      // Only validate limits this addon actually reduces (e.g. user-only addon → skip outlets)
+      const addonContribution = addonToRemove[entityType];
+      if (addonContribution <= 0) continue;
+
       const currentCount = currentCounts[entityType];
       const futureLimit = futureLimits[entityType];
 

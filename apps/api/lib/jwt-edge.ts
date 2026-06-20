@@ -107,14 +107,20 @@ export function verifyTokenSimple(token: string): JWTPayload {
     });
     
     if (payload.exp && payload.exp < now) {
-      console.log('🔍 JWT EDGE: Token expired');
-      throw new Error('Token expired');
-    }
-    
-    // Validate token age (not too old)
-    if (payload.iat && (now - payload.iat) > 7 * 24 * 60 * 60) { // 7 days
-      console.log('🔍 JWT EDGE: Token too old');
-      throw new Error('Token too old');
+      // Grace period: allow tokens expired within the last 24 hours
+      // This prevents mobile users from being logged out immediately after token expires
+      const GRACE_PERIOD_SECONDS = 24 * 60 * 60; // 24 hours
+      const expiredDuration = now - payload.exp;
+      
+      if (expiredDuration > GRACE_PERIOD_SECONDS) {
+        console.log('🔍 JWT EDGE: Token expired beyond grace period');
+        throw new Error('Token expired');
+      }
+      
+      console.log('🔍 JWT EDGE: Token expired but within grace period, allowing through', {
+        expiredSeconds: expiredDuration,
+        gracePeriod: GRACE_PERIOD_SECONDS
+      });
     }
     
     // For now, skip signature verification in Edge Runtime

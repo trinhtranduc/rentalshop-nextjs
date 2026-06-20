@@ -207,10 +207,10 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
     currency: 'VND',
     limits: {
       outlets: 1,
-      users: 3,
-      products: 500,
-      customers: 2000,
-      orders: 2000
+      users: 2,
+      products: 3000,
+      customers: 3000,
+      orders: 3000
     },
     features: [
       { name: 'Mobile app access', description: 'Access your business on mobile devices', included: true },
@@ -237,7 +237,7 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
     currency: 'VND',
     limits: {
       outlets: 1,
-      users: 8,
+      users: 4,
       products: 5000,
       customers: 10000,
       orders: 10000

@@ -116,8 +116,8 @@ function buildProductOrderByClause(sortBy?: string, sortOrder?: string): any {
     'createdAt', 'updatedAt', 'name', 'rentPrice', 'salePrice', 'totalStock'
   ];
   
-  const field = validSortFields.includes(sortBy || '') ? sortBy : 'createdAt';
-  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+  const field = validSortFields.includes(sortBy || '') ? sortBy : 'name';
+  const order = sortOrder === 'desc' ? 'desc' : 'asc';
   
   return { [field as string]: order };
 }

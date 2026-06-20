@@ -165,12 +165,14 @@ export async function GET(
 
       // Get stock info for single outlet
       const totalStock = outletStock.stock;
+      
+      // NOTE: We do NOT use outletStock.renting for availability calculation here.
+      // The `renting` field is a static counter that may be stale.
+      // Instead, we calculate conflicts directly from active orders to avoid double-counting.
+      // outletStock.renting is still returned for informational purposes.
       const totalRenting = outletStock.renting;
       
-      // Calculate available from actual orders (more accurate than OutletStock.available)
-      // For RENT: available = stock - renting (temporary)
-      // For SALE: available = stock - sold (permanent, but we track via stock directly)
-      // Since we're checking availability for a potential RENT order, use: available = stock - renting
+      // For basic stock check (no dates), use static stock info
       const totalAvailableStock = Math.max(0, totalStock - totalRenting);
 
       console.log('🔍 Stock summary:', {
@@ -495,11 +497,12 @@ export async function GET(
       const conflictingQuantity = outletConflicts.conflictingQuantity;
       
       // Calculate available quantity considering conflicts during rental period
-      // Available = stock - renting (from OutletStock) - conflicts (from active RENT orders)
-      // This ensures we account for both:
-      // 1. Items currently rented (renting field)
-      // 2. Items reserved/picked up during the requested period (conflicts)
-      const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
+      // effectivelyAvailable = totalStock - conflictingQuantity (from active RENT orders in period)
+      // We use totalStock directly (NOT totalAvailableStock) because conflictingQuantity
+      // already includes PICKUPED orders that overlap the period.
+      // Using totalAvailableStock would double-count PICKUPED orders
+      // (once in outletStock.renting, once in conflictingQuantity).
+      const effectivelyAvailable = Math.max(0, totalStock - conflictingQuantity);
       const canFulfillRequest = effectivelyAvailable >= quantity;
 
       // Enhanced logging for debugging rental calculation
@@ -507,13 +510,14 @@ export async function GET(
         outletId: finalOutletId,
         productId: productId,
         totalStock,
-        totalAvailableStock,
         totalRenting,
+        totalAvailableStock,
         conflictingQuantity,
         effectivelyAvailable,
         requestedQuantity: quantity,
         canFulfillRequest,
         conflictingOrdersCount: conflictingOrders.length,
+        note: 'effectivelyAvailable = totalStock - conflictingQuantity (avoids double-count with renting)',
         conflictsDetails: outletConflicts.conflicts.map(c => ({
           orderNumber: c.orderNumber,
           quantity: c.quantity,

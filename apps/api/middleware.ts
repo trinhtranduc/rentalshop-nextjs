@@ -35,6 +35,7 @@ const publicRoutes = [
   '/api/posts/slug/', // Public post by slug (for client app) - note: trailing slash for pattern matching
   '/api/posts/categories/public', // Public post categories
   '/api/posts/tags/public', // Public post tags
+  '/api/mobile/auth', // Mobile auth endpoints (login, refresh) - no JWT required
   '/api/test',
   '/api/debug', // Debug endpoints for troubleshooting
   '/api/sync-proxy', // Sync proxy endpoint (no authentication required)
