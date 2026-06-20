@@ -102,6 +102,13 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     }
 
     // Use simplified database API with role-based filtering
+    // Mobile app (on store) hardcodes sortBy=createdAt&sortOrder=desc
+    // Override to sort by name for consistent UX until next mobile app update
+    const platform = request.headers.get('x-platform') || request.headers.get('x-client-platform') || '';
+    const isMobilePlatform = platform.toLowerCase() === 'mobile';
+    const effectiveSortBy = isMobilePlatform ? 'name' : (sortBy as any);
+    const effectiveSortOrder = isMobilePlatform ? 'asc' : (sortOrder as any);
+
     const searchFilters = {
       merchantId: filterMerchantId,
       outletId: filterOutletId,
@@ -111,8 +118,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       available,
       minPrice,
       maxPrice,
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
+      sortBy: effectiveSortBy,
+      sortOrder: effectiveSortOrder,
       page: page || 1,
       limit: limit || 50
     };
