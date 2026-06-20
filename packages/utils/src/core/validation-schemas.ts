@@ -181,8 +181,8 @@ export const productsQuerySchema = z.object({
   maxPrice: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['name', 'createdAt', 'rentPrice']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  sortBy: z.enum(['name', 'createdAt', 'rentPrice']).default('name'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 export const rentalSchema = z.object({

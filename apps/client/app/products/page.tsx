@@ -123,8 +123,8 @@ export default function ProductsPage() {
   const outletId = searchParams.get('outlet') ? parseInt(searchParams.get('outlet')!) : undefined;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
-  const sortBy = searchParams.get('sortBy') || 'createdAt';
-  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  const sortBy = searchParams.get('sortBy') || 'name';
+  const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple
