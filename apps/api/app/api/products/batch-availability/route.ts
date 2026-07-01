@@ -512,7 +512,10 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
 
           // Calculate final availability using product-specific quantity
           const conflictingQuantity = outletConflicts.conflictingQuantity;
-          const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
+          // CRITICAL FIX: Use totalStock (not totalAvailableStock) to avoid double-counting
+          // conflictingQuantity already includes PICKUPED orders that overlap the period.
+          // Using totalAvailableStock would double-count (once in renting, once in conflictingQuantity).
+          const effectivelyAvailable = Math.max(0, totalStock - conflictingQuantity);
           const canFulfillRequest = effectivelyAvailable >= productQuantity;
           const isAvailable = canFulfillRequest;
 

@@ -650,9 +650,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
     }
 
     // Full name search: split into words and match each against firstName OR lastName
-    const searchWords = searchTerm.split(/\s+/).filter(w => w.length > 0);
+    const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
     if (searchWords.length > 1) {
-      const allWordsMatch = searchWords.map(word => ({
+      const allWordsMatch = searchWords.map((word: string) => ({
         customer: {
           OR: [
             { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -663,8 +663,8 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
       searchConditions.push({ AND: allWordsMatch });
 
       if (normalizedTerm !== searchTerm) {
-        const normalizedWords = normalizedTerm.split(/\s+/).filter(w => w.length > 0);
-        const allNormalizedWordsMatch = normalizedWords.map(word => ({
+        const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
+        const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
           customer: {
             OR: [
               { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1042,9 +1042,9 @@ export const simplifiedOrders = {
       }
 
       // Full name search: split into words and match each against firstName OR lastName
-      const searchWords = searchTerm.split(/\s+/).filter(w => w.length > 0);
+      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
       if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map(word => ({
+        const allWordsMatch = searchWords.map((word: string) => ({
           customer: {
             OR: [
               { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1055,8 +1055,8 @@ export const simplifiedOrders = {
         searchConditions.push({ AND: allWordsMatch });
 
         if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter(w => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map(word => ({
+          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
+          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
             customer: {
               OR: [
                 { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1440,9 +1440,9 @@ export const simplifiedOrders = {
       }
 
       // Full name search: split into words and match each against firstName OR lastName
-      const searchWords = searchTerm.split(/\s+/).filter(w => w.length > 0);
+      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
       if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map(word => ({
+        const allWordsMatch = searchWords.map((word: string) => ({
           customer: {
             OR: [
               { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1453,8 +1453,8 @@ export const simplifiedOrders = {
         searchConditions.push({ AND: allWordsMatch });
 
         if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter(w => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map(word => ({
+          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
+          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
             customer: {
               OR: [
                 { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1689,9 +1689,9 @@ export const simplifiedOrders = {
 
       // Full name search: split search term into words and match each word against firstName OR lastName
       // This handles cases like searching "hồng ngọc" when data is firstName="Hồng", lastName="Ngọc"
-      const searchWords = searchTerm.split(/\s+/).filter(w => w.length > 0);
+      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
       if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map(word => ({
+        const allWordsMatch = searchWords.map((word: string) => ({
           customer: {
             OR: [
               { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -1703,8 +1703,8 @@ export const simplifiedOrders = {
 
         // Also try with normalized (no diacritics) version for each word
         if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter(w => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map(word => ({
+          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
+          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
             customer: {
               OR: [
                 { firstName: { contains: word, mode: 'insensitive' as const } },
