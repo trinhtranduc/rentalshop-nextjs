@@ -17,6 +17,8 @@ const availabilityQuerySchema = z.object({
   timeZone: z.string().optional().default('UTC'), // Support timezone for proper time comparison
   // Include all orders (RETURNED, CANCELLED, etc.) in response - default false (only active)
   includeAllOrders: z.coerce.boolean().optional().default(false),
+  // Exclude a specific order from conflict check (used when editing an existing order)
+  excludeOrderId: z.coerce.number().int().positive().optional(),
 });
 
 /**
@@ -71,7 +73,7 @@ export async function GET(
         );
       }
 
-      const { startDate, endDate, date, quantity, includeTimePrecision, timeZone, includeAllOrders } = parsedQuery.data;
+      const { startDate, endDate, date, quantity, includeTimePrecision, timeZone, includeAllOrders, excludeOrderId } = parsedQuery.data;
 
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
@@ -282,6 +284,8 @@ export async function GET(
           // CRITICAL FIX: Filter by specific outlet, not all merchant outlets
           outletId: finalOutletId,
           deletedAt: null,
+          // Exclude a specific order from conflict check (used when editing an existing order)
+          ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
           // Overlap condition: orderPickup < rentalEnd AND orderReturn > rentalStart
           pickupPlanAt: { lt: rentalEnd },
           returnPlanAt: { gt: rentalStart },
