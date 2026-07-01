@@ -1163,5 +1163,65 @@ describe('Product Availability Overlap Tests', () => {
       expect(result.totalAvailable).toBe(4);
       expect(result.activeOrders.length).toBe(3);
     });
+
+    it('should correctly handle: stock=3, PICKUPED order before period does NOT conflict, RESERVED order partially overlaps', () => {
+      // Real scenario: Product "AD quả kem Nhược Vân - S"
+      // Stock: 3
+      // Order 966885: 01/07-05/07, qty 1, PICKUPED (does NOT overlap 08/07-20/07)
+      // Order 803628: 17/07-20/07, qty 2, RESERVED (overlaps 08/07-20/07)
+      // Order 908857: 30/07-03/08, qty 2, RESERVED (does NOT overlap 08/07-20/07)
+      // Request: qty 1 for 08/07-20/07
+      // Expected: only Order 803628 conflicts → totalReserved=2, totalAvailable = 3-0-2 = 1
+
+      const stockForScenario = 3;
+      const pickupDate = '2026-07-08';
+      const returnDate = '2026-07-20';
+      const startOfPeriod = new Date(pickupDate + 'T00:00:00.000Z');
+      const endOfPeriod = new Date(returnDate + 'T23:59:59.999Z');
+
+      const orders = [
+        // Order 966885: 01/07-05/07, PICKUPED - should NOT overlap with 08/07-20/07
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.PICKUPED,
+          pickupPlanAt: '2026-07-01T00:00:00.000Z',
+          returnPlanAt: '2026-07-05T00:00:00.000Z',
+          orderItems: [{ productId, quantity: 1 }]
+        },
+        // Order 803628: 17/07-20/07, RESERVED - overlaps with 08/07-20/07
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-07-17T00:00:00.000Z',
+          returnPlanAt: '2026-07-20T00:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        },
+        // Order 908857: 30/07-03/08, RESERVED - should NOT overlap with 08/07-20/07
+        {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.RESERVED,
+          pickupPlanAt: '2026-07-30T00:00:00.000Z',
+          returnPlanAt: '2026-08-03T00:00:00.000Z',
+          orderItems: [{ productId, quantity: 2 }]
+        }
+      ];
+
+      const result = calculateProductAvailability(
+        stockForScenario,
+        orders,
+        productId,
+        startOfPeriod,
+        endOfPeriod
+      );
+
+      // Only Order 803628 overlaps: 17/07 < 20/07(endOfPeriod) AND 20/07(returnEnd=23:59) > 08/07(startOfPeriod)
+      // Order 966885: returnPlanAt=05/07 → returnEnd=05/07 23:59:59 < 08/07(startOfPeriod)? NO! 05/07 23:59 < 08/07 00:00 → YES, no overlap ✓
+      // Order 908857: pickupPlanAt=30/07 → 30/07 < 20/07 23:59? NO → no overlap ✓
+      expect(result.totalRented).toBe(0); // Order 966885 (PICKUPED) does NOT overlap
+      expect(result.totalReserved).toBe(2); // Only Order 803628 (RESERVED, qty 2) overlaps
+      expect(result.totalAvailable).toBe(1); // 3 - 0 - 2 = 1
+      expect(result.isAvailable).toBe(true); // Can fulfill qty 1
+      expect(result.activeOrders.length).toBe(1); // Only 1 order overlaps
+    });
   });
 });

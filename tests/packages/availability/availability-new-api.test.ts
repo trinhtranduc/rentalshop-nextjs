@@ -57,13 +57,14 @@ function buildOrdersResponse(
 }
 
 // Simulate effectivelyAvailable calculation
+// FIXED: Use totalStock - conflictingQuantity (not totalAvailableStock - conflictingQuantity)
+// This avoids double-counting PICKUPED orders that are already in renting AND in conflictingQuantity
 function calculateEffectivelyAvailable(
   totalStock: number,
-  totalRenting: number,
+  _totalRenting: number, // kept for backward compat but not used in formula
   conflictingQuantity: number
 ): number {
-  const totalAvailableStock = Math.max(0, totalStock - totalRenting);
-  return Math.max(0, totalAvailableStock - conflictingQuantity);
+  return Math.max(0, totalStock - conflictingQuantity);
 }
 
 describe('New Availability API - Orders Response', () => {
@@ -144,27 +145,45 @@ describe('New Availability API - Orders Response', () => {
   });
 
   describe('effectivelyAvailable calculation', () => {
-    it('should calculate: stock - renting - conflicts', () => {
+    it('should calculate: totalStock - conflictingQuantity (ignores renting to avoid double-count)', () => {
       // Product 60: stock=13, renting=1, conflicts=3
+      // Formula: totalStock - conflictingQuantity = 13 - 3 = 10
+      // (renting is ignored because conflicting orders already include PICKUPED orders that overlap)
       const result = calculateEffectivelyAvailable(13, 1, 3);
-      expect(result).toBe(9); // 13 - 1 - 3 = 9
+      expect(result).toBe(10); // 13 - 3 = 10
     });
 
     it('should not go below 0', () => {
-      // stock=5, renting=3, conflicts=5 → 5-3-5 = -3 → 0
-      const result = calculateEffectivelyAvailable(5, 3, 5);
+      // stock=5, renting=3, conflicts=6 → 5-6 = -1 → 0
+      const result = calculateEffectivelyAvailable(5, 3, 6);
       expect(result).toBe(0);
     });
 
-    it('should return full stock when no renting and no conflicts', () => {
+    it('should return full stock when no conflicts', () => {
       const result = calculateEffectivelyAvailable(20, 0, 0);
       expect(result).toBe(20);
     });
 
-    it('should handle renting > stock gracefully', () => {
-      // Data inconsistency: renting=10 but stock=5
-      const result = calculateEffectivelyAvailable(5, 10, 0);
-      expect(result).toBe(0); // max(0, 5-10) = 0
+    it('should return full stock when renting exists but no conflicts (order not in period)', () => {
+      // renting=3 but conflicts=0 means PICKUPED orders don't overlap requested period
+      const result = calculateEffectivelyAvailable(10, 3, 0);
+      expect(result).toBe(10); // All stock available for the requested period
+    });
+
+    it('should handle real scenario: stock=3, renting=1 (not in period), conflicts=2', () => {
+      // Scenario: Product stock=3
+      // - Order A: 01/07-05/07, qty 1, PICKUPED (renting=1, but NOT in period 08/07-20/07)
+      // - Order B: 17/07-20/07, qty 2, RESERVED (conflicts with 08/07-20/07)
+      // Request: qty 1 for 08/07-20/07
+      // effectivelyAvailable = 3 - 2 = 1 (enough for qty 1)
+      const result = calculateEffectivelyAvailable(3, 1, 2);
+      expect(result).toBe(1);
+    });
+
+    it('should handle conflicts exceeding stock', () => {
+      // stock=3, conflicts=5 → 3-5 = -2 → 0
+      const result = calculateEffectivelyAvailable(3, 0, 5);
+      expect(result).toBe(0);
     });
   });
 
