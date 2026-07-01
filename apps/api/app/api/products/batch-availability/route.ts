@@ -25,6 +25,8 @@ const batchAvailabilitySchema = z.object({
   includeTimePrecision: z.coerce.boolean().optional().default(true),
   timeZone: z.string().optional().default('UTC'),
   outletId: z.coerce.number().int().positive().optional(),
+  // Exclude a specific order from conflict check (used when editing an existing order)
+  excludeOrderId: z.coerce.number().int().positive().optional(),
 }).refine((data) => {
   // For RENT orders: Either 'date' or both 'startDate' and 'endDate' must be provided
   // For SALE orders: Dates are optional and will be ignored even if provided
@@ -103,7 +105,8 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         quantity, // Legacy format: default quantity for all products
         includeTimePrecision, 
         timeZone,
-        outletId: queryOutletId 
+        outletId: queryOutletId,
+        excludeOrderId
       } = parsed.data;
 
       // Normalize to products array format
@@ -263,12 +266,18 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       const now = new Date();
       const whereClause: any = {
         outletId: finalOutletId,
+        deletedAt: null,
         orderItems: {
           some: {
             productId: { in: productIdsList },
           },
         },
       };
+
+      // Exclude a specific order from conflict check (used when editing an existing order)
+      if (excludeOrderId) {
+        whereClause.id = { not: excludeOrderId };
+      }
 
       if (orderType === 'RENT') {
         // RENT orders: Check date-based conflicts

@@ -231,3 +231,319 @@ describe('New Availability API - Orders Response', () => {
     });
   });
 });
+
+// =============================================================================
+// excludeOrderId - Edit Order Availability Tests
+// =============================================================================
+
+/**
+ * Simulate the conflict detection logic WITH excludeOrderId support
+ * This mirrors the API behavior: when editing an order, exclude it from conflict check
+ */
+function findConflictingOrders(
+  allOrders: Array<{
+    id: number;
+    orderNumber: string;
+    orderType: string;
+    status: string;
+    pickupPlanAt: Date;
+    returnPlanAt: Date;
+    quantity: number;
+  }>,
+  rentalStart: Date,
+  rentalEnd: Date,
+  excludeOrderId?: number
+): Array<{ id: number; orderNumber: string; quantity: number }> {
+  return allOrders.filter(order => {
+    // Exclude the order being edited
+    if (excludeOrderId && order.id === excludeOrderId) {
+      return false;
+    }
+    // Only active RENT orders
+    if (order.orderType !== 'RENT') return false;
+    if (order.status !== 'RESERVED' && order.status !== 'PICKUPED') return false;
+    // Overlap: orderPickup < rentalEnd AND orderReturn > rentalStart
+    return order.pickupPlanAt < rentalEnd && order.returnPlanAt > rentalStart;
+  });
+}
+
+function calculateAvailabilityWithExclude(
+  totalStock: number,
+  allOrders: Array<{
+    id: number;
+    orderNumber: string;
+    orderType: string;
+    status: string;
+    pickupPlanAt: Date;
+    returnPlanAt: Date;
+    quantity: number;
+  }>,
+  rentalStart: Date,
+  rentalEnd: Date,
+  requestedQuantity: number,
+  excludeOrderId?: number
+): {
+  conflictingQuantity: number;
+  effectivelyAvailable: number;
+  canFulfillRequest: boolean;
+  conflictingOrders: Array<{ id: number; orderNumber: string; quantity: number }>;
+} {
+  const conflicts = findConflictingOrders(allOrders, rentalStart, rentalEnd, excludeOrderId);
+  const conflictingQuantity = conflicts.reduce((sum, o) => sum + o.quantity, 0);
+  const effectivelyAvailable = Math.max(0, totalStock - conflictingQuantity);
+  const canFulfillRequest = effectivelyAvailable >= requestedQuantity;
+
+  return {
+    conflictingQuantity,
+    effectivelyAvailable,
+    canFulfillRequest,
+    conflictingOrders: conflicts,
+  };
+}
+
+describe('Edit Order Availability - excludeOrderId', () => {
+  // Scenario: Product "AD sui hồng Uyến Hoa - XL"
+  // Stock: 1
+  // Order 725881: 31/07-03/08, qty 1, RESERVED (this is the order being edited)
+  // Order 309990: 07/08-10/08, qty 1, RESERVED
+  const orders = [
+    {
+      id: 725881,
+      orderNumber: '725881',
+      orderType: 'RENT',
+      status: 'RESERVED',
+      pickupPlanAt: new Date('2026-07-31T00:00:00Z'),
+      returnPlanAt: new Date('2026-08-03T00:00:00Z'),
+      quantity: 1,
+    },
+    {
+      id: 309990,
+      orderNumber: '309990',
+      orderType: 'RENT',
+      status: 'RESERVED',
+      pickupPlanAt: new Date('2026-08-07T00:00:00Z'),
+      returnPlanAt: new Date('2026-08-10T00:00:00Z'),
+      quantity: 1,
+    },
+  ];
+
+  const totalStock = 1;
+
+  describe('Creating new order (no excludeOrderId)', () => {
+    it('should report conflict when period overlaps with existing order', () => {
+      // New order: 31/07-03/08 → overlaps with order 725881
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-07-31T00:00:00Z'),
+        new Date('2026-08-03T00:00:00Z'),
+        1,
+        undefined // no exclude
+      );
+
+      expect(result.conflictingQuantity).toBe(1);
+      expect(result.effectivelyAvailable).toBe(0); // 1 - 1 = 0
+      expect(result.canFulfillRequest).toBe(false);
+      expect(result.conflictingOrders).toHaveLength(1);
+      expect(result.conflictingOrders[0].orderNumber).toBe('725881');
+    });
+
+    it('should report unavailable when stock=1 and 1 order exists in period', () => {
+      // New order: 01/08-05/08 → overlaps with order 725881 (31/07-03/08)
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-08-01T00:00:00Z'),
+        new Date('2026-08-05T00:00:00Z'),
+        1,
+        undefined
+      );
+
+      expect(result.conflictingQuantity).toBe(1);
+      expect(result.canFulfillRequest).toBe(false);
+    });
+  });
+
+  describe('Editing existing order (with excludeOrderId)', () => {
+    it('should NOT self-conflict when editing order with same dates and quantity', () => {
+      // Editing order 725881: same dates 31/07-03/08, qty 1
+      // Should exclude order 725881 from conflict check → no conflicts
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-07-31T00:00:00Z'),
+        new Date('2026-08-03T00:00:00Z'),
+        1,
+        725881 // exclude this order
+      );
+
+      expect(result.conflictingQuantity).toBe(0);
+      expect(result.effectivelyAvailable).toBe(1); // 1 - 0 = 1
+      expect(result.canFulfillRequest).toBe(true);
+      expect(result.conflictingOrders).toHaveLength(0);
+    });
+
+    it('should report unavailable when increasing quantity beyond stock during edit', () => {
+      // Editing order 725881: same dates but qty 2 (stock is only 1)
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-07-31T00:00:00Z'),
+        new Date('2026-08-03T00:00:00Z'),
+        2, // requesting 2 but stock is 1
+        725881
+      );
+
+      expect(result.conflictingQuantity).toBe(0);
+      expect(result.effectivelyAvailable).toBe(1); // 1 - 0 = 1
+      expect(result.canFulfillRequest).toBe(false); // 1 < 2
+    });
+
+    it('should detect conflict with OTHER orders when editing and changing dates', () => {
+      // Editing order 725881: changing dates to 07/08-10/08 (overlaps with order 309990)
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-08-07T00:00:00Z'),
+        new Date('2026-08-10T00:00:00Z'),
+        1,
+        725881 // exclude self
+      );
+
+      expect(result.conflictingQuantity).toBe(1); // order 309990 conflicts
+      expect(result.effectivelyAvailable).toBe(0); // 1 - 1 = 0
+      expect(result.canFulfillRequest).toBe(false);
+      expect(result.conflictingOrders[0].orderNumber).toBe('309990');
+    });
+
+    it('should allow edit when changing to non-conflicting dates', () => {
+      // Editing order 725881: changing dates to 04/08-06/08 (no overlap with any other order)
+      const result = calculateAvailabilityWithExclude(
+        totalStock,
+        orders,
+        new Date('2026-08-04T00:00:00Z'),
+        new Date('2026-08-06T00:00:00Z'),
+        1,
+        725881
+      );
+
+      expect(result.conflictingQuantity).toBe(0);
+      expect(result.effectivelyAvailable).toBe(1);
+      expect(result.canFulfillRequest).toBe(true);
+    });
+  });
+
+  describe('Edit order with multiple products and higher stock', () => {
+    const multiOrders = [
+      {
+        id: 100,
+        orderNumber: '100',
+        orderType: 'RENT',
+        status: 'RESERVED',
+        pickupPlanAt: new Date('2026-07-01T00:00:00Z'),
+        returnPlanAt: new Date('2026-07-05T00:00:00Z'),
+        quantity: 2,
+      },
+      {
+        id: 200,
+        orderNumber: '200',
+        orderType: 'RENT',
+        status: 'PICKUPED',
+        pickupPlanAt: new Date('2026-07-03T00:00:00Z'),
+        returnPlanAt: new Date('2026-07-08T00:00:00Z'),
+        quantity: 1,
+      },
+      {
+        id: 300,
+        orderNumber: '300',
+        orderType: 'RENT',
+        status: 'RESERVED',
+        pickupPlanAt: new Date('2026-07-10T00:00:00Z'),
+        returnPlanAt: new Date('2026-07-15T00:00:00Z'),
+        quantity: 3,
+      },
+    ];
+
+    const stock = 5;
+
+    it('should allow editing order 100 with same qty (excludes self)', () => {
+      // Period 01/07-05/07 overlaps with order 200 (03/07-08/07)
+      // Without exclude: conflicts = order 100 (qty 2) + order 200 (qty 1) = 3
+      // With exclude 100: conflicts = order 200 (qty 1) only
+      const result = calculateAvailabilityWithExclude(
+        stock,
+        multiOrders,
+        new Date('2026-07-01T00:00:00Z'),
+        new Date('2026-07-05T00:00:00Z'),
+        2,
+        100
+      );
+
+      expect(result.conflictingQuantity).toBe(1); // only order 200
+      expect(result.effectivelyAvailable).toBe(4); // 5 - 1 = 4
+      expect(result.canFulfillRequest).toBe(true); // 4 >= 2
+    });
+
+    it('should detect insufficient stock when increasing qty during edit', () => {
+      // Editing order 100: increase qty from 2 to 5
+      // Period 01/07-05/07, exclude self (100), conflicts = order 200 (qty 1)
+      // effectivelyAvailable = 5 - 1 = 4, requesting 5 → not enough
+      const result = calculateAvailabilityWithExclude(
+        stock,
+        multiOrders,
+        new Date('2026-07-01T00:00:00Z'),
+        new Date('2026-07-05T00:00:00Z'),
+        5,
+        100
+      );
+
+      expect(result.conflictingQuantity).toBe(1);
+      expect(result.effectivelyAvailable).toBe(4); // 5 - 1 = 4
+      expect(result.canFulfillRequest).toBe(false); // 4 < 5
+    });
+
+    it('without excludeOrderId should include self in conflicts', () => {
+      // Same scenario but WITHOUT excludeOrderId (like creating new order)
+      const result = calculateAvailabilityWithExclude(
+        stock,
+        multiOrders,
+        new Date('2026-07-01T00:00:00Z'),
+        new Date('2026-07-05T00:00:00Z'),
+        2,
+        undefined // no exclude
+      );
+
+      expect(result.conflictingQuantity).toBe(3); // order 100 (qty 2) + order 200 (qty 1)
+      expect(result.effectivelyAvailable).toBe(2); // 5 - 3 = 2
+      expect(result.canFulfillRequest).toBe(true); // 2 >= 2
+    });
+
+    it('should handle RETURNED/CANCELLED orders correctly (never conflict)', () => {
+      const ordersWithReturned = [
+        ...multiOrders,
+        {
+          id: 400,
+          orderNumber: '400',
+          orderType: 'RENT',
+          status: 'RETURNED', // should not conflict
+          pickupPlanAt: new Date('2026-07-01T00:00:00Z'),
+          returnPlanAt: new Date('2026-07-05T00:00:00Z'),
+          quantity: 2,
+        },
+      ];
+
+      const result = calculateAvailabilityWithExclude(
+        stock,
+        ordersWithReturned,
+        new Date('2026-07-01T00:00:00Z'),
+        new Date('2026-07-05T00:00:00Z'),
+        2,
+        100
+      );
+
+      // RETURNED order 400 should not count
+      expect(result.conflictingQuantity).toBe(1); // only order 200
+      expect(result.canFulfillRequest).toBe(true);
+    });
+  });
+});
