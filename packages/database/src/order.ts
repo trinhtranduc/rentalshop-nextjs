@@ -53,10 +53,13 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
     conditions.push({ customerId: { in: matchingCustomerIds } });
   }
 
-  // Step 4: Full name search — split normalized words, each must match firstName or lastName
+  // Step 4: Full name search — split into words, each must match firstName or lastName
+  const originalWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
   const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-  if (normalizedWords.length > 1) {
-    const allWordsMatch = normalizedWords.map((word: string) => ({
+  
+  if (originalWords.length > 1) {
+    // Search with original words (matches data with same diacritics)
+    const allOriginalWordsMatch = originalWords.map((word: string) => ({
       customer: {
         OR: [
           { firstName: { contains: word, mode: 'insensitive' as const } },
@@ -64,7 +67,20 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
         ]
       }
     }));
-    conditions.push({ AND: allWordsMatch });
+    conditions.push({ AND: allOriginalWordsMatch });
+
+    // Search with normalized words (matches data without diacritics)
+    if (normalizedTerm !== searchTerm) {
+      const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
+        customer: {
+          OR: [
+            { firstName: { contains: word, mode: 'insensitive' as const } },
+            { lastName: { contains: word, mode: 'insensitive' as const } }
+          ]
+        }
+      }));
+      conditions.push({ AND: allNormalizedWordsMatch });
+    }
   }
 
   return conditions;
