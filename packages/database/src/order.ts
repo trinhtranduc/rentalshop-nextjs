@@ -8,6 +8,68 @@ import type {
 } from '@rentalshop/types';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
+/**
+ * Build search conditions for orders with diacritics-insensitive Vietnamese name search.
+ * Uses PostgreSQL unaccent() to match "hong ngoc" → "Hồng Ngọc".
+ * Falls back to Prisma contains if unaccent is not available.
+ */
+async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
+  const searchTerm = searchInput.trim();
+  const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+
+  // Step 1: Find customer IDs using unaccent() for diacritics-insensitive search
+  let matchingCustomerIds: number[] = [];
+  try {
+    const searchPattern = `%${normalizedTerm.toLowerCase()}%`;
+    const customerResults: Array<{ id: number }> = await prisma.$queryRaw`
+      SELECT id FROM "Customer" 
+      WHERE "deletedAt" IS NULL
+      AND (
+        unaccent(lower("firstName")) LIKE ${searchPattern}
+        OR unaccent(lower(COALESCE("lastName", ''))) LIKE ${searchPattern}
+        OR unaccent(lower("firstName" || ' ' || COALESCE("lastName", ''))) LIKE ${searchPattern}
+        OR unaccent(lower(COALESCE("lastName", '') || ' ' || "firstName")) LIKE ${searchPattern}
+      )
+      LIMIT 200
+    `;
+    matchingCustomerIds = customerResults.map(r => r.id);
+  } catch {
+    // unaccent extension not available — fallback silently
+  }
+
+  // Step 2: Build Prisma OR conditions
+  const conditions: any[] = [
+    { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+    { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
+    { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+    { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+    // Normalized (no diacritics) — matches data stored without diacritics
+    { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+    { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } },
+  ];
+
+  // Step 3: Add unaccent-matched customer IDs (true diacritics-insensitive)
+  if (matchingCustomerIds.length > 0) {
+    conditions.push({ customerId: { in: matchingCustomerIds } });
+  }
+
+  // Step 4: Full name search — split normalized words, each must match firstName or lastName
+  const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
+  if (normalizedWords.length > 1) {
+    const allWordsMatch = normalizedWords.map((word: string) => ({
+      customer: {
+        OR: [
+          { firstName: { contains: word, mode: 'insensitive' as const } },
+          { lastName: { contains: word, mode: 'insensitive' as const } }
+        ]
+      }
+    }));
+    conditions.push({ AND: allWordsMatch });
+  }
+
+  return conditions;
+}
+
 export interface OrderWithRelations {
   id: number
   orderNumber: string
@@ -630,53 +692,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   where.deletedAt = null;
 
   // Text search (diacritics-insensitive for customer names)
+  // Uses PostgreSQL unaccent() for true Vietnamese search: "hong ngoc" matches "Hồng Ngọc"
   if (q) {
-    const searchTerm = q.trim();
-    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-    
-    const searchConditions: any[] = [
-      { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
-      { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
-      { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
-      { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
-    ];
-    
-    // Add normalized search for customer names if different from original
-    if (normalizedTerm !== searchTerm) {
-      searchConditions.push(
-        { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
-      );
-    }
-
-    // Full name search: split into words and match each against firstName OR lastName
-    const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
-    if (searchWords.length > 1) {
-      const allWordsMatch = searchWords.map((word: string) => ({
-        customer: {
-          OR: [
-            { firstName: { contains: word, mode: 'insensitive' as const } },
-            { lastName: { contains: word, mode: 'insensitive' as const } }
-          ]
-        }
-      }));
-      searchConditions.push({ AND: allWordsMatch });
-
-      if (normalizedTerm !== searchTerm) {
-        const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-        const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
-          customer: {
-            OR: [
-              { firstName: { contains: word, mode: 'insensitive' as const } },
-              { lastName: { contains: word, mode: 'insensitive' as const } }
-            ]
-          }
-        }));
-        searchConditions.push({ AND: allNormalizedWordsMatch });
-      }
-    }
-    
-    where.OR = searchConditions;
+    where.OR = await buildOrderSearchConditions(q);
   }
 
   // Filter by outlet
@@ -1023,52 +1041,7 @@ export const simplifiedOrders = {
 
     // Text search (case-insensitive and diacritics-insensitive for customer names)
     if (whereFilters.search) {
-      const searchTerm = whereFilters.search.trim();
-      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-      
-      const searchConditions: any[] = [
-        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
-        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
-      ];
-      
-      // Add normalized search for customer names if different from original
-      if (normalizedTerm !== searchTerm) {
-        searchConditions.push(
-          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
-          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
-        );
-      }
-
-      // Full name search: split into words and match each against firstName OR lastName
-      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
-      if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map((word: string) => ({
-          customer: {
-            OR: [
-              { firstName: { contains: word, mode: 'insensitive' as const } },
-              { lastName: { contains: word, mode: 'insensitive' as const } }
-            ]
-          }
-        }));
-        searchConditions.push({ AND: allWordsMatch });
-
-        if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
-            customer: {
-              OR: [
-                { firstName: { contains: word, mode: 'insensitive' as const } },
-                { lastName: { contains: word, mode: 'insensitive' as const } }
-              ]
-            }
-          }));
-          searchConditions.push({ AND: allNormalizedWordsMatch });
-        }
-      }
-      
-      where.OR = searchConditions;
+      where.OR = await buildOrderSearchConditions(whereFilters.search);
     }
 
     // ✅ Build dynamic orderBy clause
@@ -1421,52 +1394,7 @@ export const simplifiedOrders = {
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
     if (search) {
-      const searchTerm = search.trim();
-      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-      
-      const searchConditions: any[] = [
-        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
-        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
-      ];
-      
-      // Add normalized search for customer names if different from original
-      if (normalizedTerm !== searchTerm) {
-        searchConditions.push(
-          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
-          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
-        );
-      }
-
-      // Full name search: split into words and match each against firstName OR lastName
-      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
-      if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map((word: string) => ({
-          customer: {
-            OR: [
-              { firstName: { contains: word, mode: 'insensitive' as const } },
-              { lastName: { contains: word, mode: 'insensitive' as const } }
-            ]
-          }
-        }));
-        searchConditions.push({ AND: allWordsMatch });
-
-        if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
-            customer: {
-              OR: [
-                { firstName: { contains: word, mode: 'insensitive' as const } },
-                { lastName: { contains: word, mode: 'insensitive' as const } }
-              ]
-            }
-          }));
-          searchConditions.push({ AND: allNormalizedWordsMatch });
-        }
-      }
-      
-      where.OR = searchConditions;
+      where.OR = await buildOrderSearchConditions(search);
     }
 
     const [orders, total] = await Promise.all([
@@ -1669,52 +1597,7 @@ export const simplifiedOrders = {
     // Use 'q' parameter first, fallback to 'search' for backward compatibility
     const searchQuery = q || search;
     if (searchQuery) {
-      const searchTerm = searchQuery.trim();
-      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-      
-      const searchConditions: any[] = [
-        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
-        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
-        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
-      ];
-      
-      // Add normalized search for customer names if different from original
-      if (normalizedTerm !== searchTerm) {
-        searchConditions.push(
-          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
-          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
-        );
-      }
-
-      // Full name search: split search term into words and match each word against firstName OR lastName
-      // This handles cases like searching "hồng ngọc" when data is firstName="Hồng", lastName="Ngọc"
-      const searchWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
-      if (searchWords.length > 1) {
-        const allWordsMatch = searchWords.map((word: string) => ({
-          customer: {
-            OR: [
-              { firstName: { contains: word, mode: 'insensitive' as const } },
-              { lastName: { contains: word, mode: 'insensitive' as const } }
-            ]
-          }
-        }));
-        searchConditions.push({ AND: allWordsMatch });
-
-        // Also try with normalized (no diacritics) version for each word
-        if (normalizedTerm !== searchTerm) {
-          const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-          const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
-            customer: {
-              OR: [
-                { firstName: { contains: word, mode: 'insensitive' as const } },
-                { lastName: { contains: word, mode: 'insensitive' as const } }
-              ]
-            }
-          }));
-          searchConditions.push({ AND: allNormalizedWordsMatch });
-        }
-      }
+      const searchConditions = await buildOrderSearchConditions(searchQuery);
       
       // Combine outlet filter with search conditions using AND
       if (outletFilter) {
