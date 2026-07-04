@@ -1156,7 +1156,14 @@ class InfoMainViewController: BaseViewControler {
             
             // Update availability status for all products
             for result in data.results {
-                let available = result.totalAvailableStock ?? 0
+                // Use effectivelyAvailable from best outlet (accounts for date-based conflicts)
+                // Fallback to totalAvailableStock for backward compatibility
+                let available: Int
+                if let bestOutlet = result.availabilityByOutlet?.first {
+                    available = bestOutlet.effectivelyAvailable ?? result.totalAvailableStock ?? 0
+                } else {
+                    available = result.totalAvailableStock ?? 0
+                }
                 let isAvailable = result.isAvailable && (available >= result.requestedQuantity)
                 
                 let status = AvailabilityStatus(isAvailable: isAvailable, available: available)
