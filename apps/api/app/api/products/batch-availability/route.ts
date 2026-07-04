@@ -532,7 +532,10 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
             productId,
             productName: product.name,
             totalStock,
-            totalAvailableStock,
+            // CRITICAL FIX: Mobile reads totalAvailableStock for display
+            // Must return effectivelyAvailable here so mobile shows correct availability
+            // Mobile code: `let available = result.totalAvailableStock ?? 0`
+            totalAvailableStock: effectivelyAvailable,
             totalRenting,
             requestedQuantity: productQuantity,
             // Only include rentalPeriod for RENT orders
