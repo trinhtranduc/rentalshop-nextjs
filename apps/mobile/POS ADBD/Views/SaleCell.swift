@@ -39,8 +39,8 @@ class SaleCell: UITableViewCell {
     
     private lazy var nameLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.mediumFont(size: 14) // Medium weight to highlight customer name
-        label.textColor = .label // Full contrast (dark in light mode, light in dark mode)
+        label.font = Utils.boldFont(size: 14) // Bold to make customer name stand out
+        label.textColor = .black // Always black for maximum visibility
         label.numberOfLines = 2
         label.minimumScaleFactor = 0.8
         return label
