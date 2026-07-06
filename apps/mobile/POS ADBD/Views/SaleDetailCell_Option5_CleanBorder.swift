@@ -62,8 +62,8 @@ class SaleDetailCell_Option5: UITableViewCell {
         let label = UILabel()
         label.adjustsFontSizeToFitWidth = true
 
-        label.font = Utils.boldFont(size: 14) // Bold to highlight customer name
-        label.textColor = .black // Black for maximum visibility
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .label
         return label
     }()
     
@@ -274,7 +274,7 @@ class SaleDetailCell_Option5: UITableViewCell {
         if traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass {
             let isIPad = traitCollection.horizontalSizeClass == .regular
             orderNumberLabel.font = Utils.boldFont(size: isIPad ? 17 : 14) // Giữ nguyên vì là tiêu đề chính
-            customerNameLabel.font = Utils.boldFont(size: 14) // Bold to highlight customer name
+            customerNameLabel.font = Utils.regularFont(size: 14) // Bold to highlight customer name
             staffNameLabel.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
             itemCountLabel.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
             totalAmountLabel.font = Utils.boldFont(size: isIPad ? 17 : 14) // Giữ nguyên vì là tổng tiền
