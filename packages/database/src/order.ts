@@ -606,8 +606,8 @@ export async function updateOrder(
         newStatus,
         orderType as 'RENT' | 'SALE',
         oldOutletId,
-        oldOrderItems.map((item: { productId: number; quantity: number }): { productId: number; quantity: number } => ({
-          productId: item.productId,
+        oldOrderItems.map((item: { productId: number | null; quantity: number }) => ({
+          productId: item.productId!,
           quantity: item.quantity,
         })).filter((item: { productId: number }): boolean => item.productId > 0)
       );
