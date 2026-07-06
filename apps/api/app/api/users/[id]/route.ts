@@ -244,14 +244,14 @@ export async function DELETE(
       await db.sessions.invalidateAllUserSessions(userId);
       console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-      // Soft delete user (preserves order history and frees addon slot)
-      // Soft deleted users are automatically excluded from queries and plan limit counts
-      const deletedUser = await db.users.softDelete(userId);
-      console.log('✅ User soft deleted successfully:', deletedUser);
+      // Hard delete user (permanently removes from database)
+      // Order history preserved: Order.createdById is SET NULL on user deletion (schema onDelete: SetNull)
+      await db.users.delete(userId);
+      console.log('✅ User hard deleted successfully:', userId);
 
       return NextResponse.json({
         success: true,
-        data: deletedUser,
+        data: { id: userId },
         code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully'
       });
