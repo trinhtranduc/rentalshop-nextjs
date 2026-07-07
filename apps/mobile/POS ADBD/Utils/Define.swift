@@ -91,14 +91,21 @@ extension UIColor {
     static let statusInactive = UIColor.neutralGray
     static let statusPending = UIColor.accentOrange
 
-    // Order status badge fills.
-    // Darkened on purpose so white badge text clears WCAG AA (all >= ~4.8:1 contrast);
-    // the bright accent colors previously used (systemGreen/accentOrange) only reached ~2.2:1.
-    static let statusDraftFill     = UIColor(hexString: "6B7280") // neutral gray
-    static let statusReservedFill  = UIColor(hexString: "B45309") // amber (pending)
-    static let statusActiveFill    = UIColor.brandPrimary          // blue (picked up / in use)
-    static let statusDoneFill      = UIColor(hexString: "1E7B34") // green (returned / completed)
-    static let statusCancelledFill = UIColor(hexString: "C62828") // red (cancelled)
+    // Order status badges — "soft" style: a bright, light tinted fill paired with
+    // a saturated dark text of the same hue. This reads far lighter/brighter than a
+    // solid chip while keeping strong legibility (dark-on-tint ~7-9:1, well past AA).
+    // Fills (light tints)
+    static let statusDraftFill     = UIColor(hexString: "F3F4F6") // gray-100
+    static let statusReservedFill  = UIColor(hexString: "FEF3C7") // amber-100 (pending)
+    static let statusActiveFill    = UIColor(hexString: "DBEAFE") // blue-100 (picked up / in use)
+    static let statusDoneFill      = UIColor(hexString: "DCFCE7") // green-100 (returned / completed)
+    static let statusCancelledFill = UIColor(hexString: "FEE2E2") // red-100 (cancelled)
+    // Text / foreground (saturated, dark)
+    static let statusDraftText     = UIColor(hexString: "4B5563") // gray-600
+    static let statusReservedText  = UIColor(hexString: "B45309") // amber-700
+    static let statusActiveText    = UIColor(hexString: "1D4ED8") // blue-700
+    static let statusDoneText      = UIColor(hexString: "15803D") // green-700
+    static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
 
     static var authGradientColors: [CGColor] {
         [
@@ -164,9 +171,9 @@ extension UIFont {
 // and `draft` rendered white-on-clear = invisible). Centralizing it here keeps
 // every badge consistent and readable.
 extension OrderStatus {
-    /// Background fill for the status badge. One canonical color per status,
-    /// independent of order type: gray(draft) -> amber(reserved) -> blue(pickuped)
-    /// -> green(returned/completed), with red for cancelled.
+    /// Light tinted background fill for the status badge. One canonical color per
+    /// status, independent of order type: gray(draft) -> amber(reserved) ->
+    /// blue(pickuped) -> green(returned/completed), with red for cancelled.
     var badgeColor: UIColor {
         switch self {
         case .draft:     return .statusDraftFill
@@ -178,6 +185,15 @@ extension OrderStatus {
         }
     }
 
-    /// Text color for the badge. White reads with AA contrast on every fill above.
-    var badgeTextColor: UIColor { .textInverted }
+    /// Saturated dark text of the same hue as the fill (soft-badge pairing).
+    var badgeTextColor: UIColor {
+        switch self {
+        case .draft:     return .statusDraftText
+        case .reserved:  return .statusReservedText
+        case .pickuped:  return .statusActiveText
+        case .returned:  return .statusDoneText
+        case .completed: return .statusDoneText
+        case .cancelled: return .statusCancelledText
+        }
+    }
 }

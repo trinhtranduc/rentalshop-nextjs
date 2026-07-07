@@ -657,8 +657,8 @@ class CalendarHeaderCell: UITableViewHeaderFooterView {
 
         statusBadge.text = formatStatusText(from: statusString)
         let status = OrderStatus.from(apiString: statusString)
-        statusBadge.backgroundColor = status?.badgeColor ?? .statusInactive
-        statusBadge.textColor = status?.badgeTextColor ?? .textInverted
+        statusBadge.backgroundColor = status?.badgeColor ?? .statusDraftFill
+        statusBadge.textColor = status?.badgeTextColor ?? .statusDraftText
     }
 }
 

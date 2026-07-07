@@ -387,8 +387,8 @@ class SaleCell: UITableViewCell {
         let statusString = order.status ?? ""
         statusLabel.text = statusString.localizedStatus()
         let status = OrderStatus.from(apiString: statusString)
-        statusLabel.backgroundColor = status?.badgeColor ?? .statusInactive
-        statusLabel.textColor = status?.badgeTextColor ?? .textInverted
+        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
+        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
     }
     
     
@@ -431,8 +431,8 @@ class SaleCell: UITableViewCell {
 
         // Map status string to colors via the shared badge palette
         let status = OrderStatus.from(apiString: statusString)
-        statusLabel.backgroundColor = status?.badgeColor ?? .statusInactive
-        statusLabel.textColor = status?.badgeTextColor ?? .textInverted
+        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
+        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
     }
     
     private func setupStatus(for order: Order) {
