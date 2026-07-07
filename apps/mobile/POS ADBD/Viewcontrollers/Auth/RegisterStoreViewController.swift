@@ -142,7 +142,7 @@ class RegisterStoreViewController: BaseViewControler {
         tv.textContainerInset = .zero
         tv.textContainer.lineFragmentPadding = 0
         tv.delegate = self
-        tv.linkTextAttributes = [.foregroundColor: UIColor.brandPrimary]
+        tv.tintColor = .brandPrimary // UITextView renders .link ranges in the tint color
         return tv
     }()
     
@@ -339,7 +339,6 @@ class RegisterStoreViewController: BaseViewControler {
                                        attributes: [.font: font, .link: URL(string: "anyrent://terms")!]))
 
         privacyTextView.attributedText = text
-        privacyTextView.linkTextAttributes = [.foregroundColor: UIColor.brandPrimary]
     }
     
     // MARK: - Privacy Policy Actions
