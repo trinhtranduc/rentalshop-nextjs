@@ -16,7 +16,18 @@ class RegisterStoreViewController: BaseViewControler {
         view.backgroundColor = .clear
         return view
     }()
-    
+
+    // Glass card wrapping the form, matching LoginViewController / Create Account.
+    private lazy var cardView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .surfaceAuthCard
+        view.layer.cornerRadius = 24
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.72).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
     private lazy var stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -210,7 +221,8 @@ class RegisterStoreViewController: BaseViewControler {
         // Add subviews
         view.addSubview(scrollView)
         scrollView.addSubview(containerView)
-        containerView.addSubview(stackView)
+        containerView.addSubview(cardView)
+        cardView.addSubview(stackView)
         
         // Setup privacy policy view
         privacyPolicyView.addSubview(privacyCheckbox)
@@ -278,13 +290,17 @@ class RegisterStoreViewController: BaseViewControler {
             make.width.equalToSuperview() // This ensures horizontal scrolling is disabled
         }
         
-        // StackView constraints - pins to containerView edges
-        // The bottom constraint determines the content height
-        stackView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(20)
+        // Card wraps the form with a 20pt outer margin (matches Login / Create Account).
+        cardView.snp.makeConstraints { make in
+            make.top.equalToSuperview()
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
-            make.bottom.equalToSuperview().offset(-20) // This sets the containerView height
+            make.bottom.equalToSuperview()
+        }
+
+        // StackView pins to the card edges with 20pt inner padding.
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(20)
         }
         
         // Set up scrollView constraints - positioned below custom navigation bar
