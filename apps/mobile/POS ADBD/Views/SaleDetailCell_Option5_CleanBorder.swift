@@ -13,7 +13,8 @@ class SaleDetailCell_Option5: UITableViewCell {
     // MARK: - UI Components
     private lazy var containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .white
+        // Adaptive so the card pairs correctly with the semantic (.label/.secondaryLabel) text.
+        view.backgroundColor = .secondarySystemGroupedBackground
         view.layer.cornerRadius = 10
         view.layer.borderWidth = 0.5
         view.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
@@ -39,12 +40,12 @@ class SaleDetailCell_Option5: UITableViewCell {
         return stack
     }()
     
-    // Row 1: Order number
+    // Row 1: Order number — primary identifier, most prominent element in the cell.
     private lazy var orderNumberLabel: UILabel = {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
-        label.font = Utils.regularFont(size: isIPad ? 17 : 16)
-        label.textColor = .secondaryLabel
+        label.font = Utils.boldFont(size: isIPad ? 17 : 16)
+        label.textColor = .label
         return label
     }()
     
@@ -237,8 +238,9 @@ class SaleDetailCell_Option5: UITableViewCell {
     private lazy var totalAmountLabel: UILabel = {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
-        label.font = Utils.regularFont(size: isIPad ? 17 : 16)
-        label.textColor = .textPrimary
+        // Bold + semantic color: total amount is the key figure on the right side.
+        label.font = Utils.boldFont(size: isIPad ? 17 : 16)
+        label.textColor = .label
         label.textAlignment = .right
         return label
     }()
@@ -273,11 +275,11 @@ class SaleDetailCell_Option5: UITableViewCell {
         // Update font sizes when device orientation or size class changes
         if traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass {
             let isIPad = traitCollection.horizontalSizeClass == .regular
-            orderNumberLabel.font = Utils.boldFont(size: isIPad ? 17 : 14) // Giữ nguyên vì là tiêu đề chính
+            orderNumberLabel.font = Utils.boldFont(size: isIPad ? 17 : 16) // Tiêu đề chính - khớp với giá trị khởi tạo
             customerNameLabel.font = Utils.regularFont(size: 14) // Bold to highlight customer name
             staffNameLabel.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
             itemCountLabel.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-            totalAmountLabel.font = Utils.boldFont(size: isIPad ? 17 : 14) // Giữ nguyên vì là tổng tiền
+            totalAmountLabel.font = Utils.boldFont(size: isIPad ? 17 : 16) // Tổng tiền - khớp với giá trị khởi tạo
             statusBadge.font = Utils.mediumFont(size: isIPad ? 12 : 11) // Giữ nguyên vì là badge nhỏ
             
             // Update date labels - Match AccountViewController
