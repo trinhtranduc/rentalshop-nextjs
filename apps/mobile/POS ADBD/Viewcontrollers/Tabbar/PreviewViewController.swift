@@ -392,58 +392,64 @@ class PreviewViewController: BaseViewControler {
         return stack
     }()
     
-    // Add buttons to footer - all buttons follow the same style as printButton
+    // Footer action buttons. Visual hierarchy (all share the same frame in the
+    // fillEqually stack, so weight is conveyed by fill vs outline vs tint):
+    //   - Primary state action (save/pickup/return/update) -> solid brand fill
+    //   - Print -> secondary, outline (was a competing solid green)
+    //   - Cancel/Delete -> destructive, soft red tint (was heavy solid red next to primary)
     private lazy var saveButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = APP_TONE_COLOR
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .brandPrimary
+        button.setTitleColor(.textInverted, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(saveOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var cancelButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Cancel".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionDanger
-        button.setTitleColor(.navTint, for: .normal)
+        button.backgroundColor = .statusCancelledFill
+        button.setTitleColor(.statusCancelledText, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(cancelOrder), for: .touchUpInside)
         return button
     }()
-    
+
     // Add more buttons to footer
     private lazy var printButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Print".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionSuccess
-        button.setTitleColor(.navTint, for: .normal)
+        button.backgroundColor = .clear
+        button.setTitleColor(.brandPrimary, for: .normal)
         button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.brandPrimary.cgColor
         button.addTarget(self, action: #selector(printOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var updateButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Update".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = APP_TONE_COLOR
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .brandPrimary
+        button.setTitleColor(.textInverted, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(updateOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var deleteButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Delete".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionDanger
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .statusCancelledFill
+        button.setTitleColor(.statusCancelledText, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(deleteOrder), for: .touchUpInside)
         return button
