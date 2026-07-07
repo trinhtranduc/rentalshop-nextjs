@@ -443,32 +443,8 @@ class SaleDetailCell_Option5: UITableViewCell {
     
     private func setupStatusBadge(for order: Order) {
         statusBadge.text = formatStatusText(order.status)
-        
-        if order.orderType == .rent {
-            switch order.status {
-            case .reserved:
-                statusBadge.backgroundColor = .red
-            case .pickuped:
-                statusBadge.backgroundColor = APP_ORANGE_COLOR
-            case .returned:
-                statusBadge.backgroundColor = .actionSuccess
-            case .cancelled:
-                statusBadge.backgroundColor = UIColor(hexString: "b22222")
-            default:
-                statusBadge.backgroundColor = .clear
-            }
-        } else {
-            switch order.status {
-            case .completed:
-                statusBadge.backgroundColor = .actionSuccess  // Green color like print button
-            case .reserved:
-                statusBadge.backgroundColor = APP_ORANGE_COLOR
-            case .cancelled:
-                statusBadge.backgroundColor = UIColor(hexString: "b22222")
-            default:
-                statusBadge.backgroundColor = .clear
-            }
-        }
+        statusBadge.backgroundColor = order.status.badgeColor
+        statusBadge.textColor = order.status.badgeTextColor
     }
 }
 
