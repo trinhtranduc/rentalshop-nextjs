@@ -139,11 +139,11 @@ class RegisterAccountViewController: BaseViewControler {
     
     // MARK: - UI Setup
     override func setupUI() {
-        // Add other subviews
-        view.addSubview(scrollView)
+        // Add other subviews — fixed card, scroll INSIDE the card.
+        view.addSubview(cardView)
+        cardView.addSubview(scrollView)
         scrollView.addSubview(containerView)
-        containerView.addSubview(cardView)
-        cardView.addSubview(stackView)
+        containerView.addSubview(stackView)
         view.addSubview(loginButton)
         
         [nameField, emailField, passwordField, retypePasswordField, nextButton].forEach {
@@ -179,45 +179,36 @@ class RegisterAccountViewController: BaseViewControler {
             }
         }
         
-        // ContainerView constraints - CRITICAL for scrollView content size
-        // containerView must pin to scrollView edges and match width
-        containerView.snp.makeConstraints { make in
-            make.top.leading.trailing.bottom.equalToSuperview()
-            make.width.equalToSuperview() // This ensures horizontal scrolling is disabled
-        }
-        
-        // Card wraps the form with a 20pt outer margin (matches Login).
-        cardView.snp.makeConstraints { make in
-            make.top.equalToSuperview()
-            make.leading.equalToSuperview().offset(20)
-            make.trailing.equalToSuperview().offset(-20)
-            make.bottom.equalToSuperview() // drives containerView (and scroll content) height
-        }
-
-        // StackView pins to the card edges with 20pt inner padding.
-        stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(20)
-        }
-        
-        // Set up scrollView constraints AFTER loginButton is positioned
-        // Use .equalTo() instead of .lessThanOrEqualTo() to ensure definite height
         guard let customNavBar = customNavBar else { return }
-        
-        if isIPad {
-            // iPad - Fixed width centered container
-            scrollView.snp.makeConstraints { make in
+
+        // Fixed card: pinned below the nav bar (20pt top gap) and above the bottom
+        // button; it does NOT scroll — the fields scroll inside it.
+        cardView.snp.makeConstraints { make in
+            make.top.equalTo(customNavBar.snp.bottom).offset(20)
+            make.bottom.equalTo(loginButton.snp.top).offset(-20)
+            if isIPad {
                 make.centerX.equalToSuperview()
                 make.width.equalTo(400)
-                make.top.equalTo(customNavBar.snp.bottom).offset(20)
-                make.bottom.equalTo(loginButton.snp.top).offset(-20) // Changed to equalTo for definite height
+            } else {
+                make.leading.equalToSuperview().offset(20)
+                make.trailing.equalToSuperview().offset(-20)
             }
-        } else {
-            // iPhone - Edge-to-edge with margins
-            scrollView.snp.makeConstraints { make in
-                make.top.equalTo(customNavBar.snp.bottom).offset(20)
-                make.leading.trailing.equalToSuperview()
-                make.bottom.equalTo(loginButton.snp.top).offset(-20) // Changed to equalTo for definite height
-            }
+        }
+
+        // Scroll view fills the card; rounded corners clip the scrolling content.
+        scrollView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        // ContainerView pins to scroll content; width = scroll frame width (vertical only).
+        containerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalToSuperview()
+        }
+
+        // StackView pins to the container edges with 20pt inner padding.
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(20)
         }
     }
     
