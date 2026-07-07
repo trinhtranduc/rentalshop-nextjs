@@ -34,8 +34,8 @@ export const registerSchema = z.object({
   // For merchant registration - businessName is required if registering as merchant
   businessName: z.string().optional(),
   
-  // All other fields are optional
-  phone: z.string().optional(),
+  // Store info: phone and address required for merchant/outlet registration
+  phone: z.string().min(1, 'Phone number is required'),
   role: z.enum([
     USER_ROLE.ADMIN,
     USER_ROLE.MERCHANT,
@@ -52,8 +52,8 @@ export const registerSchema = z.object({
   // Business configuration (optional - defaults will be used)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
-  // Address fields for merchant registration (all optional)
-  address: z.string().optional(),
+  // Store address: required for merchant registration
+  address: z.string().min(1, 'Address is required'),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
