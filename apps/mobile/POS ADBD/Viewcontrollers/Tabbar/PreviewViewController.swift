@@ -2091,7 +2091,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .notes:
             return 1 // Notes
         case .summary:
-            return viewModel.shouldShowDepositInfo ? 4 : 3 // Subtotal, Discount, Grand Total, (Deposit if rent) - To Collect hidden
+            return 3 // Subtotal, Discount, Grand Total (Deposit moved to dates section)
         }
     }
     
@@ -2338,15 +2338,11 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             let cell = UITableViewCell(style: .value1, reuseIdentifier: "SummaryCell")
             var config = cell.defaultContentConfiguration()
             
-            // Build rows array
+            // Build rows array (Deposit moved to dates section)
             var rows: [(title: String, value: String, isHighlighted: Bool)] = []
             rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
             rows.append(("Discount".localized(), viewModel.discountText, false))
             rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
-            
-            if viewModel.shouldShowDepositInfo {
-                rows.append(("Deposit".localized(), viewModel.depositAmount.formatStringInCommon(), false))
-            }
             
             // To Collect row is hidden
             // rows.append(("To Collect".localized(), viewModel.toCollectAmount.formatStringInCommon(), true))
