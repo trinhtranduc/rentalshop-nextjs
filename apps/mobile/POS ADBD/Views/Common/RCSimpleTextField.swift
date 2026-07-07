@@ -45,8 +45,9 @@ class RCSimpleTextField: UITextField {
         let isIPad = traitCollection.horizontalSizeClass == .regular
         
         // Background and border styling (design tokens so it themes consistently)
+        // Standard data-entry field radius = 12 (unified with RCTextFieldPadding).
         backgroundColor = .backgroundCard
-        layer.cornerRadius = 25
+        layer.cornerRadius = 12
         layer.borderWidth = 1
         layer.borderColor = UIColor.borderColor.cgColor
 
