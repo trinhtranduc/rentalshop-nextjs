@@ -245,10 +245,10 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       });
     }
 
-    const responseData = ResponseBuilder.success('TOP_CUSTOMERS_SUCCESS', {
-      data: topCustomersWithDetails,
-      userRole: user.role // Include user role for frontend filtering
-    });
+    // Return a flat array to match the documented contract and mobile decoder
+    // (APITopCustomersResponse.data: [TopCustomer]). Financial data (totalSpent)
+    // is already nulled for OUTLET_STAFF above, so userRole is no longer needed here.
+    const responseData = ResponseBuilder.success('TOP_CUSTOMERS_SUCCESS', topCustomersWithDetails);
     const dataString = JSON.stringify(responseData);
     const etag = crypto.createHash('sha1').update(dataString).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');

@@ -386,20 +386,9 @@ class SaleCell: UITableViewCell {
         // Status
         let statusString = order.status ?? ""
         statusLabel.text = statusString.localizedStatus()
-        switch statusString.uppercased() {
-        case "RESERVED":
-            statusLabel.backgroundColor = .red
-        case "PICKUPED", "PICKUP", "PICKED_UP":
-            statusLabel.backgroundColor = APP_ORANGE_COLOR
-        case "RETURNED":
-            statusLabel.backgroundColor = .actionSuccess
-        case "COMPLETED":
-            statusLabel.backgroundColor = .actionSuccess
-        case "CANCELLED":
-            statusLabel.backgroundColor = UIColor(hexString: "b22222")
-        default:
-            statusLabel.backgroundColor = .clear
-        }
+        let status = OrderStatus.from(apiString: statusString)
+        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
+        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
     }
     
     
@@ -439,54 +428,17 @@ class SaleCell: UITableViewCell {
         
         // Localize status string
         statusLabel.text = statusString.localizedStatus()
-        
-        // Map status string to colors
-        switch statusString.uppercased() {
-        case "RESERVED":
-            statusLabel.backgroundColor = .red
-        case "PICKUPED", "PICKUP", "PICKED_UP":
-            statusLabel.backgroundColor = APP_ORANGE_COLOR
-        case "RETURNED":
-            statusLabel.backgroundColor = APP_TONE_COLOR
-        case "COMPLETED":
-            statusLabel.backgroundColor = .actionSuccess
-        case "CANCELLED":
-            statusLabel.backgroundColor = UIColor(hexString: "b22222")
-        default:
-            statusLabel.backgroundColor = .clear
-        }
+
+        // Map status string to colors via the shared badge palette
+        let status = OrderStatus.from(apiString: statusString)
+        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
+        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
     }
     
     private func setupStatus(for order: Order) {
-        if order.orderType == .rent {
-            statusLabel.text = order.status.inString()
-            
-            switch order.status {
-            case .reserved:
-                statusLabel.backgroundColor = .red
-            case .pickuped:
-                statusLabel.backgroundColor = APP_ORANGE_COLOR
-            case .returned:
-                statusLabel.backgroundColor = .actionSuccess
-            case .cancelled:
-                statusLabel.backgroundColor = UIColor(hexString: "b22222")
-            default:
-                statusLabel.backgroundColor = .clear
-            }
-        } else {
-            // For sale orders, use order status
-            statusLabel.text = order.status.inString()
-            switch order.status {
-            case .completed:
-                statusLabel.backgroundColor = .actionSuccess  // Green color like print button
-            case .reserved:
-                statusLabel.backgroundColor = APP_ORANGE_COLOR
-            case .cancelled:
-                statusLabel.backgroundColor = UIColor(hexString: "b22222")
-            default:
-                statusLabel.backgroundColor = .clear
-            }
-        }
+        statusLabel.text = order.status.inString()
+        statusLabel.backgroundColor = order.status.badgeColor
+        statusLabel.textColor = order.status.badgeTextColor
     }
     
 }

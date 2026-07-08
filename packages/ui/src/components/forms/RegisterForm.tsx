@@ -128,7 +128,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     // businessType and pricingType are hidden and defaulted, no validation required
     address: Yup.string()
       .min(5, t('register.addressMinLength'))
-      .notRequired(),
+      .required(t('register.addressRequired')),
     acceptTermsAndPrivacy: Yup.boolean()
       .oneOf([true], t('register.agreeToTerms'))
       .required(t('register.agreeToTerms')),
@@ -570,10 +570,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
                 {/* Address Information Section */}
                 <div className="space-y-4">
-                  {/* Address Field - Full address (optional) */}
+                  {/* Address Field - Full address (required) */}
                   <div className="space-y-2">
                     <label htmlFor="address" className="text-sm font-medium text-gray-700">
-                      {t('register.address')}
+                      {t('register.address')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
