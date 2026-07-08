@@ -78,7 +78,8 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
     const topProducts = orderIds.length > 0 ? await db.orderItems.groupBy({
       by: ['productId'],
       where: {
-        orderId: { in: orderIds }
+        orderId: { in: orderIds },
+        productId: { not: null } // OrderItem.productId is nullable
       },
       _count: {
         productId: true
@@ -97,7 +98,8 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
     // Get product details for each top product in order
     const topProductsWithDetails = [];
     for (const item of topProducts) {
-      const productId = typeof item.productId === 'number' ? item.productId : (item as any).productId;
+      const productId = typeof item.productId === 'number' ? item.productId : Number((item as any).productId);
+      if (!Number.isFinite(productId) || productId <= 0) continue;
       const product = await db.products.findById(productId);
 
       // ✅ Use shared parseProductImages() for backward compatibility

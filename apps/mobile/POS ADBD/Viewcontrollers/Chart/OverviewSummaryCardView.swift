@@ -2,13 +2,15 @@
 //  OverviewSummaryCardView.swift
 //  POS ADBD
 //
+//  Cash Strip layout (Direction A):
+//  one hero revenue number + one dens meta line. No nested metric cards.
+//
 
 import UIKit
 import SnapKit
 
 final class OverviewSummaryCardView: UIView {
 
-    let dateButton: UIButton
     let incomeLabel: UILabel
     let ordersLabel: UILabel
     let collateralLabel: UILabel
@@ -17,18 +19,17 @@ final class OverviewSummaryCardView: UIView {
     let growthPillView: UIView
     let growthPillLabel: UILabel
 
-    private weak var collateralMetricView: UIView?
-    private weak var planMetricView: UIView?
-    private weak var collateralDividerView: UIView?
+    private let contentStack = UIStackView()
+    private let metaStack = UIStackView()
+    private weak var ordersUnit: UIView?
+    private weak var collateralUnit: UIView?
+    private weak var planUnit: UIView?
 
     init(
         isIPad: Bool,
-        dateTarget: Any?,
-        dateAction: Selector,
         infoTarget: Any?,
         infoAction: Selector
     ) {
-        dateButton = UIButton(type: .system)
         incomeLabel = OverviewUIBuilder.makeSummaryValueLabel(isIPad: isIPad)
         ordersLabel = OverviewUIBuilder.makeSummaryValueLabel(isIPad: isIPad)
         collateralLabel = OverviewUIBuilder.makeSummaryValueLabel(isIPad: isIPad)
@@ -41,37 +42,33 @@ final class OverviewSummaryCardView: UIView {
 
         growthPillLabel = UILabel()
         growthPillLabel.font = .captionMedium(size: 12)
-        growthPillLabel.textAlignment = .center
+        growthPillLabel.textAlignment = .left
         growthPillLabel.numberOfLines = 1
+        growthPillLabel.adjustsFontSizeToFitWidth = true
+        growthPillLabel.minimumScaleFactor = 0.75
 
         growthPillView = UIView()
         growthPillView.isHidden = true
-        growthPillView.layer.cornerRadius = 9
+        growthPillView.layer.cornerRadius = 8
         growthPillView.addSubview(growthPillLabel)
         growthPillLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 8, bottom: 5, right: 8))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8))
         }
 
         super.init(frame: .zero)
 
-        dateButton.titleLabel?.font = .bodyMedium(size: isIPad ? 18 : 16)
-        dateButton.addTarget(dateTarget, action: dateAction, for: .touchUpInside)
-        dateButton.tintColor = .brandPrimary
-        dateButton.contentHorizontalAlignment = .center
-        dateButton.backgroundColor = .clear
-        dateButton.layer.cornerRadius = 10
-        dateButton.layer.borderWidth = 1
-        dateButton.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.8).cgColor
-        dateButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
-        dateButton.setTitleColor(.brandPrimary, for: .normal)
-
-        incomeLabel.font = .bodyBold(size: isIPad ? 26 : 24)
+        incomeLabel.font = .bodyBold(size: isIPad ? 28 : 24)
         incomeLabel.textColor = .brandPrimary
-        ordersLabel.font = .bodyBold(size: isIPad ? 17 : 16)
-        collateralLabel.font = .bodyBold(size: isIPad ? 16 : 15)
-        collateralPlanLabel.font = .bodyBold(size: isIPad ? 16 : 15)
+        incomeLabel.numberOfLines = 1
+        incomeLabel.adjustsFontSizeToFitWidth = true
+        incomeLabel.minimumScaleFactor = 0.65
+        incomeLabel.setContentCompressionResistancePriority(.required, for: .vertical)
 
-        buildLayout(isIPad: isIPad, infoTarget: infoTarget, infoAction: infoAction)
+        styleMetaValue(ordersLabel, isIPad: isIPad)
+        styleMetaValue(collateralLabel, isIPad: isIPad)
+        styleMetaValue(collateralPlanLabel, isIPad: isIPad)
+
+        buildLayout(isIPad: isIPad)
     }
 
     required init?(coder: NSCoder) {
@@ -79,122 +76,112 @@ final class OverviewSummaryCardView: UIView {
     }
 
     func setCollateralMetricsVisible(_ visible: Bool) {
-        collateralMetricView?.isHidden = !visible
-        planMetricView?.isHidden = !visible
-        collateralDividerView?.isHidden = !visible
+        collateralUnit?.isHidden = !visible
+        planUnit?.isHidden = !visible
     }
 
     func applyIncomeColor(for amount: Double) {
         incomeLabel.textColor = OverviewUIBuilder.revenueDisplayColor(for: amount, positiveColor: .brandPrimary)
     }
 
-    private func buildLayout(isIPad: Bool, infoTarget: Any?, infoAction: Selector) {
+    private func styleMetaValue(_ label: UILabel, isIPad: Bool) {
+        // Meta values sit under short titles — keep them clearly larger than captions
+        // so Orders / Deposit Held / Deposit Due remain readable at a glance.
+        label.font = .bodyBold(size: isIPad ? 18 : 16)
+        label.textColor = .textPrimary
+        label.numberOfLines = 1
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.7
+    }
+
+    private func buildLayout(isIPad: Bool) {
         let card = UIView()
         card.backgroundColor = .backgroundCard
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 12
         card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.7).cgColor
+        card.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.65).cgColor
 
-        let topRow = UIStackView(arrangedSubviews: [UIView(), dateButton])
-        topRow.axis = .horizontal
-        topRow.spacing = 10
-        topRow.alignment = .center
+        let titleLabel = UILabel()
+        titleLabel.text = "Report_Summary_Revenue".localized()
+        titleLabel.font = .captionMedium(size: 12)
+        titleLabel.textColor = .textTertiary
 
-        let heroTitleLabel = UILabel()
-        heroTitleLabel.text = "Total Revenue".localized()
-        heroTitleLabel.font = .captionMedium(size: 12)
-        heroTitleLabel.textColor = .textSecondary
+        let titleRow = UIStackView(arrangedSubviews: [titleLabel, revenueInfoButton, UIView()])
+        titleRow.axis = .horizontal
+        titleRow.spacing = 4
+        titleRow.alignment = .center
 
-        let heroTitleRow = UIStackView(arrangedSubviews: [heroTitleLabel, revenueInfoButton, UIView()])
-        heroTitleRow.axis = .horizontal
-        heroTitleRow.spacing = 4
-        heroTitleRow.alignment = .center
-
-        let heroStack = UIStackView(arrangedSubviews: [heroTitleRow, incomeLabel, growthPillView])
+        let heroStack = UIStackView(arrangedSubviews: [titleRow, incomeLabel, growthPillView])
         heroStack.axis = .vertical
         heroStack.spacing = 4
-        heroStack.alignment = .fill
+        heroStack.alignment = .leading
 
-        let collateralTitle = isIPad
-            ? "Collateral (received)".localized()
-            : "Collateral (received)_Short".localized()
-        let planTitle = isIPad
-            ? "Collateral (return)".localized()
-            : "Collateral (return)_Short".localized()
-
-        let ordersCard = OverviewUIBuilder.makeSummaryStripMetric(
-            title: "Total Orders".localized(),
+        let orders = makeMetaUnit(
+            title: "Report_Summary_Orders".localized(),
             valueLabel: ordersLabel,
-            metric: .totalOrders,
-            infoTarget: infoTarget,
-            infoAction: infoAction
+            isIPad: isIPad
         )
-        let collateralCard = OverviewUIBuilder.makeSummaryStripMetric(
-            title: collateralTitle,
+        let held = makeMetaUnit(
+            title: "Report_Summary_DepositHeld".localized(),
             valueLabel: collateralLabel,
-            metric: .collateralReceived,
-            infoTarget: infoTarget,
-            infoAction: infoAction
+            isIPad: isIPad
         )
-        let planCard = OverviewUIBuilder.makeSummaryStripMetric(
-            title: planTitle,
+        let due = makeMetaUnit(
+            title: "Report_Summary_DepositDue".localized(),
             valueLabel: collateralPlanLabel,
-            metric: .collateralExpected,
-            infoTarget: infoTarget,
-            infoAction: infoAction
+            isIPad: isIPad
         )
+        ordersUnit = orders
+        collateralUnit = held
+        planUnit = due
 
-        let collateralDivider = OverviewUIBuilder.makeSummaryMetricColumnDivider()
-        let metricsPanel = UIView()
-        metricsPanel.backgroundColor = .clear
-        metricsPanel.layer.cornerRadius = 10
-        metricsPanel.layer.borderWidth = 1
-        metricsPanel.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.65).cgColor
+        // Equal columns so larger titles/values share width instead of crowding left.
+        metaStack.axis = .horizontal
+        metaStack.spacing = 10
+        metaStack.alignment = .top
+        metaStack.distribution = .fillEqually
+        metaStack.addArrangedSubview(orders)
+        metaStack.addArrangedSubview(held)
+        metaStack.addArrangedSubview(due)
 
-        let metricsStack: UIStackView
-        if isIPad {
-            let ordersDivider = OverviewUIBuilder.makeSummaryMetricColumnDivider()
-            let horizontalStack = UIStackView(arrangedSubviews: [ordersCard, ordersDivider, collateralCard, collateralDivider, planCard])
-            horizontalStack.axis = .horizontal
-            horizontalStack.spacing = 12
-            horizontalStack.alignment = .fill
-            horizontalStack.distribution = .fill
-            metricsStack = horizontalStack
-        } else {
-            let collateralRow = UIStackView(arrangedSubviews: [collateralCard, collateralDivider, planCard])
-            collateralRow.axis = .horizontal
-            collateralRow.spacing = 12
-            collateralRow.alignment = .fill
-            collateralRow.distribution = .fillEqually
-
-            let verticalStack = UIStackView(arrangedSubviews: [ordersCard, collateralRow])
-            verticalStack.axis = .vertical
-            verticalStack.spacing = 10
-            verticalStack.alignment = .fill
-            metricsStack = verticalStack
+        let hairline = UIView()
+        hairline.backgroundColor = UIColor.borderColor.withAlphaComponent(0.7)
+        hairline.snp.makeConstraints { make in
+            make.height.equalTo(1 / UIScreen.main.scale)
         }
 
-        metricsPanel.addSubview(metricsStack)
-        metricsStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12))
-        }
-
-        collateralMetricView = collateralCard
-        planMetricView = planCard
-        collateralDividerView = collateralDivider
-
-        let stack = UIStackView(arrangedSubviews: [topRow, heroStack, metricsPanel])
-        stack.axis = .vertical
-        stack.spacing = 10
-        stack.alignment = .fill
+        contentStack.axis = .vertical
+        contentStack.spacing = 10
+        contentStack.alignment = .fill
+        contentStack.addArrangedSubview(heroStack)
+        contentStack.addArrangedSubview(hairline)
+        contentStack.addArrangedSubview(metaStack)
 
         addSubview(card)
-        card.addSubview(stack)
+        card.addSubview(contentStack)
         card.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(14)
+        contentStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 14, bottom: 12, right: 14))
         }
+    }
+
+    private func makeMetaUnit(title: String, valueLabel: UILabel, isIPad: Bool) -> UIView {
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        // Was 10pt — too small next to 16pt values; 12/13 matches secondary body rhythm.
+        titleLabel.font = .captionMedium(size: isIPad ? 13 : 12)
+        titleLabel.textColor = .textTertiary
+        titleLabel.numberOfLines = 2
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.85
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        stack.axis = .vertical
+        stack.spacing = 3
+        stack.alignment = .leading
+        return stack
     }
 }

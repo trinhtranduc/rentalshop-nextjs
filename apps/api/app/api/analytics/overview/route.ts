@@ -294,9 +294,14 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       const orderIds = orders.data?.map((o: any) => o.id) || [];
       if (orderIds.length === 0) return [];
 
+      // productId is nullable on OrderItem — exclude nulls or Prisma findUnique({ id: null })
+      // throws and handleApiError maps some Prisma codes to BUSINESS_RULE_VIOLATION.
       const grouped = await db.orderItems.groupBy({
         by: ['productId'],
-        where: { orderId: { in: orderIds } },
+        where: {
+          orderId: { in: orderIds },
+          productId: { not: null }
+        },
         _count: { productId: true },
         _sum: { totalPrice: true },
         orderBy: { _sum: { totalPrice: 'desc' } },
@@ -305,11 +310,12 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
       const result: any[] = [];
       for (const item of grouped) {
-        const productId = typeof item.productId === 'number' ? item.productId : (item as any).productId;
+        const productId = typeof item.productId === 'number' ? item.productId : Number((item as any).productId);
+        if (!Number.isFinite(productId) || productId <= 0) continue;
         const product = await db.products.findById(productId);
         const images = parseProductImages(product?.images);
         result.push({
-          id: product?.id || 0,
+          id: product?.id || productId,
           name: product?.name || 'Unknown Product',
           rentPrice: product?.rentPrice || 0,
           category: product?.category?.name || 'Uncategorized',
@@ -403,9 +409,10 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
       const result: any[] = [];
       for (const item of top) {
+        if (!Number.isFinite(item.customerId) || item.customerId <= 0) continue;
         const customer = await db.customers.findById(item.customerId);
         result.push({
-          id: customer?.id || 0,
+          id: customer?.id || item.customerId,
           name: customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : 'Unknown Customer',
           email: customer?.email || '',
           phone: customer?.phone || '',
@@ -419,8 +426,9 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       return result;
     };
 
-    // Run all sections in parallel.
-    const [income, growth, statistics, topProducts, topCustomers] = await Promise.all([
+    // Isolate section failures so one broken nested query (e.g. null productId)
+    // does not turn the whole overview into BUSINESS_RULE_VIOLATION.
+    const settled = await Promise.allSettled([
       computeMonthlyIncome(),
       computeGrowth(),
       computeStatistics(),
@@ -428,13 +436,30 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       computeTopCustomers()
     ]);
 
+    const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
+      if (result.status === 'fulfilled') return result.value;
+      console.error(`Analytics overview section failed (${label}):`, result.reason);
+      return fallback;
+    };
+
     return NextResponse.json(
       ResponseBuilder.success('ANALYTICS_OVERVIEW_SUCCESS', {
-        income,
-        growth,
-        statistics,
-        topProducts,
-        topCustomers
+        income: valueOr(settled[0], [], 'income'),
+        growth: valueOr(
+          settled[1],
+          {
+            orders: { current: 0, previous: 0, growth: 0 },
+            revenue: { current: 0, previous: 0, growth: 0 }
+          },
+          'growth'
+        ),
+        statistics: valueOr(
+          settled[2],
+          { totalOrders: 0, totalRevenue: 0, statusBreakdown: {} },
+          'statistics'
+        ),
+        topProducts: valueOr(settled[3], [], 'topProducts'),
+        topCustomers: valueOr(settled[4], [], 'topCustomers')
       })
     );
   } catch (error) {

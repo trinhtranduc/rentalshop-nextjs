@@ -40,20 +40,20 @@ class SaleCell: UITableViewCell {
     private lazy var nameLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.boldFont(size: 14) // Bold to make customer name stand out
-        label.textColor = .black // Always black for maximum visibility
+        label.textColor = .textPrimary
         label.numberOfLines = 2
         label.minimumScaleFactor = 0.8
         return label
     }()
 
-    /// Subtitle under name for chart layout: orderType + phone
-    private lazy var chartSubtitleLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 12)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 1
-        label.minimumScaleFactor = 0.8
-        return label
+    private lazy var rowSurfaceView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        // Compact list-row radius (was 12 — read as a large panel).
+        view.layer.cornerRadius = 8
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.92).cgColor
+        return view
     }()
     
     private lazy var datesStack: UIStackView = {
@@ -97,14 +97,22 @@ class SaleCell: UITableViewCell {
         super.prepareForReuse()
         // Remove all constraints and subviews to prevent duplicates
         containerStackView.snp.removeConstraints()
+        rowSurfaceView.snp.removeConstraints()
         statusContainer.snp.removeConstraints()
         statusLabel.snp.removeConstraints()
         datesStack.snp.removeConstraints()
+        rowSurfaceView.removeFromSuperview()
         containerStackView.removeFromSuperview()
+        contentView.viewWithTag(9_901)?.removeFromSuperview()
     }
     
     // MARK: - Setup
     func setupUI(for layout: CellLayout = .sale) {
+        contentView.backgroundColor = .clear
+        backgroundColor = .clear
+        rowSurfaceView.removeFromSuperview()
+        containerStackView.removeFromSuperview()
+        contentView.viewWithTag(9_901)?.removeFromSuperview()
         contentView.addSubview(containerStackView)
         
         // Remove any existing arranged subviews
@@ -112,8 +120,13 @@ class SaleCell: UITableViewCell {
         datesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         
         // Configure stack view
+        containerStackView.axis = .horizontal
+        containerStackView.spacing = 4
         containerStackView.alignment = .center
         containerStackView.distribution = .fill
+        datesStack.axis = .horizontal
+        datesStack.spacing = 8
+        datesStack.distribution = .fillEqually
         
         // Configure all labels
         [orderIdLabel, nameLabel, bookDateLabel, getDateLabel].forEach {
@@ -131,8 +144,18 @@ class SaleCell: UITableViewCell {
         
         switch layout {
         case .sale:
+            selectionStyle = .default
             let statusContainerWidth: CGFloat = isIPad ? 100 : 80
             let statusHeight: CGFloat = isIPad ? 28 : 24
+            orderIdLabel.font = Utils.regularFont(size: 14)
+            orderIdLabel.textColor = .textPrimary
+            nameLabel.font = Utils.boldFont(size: 14)
+            nameLabel.textColor = .textPrimary
+            nameLabel.numberOfLines = 2
+            bookDateLabel.font = Utils.regularFont(size: 13)
+            bookDateLabel.textColor = .textPrimary
+            getDateLabel.font = Utils.regularFont(size: 13)
+            getDateLabel.textColor = .textPrimary
             // Create a stack for # and Name
             let infoStack = UIStackView()
             infoStack.axis = .horizontal
@@ -174,42 +197,59 @@ class SaleCell: UITableViewCell {
             }
             
         case .chart:
-            let statusContainerWidth: CGFloat = isIPad ? 100 : 80
-            let statusHeight: CGFloat = isIPad ? 28 : 24
+            // Compact card row: keep surface chrome (users found plain rows odd),
+            // but denser than the old 3-block layout.
+            selectionStyle = .default
+            let statusContainerWidth: CGFloat = isIPad ? 90 : 78
+            let statusHeight: CGFloat = isIPad ? 24 : 20
+            let outerInset: CGFloat = isIPad ? 20 : 16
 
-            let nameColumnStack = UIStackView()
-            nameColumnStack.axis = .vertical
-            nameColumnStack.spacing = 2
-            nameColumnStack.alignment = .leading
-            nameColumnStack.addArrangedSubview(nameLabel)
-            nameColumnStack.addArrangedSubview(chartSubtitleLabel)
+            contentView.addSubview(rowSurfaceView)
+            rowSurfaceView.addSubview(containerStackView)
 
-            let infoStack = UIStackView()
-            infoStack.axis = .horizontal
-            infoStack.spacing = 5
-            infoStack.distribution = .fillEqually
-            infoStack.addArrangedSubview(orderIdLabel)
-            infoStack.addArrangedSubview(nameColumnStack)
+            containerStackView.axis = .horizontal
+            containerStackView.spacing = 10
+            containerStackView.alignment = .center
+            containerStackView.distribution = .fill
 
-            datesStack.addArrangedSubview(bookDateLabel)
-            datesStack.addArrangedSubview(getDateLabel)
+            let leftStack = UIStackView(arrangedSubviews: [orderIdLabel, nameLabel])
+            leftStack.axis = .vertical
+            leftStack.spacing = 2
+            leftStack.alignment = .leading
 
-            containerStackView.addArrangedSubview(datesStack)
-            containerStackView.addArrangedSubview(infoStack)
+            let rightStack = UIStackView(arrangedSubviews: [getDateLabel, bookDateLabel])
+            rightStack.axis = .vertical
+            rightStack.spacing = 2
+            rightStack.alignment = .trailing
+
+            nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            getDateLabel.setContentHuggingPriority(.required, for: .horizontal)
+            getDateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+            bookDateLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+            containerStackView.addArrangedSubview(leftStack)
+            containerStackView.addArrangedSubview(rightStack)
             containerStackView.addArrangedSubview(statusContainer)
-            
-            // Setup constraints with SnapKit
-            containerStackView.snp.makeConstraints { make in
-                make.top.equalToSuperview().offset(isIPad ? 16 : 12)
-                make.leading.equalToSuperview().offset(isIPad ? 24 : 16)
-                make.trailing.equalToSuperview().offset(isIPad ? -24 : -16)
-                make.bottom.equalToSuperview().offset(isIPad ? -16 : -12)
+
+            rowSurfaceView.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(4)
+                make.leading.equalToSuperview().offset(outerInset)
+                make.trailing.equalToSuperview().offset(-outerInset)
+                make.bottom.equalToSuperview().offset(-4)
             }
-            
+
+            containerStackView.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(isIPad ? 12 : 10)
+                make.leading.equalToSuperview().offset(isIPad ? 14 : 12)
+                make.trailing.equalToSuperview().offset(isIPad ? -14 : -12)
+                make.bottom.equalToSuperview().offset(isIPad ? -12 : -10)
+            }
+
             statusContainer.snp.makeConstraints { make in
                 make.width.equalTo(statusContainerWidth)
             }
-            
+
             statusLabel.snp.makeConstraints { make in
                 make.center.equalToSuperview()
                 make.width.equalToSuperview()
@@ -217,12 +257,29 @@ class SaleCell: UITableViewCell {
             }
             statusLabel.layer.cornerRadius = statusHeight / 2
 
-            datesStack.snp.makeConstraints { make in
-                make.width.equalTo(infoStack)
-            }
-            setChartIncomeAlignment()
+            orderIdLabel.font = Utils.boldFont(size: isIPad ? 15 : 14)
+            orderIdLabel.textColor = .textPrimary
+
+            nameLabel.font = Utils.regularFont(size: isIPad ? 13 : 12)
+            nameLabel.textColor = .textSecondary
+            nameLabel.numberOfLines = 1
+            nameLabel.lineBreakMode = .byTruncatingTail
+
+            bookDateLabel.font = Utils.regularFont(size: isIPad ? 12 : 11)
+            bookDateLabel.textColor = .textTertiary
+            bookDateLabel.textAlignment = .right
+            getDateLabel.font = Utils.boldFont(size: isIPad ? 15 : 14)
+            getDateLabel.textColor = .textPrimary
+            getDateLabel.textAlignment = .right
 
         case .order:
+            selectionStyle = .default
+            orderIdLabel.font = Utils.regularFont(size: 14)
+            orderIdLabel.textColor = .textPrimary
+            bookDateLabel.font = Utils.regularFont(size: 13)
+            bookDateLabel.textColor = .textPrimary
+            getDateLabel.font = Utils.regularFont(size: 13)
+            getDateLabel.textColor = .textPrimary
             // Create a stack for # and QTY
             let infoStack = UIStackView()
             infoStack.axis = .horizontal
@@ -269,15 +326,34 @@ class SaleCell: UITableViewCell {
     private func createDateLabel() -> UILabel {
         let label = UILabel()
         label.font = Utils.regularFont(size: 13) // Reduced from 16 for more compact display
-        label.textColor = .black
+        label.textColor = .textPrimary
         label.minimumScaleFactor = 0.5
         label.contentScaleFactor = 0.5
         return label
     }
 
-    /// Income column (getDateLabel) should be right-aligned for chart layout
+    private func formattedOrderIdentifier(_ rawValue: String?) -> String {
+        let trimmed = (rawValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "#N/A".localized() }
+        return trimmed.hasPrefix("#") ? trimmed : "#\(trimmed)"
+    }
+
+    private func setChartCustomerInfo(name: String?, phone: String?) {
+        // Compact overview row: name only (phone is on order detail).
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        nameLabel.attributedText = nil
+        nameLabel.text = trimmed.isEmpty ? "N/A".localized() : trimmed
+        nameLabel.numberOfLines = 1
+        nameLabel.lineBreakMode = .byTruncatingTail
+    }
+
+    private func chartRevenueTextColor(for amount: Double) -> UIColor {
+        amount < 0 ? .statusCancelledText : .textPrimary
+    }
+
+    /// Income amount stays right-aligned in the compact overview meta row.
     private func setChartIncomeAlignment() {
-        bookDateLabel.textAlignment = .left
+        bookDateLabel.textAlignment = .right
         getDateLabel.textAlignment = .right
     }
     
@@ -309,13 +385,11 @@ class SaleCell: UITableViewCell {
             }
             
         case .chart:
-            orderIdLabel.text = order.orderNumber
-            nameLabel.text = order.customerName
-            let typeStr = order.orderType == .rent ? "Rent".localized() : "Sale".localized()
-            chartSubtitleLabel.text = [typeStr, order.customerPhone].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-            chartSubtitleLabel.isHidden = (chartSubtitleLabel.text ?? "").isEmpty
+            orderIdLabel.text = formattedOrderIdentifier(order.orderNumber)
+            setChartCustomerInfo(name: order.customerName, phone: order.customerPhone)
             bookDateLabel.text = order.createdAt.dateInString()
             getDateLabel.text = order.totalAmount.formatStringInCommon()
+            getDateLabel.textColor = chartRevenueTextColor(for: order.totalAmount)
             setChartIncomeAlignment()
             setupStatus(for: order)
             
@@ -398,19 +472,16 @@ class SaleCell: UITableViewCell {
         
         switch layout {
         case .chart:
-            orderIdLabel.text = dailyOrder.orderNumber ?? "N/A".localized()
-            nameLabel.text = dailyOrder.customerName ?? "N/A".localized()
-            let rawType = (dailyOrder.orderType ?? "").lowercased()
-            let typeStr = rawType == "rent" ? "Rent".localized() : (rawType == "sale" ? "Sale".localized() : (dailyOrder.orderType ?? ""))
-            let parts = [typeStr, dailyOrder.customerPhone].compactMap { $0 }.filter { !$0.isEmpty }
-            chartSubtitleLabel.text = parts.joined(separator: " · ")
-            chartSubtitleLabel.isHidden = (chartSubtitleLabel.text ?? "").isEmpty
+            orderIdLabel.text = formattedOrderIdentifier(dailyOrder.orderNumber)
+            setChartCustomerInfo(name: dailyOrder.customerName, phone: dailyOrder.customerPhone)
             if let revenueDate = dailyOrder.revenueDate {
                 bookDateLabel.text = revenueDate.dateInString()
             } else {
                 bookDateLabel.text = "N/A".localized()
             }
-            getDateLabel.text = (dailyOrder.revenue ?? dailyOrder.totalAmount ?? 0.0).formatStringInCommon()
+            let revenueValue = dailyOrder.revenue ?? dailyOrder.totalAmount ?? 0.0
+            getDateLabel.text = revenueValue.formatStringInCommon()
+            getDateLabel.textColor = chartRevenueTextColor(for: revenueValue)
             setChartIncomeAlignment()
             setupStatus(for: dailyOrder)
         default:

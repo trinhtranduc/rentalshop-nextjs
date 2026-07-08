@@ -17,6 +17,8 @@ enum OverviewUIBuilder {
         label.font = .bodyRegular(size: isIPad ? 18 : 16)
         label.textColor = .brandPrimary
         label.text = "0"
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.7
         return label
     }
 
@@ -29,6 +31,48 @@ enum OverviewUIBuilder {
         return view
     }
 
+    /// Compact metric: short title on top, value below. Avoids "..." from sideways title+value.
+    static func makeSummaryStackedMetric(
+        title: String,
+        valueLabel: UILabel,
+        accessory: UIView?,
+        alignment: UIStackView.Alignment
+    ) -> UIView {
+        let container = UIStackView()
+        container.axis = .vertical
+        container.spacing = 2
+        container.alignment = alignment
+
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = .captionMedium(size: 11)
+        titleLabel.textColor = .textTertiary
+        titleLabel.numberOfLines = 1
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.8
+        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+
+        let titleRow: UIView
+        if let accessory = accessory {
+            let row = UIStackView(arrangedSubviews: [titleLabel, accessory, UIView()])
+            row.axis = .horizontal
+            row.spacing = 2
+            row.alignment = .center
+            titleRow = row
+        } else {
+            titleRow = titleLabel
+        }
+
+        valueLabel.numberOfLines = 1
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.7
+        valueLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+
+        container.addArrangedSubview(titleRow)
+        container.addArrangedSubview(valueLabel)
+        return container
+    }
+
     static func makeSummaryStripMetric(
         title: String,
         valueLabel: UILabel,
@@ -36,35 +80,17 @@ enum OverviewUIBuilder {
         infoTarget: Any?,
         infoAction: Selector
     ) -> UIView {
-        let container = UIStackView()
-        container.axis = .vertical
-        container.spacing = 4
-        container.alignment = .center
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .captionMedium(size: 11)
-        titleLabel.textColor = .textTertiary
-        titleLabel.numberOfLines = 2
-        titleLabel.textAlignment = .center
-
-        let infoButton = OverviewMetricInfoPresenter.makeInfoButton(
-            metric: metric,
-            target: infoTarget,
-            action: infoAction
+        // Kept for call-site compatibility; prefer makeSummaryStackedMetric for density.
+        return makeSummaryStackedMetric(
+            title: title,
+            valueLabel: valueLabel,
+            accessory: OverviewMetricInfoPresenter.makeInfoButton(
+                metric: metric,
+                target: infoTarget,
+                action: infoAction
+            ),
+            alignment: .center
         )
-        let titleRow = UIStackView(arrangedSubviews: [titleLabel, infoButton])
-        titleRow.axis = .horizontal
-        titleRow.spacing = 2
-        titleRow.alignment = .center
-
-        valueLabel.textColor = .textPrimary
-        valueLabel.numberOfLines = 1
-        valueLabel.textAlignment = .center
-
-        container.addArrangedSubview(titleRow)
-        container.addArrangedSubview(valueLabel)
-        return container
     }
 
     static func makeSnapshotValueLabel(isIPad: Bool) -> UILabel {
