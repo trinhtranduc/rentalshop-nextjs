@@ -637,8 +637,10 @@ struct OrderStatisticsResponse: Codable {
 
 // Income Analytics Item - Updated to match API documentation (array structure)
 struct IncomeAnalyticsItem: Codable {
-    let month: String? // Format: "01/24" for monthly grouping
-    let day: String? // Format: "DD/MM/YY" for daily grouping
+    let month: String? // Monthly: "01/24"; Daily API still puts day label here as "DD/MM/YY"
+    let day: String? // Optional alternate day label
+    let date: String? // Daily: "YYYY/MM/DD" from /api/analytics/income?groupBy=day
+    let dayNumber: Int?
     let year: Int?
     let realIncome: Double?
     let futureIncome: Double?
@@ -650,6 +652,8 @@ struct IncomeAnalyticsItem: Codable {
     enum CodingKeys: String, CodingKey {
         case month
         case day
+        case date
+        case dayNumber
         case year
         case realIncome
         case futureIncome

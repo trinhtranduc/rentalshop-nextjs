@@ -15,10 +15,10 @@ import SnapKit
 class OverviewViewController: DemoBaseViewController {
     
     // MARK: - Properties
-    private var selectedMode: ViewMode = .dailyReport {
+    private var selectedPeriod: ReportPeriod = .today {
         didSet {
-            guard oldValue != selectedMode else { return }
-            updateViewForMode()
+            guard oldValue != selectedPeriod else { return }
+            updateViewForPeriod()
         }
     }
     
@@ -44,11 +44,11 @@ class OverviewViewController: DemoBaseViewController {
     }()
     
     private var yearSelectedIndex: Int = 1 {
-        didSet { updateDateButtonTitle() }
+        didSet { updateDateFilterTitle() }
     }
     
     private var todayDate: Date = Date() {
-        didSet { updateDateButtonTitle() }
+        didSet { updateDateFilterTitle() }
     }
     
     // Stats
@@ -78,21 +78,15 @@ class OverviewViewController: DemoBaseViewController {
         return button
     }()
 
-    private lazy var modeSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ViewMode.allCases.map { $0.title })
-        control.selectedSegmentIndex = ViewMode.dailyReport.rawValue
-        control.addTarget(self, action: #selector(modeSegmentChanged(_:)), for: .valueChanged)
-        control.selectedSegmentTintColor = .brandPrimary
-        control.setTitleTextAttributes(
-            [NSAttributedString.Key.font: UIFont.bodyMedium(size: 14), NSAttributedString.Key.foregroundColor: UIColor.textPrimary],
-            for: .normal
-        )
-        control.setTitleTextAttributes(
-            [NSAttributedString.Key.font: UIFont.bodyMedium(size: 14), NSAttributedString.Key.foregroundColor: UIColor.white],
-            for: .selected
-        )
-        control.backgroundColor = .backgroundCard
-        return control
+    private lazy var periodFilterView: OverviewPeriodFilterView = {
+        let view = OverviewPeriodFilterView()
+        view.onPeriodSelected = { [weak self] period in
+            self?.selectedPeriod = period
+        }
+        view.onDateTapped = { [weak self] in
+            self?.dateButtonTapped()
+        }
+        return view
     }()
 
     private lazy var emptyStateView: UIView = {
@@ -146,8 +140,6 @@ class OverviewViewController: DemoBaseViewController {
     private lazy var summaryCard: OverviewSummaryCardView = {
         OverviewSummaryCardView(
             isIPad: isIPad,
-            dateTarget: self,
-            dateAction: #selector(dateButtonTapped),
             infoTarget: self,
             infoAction: #selector(overviewInfoButtonTapped(_:))
         )
@@ -155,16 +147,16 @@ class OverviewViewController: DemoBaseViewController {
 
     private lazy var ordersSectionTitleLabel: UILabel = {
         let label = UILabel()
-        label.numberOfLines = 2
+        label.numberOfLines = 1
         label.textColor = .textPrimary
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.78
+        label.minimumScaleFactor = 0.8
         return label
     }()
 
     private lazy var ordersSectionSubtitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyRegular(size: 13)
+        label.font = .captionMedium(size: 12)
         label.textColor = .textTertiary
         label.numberOfLines = 1
         return label
@@ -174,13 +166,24 @@ class OverviewViewController: DemoBaseViewController {
         let container = UIView()
         container.isHidden = true
 
-        let stack = UIStackView(arrangedSubviews: [ordersSectionTitleLabel, ordersSectionSubtitleLabel])
-        stack.axis = .vertical
-        stack.spacing = 2
-        stack.alignment = .leading
+        let stack = UIStackView(arrangedSubviews: [ordersSectionTitleLabel, UIView(), ordersSectionSubtitleLabel])
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
 
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
+        let hairline = UIView()
+        hairline.backgroundColor = UIColor.borderColor.withAlphaComponent(0.65)
+        hairline.snp.makeConstraints { make in
+            make.height.equalTo(1 / UIScreen.main.scale)
+        }
+
+        let vertical = UIStackView(arrangedSubviews: [stack, hairline])
+        vertical.axis = .vertical
+        vertical.spacing = 8
+        vertical.alignment = .fill
+
+        container.addSubview(vertical)
+        vertical.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
@@ -250,8 +253,9 @@ class OverviewViewController: DemoBaseViewController {
         table.backgroundColor = .clear
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 108
+        table.estimatedRowHeight = 72
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        table.separatorStyle = .none
         if #available(iOS 15.0, *) {
             table.sectionHeaderTopPadding = 0
         }
@@ -259,7 +263,7 @@ class OverviewViewController: DemoBaseViewController {
     }()
 
     private var chartTopToSummaryConstraint: Constraint?
-    private var listHeaderTopToSegmentConstraint: Constraint?
+    private var listHeaderTopToFilterConstraint: Constraint?
     private var listHeaderTopToNavConstraint: Constraint?
 
     // MARK: - Lifecycle
@@ -269,16 +273,16 @@ class OverviewViewController: DemoBaseViewController {
         setupUI()
         setupCharts()
         
-        // Set initial view state for daily report mode (before setting selectedMode)
+        // Set initial view state for today mode (before setting selectedPeriod)
         chartScrollView.isHidden = true
         chartStackView.isHidden = true
         orderTableView.isHidden = false
         ordersSectionView.isHidden = false
         
-        // Initialize mode selection and load data
-        initializeModeSelection()
+        // Initialize period selection and load data
+        initializePeriodSelection()
         chartsSection.configureInitialExpansion(isIPad: isIPad)
-        updateDateButtonTitle()
+        updateDateFilterTitle()
         applySummaryLayout()
         updateCreateOrderFabVisibility()
         loadData()
@@ -311,40 +315,53 @@ class OverviewViewController: DemoBaseViewController {
         )
 
         navBar.addRightButton(refreshButton)
-        updateModeSegmentVisibility()
+        refreshPeriodFilter()
     }
 
-    private func updateModeSegmentVisibility() {
-        // Hide the mode switch when the user can only see the daily report:
-        // outlet staff by role, or anyone lacking full revenue analytics permission.
-        let hideSegment = isOutletStaff || !canViewChartAnalytics()
-        modeSegmentedControl.isHidden = hideSegment
+    private func refreshPeriodFilter() {
+        let periods = ReportPeriod.availablePeriods(canViewRevenueAnalytics: canViewChartAnalytics())
+        let showsDate = selectedPeriod == .today || selectedPeriod == .thisYear
+        periodFilterView.configure(
+            periods: periods,
+            selected: selectedPeriod,
+            dateTitle: dateFilterTitle(),
+            showsDateButton: showsDate
+        )
+        periodFilterView.setDateButtonEnabled(!isOutletStaff)
 
-        if hideSegment {
-            listHeaderTopToSegmentConstraint?.deactivate()
+        if periods.count <= 1 {
+            listHeaderTopToFilterConstraint?.deactivate()
             listHeaderTopToNavConstraint?.activate()
         } else {
-            listHeaderTopToSegmentConstraint?.activate()
+            listHeaderTopToFilterConstraint?.activate()
             listHeaderTopToNavConstraint?.deactivate()
         }
     }
 
-    private func applySummaryLayout() {
-        let hideCollateral = (selectedMode == .overview)
-        summaryCard.revenueInfoButton.isHidden = (selectedMode == .dailyReport)
-        summaryCard.growthPillView.isHidden = (selectedMode != .overview)
-        summaryCard.setCollateralMetricsVisible(!hideCollateral)
+    private func dateFilterTitle() -> String {
+        if selectedPeriod == .thisYear {
+            return years[yearSelectedIndex].inString()
+        }
+        return todayDate.dateInString() ?? ""
+    }
 
-        updateDateButtonTitle()
-        if selectedMode == .dailyReport {
+        private func applySummaryLayout() {
+        let isToday = selectedPeriod == .today
+        let isRangeOrYear = selectedPeriod.showsChartsAndInsights
+        summaryCard.revenueInfoButton.isHidden = false
+        summaryCard.growthPillView.isHidden = !isRangeOrYear
+        summaryCard.setCollateralMetricsVisible(isToday)
+
+        refreshPeriodFilter()
+        if isToday {
             reloadList()
         } else {
-            syncSummaryLabelsForYearMode()
+            syncSummaryLabelsForRangeMode()
             refreshOverviewInsightSections()
         }
     }
 
-    private func syncSummaryLabelsForYearMode() {
+    private func syncSummaryLabelsForRangeMode() {
         summaryCard.incomeLabel.text = realIncome.formatStringInCommon()
         summaryCard.ordersLabel.text = totalOrder.formatStringInCommon()
         summaryCard.collateralLabel.text = "—"
@@ -353,7 +370,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func setupHeaderView() {
-        view.addSubview(modeSegmentedControl)
+        view.addSubview(periodFilterView)
         view.addSubview(summaryCard)
         view.addSubview(chartScrollView)
         chartScrollView.addSubview(chartScrollContentView)
@@ -365,32 +382,27 @@ class OverviewViewController: DemoBaseViewController {
         
         chartStackView.addArrangedSubview(chartsSection)
         chartStackView.addArrangedSubview(insightsPanel)
-        
-        if isOutletStaff {
-            summaryCard.dateButton.isUserInteractionEnabled = false
-        }
     }
     
     private func setupConstraints() {
         guard let customNavBar = customNavBar else { return }
 
-        modeSegmentedControl.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom).offset(12)
+        periodFilterView.snp.makeConstraints { make in
+            make.top.equalTo(customNavBar.snp.bottom).offset(10)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(36)
         }
 
         summaryCard.snp.makeConstraints { make in
-            listHeaderTopToSegmentConstraint = make.top.equalTo(modeSegmentedControl.snp.bottom).offset(12).constraint
-            listHeaderTopToNavConstraint = make.top.equalTo(customNavBar.snp.bottom).offset(16).constraint
+            listHeaderTopToFilterConstraint = make.top.equalTo(periodFilterView.snp.bottom).offset(8).constraint
+            listHeaderTopToNavConstraint = make.top.equalTo(customNavBar.snp.bottom).offset(12).constraint
             make.leading.trailing.equalToSuperview().inset(16)
         }
-        listHeaderTopToSegmentConstraint?.activate()
+        listHeaderTopToFilterConstraint?.activate()
         listHeaderTopToNavConstraint?.deactivate()
 
         chartScrollView.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
-            chartTopToSummaryConstraint = make.top.equalTo(summaryCard.snp.bottom).offset(18).constraint
+            chartTopToSummaryConstraint = make.top.equalTo(summaryCard.snp.bottom).offset(8).constraint
         }
         chartTopToSummaryConstraint?.activate()
 
@@ -404,17 +416,17 @@ class OverviewViewController: DemoBaseViewController {
         }
 
         ordersSectionView.snp.makeConstraints { make in
-            make.top.equalTo(summaryCard.snp.bottom).offset(18)
+            make.top.equalTo(summaryCard.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
         }
         
         orderTableView.snp.makeConstraints { make in
-            make.top.equalTo(ordersSectionView.snp.bottom).offset(8)
+            make.top.equalTo(ordersSectionView.snp.bottom).offset(0)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
         emptyStateView.snp.makeConstraints { make in
-            make.top.equalTo(ordersSectionView.snp.bottom).offset(8)
+            make.top.equalTo(ordersSectionView.snp.bottom).offset(0)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
@@ -442,54 +454,91 @@ class OverviewViewController: DemoBaseViewController {
         lineLeftAxis.axisMinimum = 0
         lineLeftAxis.granularity = 2.0
         lineLeftAxis.forceLabelsEnabled = true
+
+        applyChartPanMode(for: selectedPeriod)
     }
 
     private func configureOverviewChartInteraction(_ chartView: BarLineChartViewBase) {
-        chartView.dragEnabled = false
+        // Scale/pinch stay off; horizontal drag is toggled per period via applyChartPanMode.
         chartView.setScaleEnabled(false)
         chartView.pinchZoomEnabled = false
         chartView.doubleTapToZoomEnabled = false
-        chartView.highlightPerDragEnabled = false
+        chartView.highlightPerDragEnabled = true
+        chartView.dragDecelerationEnabled = true
+    }
+
+    /// Year (and long day ranges) need horizontal pan so revenue bars stay readable.
+    /// Nested inside a vertical `UIScrollView`, so only X-drag is enabled.
+    private func applyChartPanMode(for period: ReportPeriod) {
+        let allowHorizontalDrag = period == .thisYear || period == .last30Days || period == .last7Days
+        [chartsSection.barChartView, chartsSection.lineChartView].forEach { chart in
+            chart.dragEnabled = allowHorizontalDrag
+            chart.dragXEnabled = allowHorizontalDrag
+            chart.dragYEnabled = false
+        }
+    }
+
+    private func applyChartVisibleRangeIfNeeded() {
+        let count = max(xValues.count, 1)
+        let visibleCount: Double
+        switch selectedPeriod {
+        case .thisYear:
+            // Show ~6 months at a time; user pans across the rest of the year.
+            visibleCount = min(6, Double(count))
+        case .last30Days:
+            visibleCount = min(10, Double(count))
+        case .last7Days:
+            visibleCount = Double(count) // all 7 fit; drag still ok if layout is tight
+        case .today:
+            return
+        }
+
+        let bar = chartsSection.barChartView
+        let line = chartsSection.lineChartView
+        guard visibleCount > 0, Double(count) > visibleCount else {
+            bar.fitScreen()
+            line.fitScreen()
+            return
+        }
+
+        bar.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
+        line.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
+        // Start at the latest months/days (right edge) so current period is on screen first.
+        let latestX = Double(count - 1)
+        bar.moveViewToX(latestX)
+        line.moveViewToX(latestX)
     }
     
     private func configureXAxis(_ axis: XAxis) {
         axis.labelPosition = XAxis.LabelPosition.bottom
         axis.valueFormatter = DefaultAxisValueFormatter(block: { [weak self] index, _ in
-            guard let self = self, Int(index) < self.xValues.count else { return "" }
-            return self.xValues[Int(index)]
+            // Charts can ask for negative X values (e.g. after groupBars(fromX: -0.5)).
+            // Bound both sides so we never crash on Int(index).
+            let i = Int(index)
+            guard let self = self, i >= 0, i < self.xValues.count else { return "" }
+            return self.xValues[i]
         })
     }
     
-    private func initializeModeSelection() {
-        modeSegmentedControl.selectedSegmentIndex = selectedMode.rawValue
-        updateModeSegmentVisibility()
-        selectedMode = .dailyReport
+    private func initializePeriodSelection() {
+        selectedPeriod = .today
+        refreshPeriodFilter()
     }
 
-    @objc private func modeSegmentChanged(_ sender: UISegmentedControl) {
-        guard let mode = ViewMode(rawValue: sender.selectedSegmentIndex) else { return }
-        selectedMode = mode
-    }
-    
-    private func updateViewForMode() {
-        // Force daily report for users who cannot access yearly analytics.
-        if (isOutletStaff || !canViewChartAnalytics()) && selectedMode != .dailyReport {
-            selectedMode = .dailyReport
+    private func updateViewForPeriod() {
+        if (isOutletStaff || !canViewChartAnalytics()) && selectedPeriod != .today {
+            selectedPeriod = .today
             return
         }
 
-        modeSegmentedControl.selectedSegmentIndex = selectedMode.rawValue
-
-        let isOverviewMode = selectedMode == .overview
-        let isDailyReportMode = selectedMode == .dailyReport
-
         applySummaryLayout()
+        applyChartPanMode(for: selectedPeriod)
 
-        // List order (bảng đơn hàng): chỉ hiện khi xem theo ngày. Xem theo năm chỉ hiện chart.
-        let showOrderList = isDailyReportMode
-        UIView.animate(withDuration: 0.3) {
-            self.chartScrollView.isHidden = !isOverviewMode
-            self.chartStackView.isHidden = !isOverviewMode
+        let showOrderList = selectedPeriod.showsOrderList
+        let showCharts = selectedPeriod.showsChartsAndInsights
+        UIView.animate(withDuration: 0.25) {
+            self.chartScrollView.isHidden = !showCharts
+            self.chartStackView.isHidden = !showCharts
             self.ordersSectionView.isHidden = !showOrderList
             self.orderTableView.isHidden = !showOrderList
             if !showOrderList {
@@ -498,14 +547,13 @@ class OverviewViewController: DemoBaseViewController {
         } completion: { _ in
             self.loadData()
         }
-        
-        updateDateButtonTitle()
+
         updateCreateOrderFabVisibility()
     }
 
     private func updateCreateOrderFabVisibility() {
         let canCreate = PermissionManager.shared.canCreateOrders()
-        let showFab = selectedMode == .dailyReport && canCreate
+        let showFab = selectedPeriod == .today && canCreate
         createOrderFab.isHidden = !showFab
         let bottomInset: CGFloat = showFab ? 88 : 16
         orderTableView.contentInset.bottom = bottomInset
@@ -531,7 +579,7 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     // MARK: - Permission Check
-    /// Yearly overview (income chart, growth, top lists) requires full revenue analytics.
+    /// Yearly / range overview requires full revenue analytics.
     /// Backend gates these endpoints on `analytics.view.revenue`, so `analytics.view.dashboard`
     /// alone (OUTLET_STAFF) must NOT unlock yearly mode.
     private func canViewChartAnalytics() -> Bool {
@@ -566,9 +614,9 @@ class OverviewViewController: DemoBaseViewController {
         // Outlet staff: disable date selection
         guard !isOutletStaff else { return }
         
-        if selectedMode == .overview {
+        if selectedPeriod == .thisYear {
             showYearSelection()
-        } else {
+        } else if selectedPeriod == .today {
             showDatePicker()
         }
     }
@@ -590,8 +638,8 @@ class OverviewViewController: DemoBaseViewController {
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
         
         if let popover = alert.popoverPresentationController {
-            popover.sourceView = summaryCard.dateButton
-            popover.sourceRect = summaryCard.dateButton.bounds
+            popover.sourceView = periodFilterView
+            popover.sourceRect = periodFilterView.bounds
         }
         
         present(alert, animated: true)
@@ -608,33 +656,34 @@ class OverviewViewController: DemoBaseViewController {
         present(controller, animated: true)
     }
     
-    private func updateDateButtonTitle() {
-        guard summaryCard.dateButton.superview != nil else { return }
-
-        let title = selectedMode == .overview
-            ? years[yearSelectedIndex].inString()
-            : todayDate.dateInString()
-        summaryCard.dateButton.setTitle(title, for: .normal)
+    private func updateDateFilterTitle() {
+        periodFilterView.setDateTitle(dateFilterTitle())
     }
     
     // MARK: - Data Loading
     private func loadData() {
         view.viewWithTag(9090)?.removeFromSuperview()
         setSummaryPlaceholder(placeholder: "—")
-        if selectedMode == .overview {
+        if selectedPeriod.showsChartsAndInsights {
             resetOverviewInsightState()
             refreshOverviewInsightSections()
         }
-        switch selectedMode {
-        case .overview:
-            if canViewChartAnalytics() {
-                loadOverview(year: years[yearSelectedIndex])
+        switch selectedPeriod {
+        case .today:
+            if canViewDailyReport() {
+                loadOrder(date: todayDate)
             } else {
                 showNoPermissionMessage()
             }
-        case .dailyReport:
-            if canViewDailyReport() {
-                loadOrder(date: todayDate)
+        case .last7Days, .last30Days:
+            if canViewChartAnalytics() {
+                loadRangeReport(period: selectedPeriod)
+            } else {
+                showNoPermissionMessage()
+            }
+        case .thisYear:
+            if canViewChartAnalytics() {
+                loadOverview(year: years[yearSelectedIndex])
             } else {
                 showNoPermissionMessage()
             }
@@ -668,6 +717,64 @@ class OverviewViewController: DemoBaseViewController {
         }
     }
     
+    private func loadRangeReport(period: ReportPeriod) {
+        guard canViewChartAnalytics() else {
+            clearChart()
+            return
+        }
+
+        let year = years[yearSelectedIndex]
+        let range = period.dateRange(todayDate: todayDate, year: year)
+        showProgressText(text: "Loading...".localized(), navigationController: navigationController)
+
+        let group = DispatchGroup()
+        var incomeData: [IncomeAnalyticsItem]?
+        var overviewResponse: AnalyticsOverviewResponse?
+        var loadError: NSError?
+
+        group.enter()
+        AnalyticsAPIService.shared.loadIncomeAnalytics(
+            startDate: range.start,
+            endDate: range.end,
+            outletId: nil,
+            groupBy: period.incomeGroupBy,
+            outletIds: nil
+        ) { data, error in
+            incomeData = data
+            if let error = error { loadError = error }
+            group.leave()
+        }
+
+        group.enter()
+        AnalyticsAPIService.shared.loadAnalyticsOverview(startDate: range.start, endDate: range.end, limit: 3) { response, error in
+            overviewResponse = response
+            if loadError == nil, let error = error { loadError = error }
+            group.leave()
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            guard let self = self else { return }
+            self.hideProgress(navigationController: self.navigationController)
+
+            // Income is enough to draw the chart + summary totals.
+            // Overview (growth / snapshot / top lists) is optional — do not block the chart
+            // when /overview fails (e.g. route not deployed, or a nested Prisma error).
+            if let error = loadError, incomeData == nil, overviewResponse == nil {
+                print("Error loading range report: \(error.localizedDescription)")
+                UIAlertController.errorAlert(parent: self, error: error)
+            } else if let error = loadError, overviewResponse == nil {
+                print("Warning: overview section failed (chart still uses income): \(error.localizedDescription)")
+            }
+
+            self.overviewGrowthMetrics = overviewResponse?.growth
+            self.overviewOrderStatistics = overviewResponse?.statistics
+            self.overviewTopProducts = overviewResponse?.topProducts ?? []
+            self.overviewTopCustomers = overviewResponse?.topCustomers ?? []
+            self.processIncomeChartData(incomeData: incomeData ?? overviewResponse?.income, period: period)
+            self.refreshOverviewInsightSections()
+        }
+    }
+    
     private func loadOverview(year: Int) {
         guard canViewChartAnalytics() else {
             clearChart()
@@ -695,77 +802,169 @@ class OverviewViewController: DemoBaseViewController {
                 self.overviewOrderStatistics = response?.statistics
                 self.overviewTopProducts = response?.topProducts ?? []
                 self.overviewTopCustomers = response?.topCustomers ?? []
-                self.processAnalyticsData(incomeData: response?.income, year: year)
+                self.processIncomeChartData(incomeData: response?.income, period: .thisYear)
                 self.refreshOverviewInsightSections()
             }
         }
     }
     
     // MARK: - Data Processing
-    private func processAnalyticsData(incomeData: [IncomeAnalyticsItem]?, year: Int) {
+    private func processIncomeChartData(incomeData: [IncomeAnalyticsItem]?, period: ReportPeriod) {
         clearChartData()
-        
+
         guard let incomeData = incomeData, !incomeData.isEmpty else {
-            initializeEmptyChartData()
-            // Order count can safely fall back to the statistics endpoint (a plain count).
+            initializeEmptyChartData(for: period)
             totalOrder = Double(overviewGrowthMetrics?.orders?.current ?? overviewOrderStatistics?.totalOrders ?? 0)
-            // Revenue must only come from the revenue-calculator source (growth-metrics).
-            // Do NOT fall back to statistics.totalRevenue: that is sum(totalAmount), a different
-            // definition than realIncome, and would show an inconsistent hero number.
             realIncome = overviewGrowthMetrics?.revenue?.current ?? 0
             expectedIncome = 0
             reloadChart()
-            syncSummaryLabelsForYearMode()
+            syncSummaryLabelsForRangeMode()
             return
         }
-        
+
+        if period == .thisYear {
+            processYearlyIncomeData(incomeData)
+        } else {
+            processDailyIncomeSeries(incomeData, period: period)
+        }
+    }
+
+    private func processYearlyIncomeData(_ incomeData: [IncomeAnalyticsItem]) {
         var monthlyData: [Int: (realIncome: Double, futureIncome: Double, orderCount: Int)] = [:]
-        var totalOrder = Double(0)
+        var totalOrderCount = 0.0
         var totalRealIncome = 0.0
-        
-        // Process income data
+
         for item in incomeData {
             guard let monthString = item.month,
                   let monthNum = Int(monthString.split(separator: "/").first ?? "") else { continue }
-            
-            let realIncome = item.realIncome ?? 0.0
-            let futureIncome = item.futureIncome ?? 0.0
+
+            let real = item.realIncome ?? 0
+            let future = item.futureIncome ?? 0
             let orderCount = item.orderCount ?? 0
-            
-            let existing = monthlyData[monthNum] ?? (0.0, 0.0, 0)
+            let existing = monthlyData[monthNum] ?? (0, 0, 0)
             monthlyData[monthNum] = (
-                realIncome: existing.realIncome + realIncome,
-                futureIncome: existing.futureIncome + futureIncome,
+                realIncome: existing.realIncome + real,
+                futureIncome: existing.futureIncome + future,
                 orderCount: existing.orderCount + orderCount
             )
-            
-            totalRealIncome += realIncome
-            totalOrder += Double(orderCount)
+            totalRealIncome += real
+            totalOrderCount += Double(orderCount)
         }
-        
-        // Create 12 months of data
+
         for month in 1...12 {
             xValues.append("T\(month)")
-            
             if let monthData = monthlyData[month] {
                 yRValues.append(monthData.realIncome)
                 yEValues.append(monthData.futureIncome)
                 yOValues.append(Double(monthData.orderCount))
             } else {
-                yRValues.append(0.0)
-                yEValues.append(0.0)
-                yOValues.append(0.0)
+                yRValues.append(0)
+                yEValues.append(0)
+                yOValues.append(0)
             }
         }
-        
-        self.totalOrder = totalOrder
-        self.realIncome = totalRealIncome
+
+        totalOrder = totalOrderCount
+        realIncome = totalRealIncome
         reloadChart()
         DispatchQueue.main.async { [weak self] in
-            self?.syncSummaryLabelsForYearMode()
+            self?.syncSummaryLabelsForRangeMode()
         }
     }
 
+    private func processDailyIncomeSeries(_ incomeData: [IncomeAnalyticsItem], period: ReportPeriod) {
+        let sorted = incomeData.sorted { lhs, rhs in
+            daySortKey(lhs) < daySortKey(rhs)
+        }
+
+        var totalOrderCount = 0.0
+        var totalRealIncome = 0.0
+
+        for item in sorted {
+            let label = chartDayLabel(for: item)
+            xValues.append(label)
+            let real = item.realIncome ?? 0
+            let future = item.futureIncome ?? 0
+            let orderCount = item.orderCount ?? 0
+            yRValues.append(real)
+            yEValues.append(future)
+            yOValues.append(Double(orderCount))
+            totalRealIncome += real
+            totalOrderCount += Double(orderCount)
+        }
+
+        if xValues.isEmpty {
+            initializeEmptyChartData(for: period)
+        }
+
+        totalOrder = totalOrderCount
+        realIncome = totalRealIncome
+        reloadChart()
+        DispatchQueue.main.async { [weak self] in
+            self?.syncSummaryLabelsForRangeMode()
+        }
+    }
+
+    private func daySortKey(_ item: IncomeAnalyticsItem) -> String {
+        // Prefer ISO-friendly date ("2026/07/02") so lexical sort == chronological.
+        if let date = item.date { return date }
+        if let day = item.day { return day }
+        return item.month ?? ""
+    }
+
+    private func chartDayLabel(for item: IncomeAnalyticsItem) -> String {
+        // Daily payload uses month="DD/MM/YY" and date="YYYY/MM/DD".
+        if let date = item.date {
+            let parts = date.split(separator: "/")
+            if parts.count >= 3 {
+                return "\(parts[2])/\(parts[1])" // DD/MM
+            }
+            return date
+        }
+        if let day = item.day {
+            let parts = day.split(separator: "/")
+            if parts.count >= 2 {
+                return "\(parts[0])/\(parts[1])"
+            }
+            return day
+        }
+        if let month = item.month {
+            let parts = month.split(separator: "/")
+            if parts.count >= 2 {
+                return "\(parts[0])/\(parts[1])"
+            }
+            return month
+        }
+        return ""
+    }
+
+    private func initializeEmptyChartData(for period: ReportPeriod) {
+        switch period {
+        case .thisYear:
+            for i in 1...12 {
+                xValues.append("T\(i)")
+                yRValues.append(0)
+                yEValues.append(0)
+                yOValues.append(0)
+            }
+        case .last7Days:
+            for i in 1...7 {
+                xValues.append("D\(i)")
+                yRValues.append(0)
+                yEValues.append(0)
+                yOValues.append(0)
+            }
+        case .last30Days:
+            for i in 1...30 {
+                xValues.append("D\(i)")
+                yRValues.append(0)
+                yEValues.append(0)
+                yOValues.append(0)
+            }
+        case .today:
+            break
+        }
+    }
     private func clearChartData() {
         xValues.removeAll()
         yRValues.removeAll()
@@ -774,17 +973,12 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     private func initializeEmptyChartData() {
-        for i in 1...12 {
-            xValues.append("T\(i)")
-            yRValues.append(0.0)
-            yEValues.append(0.0)
-            yOValues.append(0.0)
-        }
+        initializeEmptyChartData(for: selectedPeriod)
     }
     
     // MARK: - Chart Updates
     override func updateChartData() {
-        guard !shouldHideData && (selectedMode != .overview || canViewChartAnalytics()) else {
+        guard !shouldHideData && (selectedPeriod == .today || canViewChartAnalytics()) else {
             chartsSection.barChartView.data = nil
             chartsSection.lineChartView.data = nil
             return
@@ -814,6 +1008,9 @@ class OverviewViewController: DemoBaseViewController {
         data.groupBars(fromX: -0.5, groupSpace: 0.06, barSpace: 0.02)
         
         chartsSection.barChartView.data = data
+        chartsSection.barChartView.notifyDataSetChanged()
+        applyChartPanMode(for: selectedPeriod)
+        applyChartVisibleRangeIfNeeded()
         chartsSection.barChartView.setNeedsDisplay()
     }
     
@@ -840,6 +1037,9 @@ class OverviewViewController: DemoBaseViewController {
         data.setValueFont(.bodyRegular(size: isIPad ? 14 : 12))
         
         chartsSection.lineChartView.data = data
+        chartsSection.lineChartView.notifyDataSetChanged()
+        applyChartPanMode(for: selectedPeriod)
+        applyChartVisibleRangeIfNeeded()
         chartsSection.lineChartView.setNeedsDisplay()
     }
     
@@ -850,8 +1050,8 @@ class OverviewViewController: DemoBaseViewController {
         realIncome = 0
         expectedIncome = 0
         resetOverviewInsightState()
-        if selectedMode == .overview {
-            syncSummaryLabelsForYearMode()
+        if selectedPeriod.showsChartsAndInsights {
+            syncSummaryLabelsForRangeMode()
             refreshOverviewInsightSections()
         }
     }
@@ -880,9 +1080,9 @@ class OverviewViewController: DemoBaseViewController {
         let isEmpty = dailyIncomeOrders.isEmpty && orders.isEmpty
         let orderCount = dailyIncomeOrders.isEmpty ? orders.count : dailyIncomeOrders.count
         updateOrdersSectionHeader(orderCount: orderCount)
-        emptyStateView.isHidden = !isEmpty || selectedMode != .dailyReport
-        orderTableView.isHidden = isEmpty && selectedMode == .dailyReport
-        if isEmpty && selectedMode == .dailyReport {
+        emptyStateView.isHidden = !isEmpty || selectedPeriod != .today
+        orderTableView.isHidden = isEmpty && selectedPeriod == .today
+        if isEmpty && selectedPeriod == .today {
             (emptyStateView.viewWithTag(100) as? UILabel)?.text = "No orders for this day".localized() + "\n" + (todayDate.dateInString() ?? "")
         }
 
@@ -912,7 +1112,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func refreshOverviewGrowthPill() {
-        guard selectedMode == .overview else {
+        guard selectedPeriod.showsChartsAndInsights else {
             summaryCard.growthPillView.isHidden = true
             return
         }
@@ -927,9 +1127,8 @@ class OverviewViewController: DemoBaseViewController {
 
         var segments: [String] = []
         if let revenueGrowth = revenueGrowth {
-            segments.append("Revenue".localized() + " " + OverviewUIBuilder.growthText(revenueGrowth))
-        }
-        if let ordersGrowth = ordersGrowth {
+            segments.append(OverviewUIBuilder.growthText(revenueGrowth))
+        } else if let ordersGrowth = ordersGrowth {
             segments.append("Orders".localized() + " " + OverviewUIBuilder.growthText(ordersGrowth))
         }
 
@@ -946,7 +1145,7 @@ class OverviewViewController: DemoBaseViewController {
         }
 
         summaryCard.growthPillLabel.text = segments.joined(separator: "  •  ") + "  " + "vs previous period".localized()
-        summaryCard.growthPillView.isHidden = false
+        summaryCard.growthPillView.isHidden = segments.isEmpty
     }
 
     private func refreshOverviewSnapshotSection() {
@@ -966,7 +1165,7 @@ class OverviewViewController: DemoBaseViewController {
         let title = NSMutableAttributedString(
             string: "\(countText) ",
             attributes: [
-                .font: UIFont.bodyBold(size: isIPad ? 24 : 22),
+                .font: UIFont.bodyBold(size: isIPad ? 16 : 15),
                 .foregroundColor: UIColor.textPrimary
             ]
         )
@@ -974,24 +1173,24 @@ class OverviewViewController: DemoBaseViewController {
             NSAttributedString(
                 string: "Overview_Orders_Count".localized(),
                 attributes: [
-                    .font: UIFont.bodyMedium(size: isIPad ? 20 : 18),
+                    .font: UIFont.bodyMedium(size: isIPad ? 15 : 14),
                     .foregroundColor: UIColor.textSecondary
                 ]
             )
         )
         ordersSectionTitleLabel.attributedText = title
-        ordersSectionSubtitleLabel.text = todayDate.dateInString() ?? ""
+        ordersSectionSubtitleLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
     }
 
     private func setOrdersSectionPlaceholder(_ placeholder: String) {
         ordersSectionTitleLabel.attributedText = NSAttributedString(
             string: placeholder,
             attributes: [
-                .font: UIFont.bodyBold(size: isIPad ? 24 : 22),
+                .font: UIFont.bodyBold(size: isIPad ? 16 : 15),
                 .foregroundColor: UIColor.textPrimary
             ]
         )
-        ordersSectionSubtitleLabel.text = todayDate.dateInString() ?? ""
+        ordersSectionSubtitleLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
     }
 
     @objc private func overviewInfoButtonTapped(_ sender: UIButton) {
@@ -1003,7 +1202,7 @@ class OverviewViewController: DemoBaseViewController {
         chartScrollView.isHidden = true
         chartStackView.isHidden = true
         summaryCard.isHidden = true
-        modeSegmentedControl.isHidden = true
+        periodFilterView.isHidden = true
         ordersSectionView.isHidden = true
         view.viewWithTag(9090)?.removeFromSuperview()
         

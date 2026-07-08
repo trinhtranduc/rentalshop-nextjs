@@ -39,6 +39,11 @@ internal let DATE_STRING_FULL_FORMAT =  "yyyy-MM-dd HH:mm:ss"
 let UpgradeMessage = "UpgradeMessage".localized()
 let INVALID_NUMBER = -1
 
+enum AppImageAsset {
+    static let authEntryBackground = "anyrent-auth-background"
+    static let brandPrimaryMark = "anyrent-brandmark-ribbon"
+}
+
 extension Notification.Name {
     static let unauthorizedAccess = Notification.Name("unauthorizedAccess")
     static let orderDidCreateOrUpdate = Notification.Name("orderDidCreateOrUpdate")
@@ -91,21 +96,20 @@ extension UIColor {
     static let statusInactive = UIColor.neutralGray
     static let statusPending = UIColor.accentOrange
 
-    // Order status badges — "soft" style: a bright, light tinted fill paired with
-    // a saturated dark text of the same hue. This reads far lighter/brighter than a
-    // solid chip while keeping strong legibility (dark-on-tint ~7-9:1, well past AA).
-    // Fills (light tints)
-    static let statusDraftFill     = UIColor(hexString: "F3F4F6") // gray-100
-    static let statusReservedFill  = UIColor(hexString: "FEF3C7") // amber-100 (pending)
-    static let statusActiveFill    = UIColor(hexString: "DBEAFE") // blue-100 (picked up / in use)
-    static let statusDoneFill      = UIColor(hexString: "DCFCE7") // green-100 (returned / completed)
-    static let statusCancelledFill = UIColor(hexString: "FEE2E2") // red-100 (cancelled)
-    // Text / foreground (saturated, dark)
-    static let statusDraftText     = UIColor(hexString: "4B5563") // gray-600
-    static let statusReservedText  = UIColor(hexString: "B45309") // amber-700
-    static let statusActiveText    = UIColor(hexString: "1D4ED8") // blue-700
-    static let statusDoneText      = UIColor(hexString: "15803D") // green-700
-    static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
+    // Order status badges — solid mid-tone fill + white text for strong contrast
+    // on list cards. Soft *-100/*-200 tints read too washed; solid chips scan faster.
+    // Fills (solid / saturated)
+    static let statusDraftFill     = UIColor(hexString: "6B7280") // gray-500
+    static let statusReservedFill  = UIColor(hexString: "D97706") // amber-600 (pending)
+    static let statusActiveFill    = UIColor(hexString: "2563EB") // blue-600 (picked up / in use)
+    static let statusDoneFill      = UIColor(hexString: "16A34A") // green-600 (returned / completed)
+    static let statusCancelledFill = UIColor(hexString: "DC2626") // red-600 (cancelled)
+    // Text on solid fills
+    static let statusDraftText     = UIColor.white
+    static let statusReservedText  = UIColor.white
+    static let statusActiveText    = UIColor.white
+    static let statusDoneText      = UIColor.white
+    static let statusCancelledText = UIColor.white
 
     static var authGradientColors: [CGColor] {
         [
@@ -171,9 +175,7 @@ extension UIFont {
 // and `draft` rendered white-on-clear = invisible). Centralizing it here keeps
 // every badge consistent and readable.
 extension OrderStatus {
-    /// Light tinted background fill for the status badge. One canonical color per
-    /// status, independent of order type: gray(draft) -> amber(reserved) ->
-    /// blue(pickuped) -> green(returned/completed), with red for cancelled.
+    /// Saturated fill for the status badge (solid chip).
     var badgeColor: UIColor {
         switch self {
         case .draft:     return .statusDraftFill
@@ -185,7 +187,7 @@ extension OrderStatus {
         }
     }
 
-    /// Saturated dark text of the same hue as the fill (soft-badge pairing).
+    /// White text on solid fill for strong contrast.
     var badgeTextColor: UIColor {
         switch self {
         case .draft:     return .statusDraftText

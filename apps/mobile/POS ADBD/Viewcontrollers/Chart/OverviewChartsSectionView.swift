@@ -69,18 +69,18 @@ final class OverviewChartsSectionView: UIView {
         headerStack.axis = .horizontal
         headerStack.spacing = 12
         headerStack.alignment = .center
+        // Labels/chevron must not steal taps from the full-width toggle control beneath.
+        headerStack.isUserInteractionEnabled = false
 
         let toggleButton = UIButton(type: .system)
+        toggleButton.accessibilityLabel = "Overview_Charts_Title".localized()
         toggleButton.addTarget(self, action: #selector(toggleTapped), for: .touchUpInside)
 
-        addSubview(toggleButton)
         addSubview(headerStack)
         addSubview(chartsBodyStackView)
+        // Toggle sits above the header visuals so expand/collapse always receives the tap.
+        addSubview(toggleButton)
 
-        toggleButton.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(headerStack.snp.bottom).offset(12)
-        }
         headerStack.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview().inset(14)
         }
@@ -88,6 +88,10 @@ final class OverviewChartsSectionView: UIView {
             make.top.equalTo(headerStack.snp.bottom).offset(12)
             make.leading.trailing.bottom.equalToSuperview().inset(14)
             chartsBodyHeightConstraint = make.height.equalTo(0).constraint
+        }
+        toggleButton.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(headerStack.snp.bottom).offset(12)
         }
         chartsBodyHeightConstraint?.deactivate()
     }
@@ -126,8 +130,24 @@ final class OverviewChartsSectionView: UIView {
     }
 
     @objc private func toggleTapped() {
-        isExpanded.toggle()
-        setExpanded(isExpanded, animated: true)
+        setExpanded(!isExpanded, animated: true)
+        // Parent scroll view may need another layout pass after height change.
+        if let scrollView = enclosingScrollView() {
+            UIView.animate(withDuration: 0.25) {
+                scrollView.layoutIfNeeded()
+            }
+        }
         delegate?.chartsSectionDidToggleExpansion(self)
+    }
+
+    private func enclosingScrollView() -> UIScrollView? {
+        var current: UIView? = superview
+        while let view = current {
+            if let scrollView = view as? UIScrollView {
+                return scrollView
+            }
+            current = view.superview
+        }
+        return nil
     }
 }
