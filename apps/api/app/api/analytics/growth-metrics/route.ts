@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
 
@@ -91,80 +91,90 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       );
     }
 
-    // Get current period orders (use provided date range or current month)
-    const currentMonthOrders = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        createdAt: {
-          gte: startDateParam ? new Date(startDateParam) : currentMonth,
-          lte: currentEnd
-        }
-      },
-      limit: 1000
-    });
+    // Actual start of the current period (respect provided startDate, else first of month)
+    const currentStart = startDateParam ? new Date(startDateParam) : currentMonth;
 
-    // Get previous period orders
-    const lastMonthOrders = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        createdAt: {
-          gte: lastMonth,
-          lte: lastMonthEnd
-        }
-      },
-      limit: 1000
-    });
+    // ------------------------------------------------------------------
+    // ORDER COUNT (by createdAt) — keep the existing definition/semantics.
+    // We only need the aggregate count, so limit:1 avoids fetching rows;
+    // `.total` is a DB-level count independent of the page size.
+    // ------------------------------------------------------------------
+    const [currentMonthOrders, lastMonthOrders] = await Promise.all([
+      db.orders.search({
+        where: { ...orderWhereClause, createdAt: { gte: currentStart, lte: currentEnd } },
+        limit: 1
+      }),
+      db.orders.search({
+        where: { ...orderWhereClause, createdAt: { gte: lastMonth, lte: lastMonthEnd } },
+        limit: 1
+      })
+    ]);
 
-    // Calculate growth metrics using calculatePeriodRevenueBatch (single source of truth)
     const currentMonthCount = currentMonthOrders.total || 0;
     const lastMonthCount = lastMonthOrders.total || 0;
-    
-    // Prepare order data for revenue calculator
-    const currentMonthOrdersData = (currentMonthOrders.data || []).map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
 
-    const lastMonthOrdersData = (lastMonthOrders.data || []).map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
+    // ------------------------------------------------------------------
+    // REVENUE — aligned with /api/analytics/income.
+    // Revenue must include orders whose *events* (pickup/return/cancel/plan)
+    // fall inside the period, even if the order was created before it.
+    // Using only createdAt (previous behavior) under-counted revenue for
+    // orders created before the period but picked up/returned during it.
+    // Same OR-based order set + calculatePeriodRevenueBatch as the income API.
+    // ------------------------------------------------------------------
+    const revenueSelect = {
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      createdAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      updatedAt: true
+    } as const;
 
-    // Calculate revenue for each period
-    const currentMonthStart = currentMonth;
-    const currentMonthEnd = currentEnd;
-    const lastMonthStart = lastMonth;
-    
-    const { realIncome: currentMonthRevenue } = calculatePeriodRevenueBatch(
-      currentMonthOrdersData,
-      currentMonthStart,
-      currentMonthEnd
-    );
-    const { realIncome: lastMonthRevenue } = calculatePeriodRevenueBatch(
-      lastMonthOrdersData,
-      lastMonthStart,
-      lastMonthEnd
-    );
+    const fetchPeriodRevenue = async (periodStart: Date, periodEnd: Date): Promise<number> => {
+      const dayMs = 24 * 60 * 60 * 1000;
+      const where: any = {
+        ...orderWhereClause,
+        deletedAt: null,
+        OR: [
+          { createdAt: { gte: periodStart, lte: periodEnd } },
+          { pickedUpAt: { gte: new Date(periodStart.getTime() - dayMs), lte: new Date(periodEnd.getTime() + dayMs), not: null } },
+          { returnedAt: { gte: new Date(periodStart.getTime() - dayMs), lte: new Date(periodEnd.getTime() + dayMs), not: null } },
+          { updatedAt: { gte: periodStart, lte: periodEnd }, status: ORDER_STATUS.CANCELLED as any },
+          { pickupPlanAt: { gte: periodStart, lte: periodEnd, not: null } },
+          { returnPlanAt: { gte: periodStart, lte: periodEnd, not: null } }
+        ]
+      };
+
+      const orders = await prisma.order.findMany({ where, select: revenueSelect, take: 10000 });
+      const ordersData = orders.map((order: any) => ({
+        orderType: order.orderType,
+        status: order.status,
+        totalAmount: order.totalAmount || 0,
+        depositAmount: order.depositAmount || 0,
+        securityDeposit: order.securityDeposit || 0,
+        damageFee: order.damageFee || 0,
+        createdAt: order.createdAt,
+        pickedUpAt: order.pickedUpAt,
+        returnedAt: order.returnedAt,
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        updatedAt: order.updatedAt
+      }));
+
+      const { realIncome } = calculatePeriodRevenueBatch(ordersData, periodStart, periodEnd);
+      return realIncome;
+    };
+
+    const [currentMonthRevenue, lastMonthRevenue] = await Promise.all([
+      fetchPeriodRevenue(currentStart, currentEnd),
+      fetchPeriodRevenue(lastMonth, lastMonthEnd)
+    ]);
 
     const orderGrowth = lastMonthCount > 0 ? ((currentMonthCount - lastMonthCount) / lastMonthCount * 100) : 0;
     const revenueGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;

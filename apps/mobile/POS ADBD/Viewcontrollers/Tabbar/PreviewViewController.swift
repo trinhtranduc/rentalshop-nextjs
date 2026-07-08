@@ -392,58 +392,64 @@ class PreviewViewController: BaseViewControler {
         return stack
     }()
     
-    // Add buttons to footer - all buttons follow the same style as printButton
+    // Footer action buttons. Visual hierarchy (all share the same frame in the
+    // fillEqually stack, so weight is conveyed by fill vs outline vs tint):
+    //   - Primary state action (save/pickup/return/update) -> solid brand fill
+    //   - Print -> secondary, outline (was a competing solid green)
+    //   - Cancel/Delete -> destructive, soft red tint (was heavy solid red next to primary)
     private lazy var saveButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = APP_TONE_COLOR
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .brandPrimary
+        button.setTitleColor(.textInverted, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(saveOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var cancelButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Cancel".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionDanger
-        button.setTitleColor(.navTint, for: .normal)
+        button.backgroundColor = .statusCancelledFill
+        button.setTitleColor(.statusCancelledText, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(cancelOrder), for: .touchUpInside)
         return button
     }()
-    
+
     // Add more buttons to footer
     private lazy var printButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Print".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionSuccess
-        button.setTitleColor(.navTint, for: .normal)
+        button.backgroundColor = .clear
+        button.setTitleColor(.brandPrimary, for: .normal)
         button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.brandPrimary.cgColor
         button.addTarget(self, action: #selector(printOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var updateButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Update".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = APP_TONE_COLOR
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .brandPrimary
+        button.setTitleColor(.textInverted, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(updateOrder), for: .touchUpInside)
         return button
     }()
-    
+
     private lazy var deleteButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Delete".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .actionDanger
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .statusCancelledFill
+        button.setTitleColor(.statusCancelledText, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(deleteOrder), for: .touchUpInside)
         return button
@@ -2027,7 +2033,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
     private func previewSection(for sectionIndex: Int) -> PreviewSection? {
         let hasDeposit = viewModel.shouldShowDepositInfo
         
-        // Map section index to PreviewSection based on whether depositInfo is shown
+        // Order: customerInfo → dates → products → depositInfo → notes → summary
         switch sectionIndex {
         case 0:
             return .customerInfo
@@ -2036,13 +2042,10 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case 2:
             return .products
         case 3:
-            // If depositInfo is shown, this is depositInfo, otherwise it's notes
             return hasDeposit ? .depositInfo : .notes
         case 4:
-            // If depositInfo is shown, this is notes, otherwise it's summary
             return hasDeposit ? .notes : .summary
         case 5:
-            // Only reachable if depositInfo is shown
             return hasDeposit ? .summary : nil
         default:
             return nil
@@ -2062,13 +2065,10 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .products:
             return 2
         case .depositInfo:
-            // Only valid if depositInfo is shown
             return hasDeposit ? 3 : nil
         case .notes:
-            // If depositInfo is shown, notes is at index 4, otherwise at index 3
             return hasDeposit ? 4 : 3
         case .summary:
-            // If depositInfo is shown, summary is at index 5, otherwise at index 4
             return hasDeposit ? 5 : 4
         }
     }
@@ -2089,7 +2089,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .customerInfo:
             return 3 // Name, Phone, Creator Name
         case .dates:
-            return viewModel.orderType == .rent ? 4 : 3 // Create, Pickup, Return, (Ready deliver if rent)
+            return viewModel.orderType == .rent ? 5 : 3 // Create, Pickup, Return, Ready deliver, Deposit (if rent)
         case .products:
         return viewModel.itemsCount
         case .depositInfo:
@@ -2097,7 +2097,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .notes:
             return 1 // Notes
         case .summary:
-            return viewModel.shouldShowDepositInfo ? 4 : 3 // Subtotal, Discount, Grand Total, (Deposit if rent) - To Collect hidden
+            return 3 // Subtotal, Discount, Grand Total (Deposit moved to dates section)
         }
     }
     
@@ -2134,7 +2134,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             }
             
             config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
-            if indexPath.row != 1 {
+            if indexPath.row != 0 && indexPath.row != 1 {
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14 (same as AccountViewController)
                 config.secondaryTextProperties.color = .secondaryLabel // Value color: secondaryLabel (same as AccountViewController)
             }
@@ -2196,13 +2196,22 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                     // Clear accessory view if not rent order
                     cell.accessoryView = nil
                 }
+            case 4:
+                // Deposit amount row (only for rent orders)
+                config.text = "Deposit".localized()
+                config.secondaryText = viewModel.depositAmount.formatStringInCommon()
+                config.secondaryTextProperties.font = Utils.boldFont(size: 15)
+                config.secondaryTextProperties.color = .systemOrange
+                cell.accessoryView = nil
             default:
                 break
             }
             
             config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
-            config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14 (same as AccountViewController)
-            config.secondaryTextProperties.color = .secondaryLabel // Value color: secondaryLabel (same as AccountViewController)
+            if indexPath.row != 4 { // Don't override deposit row styling
+                config.secondaryTextProperties.font = Utils.regularFont(size: 14)
+                config.secondaryTextProperties.color = .secondaryLabel
+            }
             cell.contentConfiguration = config
             return cell
             
@@ -2267,14 +2276,14 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             case 2: // Damage Fee
                 if viewModel.isExtraChargeButtonEnabled {
                     config.secondaryTextProperties.color = APP_TONE_COLOR
-                    config.secondaryTextProperties.font = Utils.boldFont(size: 14) // Value font: regular size 14
+                    config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14
                 } else {
                     config.secondaryTextProperties.color = .secondaryLabel
-                    config.secondaryTextProperties.font = Utils.boldFont(size: 14) // Value font: regular size 14
+                    config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14
                 }
             default:
                 config.secondaryTextProperties.color = .secondaryLabel
-                config.secondaryTextProperties.font = Utils.boldFont(size: 14) // Value font: regular size 14
+                config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14
             }
             
             cell.contentConfiguration = config
@@ -2335,15 +2344,11 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             let cell = UITableViewCell(style: .value1, reuseIdentifier: "SummaryCell")
             var config = cell.defaultContentConfiguration()
             
-            // Build rows array
+            // Build rows array (Deposit moved to dates section)
             var rows: [(title: String, value: String, isHighlighted: Bool)] = []
             rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
             rows.append(("Discount".localized(), viewModel.discountText, false))
             rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
-            
-            if viewModel.shouldShowDepositInfo {
-                rows.append(("Deposit".localized(), viewModel.depositAmount.formatStringInCommon(), false))
-            }
             
             // To Collect row is hidden
             // rows.append(("To Collect".localized(), viewModel.toCollectAmount.formatStringInCommon(), true))
