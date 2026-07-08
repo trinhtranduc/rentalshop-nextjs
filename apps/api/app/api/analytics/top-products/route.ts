@@ -65,14 +65,16 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
     }
 
     // Get orders based on user scope
+    // Use a high cap so the ranking is computed over the whole period (not just first 1000).
     const orders = await db.orders.search({
       where: orderWhereClause,
-      limit: 1000 // Get enough orders to analyze
+      limit: 10000 // Get enough orders to analyze
     });
 
     const orderIds = orders.data?.map(order => order.id) || [];
 
-    // Then get the top products from those orders
+    // Then get the top products from those orders.
+    // Respect the caller-provided `limit` (mobile sends limit=3) instead of a fixed 10.
     const topProducts = orderIds.length > 0 ? await db.orderItems.groupBy({
       by: ['productId'],
       where: {
@@ -89,7 +91,7 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
           totalPrice: 'desc' // Order by total revenue instead of count
         }
       },
-      take: 10
+      take: limit
     }) : [];
 
     // Get product details for each top product in order
