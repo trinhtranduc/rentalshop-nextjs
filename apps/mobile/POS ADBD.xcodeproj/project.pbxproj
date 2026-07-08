@@ -149,6 +149,12 @@
 		884B0A3E21FAE72100DB0C52 /* BaseModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884B0A3821FAE72100DB0C52 /* BaseModel.swift */; };
 		884B0A4021FAEB3200DB0C52 /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884B0A3F21FAEB3200DB0C52 /* Product.swift */; };
 		8864537421B0F29D002AE29C /* LargeValueFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8864537321B0F29C002AE29C /* LargeValueFormatter.swift */; };
+		04F301012F40000100A001 /* OverviewTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301002F40000100A001 /* OverviewTypes.swift */; };
+		04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301022F40000100A002 /* OverviewUIBuilder.swift */; };
+		04F301052F40000100A003 /* OverviewMetricInfoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */; };
+		04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301062F40000100A004 /* OverviewSummaryCardView.swift */; };
+		04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301082F40000100A005 /* OverviewChartsSectionView.swift */; };
+		04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */; };
 		886B188121AE39560029CFB1 /* OverviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 886B188021AE39560029CFB1 /* OverviewViewController.swift */; };
 		886B188321AE39620029CFB1 /* CalendarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 886B188221AE39620029CFB1 /* CalendarViewController.swift */; };
 		887244EA2BB009FA00F15EDD /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 887244E92BB009FA00F15EDD /* GoogleService-Info.plist */; };
@@ -379,6 +385,12 @@
 		884B0A3821FAE72100DB0C52 /* BaseModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseModel.swift; sourceTree = "<group>"; };
 		884B0A3F21FAEB3200DB0C52 /* Product.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
 		8864537321B0F29C002AE29C /* LargeValueFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LargeValueFormatter.swift; sourceTree = "<group>"; };
+		04F301002F40000100A001 /* OverviewTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewTypes.swift; sourceTree = "<group>"; };
+		04F301022F40000100A002 /* OverviewUIBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewUIBuilder.swift; sourceTree = "<group>"; };
+		04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewMetricInfoPresenter.swift; sourceTree = "<group>"; };
+		04F301062F40000100A004 /* OverviewSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewSummaryCardView.swift; sourceTree = "<group>"; };
+		04F301082F40000100A005 /* OverviewChartsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewChartsSectionView.swift; sourceTree = "<group>"; };
+		04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewInsightsPanelView.swift; sourceTree = "<group>"; };
 		886B188021AE39560029CFB1 /* OverviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewViewController.swift; sourceTree = "<group>"; };
 		886B188221AE39620029CFB1 /* CalendarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewController.swift; sourceTree = "<group>"; };
 		887244E92BB009FA00F15EDD /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -704,6 +716,12 @@
 				88F3D8C121B0623D007CC30A /* XYMarkerView.swift */,
 				88F3D8BF21B06223007CC30A /* MonthAxisValueFormatter.swift */,
 				88F3D8BD21B04F78007CC30A /* DemoBaseViewController.swift */,
+				04F301002F40000100A001 /* OverviewTypes.swift */,
+				04F301022F40000100A002 /* OverviewUIBuilder.swift */,
+				04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */,
+				04F301062F40000100A004 /* OverviewSummaryCardView.swift */,
+				04F301082F40000100A005 /* OverviewChartsSectionView.swift */,
+				04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */,
 				886B188021AE39560029CFB1 /* OverviewViewController.swift */,
 			);
 			path = Chart;
@@ -1419,6 +1437,12 @@
 				040330E42EA76FAB003BC33E /* CalendarAPIService.swift in Sources */,
 				040330E52EA76FAB003BC33E /* AnalyticsAPIService.swift in Sources */,
 				04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */,
+				04F301012F40000100A001 /* OverviewTypes.swift in Sources */,
+				04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */,
+				04F301052F40000100A003 /* OverviewMetricInfoPresenter.swift in Sources */,
+				04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */,
+				04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */,
+				04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */,
 				886B188121AE39560029CFB1 /* OverviewViewController.swift in Sources */,
 				048838F52D78241600069256 /* LoginViewController.swift in Sources */,
 				C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */,
