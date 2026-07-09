@@ -8,46 +8,44 @@ import SnapKit
 
 final class OverviewInsightsPanelView: UIView {
 
-    private let isIPad: Bool
+    var onTopProductsTapped: (() -> Void)?
+    var onTopCustomersTapped: (() -> Void)?
 
-    private let reservedValueLabel: UILabel
-    private let activeValueLabel: UILabel
-    private let completedValueLabel: UILabel
-    private let cancelledValueLabel: UILabel
+    private let isIPad: Bool
 
     private let topProductsRowsStackView = UIStackView()
     private let topCustomersRowsStackView = UIStackView()
 
     private let contentStackView = UIStackView()
+    private lazy var topProductsActionButton: UIButton = {
+        let button = OverviewUIBuilder.makeSectionActionButton(title: "View all".localized())
+        button.isHidden = true
+        button.addTarget(self, action: #selector(topProductsTapped), for: .touchUpInside)
+        return button
+    }()
+    private lazy var topCustomersActionButton: UIButton = {
+        let button = OverviewUIBuilder.makeSectionActionButton(title: "View all".localized())
+        button.isHidden = true
+        button.addTarget(self, action: #selector(topCustomersTapped), for: .touchUpInside)
+        return button
+    }()
 
     init(isIPad: Bool) {
         self.isIPad = isIPad
 
-        reservedValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
-        activeValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
-        completedValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
-        cancelledValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
-
         super.init(frame: .zero)
 
         topProductsRowsStackView.axis = .vertical
-        topProductsRowsStackView.spacing = 8
+        topProductsRowsStackView.spacing = 0
         topCustomersRowsStackView.axis = .vertical
-        topCustomersRowsStackView.spacing = 8
+        topCustomersRowsStackView.spacing = 0
 
-        let snapshotGrid = makeSnapshotGrid()
-        let snapshotCard = OverviewUIBuilder.makeInsightCard(
-            title: "Operational Snapshot".localized(),
-            subtitle: "Orders by status for this period".localized(),
-            iconSystemName: "gauge.with.dots.needle.50percent",
-            contentView: snapshotGrid,
-            isIPad: isIPad
-        )
         let productsCard = OverviewUIBuilder.makeInsightCard(
             title: "Top Products".localized(),
             subtitle: "Highest revenue drivers".localized(),
             iconSystemName: "shippingbox.fill",
             contentView: topProductsRowsStackView,
+            accessoryView: topProductsActionButton,
             isIPad: isIPad
         )
         let customersCard = OverviewUIBuilder.makeInsightCard(
@@ -55,12 +53,12 @@ final class OverviewInsightsPanelView: UIView {
             subtitle: "Most valuable customers".localized(),
             iconSystemName: "person.2.fill",
             contentView: topCustomersRowsStackView,
+            accessoryView: topCustomersActionButton,
             isIPad: isIPad
         )
 
         contentStackView.axis = .vertical
-        contentStackView.spacing = 14
-        contentStackView.addArrangedSubview(snapshotCard)
+        contentStackView.spacing = 12
         contentStackView.addArrangedSubview(productsCard)
         contentStackView.addArrangedSubview(customersCard)
 
@@ -74,20 +72,8 @@ final class OverviewInsightsPanelView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func updateSnapshot(
-        reserved: Int,
-        active: Int,
-        completed: Int,
-        cancelled: Int,
-        hasData: Bool
-    ) {
-        reservedValueLabel.text = hasData ? reserved.formatStringInCommon() : "—"
-        activeValueLabel.text = hasData ? active.formatStringInCommon() : "—"
-        completedValueLabel.text = hasData ? completed.formatStringInCommon() : "—"
-        cancelledValueLabel.text = hasData ? cancelled.formatStringInCommon() : "—"
-    }
-
     func updateTopProducts(_ products: [TopProduct]) {
+        topProductsActionButton.isHidden = products.isEmpty
         let rows = products.prefix(3).enumerated().map { index, product -> UIView in
             let trimmedName = product.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let title = trimmedName.isEmpty ? "Unnamed product".localized() : trimmedName
@@ -104,18 +90,21 @@ final class OverviewInsightsPanelView: UIView {
                 subtitle: subtitleParts.joined(separator: " • "),
                 value: (product.totalRevenue ?? 0).formatStringInCommon(),
                 accentColor: .brandPrimary,
-                isIPad: isIPad
+                isIPad: isIPad,
+                style: .embedded
             )
         }
 
         OverviewUIBuilder.populateRows(
             in: topProductsRowsStackView,
             rows: rows,
-            emptyText: "No product performance for this period".localized()
+            emptyText: "No product performance for this period".localized(),
+            showsDividers: true
         )
     }
 
     func updateTopCustomers(_ customers: [TopCustomer]) {
+        topCustomersActionButton.isHidden = customers.isEmpty
         let rows = customers.prefix(3).enumerated().map { index, customer -> UIView in
             let trimmedName = customer.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let title = trimmedName.isEmpty ? "Walk-in customer".localized() : trimmedName
@@ -137,57 +126,147 @@ final class OverviewInsightsPanelView: UIView {
                 subtitle: subtitleParts.joined(separator: " • "),
                 value: (customer.totalSpent ?? 0).formatStringInCommon(),
                 accentColor: .accentOrange,
-                isIPad: isIPad
+                isIPad: isIPad,
+                style: .embedded
             )
         }
 
         OverviewUIBuilder.populateRows(
             in: topCustomersRowsStackView,
             rows: rows,
-            emptyText: "No customer performance for this period".localized()
+            emptyText: "No customer performance for this period".localized(),
+            showsDividers: true
         )
     }
 
-    private func makeSnapshotGrid() -> UIStackView {
-        let topRow = UIStackView(arrangedSubviews: [
-            OverviewUIBuilder.makeSnapshotItem(
+    @objc private func topProductsTapped() {
+        onTopProductsTapped?()
+    }
+
+    @objc private func topCustomersTapped() {
+        onTopCustomersTapped?()
+    }
+}
+
+final class OverviewSnapshotSectionView: UIView {
+
+    private let reservedValueLabel: UILabel
+    private let activeValueLabel: UILabel
+    private let completedValueLabel: UILabel
+    private let cancelledValueLabel: UILabel
+    private let depositHeldValueLabel: UILabel
+    private let depositDueValueLabel: UILabel
+    private let depositMetricsRow = UIStackView()
+
+    init(isIPad: Bool) {
+        reservedValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+        activeValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+        completedValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+        cancelledValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+        depositHeldValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+        depositDueValueLabel = OverviewUIBuilder.makeSnapshotValueLabel(isIPad: isIPad)
+
+        super.init(frame: .zero)
+
+        let firstRow = UIStackView(arrangedSubviews: [
+            OverviewUIBuilder.makeCompactSnapshotItem(
                 title: "Reserved".localized(),
                 valueLabel: reservedValueLabel,
-                backgroundColor: .backgroundCard,
-                tintColor: .statusReservedText
+                tintColor: .statusReservedText,
+                iconSystemName: "bookmark.circle.fill"
             ),
-            OverviewUIBuilder.makeSnapshotItem(
+            OverviewUIBuilder.makeCompactSnapshotItem(
                 title: "In Progress".localized(),
                 valueLabel: activeValueLabel,
-                backgroundColor: .backgroundCard,
-                tintColor: .statusActiveText
+                tintColor: .statusActiveText,
+                iconSystemName: "figure.walk.circle.fill"
             )
         ])
-        topRow.axis = .horizontal
-        topRow.spacing = 8
-        topRow.distribution = .fillEqually
+        firstRow.axis = .horizontal
+        firstRow.spacing = 8
+        firstRow.distribution = .fillEqually
 
-        let bottomRow = UIStackView(arrangedSubviews: [
-            OverviewUIBuilder.makeSnapshotItem(
+        let secondRow = UIStackView(arrangedSubviews: [
+            OverviewUIBuilder.makeCompactSnapshotItem(
                 title: "Completed".localized(),
                 valueLabel: completedValueLabel,
-                backgroundColor: .backgroundCard,
-                tintColor: .statusDoneText
+                tintColor: .statusDoneText,
+                iconSystemName: "checkmark.circle.fill"
             ),
-            OverviewUIBuilder.makeSnapshotItem(
+            OverviewUIBuilder.makeCompactSnapshotItem(
                 title: "Cancelled".localized(),
                 valueLabel: cancelledValueLabel,
-                backgroundColor: .backgroundCard,
-                tintColor: .statusCancelledText
+                tintColor: .statusCancelledText,
+                iconSystemName: "xmark.circle.fill"
             )
         ])
-        bottomRow.axis = .horizontal
-        bottomRow.spacing = 8
-        bottomRow.distribution = .fillEqually
+        secondRow.axis = .horizontal
+        secondRow.spacing = 8
+        secondRow.distribution = .fillEqually
 
-        let stack = UIStackView(arrangedSubviews: [topRow, bottomRow])
-        stack.axis = .vertical
-        stack.spacing = 8
-        return stack
+        let grid = UIStackView(arrangedSubviews: [firstRow, secondRow])
+        grid.axis = .vertical
+        grid.spacing = 8
+
+        depositMetricsRow.axis = .horizontal
+        depositMetricsRow.spacing = 8
+        depositMetricsRow.distribution = .fillEqually
+        depositMetricsRow.isHidden = true
+        depositMetricsRow.addArrangedSubview(
+            OverviewUIBuilder.makeCompactSnapshotItem(
+                title: "Report_Summary_DepositHeld".localized(),
+                valueLabel: depositHeldValueLabel,
+                tintColor: .brandPrimary,
+                iconSystemName: "lock.circle.fill"
+            )
+        )
+        depositMetricsRow.addArrangedSubview(
+            OverviewUIBuilder.makeCompactSnapshotItem(
+                title: "Report_Summary_DepositDue".localized(),
+                valueLabel: depositDueValueLabel,
+                tintColor: .accentOrange,
+                iconSystemName: "arrow.uturn.backward.circle.fill"
+            )
+        )
+
+        let contentStack = UIStackView(arrangedSubviews: [grid, depositMetricsRow])
+        contentStack.axis = .vertical
+        contentStack.spacing = 8
+
+        let card = OverviewUIBuilder.makeInsightCard(
+            title: "Operational Snapshot".localized(),
+            subtitle: "Status and deposit flow for this period".localized(),
+            iconSystemName: "gauge.with.dots.needle.50percent",
+            contentView: contentStack,
+            isIPad: isIPad
+        )
+
+        addSubview(card)
+        card.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func update(
+        reserved: Int,
+        active: Int,
+        completed: Int,
+        cancelled: Int,
+        hasData: Bool,
+        depositHeldText: String? = nil,
+        depositDueText: String? = nil,
+        showsDepositMetrics: Bool = false
+    ) {
+        reservedValueLabel.text = hasData ? reserved.formatStringInCommon() : "—"
+        activeValueLabel.text = hasData ? active.formatStringInCommon() : "—"
+        completedValueLabel.text = hasData ? completed.formatStringInCommon() : "—"
+        cancelledValueLabel.text = hasData ? cancelled.formatStringInCommon() : "—"
+        depositHeldValueLabel.text = depositHeldText ?? "—"
+        depositDueValueLabel.text = depositDueText ?? "—"
+        depositMetricsRow.isHidden = !showsDepositMetrics
     }
 }

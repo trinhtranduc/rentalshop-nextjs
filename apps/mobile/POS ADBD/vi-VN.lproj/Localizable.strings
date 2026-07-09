@@ -687,6 +687,7 @@
 "Overview_Mode_Daily" = "Theo ngày";
 "Overview_Mode_Yearly" = "Theo năm";
 "Report_Period_Today" = "Hôm nay";
+"Report_Today_Orders_Title" = "Đơn hàng hôm nay";
 "Report_Period_7Days" = "7 ngày";
 "Report_Period_30Days" = "30 ngày";
 "Report_Period_Year" = "Năm";
@@ -694,6 +695,8 @@
 "Report_Summary_Orders" = "Đơn hàng";
 "Report_Summary_DepositHeld" = "Cọc đang giữ";
 "Report_Summary_DepositDue" = "Cọc cần trả";
+"Report_Summary_AveragePerDay" = "TB/ngày";
+"Report_Summary_Change" = "Biến động";
 "Overview_Orders_Count" = "đơn hàng";
 "Collateral (received)_Short" = "Thế chân (nhận)";
 "Collateral (return)_Short" = "Thế chân (trả)";
@@ -704,6 +707,7 @@
 "Highest revenue drivers" = "Doanh thu cao nhất";
 "Top Customers" = "Khách hàng hàng đầu";
 "Most valuable customers" = "Khách chi tiêu nhiều nhất";
+"View all" = "Xem tất cả";
 "vs previous period" = "so với kỳ trước";
 "Revenue" = "Doanh thu";
 "Real income" = "Doanh thu thực";
@@ -718,6 +722,8 @@
 "Overview_Charts_Title" = "Biểu đồ doanh thu";
 "Overview_Charts_Show" = "Xem biểu đồ";
 "Overview_Charts_Hide" = "Thu gọn";
+"Overview_Charts_Orders_Subtitle" = "Diễn biến đơn hàng theo thời gian";
+"Overview_Charts_SwipeHint" = "Vuốt ngang để xem thêm";
 
 // MARK: - Customer Search
 "Search by customer name, phone" = "Tìm theo tên, số điện thoại";

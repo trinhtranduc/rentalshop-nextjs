@@ -36,6 +36,8 @@ class OverviewViewController: DemoBaseViewController {
     private var overviewTopProducts: [TopProduct] = []
     private var overviewGrowthMetrics: GrowthMetricsResponse?
     private var overviewOrderStatistics: OrderStatisticsResponse?
+    /// Period totals from `/api/analytics/income/summary` (7d / 30d / year operational + deposit metrics).
+    private var rangeIncomeSummary: DailyIncomeSummary?
     
     // Date selection
     private let years: [Int] = {
@@ -53,13 +55,23 @@ class OverviewViewController: DemoBaseViewController {
     
     // Stats
     private var totalOrder: Double = 0 {
-        didSet { summaryCard.ordersLabel.text = totalOrder.formatStringInCommon() }
+        didSet {
+            let value = totalOrder.formatStringInCommon()
+            summaryCard.ordersLabel.text = value
+            summaryCard.changeMetricLabel.text = value
+        }
     }
 
     private var realIncome: Double = 0 {
         didSet {
             summaryCard.incomeLabel.text = realIncome.formatStringInCommon()
             summaryCard.applyIncomeColor(for: realIncome)
+        }
+    }
+
+    private var averageDailyIncome: Double = 0 {
+        didSet {
+            summaryCard.averageLabel.text = averageDailyIncome.formatStringInCommon()
         }
     }
 
@@ -70,14 +82,6 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     // MARK: - UI Components
-    private lazy var refreshButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
-        button.tintColor = .brandPrimary
-        button.addTarget(self, action: #selector(refreshData), for: .touchUpInside)
-        return button
-    }()
-
     private lazy var periodFilterView: OverviewPeriodFilterView = {
         let view = OverviewPeriodFilterView()
         view.onPeriodSelected = { [weak self] period in
@@ -86,55 +90,10 @@ class OverviewViewController: DemoBaseViewController {
         view.onDateTapped = { [weak self] in
             self?.dateButtonTapped()
         }
+        view.onRefreshTapped = { [weak self] in
+            self?.refreshData()
+        }
         return view
-    }()
-
-    private lazy var emptyStateView: UIView = {
-        let container = UIView()
-        container.backgroundColor = .backgroundPrimary
-        container.isHidden = true
-
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 56, weight: .light)
-        let iconImage = UIImage(systemName: "doc.text.magnifyingglass", withConfiguration: iconConfig)
-        let iconView = UIImageView(image: iconImage)
-        iconView.tintColor = .tertiaryLabel
-        iconView.contentMode = .scaleAspectFit
-
-        let label = UILabel()
-        label.text = "No orders for this day".localized()
-        label.font = .bodyRegular(size: 16)
-        label.textColor = .textSecondary
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.tag = 100
-
-        let button = UIButton(type: .system)
-        button.setTitle("Try another date".localized(), for: .normal)
-        button.titleLabel?.font = .bodyMedium(size: 16)
-        button.tintColor = .brandPrimary
-        button.addTarget(self, action: #selector(emptyStateTryAnotherDateTapped), for: .touchUpInside)
-        button.tag = 101
-
-        container.addSubview(iconView)
-        container.addSubview(label)
-        container.addSubview(button)
-
-        iconView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(48)
-        }
-        label.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalTo(iconView.snp.bottom).offset(20)
-            make.leading.greaterThanOrEqualToSuperview().offset(24)
-            make.trailing.lessThanOrEqualToSuperview().offset(-24)
-        }
-        button.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalTo(label.snp.bottom).offset(24)
-            make.bottom.lessThanOrEqualToSuperview().offset(-32)
-        }
-        return container
     }()
 
     private lazy var summaryCard: OverviewSummaryCardView = {
@@ -145,49 +104,55 @@ class OverviewViewController: DemoBaseViewController {
         )
     }()
 
-    private lazy var ordersSectionTitleLabel: UILabel = {
-        let label = UILabel()
-        label.numberOfLines = 1
-        label.textColor = .textPrimary
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.8
-        return label
+    private lazy var snapshotSectionView: OverviewSnapshotSectionView = {
+        OverviewSnapshotSectionView(isIPad: isIPad)
     }()
 
-    private lazy var ordersSectionSubtitleLabel: UILabel = {
+    private lazy var todayOrdersCountLabel: UILabel = {
         let label = UILabel()
-        label.font = .captionMedium(size: 12)
-        label.textColor = .textTertiary
         label.numberOfLines = 1
         return label
     }()
 
-    private lazy var ordersSectionView: UIView = {
-        let container = UIView()
-        container.isHidden = true
+    private lazy var todayOrdersDateLabel: UILabel = {
+        let label = UILabel()
+        return label
+    }()
 
-        let stack = UIStackView(arrangedSubviews: [ordersSectionTitleLabel, UIView(), ordersSectionSubtitleLabel])
-        stack.axis = .horizontal
-        stack.spacing = 8
-        stack.alignment = .center
-
-        let hairline = UIView()
-        hairline.backgroundColor = UIColor.borderColor.withAlphaComponent(0.65)
-        hairline.snp.makeConstraints { make in
-            make.height.equalTo(1 / UIScreen.main.scale)
+    private lazy var todayOrdersInlineEmptyView: UIView = {
+        let container = OverviewUIBuilder.makeInlineSectionEmptyView(text: "No orders for this day".localized())
+        let button = UIButton(type: .system)
+        button.setTitle("Try another date".localized(), for: .normal)
+        button.titleLabel?.font = .bodyMedium(size: 14)
+        button.tintColor = .brandPrimary
+        button.addTarget(self, action: #selector(emptyStateTryAnotherDateTapped), for: .touchUpInside)
+        container.addSubview(button)
+        button.snp.makeConstraints { make in
+            make.top.equalTo(container.viewWithTag(100)!.snp.bottom).offset(12)
+            make.centerX.equalToSuperview()
+            make.bottom.equalToSuperview().inset(16)
         }
-
-        let vertical = UIStackView(arrangedSubviews: [stack, hairline])
-        vertical.axis = .vertical
-        vertical.spacing = 8
-        vertical.alignment = .fill
-
-        container.addSubview(vertical)
-        vertical.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
         return container
+    }()
+
+    private lazy var todayOrdersContentStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.addArrangedSubview(orderTableContainerView)
+        stack.addArrangedSubview(todayOrdersInlineEmptyView)
+        return stack
+    }()
+
+    private lazy var todayOrdersSectionCard: UIView = {
+        OverviewUIBuilder.makeGroupedListSectionCard(
+            title: "Report_Today_Orders_Title".localized(),
+            subtitleLabel: todayOrdersCountLabel,
+            dateLabel: todayOrdersDateLabel,
+            iconSystemName: "list.bullet.rectangle",
+            contentView: todayOrdersContentStack,
+            isIPad: isIPad
+        )
     }()
 
     private lazy var chartScrollView: UIScrollView = {
@@ -207,6 +172,8 @@ class OverviewViewController: DemoBaseViewController {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 14
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 24, trailing: 16)
         return stack
     }()
 
@@ -215,56 +182,48 @@ class OverviewViewController: DemoBaseViewController {
     }()
 
     private lazy var insightsPanel: OverviewInsightsPanelView = {
-        OverviewInsightsPanelView(isIPad: isIPad)
-    }()
-
-    private lazy var createOrderFab: UIButton = {
-        var config = UIButton.Configuration.filled()
-        config.title = "Create Order".localized()
-        config.image = UIImage(systemName: "plus")
-        config.imagePadding = 8
-        config.imagePlacement = .leading
-        config.baseBackgroundColor = .brandPrimary
-        config.baseForegroundColor = .white
-        config.cornerStyle = .capsule
-        config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 20)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = Utils.boldFont(size: 16)
-            return outgoing
+        let view = OverviewInsightsPanelView(isIPad: isIPad)
+        view.onTopProductsTapped = { [weak self] in
+            self?.presentOverviewRankingList(mode: .products)
         }
-
-        let button = UIButton(configuration: config)
-        button.layer.shadowColor = UIColor.brandPrimary.withAlphaComponent(0.35).cgColor
-        button.layer.shadowOpacity = 1
-        button.layer.shadowRadius = 12
-        button.layer.shadowOffset = CGSize(width: 0, height: 6)
-        button.addTarget(self, action: #selector(createOrderFabTapped), for: .touchUpInside)
-        button.isHidden = true
-        return button
+        view.onTopCustomersTapped = { [weak self] in
+            self?.presentOverviewRankingList(mode: .customers)
+        }
+        return view
     }()
 
     private lazy var orderTableView: UITableView = {
         let table = UITableView()
         table.delegate = self
         table.dataSource = self
-        table.isHidden = true
+        table.isHidden = false
+        table.isScrollEnabled = false
         table.register(SaleCell.self, forCellReuseIdentifier: "SaleCell")
         table.backgroundColor = .clear
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 72
-        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
-        table.separatorStyle = .none
+        table.estimatedRowHeight = 96
+        table.contentInset = .zero
         if #available(iOS 15.0, *) {
             table.sectionHeaderTopPadding = 0
         }
         return table
     }()
 
+    private lazy var orderTableContainerView: UIView = {
+        let view = UIView()
+        view.addSubview(orderTableView)
+        orderTableView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            orderTableHeightConstraint = make.height.equalTo(1).constraint
+        }
+        return view
+    }()
+
     private var chartTopToSummaryConstraint: Constraint?
     private var listHeaderTopToFilterConstraint: Constraint?
     private var listHeaderTopToNavConstraint: Constraint?
+    private var orderTableHeightConstraint: Constraint?
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -274,25 +233,24 @@ class OverviewViewController: DemoBaseViewController {
         setupCharts()
         
         // Set initial view state for today mode (before setting selectedPeriod)
-        chartScrollView.isHidden = true
-        chartStackView.isHidden = true
-        orderTableView.isHidden = false
-        ordersSectionView.isHidden = false
+        chartScrollView.isHidden = false
+        chartStackView.isHidden = false
+        chartsSection.isHidden = true
+        insightsPanel.isHidden = true
+        orderTableContainerView.isHidden = false
+        todayOrdersSectionCard.isHidden = false
         
         // Initialize period selection and load data
         initializePeriodSelection()
         chartsSection.configureInitialExpansion(isIPad: isIPad)
         updateDateFilterTitle()
         applySummaryLayout()
-        updateCreateOrderFabVisibility()
         loadData()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
-        updateCreateOrderFabVisibility()
-        view.bringSubview(toFront: createOrderFab)
     }
     
     // MARK: - Setup
@@ -306,15 +264,7 @@ class OverviewViewController: DemoBaseViewController {
     
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
-        let navBar = setupCustomNavigationBar(
-            title: "Overview".localized(),
-            statusBarBackgroundColor: .white,
-            titleCentered: true,
-            hideBackButton: true,
-            backAction: .pop
-        )
-
-        navBar.addRightButton(refreshButton)
+        navigationController?.setNavigationBarHidden(true, animated: false)
         refreshPeriodFilter()
     }
 
@@ -328,14 +278,8 @@ class OverviewViewController: DemoBaseViewController {
             showsDateButton: showsDate
         )
         periodFilterView.setDateButtonEnabled(!isOutletStaff)
-
-        if periods.count <= 1 {
-            listHeaderTopToFilterConstraint?.deactivate()
-            listHeaderTopToNavConstraint?.activate()
-        } else {
-            listHeaderTopToFilterConstraint?.activate()
-            listHeaderTopToNavConstraint?.deactivate()
-        }
+        listHeaderTopToFilterConstraint?.activate()
+        listHeaderTopToNavConstraint?.deactivate()
     }
 
     private func dateFilterTitle() -> String {
@@ -345,12 +289,13 @@ class OverviewViewController: DemoBaseViewController {
         return todayDate.dateInString() ?? ""
     }
 
-        private func applySummaryLayout() {
+    private func applySummaryLayout() {
         let isToday = selectedPeriod == .today
-        let isRangeOrYear = selectedPeriod.showsChartsAndInsights
+
+        summaryCard.setMode(isToday ? .today : .range)
+        summaryCard.setContextText(nil)
         summaryCard.revenueInfoButton.isHidden = false
-        summaryCard.growthPillView.isHidden = !isRangeOrYear
-        summaryCard.setCollateralMetricsVisible(isToday)
+        summaryCard.growthPillView.isHidden = true
 
         refreshPeriodFilter()
         if isToday {
@@ -364,75 +309,53 @@ class OverviewViewController: DemoBaseViewController {
     private func syncSummaryLabelsForRangeMode() {
         summaryCard.incomeLabel.text = realIncome.formatStringInCommon()
         summaryCard.ordersLabel.text = totalOrder.formatStringInCommon()
-        summaryCard.collateralLabel.text = "—"
-        summaryCard.collateralPlanLabel.text = "—"
         summaryCard.applyIncomeColor(for: realIncome)
+    }
+
+    private func averageIncome(total: Double, for period: ReportPeriod) -> Double {
+        guard period != .today else { return total }
+        let range = period.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let calendar = Calendar.current
+        let dayCount = max((calendar.dateComponents([.day], from: calendar.startOfDay(for: range.start), to: calendar.startOfDay(for: range.end)).day ?? 0) + 1, 1)
+        return total / Double(dayCount)
     }
 
     private func setupHeaderView() {
         view.addSubview(periodFilterView)
-        view.addSubview(summaryCard)
         view.addSubview(chartScrollView)
         chartScrollView.addSubview(chartScrollContentView)
         chartScrollContentView.addSubview(chartStackView)
-        view.addSubview(ordersSectionView)
-        view.addSubview(orderTableView)
-        view.addSubview(emptyStateView)
-        view.addSubview(createOrderFab)
-        
+        chartStackView.addArrangedSubview(summaryCard)
+        chartStackView.addArrangedSubview(snapshotSectionView)
         chartStackView.addArrangedSubview(chartsSection)
         chartStackView.addArrangedSubview(insightsPanel)
+        chartStackView.addArrangedSubview(todayOrdersSectionCard)
     }
     
     private func setupConstraints() {
-        guard let customNavBar = customNavBar else { return }
-
-        periodFilterView.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(16)
+        if let customNavBar = customNavBar {
+            periodFilterView.snp.makeConstraints { make in
+                make.top.equalTo(customNavBar.snp.bottom).offset(10)
+                make.leading.trailing.equalToSuperview().inset(16)
+            }
+        } else {
+            periodFilterView.snp.makeConstraints { make in
+                make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(8)
+                make.leading.trailing.equalToSuperview().inset(16)
+            }
         }
-
-        summaryCard.snp.makeConstraints { make in
-            listHeaderTopToFilterConstraint = make.top.equalTo(periodFilterView.snp.bottom).offset(8).constraint
-            listHeaderTopToNavConstraint = make.top.equalTo(customNavBar.snp.bottom).offset(12).constraint
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        listHeaderTopToFilterConstraint?.activate()
-        listHeaderTopToNavConstraint?.deactivate()
 
         chartScrollView.snp.makeConstraints { make in
+            make.top.equalTo(periodFilterView.snp.bottom).offset(8)
             make.leading.trailing.bottom.equalToSuperview()
-            chartTopToSummaryConstraint = make.top.equalTo(summaryCard.snp.bottom).offset(8).constraint
         }
-        chartTopToSummaryConstraint?.activate()
 
         chartScrollContentView.snp.makeConstraints { make in
             make.edges.equalTo(chartScrollView.contentLayoutGuide)
             make.width.equalTo(chartScrollView.frameLayoutGuide)
         }
         chartStackView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16))
-            make.bottom.equalToSuperview().offset(-24)
-        }
-
-        ordersSectionView.snp.makeConstraints { make in
-            make.top.equalTo(summaryCard.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        
-        orderTableView.snp.makeConstraints { make in
-            make.top.equalTo(ordersSectionView.snp.bottom).offset(0)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        emptyStateView.snp.makeConstraints { make in
-            make.top.equalTo(ordersSectionView.snp.bottom).offset(0)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        createOrderFab.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
+            make.edges.equalToSuperview()
         }
     }
     
@@ -476,6 +399,7 @@ class OverviewViewController: DemoBaseViewController {
             chart.dragXEnabled = allowHorizontalDrag
             chart.dragYEnabled = false
         }
+        chartsSection.setShowsHorizontalHint(allowHorizontalDrag)
     }
 
     private func applyChartVisibleRangeIfNeeded() {
@@ -537,44 +461,16 @@ class OverviewViewController: DemoBaseViewController {
         let showOrderList = selectedPeriod.showsOrderList
         let showCharts = selectedPeriod.showsChartsAndInsights
         UIView.animate(withDuration: 0.25) {
-            self.chartScrollView.isHidden = !showCharts
-            self.chartStackView.isHidden = !showCharts
-            self.ordersSectionView.isHidden = !showOrderList
-            self.orderTableView.isHidden = !showOrderList
+            self.chartScrollView.isHidden = false
+            self.chartStackView.isHidden = false
+            self.chartsSection.isHidden = !showCharts
+            self.insightsPanel.isHidden = !showCharts
+            self.todayOrdersSectionCard.isHidden = !showOrderList
             if !showOrderList {
-                self.emptyStateView.isHidden = true
+                self.todayOrdersInlineEmptyView.isHidden = true
             }
         } completion: { _ in
             self.loadData()
-        }
-
-        updateCreateOrderFabVisibility()
-    }
-
-    private func updateCreateOrderFabVisibility() {
-        let canCreate = PermissionManager.shared.canCreateOrders()
-        let showFab = selectedPeriod == .today && canCreate
-        createOrderFab.isHidden = !showFab
-        let bottomInset: CGFloat = showFab ? 88 : 16
-        orderTableView.contentInset.bottom = bottomInset
-        orderTableView.scrollIndicatorInsets.bottom = bottomInset
-    }
-
-    @objc private func createOrderFabTapped() {
-        guard PermissionManager.shared.canCreateOrders() else { return }
-
-        tabBarController?.selectedIndex = 0
-
-        guard let homeNav = tabBarController?.viewControllers?.first as? UINavigationController,
-              let mainVC = homeNav.viewControllers.first as? MainViewController else {
-            return
-        }
-
-        homeNav.popToRootViewController(animated: false)
-
-        if !CartStore.shared.cart.items.isEmpty,
-           let cartVC = mainVC.cartViewController {
-            homeNav.pushViewController(cartVC, animated: true)
         }
     }
     
@@ -662,11 +558,34 @@ class OverviewViewController: DemoBaseViewController {
     
     // MARK: - Data Loading
     private func loadData() {
+        summaryCard.isHidden = false
+        periodFilterView.isHidden = false
+        snapshotSectionView.isHidden = false
+        chartScrollView.isHidden = false
+        chartStackView.isHidden = false
         view.viewWithTag(9090)?.removeFromSuperview()
+        rangeIncomeSummary = nil
         setSummaryPlaceholder(placeholder: "—")
+        snapshotSectionView.update(
+            reserved: 0,
+            active: 0,
+            completed: 0,
+            cancelled: 0,
+            hasData: false,
+            depositHeldText: "—",
+            depositDueText: "—",
+            showsDepositMetrics: showsDepositMetricsForSelectedPeriod
+        )
+        if selectedPeriod == .today {
+            orderTableContainerView.isHidden = true
+            todayOrdersInlineEmptyView.isHidden = true
+            orderTableHeightConstraint?.update(offset: 1)
+        }
         if selectedPeriod.showsChartsAndInsights {
             resetOverviewInsightState()
             refreshOverviewInsightSections()
+        } else {
+            refreshOverviewGrowthPill()
         }
         switch selectedPeriod {
         case .today:
@@ -695,28 +614,60 @@ class OverviewViewController: DemoBaseViewController {
 
         AnalyticsAPIService.shared.loadDailyIncomeAnalytics(startDate: date, endDate: date) { [weak self] response, error in
             DispatchQueue.main.async {
-                self?.hideProgress(navigationController: self?.navigationController)
+                guard let self = self else { return }
+                self.hideProgress(navigationController: self.navigationController)
 
                 if let error = error {
+                    self.overviewGrowthMetrics = nil
+                    self.refreshOverviewGrowthPill()
                     UIAlertController.errorAlert(parent: self, error: error)
-                    self?.reloadList()
+                    self.reloadList()
                     return
                 }
 
                 guard let response = response else {
-                    self?.dailyIncomeOrders = []
-                    self?.dailyIncomeData = nil
-                    self?.reloadList()
+                    self.dailyIncomeOrders = []
+                    self.dailyIncomeData = nil
+                    self.overviewGrowthMetrics = nil
+                    self.refreshOverviewGrowthPill()
+                    self.reloadList()
                     return
                 }
 
-                self?.dailyIncomeData = response
-                self?.dailyIncomeOrders = response.days?.flatMap { $0.orders ?? [] } ?? []
-                self?.reloadList()
+                self.dailyIncomeData = response
+                self.dailyIncomeOrders = response.days?.flatMap { $0.orders ?? [] } ?? []
+                self.overviewGrowthMetrics = nil
+                self.reloadList()
+                let referenceYear = self.years[self.yearSelectedIndex]
+                self.loadComparisonGrowth(for: .today, referenceDate: date, referenceYear: referenceYear) { growth in
+                    guard self.selectedPeriod == .today else { return }
+                    guard Calendar.current.isDate(self.todayDate, inSameDayAs: date) else { return }
+                    self.overviewGrowthMetrics = growth
+                    self.refreshOverviewGrowthPill()
+                }
             }
         }
     }
     
+    private func applyPeriodReport(_ report: AnalyticsPeriodResponse?, period: ReportPeriod) {
+        overviewGrowthMetrics = report?.growth
+        overviewOrderStatistics = nil
+        rangeIncomeSummary = report?.operational
+        overviewTopProducts = report?.topProducts ?? []
+        overviewTopCustomers = report?.topCustomers ?? []
+
+        processIncomeChartData(incomeData: report?.series, period: period)
+
+        if (report?.series ?? []).isEmpty, let revenue = report?.revenue {
+            totalOrder = Double(revenue.totalOrders ?? 0)
+            realIncome = revenue.totalRevenue ?? 0
+            averageDailyIncome = averageIncome(total: realIncome, for: period)
+            syncSummaryLabelsForRangeMode()
+        }
+
+        refreshOverviewInsightSections()
+    }
+
     private func loadRangeReport(period: ReportPeriod) {
         guard canViewChartAnalytics() else {
             clearChart()
@@ -727,51 +678,27 @@ class OverviewViewController: DemoBaseViewController {
         let range = period.dateRange(todayDate: todayDate, year: year)
         showProgressText(text: "Loading...".localized(), navigationController: navigationController)
 
-        let group = DispatchGroup()
-        var incomeData: [IncomeAnalyticsItem]?
-        var overviewResponse: AnalyticsOverviewResponse?
-        var loadError: NSError?
-
-        group.enter()
-        AnalyticsAPIService.shared.loadIncomeAnalytics(
+        AnalyticsAPIService.shared.loadAnalyticsPeriod(
             startDate: range.start,
             endDate: range.end,
-            outletId: nil,
             groupBy: period.incomeGroupBy,
-            outletIds: nil
-        ) { data, error in
-            incomeData = data
-            if let error = error { loadError = error }
-            group.leave()
-        }
+            limit: 3
+        ) { [weak self] periodResponse, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.hideProgress(navigationController: self.navigationController)
 
-        group.enter()
-        AnalyticsAPIService.shared.loadAnalyticsOverview(startDate: range.start, endDate: range.end, limit: 3) { response, error in
-            overviewResponse = response
-            if loadError == nil, let error = error { loadError = error }
-            group.leave()
-        }
+                if let error = error, periodResponse == nil {
+                    print("Error loading period report: \(error.localizedDescription)")
+                    UIAlertController.errorAlert(parent: self, error: error)
+                    return
+                } else if let error = error {
+                    print("Warning: period report partial failure: \(error.localizedDescription)")
+                }
 
-        group.notify(queue: .main) { [weak self] in
-            guard let self = self else { return }
-            self.hideProgress(navigationController: self.navigationController)
-
-            // Income is enough to draw the chart + summary totals.
-            // Overview (growth / snapshot / top lists) is optional — do not block the chart
-            // when /overview fails (e.g. route not deployed, or a nested Prisma error).
-            if let error = loadError, incomeData == nil, overviewResponse == nil {
-                print("Error loading range report: \(error.localizedDescription)")
-                UIAlertController.errorAlert(parent: self, error: error)
-            } else if let error = loadError, overviewResponse == nil {
-                print("Warning: overview section failed (chart still uses income): \(error.localizedDescription)")
+                guard self.selectedPeriod == period else { return }
+                self.applyPeriodReport(periodResponse, period: period)
             }
-
-            self.overviewGrowthMetrics = overviewResponse?.growth
-            self.overviewOrderStatistics = overviewResponse?.statistics
-            self.overviewTopProducts = overviewResponse?.topProducts ?? []
-            self.overviewTopCustomers = overviewResponse?.topCustomers ?? []
-            self.processIncomeChartData(incomeData: incomeData ?? overviewResponse?.income, period: period)
-            self.refreshOverviewInsightSections()
         }
     }
     
@@ -787,23 +714,24 @@ class OverviewViewController: DemoBaseViewController {
 
         showProgressText(text: "Loading...".localized(), navigationController: navigationController)
 
-        // Single aggregated request replaces the previous 5 parallel calls
-        // (income + growth + statistics + top products/customers).
-        AnalyticsAPIService.shared.loadAnalyticsOverview(startDate: startDate, endDate: endDate, limit: 3) { [weak self] response, error in
+        AnalyticsAPIService.shared.loadAnalyticsPeriod(
+            startDate: startDate,
+            endDate: endDate,
+            groupBy: ReportPeriod.thisYear.incomeGroupBy,
+            limit: 3
+        ) { [weak self] periodResponse, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.hideProgress(navigationController: self.navigationController)
 
-                if let error = error {
-                    print("Error loading analytics overview: \(error.localizedDescription)")
+                if let error = error, periodResponse == nil {
+                    print("Error loading yearly period report: \(error.localizedDescription)")
+                    UIAlertController.errorAlert(parent: self, error: error)
+                    return
                 }
 
-                self.overviewGrowthMetrics = response?.growth
-                self.overviewOrderStatistics = response?.statistics
-                self.overviewTopProducts = response?.topProducts ?? []
-                self.overviewTopCustomers = response?.topCustomers ?? []
-                self.processIncomeChartData(incomeData: response?.income, period: .thisYear)
-                self.refreshOverviewInsightSections()
+                guard self.selectedPeriod == .thisYear, self.years[self.yearSelectedIndex] == year else { return }
+                self.applyPeriodReport(periodResponse, period: .thisYear)
             }
         }
     }
@@ -814,8 +742,9 @@ class OverviewViewController: DemoBaseViewController {
 
         guard let incomeData = incomeData, !incomeData.isEmpty else {
             initializeEmptyChartData(for: period)
-            totalOrder = Double(overviewGrowthMetrics?.orders?.current ?? overviewOrderStatistics?.totalOrders ?? 0)
+            totalOrder = Double(overviewGrowthMetrics?.orders?.current ?? 0)
             realIncome = overviewGrowthMetrics?.revenue?.current ?? 0
+            averageDailyIncome = averageIncome(total: realIncome, for: period)
             expectedIncome = 0
             reloadChart()
             syncSummaryLabelsForRangeMode()
@@ -866,6 +795,7 @@ class OverviewViewController: DemoBaseViewController {
 
         totalOrder = totalOrderCount
         realIncome = totalRealIncome
+        averageDailyIncome = averageIncome(total: totalRealIncome, for: .thisYear)
         reloadChart()
         DispatchQueue.main.async { [weak self] in
             self?.syncSummaryLabelsForRangeMode()
@@ -899,6 +829,7 @@ class OverviewViewController: DemoBaseViewController {
 
         totalOrder = totalOrderCount
         realIncome = totalRealIncome
+        averageDailyIncome = averageIncome(total: totalRealIncome, for: period)
         reloadChart()
         DispatchQueue.main.async { [weak self] in
             self?.syncSummaryLabelsForRangeMode()
@@ -1048,6 +979,7 @@ class OverviewViewController: DemoBaseViewController {
         chartsSection.lineChartView.data = nil
         totalOrder = 0
         realIncome = 0
+        averageDailyIncome = 0
         expectedIncome = 0
         resetOverviewInsightState()
         if selectedPeriod.showsChartsAndInsights {
@@ -1077,22 +1009,38 @@ class OverviewViewController: DemoBaseViewController {
             summaryCard.collateralPlanLabel.text = "0"
         }
 
+        refreshOverviewSnapshotSection()
+
         let isEmpty = dailyIncomeOrders.isEmpty && orders.isEmpty
         let orderCount = dailyIncomeOrders.isEmpty ? orders.count : dailyIncomeOrders.count
         updateOrdersSectionHeader(orderCount: orderCount)
-        emptyStateView.isHidden = !isEmpty || selectedPeriod != .today
-        orderTableView.isHidden = isEmpty && selectedPeriod == .today
+        orderTableContainerView.isHidden = isEmpty
+        todayOrdersInlineEmptyView.isHidden = !isEmpty
         if isEmpty && selectedPeriod == .today {
-            (emptyStateView.viewWithTag(100) as? UILabel)?.text = "No orders for this day".localized() + "\n" + (todayDate.dateInString() ?? "")
+            (todayOrdersInlineEmptyView.viewWithTag(100) as? UILabel)?.text =
+                "No orders for this day".localized() + "\n" + (todayDate.dateInString() ?? "")
         }
 
         orderTableView.reloadData()
+        DispatchQueue.main.async { [weak self] in
+            self?.updateOrderTableHeight()
+        }
+    }
+
+    private func updateOrderTableHeight() {
+        orderTableView.layoutIfNeeded()
+        let height = selectedPeriod == .today ? max(orderTableView.contentSize.height, 1) : 1
+        orderTableHeightConstraint?.update(offset: height)
+        view.layoutIfNeeded()
     }
 
     private func setSummaryPlaceholder(placeholder: String) {
         [summaryCard.ordersLabel, summaryCard.incomeLabel, summaryCard.collateralLabel, summaryCard.collateralPlanLabel]
             .forEach { $0.text = placeholder }
+        summaryCard.averageLabel.text = placeholder
+        summaryCard.changeMetricLabel.text = placeholder
         setOrdersSectionPlaceholder(placeholder)
+        summaryCard.setContextText(nil)
         summaryCard.growthPillView.isHidden = true
     }
 
@@ -1102,6 +1050,26 @@ class OverviewViewController: DemoBaseViewController {
         overviewTopProducts = []
         overviewGrowthMetrics = nil
         overviewOrderStatistics = nil
+        rangeIncomeSummary = nil
+    }
+
+    /// Deposit rows in Operational Snapshot: today + rolling windows (API: income/summary).
+    private var showsDepositMetricsForSelectedPeriod: Bool {
+        switch selectedPeriod {
+        case .today, .last7Days, .last30Days:
+            return true
+        case .thisYear:
+            return false
+        }
+    }
+
+    private func operationalSummaryForSnapshot() -> DailyIncomeSummary? {
+        switch selectedPeriod {
+        case .today:
+            return dailyIncomeData?.summary
+        case .last7Days, .last30Days, .thisYear:
+            return rangeIncomeSummary
+        }
     }
 
     private func refreshOverviewInsightSections() {
@@ -1112,11 +1080,6 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func refreshOverviewGrowthPill() {
-        guard selectedPeriod.showsChartsAndInsights else {
-            summaryCard.growthPillView.isHidden = true
-            return
-        }
-
         let revenueGrowth = overviewGrowthMetrics?.revenue?.growth
         let ordersGrowth = overviewGrowthMetrics?.orders?.growth
 
@@ -1133,64 +1096,168 @@ class OverviewViewController: DemoBaseViewController {
         }
 
         let primaryGrowth = revenueGrowth ?? ordersGrowth ?? 0
+        // Text + symbol only — no filled chip background (was too loud under Cash Strip).
+        summaryCard.growthPillView.backgroundColor = .clear
         if primaryGrowth > 0 {
-            summaryCard.growthPillView.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.12)
             summaryCard.growthPillLabel.textColor = .brandPrimary
         } else if primaryGrowth < 0 {
-            summaryCard.growthPillView.backgroundColor = .statusCancelledFill
-            summaryCard.growthPillLabel.textColor = .statusCancelledText
+            summaryCard.growthPillLabel.textColor = .actionDanger
         } else {
-            summaryCard.growthPillView.backgroundColor = UIColor.surfaceAuthChrome
             summaryCard.growthPillLabel.textColor = .textSecondary
         }
 
-        summaryCard.growthPillLabel.text = segments.joined(separator: "  •  ") + "  " + "vs previous period".localized()
-        summaryCard.growthPillView.isHidden = segments.isEmpty
+        summaryCard.growthPillLabel.text = segments.joined(separator: "  ") + "  " + "vs previous period".localized()
+        summaryCard.growthPillView.isHidden = false
+    }
+
+    private func previousComparisonRange(for period: ReportPeriod, currentStart: Date, currentEnd: Date) -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+
+        switch period {
+        case .today:
+            let previousStart = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: currentStart)) ?? currentStart
+            let previousEnd = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: previousStart) ?? previousStart
+            return (previousStart, previousEnd)
+
+        case .last7Days:
+            return (
+                calendar.date(byAdding: .day, value: -7, to: currentStart) ?? currentStart,
+                calendar.date(byAdding: .day, value: -7, to: currentEnd) ?? currentEnd
+            )
+
+        case .last30Days:
+            return (
+                calendar.date(byAdding: .day, value: -30, to: currentStart) ?? currentStart,
+                calendar.date(byAdding: .day, value: -30, to: currentEnd) ?? currentEnd
+            )
+
+        case .thisYear:
+            return (
+                calendar.date(byAdding: .year, value: -1, to: currentStart) ?? currentStart,
+                calendar.date(byAdding: .year, value: -1, to: currentEnd) ?? currentEnd
+            )
+        }
+    }
+
+    private func growthPercentage(current: Double, previous: Double) -> Double {
+        guard previous > 0 else { return 0 }
+        return ((current - previous) / previous * 100 * 100).rounded() / 100
+    }
+
+    private func buildGrowthMetrics(currentSummary: DailyIncomeSummary?, previousSummary: DailyIncomeSummary?) -> GrowthMetricsResponse? {
+        guard currentSummary != nil || previousSummary != nil else { return nil }
+
+        let currentOrders = currentSummary?.totalOrders ?? 0
+        let previousOrders = previousSummary?.totalOrders ?? 0
+        let currentRevenue = currentSummary?.totalRevenue ?? 0
+        let previousRevenue = previousSummary?.totalRevenue ?? 0
+
+        return GrowthMetricsResponse(
+            orders: GrowthMetricsValue(
+                current: currentOrders,
+                previous: previousOrders,
+                growth: growthPercentage(current: Double(currentOrders), previous: Double(previousOrders))
+            ),
+            revenue: GrowthMetricsRevenue(
+                current: currentRevenue,
+                previous: previousRevenue,
+                growth: growthPercentage(current: currentRevenue, previous: previousRevenue)
+            )
+        )
+    }
+
+    private func loadComparisonGrowth(
+        for period: ReportPeriod,
+        referenceDate: Date,
+        referenceYear: Int,
+        completion: @escaping (GrowthMetricsResponse?) -> Void
+    ) {
+        let currentRange = period.dateRange(todayDate: referenceDate, year: referenceYear)
+        let previousRange = previousComparisonRange(for: period, currentStart: currentRange.start, currentEnd: currentRange.end)
+
+        let group = DispatchGroup()
+        var currentSummary: DailyIncomeSummary?
+        var previousSummary: DailyIncomeSummary?
+
+        group.enter()
+        AnalyticsAPIService.shared.loadIncomeSummary(startDate: currentRange.start, endDate: currentRange.end) { data, _ in
+            currentSummary = data?.summary
+            group.leave()
+        }
+
+        group.enter()
+        AnalyticsAPIService.shared.loadIncomeSummary(startDate: previousRange.start, endDate: previousRange.end) { data, _ in
+            previousSummary = data?.summary
+            group.leave()
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            guard self != nil else { return }
+            completion(self?.buildGrowthMetrics(currentSummary: currentSummary, previousSummary: previousSummary))
+        }
     }
 
     private func refreshOverviewSnapshotSection() {
+        if let summary = operationalSummaryForSnapshot() {
+            let orderCounts = summary.orderCounts
+            let days = dailyIncomeData?.days ?? []
+            let reserved = orderCounts?.new ?? days.reduce(0) { $0 + ($1.newOrderCount ?? 0) }
+            let active = orderCounts?.pickup ?? days.reduce(0) { $0 + ($1.pickupOrderCount ?? 0) }
+            let completed = orderCounts?.return ?? days.reduce(0) { $0 + ($1.returnOrderCount ?? 0) }
+            let cancelled = orderCounts?.cancelled ?? days.reduce(0) { $0 + ($1.cancelledOrderCount ?? 0) }
+            let hasSnapshot = (orderCounts != nil) || !days.isEmpty || (summary.totalDays ?? 0) > 0
+            snapshotSectionView.update(
+                reserved: reserved,
+                active: active,
+                completed: completed,
+                cancelled: cancelled,
+                hasData: hasSnapshot,
+                depositHeldText: (summary.totalCollateral ?? 0).formatStringInCommon(),
+                depositDueText: (summary.totalCollateralPlanExpectedToRefund ?? summary.totalCollateralPlan ?? 0).formatStringInCommon(),
+                showsDepositMetrics: showsDepositMetricsForSelectedPeriod
+            )
+            return
+        }
+
+        // Fallback when income summary is unavailable (e.g. API error).
         let statusBreakdown = overviewOrderStatistics?.statusBreakdown
-        let hasSnapshot = (statusBreakdown != nil)
-        insightsPanel.updateSnapshot(
+        let hasSnapshot = statusBreakdown != nil
+        snapshotSectionView.update(
             reserved: statusBreakdown?.RESERVED ?? 0,
-            active: (statusBreakdown?.PICKUPED ?? 0) + (statusBreakdown?.RETURNED ?? 0),
-            completed: statusBreakdown?.COMPLETED ?? 0,
+            active: statusBreakdown?.PICKUPED ?? 0,
+            completed: (statusBreakdown?.RETURNED ?? 0) + (statusBreakdown?.COMPLETED ?? 0),
             cancelled: statusBreakdown?.CANCELLED ?? 0,
-            hasData: hasSnapshot
+            hasData: hasSnapshot,
+            depositHeldText: "—",
+            depositDueText: "—",
+            showsDepositMetrics: showsDepositMetricsForSelectedPeriod
         )
+    }
+
+    private func presentOverviewRankingList(mode: OverviewRankingListMode) {
+        guard selectedPeriod.showsChartsAndInsights else { return }
+        guard let navigationController = navigationController else { return }
+
+        let range = selectedPeriod.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let controller = OverviewRankingListViewController(
+            mode: mode,
+            startDate: range.start,
+            endDate: range.end,
+            periodSubtitle: selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        )
+        controller.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(controller, animated: true)
     }
 
     private func updateOrdersSectionHeader(orderCount: Int) {
         let countText = orderCount.formatStringInCommon()
-        let title = NSMutableAttributedString(
-            string: "\(countText) ",
-            attributes: [
-                .font: UIFont.bodyBold(size: isIPad ? 16 : 15),
-                .foregroundColor: UIColor.textPrimary
-            ]
-        )
-        title.append(
-            NSAttributedString(
-                string: "Overview_Orders_Count".localized(),
-                attributes: [
-                    .font: UIFont.bodyMedium(size: isIPad ? 15 : 14),
-                    .foregroundColor: UIColor.textSecondary
-                ]
-            )
-        )
-        ordersSectionTitleLabel.attributedText = title
-        ordersSectionSubtitleLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        todayOrdersCountLabel.text = "\(countText) " + "Overview_Orders_Count".localized()
+        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
     }
 
     private func setOrdersSectionPlaceholder(_ placeholder: String) {
-        ordersSectionTitleLabel.attributedText = NSAttributedString(
-            string: placeholder,
-            attributes: [
-                .font: UIFont.bodyBold(size: isIPad ? 16 : 15),
-                .foregroundColor: UIColor.textPrimary
-            ]
-        )
-        ordersSectionSubtitleLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        todayOrdersCountLabel.text = placeholder
+        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
     }
 
     @objc private func overviewInfoButtonTapped(_ sender: UIButton) {
@@ -1202,8 +1269,9 @@ class OverviewViewController: DemoBaseViewController {
         chartScrollView.isHidden = true
         chartStackView.isHidden = true
         summaryCard.isHidden = true
+        snapshotSectionView.isHidden = true
         periodFilterView.isHidden = true
-        ordersSectionView.isHidden = true
+        todayOrdersSectionCard.isHidden = true
         view.viewWithTag(9090)?.removeFromSuperview()
         
         let messageLabel = UILabel()
@@ -1231,6 +1299,11 @@ extension OverviewViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? { nil }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 0 }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let isLast = indexPath.row >= tableView.numberOfRows(inSection: indexPath.section) - 1
+        cell.contentView.viewWithTag(9_901)?.isHidden = isLast
+    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SaleCell", for: indexPath) as! SaleCell
@@ -1275,6 +1348,225 @@ extension OverviewViewController: UITableViewDelegate, UITableViewDataSource {
             preview.delegate = self
             navigationController?.pushViewController(preview, animated: true)
         }
+    }
+}
+
+private enum OverviewRankingListMode {
+    case products
+    case customers
+
+    var title: String {
+        switch self {
+        case .products:
+            return "Top Products".localized()
+        case .customers:
+            return "Top Customers".localized()
+        }
+    }
+
+    var emptyText: String {
+        switch self {
+        case .products:
+            return "No product performance for this period".localized()
+        case .customers:
+            return "No customer performance for this period".localized()
+        }
+    }
+}
+
+private final class OverviewRankingListViewController: BaseViewControler {
+
+    private let mode: OverviewRankingListMode
+    private let startDate: Date
+    private let endDate: Date
+    private let periodSubtitle: String
+
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let rowsStackView = UIStackView()
+    private let loadingIndicator = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+    private let periodLabel = UILabel()
+
+    private var isIPad: Bool {
+        traitCollection.horizontalSizeClass == .regular
+    }
+
+    init(
+        mode: OverviewRankingListMode,
+        startDate: Date,
+        endDate: Date,
+        periodSubtitle: String
+    ) {
+        self.mode = mode
+        self.startDate = startDate
+        self.endDate = endDate
+        self.periodSubtitle = periodSubtitle
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupNavigationBar()
+        setupUI()
+        loadData()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    override func setupUI() {
+        super.setupUI()
+        view.backgroundColor = .backgroundCard
+
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.backgroundColor = .backgroundCard
+
+        loadingIndicator.color = .brandPrimary
+        loadingIndicator.hidesWhenStopped = true
+
+        periodLabel.text = periodSubtitle
+        periodLabel.font = .captionMedium(size: 12)
+        periodLabel.textColor = .textSecondary
+        periodLabel.textAlignment = .left
+
+        let periodCard = UIView()
+        periodCard.backgroundColor = .backgroundCard
+        periodCard.layer.cornerRadius = 12
+        periodCard.layer.borderWidth = 1
+        periodCard.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.65).cgColor
+        periodCard.addSubview(periodLabel)
+        periodLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12))
+        }
+
+        rowsStackView.axis = .vertical
+        rowsStackView.spacing = 10
+
+        guard let customNavBar = customNavBar else { return }
+
+        view.addSubview(scrollView)
+        view.addSubview(loadingIndicator)
+        scrollView.addSubview(contentView)
+        contentView.backgroundColor = .backgroundCard
+        contentView.addSubview(periodCard)
+        contentView.addSubview(rowsStackView)
+
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(customNavBar.snp.bottom)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        contentView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalToSuperview()
+        }
+        periodCard.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+        rowsStackView.snp.makeConstraints { make in
+            make.top.equalTo(periodCard.snp.bottom).offset(14)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-24)
+        }
+        loadingIndicator.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+    }
+
+    private func setupNavigationBar() {
+        setupCustomNavigationBar(
+            title: mode.title,
+            statusBarBackgroundColor: .white,
+            titleCentered: true,
+            hideBackButton: false,
+            backAction: .pop
+        )
+    }
+
+    private func loadData() {
+        loadingIndicator.startAnimating()
+        rowsStackView.isHidden = true
+
+        switch mode {
+        case .products:
+            AnalyticsAPIService.shared.loadTopProducts(limit: 20, startDate: startDate, endDate: endDate) { [weak self] products, _ in
+                DispatchQueue.main.async {
+                    self?.renderProducts(products ?? [])
+                }
+            }
+        case .customers:
+            AnalyticsAPIService.shared.loadTopCustomers(limit: 20, startDate: startDate, endDate: endDate) { [weak self] customers, _ in
+                DispatchQueue.main.async {
+                    self?.renderCustomers(customers ?? [])
+                }
+            }
+        }
+    }
+
+    private func renderProducts(_ products: [TopProduct]) {
+        loadingIndicator.stopAnimating()
+        rowsStackView.isHidden = false
+
+        let rows = products.prefix(20).enumerated().map { index, product -> UIView in
+            let trimmedName = product.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let title = trimmedName.isEmpty ? "Unnamed product".localized() : trimmedName
+
+            var subtitleParts: [String] = []
+            if let category = product.category?.trimmingCharacters(in: .whitespacesAndNewlines), !category.isEmpty {
+                subtitleParts.append(category)
+            }
+            subtitleParts.append("\((product.rentalCount ?? 0).formatStringInCommon()) " + "rentals".localized())
+
+            return OverviewUIBuilder.makeRankingRow(
+                rank: index + 1,
+                title: title,
+                subtitle: subtitleParts.joined(separator: " • "),
+                value: (product.totalRevenue ?? 0).formatStringInCommon(),
+                accentColor: .brandPrimary,
+                isIPad: isIPad
+            )
+        }
+
+        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText)
+    }
+
+    private func renderCustomers(_ customers: [TopCustomer]) {
+        loadingIndicator.stopAnimating()
+        rowsStackView.isHidden = false
+
+        let rows = customers.prefix(20).enumerated().map { index, customer -> UIView in
+            let trimmedName = customer.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let title = trimmedName.isEmpty ? "Walk-in customer".localized() : trimmedName
+
+            var subtitleParts: [String] = []
+            if let phone = customer.phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
+                subtitleParts.append(phone)
+            }
+            let orderCount = customer.orderCount ?? customer.rentalCount ?? customer.saleCount ?? 0
+            if orderCount > 0 {
+                subtitleParts.append("\(orderCount.formatStringInCommon()) " + "orders".localized())
+            } else if let location = customer.location?.trimmingCharacters(in: .whitespacesAndNewlines), !location.isEmpty {
+                subtitleParts.append(location)
+            }
+
+            return OverviewUIBuilder.makeRankingRow(
+                rank: index + 1,
+                title: title,
+                subtitle: subtitleParts.joined(separator: " • "),
+                value: (customer.totalSpent ?? 0).formatStringInCommon(),
+                accentColor: .accentOrange,
+                isIPad: isIPad
+            )
+        }
+
+        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText)
     }
 }
 

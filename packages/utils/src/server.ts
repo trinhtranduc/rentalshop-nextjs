@@ -16,7 +16,8 @@
 export * from './core/logger';
 
 // Database-dependent utilities - SERVER ONLY
-// These import @rentalshop/database and Prisma Client, which cannot run in browser
+export * from './analytics/income-period-summary';
+export * from './analytics/period-report';
 export * from './core/subscription-manager';
 export * from './core/audit-helper';
 export * from './core/order-number-manager';
