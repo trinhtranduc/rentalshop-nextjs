@@ -18,6 +18,8 @@ protocol AnalyticsAPIServiceProtocol {
     func loadGrowthMetrics(startDate: Date?, endDate: Date?, completion: @escaping (GrowthMetricsResponse?, NSError?) -> Void)
     /// GET /api/analytics/overview — aggregated yearly overview in a single request
     func loadAnalyticsOverview(startDate: Date?, endDate: Date?, limit: Int?, completion: @escaping (AnalyticsOverviewResponse?, NSError?) -> Void)
+    /// GET /api/analytics/period — duration report (operational, revenue, growth, series, top lists)
+    func loadAnalyticsPeriod(startDate: Date?, endDate: Date?, groupBy: String?, limit: Int?, completion: @escaping (AnalyticsPeriodResponse?, NSError?) -> Void)
     func loadRecentOrders(startDate: Date?, endDate: Date?, completion: @escaping ([RecentOrder]?, NSError?) -> Void)
     func loadRecentActivities(limit: Int?, completion: @escaping ([RecentActivity]?, NSError?) -> Void)
 }
@@ -721,6 +723,59 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
                         AnalyticsService.shared.trackError(error: nsError, userId: userId, context: "analytics_overview")
                     }
                     completion(nil, nsError)
+                }
+            }
+    }
+
+    // MARK: - Analytics Period (duration report)
+    func loadAnalyticsPeriod(
+        startDate: Date? = nil,
+        endDate: Date? = nil,
+        groupBy: String? = nil,
+        limit: Int? = nil,
+        completion: @escaping (AnalyticsPeriodResponse?, NSError?) -> Void
+    ) {
+        let path = APIEndpoint.Path.analyticsPeriod
+        let fullURL = APIEndpoint.currentBaseURL + path
+
+        var params: [String: Any] = [:]
+        if let startDate = startDate {
+            params["startDate"] = startDate.dateServerInString()
+        }
+        if let endDate = endDate {
+            params["endDate"] = endDate.dateServerInString()
+        }
+        if let groupBy = groupBy, !groupBy.isEmpty {
+            params["groupBy"] = groupBy
+        }
+        if let limit = limit {
+            params["limit"] = limit
+        }
+
+        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+            .responseData { response in
+                switch response.result {
+                case .success(let data):
+                    do {
+                        let apiResponse = try JSONDecoder.shared.decode(APIAnalyticsPeriodResponse.self, from: data)
+                        if apiResponse.success {
+                            completion(apiResponse.data, nil)
+                        } else {
+                            let nsError = self.createErrorFromResponse(
+                                success: apiResponse.success,
+                                code: apiResponse.code,
+                                message: apiResponse.message,
+                                error: apiResponse.error,
+                                httpStatusCode: response.response?.statusCode,
+                                defaultMessage: "Failed to load analytics period report"
+                            )
+                            completion(nil, nsError)
+                        }
+                    } catch {
+                        completion(nil, error as NSError)
+                    }
+                case .failure(let error):
+                    completion(nil, error as NSError)
                 }
             }
     }

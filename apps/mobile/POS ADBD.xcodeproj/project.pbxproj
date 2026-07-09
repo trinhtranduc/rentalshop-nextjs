@@ -150,6 +150,7 @@
 		884B0A4021FAEB3200DB0C52 /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884B0A3F21FAEB3200DB0C52 /* Product.swift */; };
 		8864537421B0F29D002AE29C /* LargeValueFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8864537321B0F29C002AE29C /* LargeValueFormatter.swift */; };
 		04F301012F40000100A001 /* OverviewTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301002F40000100A001 /* OverviewTypes.swift */; };
+		04F302012F40000200B001 /* OverviewPeriodFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F302002F40000200B001 /* OverviewPeriodFilterView.swift */; };
 		04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301022F40000100A002 /* OverviewUIBuilder.swift */; };
 		04F301052F40000100A003 /* OverviewMetricInfoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */; };
 		04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301062F40000100A004 /* OverviewSummaryCardView.swift */; };
@@ -386,6 +387,7 @@
 		884B0A3F21FAEB3200DB0C52 /* Product.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
 		8864537321B0F29C002AE29C /* LargeValueFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LargeValueFormatter.swift; sourceTree = "<group>"; };
 		04F301002F40000100A001 /* OverviewTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewTypes.swift; sourceTree = "<group>"; };
+		04F302002F40000200B001 /* OverviewPeriodFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewPeriodFilterView.swift; sourceTree = "<group>"; };
 		04F301022F40000100A002 /* OverviewUIBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewUIBuilder.swift; sourceTree = "<group>"; };
 		04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewMetricInfoPresenter.swift; sourceTree = "<group>"; };
 		04F301062F40000100A004 /* OverviewSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewSummaryCardView.swift; sourceTree = "<group>"; };
@@ -717,6 +719,7 @@
 				88F3D8BF21B06223007CC30A /* MonthAxisValueFormatter.swift */,
 				88F3D8BD21B04F78007CC30A /* DemoBaseViewController.swift */,
 				04F301002F40000100A001 /* OverviewTypes.swift */,
+				04F302002F40000200B001 /* OverviewPeriodFilterView.swift */,
 				04F301022F40000100A002 /* OverviewUIBuilder.swift */,
 				04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */,
 				04F301062F40000100A004 /* OverviewSummaryCardView.swift */,
@@ -1438,6 +1441,7 @@
 				040330E52EA76FAB003BC33E /* AnalyticsAPIService.swift in Sources */,
 				04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */,
 				04F301012F40000100A001 /* OverviewTypes.swift in Sources */,
+				04F302012F40000200B001 /* OverviewPeriodFilterView.swift in Sources */,
 				04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */,
 				04F301052F40000100A003 /* OverviewMetricInfoPresenter.swift in Sources */,
 				04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */,
