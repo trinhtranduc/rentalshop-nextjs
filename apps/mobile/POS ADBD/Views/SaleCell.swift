@@ -34,6 +34,9 @@ class SaleCell: UITableViewCell {
         label.textAlignment = .center
         label.layer.cornerRadius = 12 // Match SaleDetailCell_Option5 (was 4)
         label.clipsToBounds = true
+        // Horizontal padding so long status labels aren't flush against rounded ends.
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
     
@@ -49,10 +52,13 @@ class SaleCell: UITableViewCell {
     private lazy var rowSurfaceView: UIView = {
         let view = UIView()
         view.backgroundColor = .backgroundCard
-        // Compact list-row radius (was 12 — read as a large panel).
-        view.layer.cornerRadius = 8
+        view.layer.cornerRadius = 16
         view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.92).cgColor
+        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.55).cgColor
+        view.layer.shadowColor = UIColor.black.withAlphaComponent(0.03).cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowRadius = 10
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
         return view
     }()
     
@@ -68,6 +74,7 @@ class SaleCell: UITableViewCell {
     lazy var getDateLabel: UILabel = createDateLabel()
     
     private var order: Order?
+    private var activeLayout: CellLayout = .sale
     
     enum CellLayout {
         case sale    // Book, Pickup, #, Name, Status
@@ -103,15 +110,18 @@ class SaleCell: UITableViewCell {
         datesStack.snp.removeConstraints()
         rowSurfaceView.removeFromSuperview()
         containerStackView.removeFromSuperview()
+        statusContainer.removeFromSuperview()
         contentView.viewWithTag(9_901)?.removeFromSuperview()
     }
     
     // MARK: - Setup
     func setupUI(for layout: CellLayout = .sale) {
+        activeLayout = layout
         contentView.backgroundColor = .clear
         backgroundColor = .clear
         rowSurfaceView.removeFromSuperview()
         containerStackView.removeFromSuperview()
+        statusContainer.removeFromSuperview()
         contentView.viewWithTag(9_901)?.removeFromSuperview()
         contentView.addSubview(containerStackView)
         
@@ -145,6 +155,7 @@ class SaleCell: UITableViewCell {
         switch layout {
         case .sale:
             selectionStyle = .default
+            contentView.backgroundColor = .clear
             let statusContainerWidth: CGFloat = isIPad ? 100 : 80
             let statusHeight: CGFloat = isIPad ? 28 : 24
             orderIdLabel.font = Utils.regularFont(size: 14)
@@ -197,67 +208,76 @@ class SaleCell: UITableViewCell {
             }
             
         case .chart:
-            // Compact card row: keep surface chrome (users found plain rows odd),
-            // but denser than the old 3-block layout.
+            // Flat row inside grouped today-orders card.
+            // Trailing column: badge (top-right) + revenue + date stacked vertically
+            // so money aligns in one column across rows.
             selectionStyle = .default
-            let statusContainerWidth: CGFloat = isIPad ? 90 : 78
-            let statusHeight: CGFloat = isIPad ? 24 : 20
-            let outerInset: CGFloat = isIPad ? 20 : 16
-
-            contentView.addSubview(rowSurfaceView)
-            rowSurfaceView.addSubview(containerStackView)
-
-            containerStackView.axis = .horizontal
-            containerStackView.spacing = 10
-            containerStackView.alignment = .center
-            containerStackView.distribution = .fill
+            let statusHeight: CGFloat = isIPad ? 24 : 22
+            contentView.addSubview(containerStackView)
+            contentView.addSubview(statusContainer)
 
             let leftStack = UIStackView(arrangedSubviews: [orderIdLabel, nameLabel])
             leftStack.axis = .vertical
-            leftStack.spacing = 2
+            leftStack.spacing = 3
             leftStack.alignment = .leading
 
-            let rightStack = UIStackView(arrangedSubviews: [getDateLabel, bookDateLabel])
-            rightStack.axis = .vertical
-            rightStack.spacing = 2
-            rightStack.alignment = .trailing
+            let moneyStack = UIStackView(arrangedSubviews: [getDateLabel, bookDateLabel])
+            moneyStack.axis = .vertical
+            moneyStack.spacing = 2
+            moneyStack.alignment = .trailing
 
             nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
             nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             getDateLabel.setContentHuggingPriority(.required, for: .horizontal)
             getDateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
             bookDateLabel.setContentHuggingPriority(.required, for: .horizontal)
+            bookDateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+            moneyStack.setContentHuggingPriority(.required, for: .horizontal)
+            moneyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
 
+            containerStackView.axis = .horizontal
+            containerStackView.spacing = 12
+            containerStackView.alignment = .center
+            containerStackView.distribution = .fill
             containerStackView.addArrangedSubview(leftStack)
-            containerStackView.addArrangedSubview(rightStack)
-            containerStackView.addArrangedSubview(statusContainer)
-
-            rowSurfaceView.snp.makeConstraints { make in
-                make.top.equalToSuperview().offset(4)
-                make.leading.equalToSuperview().offset(outerInset)
-                make.trailing.equalToSuperview().offset(-outerInset)
-                make.bottom.equalToSuperview().offset(-4)
-            }
+            containerStackView.addArrangedSubview(moneyStack)
 
             containerStackView.snp.makeConstraints { make in
-                make.top.equalToSuperview().offset(isIPad ? 12 : 10)
-                make.leading.equalToSuperview().offset(isIPad ? 14 : 12)
-                make.trailing.equalToSuperview().offset(isIPad ? -14 : -12)
-                make.bottom.equalToSuperview().offset(isIPad ? -12 : -10)
+                make.leading.equalToSuperview()
+                make.trailing.equalToSuperview()
+                make.bottom.equalToSuperview().offset(isIPad ? -10 : -8)
+                // Leave headroom for the status chip pinned to the top-trailing corner.
+                make.top.equalToSuperview().offset(isIPad ? 30 : 28)
             }
 
+            moneyStack.snp.makeConstraints { make in
+                make.width.greaterThanOrEqualTo(isIPad ? 108 : 96)
+            }
+
+            statusContainer.clipsToBounds = true
+            statusContainer.layer.cornerRadius = statusHeight / 2
+            statusLabel.backgroundColor = .clear
             statusContainer.snp.makeConstraints { make in
-                make.width.equalTo(statusContainerWidth)
+                make.top.equalToSuperview().offset(isIPad ? 8 : 6)
+                make.trailing.equalToSuperview()
             }
-
             statusLabel.snp.makeConstraints { make in
-                make.center.equalToSuperview()
-                make.width.equalToSuperview()
+                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8))
                 make.height.equalTo(statusHeight)
             }
-            statusLabel.layer.cornerRadius = statusHeight / 2
+            statusLabel.layer.cornerRadius = 0
+            statusLabel.font = Utils.mediumFont(size: isIPad ? 10 : 9)
 
-            orderIdLabel.font = Utils.boldFont(size: isIPad ? 15 : 14)
+            let separator = UIView()
+            separator.tag = 9_901
+            separator.backgroundColor = UIColor.borderColor.withAlphaComponent(0.65)
+            contentView.addSubview(separator)
+            separator.snp.makeConstraints { make in
+                make.leading.trailing.bottom.equalToSuperview()
+                make.height.equalTo(1 / UIScreen.main.scale)
+            }
+
+            orderIdLabel.font = Utils.boldFont(size: isIPad ? 16 : 15)
             orderIdLabel.textColor = .textPrimary
 
             nameLabel.font = Utils.regularFont(size: isIPad ? 13 : 12)
@@ -268,12 +288,13 @@ class SaleCell: UITableViewCell {
             bookDateLabel.font = Utils.regularFont(size: isIPad ? 12 : 11)
             bookDateLabel.textColor = .textTertiary
             bookDateLabel.textAlignment = .right
-            getDateLabel.font = Utils.boldFont(size: isIPad ? 15 : 14)
+            getDateLabel.font = Utils.boldFont(size: isIPad ? 16 : 15)
             getDateLabel.textColor = .textPrimary
             getDateLabel.textAlignment = .right
 
         case .order:
             selectionStyle = .default
+            contentView.backgroundColor = .clear
             orderIdLabel.font = Utils.regularFont(size: 14)
             orderIdLabel.textColor = .textPrimary
             bookDateLabel.font = Utils.regularFont(size: 13)
@@ -339,16 +360,43 @@ class SaleCell: UITableViewCell {
     }
 
     private func setChartCustomerInfo(name: String?, phone: String?) {
-        // Compact overview row: name only (phone is on order detail).
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        nameLabel.attributedText = nil
-        nameLabel.text = trimmed.isEmpty ? "N/A".localized() : trimmed
-        nameLabel.numberOfLines = 1
+        let phoneText = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let displayName = trimmed.isEmpty ? "N/A".localized() : trimmed
+
+        let attributed = NSMutableAttributedString(
+            string: displayName,
+            attributes: [
+                .font: Utils.mediumFont(size: 15),
+                .foregroundColor: UIColor.textPrimary
+            ]
+        )
+
+        if !phoneText.isEmpty {
+            attributed.append(
+                NSAttributedString(
+                    string: "\n\(phoneText)",
+                    attributes: [
+                        .font: Utils.regularFont(size: 12),
+                        .foregroundColor: UIColor.textSecondary
+                    ]
+                )
+            )
+        }
+
+        nameLabel.attributedText = attributed
+        nameLabel.numberOfLines = phoneText.isEmpty ? 1 : 2
         nameLabel.lineBreakMode = .byTruncatingTail
     }
 
     private func chartRevenueTextColor(for amount: Double) -> UIColor {
-        amount < 0 ? .statusCancelledText : .textPrimary
+        if amount < 0 {
+            return .actionDanger
+        }
+        if amount > 0 {
+            return .brandPrimary
+        }
+        return .textPrimary
     }
 
     /// Income amount stays right-aligned in the compact overview meta row.
@@ -461,8 +509,10 @@ class SaleCell: UITableViewCell {
         let statusString = order.status ?? ""
         statusLabel.text = statusString.localizedStatus()
         let status = OrderStatus.from(apiString: statusString)
-        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
-        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
+        applyStatusStyle(
+            fill: status?.badgeColor ?? .statusDraftFill,
+            text: status?.badgeTextColor ?? .statusDraftText
+        )
     }
     
     
@@ -490,26 +540,36 @@ class SaleCell: UITableViewCell {
         }
     }
     
+    private func applyStatusStyle(fill: UIColor, text: UIColor) {
+        statusLabel.textColor = text
+        if activeLayout == .chart {
+            // Chip fill lives on the padded container so long labels get breathing room.
+            statusContainer.backgroundColor = fill
+            statusLabel.backgroundColor = .clear
+        } else {
+            statusLabel.backgroundColor = fill
+            statusContainer.backgroundColor = .clear
+        }
+    }
+
     private func setupStatus(for dailyOrder: DailyIncomeOrder) {
         guard let statusString = dailyOrder.status else {
             statusLabel.text = "N/A".localized()
-            statusLabel.backgroundColor = .clear
+            applyStatusStyle(fill: .clear, text: .textSecondary)
             return
         }
         
-        // Localize status string
         statusLabel.text = statusString.localizedStatus()
-
-        // Map status string to colors via the shared badge palette
         let status = OrderStatus.from(apiString: statusString)
-        statusLabel.backgroundColor = status?.badgeColor ?? .statusDraftFill
-        statusLabel.textColor = status?.badgeTextColor ?? .statusDraftText
+        applyStatusStyle(
+            fill: status?.badgeColor ?? .statusDraftFill,
+            text: status?.badgeTextColor ?? .statusDraftText
+        )
     }
     
     private func setupStatus(for order: Order) {
         statusLabel.text = order.status.inString()
-        statusLabel.backgroundColor = order.status.badgeColor
-        statusLabel.textColor = order.status.badgeTextColor
+        applyStatusStyle(fill: order.status.badgeColor, text: order.status.badgeTextColor)
     }
     
 }

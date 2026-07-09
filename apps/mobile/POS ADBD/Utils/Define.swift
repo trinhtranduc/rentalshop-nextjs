@@ -96,20 +96,23 @@ extension UIColor {
     static let statusInactive = UIColor.neutralGray
     static let statusPending = UIColor.accentOrange
 
-    // Order status badges — solid mid-tone fill + white text for strong contrast
-    // on list cards. Soft *-100/*-200 tints read too washed; solid chips scan faster.
+    // Order status badges — solid mid-tone fill + white label text on the chip.
+    // `status*Text` stays dark for on-surface use (negative revenue, icon tints);
+    // badge chips force white via `badgeTextColor` so we don't bleach those UIs.
     // Fills (solid / saturated)
     static let statusDraftFill     = UIColor(hexString: "6B7280") // gray-500
     static let statusReservedFill  = UIColor(hexString: "D97706") // amber-600 (pending)
     static let statusActiveFill    = UIColor(hexString: "2563EB") // blue-600 (picked up / in use)
     static let statusDoneFill      = UIColor(hexString: "16A34A") // green-600 (returned / completed)
     static let statusCancelledFill = UIColor(hexString: "DC2626") // red-600 (cancelled)
-    // Text on solid fills
-    static let statusDraftText     = UIColor.white
-    static let statusReservedText  = UIColor.white
-    static let statusActiveText    = UIColor.white
-    static let statusDoneText      = UIColor.white
-    static let statusCancelledText = UIColor.white
+    // On-surface / accent text (dark) — NOT for painting on solid badge fills
+    static let statusDraftText     = UIColor(hexString: "374151") // gray-700
+    static let statusReservedText  = UIColor(hexString: "92400E") // amber-800
+    static let statusActiveText    = UIColor(hexString: "1E40AF") // blue-800
+    static let statusDoneText      = UIColor(hexString: "166534") // green-800
+    static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
+    /// Label color on solid status chips only.
+    static let statusBadgeLabelText = UIColor.white
 
     static var authGradientColors: [CGColor] {
         [
@@ -187,15 +190,8 @@ extension OrderStatus {
         }
     }
 
-    /// White text on solid fill for strong contrast.
+    /// White text on solid fill for strong contrast (do not reuse for on-surface labels).
     var badgeTextColor: UIColor {
-        switch self {
-        case .draft:     return .statusDraftText
-        case .reserved:  return .statusReservedText
-        case .pickuped:  return .statusActiveText
-        case .returned:  return .statusDoneText
-        case .completed: return .statusDoneText
-        case .cancelled: return .statusCancelledText
-        }
+        .statusBadgeLabelText
     }
 }

@@ -16,6 +16,7 @@ final class OverviewChartsSectionView: UIView {
     weak var delegate: OverviewChartsSectionViewDelegate?
 
     private(set) var isExpanded: Bool = false
+    private var showsHorizontalHint: Bool = false
 
     let barChartView: BarChartView
     let lineChartView: LineChartView
@@ -23,6 +24,7 @@ final class OverviewChartsSectionView: UIView {
     private let chartsBodyStackView: UIStackView
     private let toggleChevron = UIImageView()
     private let toggleSubtitleLabel = UILabel()
+    private let titleLabel = UILabel()
     private var chartsBodyHeightConstraint: Constraint?
 
     init(isIPad: Bool) {
@@ -32,17 +34,34 @@ final class OverviewChartsSectionView: UIView {
         lineChartView = LineChartView()
         lineChartView.heightAnchor.constraint(equalToConstant: 250).isActive = true
 
-        chartsBodyStackView = UIStackView(arrangedSubviews: [barChartView, lineChartView])
+        let revenuePanel = OverviewChartsSectionView.makeChartPanel(
+            title: "Revenue".localized(),
+            subtitle: "Real income".localized() + " • " + "Plan income".localized(),
+            chartView: barChartView,
+            isIPad: isIPad
+        )
+        let ordersPanel = OverviewChartsSectionView.makeChartPanel(
+            title: "Order total".localized(),
+            subtitle: "Overview_Charts_Orders_Subtitle".localized(),
+            chartView: lineChartView,
+            isIPad: isIPad
+        )
+
+        chartsBodyStackView = UIStackView(arrangedSubviews: [revenuePanel, ordersPanel])
         chartsBodyStackView.axis = .vertical
-        chartsBodyStackView.spacing = 14
+        chartsBodyStackView.spacing = 12
         chartsBodyStackView.clipsToBounds = true
 
         super.init(frame: .zero)
 
         backgroundColor = .backgroundCard
-        layer.cornerRadius = 14
+        layer.cornerRadius = 16
         layer.borderWidth = 1
-        layer.borderColor = UIColor.borderColor.withAlphaComponent(0.65).cgColor
+        layer.borderColor = UIColor.borderColor.withAlphaComponent(0.52).cgColor
+        layer.shadowColor = UIColor.black.withAlphaComponent(0.02).cgColor
+        layer.shadowOpacity = 1
+        layer.shadowRadius = 10
+        layer.shadowOffset = CGSize(width: 0, height: 4)
 
         toggleChevron.image = UIImage(systemName: "chevron.down")
         toggleChevron.tintColor = .textSecondary
@@ -51,18 +70,17 @@ final class OverviewChartsSectionView: UIView {
             make.width.height.equalTo(14)
         }
 
-        let titleLabel = UILabel()
         titleLabel.text = "Overview_Charts_Title".localized()
-        titleLabel.font = .bodyBold(size: isIPad ? 16 : 15)
+        titleLabel.font = .bodyBold(size: isIPad ? 18 : 16)
         titleLabel.textColor = .textPrimary
 
-        toggleSubtitleLabel.font = .captionMedium(size: 12)
+        toggleSubtitleLabel.font = .captionMedium(size: 11)
         toggleSubtitleLabel.textColor = .textSecondary
         toggleSubtitleLabel.text = "Overview_Charts_Show".localized()
 
         let labelStack = UIStackView(arrangedSubviews: [titleLabel, toggleSubtitleLabel])
         labelStack.axis = .vertical
-        labelStack.spacing = 2
+        labelStack.spacing = 3
         labelStack.alignment = .leading
 
         let headerStack = UIStackView(arrangedSubviews: [labelStack, UIView(), toggleChevron])
@@ -94,6 +112,7 @@ final class OverviewChartsSectionView: UIView {
             make.bottom.equalTo(headerStack.snp.bottom).offset(12)
         }
         chartsBodyHeightConstraint?.deactivate()
+        refreshHeaderState()
     }
 
     required init?(coder: NSCoder) {
@@ -101,7 +120,12 @@ final class OverviewChartsSectionView: UIView {
     }
 
     func configureInitialExpansion(isIPad: Bool) {
-        setExpanded(isIPad, animated: false)
+        setExpanded(true, animated: false)
+    }
+
+    func setShowsHorizontalHint(_ shows: Bool) {
+        showsHorizontalHint = shows
+        refreshHeaderState()
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
@@ -116,9 +140,7 @@ final class OverviewChartsSectionView: UIView {
                 self.chartsBodyHeightConstraint?.activate()
             }
             self.toggleChevron.image = UIImage(systemName: expanded ? "chevron.up" : "chevron.down")
-            self.toggleSubtitleLabel.text = expanded
-                ? "Overview_Charts_Hide".localized()
-                : "Overview_Charts_Show".localized()
+            self.refreshHeaderState()
             self.layoutIfNeeded()
         }
 
@@ -149,5 +171,57 @@ final class OverviewChartsSectionView: UIView {
             current = view.superview
         }
         return nil
+    }
+
+    private func refreshHeaderState() {
+        if isExpanded {
+            toggleSubtitleLabel.text = showsHorizontalHint
+                ? "Overview_Charts_SwipeHint".localized()
+                : "Overview_Charts_Hide".localized()
+            toggleSubtitleLabel.textColor = showsHorizontalHint ? .brandPrimary : .textSecondary
+        } else {
+            toggleSubtitleLabel.text = "Overview_Charts_Show".localized()
+            toggleSubtitleLabel.textColor = .textSecondary
+        }
+    }
+
+    private static func makeChartPanel(
+        title: String,
+        subtitle: String,
+        chartView: UIView,
+        isIPad: Bool
+    ) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .backgroundCard
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = 1
+        container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.68).cgColor
+
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = .bodyBold(size: isIPad ? 16 : 15)
+        titleLabel.textColor = .textPrimary
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = .captionMedium(size: 11)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 2
+
+        let labelStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        labelStack.axis = .vertical
+        labelStack.spacing = 3
+        labelStack.alignment = .leading
+
+        let stack = UIStackView(arrangedSubviews: [labelStack, chartView])
+        stack.axis = .vertical
+        stack.spacing = 10
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12))
+        }
+
+        return container
     }
 }

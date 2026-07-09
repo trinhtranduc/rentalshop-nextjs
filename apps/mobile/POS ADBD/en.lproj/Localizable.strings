@@ -689,6 +689,7 @@
 "Overview_Mode_Daily" = "Daily";
 "Overview_Mode_Yearly" = "Yearly";
 "Report_Period_Today" = "Today";
+"Report_Today_Orders_Title" = "Today's orders";
 "Report_Period_7Days" = "7 days";
 "Report_Period_30Days" = "30 days";
 "Report_Period_Year" = "Year";
@@ -696,6 +697,8 @@
 "Report_Summary_Orders" = "Orders";
 "Report_Summary_DepositHeld" = "Deposit held";
 "Report_Summary_DepositDue" = "Deposit due";
+"Report_Summary_AveragePerDay" = "Avg/day";
+"Report_Summary_Change" = "Change";
 "Overview_Orders_Count" = "orders";
 "Collateral (received)_Short" = "Deposit held";
 "Collateral (return)_Short" = "Deposit due";
@@ -706,6 +709,7 @@
 "Highest revenue drivers" = "Highest revenue drivers";
 "Top Customers" = "Top Customers";
 "Most valuable customers" = "Most valuable customers";
+"View all" = "View all";
 "vs previous period" = "vs previous period";
 "Revenue" = "Revenue";
 "Order total" = "Order total";
@@ -718,6 +722,8 @@
 "Overview_Charts_Title" = "Revenue charts";
 "Overview_Charts_Show" = "Show charts";
 "Overview_Charts_Hide" = "Hide charts";
+"Overview_Charts_Orders_Subtitle" = "Order volume over time";
+"Overview_Charts_SwipeHint" = "Swipe horizontally to see more";
 
 // MARK: - Customer Search
 "Search by customer name, phone" = "Search by customer name, phone";

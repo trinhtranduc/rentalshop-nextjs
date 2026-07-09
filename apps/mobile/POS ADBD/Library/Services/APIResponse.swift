@@ -1194,6 +1194,8 @@ struct AnalyticsOverviewResponse: Codable {
     let income: [IncomeAnalyticsItem]?
     let growth: GrowthMetricsResponse?
     let statistics: OrderStatisticsResponse?
+    /// Event-based operational + deposit totals for the requested date range.
+    let periodSummary: DailyIncomeSummary?
     let topProducts: [TopProduct]?
     let topCustomers: [TopCustomer]?
 
@@ -1201,6 +1203,7 @@ struct AnalyticsOverviewResponse: Codable {
         case income
         case growth
         case statistics
+        case periodSummary
         case topProducts
         case topCustomers
     }
@@ -1211,6 +1214,60 @@ struct APIAnalyticsOverviewResponse: Codable {
     let code: String?
     let message: String?
     let data: AnalyticsOverviewResponse?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case code
+        case message
+        case data
+        case error
+    }
+}
+
+// MARK: - Analytics Period (GET /api/analytics/period)
+
+struct AnalyticsPeriodRevenueSummary: Codable {
+    let totalRevenue: Double?
+    let totalActualRevenue: Double?
+    let totalOrders: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case totalRevenue
+        case totalActualRevenue
+        case totalOrders
+    }
+}
+
+struct AnalyticsPeriodResponse: Codable {
+    let startDate: String?
+    let endDate: String?
+    let groupBy: String?
+    let operational: DailyIncomeSummary?
+    let revenue: AnalyticsPeriodRevenueSummary?
+    let growth: GrowthMetricsResponse?
+    let series: [IncomeAnalyticsItem]?
+    let topProducts: [TopProduct]?
+    let topCustomers: [TopCustomer]?
+
+    enum CodingKeys: String, CodingKey {
+        case startDate
+        case endDate
+        case groupBy
+        case operational
+        case revenue
+        case growth
+        case series
+        case topProducts
+        case topCustomers
+    }
+}
+
+struct APIAnalyticsPeriodResponse: Codable {
+    let success: Bool
+    let code: String?
+    let message: String?
+    let data: AnalyticsPeriodResponse?
     let error: String?
 
     enum CodingKeys: String, CodingKey {

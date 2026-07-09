@@ -126,6 +126,9 @@ enum APIEndpoint {
         /// GET aggregated yearly overview (income + growth + statistics + top products/customers)
         /// Params: startDate, endDate (YYYY-MM-DD), limit? (top lists)
         static let analyticsOverview = "/api/analytics/overview"
+        /// GET duration-based report: operational + revenue + growth + series + top lists
+        /// Params: startDate, endDate, groupBy? (day|month), limit?
+        static let analyticsPeriod = "/api/analytics/period"
         
         // Calendar
         static let calendarOrders = "/api/calendar/orders"
