@@ -413,7 +413,7 @@ class PreviewViewController: BaseViewControler {
         button.setTitle("Cancel".localized().uppercased(), for: .normal)
         button.titleLabel?.font = .titleSmall()
         button.backgroundColor = .statusCancelledFill
-        button.setTitleColor(.statusCancelledText, for: .normal)
+        button.setTitleColor(.textInverted, for: .normal)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(cancelOrder), for: .touchUpInside)
         return button

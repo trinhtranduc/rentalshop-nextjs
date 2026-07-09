@@ -28,13 +28,8 @@ class SaleCell: UITableViewCell {
     
     private lazy var statusLabel: UILabel = {
         let label = UILabel()
-        let isIPad = traitCollection.horizontalSizeClass == .regular
-        label.font = Utils.mediumFont(size: isIPad ? 12 : 11) // Match SaleDetailCell_Option5
-        label.textColor = .white
         label.textAlignment = .center
-        label.layer.cornerRadius = 12 // Match SaleDetailCell_Option5 (was 4)
         label.clipsToBounds = true
-        // Horizontal padding so long status labels aren't flush against rounded ends.
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
@@ -48,6 +43,46 @@ class SaleCell: UITableViewCell {
         label.minimumScaleFactor = 0.8
         return label
     }()
+
+    // Small pill next to the order code marking rent vs sale (used in .chart).
+    private lazy var typeBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.boldFont(size: 13)
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private lazy var typeBadgeContainer: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 10
+        view.clipsToBounds = true
+        view.addSubview(typeBadgeLabel)
+        typeBadgeLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 11, bottom: 4, right: 11))
+        }
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return view
+    }()
+
+    // Eye toggle to reveal the masked phone in the chart/today-orders row.
+    private lazy var chartRevealButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage.revealEye(revealed: false), for: .normal)
+        button.tintColor = .textSecondary // same grey as the phone text
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addTarget(self, action: #selector(toggleChartPhoneReveal), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.width.height.equalTo(22)
+        }
+        return button
+    }()
+
+    private var isChartPhoneRevealed = false
+    private var chartCustomerName: String?
+    private var chartCustomerPhone: String?
 
     private lazy var rowSurfaceView: UIView = {
         let view = UIView()
@@ -112,6 +147,10 @@ class SaleCell: UITableViewCell {
         containerStackView.removeFromSuperview()
         statusContainer.removeFromSuperview()
         contentView.viewWithTag(9_901)?.removeFromSuperview()
+        isChartPhoneRevealed = false
+        chartCustomerName = nil
+        chartCustomerPhone = nil
+        chartRevealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
     }
     
     // MARK: - Setup
@@ -150,14 +189,13 @@ class SaleCell: UITableViewCell {
         
         // Adjust font sizes for iPad - Update statusLabel font to match device
         let isIPad = traitCollection.horizontalSizeClass == .regular
-        statusLabel.font = Utils.mediumFont(size: isIPad ? 12 : 11) // Match SaleDetailCell_Option5
+        OrderStatusBadgeMetrics.applyBaseAppearance(to: statusLabel, isRegularWidth: isIPad)
         
         switch layout {
         case .sale:
             selectionStyle = .default
             contentView.backgroundColor = .clear
             let statusContainerWidth: CGFloat = isIPad ? 100 : 80
-            let statusHeight: CGFloat = isIPad ? 28 : 24
             orderIdLabel.font = Utils.regularFont(size: 14)
             orderIdLabel.textColor = .textPrimary
             nameLabel.font = Utils.boldFont(size: 14)
@@ -199,7 +237,7 @@ class SaleCell: UITableViewCell {
             statusLabel.snp.makeConstraints { make in
                 make.center.equalToSuperview()
                 make.width.equalToSuperview()
-                make.height.equalTo(statusHeight)
+                make.height.greaterThanOrEqualTo(OrderStatusBadgeMetrics.minimumHeight)
             }
             
             // Set equal widths for date stack and info stack
@@ -209,21 +247,37 @@ class SaleCell: UITableViewCell {
             
         case .chart:
             // Flat row inside grouped today-orders card.
-            // Trailing column: badge (top-right) + revenue + date stacked vertically
-            // so money aligns in one column across rows.
+            // Left column: order # + customer (top-aligned). Trailing column: the
+            // status badge, revenue and date stacked vertically and right-aligned,
+            // so the badge sits at the top-right and money lines up in one column
+            // across rows — WITHOUT the absolute-pinned badge + top headroom hack
+            // that left a large empty gap above every row.
             selectionStyle = .default
-            let statusHeight: CGFloat = isIPad ? 24 : 22
             contentView.addSubview(containerStackView)
-            contentView.addSubview(statusContainer)
 
-            let leftStack = UIStackView(arrangedSubviews: [orderIdLabel, nameLabel])
+            orderIdLabel.setContentHuggingPriority(.required, for: .horizontal)
+            let orderRow = UIStackView(arrangedSubviews: [orderIdLabel, typeBadgeContainer, UIView()])
+            orderRow.axis = .horizontal
+            orderRow.spacing = 6
+            orderRow.alignment = .center
+
+            let nameRow = UIStackView(arrangedSubviews: [nameLabel, chartRevealButton, UIView()])
+            nameRow.axis = .horizontal
+            nameRow.spacing = 4
+            nameRow.alignment = .center
+
+            let leftStack = UIStackView(arrangedSubviews: [orderRow, nameRow])
             leftStack.axis = .vertical
             leftStack.spacing = 3
             leftStack.alignment = .leading
 
-            let moneyStack = UIStackView(arrangedSubviews: [getDateLabel, bookDateLabel])
+            statusContainer.clipsToBounds = true
+            statusContainer.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
+            statusLabel.backgroundColor = .clear
+
+            let moneyStack = UIStackView(arrangedSubviews: [statusContainer, getDateLabel])
             moneyStack.axis = .vertical
-            moneyStack.spacing = 2
+            moneyStack.spacing = 4
             moneyStack.alignment = .trailing
 
             nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -232,12 +286,14 @@ class SaleCell: UITableViewCell {
             getDateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
             bookDateLabel.setContentHuggingPriority(.required, for: .horizontal)
             bookDateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+            statusContainer.setContentHuggingPriority(.required, for: .horizontal)
+            statusContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
             moneyStack.setContentHuggingPriority(.required, for: .horizontal)
             moneyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
 
             containerStackView.axis = .horizontal
             containerStackView.spacing = 12
-            containerStackView.alignment = .center
+            containerStackView.alignment = .top
             containerStackView.distribution = .fill
             containerStackView.addArrangedSubview(leftStack)
             containerStackView.addArrangedSubview(moneyStack)
@@ -245,28 +301,25 @@ class SaleCell: UITableViewCell {
             containerStackView.snp.makeConstraints { make in
                 make.leading.equalToSuperview()
                 make.trailing.equalToSuperview()
-                make.bottom.equalToSuperview().offset(isIPad ? -10 : -8)
-                // Leave headroom for the status chip pinned to the top-trailing corner.
-                make.top.equalToSuperview().offset(isIPad ? 30 : 28)
+                make.top.equalToSuperview().offset(isIPad ? 16 : 14)
+                make.bottom.equalToSuperview().offset(isIPad ? -16 : -14)
             }
 
             moneyStack.snp.makeConstraints { make in
                 make.width.greaterThanOrEqualTo(isIPad ? 108 : 96)
             }
 
-            statusContainer.clipsToBounds = true
-            statusContainer.layer.cornerRadius = statusHeight / 2
-            statusLabel.backgroundColor = .clear
-            statusContainer.snp.makeConstraints { make in
-                make.top.equalToSuperview().offset(isIPad ? 8 : 6)
-                make.trailing.equalToSuperview()
-            }
+            // The visible badge is `statusContainer`; enforce the standard min
+            // height on IT (not on the inset label — that double-counted the
+            // padding and made this badge ~10pt taller than badges elsewhere).
             statusLabel.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8))
-                make.height.equalTo(statusHeight)
+                make.edges.equalToSuperview().inset(OrderStatusBadgeMetrics.contentInsets)
+            }
+            statusContainer.snp.makeConstraints { make in
+                make.height.greaterThanOrEqualTo(OrderStatusBadgeMetrics.minimumHeight)
             }
             statusLabel.layer.cornerRadius = 0
-            statusLabel.font = Utils.mediumFont(size: isIPad ? 10 : 9)
+            OrderStatusBadgeMetrics.applyBaseAppearance(to: statusLabel, isRegularWidth: isIPad)
 
             let separator = UIView()
             separator.tag = 9_901
@@ -277,7 +330,7 @@ class SaleCell: UITableViewCell {
                 make.height.equalTo(1 / UIScreen.main.scale)
             }
 
-            orderIdLabel.font = Utils.boldFont(size: isIPad ? 16 : 15)
+            orderIdLabel.font = Utils.regularFont(size: isIPad ? 16 : 15)
             orderIdLabel.textColor = .textPrimary
 
             nameLabel.font = Utils.regularFont(size: isIPad ? 13 : 12)
@@ -334,7 +387,7 @@ class SaleCell: UITableViewCell {
             statusLabel.snp.makeConstraints { make in
                 make.center.equalToSuperview()
                 make.width.equalToSuperview()
-                make.height.equalTo(26) // Match SaleDetailCell_Option5
+                make.height.greaterThanOrEqualTo(OrderStatusBadgeMetrics.minimumHeight)
             }
             
             // Set equal widths for date stack and info stack
@@ -360,24 +413,38 @@ class SaleCell: UITableViewCell {
     }
 
     private func setChartCustomerInfo(name: String?, phone: String?) {
-        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        chartCustomerName = name
+        chartCustomerPhone = phone
+        isChartPhoneRevealed = false
+        chartRevealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
         let phoneText = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        chartRevealButton.isHidden = phoneText.isEmpty
+        applyChartCustomerInfo()
+    }
+
+    /// Renders "name  •  phone" (phone masked unless revealed) — name medium/primary,
+    /// phone regular/secondary, matching SaleDetailCell_Option5.
+    private func applyChartCustomerInfo() {
+        let trimmed = chartCustomerName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let phoneText = chartCustomerPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let displayName = trimmed.isEmpty ? "N/A".localized() : trimmed
+        let isIPad = traitCollection.horizontalSizeClass == .regular
 
         let attributed = NSMutableAttributedString(
             string: displayName,
             attributes: [
-                .font: Utils.mediumFont(size: 15),
+                .font: Utils.mediumFont(size: isIPad ? 15 : 14),
                 .foregroundColor: UIColor.textPrimary
             ]
         )
 
         if !phoneText.isEmpty {
+            let displayPhone = isChartPhoneRevealed ? phoneText : phoneText.maskedPhoneNumber
             attributed.append(
                 NSAttributedString(
-                    string: "\n\(phoneText)",
+                    string: "  •  \(displayPhone)",
                     attributes: [
-                        .font: Utils.regularFont(size: 12),
+                        .font: Utils.regularFont(size: isIPad ? 14 : 13),
                         .foregroundColor: UIColor.textSecondary
                     ]
                 )
@@ -385,8 +452,14 @@ class SaleCell: UITableViewCell {
         }
 
         nameLabel.attributedText = attributed
-        nameLabel.numberOfLines = phoneText.isEmpty ? 1 : 2
+        nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
+    }
+
+    @objc private func toggleChartPhoneReveal() {
+        isChartPhoneRevealed.toggle()
+        chartRevealButton.setImage(UIImage.revealEye(revealed: isChartPhoneRevealed), for: .normal)
+        applyChartCustomerInfo()
     }
 
     private func chartRevenueTextColor(for amount: Double) -> UIColor {
@@ -399,10 +472,42 @@ class SaleCell: UITableViewCell {
         return .textPrimary
     }
 
-    /// Income amount stays right-aligned in the compact overview meta row.
-    private func setChartIncomeAlignment() {
-        bookDateLabel.textAlignment = .right
+    /// The amount in the today-orders / income list is the *revenue generated*
+    /// by the order (not the order value), so present it as "Revenue: <amount>"
+    /// — label muted, amount bold and coloured by sign.
+    private func setChartRevenue(_ amount: Double) {
+        let isIPad = traitCollection.horizontalSizeClass == .regular
+        let attributed = NSMutableAttributedString(
+            string: "Report_Summary_Revenue".localized() + ": ",
+            attributes: [
+                .font: Utils.regularFont(size: isIPad ? 13 : 12),
+                .foregroundColor: UIColor.textSecondary
+            ]
+        )
+        attributed.append(
+            NSAttributedString(
+                string: amount.formatStringInCommon(),
+                attributes: [
+                    .font: Utils.boldFont(size: isIPad ? 16 : 15),
+                    .foregroundColor: chartRevenueTextColor(for: amount)
+                ]
+            )
+        )
+        getDateLabel.attributedText = attributed
         getDateLabel.textAlignment = .right
+    }
+
+    /// Rent vs sale pill shown beside the order code in the chart/today-orders row.
+    private func setOrderTypeBadge(isRent: Bool) {
+        if isRent {
+            typeBadgeLabel.text = "Order_Type_Rent".localized()
+            typeBadgeLabel.textColor = .brandPrimary
+            typeBadgeContainer.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.12)
+        } else {
+            typeBadgeLabel.text = "Order_Type_Sale".localized()
+            typeBadgeLabel.textColor = .accentOrange
+            typeBadgeContainer.backgroundColor = UIColor.accentOrange.withAlphaComponent(0.15)
+        }
     }
     
     // MARK: - Public Methods
@@ -434,11 +539,9 @@ class SaleCell: UITableViewCell {
             
         case .chart:
             orderIdLabel.text = formattedOrderIdentifier(order.orderNumber)
+            setOrderTypeBadge(isRent: order.orderType == .rent)
             setChartCustomerInfo(name: order.customerName, phone: order.customerPhone)
-            bookDateLabel.text = order.createdAt.dateInString()
-            getDateLabel.text = order.totalAmount.formatStringInCommon()
-            getDateLabel.textColor = chartRevenueTextColor(for: order.totalAmount)
-            setChartIncomeAlignment()
+            setChartRevenue(order.totalAmount)
             setupStatus(for: order)
             
         case .order:
@@ -507,12 +610,12 @@ class SaleCell: UITableViewCell {
         
         // Status
         let statusString = order.status ?? ""
-        statusLabel.text = statusString.localizedStatus()
-        let status = OrderStatus.from(apiString: statusString)
-        applyStatusStyle(
-            fill: status?.badgeColor ?? .statusDraftFill,
-            text: status?.badgeTextColor ?? .statusDraftText
-        )
+        if let status = OrderStatus.from(apiString: statusString) {
+            status.applySolidBadge(to: statusLabel)
+        } else {
+            statusLabel.text = statusString.localizedStatus().uppercased()
+            applyStatusStyle(fill: .statusDraftFill, text: .statusBadgeLabelText)
+        }
     }
     
     
@@ -523,16 +626,10 @@ class SaleCell: UITableViewCell {
         switch layout {
         case .chart:
             orderIdLabel.text = formattedOrderIdentifier(dailyOrder.orderNumber)
+            setOrderTypeBadge(isRent: (dailyOrder.orderType ?? "").uppercased() == "RENT")
             setChartCustomerInfo(name: dailyOrder.customerName, phone: dailyOrder.customerPhone)
-            if let revenueDate = dailyOrder.revenueDate {
-                bookDateLabel.text = revenueDate.dateInString()
-            } else {
-                bookDateLabel.text = "N/A".localized()
-            }
             let revenueValue = dailyOrder.revenue ?? dailyOrder.totalAmount ?? 0.0
-            getDateLabel.text = revenueValue.formatStringInCommon()
-            getDateLabel.textColor = chartRevenueTextColor(for: revenueValue)
-            setChartIncomeAlignment()
+            setChartRevenue(revenueValue)
             setupStatus(for: dailyOrder)
         default:
             // For other layouts, use chart layout as default
@@ -543,11 +640,12 @@ class SaleCell: UITableViewCell {
     private func applyStatusStyle(fill: UIColor, text: UIColor) {
         statusLabel.textColor = text
         if activeLayout == .chart {
-            // Chip fill lives on the padded container so long labels get breathing room.
             statusContainer.backgroundColor = fill
             statusLabel.backgroundColor = .clear
+            statusContainer.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
         } else {
             statusLabel.backgroundColor = fill
+            statusLabel.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
             statusContainer.backgroundColor = .clear
         }
     }
@@ -558,18 +656,21 @@ class SaleCell: UITableViewCell {
             applyStatusStyle(fill: .clear, text: .textSecondary)
             return
         }
-        
-        statusLabel.text = statusString.localizedStatus()
+
         let status = OrderStatus.from(apiString: statusString)
+        statusLabel.text = status?.filterChipTitle ?? statusString.localizedStatus().uppercased()
         applyStatusStyle(
             fill: status?.badgeColor ?? .statusDraftFill,
-            text: status?.badgeTextColor ?? .statusDraftText
+            text: status?.badgeTextColor ?? .statusBadgeLabelText
         )
     }
-    
+
     private func setupStatus(for order: Order) {
-        statusLabel.text = order.status.inString()
-        applyStatusStyle(fill: order.status.badgeColor, text: order.status.badgeTextColor)
+        if activeLayout == .chart {
+            order.status.applySolidBadge(to: statusLabel, container: statusContainer)
+        } else {
+            order.status.applySolidBadge(to: statusLabel)
+        }
     }
     
 }

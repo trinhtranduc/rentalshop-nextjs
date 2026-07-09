@@ -159,6 +159,7 @@ class OverviewViewController: DemoBaseViewController {
         let sv = UIScrollView()
         sv.showsVerticalScrollIndicator = true
         sv.alwaysBounceVertical = true
+        sv.isDirectionalLockEnabled = true
         sv.isHidden = true
         return sv
     }()
@@ -360,25 +361,37 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     private func setupCharts() {
-        setup(barLineChartView: chartsSection.barChartView)
-        setup(barLineChartView: chartsSection.lineChartView)
-        configureOverviewChartInteraction(chartsSection.barChartView)
-        configureOverviewChartInteraction(chartsSection.lineChartView)
-        
-        chartsSection.barChartView.drawBarShadowEnabled = false
-        chartsSection.barChartView.drawValueAboveBarEnabled = true
-        chartsSection.barChartView.maxVisibleCount = 60
-        
-        configureXAxis(chartsSection.barChartView.xAxis)
-        configureXAxis(chartsSection.lineChartView.xAxis)
-        
-        let lineLeftAxis = chartsSection.lineChartView.leftAxis
-        lineLeftAxis.valueFormatter = MarketAxisValueFormatter() as? AxisValueFormatter
-        lineLeftAxis.axisMinimum = 0
-        lineLeftAxis.granularity = 2.0
-        lineLeftAxis.forceLabelsEnabled = true
-
+        let chart = chartsSection.revenueChartView
+        setup(barLineChartView: chart)
+        configureOverviewChartInteraction(chart)
+        configureRevenueChartStyle(chart)
+        configureXAxis(chart.xAxis)
         applyChartPanMode(for: selectedPeriod)
+    }
+
+    private func configureRevenueChartStyle(_ chartView: LineChartView) {
+        chartView.legend.enabled = false
+        chartView.drawGridBackgroundEnabled = false
+        chartView.setExtraOffsets(left: 4, top: 8, right: 12, bottom: 4)
+
+        let leftAxis = chartView.leftAxis
+        leftAxis.labelFont = .captionMedium(size: 11)
+        leftAxis.labelTextColor = .textTertiary
+        leftAxis.axisMinimum = 0
+        leftAxis.drawAxisLineEnabled = false
+        leftAxis.gridColor = UIColor.borderColor.withAlphaComponent(0.9)
+        leftAxis.gridLineDashLengths = [4, 4]
+        leftAxis.gridLineWidth = 0.8
+        leftAxis.spaceTop = 0.12
+
+        let xAxis = chartView.xAxis
+        xAxis.labelFont = .captionMedium(size: 11)
+        xAxis.labelTextColor = .textTertiary
+        xAxis.drawGridLinesEnabled = false
+        xAxis.drawAxisLineEnabled = false
+        xAxis.labelPosition = .bottom
+        xAxis.granularity = 1
+        xAxis.avoidFirstLastClippingEnabled = true
     }
 
     private func configureOverviewChartInteraction(_ chartView: BarLineChartViewBase) {
@@ -386,51 +399,54 @@ class OverviewViewController: DemoBaseViewController {
         chartView.setScaleEnabled(false)
         chartView.pinchZoomEnabled = false
         chartView.doubleTapToZoomEnabled = false
-        chartView.highlightPerDragEnabled = true
+        chartView.highlightPerTapEnabled = true
         chartView.dragDecelerationEnabled = true
+        chartView.dragDecelerationFrictionCoef = 0.92
     }
 
-    /// Year (and long day ranges) need horizontal pan so revenue bars stay readable.
-    /// Nested inside a vertical `UIScrollView`, so only X-drag is enabled.
+    /// Year (and long day ranges) need horizontal pan so revenue points stay readable.
+    /// Nested inside a vertical `UIScrollView`; DGCharts coordinates with the parent scroll view.
     private func applyChartPanMode(for period: ReportPeriod) {
         let allowHorizontalDrag = period == .thisYear || period == .last30Days || period == .last7Days
-        [chartsSection.barChartView, chartsSection.lineChartView].forEach { chart in
-            chart.dragEnabled = allowHorizontalDrag
-            chart.dragXEnabled = allowHorizontalDrag
-            chart.dragYEnabled = false
-        }
+        let chart = chartsSection.revenueChartView
+        chart.dragEnabled = allowHorizontalDrag
+        chart.dragXEnabled = allowHorizontalDrag
+        chart.dragYEnabled = false
+        // Highlight-on-drag fights horizontal pan when the chart is zoomed to a window.
+        chart.highlightPerDragEnabled = !allowHorizontalDrag
         chartsSection.setShowsHorizontalHint(allowHorizontalDrag)
+    }
+
+    private func chartVisibleWindowSize(for period: ReportPeriod, pointCount: Int) -> Double? {
+        guard pointCount > 1 else { return nil }
+        switch period {
+        case .thisYear:
+            return min(6, Double(pointCount))
+        case .last30Days:
+            return min(7, Double(pointCount))
+        case .last7Days:
+            return min(5, Double(pointCount))
+        case .today:
+            return nil
+        }
     }
 
     private func applyChartVisibleRangeIfNeeded() {
         let count = max(xValues.count, 1)
-        let visibleCount: Double
-        switch selectedPeriod {
-        case .thisYear:
-            // Show ~6 months at a time; user pans across the rest of the year.
-            visibleCount = min(6, Double(count))
-        case .last30Days:
-            visibleCount = min(10, Double(count))
-        case .last7Days:
-            visibleCount = Double(count) // all 7 fit; drag still ok if layout is tight
-        case .today:
+        guard let visibleCount = chartVisibleWindowSize(for: selectedPeriod, pointCount: count),
+              visibleCount > 0,
+              Double(count) > visibleCount else {
+            chartsSection.revenueChartView.fitScreen()
             return
         }
 
-        let bar = chartsSection.barChartView
-        let line = chartsSection.lineChartView
-        guard visibleCount > 0, Double(count) > visibleCount else {
-            bar.fitScreen()
-            line.fitScreen()
-            return
-        }
+        let chart = chartsSection.revenueChartView
+        chart.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
 
-        bar.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
-        line.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
-        // Start at the latest months/days (right edge) so current period is on screen first.
-        let latestX = Double(count - 1)
-        bar.moveViewToX(latestX)
-        line.moveViewToX(latestX)
+        // `moveViewToX` aligns the left edge — offset so the latest days/months stay in view.
+        let latestIndex = Double(count - 1)
+        let leftIndex = max(0, latestIndex - visibleCount + 1)
+        chart.moveViewToX(leftIndex)
     }
     
     private func configureXAxis(_ axis: XAxis) {
@@ -638,13 +654,25 @@ class OverviewViewController: DemoBaseViewController {
                 self.dailyIncomeOrders = response.days?.flatMap { $0.orders ?? [] } ?? []
                 self.overviewGrowthMetrics = nil
                 self.reloadList()
-                let referenceYear = self.years[self.yearSelectedIndex]
-                self.loadComparisonGrowth(for: .today, referenceDate: date, referenceYear: referenceYear) { growth in
-                    guard self.selectedPeriod == .today else { return }
-                    guard Calendar.current.isDate(self.todayDate, inSameDayAs: date) else { return }
-                    self.overviewGrowthMetrics = growth
-                    self.refreshOverviewGrowthPill()
-                }
+                self.loadTodayGrowthComparison(for: date)
+            }
+        }
+    }
+
+    /// Growth vs previous day — from `/api/analytics/period` (same duration logic as 7d/30d).
+    private func loadTodayGrowthComparison(for date: Date) {
+        AnalyticsAPIService.shared.loadAnalyticsPeriod(
+            startDate: date,
+            endDate: date,
+            groupBy: "day",
+            limit: 3
+        ) { [weak self] periodResponse, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard self.selectedPeriod == .today else { return }
+                guard Calendar.current.isDate(self.todayDate, inSameDayAs: date) else { return }
+                self.overviewGrowthMetrics = periodResponse?.growth
+                self.refreshOverviewGrowthPill()
             }
         }
     }
@@ -910,73 +938,52 @@ class OverviewViewController: DemoBaseViewController {
     // MARK: - Chart Updates
     override func updateChartData() {
         guard !shouldHideData && (selectedPeriod == .today || canViewChartAnalytics()) else {
-            chartsSection.barChartView.data = nil
-            chartsSection.lineChartView.data = nil
+            chartsSection.revenueChartView.data = nil
             return
         }
-        
-        setBarChartData()
-        setLineChartData()
+
+        setRevenueChartData()
     }
-    
-    private func setBarChartData() {
-        let realEntries = yRValues.enumerated().map { BarChartDataEntry(x: Double($0.offset), y: $0.element) }
-        let futureEntries = yEValues.enumerated().map { BarChartDataEntry(x: Double($0.offset), y: $0.element) }
-        
-        let realSet = BarChartDataSet(entries: realEntries, label: "Real income".localized().uppercased())
-        realSet.setColor(.actionWarning)
-        realSet.axisDependency = .left
-        realSet.drawValuesEnabled = false
-        
-        let futureSet = BarChartDataSet(entries: futureEntries, label: "Plan income".localized().uppercased())
-        futureSet.setColor(.neutralGray)
-        futureSet.axisDependency = .left
-        futureSet.drawValuesEnabled = false
-        
-        let data = BarChartData(dataSets: [realSet, futureSet])
-        data.barWidth = 0.45
-        data.setValueFont(.bodyRegular(size: 10))
-        data.groupBars(fromX: -0.5, groupSpace: 0.06, barSpace: 0.02)
-        
-        chartsSection.barChartView.data = data
-        chartsSection.barChartView.notifyDataSetChanged()
-        applyChartPanMode(for: selectedPeriod)
-        applyChartVisibleRangeIfNeeded()
-        chartsSection.barChartView.setNeedsDisplay()
-    }
-    
-    private func setLineChartData() {
-        let entries = yOValues.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
-        
-        let set = LineChartDataSet(entries: entries, label: "Order total".localized().uppercased())
+
+    private func setRevenueChartData() {
+        let entries = yRValues.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
+
+        let set = LineChartDataSet(entries: entries, label: "Revenue".localized())
         set.axisDependency = .left
-        set.valueFormatter = MarketAxisValueFormatter()
-        set.setColor(.accentOrange)
-        set.lineDashLengths = [5, 2.5]
-        set.highlightLineDashLengths = [5, 2.5]
-        set.setCircleColor(.accentOrange)
-        set.lineWidth = 2
-        set.circleRadius = 5
-        set.fillAlpha = 50 / 255
-        set.drawFilledEnabled = true
-        set.fillColor = .accentOrange
-        set.highlightColor = .actionDanger
+        set.setColor(.brandPrimary)
+        set.lineWidth = 2.5
+        set.circleRadius = 4
+        set.setCircleColor(.brandPrimary)
         set.drawCircleHoleEnabled = false
-        
+        set.drawValuesEnabled = false
+        set.mode = .linear
+        set.drawFilledEnabled = true
+        set.highlightColor = .brandPrimary
+        set.highlightLineWidth = 1.5
+
+        let topColor = UIColor.brandPrimary.withAlphaComponent(0.28).cgColor
+        let bottomColor = UIColor.brandPrimary.withAlphaComponent(0.02).cgColor
+        if let gradient = CGGradient(
+            colorsSpace: CGColorSpaceCreateDeviceRGB(),
+            colors: [topColor, bottomColor] as CFArray,
+            locations: [0.0, 1.0]
+        ) {
+            set.fill = LinearGradientFill(gradient: gradient, angle: 90)
+        } else {
+            set.fillColor = UIColor.brandPrimary.withAlphaComponent(0.12)
+        }
+
         let data = LineChartData(dataSet: set)
-        data.setValueTextColor(.textPrimary)
-        data.setValueFont(.bodyRegular(size: isIPad ? 14 : 12))
-        
-        chartsSection.lineChartView.data = data
-        chartsSection.lineChartView.notifyDataSetChanged()
+        let chart = chartsSection.revenueChartView
+        chart.data = data
+        chart.notifyDataSetChanged()
         applyChartPanMode(for: selectedPeriod)
         applyChartVisibleRangeIfNeeded()
-        chartsSection.lineChartView.setNeedsDisplay()
+        chart.setNeedsDisplay()
     }
-    
+
     private func clearChart() {
-        chartsSection.barChartView.data = nil
-        chartsSection.lineChartView.data = nil
+        chartsSection.revenueChartView.data = nil
         totalOrder = 0
         realIncome = 0
         averageDailyIncome = 0
@@ -1028,8 +1035,27 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func updateOrderTableHeight() {
+        guard selectedPeriod == .today else {
+            orderTableHeightConstraint?.update(offset: 1)
+            view.layoutIfNeeded()
+            return
+        }
+
+        let rowCount = orderTableView.numberOfRows(inSection: 0)
+        guard rowCount > 0 else {
+            orderTableHeightConstraint?.update(offset: 1)
+            view.layoutIfNeeded()
+            return
+        }
+
+        // The constraint may currently be collapsed to 1pt, which stops the
+        // self-sizing cells from laying out — reading contentSize there gives a
+        // wrong (shrunk) height. Give the table a generous height first so every
+        // cell lays out, then read the real contentSize.
+        orderTableHeightConstraint?.update(offset: CGFloat(rowCount) * max(orderTableView.estimatedRowHeight, 1))
         orderTableView.layoutIfNeeded()
-        let height = selectedPeriod == .today ? max(orderTableView.contentSize.height, 1) : 1
+
+        let height = max(orderTableView.contentSize.height, 1)
         orderTableHeightConstraint?.update(offset: height)
         view.layoutIfNeeded()
     }
@@ -1099,7 +1125,7 @@ class OverviewViewController: DemoBaseViewController {
         // Text + symbol only — no filled chip background (was too loud under Cash Strip).
         summaryCard.growthPillView.backgroundColor = .clear
         if primaryGrowth > 0 {
-            summaryCard.growthPillLabel.textColor = .brandPrimary
+            summaryCard.growthPillLabel.textColor = .actionSuccess
         } else if primaryGrowth < 0 {
             summaryCard.growthPillLabel.textColor = .actionDanger
         } else {
@@ -1108,93 +1134,6 @@ class OverviewViewController: DemoBaseViewController {
 
         summaryCard.growthPillLabel.text = segments.joined(separator: "  ") + "  " + "vs previous period".localized()
         summaryCard.growthPillView.isHidden = false
-    }
-
-    private func previousComparisonRange(for period: ReportPeriod, currentStart: Date, currentEnd: Date) -> (start: Date, end: Date) {
-        let calendar = Calendar.current
-
-        switch period {
-        case .today:
-            let previousStart = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: currentStart)) ?? currentStart
-            let previousEnd = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: previousStart) ?? previousStart
-            return (previousStart, previousEnd)
-
-        case .last7Days:
-            return (
-                calendar.date(byAdding: .day, value: -7, to: currentStart) ?? currentStart,
-                calendar.date(byAdding: .day, value: -7, to: currentEnd) ?? currentEnd
-            )
-
-        case .last30Days:
-            return (
-                calendar.date(byAdding: .day, value: -30, to: currentStart) ?? currentStart,
-                calendar.date(byAdding: .day, value: -30, to: currentEnd) ?? currentEnd
-            )
-
-        case .thisYear:
-            return (
-                calendar.date(byAdding: .year, value: -1, to: currentStart) ?? currentStart,
-                calendar.date(byAdding: .year, value: -1, to: currentEnd) ?? currentEnd
-            )
-        }
-    }
-
-    private func growthPercentage(current: Double, previous: Double) -> Double {
-        guard previous > 0 else { return 0 }
-        return ((current - previous) / previous * 100 * 100).rounded() / 100
-    }
-
-    private func buildGrowthMetrics(currentSummary: DailyIncomeSummary?, previousSummary: DailyIncomeSummary?) -> GrowthMetricsResponse? {
-        guard currentSummary != nil || previousSummary != nil else { return nil }
-
-        let currentOrders = currentSummary?.totalOrders ?? 0
-        let previousOrders = previousSummary?.totalOrders ?? 0
-        let currentRevenue = currentSummary?.totalRevenue ?? 0
-        let previousRevenue = previousSummary?.totalRevenue ?? 0
-
-        return GrowthMetricsResponse(
-            orders: GrowthMetricsValue(
-                current: currentOrders,
-                previous: previousOrders,
-                growth: growthPercentage(current: Double(currentOrders), previous: Double(previousOrders))
-            ),
-            revenue: GrowthMetricsRevenue(
-                current: currentRevenue,
-                previous: previousRevenue,
-                growth: growthPercentage(current: currentRevenue, previous: previousRevenue)
-            )
-        )
-    }
-
-    private func loadComparisonGrowth(
-        for period: ReportPeriod,
-        referenceDate: Date,
-        referenceYear: Int,
-        completion: @escaping (GrowthMetricsResponse?) -> Void
-    ) {
-        let currentRange = period.dateRange(todayDate: referenceDate, year: referenceYear)
-        let previousRange = previousComparisonRange(for: period, currentStart: currentRange.start, currentEnd: currentRange.end)
-
-        let group = DispatchGroup()
-        var currentSummary: DailyIncomeSummary?
-        var previousSummary: DailyIncomeSummary?
-
-        group.enter()
-        AnalyticsAPIService.shared.loadIncomeSummary(startDate: currentRange.start, endDate: currentRange.end) { data, _ in
-            currentSummary = data?.summary
-            group.leave()
-        }
-
-        group.enter()
-        AnalyticsAPIService.shared.loadIncomeSummary(startDate: previousRange.start, endDate: previousRange.end) { data, _ in
-            previousSummary = data?.summary
-            group.leave()
-        }
-
-        group.notify(queue: .main) { [weak self] in
-            guard self != nil else { return }
-            completion(self?.buildGrowthMetrics(currentSummary: currentSummary, previousSummary: previousSummary))
-        }
     }
 
     private func refreshOverviewSnapshotSection() {
@@ -1422,11 +1361,11 @@ private final class OverviewRankingListViewController: BaseViewControler {
 
     override func setupUI() {
         super.setupUI()
-        view.backgroundColor = .backgroundCard
+        view.backgroundColor = .backgroundPrimary
 
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
-        scrollView.backgroundColor = .backgroundCard
+        scrollView.backgroundColor = .backgroundPrimary
 
         loadingIndicator.color = .brandPrimary
         loadingIndicator.hidesWhenStopped = true
@@ -1438,23 +1377,23 @@ private final class OverviewRankingListViewController: BaseViewControler {
 
         let periodCard = UIView()
         periodCard.backgroundColor = .backgroundCard
-        periodCard.layer.cornerRadius = 12
+        periodCard.layer.cornerRadius = 10
         periodCard.layer.borderWidth = 1
-        periodCard.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.65).cgColor
+        periodCard.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.55).cgColor
         periodCard.addSubview(periodLabel)
         periodLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 9, left: 12, bottom: 9, right: 12))
         }
 
         rowsStackView.axis = .vertical
-        rowsStackView.spacing = 10
+        rowsStackView.spacing = 8
 
         guard let customNavBar = customNavBar else { return }
 
         view.addSubview(scrollView)
         view.addSubview(loadingIndicator)
         scrollView.addSubview(contentView)
-        contentView.backgroundColor = .backgroundCard
+        contentView.backgroundColor = .backgroundPrimary
         contentView.addSubview(periodCard)
         contentView.addSubview(rowsStackView)
 
@@ -1467,13 +1406,13 @@ private final class OverviewRankingListViewController: BaseViewControler {
             make.width.equalToSuperview()
         }
         periodCard.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
+            make.top.equalToSuperview().offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
         }
         rowsStackView.snp.makeConstraints { make in
-            make.top.equalTo(periodCard.snp.bottom).offset(14)
+            make.top.equalTo(periodCard.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-24)
+            make.bottom.equalToSuperview().offset(-20)
         }
         loadingIndicator.snp.makeConstraints { make in
             make.center.equalToSuperview()
@@ -1483,7 +1422,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
     private func setupNavigationBar() {
         setupCustomNavigationBar(
             title: mode.title,
-            statusBarBackgroundColor: .white,
+            statusBarBackgroundColor: .backgroundCard,
             titleCentered: true,
             hideBackButton: false,
             backAction: .pop
@@ -1494,17 +1433,22 @@ private final class OverviewRankingListViewController: BaseViewControler {
         loadingIndicator.startAnimating()
         rowsStackView.isHidden = true
 
-        switch mode {
-        case .products:
-            AnalyticsAPIService.shared.loadTopProducts(limit: 20, startDate: startDate, endDate: endDate) { [weak self] products, _ in
-                DispatchQueue.main.async {
-                    self?.renderProducts(products ?? [])
+        AnalyticsAPIService.shared.loadAnalyticsPeriod(
+            startDate: startDate,
+            endDate: endDate,
+            groupBy: nil,
+            limit: 20
+        ) { [weak self] response, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if let error = error, response == nil {
+                    print("Error loading ranking period report: \(error.localizedDescription)")
                 }
-            }
-        case .customers:
-            AnalyticsAPIService.shared.loadTopCustomers(limit: 20, startDate: startDate, endDate: endDate) { [weak self] customers, _ in
-                DispatchQueue.main.async {
-                    self?.renderCustomers(customers ?? [])
+                switch self.mode {
+                case .products:
+                    self.renderProducts(response?.topProducts ?? [])
+                case .customers:
+                    self.renderCustomers(response?.topCustomers ?? [])
                 }
             }
         }
@@ -1534,7 +1478,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
             )
         }
 
-        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText)
+        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText, emptyCornerRadius: 10)
     }
 
     private func renderCustomers(_ customers: [TopCustomer]) {
@@ -1566,7 +1510,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
             )
         }
 
-        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText)
+        OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText, emptyCornerRadius: 10)
     }
 }
 

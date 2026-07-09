@@ -8,669 +8,543 @@
 
 import Foundation
 import UIKit
-import RealmSwift
 
-class CalendarHeaderCell: UITableViewHeaderFooterView {
-    
-    // MARK: - UI Components
-    private lazy var containerStackView: UIStackView = {
+final class CalendarDateInfoView: UIView {
+    private let iconImageView = UIImageView()
+    private let titleLabel = UILabel()
+    private let valueLabel = UILabel()
+    private let textStackView = UIStackView()
+    private let rowStackView = UIStackView()
+
+    init(symbolName: String) {
+        super.init(frame: .zero)
+        iconImageView.image = UIImage(systemName: symbolName)?.withRenderingMode(.alwaysTemplate)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        iconImageView.setContentHuggingPriority(.required, for: .horizontal)
+
+        titleLabel.font = .captionMedium(size: 11)
+        titleLabel.textColor = .textSecondary
+        titleLabel.numberOfLines = 1
+
+        valueLabel.font = .bodyRegular(size: 13)
+        valueLabel.textColor = .textPrimary
+        valueLabel.numberOfLines = 2
+
+        textStackView.axis = .vertical
+        textStackView.spacing = 2
+        textStackView.alignment = .leading
+        textStackView.translatesAutoresizingMaskIntoConstraints = false
+        textStackView.addArrangedSubview(titleLabel)
+        textStackView.addArrangedSubview(valueLabel)
+
+        rowStackView.axis = .horizontal
+        rowStackView.spacing = 6
+        rowStackView.alignment = .top
+        rowStackView.translatesAutoresizingMaskIntoConstraints = false
+        rowStackView.addArrangedSubview(iconImageView)
+        rowStackView.addArrangedSubview(textStackView)
+
+        addSubview(rowStackView)
+
+        NSLayoutConstraint.activate([
+            rowStackView.topAnchor.constraint(equalTo: topAnchor),
+            rowStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            rowStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            rowStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            iconImageView.widthAnchor.constraint(equalToConstant: 14),
+            iconImageView.heightAnchor.constraint(equalToConstant: 14),
+            iconImageView.topAnchor.constraint(equalTo: rowStackView.topAnchor, constant: 1)
+        ])
+    }
+
+    func configure(title: String, value: String) {
+        titleLabel.text = title
+        valueLabel.text = value
+        iconImageView.tintColor = titleLabel.textColor
+    }
+}
+
+class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelegate {
+    private enum Metrics {
+        static let cardCornerRadius: CGFloat = 12
+        static let cardPadding: CGFloat = 10
+        static let cardHorizontalInset: CGFloat = 12
+        static let cardTopInset: CGFloat = 4
+    }
+
+    private lazy var cardView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        view.layer.cornerRadius = Metrics.cardCornerRadius
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.55).cgColor
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.03
+        view.layer.shadowRadius = 8
+        view.layer.shadowOffset = CGSize(width: 0, height: 3)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    private lazy var contentStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 12
+        stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
-    
-    private lazy var topRowStack: UIStackView = {
+
+    private lazy var topRowStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 8
-        stack.alignment = .center
+        stack.alignment = .top
+        stack.spacing = 10
         return stack
     }()
-    
-    private lazy var middleRowStack: UIStackView = {
+
+    private lazy var customerRowStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 8
         stack.alignment = .center
+        stack.spacing = 8
         return stack
     }()
-    
-    private lazy var bottomRowStack: UIStackView = {
+
+    private lazy var datesRowStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
+        stack.alignment = .top
+        stack.distribution = .fillEqually
         stack.spacing = 8
-        stack.alignment = .center
-        stack.distribution = .fill
         return stack
     }()
-    
+
     private lazy var orderNumberLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.mediumFont(size: 16) // Match AccountViewController text chính
+        // Match SaleViewController's order code style (SaleDetailCell_Option5):
+        // modest regular font, not a large bold title.
+        label.font = Utils.regularFont(size: 15)
+        label.textColor = .textPrimary
+        label.numberOfLines = 1
         return label
     }()
-    
-    private lazy var nameLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
+
+    private lazy var statusBadge: OrderStatusPillLabel = {
+        let label = OrderStatusPillLabel()
         return label
     }()
-    
-    private lazy var orderDateTitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Order date".localized()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .secondaryLabel
-        return label
-    }()
-    
-    private lazy var orderDateLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        label.textColor = .label
-        return label
-    }()
-    
-    private lazy var getDateTitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Pickup date".localized()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .secondaryLabel
-        return label
-    }()
-    
-    private lazy var getDateLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        label.textColor = .label
-        return label
-    }()
-    
-    private lazy var getTimeLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .secondaryLabel
-        return label
-    }()
-    
-    private lazy var returnDateTitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Return date".localized()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .secondaryLabel
-        return label
-    }()
-    
-    private lazy var returnDateLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        label.textColor = .label
-        return label
-    }()
-    
-    private lazy var returnTimeLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .secondaryLabel
-        return label
-    }()
-    
-    private lazy var noteLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        label.textColor = .systemGray
-        label.numberOfLines = 0
-        return label
-    }()
-    
-    private lazy var statusBadge: UILabel = {
-        let label = UILabel()
-        label.font = Utils.mediumFont(size: 11)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.layer.cornerRadius = 12
-        label.clipsToBounds = true
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        return label
-    }()
-    
-    private lazy var _preparedButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setImage(UIImage(systemName: "square"), for: .normal)
-        button.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
-        button.tintColor = APP_TONE_COLOR
-        button.contentMode = .scaleAspectFit
-        button.imageView?.contentMode = .scaleAspectFit
-        
-        button.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        
-        button.addTarget(self, action: #selector(preparedButtonTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    // Expose preparedButton for external access (e.g., to revert state on error)
-    var preparedButton: UIButton {
-        return _preparedButton
-    }
-    
-    private lazy var phoneButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.titleLabel?.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        button.setTitleColor(.label, for: .normal)
-        button.addTarget(self, action: #selector(phoneButtonTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    // Add expand button
+
     private lazy var expandButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.down"), for: .normal)
-        button.tintColor = .systemGray
+        button.tintColor = .textSecondary
+        button.backgroundColor = .backgroundPrimary
+        button.layer.cornerRadius = 12
         button.addTarget(self, action: #selector(expandButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 28),
+            button.heightAnchor.constraint(equalToConstant: 28)
+        ])
         return button
     }()
 
-    // Add expand indicator view
-    private lazy var expandIndicatorView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Add expand icon only
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
-        imageView.tintColor = .label
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(imageView)
-        
-        NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 16),
-            imageView.heightAnchor.constraint(equalToConstant: 16)
-        ])
-        
-        return view
+    private lazy var customerNameLabel: UILabel = {
+        let label = UILabel()
+        // Match SaleViewController's customer name style: medium weight, primary
+        // color (phone stays a tappable brand-coloured button alongside it).
+        label.font = Utils.mediumFont(size: 16)
+        label.textColor = .textPrimary
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
     }()
-    
-    // MARK: - Properties
+
+    private lazy var dotLabel: UILabel = {
+        let label = UILabel()
+        label.text = "•"
+        label.font = .bodyRegular(size: 14)
+        label.textColor = .textSecondary
+        return label
+    }()
+
+    private lazy var phoneLabel: UILabel = {
+        let label = UILabel()
+        label.font = .bodyRegular(size: 15)
+        label.textColor = .textSecondary // gray, non-tappable — same as the sale order cell
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private lazy var phoneRevealButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage.revealEye(revealed: false), for: .normal)
+        button.tintColor = .textSecondary
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addTarget(self, action: #selector(togglePhoneReveal), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 24),
+            button.heightAnchor.constraint(equalToConstant: 24)
+        ])
+        return button
+    }()
+
+    private var isCalendarPhoneRevealed = false
+    private var customerPhoneRaw: String?
+
+    lazy var preparedButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.setImage(UIImage(systemName: "square"), for: .normal)
+        button.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
+        button.tintColor = .brandPrimary
+        button.addTarget(self, action: #selector(preparedButtonTapped), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 22),
+            button.heightAnchor.constraint(equalToConstant: 22)
+        ])
+        return button
+    }()
+
+    private lazy var readyToDeliverLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Ready Deliver".localized()
+        label.font = .bodyMedium(size: 14)
+        label.textColor = .brandPrimary
+        return label
+    }()
+
+    private lazy var preparedStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [preparedButton, readyToDeliverLabel])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
+    }()
+
+    private lazy var orderDateInfoView = CalendarDateInfoView(symbolName: "calendar.badge.clock")
+    private lazy var pickupDateInfoView = CalendarDateInfoView(symbolName: "arrow.up.circle")
+    private lazy var returnDateInfoView = CalendarDateInfoView(symbolName: "arrow.down.circle")
+
     var onExpandTapped: (() -> Void)?
-    var onReadyToDeliverTapped: ((Bool, Int) -> Void)? // isReady, orderId
+    var onReadyToDeliverTapped: ((Bool, Int) -> Void)?
+
     private var order: Order?
     private var calendarOrder: CalendarOrder?
-    private var isExpanded: Bool = false
-    
-    // MARK: - Initialization
+    private var isExpanded = false
+    private var showsProductRows = false
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupUI()
     }
-    
+
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
         setupUI()
     }
-    
-    // MARK: - Setup
+
     private func setupUI() {
-        contentView.backgroundColor = .white
-        
-        // Add subviews
-        contentView.addSubview(containerStackView)
-        contentView.addSubview(expandIndicatorView)
-        
-        // Setup stacks with proper spacing and alignment
-        containerStackView.spacing = 12
-        containerStackView.addArrangedSubview(topRowStack)
-        containerStackView.addArrangedSubview(middleRowStack)
-        containerStackView.addArrangedSubview(bottomRowStack)
-        
-        // Top row setup
-        topRowStack.spacing = 8
-        topRowStack.alignment = .center
-        topRowStack.distribution = .fill
-        
-        let readyToDeliverLabel = UILabel()
-        readyToDeliverLabel.text = "Ready Deliver".localized()
-        readyToDeliverLabel.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
-        readyToDeliverLabel.textColor = APP_TONE_COLOR
-        
-        // Icon bên trái, text bên phải
-        let preparedStack = UIStackView(arrangedSubviews: [preparedButton, readyToDeliverLabel])
-        preparedStack.axis = .horizontal
-        preparedStack.spacing = 8
-        preparedStack.alignment = .center
-        
-        // Add fixed width for preparedStack
-        preparedStack.widthAnchor.constraint(equalToConstant: 140).isActive = true
-        
-        // Customer name and phone stack (will be moved to bottom row)
-        let customerStack = UIStackView(arrangedSubviews: [nameLabel, phoneButton])
-        customerStack.axis = .horizontal
-        customerStack.spacing = 8
-        customerStack.alignment = .center
-        customerStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        
-        // Top row: Order number | Empty spacer | Status badge (right-center)
-        let spacerLabel = UILabel()
-        spacerLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        spacerLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        
-        topRowStack.addArrangedSubview(orderNumberLabel)
-        topRowStack.addArrangedSubview(spacerLabel)
-        topRowStack.addArrangedSubview(statusBadge)
-        
-        // Middle row setup with dates (Order date, Pickup date, Return date)
-        middleRowStack.spacing = 16
-        middleRowStack.alignment = .center
-        
-        let orderDateStack = UIStackView()
-        orderDateStack.axis = .vertical
-        orderDateStack.spacing = 4
-        orderDateStack.alignment = .leading
-        orderDateStack.addArrangedSubview(orderDateTitleLabel)
-        orderDateStack.addArrangedSubview(orderDateLabel)
-        
-        let pickupStack = UIStackView()
-        pickupStack.axis = .vertical
-        pickupStack.spacing = 4
-        pickupStack.alignment = .leading
-        pickupStack.addArrangedSubview(getDateTitleLabel)
-        pickupStack.addArrangedSubview(getDateLabel)
-        
-        let returnStack = UIStackView()
-        returnStack.axis = .vertical
-        returnStack.spacing = 4
-        returnStack.alignment = .leading
-        returnStack.addArrangedSubview(returnDateTitleLabel)
-        returnStack.addArrangedSubview(returnDateLabel)
-        
-        let datesStack = UIStackView(arrangedSubviews: [orderDateStack, pickupStack, returnStack])
-        datesStack.axis = .horizontal
-        datesStack.spacing = 16
-        datesStack.distribution = .fillEqually
-        
-        middleRowStack.addArrangedSubview(datesStack)
-        
-        // Bottom row with customer name, phone, and ready deliver (right)
-        bottomRowStack.addArrangedSubview(customerStack)
-        bottomRowStack.addArrangedSubview(preparedStack)
-        
-        // Determine status badge width based on device type
-        let isIPad = traitCollection.horizontalSizeClass == .regular
-        let statusBadgeWidth: CGFloat = isIPad ? 100 : 85
-        
+        backgroundView = UIView()
+        backgroundView?.backgroundColor = .clear
+        contentView.backgroundColor = .clear
+
+        contentView.addSubview(cardView)
+        cardView.addSubview(contentStackView)
+
+        contentStackView.addArrangedSubview(topRowStackView)
+        contentStackView.addArrangedSubview(customerRowStackView)
+        contentStackView.addArrangedSubview(datesRowStackView)
+
+        let topSpacer = UIView()
+        topSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        topSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let topTrailingStackView = UIStackView(arrangedSubviews: [statusBadge, expandButton])
+        topTrailingStackView.axis = .horizontal
+        topTrailingStackView.alignment = .center
+        topTrailingStackView.spacing = 8
+        topTrailingStackView.setContentHuggingPriority(.required, for: .horizontal)
+
+        topRowStackView.addArrangedSubview(orderNumberLabel)
+        topRowStackView.addArrangedSubview(topSpacer)
+        topRowStackView.addArrangedSubview(topTrailingStackView)
+
+        // Customer name • phone on the left, the "Ready to deliver" control pinned
+        // to the right — all on the same line.
+        let customerSpacer = UIView()
+        customerSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        customerSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        preparedStackView.setContentHuggingPriority(.required, for: .horizontal)
+        preparedStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        customerRowStackView.addArrangedSubview(customerNameLabel)
+        customerRowStackView.addArrangedSubview(dotLabel)
+        customerRowStackView.addArrangedSubview(phoneLabel)
+        customerRowStackView.addArrangedSubview(phoneRevealButton)
+        customerRowStackView.addArrangedSubview(customerSpacer)
+        customerRowStackView.addArrangedSubview(preparedStackView)
+
+        datesRowStackView.addArrangedSubview(orderDateInfoView)
+        datesRowStackView.addArrangedSubview(pickupDateInfoView)
+        datesRowStackView.addArrangedSubview(returnDateInfoView)
+
         NSLayoutConstraint.activate([
-            // Container constraints
-            containerStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            containerStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            containerStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            
-            // Fixed widths
-            orderNumberLabel.widthAnchor.constraint(equalToConstant: 80),
-            statusBadge.widthAnchor.constraint(equalToConstant: statusBadgeWidth),
-            statusBadge.heightAnchor.constraint(equalToConstant: 26),
-            preparedButton.widthAnchor.constraint(equalToConstant: 24),
-            preparedButton.heightAnchor.constraint(equalToConstant: 24),
-            
-            // Ensure dates stack takes proper width
-            datesStack.widthAnchor.constraint(greaterThanOrEqualTo: containerStackView.widthAnchor, multiplier: 0.6),
-            
-            // Expand indicator - align with container content
-            expandIndicatorView.topAnchor.constraint(equalTo: containerStackView.bottomAnchor, constant: 8),
-            expandIndicatorView.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
-            expandIndicatorView.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
-            expandIndicatorView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
-            expandIndicatorView.heightAnchor.constraint(equalToConstant: 28)
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Metrics.cardTopInset),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Metrics.cardHorizontalInset),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Metrics.cardHorizontalInset),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
+            contentStackView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Metrics.cardPadding),
+            contentStackView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Metrics.cardPadding),
+            contentStackView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Metrics.cardPadding),
+            contentStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -Metrics.cardPadding)
         ])
-        
-        // Set content hugging and compression resistance priorities for auto height
-        containerStackView.setContentHuggingPriority(.required, for: .vertical)
-        containerStackView.setContentCompressionResistancePriority(.required, for: .vertical)
-        
-        // Content priorities
-        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        phoneButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-        customerStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        preparedStack.setContentHuggingPriority(.required, for: .horizontal)
-        preparedStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-        statusBadge.setContentHuggingPriority(.required, for: .horizontal)
-        statusBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
-        
-        // Visual styling
-        contentView.layer.shadowColor = UIColor.black.cgColor
-        contentView.layer.shadowOffset = CGSize(width: 0, height: 1)
-        contentView.layer.shadowRadius = 2
-        contentView.layer.shadowOpacity = 0.1
-        
-        // Add tap gesture
+
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(headerTapped))
-        contentView.addGestureRecognizer(tapGesture)
+        tapGesture.delegate = self
+        cardView.addGestureRecognizer(tapGesture)
     }
-    
-    // MARK: - Public Methods
-    func bind(calendarOrder: CalendarOrder, isExpanded: Bool = false) {
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !(touch.view is UIControl)
+    }
+
+    func bind(calendarOrder: CalendarOrder, isExpanded: Bool = false, showsProductRows: Bool = true) {
         self.calendarOrder = calendarOrder
+        self.order = nil
         self.isExpanded = isExpanded
-        
-        // Update UI with CalendarOrder data
-        orderNumberLabel.text = "#\(calendarOrder.orderNumber ?? "N/A")"
-        nameLabel.text = calendarOrder.customerName ?? "N/A"
-        phoneButton.setTitle(calendarOrder.customerPhone ?? "N/A", for: .normal)
-        
-        // Order date - use createdAt if available (with time)
-        if let createdAt = calendarOrder.createdAt {
-            let dateFormatter = ISO8601DateFormatter()
-            dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-            
-            if let createdDate = dateFormatter.date(from: createdAt) {
-                // Use dateTimeInString() to display with time: "dd/MM/yy HH:mm"
-                orderDateLabel.text = createdDate.dateTimeInString() ?? "N/A"
-            } else {
-                // Try alternative format without fractional seconds
-                dateFormatter.formatOptions = [.withInternetDateTime]
-                if let createdDate = dateFormatter.date(from: createdAt) {
-                    orderDateLabel.text = createdDate.dateTimeInString() ?? "N/A"
-                } else {
-                    // Try standard DateFormatter as fallback
-                    let fallbackFormatter = DateFormatter()
-                    fallbackFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-                    fallbackFormatter.timeZone = TimeZone(abbreviation: "UTC")
-                    if let createdDate = fallbackFormatter.date(from: createdAt) {
-                        orderDateLabel.text = createdDate.dateTimeInString() ?? "N/A"
-                } else {
-                    orderDateLabel.text = "N/A"
-                    }
-                }
-            }
-        } else {
-            orderDateLabel.text = "N/A"
-        }
-        
-        // Get status for use throughout the method
-        let status = calendarOrder.status?.uppercased() ?? ""
-        
-        // Set prepared button state from isReadyToDeliver field
-        // If isReadyToDeliver is not available from API, default to false
-        // (We can't infer ready to deliver status from order status alone)
-        if let isReadyToDeliver = calendarOrder.isReadyToDeliver {
-            preparedButton.isSelected = isReadyToDeliver
-        } else {
-            // Default to false if API doesn't provide isReadyToDeliver
-            // This ensures consistency - if API doesn't return the field, we assume it's not ready
-            preparedButton.isSelected = false
-        }
-        
-        // Setup status badge
-        setupStatusBadge(statusString: calendarOrder.status, orderType: .rent) // Calendar orders are typically rent orders
-        
-        // Hide note label (item count removed)
-        noteLabel.text = nil
-        
-        // Show "ready to deliver" section based on status
-        let shouldShowPrepared = (status == "RESERVED" || status == "PENDING")
-        for subview in topRowStack.arrangedSubviews {
-            if let stack = subview as? UIStackView, stack.arrangedSubviews.contains(preparedButton) {
-                stack.isHidden = !shouldShowPrepared
-                break
-            }
-        }
-        
-        // Update dates from API strings
-        if let pickupPlanAt = calendarOrder.pickupPlanAt {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-            
-            if let pickupDate = dateFormatter.date(from: pickupPlanAt) {
-                let displayFormatter = DateFormatter()
-                displayFormatter.dateFormat = "dd/MM/yy"
-                getDateLabel.text = displayFormatter.string(from: pickupDate)
-            } else {
-                getDateLabel.text = "INVALID_DATE".localized()
-            }
-        } else {
-            getDateLabel.text = "N/A"
-        }
-        
-        if let returnPlanAt = calendarOrder.returnPlanAt {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-            
-            if let returnDate = dateFormatter.date(from: returnPlanAt) {
-                let displayFormatter = DateFormatter()
-                displayFormatter.dateFormat = "dd/MM/yy"
-                returnDateLabel.text = displayFormatter.string(from: returnDate)
-            } else {
-                returnDateLabel.text = "INVALID_DATE".localized()
-            }
-        } else {
-            returnDateLabel.text = "N/A"
-        }
-        
-        // Update expand indicator - only rotate, don't hide
-        UIView.animate(withDuration: 0.3) {
-            if let chevron = self.expandIndicatorView.subviews.first as? UIImageView {
-                chevron.transform = isExpanded ? 
-                    CGAffineTransform(rotationAngle: .pi) : 
-                    .identity
-            }
-        }
+        self.showsProductRows = showsProductRows
+
+        orderNumberLabel.text = formattedOrderIdentifier(calendarOrder.orderNumber)
+        customerNameLabel.text = calendarOrder.customerName ?? "N/A"
+        configurePhone(calendarOrder.customerPhone)
+        preparedButton.isSelected = calendarOrder.isReadyToDeliver ?? false
+
+        setupStatusBadge(statusString: calendarOrder.status, orderType: .rent)
+
+        let orderDate = parseCalendarDate(calendarOrder.createdAt)
+        let pickupDate = parseCalendarDate(calendarOrder.pickupPlanAt)
+        let returnDate = parseCalendarDate(calendarOrder.returnPlanAt)
+
+        orderDateInfoView.configure(
+            title: "Order date".localized(),
+            value: formattedDate(orderDate, includeTime: true)
+        )
+        pickupDateInfoView.configure(
+            title: "Pickup date".localized(),
+            value: formattedDate(pickupDate)
+        )
+        returnDateInfoView.configure(
+            title: "Return date".localized(),
+            value: formattedDate(returnDate)
+        )
+
+        let statusString = calendarOrder.status?.uppercased() ?? ""
+        preparedStackView.isHidden = !(statusString == "RESERVED" || statusString == "PENDING" || statusString == "DRAFT")
+
+        applyCardShape()
+        updateExpandState(animated: false)
     }
-    
-    // MARK: - Legacy Support
-    func bind(order: Order, isExpanded: Bool = false) {
+
+    func bind(order: Order, isExpanded: Bool = false, showsProductRows: Bool = true) {
         self.order = order
+        self.calendarOrder = nil
         self.isExpanded = isExpanded
-        
-        // Update UI
-        orderNumberLabel.text = order.orderNumber
-        nameLabel.text = order.customerName
-        phoneButton.setTitle(order.customerPhone, for: .normal)
+        self.showsProductRows = showsProductRows
+
+        orderNumberLabel.text = formattedOrderIdentifier(order.orderNumber)
+        customerNameLabel.text = order.customerName
+        configurePhone(order.customerPhone)
         preparedButton.isSelected = order.isReadyToDeliver
-        
-        // Setup status badge
+
         setupStatusBadge(status: order.status, orderType: order.orderType)
-        
-        // Hide note label (item count removed)
-        noteLabel.text = nil
-        
-        // Update order date (createdAt)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd/MM/yy"
-        orderDateLabel.text = dateFormatter.string(from: order.createdAt)
-        
-        // Hide "ready to deliver" section for sale orders
-        if order.orderType == .sale {
-            // Find the preparedStack in topRowStack and hide it
-            for subview in topRowStack.arrangedSubviews {
-                if let stack = subview as? UIStackView, stack.arrangedSubviews.contains(preparedButton) {
-                    stack.isHidden = true
-                    break
-                }
-            }
-        } else {
-            // Show "ready to deliver" section for rent orders
-            for subview in topRowStack.arrangedSubviews {
-                if let stack = subview as? UIStackView, stack.arrangedSubviews.contains(preparedButton) {
-                    stack.isHidden = false
-                    break
-                }
-            }
-        }
-        
-        // Update dates (date only)
-        if let pickupDate = order.pickupDate {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "dd/MM/yy"
-            getDateLabel.text = dateFormatter.string(from: pickupDate)
-        }
-        
-        if let returnDate = order.returnDate {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "dd/MM/yy"
-            returnDateLabel.text = dateFormatter.string(from: returnDate)
-        }
-        
-        // Update expand indicator - only rotate, don't hide
-        UIView.animate(withDuration: 0.3) {
-            if let chevron = self.expandIndicatorView.subviews.first as? UIImageView {
-                chevron.transform = isExpanded ? 
-                    CGAffineTransform(rotationAngle: .pi) : 
-                    .identity
-            }
-        }
+        orderDateInfoView.configure(
+            title: "Order date".localized(),
+            value: order.createdAt.dateTimeInString() ?? "N/A"
+        )
+        pickupDateInfoView.configure(
+            title: "Pickup date".localized(),
+            value: formattedDate(order.pickupDate)
+        )
+        returnDateInfoView.configure(
+            title: "Return date".localized(),
+            value: formattedDate(order.returnDate)
+        )
+
+        preparedStackView.isHidden = order.orderType == .sale
+
+        applyCardShape()
+        updateExpandState(animated: false)
     }
-    
-    // MARK: - Actions
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        order = nil
+        calendarOrder = nil
+        onExpandTapped = nil
+        onReadyToDeliverTapped = nil
+        preparedButton.isSelected = false
+        isCalendarPhoneRevealed = false
+        customerPhoneRaw = nil
+        phoneRevealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
+    }
+
+    /// Configures the phone display: masked by default, tappable-to-call button
+    /// title plus an eye toggle. Hides the phone/dot/eye when there's no number.
+    private func configurePhone(_ phone: String?) {
+        customerPhoneRaw = phone
+        isCalendarPhoneRevealed = false
+        phoneRevealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
+        let isEmpty = (phone ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        dotLabel.isHidden = isEmpty
+        phoneLabel.isHidden = isEmpty
+        phoneRevealButton.isHidden = isEmpty
+        updatePhoneLabel()
+    }
+
+    private func updatePhoneLabel() {
+        let phone = (customerPhoneRaw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        phoneLabel.text = isCalendarPhoneRevealed ? phone : phone.maskedPhoneNumber
+    }
+
+    @objc private func togglePhoneReveal() {
+        isCalendarPhoneRevealed.toggle()
+        phoneRevealButton.setImage(UIImage.revealEye(revealed: isCalendarPhoneRevealed), for: .normal)
+        updatePhoneLabel()
+    }
+
     @objc private func preparedButtonTapped() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
-        
-        // Toggle button state optimistically
+
         let newState = !preparedButton.isSelected
         preparedButton.isSelected = newState
-        
-        // Get order ID and call delegate
+
         var orderId: Int?
         var isRentOrder = false
-        
+
         if let order = order {
             orderId = order.id
             isRentOrder = order.orderType == .rent
         } else if let calendarOrder = calendarOrder {
-            // CalendarOrder uses 'id' not 'orderId'
             orderId = calendarOrder.id
-            // Calendar typically only shows rent orders, but check status to be safe
-            // Only allow update for RESERVED or PENDING status (rent orders)
             let status = calendarOrder.status?.uppercased() ?? ""
             isRentOrder = (status == "RESERVED" || status == "PENDING" || status == "DRAFT")
         }
-        
-        // Only proceed if it's a rent order and we have an order ID
+
         if let orderId = orderId, orderId > 0, isRentOrder {
-            // Call delegate to handle API update
             onReadyToDeliverTapped?(newState, orderId)
         } else {
-            // Revert button state if conditions not met
             preparedButton.isSelected = !newState
         }
     }
-    
-    @objc private func phoneButtonTapped() {
-        let phone: String?
-        
-        if let order = order {
-            phone = order.customerPhone
-        } else if let pickupItem = calendarOrder {
-            phone = pickupItem.customerPhone
-        } else {
-            phone = nil
-        }
-        
-        if let phone = phone, !phone.isEmpty {
-            let phoneNumber = "tel://\(phone)"
-            if let url = URL(string: phoneNumber), !url.absoluteString.isEmpty {
-                UIApplication.shared.open(url, options: [:], completionHandler: nil)
-            }
-        }
-    }
-    
+
     @objc private func expandButtonTapped() {
-        toggleExpand()
+        requestExpandToggle()
     }
-    
+
     @objc private func headerTapped() {
-        toggleExpand()
+        requestExpandToggle()
     }
-    
-    private func toggleExpand() {
-        isExpanded.toggle()
-        
-        // Only rotate chevron, don't change alpha
-        UIView.animate(withDuration: 0.3) {
-            if let chevron = self.expandIndicatorView.subviews.first as? UIImageView {
-                chevron.transform = self.isExpanded ? 
-                    CGAffineTransform(rotationAngle: .pi) : 
-                    .identity
-            }
-        }
-        
+
+    private func requestExpandToggle() {
+        guard showsProductRows else { return }
         onExpandTapped?()
     }
-    
-    // MARK: - Status Badge
-    private func formatStatusText(_ status: OrderStatus) -> String {
-        switch status {
-        case .draft:
-            return "Draft".localized().uppercased()
-        case .reserved:
-            return "Reserved".localized().uppercased()
-        case .pickuped:
-            return "Picked Up".localized().uppercased()
-        case .returned:
-            return "Returned".localized().uppercased()
-        case .completed:
-            return "Completed".localized().uppercased()
-        case .cancelled:
-            return "Cancelled".localized().uppercased()
+
+    private func applyCardShape() {
+        let radius = Metrics.cardCornerRadius
+        if isExpanded && showsProductRows {
+            cardView.layer.cornerRadius = radius
+            cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        } else {
+            cardView.layer.cornerRadius = radius
+            cardView.layer.maskedCorners = [
+                .layerMinXMinYCorner,
+                .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner,
+                .layerMaxXMaxYCorner
+            ]
         }
     }
-    
-    private func formatStatusText(from statusString: String) -> String {
-        let upperStatus = statusString.uppercased()
-        switch upperStatus {
-        case "DRAFT":
-            return "Draft".localized().uppercased()
-        case "RESERVED":
-            return "Reserved".localized().uppercased()
-        case "PICKUPED", "PICKED_UP":
-            return "Picked Up".localized().uppercased()
-        case "RETURNED":
-            return "Returned".localized().uppercased()
-        case "COMPLETED":
-            return "Completed".localized().uppercased()
-        case "CANCELLED":
-            return "Cancelled".localized().uppercased()
-        default:
-            return statusString.localizedStatus().uppercased()
+
+    func updateExpandState(animated: Bool) {
+        let transform = (isExpanded && showsProductRows) ? CGAffineTransform(rotationAngle: .pi) : .identity
+        let updates = {
+            self.expandButton.transform = transform
         }
+
+        if animated {
+            UIView.animate(withDuration: 0.24, animations: updates)
+        } else {
+            updates()
+        }
+
+        expandButton.isHidden = !showsProductRows
     }
-    
+
+    /// Same format as SaleViewController (SaleDetailCell_Option5): trim, and only
+    /// prepend "#" when it isn't already present so codes don't end up as "##123".
+    private func formattedOrderIdentifier(_ rawValue: String?) -> String {
+        let trimmed = (rawValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "#N/A".localized() }
+        return trimmed.hasPrefix("#") ? trimmed : "#\(trimmed)"
+    }
+
+    private func parseCalendarDate(_ rawValue: String?) -> Date? {
+        guard let rawValue, !rawValue.isEmpty else { return nil }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.timeZone = TimeZone(abbreviation: "UTC")
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = isoFormatter.date(from: rawValue) {
+            return date
+        }
+
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: rawValue) {
+            return date
+        }
+
+        let fallbackFormatter = DateFormatter()
+        fallbackFormatter.locale = Locale(identifier: "en_US_POSIX")
+        fallbackFormatter.timeZone = TimeZone(abbreviation: "UTC")
+        fallbackFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        return fallbackFormatter.date(from: rawValue)
+    }
+
+    private func formattedDate(_ date: Date?, includeTime: Bool = false) -> String {
+        guard let date else { return "N/A" }
+        if includeTime {
+            return date.dateTimeInString() ?? "N/A"
+        }
+        return date.dateInString() ?? "N/A"
+    }
+
     private func setupStatusBadge(status: OrderStatus, orderType: OrderType) {
-        statusBadge.text = formatStatusText(status)
-        statusBadge.backgroundColor = status.badgeColor
-        statusBadge.textColor = status.badgeTextColor
+        statusBadge.apply(status: status)
     }
 
     private func setupStatusBadge(statusString: String?, orderType: OrderType) {
-        guard let statusString = statusString else {
-            statusBadge.text = ""
-            statusBadge.backgroundColor = .clear
+        guard let statusString, let status = OrderStatus.from(apiString: statusString) else {
+            statusBadge.clearBadge()
             return
         }
-
-        statusBadge.text = formatStatusText(from: statusString)
-        let status = OrderStatus.from(apiString: statusString)
-        statusBadge.backgroundColor = status?.badgeColor ?? .statusDraftFill
-        statusBadge.textColor = status?.badgeTextColor ?? .statusDraftText
-    }
-}
-
-// MARK: - Helper Extension
-extension UIView {
-    func findViewController() -> UIViewController? {
-        if let nextResponder = self.next as? UIViewController {
-            return nextResponder
-        } else if let nextResponder = self.next as? UIView {
-            return nextResponder.findViewController()
-        } else {
-            return nil
-        }
+        statusBadge.apply(status: status)
     }
 }

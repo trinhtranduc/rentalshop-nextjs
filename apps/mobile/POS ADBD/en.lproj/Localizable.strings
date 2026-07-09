@@ -622,6 +622,9 @@
 "CSV (.csv)" = "CSV (.csv)";
 "Products" = "Products";
 "Orders" = "Orders";
+"orders" = "orders";
+"Order_Type_Rent" = "Rent";
+"Order_Type_Sale" = "Sale";
 "Customers" = "Customers";
 "Export" = "Export";
 "Please select an export type" = "Please select an export type";
@@ -697,12 +700,14 @@
 "Report_Summary_Orders" = "Orders";
 "Report_Summary_DepositHeld" = "Deposit held";
 "Report_Summary_DepositDue" = "Deposit due";
+"Report_Summary_Reserved" = "New rentals";
 "Report_Summary_AveragePerDay" = "Avg/day";
 "Report_Summary_Change" = "Change";
 "Overview_Orders_Count" = "orders";
 "Collateral (received)_Short" = "Deposit held";
 "Collateral (return)_Short" = "Deposit due";
 "Operational Snapshot" = "Operational Snapshot";
+"Status and deposit flow for this period" = "Status and deposit flow for this period";
 "Orders by status for this period" = "Orders by status for this period";
 "In Progress" = "In Progress";
 "Top Products" = "Top Products";
@@ -1109,10 +1114,16 @@
 "Oldest First" = "Oldest First";
 "Status Filter" = "Status Filter";
 "Filter & Sort" = "Filter & Sort";
+"Order Filter" = "Order Filter";
+"Apply" = "Apply";
+"Reset Filter" = "Reset";
 "Clear" = "Clear";
 
+// MARK: - Order Status (badges & filters)
+"All" = "All";
+"PickedUp" = "Picked Up";
 "Picked" = "Picked";
-"Pickuped" = "Picked";
+"Pickuped" = "Renting";
 "Returned" = "Returned";
 "Completed" = "Completed";
 "Cancelled" = "Cancelled";

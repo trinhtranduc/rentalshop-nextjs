@@ -620,6 +620,9 @@
 "CSV (.csv)" = "CSV (.csv)";
 "Products" = "Danh sách Sản phẩm";
 "Orders" = "Danh sách đơn hàng";
+"orders" = "đơn hàng";
+"Order_Type_Rent" = "Thuê";
+"Order_Type_Sale" = "Bán";
 "Customers" = "Danh sách khách hàng";
 "Export" = "Xuất";
 "Please select an export type" = "Vui lòng chọn loại xuất";
@@ -695,12 +698,14 @@
 "Report_Summary_Orders" = "Đơn hàng";
 "Report_Summary_DepositHeld" = "Cọc đang giữ";
 "Report_Summary_DepositDue" = "Cọc cần trả";
+"Report_Summary_Reserved" = "Đơn thuê mới";
 "Report_Summary_AveragePerDay" = "TB/ngày";
 "Report_Summary_Change" = "Biến động";
 "Overview_Orders_Count" = "đơn hàng";
 "Collateral (received)_Short" = "Thế chân (nhận)";
 "Collateral (return)_Short" = "Thế chân (trả)";
 "Operational Snapshot" = "Tình hình vận hành";
+"Status and deposit flow for this period" = "Trạng thái đơn và dòng tiền cọc trong kỳ";
 "Orders by status for this period" = "Đơn theo trạng thái trong kỳ";
 "In Progress" = "Đang thuê";
 "Top Products" = "Sản phẩm hàng đầu";
@@ -1109,10 +1114,16 @@
 "Oldest First" = "Cũ nhất trước";
 "Status Filter" = "Lọc theo trạng thái";
 "Filter & Sort" = "Lọc & Sắp xếp";
+"Order Filter" = "Bộ lọc đơn hàng";
+"Apply" = "Áp dụng";
+"Reset Filter" = "Đặt lại";
 "Clear" = "Xóa";
 
+// MARK: - Order Status (badges & filters)
+"All" = "Tất cả";
+"PickedUp" = "Đã lấy";
 "Picked" = "Đã lấy";
-"Pickuped" = "Đã lấy";
+"Pickuped" = "Đang thuê";
 "Returned" = "Đã trả";
 "Completed" = "Hoàn thành";
 "Cancelled" = "Đã hủy";

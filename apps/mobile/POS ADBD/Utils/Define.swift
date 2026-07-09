@@ -177,6 +177,93 @@ extension UIFont {
 // diverging results (e.g. `reserved` showed red on one screen, blue on another,
 // and `draft` rendered white-on-clear = invisible). Centralizing it here keeps
 // every badge consistent and readable.
+
+enum OrderStatusBadgeMetrics {
+    static let cornerRadius: CGFloat = 12
+    static let contentInsets = UIEdgeInsets(top: 5, left: 9, bottom: 5, right: 9)
+    static let minimumHeight: CGFloat = 26
+
+    static func font(isRegularWidth: Bool = false) -> UIFont {
+        Utils.boldFont(size: isRegularWidth ? 11 : 10)
+    }
+
+    static func applyBaseAppearance(to label: UILabel, isRegularWidth: Bool = false) {
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        label.layer.cornerRadius = cornerRadius
+        label.layer.masksToBounds = true
+        label.font = font(isRegularWidth: isRegularWidth)
+    }
+}
+
+/// Padded pill label for order status badges in list cells and headers.
+final class OrderStatusPillLabel: UILabel {
+    var contentInsets: UIEdgeInsets = OrderStatusBadgeMetrics.contentInsets
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + contentInsets.left + contentInsets.right,
+            height: max(size.height + contentInsets.top + contentInsets.bottom, OrderStatusBadgeMetrics.minimumHeight)
+        )
+    }
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, contentInsets))
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        OrderStatusBadgeMetrics.applyBaseAppearance(to: self)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func apply(status: OrderStatus, isRegularWidth: Bool = false) {
+        OrderStatusBadgeMetrics.applyBaseAppearance(to: self, isRegularWidth: isRegularWidth)
+        text = status.filterChipTitle
+        backgroundColor = status.badgeColor
+        textColor = status.badgeTextColor
+    }
+
+    func apply(status: OrderStatus?, isRegularWidth: Bool = false) {
+        guard let status else {
+            clearBadge()
+            return
+        }
+        apply(status: status, isRegularWidth: isRegularWidth)
+    }
+
+    func clearBadge() {
+        text = nil
+        backgroundColor = .clear
+        textColor = .textSecondary
+    }
+}
+
+extension String {
+    /// Masks the middle of a phone number for display, e.g. "0901234099" -> "09xxxx099".
+    /// Numbers with 5 or fewer characters are returned unchanged (nothing to hide).
+    var maskedPhoneNumber: String {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 5 else { return trimmed }
+        return "\(trimmed.prefix(2))xxxx\(trimmed.suffix(3))"
+    }
+}
+
+extension UIImage {
+    /// Subtle eye toggle glyph for reveal/hide affordances (e.g. masked phone numbers).
+    /// Single source of truth so the icon style can be changed in one place.
+    static func revealEye(revealed: Bool) -> UIImage? {
+        // Outline glyph at the same size/weight as the date-row icons so the toggle
+        // reads as a peer of them rather than a heavier filled blob.
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return UIImage(systemName: revealed ? "eye.slash" : "eye", withConfiguration: config)
+    }
+}
+
 extension OrderStatus {
     /// Saturated fill for the status badge (solid chip).
     var badgeColor: UIColor {
@@ -193,5 +280,69 @@ extension OrderStatus {
     /// White text on solid fill for strong contrast (do not reuse for on-surface labels).
     var badgeTextColor: UIColor {
         .statusBadgeLabelText
+    }
+
+    /// Uppercase title shared by list badges and filter chips.
+    var filterChipTitle: String {
+        inString()
+    }
+
+    /// Applies neutral filter-chip styling (plain surface — status color stays on list badges only).
+    func applyFilterChipAppearance(to button: UIButton, isSelected: Bool) {
+        button.setTitle(localizedDisplayName(), for: .normal)
+        OrderFilterChipAppearance.applyNeutral(to: button, isSelected: isSelected)
+    }
+
+    /// Solid badge colors for inline `UILabel` badges (e.g. table cells).
+    func applySolidBadge(to label: UILabel, isRegularWidth: Bool = false) {
+        OrderStatusBadgeMetrics.applyBaseAppearance(to: label, isRegularWidth: isRegularWidth)
+        label.text = filterChipTitle
+        label.backgroundColor = badgeColor
+        label.textColor = badgeTextColor
+    }
+
+    /// Solid badge on a container with clear label text (chart chip layout).
+    func applySolidBadge(to label: UILabel, container: UIView, isRegularWidth: Bool = false) {
+        applySolidBadge(to: label, isRegularWidth: isRegularWidth)
+        label.backgroundColor = .clear
+        container.backgroundColor = badgeColor
+        container.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
+        container.clipsToBounds = true
+    }
+}
+
+enum OrderFilterChipMetrics {
+    static let cornerRadius: CGFloat = 15
+    static let contentInsets = UIEdgeInsets(top: 10, left: 15, bottom: 10, right: 15)
+    static let minimumHeight: CGFloat = 44
+
+    static func applyBase(to button: UIButton) {
+        button.titleLabel?.font = .bodyMedium(size: 15)
+        button.layer.cornerRadius = cornerRadius
+        button.layer.masksToBounds = true
+        button.layer.borderWidth = 1
+        button.contentEdgeInsets = contentInsets
+        button.setImage(nil, for: .normal)
+    }
+}
+
+enum OrderFilterChipAppearance {
+    /// Plain single-tone chips for the order filter sheet (matches period filter chips).
+    static func applyNeutral(to button: UIButton, isSelected: Bool) {
+        OrderFilterChipMetrics.applyBase(to: button)
+
+        if isSelected {
+            button.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.10)
+            button.layer.borderColor = UIColor.brandPrimary.withAlphaComponent(0.20).cgColor
+            button.setTitleColor(.brandPrimary, for: .normal)
+        } else {
+            button.backgroundColor = .backgroundCard
+            button.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.75).cgColor
+            button.setTitleColor(.textPrimary, for: .normal)
+        }
+    }
+
+    static func applyAll(to button: UIButton, isSelected: Bool) {
+        applyNeutral(to: button, isSelected: isSelected)
     }
 }

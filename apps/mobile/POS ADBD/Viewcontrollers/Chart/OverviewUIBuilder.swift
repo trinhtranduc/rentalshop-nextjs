@@ -136,7 +136,7 @@ enum OverviewUIBuilder {
     static func makeSnapshotValueLabel(isIPad: Bool) -> UILabel {
         let label = UILabel()
         label.text = "—"
-        label.font = .bodyBold(size: isIPad ? 24 : 22)
+        label.font = .bodyBold(size: isIPad ? 28 : 26)
         label.textColor = .textPrimary
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
@@ -198,57 +198,54 @@ enum OverviewUIBuilder {
         iconSystemName: String
     ) -> UIView {
         let container = UIView()
-        container.backgroundColor = .backgroundCard
-        container.layer.cornerRadius = 14
-        container.layer.borderWidth = 1
-        container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.72).cgColor
+        // Flat, number-forward style, centered: big dark value on top, then a
+        // centered "[icon] label" row underneath. The number stays dark for
+        // readability; the icon carries the semantic status colour so rows are
+        // scannable without turning every number into a colour.
+        container.backgroundColor = .clear
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .captionMedium(size: 11)
+        titleLabel.font = .captionMedium(size: 12)
         titleLabel.textColor = .textSecondary
         titleLabel.numberOfLines = 1
         titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.85
+        titleLabel.minimumScaleFactor = 0.8
 
         let iconView = UIImageView(image: UIImage(systemName: iconSystemName))
         iconView.tintColor = tintColor
         iconView.contentMode = .scaleAspectFit
-
-        let iconContainer = UIView()
-        iconContainer.backgroundColor = tintColor.withAlphaComponent(0.10)
-        iconContainer.layer.cornerRadius = 10
-        iconContainer.addSubview(iconView)
-        iconContainer.snp.makeConstraints { make in
-            make.width.height.equalTo(20)
-        }
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
         iconView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(11)
+            make.width.height.equalTo(14)
         }
 
-        let titleRow = UIStackView(arrangedSubviews: [iconContainer, titleLabel, UIView()])
+        let titleRow = UIStackView(arrangedSubviews: [iconView, titleLabel])
         titleRow.axis = .horizontal
-        titleRow.spacing = 8
+        titleRow.spacing = 5
         titleRow.alignment = .center
 
         valueLabel.textColor = .textPrimary
-        valueLabel.textAlignment = .left
+        valueLabel.textAlignment = .center
         valueLabel.numberOfLines = 1
         valueLabel.setContentCompressionResistancePriority(.required, for: .vertical)
         valueLabel.setContentHuggingPriority(.required, for: .vertical)
 
-        let stack = UIStackView(arrangedSubviews: [titleRow, valueLabel])
+        let stack = UIStackView(arrangedSubviews: [valueLabel, titleRow])
         stack.axis = .vertical
-        stack.spacing = 8
-        stack.alignment = .leading
+        stack.spacing = 4
+        stack.alignment = .center
 
         container.addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12))
+            make.center.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().offset(6)
+            make.trailing.lessThanOrEqualToSuperview().offset(-6)
+            make.top.greaterThanOrEqualToSuperview().offset(10)
+            make.bottom.lessThanOrEqualToSuperview().offset(-10)
         }
         container.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(82)
+            make.height.greaterThanOrEqualTo(66)
         }
 
         return container
@@ -381,10 +378,10 @@ enum OverviewUIBuilder {
         return container
     }
 
-    static func makeSectionEmptyView(text: String) -> UIView {
+    static func makeSectionEmptyView(text: String, cornerRadius: CGFloat = 12) -> UIView {
         let container = UIView()
         container.backgroundColor = .backgroundCard
-        container.layer.cornerRadius = 12
+        container.layer.cornerRadius = cornerRadius
         container.layer.borderWidth = 1
         container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.6).cgColor
 
@@ -418,16 +415,16 @@ enum OverviewUIBuilder {
             container.backgroundColor = .clear
         case .standalone:
             container.backgroundColor = .backgroundCard
-            container.layer.cornerRadius = 14
+            container.layer.cornerRadius = 10
             container.layer.borderWidth = 1
-            container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.4).cgColor
+            container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
         }
 
         let rankContainer = UIView()
         rankContainer.backgroundColor = accentColor.withAlphaComponent(0.10)
-        rankContainer.layer.cornerRadius = 16
+        rankContainer.layer.cornerRadius = 12
         rankContainer.snp.makeConstraints { make in
-            make.width.height.equalTo(32)
+            make.width.height.equalTo(30)
         }
 
         let rankLabel = UILabel()
@@ -442,7 +439,7 @@ enum OverviewUIBuilder {
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .bodyBold(size: isIPad ? 16 : 15)
+        titleLabel.font = .bodyRegular(size: isIPad ? 16 : 15)
         titleLabel.textColor = .textPrimary
         titleLabel.numberOfLines = 1
 
@@ -459,7 +456,7 @@ enum OverviewUIBuilder {
 
         let valueLabel = UILabel()
         valueLabel.text = value
-        valueLabel.font = .bodyBold(size: isIPad ? 17 : 15)
+        valueLabel.font = .bodyRegular(size: isIPad ? 17 : 15)
         valueLabel.textColor = accentColor
         valueLabel.textAlignment = .right
         valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -475,25 +472,25 @@ enum OverviewUIBuilder {
         case .embedded:
             contentInsets = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
         case .standalone:
-            contentInsets = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+            contentInsets = UIEdgeInsets(top: 10, left: 11, bottom: 10, right: 11)
         }
         stack.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(contentInsets)
         }
         container.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(68)
+            make.height.greaterThanOrEqualTo(64)
         }
         return container
     }
 
-    static func populateRows(in stackView: UIStackView, rows: [UIView], emptyText: String, showsDividers: Bool = false) {
+    static func populateRows(in stackView: UIStackView, rows: [UIView], emptyText: String, showsDividers: Bool = false, emptyCornerRadius: CGFloat = 12) {
         stackView.arrangedSubviews.forEach { view in
             stackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
 
         if rows.isEmpty {
-            stackView.addArrangedSubview(makeSectionEmptyView(text: emptyText))
+            stackView.addArrangedSubview(makeSectionEmptyView(text: emptyText, cornerRadius: emptyCornerRadius))
             return
         }
 
