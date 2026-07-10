@@ -1,6 +1,5 @@
 import Foundation
 import UIKit
-import GestureRecognizerClosures
 import QRCodeReader
 import AudioToolbox
 import AVFoundation
@@ -11,6 +10,12 @@ class MainViewController: BaseViewControler {
     private let viewModel = MainViewModel()
     
     // MARK: - UI Components
+    private lazy var searchSectionView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        return view
+    }()
+
     private lazy var productTableView: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
         table.delegate = self
@@ -22,10 +27,13 @@ class MainViewController: BaseViewControler {
         table.tableFooterView = UIView()
         table.translatesAutoresizingMaskIntoConstraints = false
         table.rowHeight = UITableViewAutomaticDimension // Tự động điều chỉnh height
-        table.estimatedRowHeight = 100 // Estimated height để optimize performance
+        table.estimatedRowHeight = 132
+        table.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         table.allowsSelection = true
         table.selectionFollowsFocus = true
         table.isUserInteractionEnabled = true
+        table.keyboardDismissMode = .onDrag
+        table.showsVerticalScrollIndicator = false
         return table
     }()
     
@@ -37,13 +45,24 @@ class MainViewController: BaseViewControler {
     private lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.delegate = self
-        searchBar.backgroundColor = .white
-//        searchBar.backgroundImage = UIImage()
+        searchBar.backgroundColor = .clear
+        searchBar.searchBarStyle = .minimal
+        searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
         searchBar.placeholder = "Product name...".localized()
         searchBar.placeholderLabel?.font = Utils.regularFont(size: 16)
         searchBar.placeholderLabel?.textColor = .textTertiary
         searchBar.textField?.textColor = .textPrimary
-        searchBar.textField?.font = Utils.regularFont(size: 16)
+        searchBar.textField?.font = Utils.boldFont(size: 16)
+        searchBar.tintColor = .brandPrimary
+
+        let searchTextField = searchBar.searchTextField
+        searchTextField.backgroundColor = .backgroundCard
+        searchTextField.layer.cornerRadius = 12
+        searchTextField.layer.masksToBounds = true
+        searchTextField.layer.borderWidth = 1
+        searchTextField.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.9).cgColor
+        searchTextField.leftView?.tintColor = .textSecondary
+        searchTextField.clearButtonMode = .whileEditing
         
         // Configure text input traits
         searchBar.searchTextField.autocorrectionType = .no
@@ -58,17 +77,23 @@ class MainViewController: BaseViewControler {
     
     private lazy var addButton: UIButton = {
         let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 23, weight: .regular)
+        button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
         button.setImage(UIImage(systemName: "plus"), for: .normal)
-        button.tintColor = .black
+        button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(addNewProduct), for: .touchUpInside)
+        button.accessibilityLabel = "Add product".localized()
         return button
     }()
     
     private lazy var barcodeScanButton: UIButton = {
         let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
         button.setImage(UIImage(systemName: "barcode.viewfinder"), for: .normal)
-        button.tintColor = .black
+        button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(barcodeScanTapped), for: .touchUpInside)
+        button.accessibilityLabel = "Scan barcode".localized()
         return button
     }()
     
@@ -81,10 +106,16 @@ class MainViewController: BaseViewControler {
     
     internal lazy var cartButton: BadgeButton = {
         let button = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
-        button.setImage(UIImage(systemName: "cart.fill"), for: .normal)
-        button.tintColor = .black
-        button.badgeEdgeInsets = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 15)
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
+        button.setImage(UIImage(systemName: "cart"), for: .normal)
+        button.tintColor = .textPrimary
+        button.badgeBackgroundColor = .brandPrimary
+        button.badgeTextColor = .white
+        button.badgeFont = Utils.mediumFont(size: 11)
+        button.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
         button.addTarget(self, action: #selector(cartButtonTapped), for: .touchUpInside)
+        button.accessibilityLabel = "Cart".localized()
         return button
     }()
     
@@ -204,13 +235,10 @@ class MainViewController: BaseViewControler {
         if #available(iOS 15.0, *) {
             productTableView.sectionHeaderTopPadding = 0
         }
-        
-        // Configure search bar
-        searchBar.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 56)
-        searchBar.sizeToFit()
-        
-        // Add subviews in order: custom nav bar, search bar, then table view
-        view.addSubview(searchBar)
+
+        // Add subviews in order: custom nav bar, search bar section, then table view
+        view.addSubview(searchSectionView)
+        searchSectionView.addSubview(searchBar)
         view.addSubview(productTableView)
         view.addSubview(floatingAISearchButton)
         
@@ -240,16 +268,16 @@ class MainViewController: BaseViewControler {
         // Add left buttons
         // Only show add button if user has canManageProducts permission
         if PermissionManager.shared.canManageProducts() {
-            navBar.addLeftButton(addButton)
+            navBar.addLeftButton(addButton, size: CGSize(width: 44, height: 44))
         }
-        navBar.addLeftButton(barcodeScanButton)
+        navBar.addLeftButton(barcodeScanButton, size: CGSize(width: 44, height: 44))
         // AI search button moved to floating button - removed from navigation bar
         
         // Add right button - cart for iPhone, trash for iPad
         if UIDevice.current.userInterfaceIdiom == .pad {
             navBar.addRightButton(trashButton, size: CGSize(width: 44, height: 44))
         } else {
-            navBar.addRightButton(cartButton)
+            navBar.addRightButton(cartButton, size: CGSize(width: 44, height: 44))
         }
     }
     
@@ -496,15 +524,19 @@ class MainViewController: BaseViewControler {
                 
                 // Adjust search bar and table view width for iPad
                 guard let customNavBar = customNavBar else { return }
-                searchBar.snp.remakeConstraints { make in
+                searchSectionView.snp.remakeConstraints { make in
                     make.top.equalTo(customNavBar.snp.bottom)
                     make.leading.equalToSuperview()
                     make.trailing.equalTo(containerView.snp.leading)
-                    make.height.equalTo(56)
+                    make.height.equalTo(72)
+                }
+
+                searchBar.snp.remakeConstraints { make in
+                    make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20))
                 }
                 
                 productTableView.snp.remakeConstraints { make in
-                    make.top.equalTo(searchBar.snp.bottom)
+                    make.top.equalTo(searchSectionView.snp.bottom)
                     make.leading.equalToSuperview()
                     make.trailing.equalTo(containerView.snp.leading)
                     make.bottom.equalToSuperview()
@@ -515,14 +547,18 @@ class MainViewController: BaseViewControler {
         } else {
             // iPhone layout - use original constraints
             guard let customNavBar = customNavBar else { return }
-            searchBar.snp.makeConstraints { make in
+            searchSectionView.snp.makeConstraints { make in
                 make.top.equalTo(customNavBar.snp.bottom)
                 make.leading.trailing.equalToSuperview()
-                make.height.equalTo(56)
+                make.height.equalTo(72)
+            }
+
+            searchBar.snp.makeConstraints { make in
+                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16))
             }
             
             productTableView.snp.makeConstraints { make in
-                make.top.equalTo(searchBar.snp.bottom)
+                make.top.equalTo(searchSectionView.snp.bottom)
                 make.leading.trailing.equalToSuperview()
                 make.bottom.equalToSuperview()
             }
@@ -588,8 +624,6 @@ extension MainViewController: UITableViewDataSource {
         
         // Setup menu for more button
         cell.setupMoreButtonMenu(menu: createProductMenu(for: product, cell: cell))
-        
-        cell.selectionStyle = .default
         return cell
     }
 }

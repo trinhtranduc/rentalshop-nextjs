@@ -28,15 +28,9 @@ class SaleDetailCell: UITableViewCell {
         return stack
     }()
     
-    // Status badge (leftmost, larger)
-    private lazy var statusBadge: UILabel = {
-        let label = UILabel()
-        label.font = Utils.mediumFont(size: 12)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.layer.cornerRadius = 4
-        label.clipsToBounds = true
-        label.numberOfLines = 1
+    // Status badge
+    private lazy var statusBadge: OrderStatusPillLabel = {
+        let label = OrderStatusPillLabel()
         return label
     }()
     
@@ -318,7 +312,7 @@ class SaleDetailCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func bind(order: Order, sortType: OrderSortType = .book_date) {
+    func bind(order: Order, sortType: OrderSortType = .rentDefault) {
         self.order = order
         
         // Order number
@@ -397,8 +391,7 @@ class SaleDetailCell: UITableViewCell {
     }
     
     private func setupStatusBadge(for order: Order) {
-        statusBadge.text = order.status.inString()
-        statusBadge.backgroundColor = order.status.badgeColor
-        statusBadge.textColor = order.status.badgeTextColor
+        let isIPad = traitCollection.horizontalSizeClass == .regular
+        statusBadge.apply(status: order.status, isRegularWidth: isIPad)
     }
 }

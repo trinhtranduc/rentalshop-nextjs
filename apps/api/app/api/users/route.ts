@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
@@ -62,14 +62,22 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
 
     const q = parsed.data as any;
     
-    // Use simplified database API
+    // Use simplified database API — omit isActive unless explicitly filtered
+    // so disabled (inactive) staff remain visible in outlet user lists.
     const searchFilters: any = {
       role: q.role,
-      isActive: q.isActive,
-      search: q.search,
+      search: q.search || q.q,
       page: q.page || 1,
       limit: q.limit || 20
     };
+
+    const resolvedIsActive = resolveUsersIsActiveFilter({
+      isActive: q.isActive,
+      status: q.status,
+    });
+    if (resolvedIsActive !== undefined) {
+      searchFilters.isActive = resolvedIsActive;
+    }
 
     // Role-based merchant filtering:
     // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)

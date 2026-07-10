@@ -115,6 +115,7 @@
 		04FBE0A82EDB2C700057EDF8 /* PaymentCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */; };
 		04FBE0AA2EDB35D70057EDF8 /* SaleDetailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0A92EDB35D70057EDF8 /* SaleDetailCell.swift */; };
 		04FBE0B62EDB47AF0057EDF8 /* SaleDetailCell_Option5_CleanBorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0B22EDB47AF0057EDF8 /* SaleDetailCell_Option5_CleanBorder.swift */; };
+		EC0A10022F1B00010000001 /* AvailabilityCheckViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */; };
 		04FBE0BB2EDB4CE80057EDF8 /* PreviewViewController_Option4_TwoColumnStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0BA2EDB4CE80057EDF8 /* PreviewViewController_Option4_TwoColumnStyle.swift */; };
 		04FBE0BC2EDB4CE80057EDF8 /* PreviewViewController_Option1_CardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0B72EDB4CE80057EDF8 /* PreviewViewController_Option1_CardStyle.swift */; };
 		04FBE0BD2EDB4CE80057EDF8 /* PreviewViewController_Option2_GroupedStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0B82EDB4CE80057EDF8 /* PreviewViewController_Option2_GroupedStyle.swift */; };
@@ -350,6 +351,7 @@
 		04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentCollectionViewController.swift; sourceTree = "<group>"; };
 		04FBE0A92EDB35D70057EDF8 /* SaleDetailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleDetailCell.swift; sourceTree = "<group>"; };
 		04FBE0B22EDB47AF0057EDF8 /* SaleDetailCell_Option5_CleanBorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleDetailCell_Option5_CleanBorder.swift; sourceTree = "<group>"; };
+		EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityCheckViews.swift; sourceTree = "<group>"; };
 		04FBE0B72EDB4CE80057EDF8 /* PreviewViewController_Option1_CardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController_Option1_CardStyle.swift; sourceTree = "<group>"; };
 		04FBE0B82EDB4CE80057EDF8 /* PreviewViewController_Option2_GroupedStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController_Option2_GroupedStyle.swift; sourceTree = "<group>"; };
 		04FBE0B92EDB4CE80057EDF8 /* PreviewViewController_Option3_CompactStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController_Option3_CompactStyle.swift; sourceTree = "<group>"; };
@@ -903,6 +905,7 @@
 				04FBE0B92EDB4CE80057EDF8 /* PreviewViewController_Option3_CompactStyle.swift */,
 				04FBE0BA2EDB4CE80057EDF8 /* PreviewViewController_Option4_TwoColumnStyle.swift */,
 				04FBE0B22EDB47AF0057EDF8 /* SaleDetailCell_Option5_CleanBorder.swift */,
+				EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */,
 				04FBE0A92EDB35D70057EDF8 /* SaleDetailCell.swift */,
 				040C801F2D9551A000EB900C /* CustomerCell.swift */,
 				048839402D79FEBD00069256 /* SaleHeaderView.swift */,
@@ -1367,6 +1370,7 @@
 				88FF339D2F2DBEA900FD0A26 /* CIImageValidator.mm in Sources */,
 				88F773F22F5AF8B00091311F /* CartStore.swift in Sources */,
 				04FBE0B62EDB47AF0057EDF8 /* SaleDetailCell_Option5_CleanBorder.swift in Sources */,
+				EC0A10022F1B00010000001 /* AvailabilityCheckViews.swift in Sources */,
 				88E4149821A99E3900BAF4A1 /* BaseViewController.swift in Sources */,
 				048839852D7D851600069256 /* DatePickerViewController.swift in Sources */,
 				88FDF9A322AA5E10005184A7 /* BaseNavigationController.swift in Sources */,

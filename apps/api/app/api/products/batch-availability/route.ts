@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
+import { calculateEffectivelyAvailable, resolveTotalAvailableStock } from '../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for batch availability request
@@ -395,7 +396,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           // Get stock info
           const totalStock = outletStock.stock;
           const totalRenting = outletStock.renting;
-          const totalAvailableStock = Math.max(0, totalStock - totalRenting);
+          const totalAvailableStock = resolveTotalAvailableStock(outletStock);
 
           // Check basic stock availability using product-specific quantity
           const stockAvailable = totalAvailableStock >= productQuantity;
@@ -408,6 +409,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
             outletId: finalOutletId,
             outletName: outletStock.outlet.name,
             conflictingQuantity: 0,
+            reservedConflictQuantity: 0,
             conflicts: [] as Array<{
               orderNumber: string;
               customerName: string;
@@ -445,6 +447,9 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
               // Only count items for the specific product
               if (item.productId === productId) {
                 outletConflicts.conflictingQuantity += item.quantity;
+                if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.RESERVED) {
+                  outletConflicts.reservedConflictQuantity += item.quantity;
+                }
 
                 if (orderType === 'RENT' && rentalStart && rentalEnd) {
                   // RENT orders: Calculate precise conflict analysis
@@ -521,10 +526,14 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
 
           // Calculate final availability using product-specific quantity
           const conflictingQuantity = outletConflicts.conflictingQuantity;
-          // CRITICAL FIX: Use totalStock (not totalAvailableStock) to avoid double-counting
-          // conflictingQuantity already includes PICKUPED orders that overlap the period.
-          // Using totalAvailableStock would double-count (once in renting, once in conflictingQuantity).
-          const effectivelyAvailable = Math.max(0, totalStock - conflictingQuantity);
+          const reservedConflictQuantity = outletConflicts.reservedConflictQuantity;
+          const effectivelyAvailable = calculateEffectivelyAvailable({
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            conflictingQuantity,
+            reservedConflictQuantity,
+          });
           const canFulfillRequest = effectivelyAvailable >= productQuantity;
           const isAvailable = canFulfillRequest;
 

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 /**
  * Test case: Áo dài - stock 1, rented 04/05-07/05
  * Creating new order 10/05-15/10 should NOT conflict

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 /**
  * Test cases simulating mobile app reading batch-availability API response
  * 

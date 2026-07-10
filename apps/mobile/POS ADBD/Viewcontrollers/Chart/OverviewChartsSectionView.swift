@@ -18,41 +18,38 @@ final class OverviewChartsSectionView: UIView {
     private(set) var isExpanded: Bool = false
     private var showsHorizontalHint: Bool = false
 
-    let barChartView: BarChartView
-    let lineChartView: LineChartView
+    let revenueChartView: LineChartView
+    let ordersChartView: LineChartView
 
     private let chartsBodyStackView: UIStackView
     private let toggleChevron = UIImageView()
     private let toggleSubtitleLabel = UILabel()
     private let titleLabel = UILabel()
+    private let chartIconView = UIImageView()
     private var chartsBodyHeightConstraint: Constraint?
 
     init(isIPad: Bool) {
-        barChartView = BarChartView()
-        barChartView.heightAnchor.constraint(equalToConstant: 250).isActive = true
+        revenueChartView = LineChartView()
+        revenueChartView.heightAnchor.constraint(equalToConstant: isIPad ? 240 : 220).isActive = true
 
-        lineChartView = LineChartView()
-        lineChartView.heightAnchor.constraint(equalToConstant: 250).isActive = true
+        ordersChartView = LineChartView()
+        ordersChartView.heightAnchor.constraint(equalToConstant: isIPad ? 200 : 180).isActive = true
 
-        let revenuePanel = OverviewChartsSectionView.makeChartPanel(
-            title: "Revenue".localized(),
-            subtitle: "Real income".localized() + " • " + "Plan income".localized(),
-            chartView: barChartView,
-            isIPad: isIPad
-        )
-        let ordersPanel = OverviewChartsSectionView.makeChartPanel(
-            title: "Order total".localized(),
-            subtitle: "Overview_Charts_Orders_Subtitle".localized(),
-            chartView: lineChartView,
-            isIPad: isIPad
-        )
-
-        chartsBodyStackView = UIStackView(arrangedSubviews: [revenuePanel, ordersPanel])
+        chartsBodyStackView = UIStackView(arrangedSubviews: [revenueChartView, ordersChartView])
         chartsBodyStackView.axis = .vertical
-        chartsBodyStackView.spacing = 12
+        chartsBodyStackView.spacing = 8
         chartsBodyStackView.clipsToBounds = true
 
         super.init(frame: .zero)
+
+        // Caption above each chart so revenue vs order-count is unambiguous.
+        let revenueCaption = Self.makeChartCaption("Report_Summary_Revenue".localized(), isIPad: isIPad)
+        let ordersCaption = Self.makeChartCaption("Overview_Charts_OrderCount".localized(), isIPad: isIPad)
+        chartsBodyStackView.insertArrangedSubview(revenueCaption, at: 0)
+        chartsBodyStackView.insertArrangedSubview(ordersCaption, at: 2)
+        chartsBodyStackView.setCustomSpacing(4, after: revenueCaption)
+        chartsBodyStackView.setCustomSpacing(16, after: revenueChartView)
+        chartsBodyStackView.setCustomSpacing(4, after: ordersCaption)
 
         backgroundColor = .backgroundCard
         layer.cornerRadius = 16
@@ -62,6 +59,14 @@ final class OverviewChartsSectionView: UIView {
         layer.shadowOpacity = 1
         layer.shadowRadius = 10
         layer.shadowOffset = CGSize(width: 0, height: 4)
+
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: isIPad ? 16 : 15, weight: .semibold)
+        chartIconView.image = UIImage(systemName: "chart.line.uptrend.xyaxis", withConfiguration: symbolConfig)
+        chartIconView.tintColor = .brandPrimary
+        chartIconView.contentMode = .scaleAspectFit
+        chartIconView.snp.makeConstraints { make in
+            make.width.height.equalTo(isIPad ? 22 : 20)
+        }
 
         toggleChevron.image = UIImage(systemName: "chevron.down")
         toggleChevron.tintColor = .textSecondary
@@ -83,11 +88,10 @@ final class OverviewChartsSectionView: UIView {
         labelStack.spacing = 3
         labelStack.alignment = .leading
 
-        let headerStack = UIStackView(arrangedSubviews: [labelStack, UIView(), toggleChevron])
+        let headerStack = UIStackView(arrangedSubviews: [chartIconView, labelStack, UIView(), toggleChevron])
         headerStack.axis = .horizontal
-        headerStack.spacing = 12
+        headerStack.spacing = 10
         headerStack.alignment = .center
-        // Labels/chevron must not steal taps from the full-width toggle control beneath.
         headerStack.isUserInteractionEnabled = false
 
         let toggleButton = UIButton(type: .system)
@@ -96,14 +100,13 @@ final class OverviewChartsSectionView: UIView {
 
         addSubview(headerStack)
         addSubview(chartsBodyStackView)
-        // Toggle sits above the header visuals so expand/collapse always receives the tap.
         addSubview(toggleButton)
 
         headerStack.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview().inset(14)
         }
         chartsBodyStackView.snp.makeConstraints { make in
-            make.top.equalTo(headerStack.snp.bottom).offset(12)
+            make.top.equalTo(headerStack.snp.bottom).offset(10)
             make.leading.trailing.bottom.equalToSuperview().inset(14)
             chartsBodyHeightConstraint = make.height.equalTo(0).constraint
         }
@@ -117,6 +120,14 @@ final class OverviewChartsSectionView: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    private static func makeChartCaption(_ text: String, isIPad: Bool) -> UILabel {
+        let label = UILabel()
+        label.text = text
+        label.font = .captionMedium(size: isIPad ? 13 : 12)
+        label.textColor = .textSecondary
+        return label
     }
 
     func configureInitialExpansion(isIPad: Bool) {
@@ -139,7 +150,7 @@ final class OverviewChartsSectionView: UIView {
             } else {
                 self.chartsBodyHeightConstraint?.activate()
             }
-            self.toggleChevron.image = UIImage(systemName: expanded ? "chevron.up" : "chevron.down")
+            self.toggleChevron.image = UIImage(systemName: expanded ? "chevron.up" : "chevron.right")
             self.refreshHeaderState()
             self.layoutIfNeeded()
         }
@@ -153,7 +164,6 @@ final class OverviewChartsSectionView: UIView {
 
     @objc private func toggleTapped() {
         setExpanded(!isExpanded, animated: true)
-        // Parent scroll view may need another layout pass after height change.
         if let scrollView = enclosingScrollView() {
             UIView.animate(withDuration: 0.25) {
                 scrollView.layoutIfNeeded()
@@ -183,45 +193,5 @@ final class OverviewChartsSectionView: UIView {
             toggleSubtitleLabel.text = "Overview_Charts_Show".localized()
             toggleSubtitleLabel.textColor = .textSecondary
         }
-    }
-
-    private static func makeChartPanel(
-        title: String,
-        subtitle: String,
-        chartView: UIView,
-        isIPad: Bool
-    ) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .backgroundCard
-        container.layer.cornerRadius = 12
-        container.layer.borderWidth = 1
-        container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.68).cgColor
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .bodyBold(size: isIPad ? 16 : 15)
-        titleLabel.textColor = .textPrimary
-
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = subtitle
-        subtitleLabel.font = .captionMedium(size: 11)
-        subtitleLabel.textColor = .textSecondary
-        subtitleLabel.numberOfLines = 2
-
-        let labelStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        labelStack.axis = .vertical
-        labelStack.spacing = 3
-        labelStack.alignment = .leading
-
-        let stack = UIStackView(arrangedSubviews: [labelStack, chartView])
-        stack.axis = .vertical
-        stack.spacing = 10
-
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12))
-        }
-
-        return container
     }
 }

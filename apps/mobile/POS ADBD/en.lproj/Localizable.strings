@@ -622,6 +622,9 @@
 "CSV (.csv)" = "CSV (.csv)";
 "Products" = "Products";
 "Orders" = "Orders";
+"orders" = "orders";
+"Order_Type_Rent" = "Rent";
+"Order_Type_Sale" = "Sale";
 "Customers" = "Customers";
 "Export" = "Export";
 "Please select an export type" = "Please select an export type";
@@ -697,12 +700,14 @@
 "Report_Summary_Orders" = "Orders";
 "Report_Summary_DepositHeld" = "Deposit held";
 "Report_Summary_DepositDue" = "Deposit due";
+"Report_Summary_Reserved" = "New rentals";
 "Report_Summary_AveragePerDay" = "Avg/day";
 "Report_Summary_Change" = "Change";
 "Overview_Orders_Count" = "orders";
 "Collateral (received)_Short" = "Deposit held";
 "Collateral (return)_Short" = "Deposit due";
 "Operational Snapshot" = "Operational Snapshot";
+"Status and deposit flow for this period" = "Status and deposit flow for this period";
 "Orders by status for this period" = "Orders by status for this period";
 "In Progress" = "In Progress";
 "Top Products" = "Top Products";
@@ -719,7 +724,8 @@
 "Walk-in customer" = "Walk-in customer";
 "rentals" = "rentals";
 "You don't have permission to view analytics" = "You don't have permission to view analytics";
-"Overview_Charts_Title" = "Revenue charts";
+"Overview_Charts_Title" = "Charts";
+"Overview_Charts_OrderCount" = "Order count";
 "Overview_Charts_Show" = "Show charts";
 "Overview_Charts_Hide" = "Hide charts";
 "Overview_Charts_Orders_Subtitle" = "Order volume over time";
@@ -1109,13 +1115,33 @@
 "Oldest First" = "Oldest First";
 "Status Filter" = "Status Filter";
 "Filter & Sort" = "Filter & Sort";
+"Order Filter" = "Order Filter";
+"Apply" = "Apply";
+"Reset Filter" = "Reset";
 "Clear" = "Clear";
 
+// MARK: - Order Status (badges & filters)
+"All" = "All";
+"PickedUp" = "Picked Up";
 "Picked" = "Picked";
-"Pickuped" = "Picked";
+"Pickuped" = "Renting";
 "Returned" = "Returned";
 "Completed" = "Completed";
 "Cancelled" = "Cancelled";
+
+// MARK: - Product Availability Check
+"On check day" = "On check day";
+"availability_verdict_date_context" = "On %@";
+"availability_verdict_available_headline" = "%@ available";
+"availability_verdict_out_of_stock_headline" = "Out of stock";
+"availability_verdict_conflict_headline" = "Schedule conflict";
+"availability_verdict_available" = "%@ products available on %@";
+"availability_verdict_out_of_stock" = "Out of stock on %@";
+"availability_verdict_conflict" = "Schedule conflict on %@";
+"Rental history" = "Rental history";
+"availability_order_count" = "%d orders";
+"availability_history_empty" = "No rental history for this day";
+"availability_overlap_on_check_day" = "Overlap on check day";
 
 // MARK: - Image Search
 "Search by Image" = "Search by Image";

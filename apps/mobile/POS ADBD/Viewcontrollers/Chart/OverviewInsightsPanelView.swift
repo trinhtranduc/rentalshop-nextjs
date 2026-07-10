@@ -170,7 +170,7 @@ final class OverviewSnapshotSectionView: UIView {
 
         let firstRow = UIStackView(arrangedSubviews: [
             OverviewUIBuilder.makeCompactSnapshotItem(
-                title: "Reserved".localized(),
+                title: "Report_Summary_Reserved".localized(),
                 valueLabel: reservedValueLabel,
                 tintColor: .statusReservedText,
                 iconSystemName: "bookmark.circle.fill"
