@@ -221,10 +221,10 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     let merchantId: number | undefined;
     let outletId: number | undefined;
 
-    if (parsed.data.role === USER_ROLE.ADMIN) {
-      // ADMIN can be assigned to any merchant/outlet or none
-      merchantId = parsed.data.merchantId;
-      outletId = parsed.data.outletId;
+    if (parsed.data.role === USER_ROLE.ADMIN || parsed.data.role === USER_ROLE.ARTICLE) {
+      // ADMIN / ARTICLE: no merchant or outlet (system-level)
+      merchantId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.merchantId : undefined;
+      outletId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.outletId : undefined;
     } else if (parsed.data.role === USER_ROLE.MERCHANT) {
       // MERCHANT must have merchantId, no outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
@@ -266,7 +266,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
 
     // Check plan limits before creating user (only for non-ADMIN users)
     // Note: Only check if creating non-ADMIN user and merchantId exists
-    if (parsed.data.role !== USER_ROLE.ADMIN && merchantId) {
+    if (parsed.data.role !== USER_ROLE.ADMIN && parsed.data.role !== USER_ROLE.ARTICLE && merchantId) {
       const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'users');
       if (planLimitError) return planLimitError;
     }
@@ -361,6 +361,12 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
     // Check if user is being deactivated (isActive changed from true to false)
     const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
+
+    const targetRole = updateData.role ?? existingUser.role;
+    if (targetRole === USER_ROLE.ARTICLE) {
+      updateData.merchantId = null;
+      updateData.outletId = null;
+    }
 
     const updatedUser = await db.users.update(id, updateData);
     const auditHelper = createAuditHelper(prisma);

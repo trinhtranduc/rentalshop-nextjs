@@ -25,7 +25,7 @@ export async function countMerchantUsersForPlanLimit(merchantId: number): Promis
     where: {
       merchantId,
       deletedAt: null,
-      role: { not: USER_ROLE.ADMIN },
+      role: { notIn: [USER_ROLE.ADMIN, USER_ROLE.ARTICLE] },
     },
   });
 }
@@ -51,7 +51,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<Entity
         role: u.role,
         isActive: u.isActive,
         deletedAt: u.deletedAt ? 'DELETED' : 'NOT_DELETED',
-        countsTowardLimit: u.role !== USER_ROLE.ADMIN && !u.deletedAt,
+        countsTowardLimit: u.role !== USER_ROLE.ADMIN && u.role !== USER_ROLE.ARTICLE && !u.deletedAt,
       })),
     }, 'getCurrentEntityCounts - Merchant user details');
 

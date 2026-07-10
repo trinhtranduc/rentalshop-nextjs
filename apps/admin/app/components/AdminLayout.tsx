@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { AdminSidebar, SidebarSkeleton, HeaderSkeleton } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import SubscriptionExpiryBanner from './SubscriptionExpiryBanner';
+import { isArticleOnlyAdminPath } from '@rentalshop/ui';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -18,9 +19,18 @@ export default function AdminLayout({
   notificationsCount = 0 
 }: AdminLayoutProps) {
   const { user, logout, loading } = useAuth();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // ARTICLE role: only blog CMS routes
+  useEffect(() => {
+    if (!user || user.role !== 'ARTICLE' || pathname === '/login') return;
+    if (!isArticleOnlyAdminPath(pathname)) {
+      router.replace('/posts');
+    }
+  }, [user, pathname, router]);
 
   // Show skeleton layout while checking authentication (non-blocking)
   if (loading) {

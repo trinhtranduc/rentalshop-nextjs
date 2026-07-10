@@ -177,6 +177,7 @@
   },
   "roles": {
     "ADMIN": "Quản trị viên",
+    "ARTICLE": "Biên tập bài viết",
     "MERCHANT": "Chủ doanh nghiệp",
     "OUTLET_ADMIN": "Quản lý cửa hàng",
     "OUTLET_STAFF": "Nhân viên cửa hàng"

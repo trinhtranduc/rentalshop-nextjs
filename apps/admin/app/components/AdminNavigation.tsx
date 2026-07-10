@@ -142,6 +142,10 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
   // Filter navigation items based on user role
   const filterNavigationByRole = (items: typeof allNavigation, userRole?: string) => {
     if (!userRole) return items;
+
+    if (userRole === 'ARTICLE') {
+      return items.filter((item) => item.href === '/posts' || item.href.startsWith('/posts/'));
+    }
     
     // Hide specific tabs based on user role
     if (userRole === 'OUTLET_ADMIN') {

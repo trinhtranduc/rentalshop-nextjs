@@ -176,6 +176,7 @@
   },
   "roles": {
     "ADMIN": "Admin",
+    "ARTICLE": "Article Editor",
     "MERCHANT": "Merchant",
     "OUTLET_ADMIN": "Outlet Admin",
     "OUTLET_STAFF": "Outlet Staff"
