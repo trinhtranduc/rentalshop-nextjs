@@ -1811,9 +1811,11 @@ struct NewAvailabilityConflict: Codable {
 struct NewAvailabilityOrder: Codable {
     let id: Int?
     let orderNumber: String?
+    let orderType: String?
     let status: String?
     let customerName: String?
     let customerPhone: String?
+    let createdAt: String?
     let pickupPlanAt: String?
     let returnPlanAt: String?
     let quantity: Int?

@@ -724,7 +724,8 @@
 "Walk-in customer" = "Khách vãng lai";
 "rentals" = "lượt thuê";
 "You don't have permission to view analytics" = "Bạn không có quyền xem phân tích";
-"Overview_Charts_Title" = "Biểu đồ doanh thu";
+"Overview_Charts_Title" = "Biểu đồ";
+"Overview_Charts_OrderCount" = "Số lượng đơn";
 "Overview_Charts_Show" = "Xem biểu đồ";
 "Overview_Charts_Hide" = "Thu gọn";
 "Overview_Charts_Orders_Subtitle" = "Diễn biến đơn hàng theo thời gian";
@@ -1127,6 +1128,16 @@
 "Returned" = "Đã trả";
 "Completed" = "Hoàn thành";
 "Cancelled" = "Đã hủy";
+
+// MARK: - Product Availability Check
+"On check day" = "Trong ngày kiểm tra";
+"availability_verdict_available" = "Còn %@ sản phẩm trong ngày %@";
+"availability_verdict_out_of_stock" = "Hết hàng trong ngày %@";
+"availability_verdict_conflict" = "Trùng lịch trong ngày %@";
+"Rental history" = "Lịch sử thuê";
+"availability_order_count" = "%d đơn";
+"availability_history_empty" = "Chưa có lịch sử thuê cho ngày này";
+"availability_overlap_on_check_day" = "Trùng trong ngày kiểm tra";
 
 // MARK: - Image Search
 "Search by Image" = "Tìm kiếm bằng hình ảnh";

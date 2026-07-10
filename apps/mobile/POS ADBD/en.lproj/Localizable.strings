@@ -724,7 +724,8 @@
 "Walk-in customer" = "Walk-in customer";
 "rentals" = "rentals";
 "You don't have permission to view analytics" = "You don't have permission to view analytics";
-"Overview_Charts_Title" = "Revenue charts";
+"Overview_Charts_Title" = "Charts";
+"Overview_Charts_OrderCount" = "Order count";
 "Overview_Charts_Show" = "Show charts";
 "Overview_Charts_Hide" = "Hide charts";
 "Overview_Charts_Orders_Subtitle" = "Order volume over time";
@@ -1127,6 +1128,16 @@
 "Returned" = "Returned";
 "Completed" = "Completed";
 "Cancelled" = "Cancelled";
+
+// MARK: - Product Availability Check
+"On check day" = "On check day";
+"availability_verdict_available" = "%@ products available on %@";
+"availability_verdict_out_of_stock" = "Out of stock on %@";
+"availability_verdict_conflict" = "Schedule conflict on %@";
+"Rental history" = "Rental history";
+"availability_order_count" = "%d orders";
+"availability_history_empty" = "No rental history for this day";
+"availability_overlap_on_check_day" = "Overlap on check day";
 
 // MARK: - Image Search
 "Search by Image" = "Search by Image";

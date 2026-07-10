@@ -3,6 +3,10 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
+import {
+  calculateEffectivelyAvailable,
+  mapAvailabilityOrderDisplay,
+} from '../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for availability query
@@ -386,6 +390,7 @@ export async function GET(
         outletId: finalOutletId,
         outletName: outletStock.outlet.name,
         conflictingQuantity: 0,
+        reservedConflictQuantity: 0,
         conflicts: [] as Array<{
           orderNumber: string;
           customerName: string;
@@ -418,6 +423,9 @@ export async function GET(
           // Only count items for the specific product
           if (item.productId === productId) {
             outletConflicts.conflictingQuantity += item.quantity;
+            if (order.status === ORDER_STATUS.RESERVED) {
+              outletConflicts.reservedConflictQuantity += item.quantity;
+            }
             
             // Calculate precise conflict analysis if time precision is enabled
             const orderPickup = order.pickupPlanAt;
@@ -499,14 +507,14 @@ export async function GET(
 
       // 7. Determine final availability considering conflicts for single outlet
       const conflictingQuantity = outletConflicts.conflictingQuantity;
-      
-      // Calculate available quantity considering conflicts during rental period
-      // effectivelyAvailable = totalStock - conflictingQuantity (from active RENT orders in period)
-      // We use totalStock directly (NOT totalAvailableStock) because conflictingQuantity
-      // already includes PICKUPED orders that overlap the period.
-      // Using totalAvailableStock would double-count PICKUPED orders
-      // (once in outletStock.renting, once in conflictingQuantity).
-      const effectivelyAvailable = Math.max(0, totalStock - conflictingQuantity);
+      const reservedConflictQuantity = outletConflicts.reservedConflictQuantity;
+
+      const effectivelyAvailable = calculateEffectivelyAvailable({
+        totalStock,
+        totalAvailableStock,
+        conflictingQuantity,
+        reservedConflictQuantity,
+      });
       const canFulfillRequest = effectivelyAvailable >= quantity;
 
       // Enhanced logging for debugging rental calculation
@@ -517,11 +525,12 @@ export async function GET(
         totalRenting,
         totalAvailableStock,
         conflictingQuantity,
+        reservedConflictQuantity,
         effectivelyAvailable,
         requestedQuantity: quantity,
         canFulfillRequest,
         conflictingOrdersCount: conflictingOrders.length,
-        note: 'effectivelyAvailable = totalStock - conflictingQuantity (avoids double-count with renting)',
+        note: 'PICKUPED-only overlap: totalAvailableStock - conflicts; RESERVED overlap: totalStock - conflicts; no overlap: totalStock',
         conflictsDetails: outletConflicts.conflicts.map(c => ({
           orderNumber: c.orderNumber,
           quantity: c.quantity,
@@ -536,6 +545,7 @@ export async function GET(
         available: outletStock.available,
         renting: outletStock.renting,
         conflictingQuantity,
+        reservedConflictQuantity,
         effectivelyAvailable,
         canFulfillRequest,
         conflicts: outletConflicts.conflicts,
@@ -582,22 +592,13 @@ export async function GET(
           totalConflictsFound: outletConflicts.conflicts.length,
           // All active orders for this product (for mobile order list display)
           // Each order is marked with isConflict flag
-          orders: allOrdersForDisplay.map(order => {
-            const productItems = order.orderItems.filter((item: any) => item.productId === productId);
-            const orderQuantity = productItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
-            return {
-              id: order.id,
-              orderNumber: order.orderNumber,
-              orderType: order.orderType,
-              status: order.status,
-              customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
-              customerPhone: order.customer?.phone || null,
-              pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
-              returnPlanAt: order.returnPlanAt?.toISOString() || null,
-              quantity: orderQuantity,
-              isConflict: conflictOrderIds.has(order.id),
-            };
-          }),
+          orders: allOrdersForDisplay.map((order) =>
+            mapAvailabilityOrderDisplay(
+              order,
+              productId,
+              conflictOrderIds.has(order.id)
+            )
+          ),
           // Enhanced message with time precision
           message: isAvailable
             ? includeTimePrecision
