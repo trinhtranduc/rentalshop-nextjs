@@ -1,6 +1,6 @@
 {
   "name": "@rentalshop/constants",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Centralized constants for the Rental Shop monorepo",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
