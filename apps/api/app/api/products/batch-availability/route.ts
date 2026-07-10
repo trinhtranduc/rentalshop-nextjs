@@ -530,6 +530,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           const effectivelyAvailable = calculateEffectivelyAvailable({
             totalStock,
             totalAvailableStock,
+            totalRenting,
             conflictingQuantity,
             reservedConflictQuantity,
           });

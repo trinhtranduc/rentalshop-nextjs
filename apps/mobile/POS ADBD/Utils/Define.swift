@@ -110,6 +110,8 @@ extension UIColor {
     static let statusReservedText  = UIColor(hexString: "92400E") // amber-800
     static let statusActiveText    = UIColor(hexString: "1E40AF") // blue-800
     static let statusDoneText      = UIColor(hexString: "166534") // green-800
+    /// Matched substring in product/customer search results.
+    static let searchMatchHighlight = UIColor(hexString: "15803D") // green-700
     static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
     /// Label color on solid status chips only.
     static let statusBadgeLabelText = UIColor.white

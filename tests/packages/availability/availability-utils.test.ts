@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 /**
  * Unit tests for Availability Check Page utilities
  * Tests the logic for deriving availability results and order conflict detection

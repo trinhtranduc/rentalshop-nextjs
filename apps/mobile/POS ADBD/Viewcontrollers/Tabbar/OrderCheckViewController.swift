@@ -289,6 +289,16 @@ class OrderCheckViewController: BaseViewControler {
             if response.success, let data = response.data {
                 let metrics = self.resolveAvailabilityMetrics(from: data)
 
+                let headerWidth = self.orderTableView.bounds.width
+                if headerWidth > 0 {
+                    self.summaryHeaderView.frame = CGRect(
+                        x: 0,
+                        y: 0,
+                        width: headerWidth,
+                        height: self.summaryHeaderView.frame.height
+                    )
+                }
+
                 self.summaryHeaderView.configure(
                     stock: metrics.stock,
                     shelfAvailable: metrics.shelfAvailable,

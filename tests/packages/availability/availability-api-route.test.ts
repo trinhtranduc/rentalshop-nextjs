@@ -90,8 +90,21 @@ describe('GET /api/products/[id]/availability — buildAvailabilityMetrics', () 
 
     expect(result.totalStock).toBe(20);
     expect(result.totalAvailableStock).toBe(19);
-    expect(result.effectivelyAvailable).toBe(20);
+    expect(result.effectivelyAvailable).toBe(19);
     expect(result.isAvailable).toBe(true);
+  });
+
+  it('Jul 16 scenario: SALE + renting, no overlap → effectivelyAvailable=19 not 20', () => {
+    const result = buildAvailabilityMetrics({
+      outletStock: { stock: 20, available: 19, renting: 1, outlet: { id: 30, name: 'O' } },
+      conflictingQuantity: 0,
+      reservedConflictQuantity: 0,
+      requestedQuantity: 1,
+    });
+
+    expect(result.totalAvailableStock).toBe(19);
+    expect(result.effectivelyAvailable).toBe(19);
+    expect(result.effectivelyAvailable).not.toBe(result.totalStock);
   });
 
   it('user scenario: stock=20, available=19, 1 PICKUPED overlap → effectivelyAvailable=18', () => {
@@ -136,7 +149,7 @@ describe('GET /api/products/[id]/availability — buildAvailabilityMetrics', () 
     expect(result.effectivelyAvailable).toBe(4);
   });
 
-  it('no period overlap: effectivelyAvailable uses totalStock (batch fix)', () => {
+  it('no period overlap: batch fix when shelf=0 but unit rented out', () => {
     const result = buildAvailabilityMetrics({
       outletStock: { stock: 1, available: 0, renting: 1, outlet: { id: 30, name: 'O' } },
       conflictingQuantity: 0,
