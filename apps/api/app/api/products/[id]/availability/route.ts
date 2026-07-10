@@ -4,8 +4,10 @@ import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import {
-  calculateEffectivelyAvailable,
+  aggregateConflictingQuantities,
+  buildAvailabilityMetrics,
   mapAvailabilityOrderDisplay,
+  resolveTotalAvailableStock,
 } from '../../../../../lib/availability';
 import { z } from 'zod';
 
@@ -171,15 +173,10 @@ export async function GET(
 
       // Get stock info for single outlet
       const totalStock = outletStock.stock;
-      
-      // NOTE: We do NOT use outletStock.renting for availability calculation here.
-      // The `renting` field is a static counter that may be stale.
-      // Instead, we calculate conflicts directly from active orders to avoid double-counting.
-      // outletStock.renting is still returned for informational purposes.
       const totalRenting = outletStock.renting;
-      
-      // For basic stock check (no dates), use static stock info
-      const totalAvailableStock = Math.max(0, totalStock - totalRenting);
+
+      // Prefer outletStock.available — updated by SALE (permanent) and RENT PICKUPED/RETURN flows.
+      const totalAvailableStock = resolveTotalAvailableStock(outletStock);
 
       console.log('🔍 Stock summary:', {
         totalStock,
@@ -188,7 +185,7 @@ export async function GET(
         requestedQuantity: quantity,
         outletId: finalOutletId,
         productId: productId,
-        note: 'Available calculated from stock - renting (for RENT orders)',
+        note: 'totalAvailableStock from outletStock.available (includes SALE); effectivelyAvailable is date-specific',
       });
 
       // 3. Check basic stock availability
@@ -383,14 +380,18 @@ export async function GET(
       });
 
       // Build conflict order IDs set for marking
-      const conflictOrderIds = new Set(conflictingOrders.map(o => o.id));
+      const {
+        conflictingQuantity,
+        reservedConflictQuantity,
+        conflictOrderIds,
+      } = aggregateConflictingQuantities(productId, finalOutletId, conflictingOrders);
 
       // 6. Calculate conflicts for single outlet with precise time analysis
       const outletConflicts = {
         outletId: finalOutletId,
         outletName: outletStock.outlet.name,
-        conflictingQuantity: 0,
-        reservedConflictQuantity: 0,
+        conflictingQuantity,
+        reservedConflictQuantity,
         conflicts: [] as Array<{
           orderNumber: string;
           customerName: string;
@@ -422,11 +423,6 @@ export async function GET(
         order.orderItems.forEach((item: any) => {
           // Only count items for the specific product
           if (item.productId === productId) {
-            outletConflicts.conflictingQuantity += item.quantity;
-            if (order.status === ORDER_STATUS.RESERVED) {
-              outletConflicts.reservedConflictQuantity += item.quantity;
-            }
-            
             // Calculate precise conflict analysis if time precision is enabled
             const orderPickup = order.pickupPlanAt;
             const orderReturn = order.returnPlanAt;
@@ -506,16 +502,24 @@ export async function GET(
       });
 
       // 7. Determine final availability considering conflicts for single outlet
-      const conflictingQuantity = outletConflicts.conflictingQuantity;
-      const reservedConflictQuantity = outletConflicts.reservedConflictQuantity;
-
-      const effectivelyAvailable = calculateEffectivelyAvailable({
-        totalStock,
-        totalAvailableStock,
+      const availabilityMetrics = buildAvailabilityMetrics({
+        outletStock: {
+          stock: outletStock.stock,
+          available: outletStock.available,
+          renting: outletStock.renting,
+          outlet: outletStock.outlet,
+        },
         conflictingQuantity,
         reservedConflictQuantity,
+        requestedQuantity: quantity,
       });
-      const canFulfillRequest = effectivelyAvailable >= quantity;
+
+      const {
+        effectivelyAvailable,
+        canFulfillRequest,
+        isAvailable,
+        availabilityByOutlet: availabilityResult,
+      } = availabilityMetrics;
 
       // Enhanced logging for debugging rental calculation
       console.log('🔍 Rental calculation summary:', {
@@ -538,22 +542,10 @@ export async function GET(
         }))
       });
 
-      const availabilityResult = {
-        outletId: outletStock.outlet.id,
-        outletName: outletStock.outlet.name,
-        stock: outletStock.stock,
-        available: outletStock.available,
-        renting: outletStock.renting,
-        conflictingQuantity,
-        reservedConflictQuantity,
-        effectivelyAvailable,
-        canFulfillRequest,
+      const availabilityResultWithConflicts = {
+        ...availabilityResult,
         conflicts: outletConflicts.conflicts,
       };
-
-      // Overall availability - canFulfillRequest is the authoritative source
-      // It already accounts for stock, conflicts, and requested quantity
-      const isAvailable = canFulfillRequest;
 
       return NextResponse.json(
         ResponseBuilder.success('AVAILABILITY_CHECKED', {
@@ -583,11 +575,11 @@ export async function GET(
           // Keep stockAvailable for backward compatibility and informational purposes
           stockAvailable,
           hasNoConflicts: conflictingOrders.length === 0,
-          availabilityByOutlet: [availabilityResult],
+          availabilityByOutlet: [availabilityResultWithConflicts],
           bestOutlet: {
-            outletId: availabilityResult.outletId,
-            outletName: availabilityResult.outletName,
-            effectivelyAvailable: availabilityResult.effectivelyAvailable,
+            outletId: availabilityResultWithConflicts.outletId,
+            outletName: availabilityResultWithConflicts.outletName,
+            effectivelyAvailable: availabilityResultWithConflicts.effectivelyAvailable,
           },
           totalConflictsFound: outletConflicts.conflicts.length,
           // All active orders for this product (for mobile order list display)

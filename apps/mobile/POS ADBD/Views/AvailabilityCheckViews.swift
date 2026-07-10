@@ -354,16 +354,23 @@ final class AvailabilitySummaryHeaderView: UIView {
         }
     }
 
-    func configure(stock: Int, available: Int, renting: Int, conflicts: Int, checkDate: String) {
-        if available > 0 {
-            verdictView.configure(style: .available, availableCount: available, checkDate: checkDate)
+    func configure(
+        stock: Int,
+        shelfAvailable: Int,
+        effectiveAvailable: Int,
+        renting: Int,
+        conflicts: Int,
+        checkDate: String
+    ) {
+        if effectiveAvailable > 0 {
+            verdictView.configure(style: .available, availableCount: effectiveAvailable, checkDate: checkDate)
         } else if conflicts > 0 {
             verdictView.configure(style: .conflictWarning, availableCount: 0, checkDate: checkDate)
         } else {
             verdictView.configure(style: .outOfStock, availableCount: 0, checkDate: checkDate)
         }
 
-        metricsCardView.configure(stock: stock, available: available, renting: renting)
+        metricsCardView.configure(stock: stock, available: shelfAvailable, renting: renting)
     }
 }
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { calculateEffectivelyAvailable } from '../../../apps/api/lib/availability';
+import {
+  calculateEffectivelyAvailable,
+  resolveTotalAvailableStock,
+} from '../../../apps/api/lib/availability';
 
 describe('calculateEffectivelyAvailable', () => {
   it('PICKUPED-only overlap: subtract conflicts from totalAvailableStock (user scenario)', () => {
@@ -34,5 +37,11 @@ describe('calculateEffectivelyAvailable', () => {
     });
 
     expect(result).toBe(2);
+  });
+});
+
+describe('resolveTotalAvailableStock', () => {
+  it('uses outlet.available when present (SALE-aware)', () => {
+    expect(resolveTotalAvailableStock({ stock: 20, available: 19, renting: 1 })).toBe(19);
   });
 });

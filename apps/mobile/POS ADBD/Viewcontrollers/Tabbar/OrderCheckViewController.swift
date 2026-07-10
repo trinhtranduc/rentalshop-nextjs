@@ -18,7 +18,8 @@ protocol OrderCheckViewControllerDelegate {
 class OrderCheckViewController: BaseViewControler {
     private struct AvailabilityMetrics {
         let stock: Int
-        let available: Int
+        let shelfAvailable: Int
+        let effectiveAvailable: Int
         let renting: Int
         let conflicts: Int
         let outletName: String?
@@ -290,7 +291,8 @@ class OrderCheckViewController: BaseViewControler {
 
                 self.summaryHeaderView.configure(
                     stock: metrics.stock,
-                    available: metrics.available,
+                    shelfAvailable: metrics.shelfAvailable,
+                    effectiveAvailable: metrics.effectiveAvailable,
                     renting: metrics.renting,
                     conflicts: metrics.conflicts,
                     checkDate: self.formatDateString(self.date)
@@ -306,7 +308,7 @@ class OrderCheckViewController: BaseViewControler {
                 if let outletName = metrics.outletName {
                     print("   Outlet: \(outletName)")
                 }
-                print("   Stock: \(metrics.stock), Renting: \(metrics.renting), Conflicts: \(metrics.conflicts), Available: \(metrics.available)")
+                print("   Stock: \(metrics.stock), Shelf: \(metrics.shelfAvailable), Renting: \(metrics.renting), Conflicts: \(metrics.conflicts), Effective: \(metrics.effectiveAvailable)")
                 print("   Orders: \(self.availabilityOrders.count)")
             } else {
                 let errorMessage = response.message ?? "Failed to load product availability"
@@ -334,16 +336,24 @@ class OrderCheckViewController: BaseViewControler {
 
         let renting = normalizedMetric(rawRenting, upperBound: stockUpperBound)
 
-        let rawAvailable = outletData?.effectivelyAvailable
-            ?? derivedEffectiveAvailability(outletData: outletData, conflicts: conflicts)
+        // Có sẵn: current shelf count (not date-specific). SALE is reflected in outlet.available.
+        let rawShelfAvailable = outletData?.available
             ?? data.totalAvailableStock
-            ?? derivedAvailable(stock: stock, renting: renting, conflicts: conflicts)
+            ?? derivedShelfAvailable(stock: stock, renting: renting)
 
-        let available = normalizedMetric(rawAvailable, upperBound: stockUpperBound)
+        let shelfAvailable = normalizedMetric(rawShelfAvailable, upperBound: stockUpperBound)
+
+        // Verdict: units free for the checked rental day (date-specific).
+        let rawEffective = outletData?.effectivelyAvailable
+            ?? derivedEffectiveAvailability(outletData: outletData, conflicts: conflicts)
+            ?? max(0, shelfAvailable - max(0, conflicts))
+
+        let effectiveAvailable = normalizedMetric(rawEffective, upperBound: stockUpperBound)
 
         return AvailabilityMetrics(
             stock: stock,
-            available: available,
+            shelfAvailable: shelfAvailable,
+            effectiveAvailable: effectiveAvailable,
             renting: renting,
             conflicts: normalizedMetric(conflicts, upperBound: stockUpperBound),
             outletName: outletData?.outletName
@@ -414,14 +424,14 @@ class OrderCheckViewController: BaseViewControler {
         return nil
     }
 
+    private func derivedShelfAvailable(stock: Int, renting: Int) -> Int? {
+        guard stock > 0 else { return nil }
+        return max(0, stock - renting)
+    }
+
     private func derivedEffectiveAvailability(outletData: NewAvailabilityOutlet?, conflicts: Int) -> Int? {
         guard let outletAvailable = outletData?.available else { return nil }
         return max(0, outletAvailable - max(0, conflicts))
-    }
-
-    private func derivedAvailable(stock: Int, renting: Int, conflicts: Int) -> Int? {
-        guard stock > 0 else { return nil }
-        return max(0, stock - renting - max(0, conflicts))
     }
 
     private func fallbackStockFromProduct() -> Int? {

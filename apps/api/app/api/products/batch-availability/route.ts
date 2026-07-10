@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
-import { calculateEffectivelyAvailable } from '../../../../lib/availability';
+import { calculateEffectivelyAvailable, resolveTotalAvailableStock } from '../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for batch availability request
@@ -396,7 +396,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
           // Get stock info
           const totalStock = outletStock.stock;
           const totalRenting = outletStock.renting;
-          const totalAvailableStock = Math.max(0, totalStock - totalRenting);
+          const totalAvailableStock = resolveTotalAvailableStock(outletStock);
 
           // Check basic stock availability using product-specific quantity
           const stockAvailable = totalAvailableStock >= productQuantity;
