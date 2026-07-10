@@ -33,9 +33,9 @@ export async function checkPlanLimitIfNeeded(
     entityType
   }, 'checkPlanLimitIfNeeded called');
 
-  // ADMIN users bypass plan limit checks
-  if (user.role === USER_ROLE.ADMIN) {
-    logger.debug({ userRole: user.role, entityType }, 'ADMIN user: Bypassing plan limit check');
+  // ADMIN / ARTICLE users bypass plan limit checks
+  if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ARTICLE) {
+    logger.debug({ userRole: user.role, entityType }, 'System user: Bypassing plan limit check');
     return null;
   }
 

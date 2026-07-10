@@ -104,8 +104,8 @@ export class SubscriptionStatusChecker {
    * ADMIN users bypass this check
    */
   static async check(user: any): Promise<SubscriptionCheckResult> {
-    // ADMIN users bypass subscription checks
-    if (user.role === USER_ROLE.ADMIN) {
+    // ADMIN and ARTICLE users bypass subscription checks
+    if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ARTICLE) {
       return { success: true };
     }
 

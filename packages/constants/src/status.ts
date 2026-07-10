@@ -90,6 +90,7 @@ export type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 // ============================================================================
 export const USER_ROLE = {
   ADMIN: 'ADMIN',                    // System Administrator
+  ARTICLE: 'ARTICLE',                // Blog / CMS editor only
   MERCHANT: 'MERCHANT',              // Business Owner
   OUTLET_ADMIN: 'OUTLET_ADMIN',      // Outlet Manager
   OUTLET_STAFF: 'OUTLET_STAFF'       // Outlet Employee

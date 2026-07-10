@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { AdminSidebar, SidebarSkeleton, HeaderSkeleton } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import SubscriptionExpiryBanner from './SubscriptionExpiryBanner';
+import { isArticleOnlyAdminPath } from '@rentalshop/ui';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -18,38 +19,53 @@ export default function AdminLayout({
   notificationsCount = 0 
 }: AdminLayoutProps) {
   const { user, logout, loading } = useAuth();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Show skeleton layout while checking authentication (non-blocking)
+  const isLoginPage = pathname === '/login';
+  const isPublicPage = isLoginPage || pathname === '/';
+  const showSidebar = Boolean(user) && !isPublicPage;
+
+  // ARTICLE role: only blog CMS routes
+  useEffect(() => {
+    if (!user || user.role !== 'ARTICLE' || pathname === '/login') return;
+    if (!isArticleOnlyAdminPath(pathname)) {
+      router.replace('/posts');
+    }
+  }, [user, pathname, router]);
+
+  // Show content skeleton while checking auth — never show sidebar until user is confirmed
   if (loading) {
     return (
       <div className="flex h-screen bg-bg-primary">
-        {/* Sidebar Skeleton */}
-        <div className="w-64 bg-bg-card border-r border-border">
-          <SidebarSkeleton />
-        </div>
-        {/* Main Content Skeleton */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <HeaderSkeleton />
-          <main className="flex-1 overflow-y-auto bg-bg-primary p-4">
-            <div className="space-y-4">
-              <div className="h-8 bg-bg-tertiary rounded w-1/4 animate-pulse" />
-              <div className="h-64 bg-bg-tertiary rounded animate-pulse" />
-            </div>
+        {showSidebar && (
+          <div className="hidden w-64 shrink-0 border-r border-border bg-bg-card lg:block">
+            <SidebarSkeleton />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {showSidebar && <HeaderSkeleton />}
+          <main
+            className={`flex-1 overflow-y-auto bg-bg-primary ${isPublicPage ? '' : 'p-4'}`}
+          >
+            {isPublicPage ? (
+              children
+            ) : (
+              <div className="space-y-4">
+                <div className="h-8 w-1/4 animate-pulse rounded bg-bg-tertiary" />
+                <div className="h-64 animate-pulse rounded bg-bg-tertiary" />
+              </div>
+            )}
           </main>
         </div>
       </div>
     );
   }
 
-  // Check if we're on the login page - hide sidebar on login page
-  const isLoginPage = pathname === '/login';
-
-  // Redirect to login if not authenticated (except on login page)
-  // But don't redirect while still loading to avoid race conditions
-  if (!user && !isLoginPage && !loading) {
+  // Redirect to login if not authenticated (public pages excluded)
+  if (!user && !isPublicPage) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -59,11 +75,10 @@ export default function AdminLayout({
   const handleLogout = () => {
     logout();
   };
-  const showSidebar = !isLoginPage;
 
   return (
     <div className="flex h-screen bg-bg-primary">
-      {/* Show sidebar on all pages except login */}
+      {/* Sidebar — only when authenticated on protected routes */}
       {showSidebar && (
         <>
           {/* Mobile Menu Overlay */}

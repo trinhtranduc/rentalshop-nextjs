@@ -312,7 +312,7 @@ class SaleDetailCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func bind(order: Order, sortType: OrderSortType = .book_date) {
+    func bind(order: Order, sortType: OrderSortType = .rentDefault) {
         self.order = order
         
         // Order number

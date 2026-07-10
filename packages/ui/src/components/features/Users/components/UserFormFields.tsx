@@ -111,6 +111,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
           {currentUserRole === 'ADMIN' && (
             <>
               <SelectItem value="ADMIN">System Admin</SelectItem>
+              <SelectItem value="ARTICLE">Article Editor</SelectItem>
               <SelectItem value="MERCHANT">Merchant</SelectItem>
             </>
           )}

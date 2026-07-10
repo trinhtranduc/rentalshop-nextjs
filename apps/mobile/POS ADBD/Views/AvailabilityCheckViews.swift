@@ -35,17 +35,9 @@ final class AvailabilityVerdictView: UIView {
         return imageView
     }()
 
-    private let eyebrowLabel: UILabel = {
-        let label = UILabel()
-        label.font = .bodyRegular(size: 13)
-        label.textColor = .textSecondary
-        label.numberOfLines = 1
-        return label
-    }()
-
     private let headlineLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyBold(size: 18)
+        label.font = .bodyRegular(size: 18)
         label.numberOfLines = 2
         return label
     }()
@@ -81,7 +73,6 @@ final class AvailabilityVerdictView: UIView {
         layer.borderWidth = 1
 
         iconContainerView.addSubview(iconImageView)
-        textStackView.addArrangedSubview(eyebrowLabel)
         textStackView.addArrangedSubview(headlineLabel)
         rowStackView.addArrangedSubview(iconContainerView)
         rowStackView.addArrangedSubview(textStackView)
@@ -98,7 +89,7 @@ final class AvailabilityVerdictView: UIView {
         textStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        rowStackView.alignment = .top
+        rowStackView.alignment = .center
 
         iconImageView.snp.makeConstraints { make in
             make.center.equalToSuperview()
@@ -108,34 +99,42 @@ final class AvailabilityVerdictView: UIView {
         rowStackView.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(16)
         }
-
-        eyebrowLabel.isHidden = true
     }
 
-    private func headline(
-        text: String,
-        highlight: String,
-        baseColor: UIColor,
-        highlightColor: UIColor = .brandPrimary
-    ) -> NSAttributedString {
+    private func availableHeadline(countText: String, checkDate: String, accentColor: UIColor) -> NSAttributedString {
+        let text = String(
+            format: "availability_verdict_available".localized(),
+            countText,
+            checkDate
+        )
         let attributed = NSMutableAttributedString(
             string: text,
             attributes: [
-                .font: UIFont.bodyBold(size: 18),
-                .foregroundColor: baseColor
+                .font: UIFont.bodyRegular(size: 18),
+                .foregroundColor: accentColor
             ]
         )
-        let range = (text as NSString).range(of: highlight)
+        let range = (text as NSString).range(of: countText)
         if range.location != NSNotFound {
             attributed.addAttributes(
                 [
-                    .font: UIFont.bodyBold(size: 18),
-                    .foregroundColor: highlightColor
+                    .font: UIFont.bodyBold(size: 22),
+                    .foregroundColor: accentColor
                 ],
                 range: range
             )
         }
         return attributed
+    }
+
+    private func plainHeadline(_ text: String, color: UIColor) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [
+                .font: UIFont.bodyRegular(size: 18),
+                .foregroundColor: color
+            ]
+        )
     }
 
     func configure(style: Style, availableCount: Int, checkDate: String) {
@@ -145,16 +144,13 @@ final class AvailabilityVerdictView: UIView {
             layer.borderColor = UIColor(hexString: "22C55E").withAlphaComponent(0.18).cgColor
             iconContainerView.backgroundColor = UIColor(hexString: "22C55E")
             iconImageView.image = UIImage(systemName: "checkmark")
-            headlineLabel.textColor = UIColor(hexString: "16A34A")
-            let text = String(
-                format: "availability_verdict_available".localized(),
-                availableCount.formatStringInCommon(),
-                checkDate
-            )
-            headlineLabel.attributedText = headline(
-                text: text,
-                highlight: checkDate,
-                baseColor: UIColor(hexString: "16A34A")
+            let accentColor = UIColor(hexString: "16A34A")
+            headlineLabel.textColor = accentColor
+            let countText = availableCount.formatStringInCommon()
+            headlineLabel.attributedText = availableHeadline(
+                countText: countText,
+                checkDate: checkDate,
+                accentColor: accentColor
             )
         case .outOfStock:
             backgroundColor = UIColor.actionDanger.withAlphaComponent(0.08)
@@ -162,14 +158,9 @@ final class AvailabilityVerdictView: UIView {
             iconContainerView.backgroundColor = .actionDanger
             iconImageView.image = UIImage(systemName: "xmark")
             headlineLabel.textColor = .actionDanger
-            let text = String(
-                format: "availability_verdict_out_of_stock".localized(),
-                checkDate
-            )
-            headlineLabel.attributedText = headline(
-                text: text,
-                highlight: checkDate,
-                baseColor: .actionDanger
+            headlineLabel.attributedText = plainHeadline(
+                String(format: "availability_verdict_out_of_stock".localized(), checkDate),
+                color: .actionDanger
             )
         case .conflictWarning:
             backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.10)
@@ -177,14 +168,9 @@ final class AvailabilityVerdictView: UIView {
             iconContainerView.backgroundColor = APP_ORANGE_COLOR
             iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
             headlineLabel.textColor = APP_ORANGE_COLOR
-            let text = String(
-                format: "availability_verdict_conflict".localized(),
-                checkDate
-            )
-            headlineLabel.attributedText = headline(
-                text: text,
-                highlight: checkDate,
-                baseColor: APP_ORANGE_COLOR
+            headlineLabel.attributedText = plainHeadline(
+                String(format: "availability_verdict_conflict".localized(), checkDate),
+                color: APP_ORANGE_COLOR
             )
         }
     }
@@ -224,19 +210,19 @@ final class AvailabilityMetricsCardView: UIView {
 
         let storage = makeColumn(
             title: "Storage".localized(),
-            accentColor: .textTertiary,
+            systemImage: "archivebox.fill",
             valueLabel: storageValueLabel,
             valueColor: .textPrimary
         )
         let available = makeColumn(
             title: "Available".localized(),
-            accentColor: .brandPrimary,
+            systemImage: "checkmark.circle.fill",
             valueLabel: availableValueLabel,
             valueColor: .brandPrimary
         )
         let renting = makeColumn(
             title: "Renting".localized(),
-            accentColor: APP_ORANGE_COLOR,
+            systemImage: "clock.fill",
             valueLabel: rentingValueLabel,
             valueColor: .textPrimary
         )
@@ -263,15 +249,20 @@ final class AvailabilityMetricsCardView: UIView {
 
     private func makeColumn(
         title: String,
-        accentColor: UIColor,
+        systemImage: String,
         valueLabel: UILabel,
         valueColor: UIColor
     ) -> UIView {
         let container = UIView()
 
+        let iconView = UIImageView()
+        iconView.image = UIImage(systemName: systemImage)
+        iconView.tintColor = .textSecondary
+        iconView.contentMode = .scaleAspectFit
+
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .captionMedium(size: 11)
+        titleLabel.font = .captionMedium(size: 13)
         titleLabel.textColor = .textSecondary
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 2
@@ -279,9 +270,14 @@ final class AvailabilityMetricsCardView: UIView {
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.85
 
-        let accentBar = UIView()
-        accentBar.backgroundColor = accentColor
-        accentBar.layer.cornerRadius = 1.5
+        let titleRow = UIStackView(arrangedSubviews: [iconView, titleLabel])
+        titleRow.axis = .horizontal
+        titleRow.spacing = 4
+        titleRow.alignment = .center
+
+        iconView.snp.makeConstraints { make in
+            make.width.height.equalTo(14)
+        }
 
         valueLabel.font = .bodyBold(size: 26)
         valueLabel.textColor = valueColor
@@ -290,16 +286,12 @@ final class AvailabilityMetricsCardView: UIView {
         valueLabel.adjustsFontSizeToFitWidth = true
         valueLabel.minimumScaleFactor = 0.65
 
-        let stack = UIStackView(arrangedSubviews: [titleLabel, accentBar, valueLabel])
+        let stack = UIStackView(arrangedSubviews: [titleRow, valueLabel])
         stack.axis = .vertical
-        stack.spacing = 6
+        stack.spacing = 8
         stack.alignment = .center
 
         container.addSubview(stack)
-        accentBar.snp.makeConstraints { make in
-            make.width.equalTo(22).priority(.high)
-            make.height.equalTo(3)
-        }
         stack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(4)
             make.leading.trailing.equalToSuperview().inset(6)
@@ -482,7 +474,7 @@ final class AvailabilityHistoryCell: UITableViewCell {
 
     private let orderNumberLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyBold(size: 15)
+        label.font = .bodyRegular(size: 15)
         label.textColor = .textPrimary
         label.numberOfLines = 1
         return label

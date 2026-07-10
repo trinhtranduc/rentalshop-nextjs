@@ -5,7 +5,7 @@ import { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from '../../../packages/auth/s
 import type { Permission, Role } from '../../../packages/auth/src/permissions';
 
 describe('@rentalshop/auth - Permissions', () => {
-  const ALL_ROLES: Role[] = ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
+  const ALL_ROLES: Role[] = ['ADMIN', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
 
   describe('ROLE_PERMISSIONS', () => {
     it('should define permissions for all roles', () => {
@@ -92,6 +92,11 @@ describe('@rentalshop/auth - Permissions', () => {
 
     it('OUTLET_ADMIN should have users.manage as critical', () => {
       expect(CRITICAL_PERMISSIONS['OUTLET_ADMIN']).toContain('users.manage');
+    });
+
+    it('ARTICLE should only manage blog posts', () => {
+      expect(ROLE_PERMISSIONS['ARTICLE']).toEqual(['posts.manage', 'posts.view']);
+      expect(CRITICAL_PERMISSIONS['ARTICLE']).toEqual(['posts.view', 'posts.manage']);
     });
   });
 

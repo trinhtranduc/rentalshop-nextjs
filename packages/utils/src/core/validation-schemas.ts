@@ -321,10 +321,24 @@ export type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 // User validation schemas
 const userRoleEnum = z.enum([
   USER_ROLE.ADMIN,
+  USER_ROLE.ARTICLE,
   USER_ROLE.MERCHANT,
   USER_ROLE.OUTLET_ADMIN,
   USER_ROLE.OUTLET_STAFF,
 ] as [string, ...string[]]);
+
+const usersIsActiveFilterSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '' || value === 'all') {
+    return undefined;
+  }
+  if (value === true || value === 'true' || value === 'active' || value === 1 || value === '1') {
+    return true;
+  }
+  if (value === false || value === 'false' || value === 'inactive' || value === 0 || value === '0') {
+    return false;
+  }
+  return value;
+}, z.boolean().optional());
 
 export const usersQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
@@ -332,13 +346,28 @@ export const usersQuerySchema = z.object({
   role: userRoleEnum.optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
-  isActive: z.coerce.boolean().optional(),
+  status: z.enum(['active', 'inactive', 'all']).optional(),
+  isActive: usersIsActiveFilterSchema,
   limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   sortBy: z.enum(['email', 'name', 'role', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
+
+/** When undefined, user list includes both active and disabled (non-deleted) accounts. */
+export function resolveUsersIsActiveFilter(query: {
+  isActive?: boolean;
+  status?: string;
+}): boolean | undefined {
+  if (typeof query.isActive === 'boolean') {
+    return query.isActive;
+  }
+  const status = query.status?.toLowerCase();
+  if (status === 'active') return true;
+  if (status === 'inactive') return false;
+  return undefined;
+}
 
 export const userCreateSchema = z.object({
   email: z.string().email('Invalid email address'),

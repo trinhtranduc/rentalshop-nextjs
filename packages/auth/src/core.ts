@@ -440,7 +440,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     // SUBSCRIPTION STATUS CHECK
     // ============================================================================
     // Check if merchant has active subscription (skip for ADMIN users)
-    if (user.role !== 'ADMIN' && user.merchantId) {
+    if (user.role !== 'ADMIN' && user.role !== 'ARTICLE' && user.merchantId) {
       const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId);
       if (!subscriptionCheck.success) {
         return {
@@ -782,6 +782,7 @@ function normalizeRole(role: string | undefined | null): Role | null {
   if (!role) return null;
   const upper = role.toUpperCase();
   if (upper === 'ADMIN') return 'ADMIN';
+  if (upper === 'ARTICLE') return 'ARTICLE';
   if (upper === 'MERCHANT') return 'MERCHANT';
   if (upper === 'OUTLET_ADMIN') return 'OUTLET_ADMIN';
   if (upper === 'OUTLET_STAFF') return 'OUTLET_STAFF';
@@ -1047,7 +1048,7 @@ export function validateMerchantOutletAccess(
   }
 
   // Validate that non-admin users have merchant association
-  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+  if (user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.ARTICLE && !userScope.merchantId) {
     return {
       authorized: false,
       error: NextResponse.json(
@@ -1193,7 +1194,7 @@ export async function validateMerchantAccess(
   }
 
   // Validate merchant association requirement (non-admin users must have merchantId)
-  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+  if (user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.ARTICLE && !userScope.merchantId) {
     return {
       valid: false,
       error: NextResponse.json(

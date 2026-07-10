@@ -7,6 +7,7 @@ import { cn } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { useOptimisticNavigation, useCommonTranslations } from '@rentalshop/hooks';
 import { formatRoleDisplayName } from '../../utils/role-utils';
+import { filterAdminMenuByRole } from '../../utils/admin-menu-filter';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -191,6 +192,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const pathname = usePathname();
   const { navigatingTo, navigate, prefetch } = useOptimisticNavigation();
 
+  const visibleMenuItems = filterAdminMenuByRole(adminMenuItems, user?.role);
+
   // Auto-expand Settings when on system pages or request-logs
   useEffect(() => {
     if ((pathname.startsWith('/system') || pathname.startsWith('/request-logs')) && !expandedItems.includes('/settings')) {
@@ -359,7 +362,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        {adminMenuItems.map((item) => renderMenuItem(item))}
+        {visibleMenuItems.map((item) => renderMenuItem(item))}
       </nav>
 
       {/* User Profile & Actions */}

@@ -85,6 +85,11 @@ export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' |
  */
 export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
   'ADMIN': [], // Admin has no restrictions
+
+  'ARTICLE': [
+    'posts.view',
+    'posts.manage',
+  ],
   
   'MERCHANT': [
     'merchant.view',        // Must view own merchant info
@@ -138,6 +143,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.export',
     'billing.manage', 'billing.view',
     'bankAccounts.manage', 'bankAccounts.view'
+  ],
+  'ARTICLE': [
+    'posts.manage',
+    'posts.view',
   ],
   'MERCHANT': [
     'merchant.manage', 'merchant.view', // ✅ Merchant can manage their own merchant information

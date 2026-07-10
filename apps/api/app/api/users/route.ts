@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
@@ -62,14 +62,22 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
 
     const q = parsed.data as any;
     
-    // Use simplified database API
+    // Use simplified database API — omit isActive unless explicitly filtered
+    // so disabled (inactive) staff remain visible in outlet user lists.
     const searchFilters: any = {
       role: q.role,
-      isActive: q.isActive,
-      search: q.search,
+      search: q.search || q.q,
       page: q.page || 1,
       limit: q.limit || 20
     };
+
+    const resolvedIsActive = resolveUsersIsActiveFilter({
+      isActive: q.isActive,
+      status: q.status,
+    });
+    if (resolvedIsActive !== undefined) {
+      searchFilters.isActive = resolvedIsActive;
+    }
 
     // Role-based merchant filtering:
     // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
@@ -213,10 +221,10 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     let merchantId: number | undefined;
     let outletId: number | undefined;
 
-    if (parsed.data.role === USER_ROLE.ADMIN) {
-      // ADMIN can be assigned to any merchant/outlet or none
-      merchantId = parsed.data.merchantId;
-      outletId = parsed.data.outletId;
+    if (parsed.data.role === USER_ROLE.ADMIN || parsed.data.role === USER_ROLE.ARTICLE) {
+      // ADMIN / ARTICLE: no merchant or outlet (system-level)
+      merchantId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.merchantId : undefined;
+      outletId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.outletId : undefined;
     } else if (parsed.data.role === USER_ROLE.MERCHANT) {
       // MERCHANT must have merchantId, no outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
@@ -258,7 +266,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
 
     // Check plan limits before creating user (only for non-ADMIN users)
     // Note: Only check if creating non-ADMIN user and merchantId exists
-    if (parsed.data.role !== USER_ROLE.ADMIN && merchantId) {
+    if (parsed.data.role !== USER_ROLE.ADMIN && parsed.data.role !== USER_ROLE.ARTICLE && merchantId) {
       const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'users');
       if (planLimitError) return planLimitError;
     }
@@ -353,6 +361,12 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
     // Check if user is being deactivated (isActive changed from true to false)
     const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
+
+    const targetRole = updateData.role ?? existingUser.role;
+    if (targetRole === USER_ROLE.ARTICLE) {
+      updateData.merchantId = null;
+      updateData.outletId = null;
+    }
 
     const updatedUser = await db.users.update(id, updateData);
     const auditHelper = createAuditHelper(prisma);

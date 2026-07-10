@@ -113,8 +113,19 @@ export const UserForm: React.FC<UserFormProps> = ({
   // Role-based access control (create mode only)
   const canSelectMerchant = currentUser?.role === 'ADMIN';
   const canSelectOutlet = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT';
-  const showMerchantField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
-  const showOutletField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
+  const isArticleRole = formData.role === 'ARTICLE';
+  const showMerchantField =
+    !isArticleRole &&
+    (currentUser?.role === 'ADMIN' ||
+      currentUser?.role === 'MERCHANT' ||
+      currentUser?.role === 'OUTLET_ADMIN' ||
+      currentUser?.role === 'OUTLET_STAFF');
+  const showOutletField =
+    !isArticleRole &&
+    (currentUser?.role === 'ADMIN' ||
+      currentUser?.role === 'MERCHANT' ||
+      currentUser?.role === 'OUTLET_ADMIN' ||
+      currentUser?.role === 'OUTLET_STAFF');
 
   // Search merchants function for dynamic search (admin only)
   const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string; description?: string }>> => {
@@ -171,7 +182,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       
       // Ensure role is properly typed
       const userRole = user.role as UserRole;
-      const validRoles: UserRole[] = ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
+      const validRoles: UserRole[] = ['ADMIN', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
       const role = validRoles.includes(userRole) ? userRole : 'OUTLET_STAFF';
       
       // Combine firstName and lastName into name field

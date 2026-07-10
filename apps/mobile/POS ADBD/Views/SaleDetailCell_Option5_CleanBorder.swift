@@ -80,7 +80,7 @@ private final class SaleOrderMetaView: UIView {
 
 class SaleDetailCell_Option5: UITableViewCell {
     private var order: Order?
-    private var currentSortType: OrderSortType = .book_date
+    private var currentSortType: OrderSortType = .rentDefault
 
     private var isRegularWidth: Bool {
         traitCollection.horizontalSizeClass == .regular
@@ -220,7 +220,7 @@ class SaleDetailCell_Option5: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         order = nil
-        currentSortType = .book_date
+        currentSortType = .rentDefault
         isPhoneRevealed = false
         revealPhoneButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
         pickupDateView.isHidden = false
@@ -389,7 +389,7 @@ class SaleDetailCell_Option5: UITableViewCell {
         )
     }
 
-    func bind(order: Order, sortType: OrderSortType = .book_date) {
+    func bind(order: Order, sortType: OrderSortType = .rentDefault) {
         self.order = order
         currentSortType = sortType
 

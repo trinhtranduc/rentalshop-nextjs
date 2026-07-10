@@ -2,7 +2,7 @@
 // USER ROLES TYPES
 // ============================================================================
 
-export type UserRole = 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+export type UserRole = 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
 
 export interface RolePermissions {
   canManageUsers: boolean;
@@ -23,6 +23,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageCustomers: true,
     canViewAnalytics: true,
     canManageSettings: true,
+  },
+  ARTICLE: {
+    canManageUsers: false,
+    canManageOutlets: false,
+    canManageProducts: false,
+    canManageOrders: false,
+    canManageCustomers: false,
+    canViewAnalytics: false,
+    canManageSettings: false,
   },
   MERCHANT: {
     canManageUsers: true,
