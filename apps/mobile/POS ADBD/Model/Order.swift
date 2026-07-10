@@ -48,7 +48,7 @@ enum OrderStatus: String, Codable, CaseIterable {
         case .reserved:
             return "Reserved".localized().uppercased()
         case .pickuped:
-            return "PickedUp".localized().uppercased()
+            return "Pickuped".localized().uppercased()
         case .returned:
             return "Returned".localized().uppercased()
         case .completed:

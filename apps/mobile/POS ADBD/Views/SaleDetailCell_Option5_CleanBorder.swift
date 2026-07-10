@@ -44,7 +44,7 @@ private final class SaleOrderMetaView: UIView {
         titleRowStackView.addArrangedSubview(titleLabel)
 
         stackView.axis = .vertical
-        stackView.spacing = 3
+        stackView.spacing = 6
         stackView.alignment = .leading
         stackView.addArrangedSubview(titleRowStackView)
         stackView.addArrangedSubview(valueLabel)

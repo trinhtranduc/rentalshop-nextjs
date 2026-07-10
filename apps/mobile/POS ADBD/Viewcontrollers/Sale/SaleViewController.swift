@@ -19,16 +19,33 @@ enum OrderSortType: Int {
 class SaleViewController : BaseViewControler{
     // MARK: - UI Components
     private var tbv: UITableView!
+    private lazy var searchSectionView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        return view
+    }()
+
     private lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.delegate = self
         searchBar.backgroundColor = .clear
-//        searchBar.backgroundImage = UIImage()
+        searchBar.searchBarStyle = .minimal
+        searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
         searchBar.placeholder = "Order number, name, phone number...".localized()
         searchBar.placeholderLabel?.font = Utils.regularFont(size: 16)
         searchBar.placeholderLabel?.textColor = .textTertiary
         searchBar.textField?.textColor = .textPrimary
         searchBar.textField?.font = Utils.regularFont(size: 16)
+        searchBar.tintColor = .brandPrimary
+
+        let searchTextField = searchBar.searchTextField
+        searchTextField.backgroundColor = .backgroundCard
+        searchTextField.layer.cornerRadius = 18
+        searchTextField.layer.masksToBounds = true
+        searchTextField.layer.borderWidth = 1
+        searchTextField.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.9).cgColor
+        searchTextField.leftView?.tintColor = .textSecondary
+        searchTextField.clearButtonMode = .whileEditing
         
         // Configure text input traits
         searchBar.searchTextField.autocorrectionType = .no
@@ -109,35 +126,30 @@ class SaleViewController : BaseViewControler{
     
     private lazy var sortButton: UIButton = {
         let button = UIButton(type: .system)
-        button.backgroundColor = .backgroundCard
-        button.layer.cornerRadius = 8
-        
-        // Set fixed size for icon-only button
-        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        
         button.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-        button.tintColor = .label
+        button.tintColor = .textPrimary
         
         // Set initial icon directly (don't call updateFilterButtonIcon() here to avoid infinite loop)
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        let filterImage = UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: config)
+        let config = UIImage.SymbolConfiguration(pointSize: 17, weight: .medium)
+        let filterImage = UIImage(systemName: "line.3.horizontal.decrease", withConfiguration: config)
         button.setImage(filterImage, for: .normal)
         
         return button
     }()
     
     private func updateFilterButtonIcon() {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        // Use filled icon when filter is active, outline when not
-        let iconName = (selectedStatus != nil) ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+        let config = UIImage.SymbolConfiguration(pointSize: 17, weight: .medium)
+        let iconName = "line.3.horizontal.decrease"
         let filterImage = UIImage(systemName: iconName, withConfiguration: config)
         sortButton.setImage(filterImage, for: .normal)
+        sortButton.tintColor = (selectedStatus != nil) ? .brandPrimary : .textPrimary
     }
     
     private lazy var barcodeButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "barcode.viewfinder"), for: .normal)
-        button.tintColor = .label
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        button.setImage(UIImage(systemName: "barcode.viewfinder", withConfiguration: config), for: .normal)
+        button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(barcode), for: .touchUpInside)
         return button
     }()
@@ -147,10 +159,15 @@ class SaleViewController : BaseViewControler{
         let segmentedControl = UISegmentedControl(items: items)
         segmentedControl.selectedSegmentIndex = 0 // Default to Rent
         segmentedControl.addTarget(self, action: #selector(segmentedControlChanged), for: .valueChanged)
-        // Customize appearance
-        // Track color contrasts with the selected pill so the active segment is clearly visible.
-        segmentedControl.backgroundColor = .backgroundSecondary
+        segmentedControl.backgroundColor = UIColor.backgroundSecondary.withAlphaComponent(0.92)
         segmentedControl.selectedSegmentTintColor = .brandPrimary
+        segmentedControl.layer.cornerRadius = 16
+        segmentedControl.layer.masksToBounds = true
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        segmentedControl.snp.makeConstraints { make in
+            make.width.equalTo(UIDevice.current.userInterfaceIdiom == .pad ? 244 : 180)
+            make.height.equalTo(40)
+        }
 
         // Set text attributes for different states
         let fontSize: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 16 : 14
@@ -166,6 +183,7 @@ class SaleViewController : BaseViewControler{
         
         segmentedControl.setTitleTextAttributes(selectedAttributes, for: .selected)
         segmentedControl.setTitleTextAttributes(normalAttributes, for: .normal)
+        segmentedControl.setContentPositionAdjustment(UIOffset(horizontal: 0, vertical: -1), forSegmentType: .any, barMetrics: .default)
         
         return segmentedControl
     }()
@@ -219,14 +237,16 @@ class SaleViewController : BaseViewControler{
         // Set row height for Option 5 (Clean Border style)
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
         tbv.rowHeight = UITableViewAutomaticDimension
-        tbv.estimatedRowHeight = isIPad ? 130 : 110
+        tbv.estimatedRowHeight = isIPad ? 132 : 118
+        tbv.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 18, right: 0)
         
         // Configure search bar
-        searchBar.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 56)
+        searchBar.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 52)
         searchBar.sizeToFit()
         
         // Add subviews in order: search bar, then table view
-        view.addSubview(searchBar)
+        view.addSubview(searchSectionView)
+        searchSectionView.addSubview(searchBar)
         view.addSubview(tbv)
         view.backgroundColor = .backgroundPrimary
         
@@ -236,15 +256,22 @@ class SaleViewController : BaseViewControler{
         guard let customNavBar = customNavBar else { return }
         
         // Setup search bar constraints - below navigation bar
-        searchBar.snp.makeConstraints { make in
+        searchSectionView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar.snp.bottom)
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(56)
+            make.height.equalTo(72)
+        }
+
+        searchBar.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+            make.bottom.equalToSuperview().offset(-10)
         }
         
         // Setup table view constraints
         tbv.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom)
+            make.top.equalTo(searchSectionView.snp.bottom)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalToSuperview()
         }
@@ -257,7 +284,7 @@ class SaleViewController : BaseViewControler{
         // but that path no longer runs after fixing the loading indicator flow.
         configPullToRefresh(tableview: tbv)
     }
-    
+
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         // Create navBar first when using customTitleView

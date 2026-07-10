@@ -163,9 +163,9 @@ class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelega
 
     private lazy var customerNameLabel: UILabel = {
         let label = UILabel()
-        // Match SaleViewController's customer name style: medium weight, primary
-        // color (phone stays a tappable brand-coloured button alongside it).
-        label.font = Utils.mediumFont(size: 16)
+        // Match the today-orders cell (SaleCell .chart) customer name size:
+        // medium 15 on iPad / 14 on iPhone, primary colour.
+        label.font = Utils.mediumFont(size: UIDevice.current.userInterfaceIdiom == .pad ? 15 : 14)
         label.textColor = .textPrimary
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label

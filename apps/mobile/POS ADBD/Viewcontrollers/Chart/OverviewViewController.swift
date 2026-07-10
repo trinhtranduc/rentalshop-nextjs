@@ -366,6 +366,17 @@ class OverviewViewController: DemoBaseViewController {
         configureOverviewChartInteraction(chart)
         configureRevenueChartStyle(chart)
         configureXAxis(chart.xAxis)
+
+        // Order-count chart shares the same base style; only the series colour and
+        // an integer y-axis (whole orders) differ.
+        let ordersChart = chartsSection.ordersChartView
+        setup(barLineChartView: ordersChart)
+        configureOverviewChartInteraction(ordersChart)
+        configureRevenueChartStyle(ordersChart)
+        ordersChart.leftAxis.granularity = 1
+        ordersChart.leftAxis.granularityEnabled = true
+        configureXAxis(ordersChart.xAxis)
+
         applyChartPanMode(for: selectedPeriod)
     }
 
@@ -408,12 +419,13 @@ class OverviewViewController: DemoBaseViewController {
     /// Nested inside a vertical `UIScrollView`; DGCharts coordinates with the parent scroll view.
     private func applyChartPanMode(for period: ReportPeriod) {
         let allowHorizontalDrag = period == .thisYear || period == .last30Days || period == .last7Days
-        let chart = chartsSection.revenueChartView
-        chart.dragEnabled = allowHorizontalDrag
-        chart.dragXEnabled = allowHorizontalDrag
-        chart.dragYEnabled = false
-        // Highlight-on-drag fights horizontal pan when the chart is zoomed to a window.
-        chart.highlightPerDragEnabled = !allowHorizontalDrag
+        for chart in [chartsSection.revenueChartView, chartsSection.ordersChartView] {
+            chart.dragEnabled = allowHorizontalDrag
+            chart.dragXEnabled = allowHorizontalDrag
+            chart.dragYEnabled = false
+            // Highlight-on-drag fights horizontal pan when the chart is zoomed to a window.
+            chart.highlightPerDragEnabled = !allowHorizontalDrag
+        }
         chartsSection.setShowsHorizontalHint(allowHorizontalDrag)
     }
 
@@ -433,20 +445,21 @@ class OverviewViewController: DemoBaseViewController {
 
     private func applyChartVisibleRangeIfNeeded() {
         let count = max(xValues.count, 1)
+        let charts = [chartsSection.revenueChartView, chartsSection.ordersChartView]
         guard let visibleCount = chartVisibleWindowSize(for: selectedPeriod, pointCount: count),
               visibleCount > 0,
               Double(count) > visibleCount else {
-            chartsSection.revenueChartView.fitScreen()
+            charts.forEach { $0.fitScreen() }
             return
         }
-
-        let chart = chartsSection.revenueChartView
-        chart.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
 
         // `moveViewToX` aligns the left edge — offset so the latest days/months stay in view.
         let latestIndex = Double(count - 1)
         let leftIndex = max(0, latestIndex - visibleCount + 1)
-        chart.moveViewToX(leftIndex)
+        charts.forEach { chart in
+            chart.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
+            chart.moveViewToX(leftIndex)
+        }
     }
     
     private func configureXAxis(_ axis: XAxis) {
@@ -939,10 +952,12 @@ class OverviewViewController: DemoBaseViewController {
     override func updateChartData() {
         guard !shouldHideData && (selectedPeriod == .today || canViewChartAnalytics()) else {
             chartsSection.revenueChartView.data = nil
+            chartsSection.ordersChartView.data = nil
             return
         }
 
         setRevenueChartData()
+        setOrdersChartData()
     }
 
     private func setRevenueChartData() {
@@ -982,8 +997,46 @@ class OverviewViewController: DemoBaseViewController {
         chart.setNeedsDisplay()
     }
 
+    private func setOrdersChartData() {
+        let entries = yOValues.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
+
+        let set = LineChartDataSet(entries: entries, label: "Overview_Charts_OrderCount".localized())
+        set.axisDependency = .left
+        set.setColor(.accentOrange)
+        set.lineWidth = 2.5
+        set.circleRadius = 4
+        set.setCircleColor(.accentOrange)
+        set.drawCircleHoleEnabled = false
+        set.drawValuesEnabled = false
+        set.mode = .linear
+        set.drawFilledEnabled = true
+        set.highlightColor = .accentOrange
+        set.highlightLineWidth = 1.5
+
+        let topColor = UIColor.accentOrange.withAlphaComponent(0.24).cgColor
+        let bottomColor = UIColor.accentOrange.withAlphaComponent(0.02).cgColor
+        if let gradient = CGGradient(
+            colorsSpace: CGColorSpaceCreateDeviceRGB(),
+            colors: [topColor, bottomColor] as CFArray,
+            locations: [0.0, 1.0]
+        ) {
+            set.fill = LinearGradientFill(gradient: gradient, angle: 90)
+        } else {
+            set.fillColor = UIColor.accentOrange.withAlphaComponent(0.12)
+        }
+
+        let data = LineChartData(dataSet: set)
+        let chart = chartsSection.ordersChartView
+        chart.data = data
+        chart.notifyDataSetChanged()
+        applyChartPanMode(for: selectedPeriod)
+        applyChartVisibleRangeIfNeeded()
+        chart.setNeedsDisplay()
+    }
+
     private func clearChart() {
         chartsSection.revenueChartView.data = nil
+        chartsSection.ordersChartView.data = nil
         totalOrder = 0
         realIncome = 0
         averageDailyIncome = 0
