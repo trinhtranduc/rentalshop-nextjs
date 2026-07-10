@@ -46,6 +46,7 @@ declare const ORDER_TYPE: {
 type OrderType$1 = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 declare const USER_ROLE: {
     readonly ADMIN: "ADMIN";
+    readonly ARTICLE: "ARTICLE";
     readonly MERCHANT: "MERCHANT";
     readonly OUTLET_ADMIN: "OUTLET_ADMIN";
     readonly OUTLET_STAFF: "OUTLET_STAFF";
