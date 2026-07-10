@@ -533,7 +533,7 @@
 
 // MARK: - Status
 "Draft" = "Đang xem";
-"Reserved" = "Đang cọc";
+"Reserved" = "Mới cọc";
 "Pickup" = "Đang thuê";
 "Return" = "Đã trả";
 "Status" = "Trạng thái";
@@ -1131,6 +1131,10 @@
 
 // MARK: - Product Availability Check
 "On check day" = "Trong ngày kiểm tra";
+"availability_verdict_date_context" = "Trong ngày %@";
+"availability_verdict_available_headline" = "Còn %@ sản phẩm";
+"availability_verdict_out_of_stock_headline" = "Hết hàng";
+"availability_verdict_conflict_headline" = "Trùng lịch";
 "availability_verdict_available" = "Còn %@ sản phẩm trong ngày %@";
 "availability_verdict_out_of_stock" = "Hết hàng trong ngày %@";
 "availability_verdict_conflict" = "Trùng lịch trong ngày %@";

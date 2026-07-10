@@ -67,10 +67,14 @@ export async function GET(
       if (query.role) {
         searchFilters.role = query.role;
       }
-      // Only filter by isActive if explicitly provided
-      // Return both active and inactive users by default (only exclude deleted)
-      if (query.isActive !== undefined) {
-        searchFilters.isActive = query.isActive;
+      // Only filter by isActive when explicitly provided (include disabled by default)
+      const { resolveUsersIsActiveFilter } = await import('@rentalshop/utils');
+      const resolvedIsActive = resolveUsersIsActiveFilter({
+        isActive: query.isActive,
+        status: (query as { status?: string }).status,
+      });
+      if (resolvedIsActive !== undefined) {
+        searchFilters.isActive = resolvedIsActive;
       }
 
       // Role-based outlet filtering:

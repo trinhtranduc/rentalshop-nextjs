@@ -101,17 +101,17 @@ extension UIColor {
     // badge chips force white via `badgeTextColor` so we don't bleach those UIs.
     // Fills (solid / saturated)
     static let statusDraftFill     = UIColor(hexString: "6B7280") // gray-500
-    static let statusReservedFill  = UIColor(hexString: "D97706") // amber-600 (pending)
-    static let statusActiveFill    = UIColor(hexString: "2563EB") // blue-600 (picked up / in use)
+    static let statusReservedFill  = UIColor(hexString: "DC2626") // red-600 (new deposit / reserved)
+    static let statusActiveFill    = UIColor.accentOrange // orange (renting / picked up)
     static let statusDoneFill      = UIColor(hexString: "16A34A") // green-600 (returned / completed)
     static let statusCancelledFill = UIColor(hexString: "DC2626") // red-600 (cancelled)
     // On-surface / accent text (dark) — NOT for painting on solid badge fills
     static let statusDraftText     = UIColor(hexString: "374151") // gray-700
-    static let statusReservedText  = UIColor(hexString: "92400E") // amber-800
-    static let statusActiveText    = UIColor(hexString: "1E40AF") // blue-800
+    static let statusReservedText  = UIColor(hexString: "B91C1C") // red-700
+    static let statusActiveText    = UIColor(hexString: "C2410C") // orange-700
     static let statusDoneText      = UIColor(hexString: "166534") // green-800
     /// Matched substring in product/customer search results.
-    static let searchMatchHighlight = UIColor(hexString: "15803D") // green-700
+    static let searchMatchHighlight = UIColor.actionPrimary
     static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
     /// Label color on solid status chips only.
     static let statusBadgeLabelText = UIColor.white

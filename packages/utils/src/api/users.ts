@@ -69,10 +69,20 @@ export const usersApi = {
     const params = new URLSearchParams();
     
     if (filters.search) params.append('search', filters.search);
+    if (filters.q) params.append('q', filters.q);
     if (filters.role) params.append('role', filters.role);
-    // Send isActive if provided (takes priority over status)
-    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
-    if (filters.status) params.append('status', filters.status);
+
+    const resolvedIsActive =
+      filters.isActive !== undefined
+        ? filters.isActive
+        : filters.status === 'active'
+          ? true
+          : filters.status === 'inactive'
+            ? false
+            : undefined;
+    if (resolvedIsActive !== undefined) {
+      params.append('isActive', resolvedIsActive.toString());
+    }
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.page) params.append('page', filters.page.toString());

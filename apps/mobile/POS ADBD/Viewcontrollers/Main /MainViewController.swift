@@ -52,12 +52,12 @@ class MainViewController: BaseViewControler {
         searchBar.placeholderLabel?.font = Utils.regularFont(size: 16)
         searchBar.placeholderLabel?.textColor = .textTertiary
         searchBar.textField?.textColor = .textPrimary
-        searchBar.textField?.font = Utils.regularFont(size: 16)
+        searchBar.textField?.font = Utils.boldFont(size: 16)
         searchBar.tintColor = .brandPrimary
 
         let searchTextField = searchBar.searchTextField
         searchTextField.backgroundColor = .backgroundCard
-        searchTextField.layer.cornerRadius = 20
+        searchTextField.layer.cornerRadius = 12
         searchTextField.layer.masksToBounds = true
         searchTextField.layer.borderWidth = 1
         searchTextField.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.9).cgColor

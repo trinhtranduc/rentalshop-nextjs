@@ -47,7 +47,7 @@ class SaleCell: UITableViewCell {
     // Small pill next to the order code marking rent vs sale (used in .chart).
     private lazy var typeBadgeLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.boldFont(size: 13)
+        label.font = Utils.regularFont(size: 13)
         label.textAlignment = .center
         label.numberOfLines = 1
         return label
@@ -341,7 +341,7 @@ class SaleCell: UITableViewCell {
             bookDateLabel.font = Utils.regularFont(size: isIPad ? 12 : 11)
             bookDateLabel.textColor = .textTertiary
             bookDateLabel.textAlignment = .right
-            getDateLabel.font = Utils.boldFont(size: isIPad ? 16 : 15)
+            getDateLabel.font = Utils.regularFont(size: isIPad ? 16 : 15)
             getDateLabel.textColor = .textPrimary
             getDateLabel.textAlignment = .right
 
@@ -422,8 +422,7 @@ class SaleCell: UITableViewCell {
         applyChartCustomerInfo()
     }
 
-    /// Renders "name  •  phone" (phone masked unless revealed) — name medium/primary,
-    /// phone regular/secondary, matching SaleDetailCell_Option5.
+    /// Renders "name  •  phone" (phone masked unless revealed) — regular weight for overview rows.
     private func applyChartCustomerInfo() {
         let trimmed = chartCustomerName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let phoneText = chartCustomerPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -433,7 +432,7 @@ class SaleCell: UITableViewCell {
         let attributed = NSMutableAttributedString(
             string: displayName,
             attributes: [
-                .font: Utils.mediumFont(size: isIPad ? 15 : 14),
+                .font: Utils.regularFont(size: isIPad ? 15 : 14),
                 .foregroundColor: UIColor.textPrimary
             ]
         )
@@ -474,7 +473,7 @@ class SaleCell: UITableViewCell {
 
     /// The amount in the today-orders / income list is the *revenue generated*
     /// by the order (not the order value), so present it as "Revenue: <amount>"
-    /// — label muted, amount bold and coloured by sign.
+    /// — label muted, amount regular and coloured by sign.
     private func setChartRevenue(_ amount: Double) {
         let isIPad = traitCollection.horizontalSizeClass == .regular
         let attributed = NSMutableAttributedString(
@@ -488,7 +487,7 @@ class SaleCell: UITableViewCell {
             NSAttributedString(
                 string: amount.formatStringInCommon(),
                 attributes: [
-                    .font: Utils.boldFont(size: isIPad ? 16 : 15),
+                    .font: Utils.regularFont(size: isIPad ? 16 : 15),
                     .foregroundColor: chartRevenueTextColor(for: amount)
                 ]
             )

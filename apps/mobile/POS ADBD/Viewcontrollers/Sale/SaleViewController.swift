@@ -14,6 +14,9 @@ import SnapKit
 enum OrderSortType: Int {
     case book_date
     case get_date
+
+    /// Default for rent order lists: sort by pickup/rental date (Ngày thuê).
+    static let rentDefault: OrderSortType = .get_date
 }
 
 class SaleViewController : BaseViewControler{
@@ -35,12 +38,12 @@ class SaleViewController : BaseViewControler{
         searchBar.placeholderLabel?.font = Utils.regularFont(size: 16)
         searchBar.placeholderLabel?.textColor = .textTertiary
         searchBar.textField?.textColor = .textPrimary
-        searchBar.textField?.font = Utils.regularFont(size: 16)
+        searchBar.textField?.font = Utils.boldFont(size: 16)
         searchBar.tintColor = .brandPrimary
 
         let searchTextField = searchBar.searchTextField
         searchTextField.backgroundColor = .backgroundCard
-        searchTextField.layer.cornerRadius = 18
+        searchTextField.layer.cornerRadius = 12
         searchTextField.layer.masksToBounds = true
         searchTextField.layer.borderWidth = 1
         searchTextField.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.9).cgColor
@@ -71,7 +74,7 @@ class SaleViewController : BaseViewControler{
         return QRCodeReaderViewController(builder: builder)
     }()
     
-    var sortType: OrderSortType = .book_date {
+    var sortType: OrderSortType = .rentDefault {
         didSet {
             // Removed automatic loadOrders call - will be called explicitly when needed
         }
@@ -849,7 +852,7 @@ extension SaleViewController: OrderFilterViewControllerDelegate {
     
     func didClearFilter(sender: OrderFilterViewController) {
         // Reset to defaults
-        self.sortType = .book_date
+        self.sortType = .rentDefault
         self.sortOrder = "desc"
         self.selectedStatus = nil
         

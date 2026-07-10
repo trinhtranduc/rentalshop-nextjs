@@ -1131,6 +1131,10 @@
 
 // MARK: - Product Availability Check
 "On check day" = "On check day";
+"availability_verdict_date_context" = "On %@";
+"availability_verdict_available_headline" = "%@ available";
+"availability_verdict_out_of_stock_headline" = "Out of stock";
+"availability_verdict_conflict_headline" = "Schedule conflict";
 "availability_verdict_available" = "%@ products available on %@";
 "availability_verdict_out_of_stock" = "Out of stock on %@";
 "availability_verdict_conflict" = "Schedule conflict on %@";

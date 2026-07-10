@@ -125,6 +125,7 @@ class OverviewViewController: DemoBaseViewController {
         button.setTitle("Try another date".localized(), for: .normal)
         button.titleLabel?.font = .bodyMedium(size: 14)
         button.tintColor = .brandPrimary
+        button.tag = 101
         button.addTarget(self, action: #selector(emptyStateTryAnotherDateTapped), for: .touchUpInside)
         container.addSubview(button)
         button.snp.makeConstraints { make in
@@ -243,6 +244,7 @@ class OverviewViewController: DemoBaseViewController {
         
         // Initialize period selection and load data
         initializePeriodSelection()
+        enforceStaffReportRestrictions()
         chartsSection.configureInitialExpansion(isIPad: isIPad)
         updateDateFilterTitle()
         applySummaryLayout()
@@ -252,6 +254,7 @@ class OverviewViewController: DemoBaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        enforceStaffReportRestrictions()
     }
     
     // MARK: - Setup
@@ -270,17 +273,30 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func refreshPeriodFilter() {
+        enforceStaffReportRestrictions()
         let periods = ReportPeriod.availablePeriods(canViewRevenueAnalytics: canViewChartAnalytics())
-        let showsDate = selectedPeriod == .today || selectedPeriod == .thisYear
+        let showsDate = (selectedPeriod == .today || selectedPeriod == .thisYear) && !isOutletStaff
         periodFilterView.configure(
             periods: periods,
             selected: selectedPeriod,
             dateTitle: dateFilterTitle(),
             showsDateButton: showsDate
         )
-        periodFilterView.setDateButtonEnabled(!isOutletStaff)
+        todayOrdersInlineEmptyView.viewWithTag(101)?.isHidden = isOutletStaff
         listHeaderTopToFilterConstraint?.activate()
         listHeaderTopToNavConstraint?.deactivate()
+    }
+
+    /// Outlet staff may only view today's daily report — no past dates or period chips beyond today.
+    private func enforceStaffReportRestrictions() {
+        guard isOutletStaff else { return }
+        let calendar = Calendar.current
+        if !calendar.isDateInToday(todayDate) {
+            todayDate = Date()
+        }
+        if selectedPeriod != .today {
+            selectedPeriod = .today
+        }
     }
 
     private func dateFilterTitle() -> String {
@@ -532,6 +548,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     @objc private func emptyStateTryAnotherDateTapped() {
+        guard !isOutletStaff else { return }
         showDatePicker()
     }
 
@@ -571,6 +588,8 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     private func showDatePicker() {
+        guard !isOutletStaff else { return }
+
         let controller = DatePickerViewController.instance()
         controller.delegate = self
         
@@ -1581,6 +1600,7 @@ extension OverviewViewController: DatePickerViewControllerDelegate {
     }
     
     func didSelectDate(_ date: Date, sender: DatePickerViewController) {
+        guard !isOutletStaff else { return }
         todayDate = date
         loadData()
     }
