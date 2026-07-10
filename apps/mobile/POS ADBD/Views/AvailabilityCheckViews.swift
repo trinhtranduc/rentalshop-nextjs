@@ -89,7 +89,7 @@ final class AvailabilityVerdictView: UIView {
         addSubview(rowStackView)
 
         iconContainerView.snp.makeConstraints { make in
-            make.width.height.equalTo(Metrics.iconSize)
+            make.width.height.equalTo(Metrics.iconSize).priority(.high)
         }
         iconContainerView.setContentHuggingPriority(.required, for: .horizontal)
         iconContainerView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -297,7 +297,7 @@ final class AvailabilityMetricsCardView: UIView {
 
         container.addSubview(stack)
         accentBar.snp.makeConstraints { make in
-            make.width.equalTo(22)
+            make.width.equalTo(22).priority(.high)
             make.height.equalTo(3)
         }
         stack.snp.makeConstraints { make in

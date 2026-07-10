@@ -16,12 +16,13 @@ function calcEffectivelyAvailable(
   totalStock: number,
   totalRenting: number,
   conflictingQuantity: number,
-  reservedConflictQuantity = conflictingQuantity
+  reservedConflictQuantity = 0
 ): number {
   const totalAvailableStock = Math.max(0, totalStock - totalRenting);
   return calculateEffectivelyAvailable({
     totalStock,
     totalAvailableStock,
+    totalRenting,
     conflictingQuantity,
     reservedConflictQuantity,
   });
@@ -152,44 +153,34 @@ describe('New Availability API - Orders Response', () => {
   });
 
   describe('effectivelyAvailable calculation', () => {
-    it('should calculate: totalStock - conflictingQuantity (ignores renting to avoid double-count)', () => {
-      // Product 60: stock=13, renting=1, conflicts=3
-      // Formula: totalStock - conflictingQuantity = 13 - 3 = 10
-      // (renting is ignored because conflicting orders already include PICKUPED orders that overlap)
-      const result = calcEffectivelyAvailable(13, 1, 3);
-      expect(result).toBe(10); // 13 - 3 = 10
+    it('PICKUPED overlap: subtract conflicts from shelf (totalAvailableStock)', () => {
+      // Product: stock=13, renting=1, shelf=12, conflicts=3 (PICKUPED overlap)
+      const result = calcEffectivelyAvailable(13, 1, 3, 0);
+      expect(result).toBe(9); // 12 - 3
     });
 
     it('should not go below 0', () => {
-      // stock=5, renting=3, conflicts=6 → 5-6 = -1 → 0
-      const result = calcEffectivelyAvailable(5, 3, 6);
-      expect(result).toBe(0);
+      const result = calcEffectivelyAvailable(5, 3, 6, 0);
+      expect(result).toBe(0); // shelf=2, 2-6
     });
 
-    it('should return full stock when no conflicts', () => {
+    it('should return shelf count when no conflicts', () => {
       const result = calcEffectivelyAvailable(20, 0, 0);
       expect(result).toBe(20);
     });
 
-    it('should return full stock when renting exists but no conflicts (order not in period)', () => {
-      // renting=3 but conflicts=0 means PICKUPED orders don't overlap requested period
+    it('no overlap: shelf count when renting exists but order not in period', () => {
       const result = calcEffectivelyAvailable(10, 3, 0);
-      expect(result).toBe(10); // All stock available for the requested period
+      expect(result).toBe(7); // stock - renting = shelf
     });
 
-    it('should handle real scenario: stock=3, renting=1 (not in period), conflicts=2', () => {
-      // Scenario: Product stock=3
-      // - Order A: 01/07-05/07, qty 1, PICKUPED (renting=1, but NOT in period 08/07-20/07)
-      // - Order B: 17/07-20/07, qty 2, RESERVED (conflicts with 08/07-20/07)
-      // Request: qty 1 for 08/07-20/07
-      // effectivelyAvailable = 3 - 2 = 1 (enough for qty 1)
-      const result = calcEffectivelyAvailable(3, 1, 2);
-      expect(result).toBe(1);
+    it('should handle real scenario: stock=3, renting=1 (not in period), conflicts=2 RESERVED', () => {
+      const result = calcEffectivelyAvailable(3, 1, 2, 2);
+      expect(result).toBe(1); // RESERVED path: totalStock - conflicts = 3 - 2
     });
 
     it('should handle conflicts exceeding stock', () => {
-      // stock=3, conflicts=5 → 3-5 = -2 → 0
-      const result = calcEffectivelyAvailable(3, 0, 5);
+      const result = calcEffectivelyAvailable(3, 0, 5, 5);
       expect(result).toBe(0);
     });
   });

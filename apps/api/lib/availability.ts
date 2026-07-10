@@ -73,18 +73,21 @@ export function resolveTotalAvailableStock(outletStock: {
  * Rules:
  * - RESERVED overlaps block from totalStock (items still physically in store).
  * - PICKUPED overlaps block from totalAvailableStock (already excluded from shelf count).
- * - No period overlap: use totalStock so a PICKUPED item returned before the period
- *   does not zero out availability (batch-availability fix).
+ * - No period overlap: use totalAvailableStock (Có sẵn, SALE-aware). When shelf is 0
+ *   but units are rented and do not overlap the period, count them via totalRenting
+ *   (batch-availability fix).
  */
 export function calculateEffectivelyAvailable(input: {
   totalStock: number;
   totalAvailableStock: number;
+  totalRenting: number;
   conflictingQuantity: number;
   reservedConflictQuantity: number;
 }): number {
   const {
     totalStock,
     totalAvailableStock,
+    totalRenting,
     conflictingQuantity,
     reservedConflictQuantity,
   } = input;
@@ -97,7 +100,11 @@ export function calculateEffectivelyAvailable(input: {
     return Math.max(0, totalAvailableStock - conflictingQuantity);
   }
 
-  return Math.max(0, totalStock);
+  if (totalAvailableStock === 0 && totalRenting > 0) {
+    return Math.max(0, totalRenting);
+  }
+
+  return Math.max(0, totalAvailableStock);
 }
 
 export type ConflictingOrderInput = {
@@ -164,6 +171,7 @@ export function buildAvailabilityMetrics(input: {
   const effectivelyAvailable = calculateEffectivelyAvailable({
     totalStock,
     totalAvailableStock,
+    totalRenting,
     conflictingQuantity: input.conflictingQuantity,
     reservedConflictQuantity: input.reservedConflictQuantity,
   });

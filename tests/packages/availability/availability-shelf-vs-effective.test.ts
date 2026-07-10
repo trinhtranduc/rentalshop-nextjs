@@ -46,6 +46,7 @@ describe('User scenario: product 13832, outlet 30, check 10/07/2026', () => {
   const effectivelyAvailable = calculateEffectivelyAvailable({
     totalStock: outletStock.stock,
     totalAvailableStock: shelfAvailable,
+    totalRenting: outletStock.renting,
     conflictingQuantity,
     reservedConflictQuantity,
   });
@@ -73,6 +74,7 @@ describe('SALE only: sold 1, no active rent', () => {
     const effective = calculateEffectivelyAvailable({
       totalStock: 19,
       totalAvailableStock: shelf,
+      totalRenting: 0,
       conflictingQuantity: 0,
       reservedConflictQuantity: 0,
     });
@@ -88,6 +90,7 @@ describe('Batch no-overlap fix: rented item returned before period', () => {
     const effective = calculateEffectivelyAvailable({
       totalStock: 1,
       totalAvailableStock: shelf,
+      totalRenting: 1,
       conflictingQuantity: 0,
       reservedConflictQuantity: 0,
     });
@@ -97,12 +100,31 @@ describe('Batch no-overlap fix: rented item returned before period', () => {
   });
 });
 
+describe('User scenario: product 13832, check 16/07/2026 (no overlap)', () => {
+  it('verdict effectivelyAvailable = 19 after SALE, not 20', () => {
+    const outletStock = { stock: 20, available: 19, renting: 1 };
+    const shelf = resolveTotalAvailableStock(outletStock);
+    const effective = calculateEffectivelyAvailable({
+      totalStock: outletStock.stock,
+      totalAvailableStock: shelf,
+      totalRenting: outletStock.renting,
+      conflictingQuantity: 0,
+      reservedConflictQuantity: 0,
+    });
+
+    expect(shelf).toBe(19);
+    expect(effective).toBe(19);
+    expect(effective).not.toBe(outletStock.stock);
+  });
+});
+
 describe('RESERVED overlap uses totalStock', () => {
   it('RESERVED blocks from stock even when renting reduces shelf', () => {
     const shelf = resolveTotalAvailableStock({ stock: 5, available: 3, renting: 2 });
     const effective = calculateEffectivelyAvailable({
       totalStock: 5,
       totalAvailableStock: shelf,
+      totalRenting: 2,
       conflictingQuantity: 2,
       reservedConflictQuantity: 1,
     });

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 /**
  * Comprehensive Availability Test Cases
  * Brainstormed scenarios covering all edge cases for product rental availability
