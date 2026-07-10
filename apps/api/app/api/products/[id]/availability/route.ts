@@ -6,7 +6,7 @@ import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/uti
 import {
   calculateEffectivelyAvailable,
   mapAvailabilityOrderDisplay,
-} from '../../../../lib/availability';
+} from '../../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for availability query

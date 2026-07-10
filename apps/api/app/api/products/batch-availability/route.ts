@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
-import { calculateEffectivelyAvailable } from '../../../lib/availability';
+import { calculateEffectivelyAvailable } from '../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for batch availability request
