@@ -1606,6 +1606,15 @@ struct CalendarOrderByDate: Codable {
         case isReadyToDeliver
         case createdAt
     }
+
+    /// Calendar by-date API may expose ready state on order items only (copied from parent order).
+    var resolvedIsReadyToDeliver: Bool {
+        if let isReadyToDeliver {
+            return isReadyToDeliver
+        }
+        guard !orderItems.isEmpty else { return false }
+        return orderItems.allSatisfy { $0.isReadyToDeliver ?? false }
+    }
 }
 
 // Update OrdersByDateData to use CalendarOrderByDate instead of Order

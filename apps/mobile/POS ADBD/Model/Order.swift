@@ -670,8 +670,7 @@ struct OrderItem: Codable {
     let productImages: [String]?
     let productRentPrice: Double?
     let productDeposit: Double?
-    
-    /// Order detail API often nests product under `product` with `name` while `productName` is null.
+    let isReadyToDeliver: Bool?
     private struct EmbeddedProduct: Codable {
         let id: Int?
         let name: String?
@@ -682,7 +681,7 @@ struct OrderItem: Codable {
     }
     
     // Default initializer for manual creation
-    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?) {
+    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil) {
         self.id = id
         self.quantity = quantity
         self.unitPrice = unitPrice
@@ -694,6 +693,7 @@ struct OrderItem: Codable {
         self.productImages = productImages
         self.productRentPrice = productRentPrice
         self.productDeposit = productDeposit
+        self.isReadyToDeliver = isReadyToDeliver
     }
     
     init(from decoder: Decoder) throws {
@@ -749,6 +749,7 @@ struct OrderItem: Codable {
         let productDepositFlat = try container.decodeIfPresent(Double.self, forKey: .productDeposit)
         let productDepositLine = try container.decodeIfPresent(Double.self, forKey: .deposit)
         productDeposit = productDepositFlat ?? productDepositLine ?? embedded?.deposit
+        isReadyToDeliver = try container.decodeIfPresent(Bool.self, forKey: .isReadyToDeliver)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -764,6 +765,7 @@ struct OrderItem: Codable {
         try container.encodeIfPresent(productImages, forKey: .productImages)
         try container.encodeIfPresent(productRentPrice, forKey: .productRentPrice)
         try container.encodeIfPresent(productDeposit, forKey: .productDeposit)
+        try container.encodeIfPresent(isReadyToDeliver, forKey: .isReadyToDeliver)
     }
     
     private static func nonEmptyImages(_ images: [String]?) -> [String]? {
@@ -776,6 +778,7 @@ struct OrderItem: Codable {
         case productId, productName, productBarcode, productImages, productRentPrice, productDeposit
         case product
         case deposit
+        case isReadyToDeliver
     }
 }
 

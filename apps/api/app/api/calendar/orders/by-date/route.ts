@@ -209,6 +209,7 @@ export const GET = withReadOnlyAuth(async (
         returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
         pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt).toISOString() : undefined,
         createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
+        isReadyToDeliver: order.isReadyToDeliver || false,
         // Product summary for calendar display
         productName: firstProduct?.name || 'Multiple Products',
         productCount: totalProductCount,
