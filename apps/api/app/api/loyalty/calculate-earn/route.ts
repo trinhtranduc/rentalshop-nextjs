@@ -10,7 +10,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 export const POST = withPermissions(['orders.view'])(async (request: NextRequest, { user, userScope }) => {
   try {

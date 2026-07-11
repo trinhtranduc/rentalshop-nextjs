@@ -11,7 +11,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 async function getTierForMerchant(tierId: number, merchantId: number) {
   return prisma.loyaltyTier.findFirst({

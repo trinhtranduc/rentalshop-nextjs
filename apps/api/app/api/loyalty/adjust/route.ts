@@ -15,7 +15,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 export const POST = withPermissions(['loyalty.adjust'])(async (request: NextRequest, { user, userScope }) => {
   try {
