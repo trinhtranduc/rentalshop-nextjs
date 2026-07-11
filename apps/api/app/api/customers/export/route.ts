@@ -12,6 +12,8 @@ import {
 } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/customers/export
  * Export customers to Excel or CSV (Admin, Merchant, Outlet Admin only)
