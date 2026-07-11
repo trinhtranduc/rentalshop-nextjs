@@ -383,33 +383,42 @@ function getEnvironment(): Environment {
  * SOLUTION 1: Ensure consistent API URL across all calls
  */
 function getApiBaseUrlInternal(): string {
+  const shouldLogApiConfig =
+    process.env.DEBUG_API_CONFIG === 'true' || process.env.NODE_ENV !== 'production';
+
   // PRIORITY 1: Always use NEXT_PUBLIC_API_URL if set (most reliable)
   if (process.env.NEXT_PUBLIC_API_URL) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL.trim();
-    console.log('✅ Using NEXT_PUBLIC_API_URL:', apiUrl);
+    if (shouldLogApiConfig) {
+      console.log('✅ Using NEXT_PUBLIC_API_URL:', apiUrl);
+    }
     return apiUrl;
   }
   
   const env = getEnvironment();
   
   // Debug logging
-  console.log('🔍 Environment Detection:', {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-    APP_ENV: process.env.APP_ENV,
-    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
-    detectedEnv: env,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET'
-  });
+  if (shouldLogApiConfig) {
+    console.log('🔍 Environment Detection:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+      APP_ENV: process.env.APP_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
+      detectedEnv: env,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET'
+    });
+  }
   
   // PRIORITY 2: Use environment-based defaults
   switch (env) {
     case 'local':
       // For local, use dev-api.anyrent.shop to avoid CORS issues
       const localUrl = 'https://dev-api.anyrent.shop';
-      console.log('✅ Local environment detected, using dev API:', localUrl);
-      console.log('💡 To use localhost:3002, set NEXT_PUBLIC_API_URL=http://localhost:3002 in .env');
+      if (shouldLogApiConfig) {
+        console.log('✅ Local environment detected, using dev API:', localUrl);
+        console.log('💡 To use localhost:3002, set NEXT_PUBLIC_API_URL=http://localhost:3002 in .env');
+      }
       return localUrl;
     
     case 'development':
@@ -944,5 +953,4 @@ export const API_BASE_URL = getApiBaseUrl();
 export const getApiDatabaseUrl = () => apiConfig.database.url;
 export const getApiJwtSecret = () => apiConfig.auth.jwtSecret;
 export const getApiCorsOrigins = () => apiConfig.cors.origins;
-
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/health/volume
  * Check Railway Volume mount status

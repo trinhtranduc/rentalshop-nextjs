@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,13 +15,16 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
-  themeColor: '#6366f1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'AnyRent API',
   },
 }
+
+export const viewport: Viewport = {
+  themeColor: '#6366f1',
+};
 
 export default function RootLayout({
   children,
