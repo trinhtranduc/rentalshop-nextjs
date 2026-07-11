@@ -172,6 +172,10 @@ export const calendarSwaggerConfig = {
             format: 'date-time',
             description: 'Planned return date and time'
           },
+          isReadyToDeliver: {
+            type: 'boolean',
+            description: 'Whether the order is ready to deliver'
+          },
           isOverdue: { type: 'boolean' },
           duration: { type: 'integer', description: 'Duration in days' },
           orderItems: {

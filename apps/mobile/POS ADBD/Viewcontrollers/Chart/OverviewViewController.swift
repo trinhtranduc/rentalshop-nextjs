@@ -1395,7 +1395,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let rowsStackView = UIStackView()
-    private let loadingIndicator = UIActivityIndicatorView(activityIndicatorStyle: .medium)
     private let periodLabel = UILabel()
 
     private var isIPad: Bool {
@@ -1439,9 +1438,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
         scrollView.alwaysBounceVertical = true
         scrollView.backgroundColor = .backgroundPrimary
 
-        loadingIndicator.color = .brandPrimary
-        loadingIndicator.hidesWhenStopped = true
-
         periodLabel.text = periodSubtitle
         periodLabel.font = .captionMedium(size: 12)
         periodLabel.textColor = .textSecondary
@@ -1463,7 +1459,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
         guard let customNavBar = customNavBar else { return }
 
         view.addSubview(scrollView)
-        view.addSubview(loadingIndicator)
         scrollView.addSubview(contentView)
         contentView.backgroundColor = .backgroundPrimary
         contentView.addSubview(periodCard)
@@ -1486,9 +1481,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().offset(-20)
         }
-        loadingIndicator.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-        }
     }
 
     private func setupNavigationBar() {
@@ -1502,7 +1494,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
     }
 
     private func loadData() {
-        loadingIndicator.startAnimating()
+        showProgressText(text: "Loading...".localized(), navigationController: navigationController)
         rowsStackView.isHidden = true
 
         AnalyticsAPIService.shared.loadAnalyticsPeriod(
@@ -1513,9 +1505,12 @@ private final class OverviewRankingListViewController: BaseViewControler {
         ) { [weak self] response, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.hideProgress(navigationController: self.navigationController)
+
                 if let error = error, response == nil {
-                    print("Error loading ranking period report: \(error.localizedDescription)")
+                    UIAlertController.errorAlert(parent: self, error: error)
                 }
+
                 switch self.mode {
                 case .products:
                     self.renderProducts(response?.topProducts ?? [])
@@ -1527,7 +1522,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
     }
 
     private func renderProducts(_ products: [TopProduct]) {
-        loadingIndicator.stopAnimating()
         rowsStackView.isHidden = false
 
         let rows = products.prefix(20).enumerated().map { index, product -> UIView in
@@ -1554,7 +1548,6 @@ private final class OverviewRankingListViewController: BaseViewControler {
     }
 
     private func renderCustomers(_ customers: [TopCustomer]) {
-        loadingIndicator.stopAnimating()
         rowsStackView.isHidden = false
 
         let rows = customers.prefix(20).enumerated().map { index, customer -> UIView in
@@ -1563,7 +1556,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
 
             var subtitleParts: [String] = []
             if let phone = customer.phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-                subtitleParts.append(phone)
+                subtitleParts.append(phone.maskedPhoneNumber)
             }
             let orderCount = customer.orderCount ?? customer.rentalCount ?? customer.saleCount ?? 0
             if orderCount > 0 {

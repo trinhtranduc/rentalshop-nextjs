@@ -111,7 +111,7 @@ final class OverviewInsightsPanelView: UIView {
 
             var subtitleParts: [String] = []
             if let phone = customer.phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-                subtitleParts.append(phone)
+                subtitleParts.append(phone.maskedPhoneNumber)
             }
             let orderCount = customer.orderCount ?? customer.rentalCount ?? customer.saleCount ?? 0
             if orderCount > 0 {

@@ -32,6 +32,7 @@ export interface CalendarOrderSummary {
   returnPlanAt?: string;
   pickedUpAt?: string; // Actual pickup date for PICKUPED orders
   createdAt?: string; // Order creation date (book date)
+  isReadyToDeliver?: boolean; // Whether the order is ready to deliver
   isOverdue?: boolean;
   duration?: number;
   // Product summary for calendar display

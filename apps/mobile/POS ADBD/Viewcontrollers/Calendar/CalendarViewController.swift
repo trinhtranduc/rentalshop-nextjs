@@ -373,9 +373,12 @@ class CalendarViewController: BaseViewControler {
                     return
                 }
 
-                if updatedOrder != nil {
-                    self?.loadCalendarData(for: self?.calendar.selectedDate ?? Date())
-                    self?.loadOrdersForSelectedDate(self?.selectedDate ?? Date())
+                if let updatedOrder = updatedOrder {
+                    let readyState = updatedOrder.isReadyToDeliver
+                    self?.invalidateOrdersCache(for: self?.selectedDate ?? Date())
+                    self?.updateReadyToDeliverLocally(orderId: orderId, isReady: readyState)
+                } else {
+                    headerView.preparedButton.isSelected = !isReady
                 }
             }
         }
@@ -399,6 +402,36 @@ class CalendarViewController: BaseViewControler {
 
     private func ordersCacheKey(date: String) -> String {
         date
+    }
+
+    private func invalidateOrdersCache(for date: Date) {
+        let apiDateFormatter = DateFormatter()
+        apiDateFormatter.dateFormat = "yyyy-MM-dd"
+        apiDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        ordersByDateCache.removeValue(forKey: ordersCacheKey(date: apiDateFormatter.string(from: date)))
+    }
+
+    private func updateReadyToDeliverLocally(orderId: Int, isReady: Bool) {
+        ordersForSelectedDate = ordersForSelectedDate.map { order in
+            guard order.id == orderId else { return order }
+
+            return CalendarOrder(
+                id: order.id,
+                orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                status: order.status,
+                totalAmount: order.totalAmount,
+                outletName: order.outletName,
+                pickupPlanAt: order.pickupPlanAt,
+                returnPlanAt: order.returnPlanAt,
+                productName: order.productName,
+                productCount: order.productCount,
+                orderItems: order.orderItems,
+                isReadyToDeliver: isReady,
+                createdAt: order.createdAt
+            )
+        }
     }
 
     private var activeCalendarScope: FSCalendarScope {
@@ -567,7 +600,7 @@ class CalendarViewController: BaseViewControler {
                         productDeposit: item.productDeposit
                     )
                 },
-                isReadyToDeliver: order.isReadyToDeliver,
+                isReadyToDeliver: order.resolvedIsReadyToDeliver,
                 createdAt: createdAtString
             )
         }
