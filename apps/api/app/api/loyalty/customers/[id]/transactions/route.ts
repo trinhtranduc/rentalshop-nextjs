@@ -11,7 +11,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 export async function GET(
   request: NextRequest,

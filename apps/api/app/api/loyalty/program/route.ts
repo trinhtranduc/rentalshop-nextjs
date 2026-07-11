@@ -9,7 +9,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 export const GET = withPermissions(['loyalty.view'])(async (_request, { user, userScope }) => {
   try {

@@ -15,7 +15,7 @@ import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
-} from '../../../../lib/loyalty-route-helpers';
+} from '@/lib/loyalty-route-helpers';
 
 export const POST = withPermissions(['orders.create'])(async (request: NextRequest, { user, userScope }) => {
   try {
