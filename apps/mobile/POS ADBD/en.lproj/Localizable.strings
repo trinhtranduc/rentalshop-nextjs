@@ -713,6 +713,10 @@
 "Top Products" = "Top Products";
 "Highest revenue drivers" = "Highest revenue drivers";
 "Top Customers" = "Top Customers";
+"View orders" = "View orders";
+"Orders by customer" = "Orders by customer";
+"Orders by product" = "Orders by product";
+"No orders found for this period" = "No orders found for this period";
 "Most valuable customers" = "Most valuable customers";
 "View all" = "View all";
 "vs previous period" = "vs previous period";

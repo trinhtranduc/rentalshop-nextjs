@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
             email: validatedData.email,
             phone: validatedData.phone,
             tenantKey,
-            address: validatedData.address,
+            address: validatedData.address?.trim() || null,
             city: validatedData.city,
             state: validatedData.state,
             zipCode: validatedData.zipCode,
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
         const outlet = await tx.outlet.create({
           data: {
             name: `${merchant.name} - Main Store`,
-            address: merchant.address || validatedData.address || 'Address to be updated',
+            address: merchant.address || validatedData.address?.trim() || null,
             phone: merchant.phone || validatedData.phone,
             city: merchant.city || validatedData.city,
             state: merchant.state || validatedData.state,

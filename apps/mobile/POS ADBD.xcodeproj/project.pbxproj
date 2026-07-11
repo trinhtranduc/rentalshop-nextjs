@@ -157,6 +157,7 @@
 		04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301062F40000100A004 /* OverviewSummaryCardView.swift */; };
 		04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301082F40000100A005 /* OverviewChartsSectionView.swift */; };
 		04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */; };
+		04F3010D2F40000100A007 /* OverviewRankingOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */; };
 		886B188121AE39560029CFB1 /* OverviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 886B188021AE39560029CFB1 /* OverviewViewController.swift */; };
 		886B188321AE39620029CFB1 /* CalendarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 886B188221AE39620029CFB1 /* CalendarViewController.swift */; };
 		887244EA2BB009FA00F15EDD /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 887244E92BB009FA00F15EDD /* GoogleService-Info.plist */; };
@@ -395,6 +396,7 @@
 		04F301062F40000100A004 /* OverviewSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewSummaryCardView.swift; sourceTree = "<group>"; };
 		04F301082F40000100A005 /* OverviewChartsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewChartsSectionView.swift; sourceTree = "<group>"; };
 		04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewInsightsPanelView.swift; sourceTree = "<group>"; };
+		04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewRankingOrdersViewController.swift; sourceTree = "<group>"; };
 		886B188021AE39560029CFB1 /* OverviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewViewController.swift; sourceTree = "<group>"; };
 		886B188221AE39620029CFB1 /* CalendarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewController.swift; sourceTree = "<group>"; };
 		887244E92BB009FA00F15EDD /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -727,6 +729,7 @@
 				04F301062F40000100A004 /* OverviewSummaryCardView.swift */,
 				04F301082F40000100A005 /* OverviewChartsSectionView.swift */,
 				04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */,
+				04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */,
 				886B188021AE39560029CFB1 /* OverviewViewController.swift */,
 			);
 			path = Chart;
@@ -1451,6 +1454,7 @@
 				04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */,
 				04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */,
 				04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */,
+				04F3010D2F40000100A007 /* OverviewRankingOrdersViewController.swift in Sources */,
 				886B188121AE39560029CFB1 /* OverviewViewController.swift in Sources */,
 				048838F52D78241600069256 /* LoginViewController.swift in Sources */,
 				C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */,

@@ -400,6 +400,76 @@ enum OverviewUIBuilder {
         return container
     }
 
+    static func makeCustomerRankingRow(
+        rank: Int,
+        title: String,
+        phone: String?,
+        trailingSubtitle: String?,
+        value: String,
+        accentColor: UIColor,
+        isIPad: Bool,
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
+    ) -> UIView {
+        let trimmedPhone = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasPhone = !trimmedPhone.isEmpty
+        let trimmedTrailing = trailingSubtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasTrailing = !trimmedTrailing.isEmpty
+
+        let subtitleView: UIView
+        if hasPhone {
+            subtitleView = OverviewRankingPhoneSubtitleView(phone: trimmedPhone, trailingText: hasTrailing ? trimmedTrailing : nil)
+        } else if hasTrailing {
+            let label = UILabel()
+            label.text = trimmedTrailing
+            label.font = .captionMedium(size: 12)
+            label.textColor = .textSecondary
+            label.numberOfLines = 1
+            subtitleView = label
+        } else {
+            subtitleView = UIView()
+        }
+
+        return makeRankingRow(
+            rank: rank,
+            title: title,
+            subtitleView: subtitleView,
+            value: value,
+            accentColor: accentColor,
+            isIPad: isIPad,
+            style: style,
+            onViewOrders: onViewOrders
+        )
+    }
+
+    static func makeProductRankingRow(
+        rank: Int,
+        title: String,
+        subtitle: String,
+        value: String,
+        accentColor: UIColor,
+        isIPad: Bool,
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
+    ) -> UIView {
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = .captionMedium(size: 12)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 1
+
+        return makeRankingRow(
+            rank: rank,
+            title: title,
+            subtitleView: subtitleLabel,
+            value: value,
+            accentColor: accentColor,
+            isIPad: isIPad,
+            style: style,
+            onViewOrders: onViewOrders
+        )
+    }
+
     static func makeRankingRow(
         rank: Int,
         title: String,
@@ -407,7 +477,36 @@ enum OverviewUIBuilder {
         value: String,
         accentColor: UIColor,
         isIPad: Bool,
-        style: RankingRowStyle = .standalone
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
+    ) -> UIView {
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = .captionMedium(size: 12)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 1
+
+        return makeRankingRow(
+            rank: rank,
+            title: title,
+            subtitleView: subtitleLabel,
+            value: value,
+            accentColor: accentColor,
+            isIPad: isIPad,
+            style: style,
+            onViewOrders: onViewOrders
+        )
+    }
+
+    private static func makeRankingRow(
+        rank: Int,
+        title: String,
+        subtitleView: UIView,
+        value: String,
+        accentColor: UIColor,
+        isIPad: Bool,
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let container = UIView()
         switch style {
@@ -443,13 +542,7 @@ enum OverviewUIBuilder {
         titleLabel.textColor = .textPrimary
         titleLabel.numberOfLines = 1
 
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = subtitle
-        subtitleLabel.font = .captionMedium(size: 12)
-        subtitleLabel.textColor = .textSecondary
-        subtitleLabel.numberOfLines = 1
-
-        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleView])
         textStack.axis = .vertical
         textStack.spacing = 3
         textStack.alignment = .fill
@@ -461,7 +554,17 @@ enum OverviewUIBuilder {
         valueLabel.textAlignment = .right
         valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, valueLabel])
+        let trailingStack = UIStackView()
+        trailingStack.axis = .vertical
+        trailingStack.spacing = 4
+        trailingStack.alignment = .trailing
+        trailingStack.addArrangedSubview(valueLabel)
+
+        if let onViewOrders {
+            trailingStack.addArrangedSubview(makeRankingOrdersButton(action: onViewOrders))
+        }
+
+        let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, trailingStack])
         stack.axis = .horizontal
         stack.spacing = 10
         stack.alignment = .center
@@ -481,6 +584,23 @@ enum OverviewUIBuilder {
             make.height.greaterThanOrEqualTo(64)
         }
         return container
+    }
+
+    static func makeRankingOrdersButton(action: @escaping () -> Void) -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.title = "View orders".localized()
+        config.baseForegroundColor = .brandPrimary
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .captionMedium(size: 12)
+            return outgoing
+        }
+
+        let button = UIButton(configuration: config, primaryAction: UIAction { _ in action() })
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return button
     }
 
     static func populateRows(in stackView: UIStackView, rows: [UIView], emptyText: String, showsDividers: Bool = false, emptyCornerRadius: CGFloat = 12) {
@@ -523,5 +643,72 @@ enum OverviewUIBuilder {
             return "↓" + formattedValue
         }
         return "→" + formattedValue
+    }
+}
+
+private final class OverviewRankingPhoneSubtitleView: UIView {
+    private let phoneLabel = UILabel()
+    private let revealButton = UIButton(type: .system)
+    private let trailingLabel = UILabel()
+    private var rawPhone = ""
+    private var isRevealed = false
+
+    init(phone: String, trailingText: String?) {
+        super.init(frame: .zero)
+        rawPhone = phone
+        setupUI(trailingText: trailingText)
+        updatePhoneDisplay()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI(trailingText: String?) {
+        phoneLabel.font = .captionMedium(size: 12)
+        phoneLabel.textColor = .textSecondary
+        phoneLabel.numberOfLines = 1
+
+        revealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
+        revealButton.tintColor = .textSecondary
+        revealButton.addTarget(self, action: #selector(toggleReveal), for: .touchUpInside)
+        revealButton.snp.makeConstraints { make in
+            make.width.height.equalTo(24)
+        }
+
+        trailingLabel.font = .captionMedium(size: 12)
+        trailingLabel.textColor = .textSecondary
+        trailingLabel.numberOfLines = 1
+
+        var arrangedSubviews: [UIView] = [phoneLabel, revealButton]
+        if let trailingText, !trailingText.isEmpty {
+            let separatorLabel = UILabel()
+            separatorLabel.text = "•"
+            separatorLabel.font = .captionMedium(size: 12)
+            separatorLabel.textColor = .textSecondary
+            trailingLabel.text = trailingText
+            arrangedSubviews.append(separatorLabel)
+            arrangedSubviews.append(trailingLabel)
+        }
+
+        let stack = UIStackView(arrangedSubviews: arrangedSubviews)
+        stack.axis = .horizontal
+        stack.spacing = 4
+        stack.alignment = .center
+
+        addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+    }
+
+    @objc private func toggleReveal() {
+        isRevealed.toggle()
+        revealButton.setImage(UIImage.revealEye(revealed: isRevealed), for: .normal)
+        updatePhoneDisplay()
+    }
+
+    private func updatePhoneDisplay() {
+        phoneLabel.text = isRevealed ? rawPhone : rawPhone.maskedPhoneNumber
     }
 }

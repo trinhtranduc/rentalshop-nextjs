@@ -10,6 +10,8 @@ final class OverviewInsightsPanelView: UIView {
 
     var onTopProductsTapped: (() -> Void)?
     var onTopCustomersTapped: (() -> Void)?
+    var onViewCustomerOrders: ((_ customerId: Int, _ name: String) -> Void)?
+    var onViewProductOrders: ((_ productId: Int, _ name: String) -> Void)?
 
     private let isIPad: Bool
 
@@ -84,14 +86,15 @@ final class OverviewInsightsPanelView: UIView {
             }
             subtitleParts.append("\((product.rentalCount ?? 0).formatStringInCommon()) " + "rentals".localized())
 
-            return OverviewUIBuilder.makeRankingRow(
+            return OverviewUIBuilder.makeProductRankingRow(
                 rank: index + 1,
                 title: title,
                 subtitle: subtitleParts.joined(separator: " • "),
                 value: (product.totalRevenue ?? 0).formatStringInCommon(),
                 accentColor: .brandPrimary,
                 isIPad: isIPad,
-                style: .embedded
+                style: .embedded,
+                onViewOrders: makeProductOrdersAction(product: product, title: title)
             )
         }
 
@@ -109,25 +112,24 @@ final class OverviewInsightsPanelView: UIView {
             let trimmedName = customer.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let title = trimmedName.isEmpty ? "Walk-in customer".localized() : trimmedName
 
-            var subtitleParts: [String] = []
-            if let phone = customer.phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-                subtitleParts.append(phone.maskedPhoneNumber)
-            }
+            var trailingParts: [String] = []
             let orderCount = customer.orderCount ?? customer.rentalCount ?? customer.saleCount ?? 0
             if orderCount > 0 {
-                subtitleParts.append("\(orderCount.formatStringInCommon()) " + "orders".localized())
+                trailingParts.append("\(orderCount.formatStringInCommon()) " + "orders".localized())
             } else if let location = customer.location?.trimmingCharacters(in: .whitespacesAndNewlines), !location.isEmpty {
-                subtitleParts.append(location)
+                trailingParts.append(location)
             }
 
-            return OverviewUIBuilder.makeRankingRow(
+            return OverviewUIBuilder.makeCustomerRankingRow(
                 rank: index + 1,
                 title: title,
-                subtitle: subtitleParts.joined(separator: " • "),
+                phone: customer.phone,
+                trailingSubtitle: trailingParts.isEmpty ? nil : trailingParts.joined(separator: " • "),
                 value: (customer.totalSpent ?? 0).formatStringInCommon(),
                 accentColor: .accentOrange,
                 isIPad: isIPad,
-                style: .embedded
+                style: .embedded,
+                onViewOrders: makeCustomerOrdersAction(customer: customer, title: title)
             )
         }
 
@@ -145,6 +147,20 @@ final class OverviewInsightsPanelView: UIView {
 
     @objc private func topCustomersTapped() {
         onTopCustomersTapped?()
+    }
+
+    private func makeCustomerOrdersAction(customer: TopCustomer, title: String) -> (() -> Void)? {
+        guard let customerId = customer.id, customerId > 0 else { return nil }
+        return { [weak self] in
+            self?.onViewCustomerOrders?(customerId, title)
+        }
+    }
+
+    private func makeProductOrdersAction(product: TopProduct, title: String) -> (() -> Void)? {
+        guard let productId = product.id, productId > 0 else { return nil }
+        return { [weak self] in
+            self?.onViewProductOrders?(productId, title)
+        }
     }
 }
 

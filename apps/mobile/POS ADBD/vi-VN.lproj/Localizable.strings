@@ -711,6 +711,10 @@
 "Top Products" = "Sản phẩm hàng đầu";
 "Highest revenue drivers" = "Doanh thu cao nhất";
 "Top Customers" = "Khách hàng hàng đầu";
+"View orders" = "Xem đơn hàng";
+"Orders by customer" = "Đơn theo khách hàng";
+"Orders by product" = "Đơn theo sản phẩm";
+"No orders found for this period" = "Không có đơn hàng trong kỳ này";
 "Most valuable customers" = "Khách chi tiêu nhiều nhất";
 "View all" = "Xem tất cả";
 "vs previous period" = "so với kỳ trước";
