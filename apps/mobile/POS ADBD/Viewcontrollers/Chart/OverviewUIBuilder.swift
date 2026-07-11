@@ -408,7 +408,8 @@ enum OverviewUIBuilder {
         value: String,
         accentColor: UIColor,
         isIPad: Bool,
-        style: RankingRowStyle = .standalone
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let trimmedPhone = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasPhone = !trimmedPhone.isEmpty
@@ -436,18 +437,20 @@ enum OverviewUIBuilder {
             value: value,
             accentColor: accentColor,
             isIPad: isIPad,
-            style: style
+            style: style,
+            onViewOrders: onViewOrders
         )
     }
 
-    static func makeRankingRow(
+    static func makeProductRankingRow(
         rank: Int,
         title: String,
         subtitle: String,
         value: String,
         accentColor: UIColor,
         isIPad: Bool,
-        style: RankingRowStyle = .standalone
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let subtitleLabel = UILabel()
         subtitleLabel.text = subtitle
@@ -462,7 +465,36 @@ enum OverviewUIBuilder {
             value: value,
             accentColor: accentColor,
             isIPad: isIPad,
-            style: style
+            style: style,
+            onViewOrders: onViewOrders
+        )
+    }
+
+    static func makeRankingRow(
+        rank: Int,
+        title: String,
+        subtitle: String,
+        value: String,
+        accentColor: UIColor,
+        isIPad: Bool,
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
+    ) -> UIView {
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = .captionMedium(size: 12)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 1
+
+        return makeRankingRow(
+            rank: rank,
+            title: title,
+            subtitleView: subtitleLabel,
+            value: value,
+            accentColor: accentColor,
+            isIPad: isIPad,
+            style: style,
+            onViewOrders: onViewOrders
         )
     }
 
@@ -473,7 +505,8 @@ enum OverviewUIBuilder {
         value: String,
         accentColor: UIColor,
         isIPad: Bool,
-        style: RankingRowStyle = .standalone
+        style: RankingRowStyle = .standalone,
+        onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let container = UIView()
         switch style {
@@ -521,7 +554,17 @@ enum OverviewUIBuilder {
         valueLabel.textAlignment = .right
         valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, valueLabel])
+        let trailingStack = UIStackView()
+        trailingStack.axis = .vertical
+        trailingStack.spacing = 4
+        trailingStack.alignment = .trailing
+        trailingStack.addArrangedSubview(valueLabel)
+
+        if let onViewOrders {
+            trailingStack.addArrangedSubview(makeRankingOrdersButton(action: onViewOrders))
+        }
+
+        let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, trailingStack])
         stack.axis = .horizontal
         stack.spacing = 10
         stack.alignment = .center
@@ -541,6 +584,23 @@ enum OverviewUIBuilder {
             make.height.greaterThanOrEqualTo(64)
         }
         return container
+    }
+
+    static func makeRankingOrdersButton(action: @escaping () -> Void) -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.title = "View orders".localized()
+        config.baseForegroundColor = .brandPrimary
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .captionMedium(size: 12)
+            return outgoing
+        }
+
+        let button = UIButton(configuration: config, primaryAction: UIAction { _ in action() })
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return button
     }
 
     static func populateRows(in stackView: UIStackView, rows: [UIView], emptyText: String, showsDividers: Bool = false, emptyCornerRadius: CGFloat = 12) {

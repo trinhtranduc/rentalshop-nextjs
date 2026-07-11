@@ -191,6 +191,12 @@ class OverviewViewController: DemoBaseViewController {
         view.onTopCustomersTapped = { [weak self] in
             self?.presentOverviewRankingList(mode: .customers)
         }
+        view.onViewCustomerOrders = { [weak self] customerId, name in
+            self?.presentRankingOrders(filter: .customer(id: customerId, name: name))
+        }
+        view.onViewProductOrders = { [weak self] productId, name in
+            self?.presentRankingOrders(filter: .product(id: productId, name: name))
+        }
         return view
     }()
 
@@ -1260,6 +1266,21 @@ class OverviewViewController: DemoBaseViewController {
         navigationController.pushViewController(controller, animated: true)
     }
 
+    private func presentRankingOrders(filter: OverviewRankingOrdersFilter) {
+        guard selectedPeriod.showsChartsAndInsights else { return }
+        guard let navigationController = navigationController else { return }
+
+        let range = selectedPeriod.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let controller = OverviewRankingOrdersViewController(
+            filter: filter,
+            startDate: range.start,
+            endDate: range.end,
+            periodSubtitle: selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        )
+        controller.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(controller, animated: true)
+    }
+
     private func updateOrdersSectionHeader(orderCount: Int) {
         let countText = orderCount.formatStringInCommon()
         todayOrdersCountLabel.text = "\(countText) " + "Overview_Orders_Count".localized()
@@ -1493,6 +1514,19 @@ private final class OverviewRankingListViewController: BaseViewControler {
         )
     }
 
+    private func presentRankingOrders(filter: OverviewRankingOrdersFilter) {
+        guard let navigationController = navigationController else { return }
+
+        let controller = OverviewRankingOrdersViewController(
+            filter: filter,
+            startDate: startDate,
+            endDate: endDate,
+            periodSubtitle: periodSubtitle
+        )
+        controller.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(controller, animated: true)
+    }
+
     private func loadData() {
         showProgressText(text: "Loading...".localized(), navigationController: navigationController)
         rowsStackView.isHidden = true
@@ -1534,13 +1568,14 @@ private final class OverviewRankingListViewController: BaseViewControler {
             }
             subtitleParts.append("\((product.rentalCount ?? 0).formatStringInCommon()) " + "rentals".localized())
 
-            return OverviewUIBuilder.makeRankingRow(
+            return OverviewUIBuilder.makeProductRankingRow(
                 rank: index + 1,
                 title: title,
                 subtitle: subtitleParts.joined(separator: " • "),
                 value: (product.totalRevenue ?? 0).formatStringInCommon(),
                 accentColor: .brandPrimary,
-                isIPad: isIPad
+                isIPad: isIPad,
+                onViewOrders: makeProductOrdersAction(product: product, title: title)
             )
         }
 
@@ -1569,11 +1604,26 @@ private final class OverviewRankingListViewController: BaseViewControler {
                 trailingSubtitle: trailingParts.isEmpty ? nil : trailingParts.joined(separator: " • "),
                 value: (customer.totalSpent ?? 0).formatStringInCommon(),
                 accentColor: .accentOrange,
-                isIPad: isIPad
+                isIPad: isIPad,
+                onViewOrders: makeCustomerOrdersAction(customer: customer, title: title)
             )
         }
 
         OverviewUIBuilder.populateRows(in: rowsStackView, rows: rows, emptyText: mode.emptyText, emptyCornerRadius: 10)
+    }
+
+    private func makeCustomerOrdersAction(customer: TopCustomer, title: String) -> (() -> Void)? {
+        guard let customerId = customer.id, customerId > 0 else { return nil }
+        return { [weak self] in
+            self?.presentRankingOrders(filter: .customer(id: customerId, name: title))
+        }
+    }
+
+    private func makeProductOrdersAction(product: TopProduct, title: String) -> (() -> Void)? {
+        guard let productId = product.id, productId > 0 else { return nil }
+        return { [weak self] in
+            self?.presentRankingOrders(filter: .product(id: productId, name: title))
+        }
     }
 }
 

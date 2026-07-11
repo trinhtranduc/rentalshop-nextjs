@@ -2,7 +2,7 @@ import Alamofire
 import FirebaseAnalytics
 
 protocol OrderServiceProtocol {
-    func loadOrders(from: Date?, productIds: [Int]?, productId: Int?, keyword: String?, page: Int?, limit: Int?, orderType: OrderType?, sortBy: String?, sortOrder: String?, status: OrderStatus?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
+    func loadOrders(from: Date?, productIds: [Int]?, productId: Int?, customerId: Int?, startDate: Date?, endDate: Date?, keyword: String?, page: Int?, limit: Int?, orderType: OrderType?, sortBy: String?, sortOrder: String?, status: OrderStatus?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     func forceLoadOrders(productId: Int?, keyword: String?, page: Int?, limit: Int?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     func deleteOrder(orderId: Int, completion: @escaping (_ error: NSError?) -> Void)
     func loadOverviewOrder(from: Date?, to: Date?, completion: @escaping (_ orders: [Order]?, _ error: NSError?) -> Void)
@@ -119,7 +119,7 @@ class OrderService: BaseService, OrderServiceProtocol {
     
     static let shared = OrderService()
     
-    func loadOrders(from: Date? = nil, productIds: [Int]?, productId: Int? = nil, keyword: String?, page: Int? = nil, limit: Int? = nil, orderType: OrderType? = nil, sortBy: String? = nil, sortOrder: String? = nil, status: OrderStatus? = nil, completion: @escaping (OrdersResponse?, NSError?) -> Void) {
+    func loadOrders(from: Date? = nil, productIds: [Int]?, productId: Int? = nil, customerId: Int? = nil, startDate: Date? = nil, endDate: Date? = nil, keyword: String?, page: Int? = nil, limit: Int? = nil, orderType: OrderType? = nil, sortBy: String? = nil, sortOrder: String? = nil, status: OrderStatus? = nil, completion: @escaping (OrdersResponse?, NSError?) -> Void) {
         let path = APIEndpoint.Path.orders
         
         // Build query parameters according to new API documentation
@@ -156,6 +156,18 @@ class OrderService: BaseService, OrderServiceProtocol {
         
         if let productId = productId {
             params["productId"] = productId
+        }
+
+        if let customerId = customerId {
+            params["customerId"] = customerId
+        }
+
+        if let startDate = startDate, let startDateString = startDate.dateServerISOString() {
+            params["startDate"] = startDateString
+        }
+
+        if let endDate = endDate, let endDateString = endDate.dateServerISOString() {
+            params["endDate"] = endDateString
         }
         
         performGET(
