@@ -15,6 +15,12 @@ import {
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION } from '@rentalshop/constants';
+import {
+  adjustRedeemOnOrderEdit,
+  calculateAmountDue,
+  getLoyaltyProgram,
+  merchantHasLoyaltyFeature,
+} from '@rentalshop/loyalty';
 
 export const runtime = 'nodejs';
 
@@ -544,9 +550,33 @@ export const PUT = async (
       }
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
-      const { subtotal, taxAmount, id, ...validUpdateData } = body;
+      const { subtotal, taxAmount, id, loyaltyRedeem, ...validUpdateData } = body;
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
+
+      const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+      const merchantId = existingOutlet?.merchantId;
+
+      if (
+        loyaltyRedeem &&
+        merchantId &&
+        existingOrder.customerId &&
+        (await merchantHasLoyaltyFeature(merchantId))
+      ) {
+        const program = await getLoyaltyProgram(merchantId);
+        if (program?.isActive) {
+          await prisma.$transaction(async (tx) => {
+            await adjustRedeemOnOrderEdit(
+              tx,
+              existingOrder,
+              loyaltyRedeem.points ?? 0,
+              { id: user.id },
+              program,
+              merchantId
+            );
+          });
+        }
+      }
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
@@ -608,6 +638,10 @@ export const PUT = async (
         discountType: fullOrder.discountType,
         discountValue: fullOrder.discountValue,
         discountAmount: fullOrder.discountAmount,
+        loyaltyPointsRedeemed: fullOrder.loyaltyPointsRedeemed ?? 0,
+        loyaltyDiscount: fullOrder.loyaltyDiscount ?? 0,
+        loyaltyPointsEarned: fullOrder.loyaltyPointsEarned ?? 0,
+        amountDue: calculateAmountDue(fullOrder.totalAmount, fullOrder.loyaltyDiscount ?? 0),
         pickupPlanAt: fullOrder.pickupPlanAt,
         returnPlanAt: fullOrder.returnPlanAt,
         pickedUpAt: fullOrder.pickedUpAt,

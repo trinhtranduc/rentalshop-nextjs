@@ -7,6 +7,7 @@ import { Button,
   EditCustomerForm,
   CustomerPageHeader, 
   CustomerInfoCard, 
+  CustomerLoyaltyTab,
   ConfirmationDialog,
   PageWrapper,
   PageHeader,
@@ -17,6 +18,7 @@ import {
   ArrowLeft,
   Edit,
   ShoppingBag,
+  Gift,
   UserCheck,
   UserX,
   Trash2,
@@ -49,6 +51,7 @@ export default function CustomerPage() {
   // Section visibility states
   const [showEditSection, setShowEditSection] = useState(false);
   const [showOrdersSection, setShowOrdersSection] = useState(false);
+  const [showLoyaltySection, setShowLoyaltySection] = useState(false);
   
   const editCustomerFormRef = React.useRef<EditCustomerFormRef>(null);
 
@@ -295,6 +298,14 @@ export default function CustomerPage() {
                 <span>{t('orders.viewOrders')}</span>
               </Button>
               <Button
+                onClick={() => setShowLoyaltySection((prev) => !prev)}
+                variant="outline"
+                className="flex items-center space-x-2"
+              >
+                <Gift className="w-4 h-4" />
+                <span>Loyalty</span>
+              </Button>
+              <Button
                 onClick={() => setShowDeleteConfirm(true)}
                 variant="destructive"
                 className="flex items-center space-x-2"
@@ -314,6 +325,12 @@ export default function CustomerPage() {
             customer={customer}
             showActions={false}
           />
+        )}
+
+        {!showEditSection && showLoyaltySection && (
+          <div className="mt-6">
+            <CustomerLoyaltyTab customerId={customer.id} />
+          </div>
         )}
 
         {/* Edit Customer Section - Show only when editing */}
