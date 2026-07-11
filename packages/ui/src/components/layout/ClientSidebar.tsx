@@ -370,13 +370,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <Logo 
-              size="sm" 
-              variant="custom" 
-              src="/anyrent-logo-light.svg" 
-              showBackground={false}
-              blueStroke={true}
-            />
+            <Logo size="sm" variant="blue" />
             <div>
               <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
             </div>
@@ -384,13 +378,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
         )}
         
         {isCollapsed && (
-          <Logo 
-            size="sm" 
-            variant="custom" 
-            src="/anyrent-logo-light.svg" 
-            showBackground={false}
-            blueStroke={true}
-          />
+          <Logo size="sm" variant="blue" />
         )}
 
         <Button
