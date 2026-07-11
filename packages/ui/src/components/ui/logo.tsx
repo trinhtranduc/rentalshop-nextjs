@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Building2 } from 'lucide-react'
+import { ANYRENT_BRANDMARK_PATH } from '@rentalshop/constants'
 
 interface LogoProps {
   /** Size of the logo (default: md) */
@@ -55,6 +56,7 @@ export const Logo: React.FC<LogoProps> = ({
   blueStroke = false
 }) => {
   const isBlueVariant = variant === 'blue'
+  const blueBrandSrc = src ?? ANYRENT_BRANDMARK_PATH
   const containerClass = showBackground || isBlueVariant
     ? `${sizeClasses[size]} bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl flex items-center justify-center shadow-lg p-4`
     : `${sizeClasses[size]} flex items-center justify-center`
@@ -70,9 +72,9 @@ export const Logo: React.FC<LogoProps> = ({
       <div className={containerClass}>
         {variant === 'default' ? (
           <Building2 className={`${iconSizes[size]} text-white`} strokeWidth={2.5} />
-        ) : variant === 'blue' && src ? (
+        ) : variant === 'blue' ? (
           <img 
-            src={src} 
+            src={blueBrandSrc} 
             alt="AnyRent Logo" 
             className="w-full h-full object-contain"
             style={{ filter: 'brightness(0) invert(1)' }}
