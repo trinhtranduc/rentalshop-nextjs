@@ -1554,21 +1554,19 @@ private final class OverviewRankingListViewController: BaseViewControler {
             let trimmedName = customer.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let title = trimmedName.isEmpty ? "Walk-in customer".localized() : trimmedName
 
-            var subtitleParts: [String] = []
-            if let phone = customer.phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-                subtitleParts.append(phone.maskedPhoneNumber)
-            }
+            var trailingParts: [String] = []
             let orderCount = customer.orderCount ?? customer.rentalCount ?? customer.saleCount ?? 0
             if orderCount > 0 {
-                subtitleParts.append("\(orderCount.formatStringInCommon()) " + "orders".localized())
+                trailingParts.append("\(orderCount.formatStringInCommon()) " + "orders".localized())
             } else if let location = customer.location?.trimmingCharacters(in: .whitespacesAndNewlines), !location.isEmpty {
-                subtitleParts.append(location)
+                trailingParts.append(location)
             }
 
-            return OverviewUIBuilder.makeRankingRow(
+            return OverviewUIBuilder.makeCustomerRankingRow(
                 rank: index + 1,
                 title: title,
-                subtitle: subtitleParts.joined(separator: " • "),
+                phone: customer.phone,
+                trailingSubtitle: trailingParts.isEmpty ? nil : trailingParts.joined(separator: " • "),
                 value: (customer.totalSpent ?? 0).formatStringInCommon(),
                 accentColor: .accentOrange,
                 isIPad: isIPad
