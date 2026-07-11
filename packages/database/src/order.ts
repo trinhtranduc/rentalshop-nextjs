@@ -99,6 +99,9 @@ export interface OrderWithRelations {
   discountType?: string
   discountValue: number
   discountAmount: number
+  loyaltyPointsRedeemed: number
+  loyaltyDiscount: number
+  loyaltyPointsEarned: number
   pickupPlanAt?: Date
   returnPlanAt?: Date
   pickedUpAt?: Date
@@ -275,6 +278,9 @@ function transformOrder(order: any): OrderWithRelations {
     discountType: order.discountType || undefined,
     discountValue: order.discountValue ?? 0,
     discountAmount: order.discountAmount ?? 0,
+    loyaltyPointsRedeemed: order.loyaltyPointsRedeemed ?? 0,
+    loyaltyDiscount: order.loyaltyDiscount ?? 0,
+    loyaltyPointsEarned: order.loyaltyPointsEarned ?? 0,
     pickupPlanAt: order.pickupPlanAt || undefined,
     returnPlanAt: order.returnPlanAt || undefined,
     pickedUpAt: order.pickedUpAt || undefined,

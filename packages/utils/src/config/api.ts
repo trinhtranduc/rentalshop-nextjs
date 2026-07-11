@@ -96,6 +96,16 @@ export interface ApiUrls {
     export: string;
     bulkImport: string;
   };
+  loyalty: {
+    program: string;
+    tiers: string;
+    tier: (id: number) => string;
+    customerSummary: (id: number) => string;
+    customerTransactions: (id: number) => string;
+    validateRedeem: string;
+    calculateEarn: string;
+    adjust: string;
+  };
   outlets: {
     list: string;
     create: string;
@@ -627,6 +637,16 @@ function createApiUrls(): ApiUrls {
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
       bulkImport: `${base}/api/customers/bulk-import`,
+    },
+    loyalty: {
+      program: `${base}/api/loyalty/program`,
+      tiers: `${base}/api/loyalty/tiers`,
+      tier: (id: number) => `${base}/api/loyalty/tiers/${id}`,
+      customerSummary: (id: number) => `${base}/api/loyalty/customers/${id}/summary`,
+      customerTransactions: (id: number) => `${base}/api/loyalty/customers/${id}/transactions`,
+      validateRedeem: `${base}/api/loyalty/validate-redeem`,
+      calculateEarn: `${base}/api/loyalty/calculate-earn`,
+      adjust: `${base}/api/loyalty/adjust`,
     },
     outlets: {
       list: `${base}/api/outlets`,

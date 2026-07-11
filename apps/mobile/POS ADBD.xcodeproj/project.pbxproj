@@ -56,6 +56,7 @@
 		048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CE2D7727AF00069256 /* AuthenticationService.swift */; };
 		048838D52D7727AF00069256 /* BaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CF2D7727AF00069256 /* BaseService.swift */; };
 		048838D62D7727AF00069256 /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D12D7727AF00069256 /* OrderService.swift */; };
+		048839B12D79F11900069257 /* LoyaltyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048839B02D79F11900069257 /* LoyaltyService.swift */; };
 		048838D72D7727AF00069256 /* ProductService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D22D7727AF00069256 /* ProductService.swift */; };
 		048838D82D7727AF00069256 /* CustomerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D02D7727AF00069256 /* CustomerService.swift */; };
 		048838DA2D77282100069256 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D92D77282100069256 /* APIEndpoint.swift */; };
@@ -295,6 +296,7 @@
 		048838CF2D7727AF00069256 /* BaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseService.swift; sourceTree = "<group>"; };
 		048838D02D7727AF00069256 /* CustomerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerService.swift; sourceTree = "<group>"; };
 		048838D12D7727AF00069256 /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderService.swift; sourceTree = "<group>"; };
+		048839B02D79F11900069257 /* LoyaltyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyService.swift; sourceTree = "<group>"; };
 		048838D22D7727AF00069256 /* ProductService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductService.swift; sourceTree = "<group>"; };
 		048838D92D77282100069256 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		048838DB2D77289900069256 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
@@ -566,6 +568,7 @@
 				048838CF2D7727AF00069256 /* BaseService.swift */,
 				048838D02D7727AF00069256 /* CustomerService.swift */,
 				048838D12D7727AF00069256 /* OrderService.swift */,
+				048839B02D79F11900069257 /* LoyaltyService.swift */,
 				048838D22D7727AF00069256 /* ProductService.swift */,
 			);
 			path = Services;
@@ -1404,6 +1407,7 @@
 				048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */,
 				048838D52D7727AF00069256 /* BaseService.swift in Sources */,
 				048838D62D7727AF00069256 /* OrderService.swift in Sources */,
+				048839B12D79F11900069257 /* LoyaltyService.swift in Sources */,
 				040330E92EA88EF5003BC33E /* Plan.swift in Sources */,
 				04A82A792EE7CC2C00E55F9C /* CountryPickerViewController.swift in Sources */,
 				0403310D2EACEC91003BC33E /* MainViewModel.swift in Sources */,

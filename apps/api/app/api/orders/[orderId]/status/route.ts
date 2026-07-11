@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import {
+  handleLoyaltyOnCancel,
+  merchantHasLoyaltyFeature,
+  processEarnOnStatusChange,
+} from '@rentalshop/loyalty';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
@@ -184,6 +189,26 @@ export async function PATCH(
       );
     }
 
+    const outlet = await db.outlets.findById(updatedOrder.outletId);
+    const merchantId = outlet?.merchantId;
+
+    if (merchantId && (await merchantHasLoyaltyFeature(merchantId))) {
+      if (status === ORDER_STATUS.CANCELLED) {
+        await prisma.$transaction(async (tx) => {
+          await handleLoyaltyOnCancel(tx, updatedOrder, merchantId);
+        });
+      } else if (status === ORDER_STATUS.RETURNED) {
+        const latestOrder = await db.orders.findById(orderPublicId);
+        if (latestOrder) {
+          await prisma.$transaction(async (tx) => {
+            await processEarnOnStatusChange(tx, latestOrder, merchantId, { id: user.id });
+          });
+        }
+      }
+    }
+
+    const finalOrder = (await db.orders.findById(orderPublicId)) || updatedOrder;
+
     // Enhanced response for returns
     let responseMessage = `Order status updated to ${status} successfully`;
     
@@ -212,7 +237,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      data: updatedOrder,
+      data: finalOrder,
       code: 'ORDER_STATUS_UPDATED_SUCCESS',
       message: responseMessage
     });
