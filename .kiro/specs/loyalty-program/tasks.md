@@ -25,16 +25,13 @@
 
 - [x] **T2.1 — Redeem guard nguyên tử (#5, INV-5).** ✅ ĐÃ ĐẠT sẵn trong `order-hooks.ts:224` (`updateMany WHERE points>=N` + check `count===1`). Không cần sửa. (Verify lại khi viết test concurrent.)
 
-- [~] **T2.2 — Gate perf (#6, INV-7).** Status route: xong (chỉ gọi khi CANCELLED/RETURNED). _Còn:_ `orders/route.ts` create — nhánh SALE (dòng 763-767) vẫn gọi `merchantHasLoyaltyFeature` cho mọi đơn SALE có customer; gộp resolve features 1 lần chung với nhánh redeem.
-  - _Done:_ merchant KHÔNG loyalty: tạo/đổi status đơn không phát sinh query merchant-plan thừa.
+- [x] **T2.2 — Gate perf (#6, INV-7).** ✅ Status route: chỉ gọi khi CANCELLED/RETURNED. `orders/route.ts` create: resolve `merchantHasLoyaltyFeature` **1 lần**, chỉ khi có ý định loyalty (redeem hoặc SALE+customer).
 
 ## Nhóm 3 — Hoàn thiện nghiệp vụ
 
-- [ ] **T3.1 — Tách endpoint re-eval hạng (§6b).** `POST /api/loyalty/reevaluate-tiers` (perm `loyalty.manage`): chỉ tính lại `totalSpent/totalOrders` + `currentTierId`, KHÔNG đụng điểm. Đây là nút "ngày 10 thêm tier".
-  - _Done:_ chạy sau khi thêm tier → hạng cập nhật, balance bất biến.
+- [x] **T3.1 — Tách endpoint re-eval hạng (§6b).** ✅ `POST /api/loyalty/reevaluate-tiers` (`loyalty.manage`): `reevaluateMerchantTiers` tính lại `totalSpent/totalOrders` + `currentTierId` (never-downgrade), KHÔNG đụng điểm, log `tier_upgrade`.
 
-- [ ] **T3.2 — Recalculate balance admin (§6c, Req 12.5).** `POST /api/loyalty/recalculate` (perm `loyalty.adjust`): derive toàn bộ cache từ ledger + orders cho 1 customer / cả merchant. Dùng chung hàm derive với backfill/reeval.
-  - _Done:_ cố tình làm lệch cache → recalc đưa về đúng `SUM(ledger)`.
+- [x] **T3.2 — Recalculate balance admin (§6c, Req 12.5).** ✅ `POST /api/loyalty/recalculate` (`loyalty.adjust`): `deriveMerchantLoyaltyCache` derive toàn bộ cache từ ledger + orders. Helper chung ở `apps/api/lib/loyalty-derive.ts`, dùng lại bởi cả `sync-history`.
 
 - [ ] **T3.3 — Luồng edit đơn (Req 7, #7).** `apps/api/app/api/orders/[orderId]/route.ts` (PUT): (a) sửa làm `finalAmount<0` → **REJECT 400**; (b) đổi `customerId` → reverse customer cũ; (c) sửa item SALE đã earn → tạo `adjust` chênh lệch. Tất cả fail-closed cho redeem, fail-open cho earn.
   - _Done:_ 3 kịch bản có test; reject có message rõ.

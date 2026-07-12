@@ -7,6 +7,7 @@ import {
   resolveLoyaltyMerchantId,
   withLoyaltyPlanGate,
 } from '@/lib/loyalty-route-helpers';
+import { deriveMerchantLoyaltyCache } from '@/lib/loyalty-derive';
 
 /**
  * Backfill loyalty points from historical orders — LEDGER-AUTHORITATIVE.
@@ -30,19 +31,6 @@ interface OrderPointStat {
   orderType: string;
   totalAmount: number;
   orderCount: number;
-}
-
-interface LedgerAggregate {
-  customerId: number;
-  balance: number;
-  earned: number;
-  redeemed: number;
-}
-
-interface OrderAggregate {
-  customerId: number;
-  spent: number;
-  orders: number;
 }
 
 export const POST = withPermissions(['loyalty.manage'])(async (_request: NextRequest, { user, userScope }) => {
@@ -164,81 +152,10 @@ export const POST = withPermissions(['loyalty.manage'])(async (_request: NextReq
         issued += points;
       }
 
-      // 5. DERIVE cache for every customer of this merchant from the two sources of truth.
-      //    points/earned/redeemed <- ledger ; spent/orders <- Order ; tier <- metric.
-      const ledgerAgg = await tx.$queryRaw<LedgerAggregate[]>`
-        SELECT t."customerId",
-               SUM(t.points)::int                                         AS balance,
-               SUM(CASE WHEN t.points > 0 THEN t.points ELSE 0 END)::int  AS earned,
-               SUM(CASE WHEN t.type = 'redeem' THEN -t.points ELSE 0 END)::int AS redeemed
-        FROM "LoyaltyTransaction" t
-        WHERE t."merchantId" = ${merchantId}
-        GROUP BY t."customerId"
-      `;
+      // 5. DERIVE cache from the two sources of truth (shared with recalculate; never-downgrade).
+      const customersProcessed = await deriveMerchantLoyaltyCache(tx, merchantId, program, tiers);
 
-      const orderAgg = await tx.$queryRaw<OrderAggregate[]>`
-        SELECT o."customerId",
-               SUM(o."totalAmount")::float8 AS spent,
-               COUNT(*)::int                AS orders
-        FROM "Order" o
-        JOIN "Outlet" out ON o."outletId" = out.id
-        WHERE out."merchantId" = ${merchantId}
-          AND o.status IN ('COMPLETED', 'RETURNED')
-          AND o."customerId" IS NOT NULL
-          AND o."deletedAt" IS NULL
-        GROUP BY o."customerId"
-      `;
-
-      const orderByCustomer = new Map<number, OrderAggregate>();
-      for (const row of orderAgg) orderByCustomer.set(row.customerId, row);
-
-      const ledgerByCustomer = new Map<number, LedgerAggregate>();
-      for (const row of ledgerAgg) ledgerByCustomer.set(row.customerId, row);
-
-      const affectedCustomers = new Set<number>([
-        ...ledgerByCustomer.keys(),
-        ...orderByCustomer.keys(),
-      ]);
-
-      for (const customerId of affectedCustomers) {
-        const ledger = ledgerByCustomer.get(customerId);
-        const orders = orderByCustomer.get(customerId);
-
-        const points = Number(ledger?.balance ?? 0);
-        const totalEarned = Number(ledger?.earned ?? 0);
-        const totalRedeemed = Number(ledger?.redeemed ?? 0);
-        const totalSpent = Number(orders?.spent ?? 0);
-        const totalOrders = Number(orders?.orders ?? 0);
-
-        // Tier from metric (highest threshold <= metric). tiers sorted threshold DESC.
-        const metricValue = program.tierMetric === 'total_orders' ? totalOrders : totalSpent;
-        const matchedTier = tiers.find((t) => metricValue >= t.threshold);
-        const currentTierId = matchedTier?.id ?? null;
-
-        await tx.customerLoyalty.upsert({
-          where: { customerId_merchantId: { customerId, merchantId } },
-          create: {
-            customerId,
-            merchantId,
-            points,
-            totalEarned,
-            totalRedeemed,
-            totalSpent,
-            totalOrders,
-            currentTierId,
-          },
-          update: {
-            points,
-            totalEarned,
-            totalRedeemed,
-            totalSpent,
-            totalOrders,
-            currentTierId,
-          },
-        });
-      }
-
-      return { customersProcessed: affectedCustomers.size, totalPointsIssued: issued };
+      return { customersProcessed, totalPointsIssued: issued };
     });
 
     return NextResponse.json(
