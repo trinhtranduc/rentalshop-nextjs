@@ -765,12 +765,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       order.orderType === ORDER_TYPE.SALE &&
       (await merchantHasLoyaltyFeature(outlet.merchantId))
     ) {
-      loyaltyOrder = await handleLoyaltyOnOrderCreate(
-        order,
-        undefined,
-        { id: user.id },
-        outlet.merchantId
-      );
+      try {
+        loyaltyOrder = await handleLoyaltyOnOrderCreate(
+          order,
+          undefined,
+          { id: user.id },
+          outlet.merchantId
+        );
+      } catch (loyaltyEarnError) {
+        console.error('⚠️ Loyalty earn failed (order still created):', loyaltyEarnError);
+        // Fail-open: order was created successfully, earn just didn't happen
+      }
     }
 
     const auditHelper = createAuditHelper(prisma);
