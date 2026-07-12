@@ -19,6 +19,7 @@ import {
   adjustRedeemOnOrderEdit,
   calculateAmountDue,
   getLoyaltyProgram,
+  handleLoyaltyOnCancel,
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
 
@@ -557,24 +558,57 @@ export const PUT = async (
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
 
+      // ---- Loyalty on edit (Req 7) ----
+      // Detect a customer change and whether this order carries any loyalty state.
+      const newCustomerId =
+        'customerId' in validUpdateData ? (validUpdateData as any).customerId : existingOrder.customerId;
+      const customerChanged = newCustomerId !== existingOrder.customerId;
+      const hasLoyaltyState =
+        (existingOrder.loyaltyDiscount ?? 0) > 0 || (existingOrder.loyaltyPointsEarned ?? 0) > 0;
+
+      // Only touch loyalty (and pay the feature query) when there is real loyalty involvement.
       if (
-        loyaltyRedeem &&
         merchantId &&
-        existingOrder.customerId &&
+        (loyaltyRedeem || customerChanged || hasLoyaltyState) &&
         (await merchantHasLoyaltyFeature(merchantId))
       ) {
         const program = await getLoyaltyProgram(merchantId);
-        if (program?.isActive) {
-          await prisma.$transaction(async (tx) => {
-            await adjustRedeemOnOrderEdit(
+
+        // Req 7.1 (DECISION: REJECT): an edit must not drive finalAmount below 0 given the
+        // effective loyalty discount. Staff must reduce redeemed points first.
+        const newTotal = Number((validUpdateData as any).totalAmount ?? existingOrder.totalAmount) || 0;
+        const newManualDiscount = Number((validUpdateData as any).discountAmount ?? existingOrder.discountAmount ?? 0);
+        let effectiveLoyaltyDiscount = existingOrder.loyaltyDiscount ?? 0;
+        if (loyaltyRedeem && program?.isActive) {
+          effectiveLoyaltyDiscount = (loyaltyRedeem.points ?? 0) * program.pointValue;
+        }
+        // A customer change reverses old loyalty, so its discount no longer applies to the guard.
+        if (customerChanged) effectiveLoyaltyDiscount = 0;
+
+        if (newTotal - newManualDiscount - effectiveLoyaltyDiscount < 0) {
+          return NextResponse.json(
+            ResponseBuilder.error('REDEEM_EXCEEDS_TOTAL'),
+            { status: 400 }
+          );
+        }
+
+        if (customerChanged && existingOrder.customerId) {
+          // Req 7.3: reverse loyalty for the OLD customer (refund redeem + reverse earn).
+          // Do NOT auto-apply for the new customer — staff re-applies redeem manually;
+          // earn for the new customer happens at the normal completion trigger.
+          await prisma.$transaction((tx) => handleLoyaltyOnCancel(tx, existingOrder, merchantId));
+        } else if (loyaltyRedeem && existingOrder.customerId && program?.isActive) {
+          // Redeem amount changed on edit — adjust to the new amount (fail-closed).
+          await prisma.$transaction((tx) =>
+            adjustRedeemOnOrderEdit(
               tx,
               existingOrder,
               loyaltyRedeem.points ?? 0,
               { id: user.id },
               program,
               merchantId
-            );
-          });
+            )
+          );
         }
       }
 

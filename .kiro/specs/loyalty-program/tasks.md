@@ -11,8 +11,7 @@
 - [ ] **T0.2 — Pure calc module.** Tách `packages/loyalty/src/calc.ts`: `calcEarnPoints`, `calcMaxRedeemable`, `evaluateTier` — thuần, không chạm DB. Earn/redeem/tier import từ đây.
   - _Done:_ có unit test cho biên (floor, multiplier, cap %, remaining).
 
-- [ ] **T0.3 — Partial unique index chống earn trùng (INV-4).** Migration Prisma thủ công: `CREATE UNIQUE INDEX loyalty_tx_earn_once ON "LoyaltyTransaction"("orderId") WHERE type='earn';`
-  - _Done:_ chạy earn 2 lần cùng orderId → lần 2 bị DB chặn (không chỉ app-check).
+- [x] **T0.3 — Partial unique index chống earn trùng (INV-4).** ✅ Migration `20260712000000_loyalty_tx_unique_per_order`: partial unique index earn + redeem (một-lần-mỗi-đơn) + dedup phòng ngừa. Áp khi `prisma migrate deploy` (start.sh).
 
 ## Nhóm 1 — Sửa 2 bug rủi ro cao nhất
 
@@ -33,8 +32,11 @@
 
 - [x] **T3.2 — Recalculate balance admin (§6c, Req 12.5).** ✅ `POST /api/loyalty/recalculate` (`loyalty.adjust`): `deriveMerchantLoyaltyCache` derive toàn bộ cache từ ledger + orders. Helper chung ở `apps/api/lib/loyalty-derive.ts`, dùng lại bởi cả `sync-history`.
 
-- [ ] **T3.3 — Luồng edit đơn (Req 7, #7).** `apps/api/app/api/orders/[orderId]/route.ts` (PUT): (a) sửa làm `finalAmount<0` → **REJECT 400**; (b) đổi `customerId` → reverse customer cũ; (c) sửa item SALE đã earn → tạo `adjust` chênh lệch. Tất cả fail-closed cho redeem, fail-open cho earn.
-  - _Done:_ 3 kịch bản có test; reject có message rõ.
+- [~] **T3.3 — Luồng edit đơn (Req 7, #7).** `orders/[orderId]/route.ts` (PUT):
+  - [x] (a) sửa làm `finalAmount<0` → **REJECT 400** (`REDEEM_EXCEEDS_TOTAL`) — quyết định đã chốt.
+  - [x] (b) đổi `customerId` → reverse loyalty customer cũ (`handleLoyaltyOnCancel`), không auto-apply customer mới.
+  - [ ] (c) sửa item SALE đã earn → tạo `adjust` chênh lệch earn *(chưa làm — phức tạp, ít gặp)*.
+  - _Còn:_ (c) + test 3 kịch bản.
 
 ## Nhóm 4 — Chốt chất lượng
 
