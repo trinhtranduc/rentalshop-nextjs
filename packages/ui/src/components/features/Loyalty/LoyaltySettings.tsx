@@ -159,16 +159,16 @@ const SectionNavButton: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
-      active ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-border bg-bg-card hover:bg-bg-secondary'
+    className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors rounded-md ${
+      active
+        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+        : 'text-gray-700 hover:bg-gray-50'
     }`}
   >
-    <div className="flex items-start gap-3">
-      <Icon className={`mt-0.5 h-5 w-5 ${active ? 'text-blue-700' : 'text-text-secondary'}`} />
-      <div className="min-w-0 flex-1">
-        <p className={`font-medium ${active ? 'text-blue-700' : 'text-text-primary'}`}>{label}</p>
-        <p className="text-xs text-text-secondary">{description}</p>
-      </div>
+    <Icon className="h-5 w-5 flex-shrink-0" />
+    <div className="min-w-0 flex-1">
+      <p className="font-medium">{label}</p>
+      <p className="text-xs text-gray-500 truncate">{description}</p>
     </div>
   </button>
 );
@@ -454,23 +454,27 @@ export const LoyaltySettings: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <Card className="h-fit">
-            <CardContent className="space-y-3 p-4">
-              {sectionItems.map((item) => (
-                <SectionNavButton
-                  key={item.id}
-                  active={activeSection === item.id}
-                  icon={item.icon}
-                  label={item.label}
-                  description={item.description}
-                  onClick={() => setActiveSection(item.id)}
-                />
-              ))}
-            </CardContent>
-          </Card>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-64 flex-shrink-0">
+            <Card>
+              <CardContent className="p-0">
+                <nav className="space-y-1">
+                  {sectionItems.map((item) => (
+                    <SectionNavButton
+                      key={item.id}
+                      active={activeSection === item.id}
+                      icon={item.icon}
+                      label={item.label}
+                      description={item.description}
+                      onClick={() => setActiveSection(item.id)}
+                    />
+                  ))}
+                </nav>
+              </CardContent>
+            </Card>
+          </div>
 
-          <div className="space-y-6">
+          <div className="flex-1 min-w-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
