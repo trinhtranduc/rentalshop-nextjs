@@ -43,10 +43,13 @@
 - [ ] **T4.1 — Dọn point lots khỏi runtime V1 (§9).** Gỡ import `expiry.ts` + mọi lời gọi tạo/xóa lot khỏi earn/sync. Giữ model + file như hạ tầng ngủ. Ghi chú Phase 2.
   - _Done:_ grep runtime không còn `loyaltyPointLot.` trong luồng V1.
 
-- [ ] **T4.2 — Verify `amountDue` không đổi cho đơn cũ.** Đối chiếu `calculateAmountDue` với công thức cũ; đơn không-loyalty phải cho amountDue y hệt trước merge.
-  - _Done:_ snapshot vài đơn cũ trước/sau → khớp.
+- [x] **T4.2 — Verify `amountDue` không đổi cho đơn cũ.** ✅ `amountDue` KHÔNG tồn tại trên `main` → field mới additive. `calculateAmountDue = max(0, total − loyaltyDiscount)`; đơn cũ loyaltyDiscount=0 → amountDue=totalAmount. Không regression.
 
-- [ ] **T4.3 — Guard "không plan cũ nào chứa loyalty".** Script/kiểm tra DB: không merchant đang chạy nào vô tình có `"loyalty"` trong `plan.features` trước khi bật.
+- [ ] **T4.3 — Guard "không plan cũ nào chứa loyalty".** Chạy trên DB thật trước khi bật:
+  ```sql
+  SELECT id, name, features FROM "Plan" WHERE features ILIKE '%loyalty%';
+  ```
+  Kỳ vọng: 0 dòng (hoặc chỉ đúng plan Professional/Enterprise bạn CHỦ ĐỘNG bật).
 
 - [ ] **T4.4 — Smoke test luồng cũ.** Merchant KHÔNG loyalty: tạo/sửa/hủy/trả đơn → hành vi = trước merge (INV-7).
 
