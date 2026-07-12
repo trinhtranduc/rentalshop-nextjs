@@ -57,6 +57,15 @@ export interface CustomerLoyalty {
   updatedAt?: Date | string;
 }
 
+export interface CustomerLoyaltySnapshot {
+  points: number;
+  totalEarned: number;
+  totalRedeemed: number;
+  totalSpent: number;
+  totalOrders: number;
+  tier: Pick<LoyaltyTier, 'id' | 'name' | 'color' | 'icon' | 'multiplier'> | null;
+}
+
 export interface LoyaltyTransaction {
   id: number;
   customerId: number;

@@ -11,6 +11,7 @@ import {
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { fetchCustomerLoyaltySnapshots } from '@/lib/customer-loyalty';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -208,12 +209,19 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       updatedAt: customer.updatedAt?.toISOString() || null,
       dateOfBirth: customer.dateOfBirth?.toISOString() || null,
     }));
+    const loyaltySnapshots = await fetchCustomerLoyaltySnapshots(
+      normalizedCustomers.map(customer => customer.id)
+    );
+    const customersWithLoyalty = normalizedCustomers.map(customer => ({
+      ...customer,
+      loyalty: loyaltySnapshots.get(customer.id) ?? null,
+    }));
 
     // Create response with ETag support
     const responseData = {
       success: true,
       data: {
-        customers: normalizedCustomers,
+        customers: customersWithLoyalty,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 50,

@@ -5,6 +5,7 @@ import { ORDER_STATUS } from '@rentalshop/constants';
 import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import {API} from '@rentalshop/constants';
+import { fetchCustomerLoyaltySnapshot } from '@/lib/customer-loyalty';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -91,6 +92,7 @@ export async function GET(
         createdAt: customer.createdAt?.toISOString() || null,
         updatedAt: customer.updatedAt?.toISOString() || null,
         dateOfBirth: customer.dateOfBirth?.toISOString() || null,
+        loyalty: await fetchCustomerLoyaltySnapshot(customerId),
       };
 
       return NextResponse.json({
