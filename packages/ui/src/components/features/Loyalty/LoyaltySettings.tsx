@@ -594,13 +594,14 @@ export const LoyaltySettings: React.FC = () => {
                     <div className="space-y-2">
                       <Label>Mốc tiền để nhận điểm (VND)</Label>
                       <Input
-                        type="number"
-                        min={1}
-                        value={program.rentEarnPerAmount ?? ''}
+                        type="text"
+                        inputMode="numeric"
+                        value={(program.rentEarnPerAmount || 0).toLocaleString('en-US')}
                         disabled={!program.rentEarnEnabled}
-                        onChange={(e) =>
-                          updateProgramField('rentEarnPerAmount', Number(e.target.value || 0))
-                        }
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, '');
+                          updateProgramField('rentEarnPerAmount', Number(raw || 0));
+                        }}
                       />
                     </div>
                   </div>
@@ -642,13 +643,14 @@ export const LoyaltySettings: React.FC = () => {
                     <div className="space-y-2">
                       <Label>Mốc tiền để nhận điểm (VND)</Label>
                       <Input
-                        type="number"
-                        min={1}
-                        value={program.saleEarnPerAmount ?? ''}
+                        type="text"
+                        inputMode="numeric"
+                        value={(program.saleEarnPerAmount || 0).toLocaleString('en-US')}
                         disabled={!program.saleEarnEnabled}
-                        onChange={(e) =>
-                          updateProgramField('saleEarnPerAmount', Number(e.target.value || 0))
-                        }
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, '');
+                          updateProgramField('saleEarnPerAmount', Number(raw || 0));
+                        }}
                       />
                     </div>
                   </div>
@@ -670,10 +672,13 @@ export const LoyaltySettings: React.FC = () => {
                   <div className="space-y-2">
                     <Label>Giá trị 1 điểm (VND)</Label>
                     <Input
-                      type="number"
-                      min={1}
-                      value={program.pointValue ?? ''}
-                      onChange={(e) => updateProgramField('pointValue', Number(e.target.value || 0))}
+                      type="text"
+                      inputMode="numeric"
+                      value={(program.pointValue || 0).toLocaleString('en-US')}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                        updateProgramField('pointValue', Number(raw || 0));
+                      }}
                     />
                   </div>
                   <div className="space-y-2">
@@ -792,11 +797,14 @@ export const LoyaltySettings: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <Label className="text-xs text-text-secondary whitespace-nowrap">Từ</Label>
                                 <Input
-                                  type="number"
-                                  min={0}
-                                  value={existing.threshold}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={existing.threshold.toLocaleString('en-US')}
                                   disabled={isDefault || isBusy}
-                                  onChange={(e) => updateTierField(existing.id, 'threshold', Number(e.target.value || 0))}
+                                  onChange={(e) => {
+                                    const raw = e.target.value.replace(/[^0-9]/g, '');
+                                    updateTierField(existing.id, 'threshold', Number(raw || 0));
+                                  }}
                                   className="w-32 h-8 text-sm"
                                 />
                               </div>
