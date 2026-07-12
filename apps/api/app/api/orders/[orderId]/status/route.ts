@@ -192,18 +192,33 @@ export async function PATCH(
     const outlet = await db.outlets.findById(updatedOrder.outletId);
     const merchantId = outlet?.merchantId;
 
-    if (merchantId && (await merchantHasLoyaltyFeature(merchantId))) {
-      if (status === ORDER_STATUS.CANCELLED) {
-        await prisma.$transaction(async (tx) => {
-          await handleLoyaltyOnCancel(tx, updatedOrder, merchantId);
-        });
-      } else if (status === ORDER_STATUS.RETURNED) {
-        const latestOrder = await db.orders.findById(orderPublicId);
-        if (latestOrder) {
-          await prisma.$transaction(async (tx) => {
-            await processEarnOnStatusChange(tx, latestOrder, merchantId, { id: user.id });
-          });
+    // Loyalty hooks — only for CANCELLED/RETURNED (avoid feature query on unrelated status changes).
+    // Fail-open (INV-6): the status change is already committed above; loyalty must never block it.
+    if (
+      merchantId &&
+      (status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.RETURNED)
+    ) {
+      try {
+        if (await merchantHasLoyaltyFeature(merchantId)) {
+          if (status === ORDER_STATUS.CANCELLED) {
+            await prisma.$transaction(async (tx) => {
+              await handleLoyaltyOnCancel(tx, updatedOrder, merchantId);
+            });
+          } else {
+            const latestOrder = await db.orders.findById(orderPublicId);
+            if (latestOrder) {
+              await prisma.$transaction(async (tx) => {
+                await processEarnOnStatusChange(tx, latestOrder, merchantId, { id: user.id });
+              });
+            }
+          }
         }
+      } catch (loyaltyError) {
+        // Fail-open: log and continue — order status change stays committed.
+        console.error(
+          `⚠️ Loyalty ${status} hook failed (order status still updated):`,
+          loyaltyError
+        );
       }
     }
 

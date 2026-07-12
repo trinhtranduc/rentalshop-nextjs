@@ -105,6 +105,7 @@ export interface ApiUrls {
     validateRedeem: string;
     calculateEarn: string;
     adjust: string;
+    syncHistory: string;
   };
   outlets: {
     list: string;
@@ -656,6 +657,7 @@ function createApiUrls(): ApiUrls {
       validateRedeem: `${base}/api/loyalty/validate-redeem`,
       calculateEarn: `${base}/api/loyalty/calculate-earn`,
       adjust: `${base}/api/loyalty/adjust`,
+      syncHistory: `${base}/api/loyalty/sync-history`,
     },
     outlets: {
       list: `${base}/api/outlets`,

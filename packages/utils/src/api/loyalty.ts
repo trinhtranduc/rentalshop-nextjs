@@ -103,4 +103,11 @@ export const loyaltyApi = {
     });
     return parseApiResponse(response);
   },
+
+  async syncHistory() {
+    const response = await authenticatedFetch(apiUrls.loyalty.syncHistory, {
+      method: 'POST',
+    });
+    return parseApiResponse<{ customersProcessed: number; totalPointsIssued: number }>(response);
+  },
 };

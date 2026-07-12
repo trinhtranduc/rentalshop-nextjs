@@ -8,14 +8,13 @@ import {
   Settings as SettingsIcon, 
   Building2,
   Store,
-  Gift,
   Languages,
   Wallet
 } from 'lucide-react';
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
-import { USER_ROLE, hasLoyaltyFeature } from '@rentalshop/constants';
+import { USER_ROLE } from '@rentalshop/constants';
 import { useToast } from '@rentalshop/ui';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 
@@ -28,7 +27,6 @@ import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { LanguageSection } from './components/LanguageSection';
 import { BankAccountSection } from './components/BankAccountSection';
-import { LoyaltySettings } from '../Loyalty';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -70,13 +68,6 @@ const createSettingsMenuItems = (t: any) => [
     icon: CreditCard,
     description: t('menuItems.subscription.description'),
     roles: [USER_ROLE.MERCHANT] // Billing/subscription: merchant owner only (outlet users use Settings elsewhere)
-  },
-  {
-    id: 'loyalty',
-    label: 'Loyalty',
-    icon: Gift,
-    description: 'Chương trình khách hàng thân thiết',
-    roles: [USER_ROLE.MERCHANT]
   },
   {
     id: 'language',
@@ -125,9 +116,9 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   // Get tab from URL or default to 'profile'
   const tabFromUrl = searchParams.get('tab') || 'profile';
   
-  // Avoid showing subscription tab until role is known (outlets must not flash subscription UI)
+  // Avoid showing moved/guarded tabs until role is known
   const [activeSection, setActiveSection] = useState(
-    tabFromUrl === 'subscription' ? 'profile' : tabFromUrl
+    tabFromUrl === 'subscription' || tabFromUrl === 'loyalty' ? 'profile' : tabFromUrl
   );
   
   // Profile editing state
@@ -187,6 +178,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   // Sync URL → active section; subscription tab only for MERCHANT after role is loaded
   useEffect(() => {
     const tab = searchParams.get('tab') || 'profile';
+
+    if (tab === 'loyalty') {
+      setActiveSection('profile');
+      router.replace('/loyalty');
+      return;
+    }
 
     if (tab === 'subscription') {
       if (!user?.role) {
@@ -370,9 +367,6 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   // Create and filter menu items based on user role
   const settingsMenuItems = createSettingsMenuItems(t);
   const filteredMenuItems = settingsMenuItems.filter(item => {
-    if (item.id === 'loyalty' && !hasLoyaltyFeature(subscriptionData?.plan?.features)) {
-      return false;
-    }
     // If item has roles restriction, check if user role is allowed
     if (item.roles) {
       return item.roles.includes(user?.role || '');
@@ -666,15 +660,6 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
             currentUserRole={user?.role}
           />
         );
-      case 'loyalty':
-        if (!hasLoyaltyFeature(subscriptionData?.plan?.features)) {
-          return (
-            <div className="p-6 text-sm text-text-secondary">
-              Nâng cấp lên gói Professional hoặc Enterprise để sử dụng Loyalty Program.
-            </div>
-          );
-        }
-        return <LoyaltySettings />;
       case 'language':
         return <LanguageSection />;
       case 'account':

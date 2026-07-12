@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge, Input, Label, Switch, useFormatCurrency } from '@rentalshop/ui';
+import { Coins } from 'lucide-react';
 import type { LoyaltyCustomerSummary } from '@rentalshop/types';
 
 interface LoyaltyRedeemSectionProps {
@@ -13,6 +14,8 @@ interface LoyaltyRedeemSectionProps {
   loading?: boolean;
   validationError?: string | null;
   enabled?: boolean;
+  earnPreview?: number | null;
+  orderType?: 'RENT' | 'SALE';
 }
 
 export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
@@ -26,6 +29,8 @@ export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
   loading = false,
   validationError,
   enabled = true,
+  earnPreview,
+  orderType,
 }) => {
   const formatMoney = useFormatCurrency();
 
@@ -91,6 +96,25 @@ export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
             <span>Khách cần trả</span>
             <span>{formatMoney(amountDue)}</span>
           </div>
+
+          {/* Next Tier Info */}
+          {summary.nextTier && summary.nextTier.remaining > 0 && (
+            <div className="text-xs text-text-secondary pt-1">
+              Cần chi thêm {formatMoney(summary.nextTier.remaining)} để lên {summary.nextTier.name}
+            </div>
+          )}
+
+          {/* Earn Preview */}
+          {earnPreview != null && earnPreview > 0 && (
+            <div className="flex items-center gap-2 text-sm text-action-success pt-2 border-t border-border">
+              <Coins className="w-4 h-4 flex-shrink-0" />
+              <span>
+                {orderType === 'RENT'
+                  ? `Ước tính tích ~${earnPreview} điểm khi trả đồ`
+                  : `Tích ${earnPreview} điểm`}
+              </span>
+            </div>
+          )}
         </>
       ) : (
         <p className="text-sm text-text-secondary">Chưa có chương trình loyalty hoặc chưa chọn khách hàng.</p>

@@ -52,6 +52,7 @@ import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
 import { LoyaltyRedeemSection } from './components/LoyaltyRedeemSection';
+import { LoyaltyOrderInfo } from '../../features/Loyalty/LoyaltyOrderInfo';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
 import { EditCustomerDialog } from '@rentalshop/ui';
@@ -799,18 +800,30 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col flex-1 overflow-visible p-6 pt-0">
-                <LoyaltyRedeemSection
-                  summary={loyalty.summary}
-                  usePoints={loyalty.usePoints}
-                  onUsePointsChange={loyalty.setUsePoints}
-                  redeemPoints={loyalty.redeemPoints}
-                  onRedeemPointsChange={loyalty.setRedeemPoints}
-                  loyaltyDiscount={loyalty.loyaltyDiscount}
-                  amountDue={loyalty.amountDue}
-                  loading={loyalty.loading}
-                  validationError={loyalty.validationError}
-                  enabled={!isEditMode && !!formData.customerId}
-                />
+                {isEditMode && initialOrder ? (
+                  <LoyaltyOrderInfo
+                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
+                    loyaltyDiscount={initialOrder.loyaltyDiscount}
+                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
+                    orderType={formData.orderType}
+                    orderStatus={initialOrder.status || 'RESERVED'}
+                  />
+                ) : (
+                  <LoyaltyRedeemSection
+                    summary={loyalty.summary}
+                    usePoints={loyalty.usePoints}
+                    onUsePointsChange={loyalty.setUsePoints}
+                    redeemPoints={loyalty.redeemPoints}
+                    onRedeemPointsChange={loyalty.setRedeemPoints}
+                    loyaltyDiscount={loyalty.loyaltyDiscount}
+                    amountDue={loyalty.amountDue}
+                    loading={loyalty.loading}
+                    validationError={loyalty.validationError}
+                    enabled={!!formData.customerId}
+                    earnPreview={loyalty.earnPreview}
+                    orderType={formData.orderType}
+                  />
+                )}
                 {/* Order Information Content with Order Summary - Takes full height */}
             <OrderInfoSection
               formData={formData}

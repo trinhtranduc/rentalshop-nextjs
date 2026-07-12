@@ -743,34 +743,42 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const order = await db.orders.create(orderData);
 
     let loyaltyOrder = order;
-    if (
-      parsed.data.customerId &&
-      parsed.data.loyaltyRedeem?.points &&
-      (await merchantHasLoyaltyFeature(outlet.merchantId))
-    ) {
-      try {
-        loyaltyOrder = await handleLoyaltyOnOrderCreate(
-          order,
-          parsed.data.loyaltyRedeem,
-          { id: user.id },
-          outlet.merchantId
-        );
-      } catch (loyaltyError) {
-        console.error('❌ Loyalty processing failed, rolling back order:', loyaltyError);
-        await db.orders.delete(order.id).catch(() => undefined);
-        throw loyaltyError;
+    // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
+    // there is an actual loyalty intent: an explicit redeem, or a SALE order with a customer
+    // (SALE earns immediately). No customer / no intent -> zero loyalty query.
+    const wantsRedeem = Boolean(parsed.data.customerId && parsed.data.loyaltyRedeem?.points);
+    const wantsSaleEarn = Boolean(
+      parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
+    );
+    if (wantsRedeem || wantsSaleEarn) {
+      const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
+      if (hasLoyalty && wantsRedeem) {
+        // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            parsed.data.loyaltyRedeem,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyError) {
+          console.error('❌ Loyalty processing failed, rolling back order:', loyaltyError);
+          await db.orders.delete(order.id).catch(() => undefined);
+          throw loyaltyError;
+        }
+      } else if (hasLoyalty && wantsSaleEarn) {
+        // Earn is FAIL-OPEN (INV-6): order stays created even if earn fails.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            undefined,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyEarnError) {
+          console.error('⚠️ Loyalty earn failed (order still created):', loyaltyEarnError);
+        }
       }
-    } else if (
-      parsed.data.customerId &&
-      order.orderType === ORDER_TYPE.SALE &&
-      (await merchantHasLoyaltyFeature(outlet.merchantId))
-    ) {
-      loyaltyOrder = await handleLoyaltyOnOrderCreate(
-        order,
-        undefined,
-        { id: user.id },
-        outlet.merchantId
-      );
     }
 
     const auditHelper = createAuditHelper(prisma);
