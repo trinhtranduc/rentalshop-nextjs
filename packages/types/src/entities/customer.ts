@@ -14,6 +14,7 @@ import {
   EntityStatus,
   MerchantReference
 } from '../common/base';
+import type { CustomerLoyaltySnapshot } from './loyalty';
 
 // ============================================================================
 // CORE CUSTOMER INTERFACES
@@ -39,6 +40,7 @@ export interface Customer extends BaseEntityWithMerchant, Address, ContactInfo {
   
   // Related entities (populated when needed)
   merchant?: MerchantReference;
+  loyalty?: CustomerLoyaltySnapshot | null;
 }
 
 // ============================================================================
@@ -136,6 +138,7 @@ export interface CustomerSearchResult {
     id: number;        // Changed from string to number
     name: string;
   };
+  loyalty?: CustomerLoyaltySnapshot | null;
 }
 
 /**

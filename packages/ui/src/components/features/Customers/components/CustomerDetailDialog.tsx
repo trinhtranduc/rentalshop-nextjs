@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Dialog,
   DialogContent,
@@ -8,12 +8,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  Button
+  Button,
+  Badge,
+  Card,
+  CardContent,
 } from '@rentalshop/ui';
 import { Trash2, History } from 'lucide-react';
 import type { Customer } from '@rentalshop/types';
+import type { LoyaltyCustomerSummary } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { loyaltyApi } from '@rentalshop/utils';
 
 interface CustomerDetailDialogProps {
   open: boolean;
@@ -34,11 +39,60 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   const tc = useCommonTranslations();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  if (!customer) return null;
+  const [loyaltySummary, setLoyaltySummary] = useState<LoyaltyCustomerSummary | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
   // Use centralized date formatting hook (DRY principle)
   const formatDate = useFormattedFullDate;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!open || !customer) {
+      setLoyaltySummary(null);
+      setLoyaltyLoading(false);
+      return;
+    }
+
+    if (customer.loyalty) {
+      setLoyaltySummary({
+        customerId: customer.id,
+        points: customer.loyalty.points,
+        totalEarned: customer.loyalty.totalEarned,
+        totalRedeemed: customer.loyalty.totalRedeemed,
+        totalSpent: customer.loyalty.totalSpent,
+        totalOrders: customer.loyalty.totalOrders,
+        tier: customer.loyalty.tier,
+        nextTier: null,
+        canRedeem: false,
+        maxRedeemPoints: 0,
+      });
+    } else {
+      setLoyaltySummary(null);
+    }
+
+    setLoyaltyLoading(true);
+    loyaltyApi
+      .getCustomerSummary(customer.id)
+      .then((response) => {
+        if (cancelled) return;
+        if (response.success && response.data) {
+          setLoyaltySummary(response.data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && !customer.loyalty) setLoyaltySummary(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoyaltyLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [customer, open]);
+
+  if (!customer) return null;
 
   const getStatusBadgeStyle = (isActive: boolean) => {
     if (isActive) {
@@ -86,6 +140,73 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
           <div className="px-6 py-4 overflow-y-auto">
             {/* Basic Information */}
             <div className="space-y-4">
+              {/* Loyalty Summary */}
+              <Card className="border border-border/70 bg-bg-secondary/30">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Loyalty
+                      </p>
+                      <p className="text-sm text-text-secondary">
+                        {loyaltyLoading ? 'Đang tải điểm thưởng...' : 'Thông tin loyalty của khách'}
+                      </p>
+                    </div>
+                    {loyaltySummary?.tier?.name ? (
+                      <Badge variant="secondary">{loyaltySummary.tier.name}</Badge>
+                    ) : (
+                      <Badge variant="outline">Chưa có hạng</Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Điểm hiện có</p>
+                      <p className="text-lg font-semibold">{loyaltySummary?.points ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Đã tích lũy</p>
+                      <p className="text-lg font-semibold">{loyaltySummary?.totalEarned ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Đã đổi</p>
+                      <p className="text-lg font-semibold">{loyaltySummary?.totalRedeemed ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Đã chi tiêu</p>
+                      <p className="text-lg font-semibold">
+                        {new Intl.NumberFormat('vi-VN').format(loyaltySummary?.totalSpent ?? 0)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border border-border bg-bg-card p-3">
+                      <p className="text-xs text-muted-foreground">Tổng đơn</p>
+                      <p className="text-sm font-medium">{loyaltySummary?.totalOrders ?? 0}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-bg-card p-3">
+                      <p className="text-xs text-muted-foreground">Đổi tối đa ở đơn</p>
+                      <p className="text-sm font-medium">
+                        {loyaltySummary?.maxRedeemPoints ?? 0} điểm
+                      </p>
+                    </div>
+                  </div>
+
+                  {loyaltySummary?.nextTier ? (
+                    <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
+                      Còn {loyaltySummary.nextTier.remaining.toLocaleString('vi-VN')}{' '}
+                      để lên hạng{' '}
+                      <span className="font-medium text-text-primary">{loyaltySummary.nextTier.name}</span>.
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
+                      Chưa có gợi ý hạng tiếp theo.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.fullName')}</label>

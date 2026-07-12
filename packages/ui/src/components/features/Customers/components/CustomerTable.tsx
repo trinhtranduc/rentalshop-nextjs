@@ -3,6 +3,7 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -181,6 +182,20 @@ export function CustomerTable({
                     <div className="font-medium text-gray-900 dark:text-white">
                       {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}
                     </div>
+                    {customer.loyalty && (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        {customer.loyalty.tier?.name ? (
+                          <Badge variant="secondary" className="px-2 py-0.5 text-[11px]">
+                            {customer.loyalty.tier.name}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="px-2 py-0.5 text-[11px]">
+                            Chưa có hạng
+                          </Badge>
+                        )}
+                        <span>{customer.loyalty.points.toLocaleString('vi-VN')} điểm</span>
+                      </div>
+                    )}
                   </div>
                 </td>
                 
