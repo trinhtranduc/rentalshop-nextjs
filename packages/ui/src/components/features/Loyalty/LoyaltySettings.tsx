@@ -70,6 +70,16 @@ const sectionItems: Array<{
   },
 ];
 
+const TIER_PRESETS = [
+  { key: 'member',   name: 'Thành viên', icon: 'user',    color: '#6B7280', threshold: 0 },
+  { key: 'bronze',   name: 'Đồng',       icon: 'medal',   color: '#CD7F32', threshold: 500000 },
+  { key: 'silver',   name: 'Bạc',        icon: 'award',   color: '#C0C0C0', threshold: 2000000 },
+  { key: 'gold',     name: 'Vàng',       icon: 'crown',   color: '#FFD700', threshold: 5000000 },
+  { key: 'platinum', name: 'Bạch Kim',   icon: 'gem',     color: '#E5E4E2', threshold: 10000000 },
+  { key: 'diamond',  name: 'Kim Cương',  icon: 'diamond', color: '#B9F2FF', threshold: 20000000 },
+  { key: 'vip',      name: 'VIP',        icon: 'star',    color: '#FF6B6B', threshold: 50000000 },
+];
+
 const defaultProgramState: Partial<LoyaltyProgram> = {
   name: 'Chương trình khách hàng thân thiết',
   isActive: true,
@@ -310,6 +320,39 @@ export const LoyaltySettings: React.FC = () => {
       toastSuccess('Đã tạo hạng mới', 'Bạn có thể chỉnh hạng ngay bên dưới.');
     } catch {
       toastError('Không thêm được hạng', 'Có lỗi xảy ra khi tạo hạng.');
+    } finally {
+      setCreatingTier(false);
+    }
+  };
+
+  const handleCreatePresetTier = async (preset: typeof TIER_PRESETS[number]) => {
+    if (!program.id) {
+      toastWarning('Hãy lưu chương trình trước', 'Cần tạo loyalty program trước khi thêm hạng.');
+      return;
+    }
+
+    setCreatingTier(true);
+
+    try {
+      const response = await loyaltyApi.createTier({
+        name: preset.name,
+        threshold: preset.threshold,
+        multiplier: 1,
+        sortOrder: TIER_PRESETS.findIndex((p) => p.key === preset.key),
+        benefits: '[]',
+        color: preset.color,
+        icon: preset.icon,
+      });
+
+      if (!response.success || !response.data) {
+        toastError('Không thêm được hạng', response.message || response.error);
+        return;
+      }
+
+      setTiers((prev) => sortTiers([...prev, toEditableTier(response.data!)]));
+      toastSuccess(`Đã thêm hạng ${preset.name}`, '');
+    } catch {
+      toastError('Không thêm được hạng', 'Có lỗi xảy ra.');
     } finally {
       setCreatingTier(false);
     }
@@ -686,156 +729,109 @@ export const LoyaltySettings: React.FC = () => {
             {activeSection === 'tiers' && (
               <SectionCard
                 title="Hạng thành viên"
-                description="Quản lý ngưỡng lên hạng, hệ số nhân điểm và quyền lợi."
+                description="Chọn các hạng áp dụng cho shop. Mỗi hạng có ngưỡng và hệ số nhân điểm riêng."
                 icon={Award}
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4">
-                  <div>
-                    <p className="font-medium text-text-primary">Đơn vị ngưỡng hiện tại</p>
-                    <p className="text-sm text-text-secondary">{metricDescription}</p>
-                  </div>
-                  <Button variant="outline" onClick={handleCreateTier} disabled={creatingTier}>
-                    {creatingTier ? 'Đang thêm...' : 'Thêm hạng'}
-                  </Button>
-                </div>
+                <p className="text-sm text-text-secondary">
+                  Tick chọn hạng muốn dùng, nhập ngưỡng ({metricUnit}) và hệ số nhân. &quot;Thành viên&quot; là hạng mặc định, luôn bật.
+                </p>
 
-                <div className="space-y-4">
-                  {orderedTiers.map((tier) => {
-                    const isSavingTier = savingTierIds.includes(tier.id);
-                    const isDeletingTier = deletingTierId === tier.id;
-                    const isBusy = isSavingTier || isDeletingTier;
+                <div className="space-y-3">
+                  {TIER_PRESETS.map((preset) => {
+                    const existing = tiers.find((t) => t.name === preset.name);
+                    const isEnabled = !!existing;
+                    const isDefault = preset.threshold === 0;
+                    const isBusy = existing ? savingTierIds.includes(existing.id) : creatingTier;
 
                     return (
-                      <div key={tier.id} className="rounded-xl border border-border p-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className="border-current"
-                                style={{ color: tier.color || '#888888' }}
-                              >
-                                {tier.name || 'Chưa đặt tên'}
-                              </Badge>
-                              {tier.threshold === 0 && (
-                                <Badge variant="secondary">Hạng mặc định</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-text-secondary">
-                              Ngưỡng: {tier.threshold.toLocaleString()} {metricUnit} • Hệ số x
-                              {tier.multiplier}
-                            </p>
-                          </div>
-
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={tiers.length <= 1 || isBusy}
-                            onClick={() => setTierPendingDelete(tier)}
-                            className="md:self-start"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Xóa hạng
-                          </Button>
-                        </div>
-
-                        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                          <div className="space-y-2">
-                            <Label>Tên hạng</Label>
-                            <Input
-                              value={tier.name}
-                              disabled={isBusy}
-                              onChange={(e) => updateTierField(tier.id, 'name', e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Ngưỡng ({metricUnit})</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              value={tier.threshold}
-                              disabled={isBusy}
-                              onChange={(e) =>
-                                updateTierField(tier.id, 'threshold', Number(e.target.value || 0))
+                      <div
+                        key={preset.key}
+                        className={`rounded-lg border p-4 transition-colors ${
+                          isEnabled ? 'border-blue-200 bg-blue-50/50' : 'border-border bg-bg-card opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Checkbox */}
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            disabled={isDefault || isBusy}
+                            onChange={async () => {
+                              if (isEnabled && existing) {
+                                // Remove tier
+                                setTierPendingDelete(existing);
+                              } else {
+                                // Create tier with preset values
+                                await handleCreatePresetTier(preset);
                               }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Hệ số nhân điểm</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              step="0.1"
-                              value={tier.multiplier}
-                              disabled={isBusy}
-                              onChange={(e) =>
-                                updateTierField(tier.id, 'multiplier', Number(e.target.value || 1))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Màu hiển thị</Label>
-                            <Input
-                              type="color"
-                              value={tier.color || '#888888'}
-                              disabled={isBusy}
-                              onChange={(e) => updateTierField(tier.id, 'color', e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Icon</Label>
-                            <Input
-                              value={tier.icon}
-                              disabled={isBusy}
-                              onChange={(e) => updateTierField(tier.id, 'icon', e.target.value)}
-                              placeholder="Ví dụ: crown"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Thứ tự sắp xếp</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              value={tier.sortOrder}
-                              disabled={isBusy}
-                              onChange={(e) =>
-                                updateTierField(tier.id, 'sortOrder', Number(e.target.value || 0))
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          <Label>Quyền lợi của hạng</Label>
-                          <Textarea
-                            rows={4}
-                            value={tier.benefitsText}
-                            disabled={isBusy}
-                            onChange={(e) =>
-                              updateTierField(tier.id, 'benefitsText', e.target.value)
-                            }
-                            placeholder={`Mỗi dòng là một quyền lợi\nƯu tiên giữ hàng\nTặng voucher sinh nhật`}
+                            }}
+                            className="h-5 w-5 rounded border-border text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <p className="text-xs text-text-secondary">
-                            Mỗi dòng là một quyền lợi riêng.
-                          </p>
-                        </div>
 
-                        <div className="mt-4 flex justify-end">
-                          <Button onClick={() => handleSaveTier(tier.id)} disabled={isBusy}>
-                            {isSavingTier ? 'Đang lưu...' : 'Lưu hạng này'}
-                          </Button>
+                          {/* Preset info */}
+                          <div className="flex items-center gap-2 min-w-[140px]">
+                            <span
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                              style={{ backgroundColor: preset.color + '20', color: preset.color }}
+                            >
+                              {preset.icon === 'user' && '👤'}
+                              {preset.icon === 'medal' && '🥉'}
+                              {preset.icon === 'award' && '🥈'}
+                              {preset.icon === 'crown' && '🥇'}
+                              {preset.icon === 'gem' && '💎'}
+                              {preset.icon === 'diamond' && '💠'}
+                              {preset.icon === 'star' && '⭐'}
+                            </span>
+                            <span className="font-medium text-text-primary">{preset.name}</span>
+                            {isDefault && <Badge variant="secondary" className="text-xs">Mặc định</Badge>}
+                          </div>
+
+                          {/* Threshold + Multiplier inputs */}
+                          {isEnabled && existing && (
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs text-text-secondary whitespace-nowrap">Từ</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  value={existing.threshold}
+                                  disabled={isDefault || isBusy}
+                                  onChange={(e) => updateTierField(existing.id, 'threshold', Number(e.target.value || 0))}
+                                  className="w-32 h-8 text-sm"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs text-text-secondary whitespace-nowrap">x</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  step="0.1"
+                                  value={existing.multiplier}
+                                  disabled={isBusy}
+                                  onChange={(e) => updateTierField(existing.id, 'multiplier', Number(e.target.value || 1))}
+                                  className="w-20 h-8 text-sm"
+                                />
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSaveTier(existing.id)}
+                                disabled={isBusy}
+                                className="h-8 text-xs"
+                              >
+                                {isBusy ? '...' : 'Lưu'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })}
-
-                  {orderedTiers.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-border p-6 text-sm text-text-secondary">
-                      Chưa có hạng thành viên. Hãy lưu chương trình trước, sau đó thêm level cho khách hàng.
-                    </div>
-                  )}
                 </div>
+
+                <p className="text-xs text-text-secondary mt-2">
+                  Ngưỡng lên hạng được tính theo {program.tierMetric === 'total_orders' ? 'tổng số đơn hoàn thành' : 'tổng chi tiêu tích lũy'}.
+                </p>
               </SectionCard>
             )}
 
