@@ -198,6 +198,7 @@ export const LoyaltySettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<LoyaltySection>('overview');
   const [savingProgram, setSavingProgram] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [creatingTier, setCreatingTier] = useState(false);
   const [savingTierIds, setSavingTierIds] = useState<number[]>([]);
   const [deletingTierId, setDeletingTierId] = useState<number | null>(null);
@@ -288,6 +289,26 @@ export const LoyaltySettings: React.FC = () => {
       toastError('Không lưu được cấu hình loyalty', 'Có lỗi xảy ra khi lưu cấu hình.');
     } finally {
       setSavingProgram(false);
+    }
+  };
+
+  const handleSyncHistory = async () => {
+    setSyncing(true);
+    try {
+      const response = await loyaltyApi.syncHistory();
+      if (response.success && response.data) {
+        const data = response.data;
+        toastSuccess(
+          'Đồng bộ thành công',
+          `Đã xử lý ${data.customersProcessed} khách hàng, cộng ${data.totalPointsIssued} điểm.`
+        );
+      } else {
+        toastError('Đồng bộ thất bại', response.message || response.error || 'Có lỗi xảy ra.');
+      }
+    } catch {
+      toastError('Đồng bộ thất bại', 'Có lỗi xảy ra khi đồng bộ lịch sử.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -487,6 +508,23 @@ export const LoyaltySettings: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {program.isActive && program.id && (
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text-primary">Đồng bộ lịch sử</p>
+                      <p className="text-sm text-text-secondary">
+                        Tính điểm và xếp hạng cho khách hàng dựa trên lịch sử đơn hàng đã hoàn thành.
+                        Có thể chạy lại nhiều lần (dữ liệu sẽ được tính lại từ đầu).
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <Button variant="outline" onClick={handleSyncHistory} disabled={syncing}>
+                        {syncing ? 'Đang đồng bộ...' : 'Bắt đầu đồng bộ'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
