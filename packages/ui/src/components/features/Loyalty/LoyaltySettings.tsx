@@ -441,18 +441,9 @@ export const LoyaltySettings: React.FC = () => {
             {activeSection === 'overview' && (
               <SectionCard
                 title="Tổng quan chương trình"
-                description="Tên chương trình, trạng thái và rule xếp hạng của loyalty."
+                description="Trạng thái và rule xếp hạng của loyalty."
                 icon={Settings2}
               >
-                <div className="space-y-2">
-                  <Label>Tên chương trình</Label>
-                  <Input
-                    value={program.name || ''}
-                    onChange={(e) => updateProgramField('name', e.target.value)}
-                    placeholder="Ví dụ: Thành viên AnyRent"
-                  />
-                </div>
-
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-text-primary">Kích hoạt loyalty</p>
