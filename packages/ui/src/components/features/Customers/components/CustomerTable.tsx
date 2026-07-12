@@ -182,7 +182,7 @@ export function CustomerTable({
                     <div className="font-medium text-gray-900 dark:text-white">
                       {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}
                     </div>
-                    {customer.loyalty && (
+                    {customer.loyaltyStatus === 'active' && customer.loyalty ? (
                       <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         {customer.loyalty.tier?.name ? (
                           <Badge variant="secondary" className="px-2 py-0.5 text-[11px]">
@@ -195,7 +195,13 @@ export function CustomerTable({
                         )}
                         <span>{customer.loyalty.points.toLocaleString('vi-VN')} điểm</span>
                       </div>
-                    )}
+                    ) : customer.loyaltyStatus ? (
+                      <div className="mt-1">
+                        <Badge variant="outline" className="px-2 py-0.5 text-[11px] text-gray-500">
+                          {customer.loyaltyStatus === 'unavailable' ? 'Loyalty khóa' : 'Loyalty tắt'}
+                        </Badge>
+                      </div>
+                    ) : null}
                   </div>
                 </td>
                 

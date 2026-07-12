@@ -1,14 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Award, Clock3, Coins, Medal, Settings2, Sparkles } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Award, Clock3, Coins, Medal, Settings2 } from 'lucide-react';
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   ConfirmationDialog,
   Input,
   Label,
@@ -29,7 +26,8 @@ type EditableTier = Omit<LoyaltyTier, 'benefits' | 'color' | 'icon'> & {
   icon: string;
 };
 
-type LoyaltySection = 'overview' | 'earn' | 'redeem' | 'tiers' | 'expiry';
+type LoyaltySection = 'overview' | 'earn' | 'tiers' | 'expiry';
+type LoyaltyAccessState = 'loading' | 'available' | 'inactive' | 'unavailable';
 
 const sectionItems: Array<{
   id: LoyaltySection;
@@ -48,12 +46,6 @@ const sectionItems: Array<{
     label: 'Tích điểm',
     description: 'Thiết lập điểm cho đơn thuê và đơn bán',
     icon: Coins,
-  },
-  {
-    id: 'redeem',
-    label: 'Đổi điểm',
-    description: 'Giá trị điểm và điều kiện dùng điểm',
-    icon: Sparkles,
   },
   {
     id: 'tiers',
@@ -81,7 +73,7 @@ const TIER_PRESETS = [
 
 const defaultProgramState: Partial<LoyaltyProgram> = {
   name: 'Chương trình khách hàng thân thiết',
-  isActive: true,
+  isActive: false,
   rentEarnEnabled: true,
   rentEarnRate: 1,
   rentEarnPerAmount: 10000,
@@ -158,16 +150,16 @@ const SectionNavButton: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors rounded-md ${
+    className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
       active
-        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-        : 'text-gray-700 hover:bg-gray-50'
+        ? 'border-blue-600 bg-blue-50 text-blue-700'
+        : 'border-transparent text-text-primary hover:bg-bg-secondary/60'
     }`}
   >
-    <Icon className="h-5 w-5 flex-shrink-0" />
+    <Icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-blue-700' : 'text-text-secondary'}`} />
     <div className="min-w-0 flex-1">
-      <p className="font-medium">{label}</p>
-      <p className="text-xs text-gray-500 truncate">{description}</p>
+      <p className={`font-semibold ${active ? 'text-blue-700' : 'text-text-primary'}`}>{label}</p>
+      <p className="truncate text-xs text-text-secondary">{description}</p>
     </div>
   </button>
 );
@@ -178,22 +170,32 @@ const SectionCard: React.FC<{
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
 }> = ({ title, description, icon: Icon, children }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
+  <section className="rounded-2xl border border-border bg-white px-5 py-5">
+    <div className="mb-5 flex items-start gap-3">
+      <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-secondary text-text-primary">
         <Icon className="h-5 w-5" />
-        {title}
-      </CardTitle>
-      <p className="text-sm text-text-secondary">{description}</p>
-    </CardHeader>
-    <CardContent className="space-y-4">{children}</CardContent>
-  </Card>
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+        <p className="text-sm text-text-secondary">{description}</p>
+      </div>
+    </div>
+    <div>{children}</div>
+  </section>
 );
+
+const statusBadgeClass = (enabled: boolean) =>
+  enabled
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-rose-200 bg-rose-50 text-rose-700';
 
 export const LoyaltySettings: React.FC = () => {
   const { toastSuccess, toastError, toastWarning } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [program, setProgram] = useState<Partial<LoyaltyProgram>>(defaultProgramState);
   const [tiers, setTiers] = useState<EditableTier[]>([]);
+  const [accessState, setAccessState] = useState<LoyaltyAccessState>('loading');
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<LoyaltySection>('overview');
   const [savingProgram, setSavingProgram] = useState(false);
@@ -207,6 +209,20 @@ export const LoyaltySettings: React.FC = () => {
     void loadSettings();
   }, []);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const nextSection: LoyaltySection =
+      tab === 'overview' || tab === 'earn' || tab === 'tiers' || tab === 'expiry'
+        ? tab
+        : 'overview';
+
+    setActiveSection(nextSection);
+
+    if (tab && tab !== nextSection) {
+      router.replace('/loyalty?tab=overview');
+    }
+  }, [router, searchParams]);
+
   async function loadSettings(showSpinner = true) {
     if (showSpinner) setLoading(true);
 
@@ -216,7 +232,18 @@ export const LoyaltySettings: React.FC = () => {
         loyaltyApi.getTiers(),
       ]);
 
-      setProgram(programRes.success && programRes.data ? normalizeProgram(programRes.data) : defaultProgramState);
+      if (programRes.success) {
+        const nextProgram = programRes.data ? normalizeProgram(programRes.data) : defaultProgramState;
+        setProgram(nextProgram);
+        setAccessState(nextProgram.isActive ? 'available' : 'inactive');
+      } else if (programRes.code === 'PLAN_UPGRADE_REQUIRED') {
+        setProgram(defaultProgramState);
+        setAccessState('unavailable');
+      } else {
+        setProgram(defaultProgramState);
+        setAccessState('inactive');
+      }
+
       setTiers(
         tiersRes.success && tiersRes.data ? sortTiers(tiersRes.data.map(toEditableTier)) : []
       );
@@ -230,6 +257,11 @@ export const LoyaltySettings: React.FC = () => {
     value: Partial<LoyaltyProgram>[K]
   ) => {
     setProgram((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSectionChange = (section: LoyaltySection) => {
+    setActiveSection(section);
+    router.push(`/loyalty?tab=${section}`);
   };
 
   const updateTierField = <K extends keyof EditableTier>(
@@ -282,7 +314,9 @@ export const LoyaltySettings: React.FC = () => {
         return;
       }
 
-      setProgram(normalizeProgram(response.data || payload));
+      const nextProgram = normalizeProgram(response.data || payload);
+      setProgram(nextProgram);
+      setAccessState(nextProgram.isActive ? 'available' : 'inactive');
       toastSuccess('Đã lưu cấu hình loyalty', 'Cấu hình loyalty đã được cập nhật.');
     } catch {
       toastError('Không lưu được cấu hình loyalty', 'Có lỗi xảy ra khi lưu cấu hình.');
@@ -408,9 +442,47 @@ export const LoyaltySettings: React.FC = () => {
       ? 'Ngưỡng lên hạng được tính theo tổng số đơn hàng.'
       : 'Ngưỡng lên hạng được tính theo tổng chi tiêu tích lũy.';
   const orderedTiers = sortTiers(tiers);
+  const isProgramUnavailable = accessState === 'unavailable';
+  const isProgramActive = accessState !== 'unavailable' && !!program.isActive;
+  const isProgramInactive = accessState === 'inactive' || (!program.isActive && !isProgramUnavailable);
 
   if (loading) {
     return <div className="p-6 text-sm text-text-secondary">Đang tải loyalty...</div>;
+  }
+
+  if (isProgramUnavailable) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">Loyalty</h1>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+              Cấu hình chương trình khách hàng thân thiết
+              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                Professional plan
+              </Badge>
+            </p>
+          </div>
+        </div>
+
+        <section className="rounded-2xl border border-border bg-white px-5 py-6">
+          <div className="mb-4 flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+              <Settings2 className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-text-primary">Loyalty bị khóa theo plan</h2>
+              <p className="text-sm text-text-secondary">
+                Loyalty chỉ khả dụng ở Professional plan. Khi nâng cấp, chương trình sẽ sẵn sàng để bật và cấu hình ngay.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-dashed border-border bg-bg-secondary/40 px-4 py-4 text-sm text-text-secondary">
+            Dữ liệu loyalty của khách vẫn được giữ lại để mở lại sau này, nhưng các thao tác tích điểm, đổi điểm và sync lịch sử đều bị khóa.
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -420,10 +492,10 @@ export const LoyaltySettings: React.FC = () => {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">Loyalty</h1>
-            <p className="text-sm text-text-secondary flex items-center gap-2 mt-1">
+            <p className="text-sm text-text-secondary flex flex-wrap items-center gap-2 mt-1">
               Cấu hình chương trình khách hàng thân thiết
-              <Badge variant={program.isActive ? 'secondary' : 'outline'}>
-                {program.isActive ? 'Đang bật' : 'Đang tắt'}
+              <Badge variant={isProgramActive ? 'secondary' : 'outline'} className={statusBadgeClass(isProgramActive)}>
+                {isProgramActive ? 'Đang bật' : 'Chưa kích hoạt'}
               </Badge>
             </p>
           </div>
@@ -432,24 +504,38 @@ export const LoyaltySettings: React.FC = () => {
           </Button>
         </div>
 
+        {isProgramInactive && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold">Loyalty đang ở trạng thái tắt</p>
+                <p className="text-sm text-amber-800">
+                  Chương trình đã sẵn sàng cấu hình. Bật loyalty khi shop muốn bắt đầu tích điểm và phân hạng khách.
+                </p>
+              </div>
+              <Badge variant="outline" className="border-amber-200 bg-white text-amber-700">
+                Draft
+              </Badge>
+            </div>
+          </section>
+        )}
+
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-64 flex-shrink-0">
-            <Card>
-              <CardContent className="p-0">
-                <nav className="space-y-1">
-                  {sectionItems.map((item) => (
-                    <SectionNavButton
+            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+              <nav className="divide-y divide-border">
+                {sectionItems.map((item) => (
+                  <SectionNavButton
                       key={item.id}
                       active={activeSection === item.id}
                       icon={item.icon}
                       label={item.label}
                       description={item.description}
-                      onClick={() => setActiveSection(item.id)}
+                      onClick={() => handleSectionChange(item.id)}
                     />
                   ))}
                 </nav>
-              </CardContent>
-            </Card>
+            </div>
           </div>
 
           <div className="flex-1 min-w-0 space-y-6">
@@ -459,318 +545,376 @@ export const LoyaltySettings: React.FC = () => {
                 description="Trạng thái và rule xếp hạng của loyalty."
                 icon={Settings2}
               >
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-text-primary">Kích hoạt loyalty</p>
-                    <p className="text-sm text-text-secondary">Tắt để tạm dừng toàn bộ tính năng loyalty.</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-4">
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="flex items-center justify-between gap-4 px-4 py-4">
+                    <div className="min-w-0">
+                      <div className="mb-1 flex items-center gap-2">
+                        <p className="font-medium text-text-primary">Kích hoạt loyalty</p>
+                        <Badge variant="outline" className={statusBadgeClass(isProgramActive)}>
+                          {isProgramActive ? 'Đang bật' : 'Đang tắt'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-text-secondary">Tắt để tạm dừng toàn bộ tính năng loyalty.</p>
+                    </div>
                     <Switch
                       checked={!!program.isActive}
-                      onCheckedChange={(checked) => updateProgramField('isActive', checked)}
+                      onCheckedChange={(checked) => {
+                        updateProgramField('isActive', checked);
+                        setAccessState(checked ? 'available' : 'inactive');
+                      }}
                     />
                   </div>
-                </div>
 
-                {program.isActive && program.id && (
-                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-text-primary">Import lịch sử một lần</p>
-                      <p className="text-sm text-text-secondary">
-                        Dùng khi migrate dữ liệu ban đầu để tạo điểm mở đầu từ lịch sử đơn hàng cũ.
-                        Không dùng như nút sync vận hành hằng ngày và không thể chạy lại sau khi đã có giao dịch loyalty.
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 ml-4">
+                  {isProgramActive && program.id && (
+                    <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-4">
+                      <div className="min-w-0">
+                        <div className="mb-1 flex items-center gap-2">
+                          <p className="font-medium text-text-primary">Import lịch sử một lần</p>
+                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                            Migration
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-text-secondary">
+                          Dùng khi migrate dữ liệu ban đầu để tạo điểm mở đầu từ lịch sử đơn hàng cũ.
+                        </p>
+                      </div>
                       <Button variant="outline" onClick={handleSyncHistory} disabled={syncing}>
                         {syncing ? 'Đang import...' : 'Bắt đầu import'}
                       </Button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Tiêu chí lên hạng</Label>
-                    <Select
-                      value={program.tierMetric || 'total_spend'}
-                      onValueChange={(value: 'total_spend' | 'total_orders') =>
-                        updateProgramField('tierMetric', value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn tiêu chí" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="total_spend">Tổng chi tiêu</SelectItem>
-                        <SelectItem value="total_orders">Tổng số đơn</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <div className="border-t border-border">
+                    <div className="grid gap-4 px-4 py-4 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label>Tiêu chí lên hạng</Label>
+                        <Select
+                          disabled
+                          value={program.tierMetric || 'total_spend'}
+                          onValueChange={(value: 'total_spend' | 'total_orders') =>
+                            updateProgramField('tierMetric', value)
+                          }
+                        >
+                          <SelectTrigger disabled>
+                            <SelectValue placeholder="Chọn tiêu chí" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="total_spend">Tổng chi tiêu</SelectItem>
+                            <SelectItem value="total_orders">Tổng số đơn</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label>Chu kỳ theo dõi hạng</Label>
-                    <Select
-                      value={program.tierPeriod || 'lifetime'}
-                      onValueChange={(value: 'lifetime' | 'yearly') =>
-                        updateProgramField('tierPeriod', value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn chu kỳ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="lifetime">Trọn đời</SelectItem>
-                        <SelectItem value="yearly">Theo năm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="space-y-2">
+                        <Label>Chu kỳ theo dõi hạng</Label>
+                        <Select
+                          disabled
+                          value={program.tierPeriod || 'lifetime'}
+                          onValueChange={(value: 'lifetime' | 'yearly') =>
+                            updateProgramField('tierPeriod', value)
+                          }
+                        >
+                          <SelectTrigger disabled>
+                            <SelectValue placeholder="Chọn chu kỳ" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="lifetime">Trọn đời</SelectItem>
+                            <SelectItem value="yearly">Theo năm</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label>Cách hạ hạng</Label>
-                    <Select
-                      value={program.tierDowngrade || 'never'}
-                      onValueChange={(value: 'never' | 'immediate' | 'grace_30d') =>
-                        updateProgramField('tierDowngrade', value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn rule hạ hạng" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="never">Không hạ hạng</SelectItem>
-                        <SelectItem value="immediate">Hạ ngay</SelectItem>
-                        <SelectItem value="grace_30d">Gia hạn 30 ngày</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <div className="space-y-2">
+                        <Label>Cách hạ hạng</Label>
+                        <Select
+                          disabled
+                          value={program.tierDowngrade || 'never'}
+                          onValueChange={(value: 'never' | 'immediate' | 'grace_30d') =>
+                            updateProgramField('tierDowngrade', value)
+                          }
+                        >
+                          <SelectTrigger disabled>
+                            <SelectValue placeholder="Chọn rule hạ hạng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="never">Không hạ hạng</SelectItem>
+                            <SelectItem value="immediate">Hạ ngay</SelectItem>
+                            <SelectItem value="grace_30d">Gia hạn 30 ngày</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="border-t border-border px-4 py-3">
+                      <p className="text-xs text-text-secondary">{metricDescription}</p>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Các mục này đang được khóa trên UI.
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <p className="text-xs text-text-secondary">{metricDescription}</p>
               </SectionCard>
             )}
 
             {activeSection === 'earn' && (
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="space-y-6">
                 <SectionCard
-                  title="Tích điểm từ đơn thuê"
-                  description="Áp dụng cho order type RENT."
+                  title="Tích điểm"
+                  description="Cấu hình cách cộng điểm cho đơn thuê và đơn bán."
                   icon={Coins}
                 >
-                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                    <div>
-                      <p className="font-medium text-text-primary">Cho phép tích điểm</p>
-                      <p className="text-sm text-text-secondary">Bật nếu bạn muốn đơn thuê sinh điểm.</p>
+                  <div className="overflow-hidden rounded-xl border border-border">
+                    <div className="flex items-center justify-between gap-3 px-4 py-4">
+                      <div>
+                        <div className="mb-1 flex items-center gap-2">
+                          <p className="font-medium text-text-primary">Đơn thuê</p>
+                          <Badge variant="outline" className={statusBadgeClass(!!program.rentEarnEnabled)}>
+                            {program.rentEarnEnabled ? 'Đang bật' : 'Đang tắt'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-text-secondary">Bật nếu bạn muốn đơn thuê sinh điểm.</p>
+                      </div>
+                      <Switch
+                        checked={!!program.rentEarnEnabled}
+                        onCheckedChange={(checked) => updateProgramField('rentEarnEnabled', checked)}
+                      />
                     </div>
-                    <Switch
-                      checked={!!program.rentEarnEnabled}
-                      onCheckedChange={(checked) => updateProgramField('rentEarnEnabled', checked)}
-                    />
-                  </div>
+                    <div className="border-t border-border px-4 py-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Số điểm nhận cho mỗi mốc</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={program.rentEarnRate ?? ''}
+                            disabled={!program.rentEarnEnabled || !isProgramActive}
+                            onChange={(e) =>
+                              updateProgramField('rentEarnRate', Number(e.target.value || 0))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Mỗi bao nhiêu VND sẽ nhận điểm</Label>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={(program.rentEarnPerAmount || 0).toLocaleString('en-US')}
+                            disabled={!program.rentEarnEnabled || !isProgramActive}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9]/g, '');
+                              updateProgramField('rentEarnPerAmount', Number(raw || 0));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Số điểm nhận được mỗi lần</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={program.rentEarnRate ?? ''}
-                        disabled={!program.rentEarnEnabled}
-                        onChange={(e) =>
-                          updateProgramField('rentEarnRate', Number(e.target.value || 0))
-                        }
-                      />
+                    <div className="border-t border-border px-4 py-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="mb-1 flex items-center gap-2">
+                            <p className="font-medium text-text-primary">Đơn bán</p>
+                            <Badge variant="outline" className={statusBadgeClass(!!program.saleEarnEnabled)}>
+                              {program.saleEarnEnabled ? 'Đang bật' : 'Đang tắt'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-text-secondary">Hữu ích khi shop vừa thuê vừa bán.</p>
+                        </div>
+                        <Switch
+                          checked={!!program.saleEarnEnabled}
+                          onCheckedChange={(checked) => updateProgramField('saleEarnEnabled', checked)}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Mốc tiền để nhận điểm (VND)</Label>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={(program.rentEarnPerAmount || 0).toLocaleString('en-US')}
-                        disabled={!program.rentEarnEnabled}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/[^0-9]/g, '');
-                          updateProgramField('rentEarnPerAmount', Number(raw || 0));
-                        }}
-                      />
+                    <div className="border-t border-border px-4 py-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Số điểm nhận cho mỗi mốc</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={program.saleEarnRate ?? ''}
+                            disabled={!program.saleEarnEnabled || !isProgramActive}
+                            onChange={(e) =>
+                              updateProgramField('saleEarnRate', Number(e.target.value || 0))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Mỗi bao nhiêu VND sẽ nhận điểm</Label>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={(program.saleEarnPerAmount || 0).toLocaleString('en-US')}
+                            disabled={!program.saleEarnEnabled || !isProgramActive}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9]/g, '');
+                              updateProgramField('saleEarnPerAmount', Number(raw || 0));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border px-4 py-4">
+                      <div className="rounded-lg bg-bg-secondary/50 px-3 py-2 text-xs text-text-secondary">
+                        <p>
+                          Ví dụ: nếu đơn thuê là 120,000đ và bạn đặt 1 điểm / 10,000đ, khách sẽ nhận 12 điểm.
+                        </p>
+                        <p className="mt-1">
+                          Nếu đơn bán là 250,000đ với cùng cấu hình, khách sẽ nhận 25 điểm.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-text-secondary">
-                    Ví dụ: mỗi {(program.rentEarnPerAmount || 0).toLocaleString()} VND nhận{' '}
-                    {program.rentEarnRate || 0} điểm.
-                  </p>
                 </SectionCard>
 
                 <SectionCard
-                  title="Tích điểm từ đơn bán"
-                  description="Áp dụng cho order type SALE."
+                  title="Đổi điểm"
+                  description="Cấu hình giá trị quy đổi và điều kiện áp dụng điểm."
                   icon={Coins}
                 >
-                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                    <div>
-                      <p className="font-medium text-text-primary">Cho phép tích điểm</p>
-                      <p className="text-sm text-text-secondary">Hữu ích khi shop vừa thuê vừa bán.</p>
-                    </div>
-                    <Switch
-                      checked={!!program.saleEarnEnabled}
-                      onCheckedChange={(checked) => updateProgramField('saleEarnEnabled', checked)}
-                    />
-                  </div>
+                  <div className="overflow-hidden rounded-xl border border-border">
+                    <div className="border-b border-border px-4 py-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <p className="font-medium text-text-primary">Giá trị quy đổi</p>
+                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                          Quy đổi
+                        </Badge>
+                      </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Số điểm nhận được mỗi lần</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={program.saleEarnRate ?? ''}
-                        disabled={!program.saleEarnEnabled}
-                        onChange={(e) =>
-                          updateProgramField('saleEarnRate', Number(e.target.value || 0))
-                        }
-                      />
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="space-y-2">
+                          <Label>Giá trị quy đổi của 1 điểm</Label>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={(program.pointValue || 0).toLocaleString('en-US')}
+                            disabled={!isProgramActive}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9]/g, '');
+                              updateProgramField('pointValue', Number(raw || 0));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Điểm tối thiểu để đổi</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={program.minRedeemPoints ?? ''}
+                            disabled={!isProgramActive}
+                            onChange={(e) =>
+                              updateProgramField('minRedeemPoints', Number(e.target.value || 0))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Mức giảm tối đa của đơn</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={program.maxRedeemPercent ?? ''}
+                            disabled={!isProgramActive}
+                            onChange={(e) =>
+                              updateProgramField('maxRedeemPercent', Number(e.target.value || 0))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-lg bg-bg-secondary/50 px-3 py-2 text-xs text-text-secondary">
+                        <p>
+                          Ví dụ: nếu 1 điểm = 1,000đ, khách có 20 điểm sẽ đổi được 20,000đ.
+                        </p>
+                        <p className="mt-1">
+                          Nếu đơn là 300,000đ và giới hạn giảm tối đa 50%, thì mức giảm lớn nhất là 150,000đ.
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Mốc tiền để nhận điểm (VND)</Label>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={(program.saleEarnPerAmount || 0).toLocaleString('en-US')}
-                        disabled={!program.saleEarnEnabled}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/[^0-9]/g, '');
-                          updateProgramField('saleEarnPerAmount', Number(raw || 0));
-                        }}
-                      />
+
+                    <div className="grid gap-0 md:grid-cols-2">
+                      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 md:border-b-0 md:border-r">
+                        <div>
+                          <p className="font-medium text-text-primary">Dùng điểm ở đơn thuê</p>
+                          <p className="text-sm text-text-secondary">Áp dụng cho RENT.</p>
+                        </div>
+                        <Switch
+                          checked={!!program.redeemOnRent}
+                          disabled={!isProgramActive}
+                          onCheckedChange={(checked) => updateProgramField('redeemOnRent', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 px-4 py-4">
+                        <div>
+                          <p className="font-medium text-text-primary">Dùng điểm ở đơn bán</p>
+                          <p className="text-sm text-text-secondary">Áp dụng cho SALE.</p>
+                        </div>
+                        <Switch
+                          checked={!!program.redeemOnSale}
+                          disabled={!isProgramActive}
+                          onCheckedChange={(checked) => updateProgramField('redeemOnSale', checked)}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-text-secondary">
-                    Ví dụ: mỗi {(program.saleEarnPerAmount || 0).toLocaleString()} VND nhận{' '}
-                    {program.saleEarnRate || 0} điểm.
-                  </p>
                 </SectionCard>
               </div>
-            )}
-
-            {activeSection === 'redeem' && (
-              <SectionCard
-                title="Đổi điểm thành ưu đãi"
-                description="1 điểm đổi ra bao nhiêu tiền và tối đa được giảm bao nhiêu % trên mỗi đơn."
-                icon={Sparkles}
-              >
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Giá trị quy đổi của 1 điểm</Label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      value={(program.pointValue || 0).toLocaleString('en-US')}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^0-9]/g, '');
-                        updateProgramField('pointValue', Number(raw || 0));
-                      }}
-                    />
-                    <p className="text-xs text-text-secondary">
-                      1 điểm = {(program.pointValue || 0).toLocaleString()} VND giảm.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Điểm tối thiểu để đổi</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={program.minRedeemPoints ?? ''}
-                      onChange={(e) =>
-                        updateProgramField('minRedeemPoints', Number(e.target.value || 0))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Mức giảm tối đa của đơn</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={program.maxRedeemPercent ?? ''}
-                      onChange={(e) =>
-                        updateProgramField('maxRedeemPercent', Number(e.target.value || 0))
-                      }
-                    />
-                    <p className="text-xs text-text-secondary">
-                      Không giảm quá {program.maxRedeemPercent || 0}% giá trị đơn.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                    <div>
-                      <p className="font-medium text-text-primary">Cho dùng điểm ở đơn thuê</p>
-                      <p className="text-sm text-text-secondary">Áp dụng cho RENT.</p>
-                    </div>
-                    <Switch
-                      checked={!!program.redeemOnRent}
-                      onCheckedChange={(checked) => updateProgramField('redeemOnRent', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                    <div>
-                      <p className="font-medium text-text-primary">Cho dùng điểm ở đơn bán</p>
-                      <p className="text-sm text-text-secondary">Áp dụng cho SALE.</p>
-                    </div>
-                    <Switch
-                      checked={!!program.redeemOnSale}
-                      onCheckedChange={(checked) => updateProgramField('redeemOnSale', checked)}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  Điểm đổi thực tế sẽ bị giới hạn bởi số điểm khách đang có và % tối đa cho phép của đơn.
-                </p>
-              </SectionCard>
             )}
 
             {activeSection === 'tiers' && (
               <SectionCard
                 title="Hạng thành viên"
-                description="Chọn các hạng áp dụng cho shop. Mỗi hạng có ngưỡng và hệ số nhân điểm riêng."
+                description="Chọn các hạng áp dụng cho shop. Mỗi hạng có ngưỡng và hệ số nhân riêng."
                 icon={Award}
               >
                 <p className="text-sm text-text-secondary">
-                  Tick chọn hạng muốn dùng, nhập ngưỡng ({metricUnit}) và hệ số nhân. &quot;Thành viên&quot; là hạng mặc định, luôn bật.
+                  Hạng mặc định luôn bật. Các hạng còn lại có thể bật/tắt bằng checkbox.
                 </p>
 
-                <div className="space-y-3">
+                <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
                   {TIER_PRESETS.map((preset) => {
                     const existing = tiers.find((tier) => tier.name === preset.name);
-                    const isEnabled = !!existing;
                     const isDefault = preset.threshold === 0;
+                    const isEnabled = isDefault || !!existing;
+                    const isChecked = isDefault || !!existing;
+                    const tierData = existing || (isDefault ? preset : null);
+                    const tierId = existing?.id ?? null;
                     const isBusy = existing ? savingTierIds.includes(existing.id) : creatingTier;
 
                     return (
                       <div
                         key={preset.key}
-                        className={`rounded-lg border p-4 transition-colors ${
-                          isEnabled ? 'border-blue-200 bg-blue-50/50' : 'border-border bg-bg-card opacity-60'
+                        className={`flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between ${
+                          isEnabled ? 'bg-white' : 'bg-white/70 opacity-70'
                         }`}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <input
                             type="checkbox"
-                            checked={isEnabled}
-                            disabled={isDefault || isBusy}
+                            checked={isChecked}
+                            disabled={isBusy || !isProgramActive}
+                            readOnly={isDefault}
+                            aria-disabled={isDefault || isBusy || !isProgramActive}
+                            onClick={(e) => {
+                              if (isDefault) e.preventDefault();
+                            }}
                             onChange={async () => {
-                              if (isEnabled && existing) {
+                              if (!isProgramActive) return;
+                              if (!isDefault && isEnabled && existing) {
                                 setTierPendingDelete(existing);
-                              } else {
+                              } else if (!isDefault) {
                                 await handleCreatePresetTier(preset);
                               }
                             }}
-                            className="h-5 w-5 rounded border-border text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                            className={`h-5 w-5 rounded border-border text-blue-600 focus:ring-blue-500 ${
+                              isDefault ? 'cursor-default accent-blue-600' : 'cursor-pointer'
+                            } disabled:cursor-not-allowed`}
                           />
 
                           <div className="flex items-center gap-2 min-w-[140px]">
                             <span
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-sm ring-1 ring-border/60"
                               style={{ backgroundColor: preset.color + '20', color: preset.color }}
                             >
                               {preset.icon === 'user' && '👤'}
@@ -784,20 +928,24 @@ export const LoyaltySettings: React.FC = () => {
                             <span className="font-medium text-text-primary">{preset.name}</span>
                             {isDefault && <Badge variant="secondary" className="text-xs">Mặc định</Badge>}
                           </div>
+                        </div>
 
-                          {isEnabled && existing && (
-                            <div className="flex items-center gap-3 flex-1">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                          {isEnabled && tierData ? (
+                            <div className="grid gap-3 md:flex md:items-center">
                               <div className="flex items-center gap-2">
-                                <Label className="text-xs text-text-secondary whitespace-nowrap">Từ</Label>
+                                <Label className="text-xs text-text-secondary whitespace-nowrap">Ngưỡng</Label>
                                 <Input
-                                  type="number"
-                                  min={0}
-                                  value={existing.threshold}
-                                  disabled={isDefault || isBusy}
-                                  onChange={(e) =>
-                                    updateTierField(existing.id, 'threshold', Number(e.target.value || 0))
-                                  }
-                                  className="w-32 h-8 text-sm"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={(tierData.threshold || 0).toLocaleString('en-US')}
+                                  disabled={isDefault || isBusy || !existing || !isProgramActive}
+                                  onChange={(e) => {
+                                    if (tierId == null) return;
+                                    const raw = e.target.value.replace(/[^0-9]/g, '');
+                                    updateTierField(tierId, 'threshold', Number(raw || 0));
+                                  }}
+                                  className="h-8 w-32 text-sm"
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -806,23 +954,31 @@ export const LoyaltySettings: React.FC = () => {
                                   type="number"
                                   min={1}
                                   step="0.1"
-                                  value={existing.multiplier}
-                                  disabled={isBusy}
-                                  onChange={(e) =>
-                                    updateTierField(existing.id, 'multiplier', Number(e.target.value || 1))
-                                  }
-                                  className="w-20 h-8 text-sm"
+                                  value={tierData.multiplier}
+                                  disabled={isBusy || !existing || !isProgramActive}
+                                  onChange={(e) => {
+                                    if (tierId == null) return;
+                                    updateTierField(tierId, 'multiplier', Number(e.target.value || 1));
+                                  }}
+                                  className="h-8 w-20 text-sm"
                                 />
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSaveTier(existing.id)}
-                                disabled={isBusy}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (tierId == null) return;
+                                    handleSaveTier(tierId);
+                                  }}
+                                disabled={isBusy || !existing || !isProgramActive}
                                 className="h-8 text-xs"
                               >
                                 {isBusy ? '...' : 'Lưu'}
                               </Button>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-text-secondary">
+                              Hạng mặc định luôn được bật.
                             </div>
                           )}
                         </div>
@@ -844,67 +1000,86 @@ export const LoyaltySettings: React.FC = () => {
                 description="Chọn cách giữ, reset hoặc hết hạn điểm theo chính sách của shop."
                 icon={Clock3}
               >
-                <div className="space-y-2">
-                  <Label>Chế độ hết hạn điểm</Label>
-                  <Select
-                    value={program.pointsExpiryMode || 'never'}
-                    onValueChange={(value: 'never' | 'per_transaction' | 'yearly_reset') =>
-                      updateProgramField('pointsExpiryMode', value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn chế độ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="never">Không hết hạn</SelectItem>
-                      <SelectItem value="per_transaction">Theo từng giao dịch</SelectItem>
-                      <SelectItem value="yearly_reset">Reset hằng năm</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {program.pointsExpiryMode === 'per_transaction' && (
-                  <div className="space-y-2">
-                    <Label>Số ngày điểm có hiệu lực</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={program.pointsExpiryDays ?? ''}
-                      onChange={(e) =>
-                        updateProgramField('pointsExpiryDays', Number(e.target.value || 0))
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="flex items-center justify-between gap-4 px-4 py-4">
+                    <div>
+                      <p className="font-medium text-text-primary">Chế độ hết hạn điểm</p>
+                      <p className="text-sm text-text-secondary">Chọn cách giữ, reset hoặc hết hạn điểm.</p>
+                    </div>
+                    <Select
+                      value={program.pointsExpiryMode || 'never'}
+                      onValueChange={(value: 'never' | 'per_transaction' | 'yearly_reset') =>
+                        updateProgramField('pointsExpiryMode', value)
                       }
-                    />
+                    >
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Chọn chế độ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="never">Không hết hạn</SelectItem>
+                        <SelectItem value="per_transaction">Theo từng giao dịch</SelectItem>
+                        <SelectItem value="yearly_reset">Reset hằng năm</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                {program.pointsExpiryMode === 'yearly_reset' && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Tháng reset</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={12}
-                        value={program.yearlyResetMonth ?? ''}
-                        onChange={(e) =>
-                          updateProgramField('yearlyResetMonth', Number(e.target.value || 0))
-                        }
-                      />
+                  {program.pointsExpiryMode === 'per_transaction' && (
+                    <div className="border-t border-border px-4 py-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-medium text-text-primary">Số ngày điểm có hiệu lực</p>
+                          <p className="text-sm text-text-secondary">Áp dụng khi chọn theo từng giao dịch.</p>
+                        </div>
+                        <Input
+                          type="number"
+                          min={1}
+                          className="w-28"
+                          value={program.pointsExpiryDays ?? ''}
+                          onChange={(e) =>
+                            updateProgramField('pointsExpiryDays', Number(e.target.value || 0))
+                          }
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Ngày reset</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={28}
-                        value={program.yearlyResetDay ?? ''}
-                        onChange={(e) =>
-                          updateProgramField('yearlyResetDay', Number(e.target.value || 0))
-                        }
-                      />
+                  )}
+
+                  {program.pointsExpiryMode === 'yearly_reset' && (
+                    <div className="grid gap-0 border-t border-border md:grid-cols-2">
+                      <div className="flex items-center justify-between gap-4 px-4 py-4">
+                        <div>
+                          <p className="font-medium text-text-primary">Tháng reset</p>
+                          <p className="text-sm text-text-secondary">Chọn tháng reset hằng năm.</p>
+                        </div>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={12}
+                          className="w-24"
+                          value={program.yearlyResetMonth ?? ''}
+                          onChange={(e) =>
+                            updateProgramField('yearlyResetMonth', Number(e.target.value || 0))
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-4 md:border-t-0 md:border-l">
+                        <div>
+                          <p className="font-medium text-text-primary">Ngày reset</p>
+                          <p className="text-sm text-text-secondary">Ngày trong tháng để reset điểm.</p>
+                        </div>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={28}
+                          className="w-24"
+                          value={program.yearlyResetDay ?? ''}
+                          onChange={(e) =>
+                            updateProgramField('yearlyResetDay', Number(e.target.value || 0))
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </SectionCard>
             )}
           </div>

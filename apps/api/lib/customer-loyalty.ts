@@ -90,3 +90,39 @@ export async function fetchCustomerLoyaltySnapshot(customerId: number) {
 
   return toSnapshot(row);
 }
+
+export async function fetchMerchantLoyaltyStatus(merchantId: number): Promise<'active' | 'inactive'> {
+  const program = await prisma.loyaltyProgram.findUnique({
+    where: { merchantId },
+    select: { isActive: true },
+  });
+
+  return program?.isActive ? 'active' : 'inactive';
+}
+
+export async function fetchMerchantLoyaltyStatuses(merchantIds: number[]) {
+  if (merchantIds.length === 0) {
+    return new Map<number, 'active' | 'inactive'>();
+  }
+
+  const programs = await prisma.loyaltyProgram.findMany({
+    where: {
+      merchantId: { in: merchantIds },
+    },
+    select: {
+      merchantId: true,
+      isActive: true,
+    },
+  });
+
+  const statusMap = new Map<number, 'active' | 'inactive'>();
+  for (const merchantId of merchantIds) {
+    statusMap.set(merchantId, 'inactive');
+  }
+
+  for (const program of programs) {
+    statusMap.set(program.merchantId, program.isActive ? 'active' : 'inactive');
+  }
+
+  return statusMap;
+}

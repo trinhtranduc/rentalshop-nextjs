@@ -117,8 +117,9 @@ class CustomerCell: UITableViewCell {
         self.user = user
         nameLabel.text = user.full_name
         phoneLabel.text = user.phone
-        loyaltyLabel.text = user.loyaltySummaryText
-        loyaltyLabel.isHidden = user.loyaltySummaryText == nil
+        loyaltyLabel.text = user.loyaltyStatusText
+        loyaltyLabel.textColor = user.loyaltyStatus == .active ? .systemBlue : .systemGray
+        loyaltyLabel.isHidden = user.loyaltyStatusText == nil
         
         if let avatar = user.avatar, let url = URL(string: avatar) {
             avatarImageView.kf.setImage(
@@ -134,8 +135,9 @@ class CustomerCell: UITableViewCell {
     func bind(user: Customer, searchWords: [String]?) {
         self.user = user
         phoneLabel.text = user.phone
-        loyaltyLabel.text = user.loyaltySummaryText
-        loyaltyLabel.isHidden = user.loyaltySummaryText == nil
+        loyaltyLabel.text = user.loyaltyStatusText
+        loyaltyLabel.textColor = user.loyaltyStatus == .active ? .systemBlue : .systemGray
+        loyaltyLabel.isHidden = user.loyaltyStatusText == nil
         
         if let words = searchWords, let name = user.full_name {
             let attributes = NSMutableAttributedString(string: name)

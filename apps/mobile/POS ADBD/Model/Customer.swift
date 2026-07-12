@@ -26,6 +26,12 @@ struct CustomerLoyaltySnapshot: Codable {
     var tier: CustomerLoyaltyTier?
 }
 
+enum CustomerLoyaltyStatus: String, Codable {
+    case active
+    case inactive
+    case unavailable
+}
+
 struct Customer: Codable, Comparable, Copying {
     // Legacy fields for backward compatibility
     var full_name: String?
@@ -38,6 +44,7 @@ struct Customer: Codable, Comparable, Copying {
     var rental_point: Int = 0
     var sale_point: Int = 0
     var loyalty: CustomerLoyaltySnapshot?
+    var loyaltyStatus: CustomerLoyaltyStatus?
     
     // New API fields according to documentation
     var id: Int?
@@ -66,6 +73,7 @@ struct Customer: Codable, Comparable, Copying {
         self.rental_point = original.rental_point
         self.sale_point = original.sale_point
         self.loyalty = original.loyalty
+        self.loyaltyStatus = original.loyaltyStatus
         self.id = original.id
         self.firstName = original.firstName
         self.lastName = original.lastName
@@ -92,6 +100,7 @@ struct Customer: Codable, Comparable, Copying {
         case rental_point = "royal_rental_point"
         case sale_point = "royal_sale_point"
         case loyalty
+        case loyaltyStatus
         
         // New API fields
         case id
@@ -140,6 +149,7 @@ struct Customer: Codable, Comparable, Copying {
         self.rental_point = try container.decodeIfPresent(Int.self, forKey: .rental_point) ?? 0
         self.sale_point = try container.decodeIfPresent(Int.self, forKey: .sale_point) ?? 0
         self.loyalty = try container.decodeIfPresent(CustomerLoyaltySnapshot.self, forKey: .loyalty)
+        self.loyaltyStatus = try container.decodeIfPresent(CustomerLoyaltyStatus.self, forKey: .loyaltyStatus)
         
         // New API fields
         self.city = try container.decodeIfPresent(String.self, forKey: .city)
@@ -165,6 +175,7 @@ struct Customer: Codable, Comparable, Copying {
         try container.encode(rental_point, forKey: .rental_point)
         try container.encode(sale_point, forKey: .sale_point)
         try container.encodeIfPresent(loyalty, forKey: .loyalty)
+        try container.encodeIfPresent(loyaltyStatus, forKey: .loyaltyStatus)
         
         // New API fields
         try container.encodeIfPresent(id, forKey: .id)
@@ -204,11 +215,24 @@ struct Customer: Codable, Comparable, Copying {
     }
 
     var loyaltySummaryText: String? {
-        guard let loyalty else { return nil }
+        guard loyaltyStatus == .active, let loyalty else { return nil }
 
         let tierName = loyalty.tier?.name ?? "Hạng khách".localized()
         let pointsText = NumberFormatter.localizedString(from: NSNumber(value: loyalty.points), number: .decimal)
         return "\(tierName) • \(pointsText) điểm"
+    }
+
+    var loyaltyStatusText: String? {
+        switch loyaltyStatus {
+        case .active:
+            return loyaltySummaryText
+        case .inactive:
+            return "Loyalty chưa kích hoạt"
+        case .unavailable:
+            return "Loyalty không khả dụng"
+        case .none:
+            return nil
+        }
     }
     
     // MARK: - Comparable Protocol

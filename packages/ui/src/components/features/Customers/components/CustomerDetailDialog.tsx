@@ -71,6 +71,13 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
       setLoyaltySummary(null);
     }
 
+    if (customer.loyaltyStatus !== 'active') {
+      setLoyaltyLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setLoyaltyLoading(true);
     loyaltyApi
       .getCustomerSummary(customer.id)
@@ -141,71 +148,92 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
             {/* Basic Information */}
             <div className="space-y-4">
               {/* Loyalty Summary */}
-              <Card className="border border-border/70 bg-bg-secondary/30">
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Loyalty
-                      </p>
-                      <p className="text-sm text-text-secondary">
-                        {loyaltyLoading ? 'Đang tải điểm thưởng...' : 'Thông tin loyalty của khách'}
-                      </p>
+              {customer.loyaltyStatus === 'active' ? (
+                <Card className="border border-border/70 bg-white">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Loyalty
+                        </p>
+                        <p className="text-sm text-text-secondary">
+                          {loyaltyLoading ? 'Đang tải điểm thưởng...' : 'Thông tin loyalty của khách'}
+                        </p>
+                      </div>
+                      {loyaltySummary?.tier?.name ? (
+                        <Badge variant="secondary">{loyaltySummary.tier.name}</Badge>
+                      ) : (
+                        <Badge variant="outline">Chưa có hạng</Badge>
+                      )}
                     </div>
-                    {loyaltySummary?.tier?.name ? (
-                      <Badge variant="secondary">{loyaltySummary.tier.name}</Badge>
+
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Điểm hiện có</p>
+                        <p className="text-lg font-semibold">{loyaltySummary?.points ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Đã tích lũy</p>
+                        <p className="text-lg font-semibold">{loyaltySummary?.totalEarned ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Đã đổi</p>
+                        <p className="text-lg font-semibold">{loyaltySummary?.totalRedeemed ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Đã chi tiêu</p>
+                        <p className="text-lg font-semibold">
+                          {new Intl.NumberFormat('vi-VN').format(loyaltySummary?.totalSpent ?? 0)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="rounded-lg border border-border bg-bg-card p-3">
+                        <p className="text-xs text-muted-foreground">Tổng đơn</p>
+                        <p className="text-sm font-medium">{loyaltySummary?.totalOrders ?? 0}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-bg-card p-3">
+                        <p className="text-xs text-muted-foreground">Đổi tối đa ở đơn</p>
+                        <p className="text-sm font-medium">
+                          {loyaltySummary?.maxRedeemPoints ?? 0} điểm
+                        </p>
+                      </div>
+                    </div>
+
+                    {loyaltySummary?.nextTier ? (
+                      <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
+                        Còn {loyaltySummary.nextTier.remaining.toLocaleString('vi-VN')}{' '}
+                        để lên hạng{' '}
+                        <span className="font-medium text-text-primary">{loyaltySummary.nextTier.name}</span>.
+                      </div>
                     ) : (
-                      <Badge variant="outline">Chưa có hạng</Badge>
+                      <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
+                        Chưa có gợi ý hạng tiếp theo.
+                      </div>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Điểm hiện có</p>
-                      <p className="text-lg font-semibold">{loyaltySummary?.points ?? 0}</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border border-dashed border-border bg-white">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Loyalty
+                        </p>
+                        <p className="text-sm text-text-secondary">
+                          Chưa kích hoạt loyalty cho merchant này.
+                        </p>
+                      </div>
+                      <Badge variant="outline">Chưa bật</Badge>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Đã tích lũy</p>
-                      <p className="text-lg font-semibold">{loyaltySummary?.totalEarned ?? 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Đã đổi</p>
-                      <p className="text-lg font-semibold">{loyaltySummary?.totalRedeemed ?? 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Đã chi tiêu</p>
-                      <p className="text-lg font-semibold">
-                        {new Intl.NumberFormat('vi-VN').format(loyaltySummary?.totalSpent ?? 0)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="rounded-lg border border-border bg-bg-card p-3">
-                      <p className="text-xs text-muted-foreground">Tổng đơn</p>
-                      <p className="text-sm font-medium">{loyaltySummary?.totalOrders ?? 0}</p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-bg-card p-3">
-                      <p className="text-xs text-muted-foreground">Đổi tối đa ở đơn</p>
-                      <p className="text-sm font-medium">
-                        {loyaltySummary?.maxRedeemPoints ?? 0} điểm
-                      </p>
-                    </div>
-                  </div>
-
-                  {loyaltySummary?.nextTier ? (
-                    <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
-                      Còn {loyaltySummary.nextTier.remaining.toLocaleString('vi-VN')}{' '}
-                      để lên hạng{' '}
-                      <span className="font-medium text-text-primary">{loyaltySummary.nextTier.name}</span>.
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border p-3 text-sm text-text-secondary">
-                      Chưa có gợi ý hạng tiếp theo.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <p className="text-sm text-text-secondary">
+                      Bật loyalty để bắt đầu tích điểm, phân hạng và đổi ưu đãi cho khách hàng.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

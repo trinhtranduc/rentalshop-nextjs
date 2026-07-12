@@ -152,7 +152,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       </CardHeader>
       
       <CardContent>
-        {customer.loyalty && (
+        {customer.loyaltyStatus === 'active' && customer.loyalty ? (
           <div className="mb-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -186,6 +186,22 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
                 <label className="block text-xs font-normal text-gray-500 mb-1">Đã chi tiêu</label>
                 <p className="text-gray-900 text-base font-medium">{new Intl.NumberFormat('vi-VN').format(customer.loyalty.totalSpent)}</p>
               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Loyalty</p>
+                <p className="text-sm text-gray-600">
+                  {customer.loyaltyStatus === 'unavailable'
+                    ? 'Loyalty không khả dụng cho plan hiện tại.'
+                    : 'Loyalty chưa kích hoạt.'}
+                </p>
+              </div>
+              <Badge variant="outline" className="border-gray-200 text-gray-600">
+                {customer.loyaltyStatus === 'unavailable' ? 'Khóa' : 'Tắt'}
+              </Badge>
             </div>
           </div>
         )}

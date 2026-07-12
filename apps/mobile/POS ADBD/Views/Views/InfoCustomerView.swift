@@ -133,8 +133,9 @@ class InfoCustomerView: UIView {
         self.customer = customer
         customerNameLabel.text = customer.full_name
         customerPhoneLabel.text = customer.phone
-        customerLoyaltyLabel.text = customer.loyaltySummaryText
-        customerLoyaltyLabel.isHidden = customer.loyaltySummaryText == nil
+        customerLoyaltyLabel.text = customer.loyaltyStatusText
+        customerLoyaltyLabel.textColor = customer.loyaltyStatus == .active ? .systemBlue : .systemGray
+        customerLoyaltyLabel.isHidden = customer.loyaltyStatusText == nil
         
         if let avatar = customer.avatar {
             customerAvatar.kf.setImage(

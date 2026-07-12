@@ -14,15 +14,22 @@ export const CustomerLoyaltyTab: React.FC<CustomerLoyaltyTabProps> = ({ customer
   const [summary, setSummary] = useState<LoyaltyCustomerSummary | null>(null);
   const [transactions, setTransactions] = useState<LoyaltyTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setUnavailable(false);
     Promise.all([
       loyaltyApi.getCustomerSummary(customerId),
       loyaltyApi.getCustomerTransactions(customerId, { page: 1, limit: 20 }),
     ])
       .then(([summaryRes, txRes]) => {
-        if (summaryRes.success) setSummary(summaryRes.data || null);
+        if (summaryRes.success) {
+          setSummary(summaryRes.data || null);
+        } else {
+          setSummary(null);
+          setUnavailable(true);
+        }
         if (txRes.success && txRes.data) setTransactions(txRes.data.transactions || []);
       })
       .finally(() => setLoading(false));
@@ -30,6 +37,21 @@ export const CustomerLoyaltyTab: React.FC<CustomerLoyaltyTabProps> = ({ customer
 
   if (loading) {
     return <div className="p-4 text-sm text-text-secondary">Đang tải loyalty...</div>;
+  }
+
+  if (unavailable) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="rounded-2xl border border-dashed border-border bg-bg-secondary/30 p-4">
+            <p className="font-medium text-text-primary">Loyalty chưa kích hoạt</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              Bật loyalty để xem điểm thưởng, lịch sử giao dịch và phân hạng khách hàng.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
