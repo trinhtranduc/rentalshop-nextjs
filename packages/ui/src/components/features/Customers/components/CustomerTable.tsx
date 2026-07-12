@@ -303,62 +303,74 @@ export function CustomerTable({
                 
                 {/* Actions - Dropdown Menu */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setOpenDropdownId(customer.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end"
-                      open={openDropdownId === customer.id}
-                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? customer.id : null)}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 px-3"
+                      onClick={() => onCustomerAction('viewOrders', customer.id)}
                     >
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('view', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        {t('actions.view')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('edit', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        {t('actions.editCustomer')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('viewOrders', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        {t('actions.viewOrders')}
-                      </DropdownMenuItem>
-                      {/* Show delete option only if user has permission */}
-                      {canManageCustomers && (
-                        <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          onCustomerAction('delete', customer.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>{t('actions.viewOrders')}</span>
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setOpenDropdownId(customer.id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        open={openDropdownId === customer.id}
+                        onOpenChange={(open: boolean) => setOpenDropdownId(open ? customer.id : null)}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t('actions.deleteCustomer')}
-                      </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('view', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          {t('actions.view')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('edit', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          {t('actions.editCustomer')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('viewOrders', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          {t('actions.viewOrders')}
+                        </DropdownMenuItem>
+                        {/* Show delete option only if user has permission */}
+                        {canManageCustomers && (
+                          <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onCustomerAction('delete', customer.id);
+                            setOpenDropdownId(null);
+                          }}
+                          className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {t('actions.deleteCustomer')}
+                        </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </td>
               </tr>
             );
