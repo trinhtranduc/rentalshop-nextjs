@@ -432,27 +432,21 @@ export const LoyaltySettings: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        <Card>
-          <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant={program.isActive ? 'secondary' : 'outline'}>
-                  {program.isActive ? 'Đang bật' : 'Đang tắt'}
-                </Badge>
-                <Badge variant="outline">{program.tierMetric === 'total_orders' ? 'Theo đơn' : 'Theo chi tiêu'}</Badge>
-              </div>
-              <h2 className="text-xl font-semibold text-text-primary">
-                {program.name || 'Chương trình loyalty'}
-              </h2>
-              <p className="text-sm text-text-secondary">
-                Tách theo từng nhóm cấu hình để dễ quản lý, dễ chỉnh, dễ hiểu.
-              </p>
-            </div>
-            <Button onClick={handleSaveProgram} disabled={savingProgram}>
-              {savingProgram ? 'Đang lưu...' : 'Lưu cấu hình'}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Page Header — matches Settings page style */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">Loyalty</h1>
+            <p className="text-sm text-text-secondary flex items-center gap-2 mt-1">
+              Cấu hình chương trình khách hàng thân thiết
+              <Badge variant={program.isActive ? 'secondary' : 'outline'}>
+                {program.isActive ? 'Đang bật' : 'Đang tắt'}
+              </Badge>
+            </p>
+          </div>
+          <Button onClick={handleSaveProgram} disabled={savingProgram}>
+            {savingProgram ? 'Đang lưu...' : 'Lưu cấu hình'}
+          </Button>
+        </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-64 flex-shrink-0">
@@ -475,16 +469,6 @@ export const LoyaltySettings: React.FC = () => {
           </div>
 
           <div className="flex-1 min-w-0 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {ActiveSectionIcon ? <ActiveSectionIcon className="h-5 w-5" /> : null}
-                  {activeSectionItem?.label}
-                </CardTitle>
-                <p className="text-sm text-text-secondary">{activeSectionItem?.description}</p>
-              </CardHeader>
-            </Card>
-
             {activeSection === 'overview' && (
               <SectionCard
                 title="Tổng quan chương trình"
