@@ -454,14 +454,16 @@ export const LoyaltySettings: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="font-medium text-text-primary">Kích hoạt loyalty</p>
                     <p className="text-sm text-text-secondary">Tắt để tạm dừng toàn bộ tính năng loyalty.</p>
                   </div>
-                  <Switch
-                    checked={!!program.isActive}
-                    onCheckedChange={(checked) => updateProgramField('isActive', checked)}
-                  />
+                  <div className="flex-shrink-0 ml-4">
+                    <Switch
+                      checked={!!program.isActive}
+                      onCheckedChange={(checked) => updateProgramField('isActive', checked)}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
