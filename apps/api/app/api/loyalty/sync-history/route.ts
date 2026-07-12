@@ -45,15 +45,37 @@ export const POST = withPermissions(['loyalty.manage'])(async (_request: NextReq
       orderBy: { threshold: 'desc' },
     });
 
-    // 3. Clean slate — delete existing loyalty data for this merchant (idempotent)
-    await prisma.loyaltyPointLot.deleteMany({
-      where: { customerLoyalty: { merchantId } },
-    });
-    await prisma.loyaltyTransaction.deleteMany({
-      where: { merchantId },
-    });
-    await prisma.customerLoyalty.deleteMany({
-      where: { merchantId },
+    // 3. Clean slate — only remove SYNC-generated records (idempotent)
+    // Keep real-time earn/redeem/refund transactions intact
+    // Sync transactions are identified by type='adjust' + description containing 'Đồng bộ'
+    await prisma.$transaction(async (tx) => {
+      // Delete point lots linked to sync transactions
+      await tx.loyaltyPointLot.deleteMany({
+        where: {
+          customerLoyalty: { merchantId },
+          earnTransaction: {
+            type: 'adjust',
+            description: { contains: 'Đồng bộ' },
+          },
+        },
+      });
+
+      // Delete sync-generated transactions only
+      await tx.loyaltyTransaction.deleteMany({
+        where: {
+          merchantId,
+          type: 'adjust',
+          description: { contains: 'Đồng bộ' },
+        },
+      });
+
+      // Reset CustomerLoyalty balances — will be recalculated below
+      // We DON'T delete CustomerLoyalty records to preserve real-time transactions' references
+      // Instead, recalculate balance from remaining transactions + new sync data
+      await tx.customerLoyalty.updateMany({
+        where: { merchantId },
+        data: { points: 0, totalEarned: 0, totalRedeemed: 0, totalSpent: 0, totalOrders: 0, currentTierId: null },
+      });
     });
 
     // 4. Query all completed/returned orders grouped by customer + orderType
@@ -133,11 +155,22 @@ export const POST = withPermissions(['loyalty.manage'])(async (_request: NextReq
         }
       }
 
-      // Create CustomerLoyalty
-      await prisma.customerLoyalty.create({
-        data: {
+      // Upsert CustomerLoyalty (may exist from real-time earn/redeem)
+      await prisma.customerLoyalty.upsert({
+        where: {
+          customerId_merchantId: { customerId, merchantId },
+        },
+        create: {
           customerId,
           merchantId,
+          points: stats.points,
+          totalEarned: stats.points,
+          totalRedeemed: 0,
+          totalSpent: stats.totalSpent,
+          totalOrders: stats.totalOrders,
+          currentTierId: assignedTierId,
+        },
+        update: {
           points: stats.points,
           totalEarned: stats.points,
           totalRedeemed: 0,
