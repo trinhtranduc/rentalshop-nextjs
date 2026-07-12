@@ -209,24 +209,27 @@ class CustomerCell: UITableViewCell {
     }
 
     private func updateLoyaltyUI(for user: Customer) {
-        guard let loyaltyStatusText = user.loyaltyStatusText else {
+        guard user.loyaltyDisplayState != .none, let loyaltyLevelName = user.loyaltyDisplayLevelName else {
             loyaltyStackView.isHidden = true
             return
         }
 
         loyaltyStackView.isHidden = false
-        loyaltyLabel.text = loyaltyStatusText
-        loyaltyLabel.textColor = user.loyaltyStatus == .active ? .systemBlue : .systemGray
+        loyaltyLabel.text = loyaltyLevelName
+        loyaltyLabel.textColor = user.loyaltyDisplayState == .inactive || user.loyaltyDisplayState == .unavailable
+            ? .systemGray
+            : .systemBlue
 
-        let iconName = loyaltyIconName(for: user.loyalty?.tier?.icon, status: user.loyaltyStatus)
+        let iconName = loyaltyIconName(for: user)
         loyaltyIconImageView.image = UIImage(systemName: iconName)
 
         let tintColor: UIColor
-        if user.loyaltyStatus == .active, let tierColor = user.loyalty?.tier?.color, let parsed = UIColor(hexString: tierColor) {
+        if user.loyaltyDisplayState == .active, let tierColor = user.loyalty?.tier?.color {
+            let parsed = UIColor(hexString: tierColor)
             tintColor = parsed
             loyaltyIconView.layer.borderColor = parsed.withAlphaComponent(0.22).cgColor
             loyaltyIconView.backgroundColor = parsed.withAlphaComponent(0.10)
-        } else if user.loyaltyStatus == .unavailable {
+        } else if user.loyaltyDisplayState == .unavailable {
             tintColor = .systemGray
             loyaltyIconView.layer.borderColor = UIColor.systemGray.withAlphaComponent(0.20).cgColor
             loyaltyIconView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.08)
@@ -236,30 +239,30 @@ class CustomerCell: UITableViewCell {
             loyaltyIconView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
         }
 
+        if let points = user.loyaltyDisplayPoints {
+            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+            loyaltyLabel.text = "\(loyaltyLevelName) • \(pointsText) điểm"
+            loyaltyLabel.textColor = user.loyaltyDisplayState == .active || user.loyaltyDisplayState == .legacy
+                ? .systemBlue
+                : .systemGray
+        } else {
+            loyaltyLabel.text = loyaltyLevelName
+        }
+
         loyaltyIconImageView.tintColor = tintColor
     }
 
-    private func loyaltyIconName(for icon: String?, status: CustomerLoyaltyStatus?) -> String {
-        guard status == .active else {
-            return status == .unavailable ? "lock.fill" : "sparkles"
-        }
-
-        switch (icon ?? "").lowercased() {
-        case "medal":
-            return "medal.fill"
-        case "award":
-            return "rosette"
-        case "crown":
-            return "crown.fill"
-        case "gem":
-            return "diamond.fill"
-        case "diamond":
-            return "diamond.fill"
-        case "star":
-            return "star.fill"
-        case "user":
-            fallthrough
-        default:
+    func loyaltyIconName(for user: Customer) -> String {
+        switch user.loyaltyDisplayState {
+        case .active:
+            return user.loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
+        case .legacy:
+            return user.customer_level?.loyaltySystemIconName ?? ((user.loyaltyDisplayPoints ?? 0) > 0 ? "star.fill" : "person.fill")
+        case .inactive:
+            return "sparkles"
+        case .unavailable:
+            return "lock.fill"
+        case .none:
             return "person.fill"
         }
     }

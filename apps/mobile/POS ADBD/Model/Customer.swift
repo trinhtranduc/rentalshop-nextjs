@@ -32,6 +32,14 @@ enum CustomerLoyaltyStatus: String, Codable {
     case unavailable
 }
 
+enum CustomerLoyaltyDisplayState {
+    case active
+    case legacy
+    case inactive
+    case unavailable
+    case none
+}
+
 struct Customer: Codable, Comparable, Copying {
     // Legacy fields for backward compatibility
     var full_name: String?
@@ -211,15 +219,15 @@ struct Customer: Codable, Comparable, Copying {
     }
 
     var loyaltyTierName: String? {
-        return loyalty?.tier?.name
+        return loyaltyDisplayLevelName
     }
 
     var loyaltySummaryText: String? {
-        guard loyaltyStatus == .active, let loyalty else { return nil }
+        guard let levelName = loyaltyDisplayLevelName else { return nil }
+        guard let points = loyaltyDisplayPoints else { return levelName }
 
-        let tierName = loyalty.tier?.name ?? "Hạng khách".localized()
-        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: loyalty.points), number: .decimal)
-        return "\(tierName) • \(pointsText) điểm"
+        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+        return "\(levelName) • \(pointsText) điểm"
     }
 
     var loyaltyStatusText: String? {
@@ -231,8 +239,72 @@ struct Customer: Codable, Comparable, Copying {
         case .unavailable:
             return "Loyalty không khả dụng"
         case .none:
+            return loyaltySummaryText
+        }
+    }
+
+    var loyaltyDisplayState: CustomerLoyaltyDisplayState {
+        if let status = loyaltyStatus {
+            switch status {
+            case .active:
+                return .active
+            case .inactive:
+                return .inactive
+            case .unavailable:
+                return .unavailable
+            }
+        }
+
+        if loyalty != nil || loyaltyLegacyPoints > 0 || (customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) {
+            return .legacy
+        }
+
+        return .none
+    }
+
+    var loyaltyDisplayLevelName: String? {
+        switch loyaltyDisplayState {
+        case .active:
+            return loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Hạng khách".localized()
+        case .legacy:
+            return customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Hạng khách".localized()
+        case .inactive:
+            return "Loyalty chưa kích hoạt"
+        case .unavailable:
+            return "Loyalty không khả dụng"
+        case .none:
             return nil
         }
+    }
+
+    var loyaltyDisplayPoints: Int? {
+        switch loyaltyDisplayState {
+        case .active:
+            return loyalty?.points
+        case .legacy:
+            return loyaltyLegacyPoints > 0 ? loyaltyLegacyPoints : nil
+        case .inactive, .unavailable, .none:
+            return nil
+        }
+    }
+
+    var loyaltyDisplayIconName: String? {
+        switch loyaltyDisplayState {
+        case .active:
+            return loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
+        case .legacy:
+            return customer_level?.loyaltySystemIconName ?? (loyaltyLegacyPoints > 0 ? "star.fill" : "person.fill")
+        case .inactive:
+            return "sparkles"
+        case .unavailable:
+            return "lock.fill"
+        case .none:
+            return nil
+        }
+    }
+
+    private var loyaltyLegacyPoints: Int {
+        return max(0, rental_point) + max(0, sale_point)
     }
     
     // MARK: - Comparable Protocol
@@ -264,6 +336,32 @@ struct Customer: Codable, Comparable, Copying {
         // TODO: Save to UserDefaults or Core Data for local persistence
         if let data = try? JSONEncoder.shared.encode(customers) {
             UserDefaults.standard.set(data, forKey: "saved_customers")
+        }
+    }
+}
+
+extension String {
+    var nilIfEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var loyaltySystemIconName: String {
+        switch lowercased() {
+        case "medal", "dong", "đồng":
+            return "medal.fill"
+        case "award", "bac", "bạc":
+            return "rosette"
+        case "crown", "vang", "vàng":
+            return "crown.fill"
+        case "gem", "diamond", "bach kim", "bạch kim", "kim cương", "kim cuong":
+            return "diamond.fill"
+        case "star", "vip":
+            return "star.fill"
+        case "user", "thành viên", "thanh vien":
+            return "person.fill"
+        default:
+            return "person.fill"
         }
     }
 }
