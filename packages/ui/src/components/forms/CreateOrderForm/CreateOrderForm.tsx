@@ -810,6 +810,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                   loading={loyalty.loading}
                   validationError={loyalty.validationError}
                   enabled={!isEditMode && !!formData.customerId}
+                  earnPreview={loyalty.earnPreview}
+                  orderType={formData.orderType}
                 />
                 {/* Order Information Content with Order Summary - Takes full height */}
             <OrderInfoSection
