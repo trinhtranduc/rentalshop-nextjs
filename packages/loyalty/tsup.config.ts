@@ -5,4 +5,8 @@ export default createBaseConfig('src/index.ts', [
   '@rentalshop/constants',
   '@rentalshop/types',
   '@prisma/client',
-]);
+], {
+  dts: {
+    resolve: true,
+  },
+});
