@@ -65,6 +65,23 @@ class InfoCustomerView: UIView {
         return label
     }()
 
+    private lazy var loyaltyIconView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 9
+        view.layer.masksToBounds = true
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
+        view.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
+        return view
+    }()
+
+    private lazy var loyaltyIconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .systemBlue
+        return imageView
+    }()
+
     private lazy var customerLoyaltyLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.mediumFont(size: 12)
@@ -72,10 +89,26 @@ class InfoCustomerView: UIView {
         label.numberOfLines = 1
         return label
     }()
+
+    private lazy var customerPointLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .gray
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private lazy var loyaltyStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [loyaltyIconView, customerLoyaltyLabel, customerPointLabel])
+        stack.axis = .horizontal
+        stack.spacing = 6
+        stack.alignment = .center
+        return stack
+    }()
     
     
     private lazy var labelsStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [customerNameLabel, customerLoyaltyLabel, customerPhoneLabel])
+        let stack = UIStackView(arrangedSubviews: [customerNameLabel, loyaltyStackView, customerPhoneLabel])
         stack.axis = .vertical
         stack.spacing = 4
         stack.alignment = .leading
@@ -99,6 +132,7 @@ class InfoCustomerView: UIView {
         containerView.addSubview(customerAvatar)
         containerView.addSubview(labelsStackView)
         containerView.addSubview(infoButton)
+        loyaltyIconView.addSubview(loyaltyIconImageView)
         
         // Container view - Card style full width
         containerView.snp.makeConstraints { make in
@@ -119,6 +153,15 @@ class InfoCustomerView: UIView {
             make.bottom.equalToSuperview().offset(-8)
             make.trailing.lessThanOrEqualTo(infoButton.snp.leading).offset(-8)
         }
+
+        loyaltyIconView.snp.makeConstraints { make in
+            make.width.height.equalTo(18)
+        }
+
+        loyaltyIconImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(10)
+        }
         
         // Info button
         infoButton.snp.makeConstraints { make in
@@ -133,9 +176,7 @@ class InfoCustomerView: UIView {
         self.customer = customer
         customerNameLabel.text = customer.full_name
         customerPhoneLabel.text = customer.phone
-        customerLoyaltyLabel.text = customer.loyaltyStatusText
-        customerLoyaltyLabel.textColor = customer.loyaltyStatus == .active ? .systemBlue : .systemGray
-        customerLoyaltyLabel.isHidden = customer.loyaltyStatusText == nil
+        updateLoyaltyUI(customer: customer)
         
         if let avatar = customer.avatar {
             customerAvatar.kf.setImage(
@@ -146,6 +187,75 @@ class InfoCustomerView: UIView {
         } else {
             customerAvatar.image = UIImage(systemName: "person.circle.fill")
             customerAvatar.tintColor = .systemGray
+        }
+    }
+
+    private func updateLoyaltyUI(customer: Customer) {
+        guard let loyaltyStatus = customer.loyaltyStatus else {
+            loyaltyStackView.isHidden = true
+            return
+        }
+
+        loyaltyStackView.isHidden = false
+
+        switch loyaltyStatus {
+        case .active:
+            let tierName = customer.loyalty?.tier?.name ?? "Hạng khách".localized()
+            let points = NumberFormatter.localizedString(from: NSNumber(value: customer.loyalty?.points ?? 0), number: .decimal)
+            customerLoyaltyLabel.text = tierName
+            customerLoyaltyLabel.textColor = .systemBlue
+            customerPointLabel.text = "• \(points) điểm"
+            customerPointLabel.textColor = .gray
+            loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer.loyalty?.tier?.icon, status: loyaltyStatus))
+
+            if let tierColor = customer.loyalty?.tier?.color, let parsed = UIColor(hexString: tierColor) {
+                loyaltyIconView.layer.borderColor = parsed.withAlphaComponent(0.22).cgColor
+                loyaltyIconView.backgroundColor = parsed.withAlphaComponent(0.10)
+                loyaltyIconImageView.tintColor = parsed
+            } else {
+                loyaltyIconView.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
+                loyaltyIconView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
+                loyaltyIconImageView.tintColor = .systemBlue
+            }
+        case .inactive:
+            customerLoyaltyLabel.text = "Loyalty chưa kích hoạt"
+            customerLoyaltyLabel.textColor = .systemGray
+            customerPointLabel.text = nil
+            loyaltyIconImageView.image = UIImage(systemName: "sparkles")
+            loyaltyIconView.layer.borderColor = UIColor.systemGray.withAlphaComponent(0.20).cgColor
+            loyaltyIconView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.08)
+            loyaltyIconImageView.tintColor = .systemGray
+        case .unavailable:
+            customerLoyaltyLabel.text = "Loyalty không khả dụng"
+            customerLoyaltyLabel.textColor = .systemGray
+            customerPointLabel.text = nil
+            loyaltyIconImageView.image = UIImage(systemName: "lock.fill")
+            loyaltyIconView.layer.borderColor = UIColor.systemGray.withAlphaComponent(0.20).cgColor
+            loyaltyIconView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.08)
+            loyaltyIconImageView.tintColor = .systemGray
+        }
+    }
+
+    private func loyaltyIconName(for icon: String?, status: CustomerLoyaltyStatus) -> String {
+        guard status == .active else { return "sparkles" }
+
+        switch (icon ?? "").lowercased() {
+        case "medal":
+            return "medal.fill"
+        case "award":
+            return "rosette"
+        case "crown":
+            return "crown.fill"
+        case "gem":
+            return "diamond.fill"
+        case "diamond":
+            return "diamond.fill"
+        case "star":
+            return "star.fill"
+        case "user":
+            fallthrough
+        default:
+            return "person.fill"
         }
     }
     
