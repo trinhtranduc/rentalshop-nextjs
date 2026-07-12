@@ -97,6 +97,13 @@ export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
             <span>{formatMoney(amountDue)}</span>
           </div>
 
+          {/* Next Tier Info */}
+          {summary.nextTier && summary.nextTier.remaining > 0 && (
+            <div className="text-xs text-text-secondary pt-1">
+              Cần chi thêm {formatMoney(summary.nextTier.remaining)} để lên {summary.nextTier.name}
+            </div>
+          )}
+
           {/* Earn Preview */}
           {earnPreview != null && earnPreview > 0 && (
             <div className="flex items-center gap-2 text-sm text-action-success pt-2 border-t border-border">
