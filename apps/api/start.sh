@@ -92,8 +92,21 @@ if npx prisma generate --schema="${SCHEMA_PATH}" 2>&1; then
     
   # Copy Prisma Client to Next.js bundle location
     if [ -d "../../node_modules/.prisma/client" ]; then
+      # Copy to .next/server/.prisma/client (standard location)
       mkdir -p .next/server/.prisma/client
       cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
+      
+      # Copy engine binary directly to .next/server/ (where bundled chunks look)
+      cp ../../node_modules/.prisma/client/libquery_engine-* .next/server/ 2>/dev/null || true
+      
+      # Copy to local node_modules/.prisma/client (another search path)
+      mkdir -p node_modules/.prisma/client
+      cp -r ../../node_modules/.prisma/client/* node_modules/.prisma/client/ 2>/dev/null || true
+      
+      # Also ensure node_modules/@prisma/client has the engine
+      mkdir -p node_modules/@prisma/client
+      cp ../../node_modules/.prisma/client/libquery_engine-* node_modules/@prisma/client/ 2>/dev/null || true
+      
       echo "✅ Prisma Client copied to Next.js bundle location"
   fi
 else
