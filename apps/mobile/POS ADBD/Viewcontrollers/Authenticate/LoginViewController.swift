@@ -6,6 +6,12 @@ class LoginViewController: BaseViewControler {
     // MARK: - UI Components
     private lazy var containerView: UIView = {
         let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.08
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowRadius = 12
         return view
     }()
     
@@ -58,8 +64,7 @@ class LoginViewController: BaseViewControler {
     
     private lazy var iconImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "login-blue")
-        imageView.tintColor = APP_TONE_COLOR
+        imageView.image = UIImage(named: "anyrent-brandmark-ribbon")?.withRenderingMode(.alwaysOriginal)
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -201,9 +206,9 @@ class LoginViewController: BaseViewControler {
             }
         }
         
-        // StackView constraints - pins to containerView edges
+        // StackView constraints - pins to containerView edges with padding
         stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.edges.equalToSuperview().inset(20)
         }
         
         // Forgot password button height - giảm height để khoảng cách gần hơn

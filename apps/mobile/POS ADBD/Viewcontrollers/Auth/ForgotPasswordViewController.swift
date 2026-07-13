@@ -6,6 +6,12 @@ class ForgotPasswordViewController: BaseViewControler {
     // MARK: - UI Components
     private lazy var containerView: UIView = {
         let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.08
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowRadius = 12
         return view
     }()
     
@@ -120,7 +126,7 @@ class ForgotPasswordViewController: BaseViewControler {
         
         // StackView constraints
         stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.edges.equalToSuperview().inset(20)
         }
         
         // Setup delegates and text change monitoring

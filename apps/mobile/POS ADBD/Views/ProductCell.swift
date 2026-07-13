@@ -56,6 +56,18 @@ class ProductCell: UITableViewCell {
         return label
     }()
     
+    private lazy var availableBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.mediumFont(size: 12)
+        label.textColor = .brandPrimary
+        label.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.10)
+        label.layer.cornerRadius = 8
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+    
     // Rent price view (title + value)
     private lazy var rentPriceTitleLabel: UILabel = {
         let label = UILabel()
@@ -188,6 +200,7 @@ class ProductCell: UITableViewCell {
         containerView.addSubview(productImageView)
         containerView.addSubview(productNameLabel)
         containerView.addSubview(stockLabel)
+        containerView.addSubview(availableBadgeLabel)
         containerView.addSubview(pricesStackView)
         containerView.addSubview(moreButton)
         containerView.addSubview(checkIndicatorView)
@@ -245,8 +258,15 @@ class ProductCell: UITableViewCell {
         stockLabel.snp.makeConstraints { make in
             make.top.equalTo(pricesStackView.snp.bottom).offset(8)
             make.leading.equalTo(productNameLabel.snp.leading)
-            make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
             make.bottom.lessThanOrEqualToSuperview().offset(-innerPadding)
+        }
+        
+        // Available badge label - right of stock label
+        availableBadgeLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(stockLabel)
+            make.leading.equalTo(stockLabel.snp.trailing).offset(8)
+            make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
+            make.height.equalTo(22)
         }
         
         // More button constraints - top-right
@@ -312,22 +332,24 @@ class ProductCell: UITableViewCell {
             availableValue = product.quantity
         }
         
-        // Format stock label as "Stock: {stock} • Available: {available}" with colored available
+        // Format stock label: bold stock value + light blue badge for available
         let totalQuantity = product.quantity.formatStringInCommon()
-        let availableText = availableValue.formatStringInCommon()
+        let availableText = "\(availableValue)"
         
-        let stockLabelText = "Stock".localized() + ": \(totalQuantity)"
-        let availableLabelText = "Available".localized() + ": \(availableText)"
-        let fullStockText = "\(stockLabelText) • \(availableLabelText)"
-        let stockAttributedString = NSMutableAttributedString(string: fullStockText)
+        // Stock part: bold
+        let stockString = NSMutableAttributedString(
+            string: "Stock".localized() + ": ",
+            attributes: [.font: Utils.regularFont(size: 14), .foregroundColor: UIColor.secondaryLabel]
+        )
+        stockString.append(NSAttributedString(
+            string: totalQuantity,
+            attributes: [.font: Utils.boldFont(size: 14), .foregroundColor: UIColor.textPrimary]
+        ))
+        stockLabel.attributedText = stockString
         
-        // Find the range of the available part and color it
-        if let availableRange = fullStockText.range(of: availableLabelText) {
-            let nsRange = NSRange(availableRange, in: fullStockText)
-            stockAttributedString.addAttribute(.foregroundColor, value: APP_TONE_COLOR, range: nsRange)
-        }
-        
-        stockLabel.attributedText = stockAttributedString
+        // Available badge (light blue background)
+        availableBadgeLabel.text = "  " + "Available".localized() + ": \(availableText)  "
+        availableBadgeLabel.isHidden = false
         
         // Rent price value
         let rentPrice = product.rentPrice ?? product.rent
