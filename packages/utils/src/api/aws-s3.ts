@@ -6,17 +6,6 @@ import { Readable } from 'stream';
 // AWS S3 CONFIGURATION
 // ============================================================================
 
-// Validate AWS credentials
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-
-if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-  console.error('❌ Missing AWS credentials:', {
-    hasAccessKey: !!AWS_ACCESS_KEY_ID,
-    hasSecretKey: !!AWS_SECRET_ACCESS_KEY
-  });
-}
-
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
 // Create S3Client function - Production Ready
@@ -41,14 +30,15 @@ function createS3Client() {
   return client;
 }
 
-// Create initial client instance - handle cases where credentials might not be available yet
-let s3Client: S3Client;
-try {
-  s3Client = createS3Client();
-} catch (error) {
-  console.warn('⚠️ S3 client not initialized due to missing credentials:', error instanceof Error ? error.message : 'Unknown error');
-  // Create a placeholder that will be replaced when credentials are available
-  s3Client = new S3Client({ region: AWS_REGION });
+// Lazily initialize S3 client so importing server utilities during build does
+// not emit credential warnings before an S3 operation is actually requested.
+let s3Client: S3Client | undefined;
+
+function getS3Client(): S3Client {
+  if (!s3Client) {
+    s3Client = createS3Client();
+  }
+  return s3Client;
 }
 
 /**
@@ -295,8 +285,8 @@ export async function uploadStreamToS3(
 
   try {
     // Validate AWS credentials (same as uploadToS3)
-    const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
-    const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
+    const cleanAccessKey = (process.env.AWS_ACCESS_KEY_ID || '').trim();
+    const cleanSecretKey = (process.env.AWS_SECRET_ACCESS_KEY || '').trim();
     
     if (!cleanAccessKey || !cleanSecretKey) {
       return {
@@ -536,7 +526,7 @@ export async function generatePresignedUrl(
       ContentType: contentType,
     });
 
-    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    const presignedUrl = await getSignedUrl(getS3Client(), command, { expiresIn });
     return presignedUrl;
   } catch (error) {
     console.error('AWS S3 presigned URL error:', error);
@@ -570,7 +560,7 @@ export async function generateAccessUrl(
       Key: key,
     });
 
-    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    const presignedUrl = await getSignedUrl(getS3Client(), command, { expiresIn });
     return presignedUrl;
   } catch (error) {
     console.error('AWS S3 access URL error:', error);
@@ -675,7 +665,7 @@ export function isS3Url(url: string): boolean {
 // ============================================================================
 
 export {
-  s3Client,
+  getS3Client,
   BUCKET_NAME,
   CLOUDFRONT_DOMAIN,
   createS3Client

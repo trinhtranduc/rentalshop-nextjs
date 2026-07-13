@@ -18,8 +18,7 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
   const normalizedTerm = removeVietnameseDiacritics(searchTerm);
 
   // Step 1: Find customer IDs using unaccent() in PostgreSQL for true diacritics-insensitive search
-  // Always normalize query first: "Hồng" → "hong" → matches "hong", "hồng", "hống" in DB
-  // Use prefix match (LIKE 'term%') not substring (LIKE '%term%')
+  // "Hồng" → normalized "hong" → matches "hong", "hồng", "hống", "Hồng" in DB
   let matchingCustomerIds: number[] = [];
   try {
     const searchPattern = `${normalizedTerm.toLowerCase()}%`;
@@ -39,13 +38,13 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
     // unaccent extension not available — fallback silently
   }
 
-  // Step 2: Build Prisma OR conditions using startsWith (prefix match)
-  // All name searches use normalizedTerm (diacritics stripped)
-  // "ho" matches "Hồng" (prefix) but NOT "Thompson" (not prefix)
+  // Step 2: Build Prisma OR conditions
+  // All name searches use normalizedTerm (diacritics stripped) with startsWith (prefix match)
+  // orderNumber and phone keep original searchTerm (they don't have diacritics)
   const conditions: any[] = [
     { orderNumber: { startsWith: searchTerm, mode: 'insensitive' } },
     { customer: { phone: { startsWith: searchTerm, mode: 'insensitive' } } },
-    // Name search always uses normalized term
+    // Name search always uses normalized term — "Hồng" and "hong" both become "hong"
     { customer: { firstName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
     { customer: { lastName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
   ];
@@ -86,6 +85,9 @@ export interface OrderWithRelations {
   discountType?: string
   discountValue: number
   discountAmount: number
+  loyaltyPointsRedeemed: number
+  loyaltyDiscount: number
+  loyaltyPointsEarned: number
   pickupPlanAt?: Date
   returnPlanAt?: Date
   pickedUpAt?: Date
@@ -262,6 +264,9 @@ function transformOrder(order: any): OrderWithRelations {
     discountType: order.discountType || undefined,
     discountValue: order.discountValue ?? 0,
     discountAmount: order.discountAmount ?? 0,
+    loyaltyPointsRedeemed: order.loyaltyPointsRedeemed ?? 0,
+    loyaltyDiscount: order.loyaltyDiscount ?? 0,
+    loyaltyPointsEarned: order.loyaltyPointsEarned ?? 0,
     pickupPlanAt: order.pickupPlanAt || undefined,
     returnPlanAt: order.returnPlanAt || undefined,
     pickedUpAt: order.pickedUpAt || undefined,

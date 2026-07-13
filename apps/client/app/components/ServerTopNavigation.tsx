@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@rentalshop/ui';
+import { Button, Logo } from '@rentalshop/ui';
 import { 
   Home, 
   ShoppingCart, 
@@ -135,14 +135,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">AnyRent</h1>
-              </div>
-            </div>
+            <Logo size="sm" variant="blue" showLabel labelText="AnyRent" />
           </div>
 
           {/* Navigation Links */}

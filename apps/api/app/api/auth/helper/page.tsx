@@ -1,7 +1,40 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@rentalshop/ui';
+import { useState, type ReactNode } from 'react';
+
+type ActionButtonProps = {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'destructive';
+};
+
+function ActionButton({
+  children,
+  className = '',
+  disabled = false,
+  onClick,
+  variant = 'primary',
+}: ActionButtonProps) {
+  const variantClass =
+    variant === 'secondary'
+      ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+      : variant === 'destructive'
+        ? 'bg-red-600 text-white hover:bg-red-700'
+        : 'bg-blue-600 text-white hover:bg-blue-700';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-md px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantClass} ${className}`.trim()}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function AuthHelperPage() {
   const [email, setEmail] = useState('test@example.com');
@@ -119,21 +152,21 @@ export default function AuthHelperPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button
+            <ActionButton
               onClick={handleLogin}
               disabled={loading}
               className="flex-1 py-2 px-4"
             >
               {loading ? 'Loading...' : 'Login'}
-            </Button>
-            <Button
-              variant="default"
+            </ActionButton>
+            <ActionButton
+              variant="primary"
               onClick={handleRegister}
               disabled={loading}
               className="flex-1 py-2 px-4"
             >
               {loading ? 'Loading...' : 'Register'}
-            </Button>
+            </ActionButton>
           </div>
 
           {message && (
@@ -151,20 +184,20 @@ export default function AuthHelperPage() {
                 {token}
               </div>
               <div className="flex gap-2 mt-3">
-                <Button
+                <ActionButton
                   variant="secondary"
                   onClick={copyToken}
                   className="py-1 px-3 text-sm"
                 >
                   Copy Token
-                </Button>
-                <Button
+                </ActionButton>
+                <ActionButton
                   variant="destructive"
                   onClick={clearToken}
                   className="py-1 px-3 text-sm"
                 >
                   Clear Token
-                </Button>
+                </ActionButton>
               </div>
             </div>
           )}

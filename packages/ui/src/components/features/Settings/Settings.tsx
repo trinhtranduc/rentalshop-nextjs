@@ -116,9 +116,9 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   // Get tab from URL or default to 'profile'
   const tabFromUrl = searchParams.get('tab') || 'profile';
   
-  // Avoid showing subscription tab until role is known (outlets must not flash subscription UI)
+  // Avoid showing moved/guarded tabs until role is known
   const [activeSection, setActiveSection] = useState(
-    tabFromUrl === 'subscription' ? 'profile' : tabFromUrl
+    tabFromUrl === 'subscription' || tabFromUrl === 'loyalty' ? 'profile' : tabFromUrl
   );
   
   // Profile editing state
@@ -178,6 +178,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   // Sync URL → active section; subscription tab only for MERCHANT after role is loaded
   useEffect(() => {
     const tab = searchParams.get('tab') || 'profile';
+
+    if (tab === 'loyalty') {
+      setActiveSection('profile');
+      router.replace('/loyalty');
+      return;
+    }
 
     if (tab === 'subscription') {
       if (!user?.role) {

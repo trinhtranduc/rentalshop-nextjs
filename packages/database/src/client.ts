@@ -66,5 +66,16 @@ function getPrismaClient(): PrismaClientType {
   }
 }
 
-// Export Prisma client instance with lazy initialization
-export const prisma = getPrismaClient(); 
+function createPrismaProxy(): PrismaClientType {
+  return new Proxy({} as PrismaClientType, {
+    get(_target, prop, receiver) {
+      const client = getPrismaClient() as unknown as Record<PropertyKey, unknown>;
+      const value = Reflect.get(client, prop, receiver);
+      return typeof value === 'function' ? value.bind(client) : value;
+    },
+  });
+}
+
+// Export Prisma client as a lazy proxy so importing database modules does not
+// eagerly initialize the Prisma engine during build-time analysis.
+export const prisma = createPrismaProxy();

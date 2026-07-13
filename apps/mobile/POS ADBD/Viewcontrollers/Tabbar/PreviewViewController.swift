@@ -523,6 +523,11 @@ class PreviewViewController: BaseViewControler {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if let cartViewModel = viewModel as? CartViewModel {
+            cartViewModel.refreshLoyalty { [weak self] in
+                self?.updateSummaryValues()
+            }
+        }
         // Update summary with calculations
         updateSummaryValues()
         
@@ -2028,58 +2033,33 @@ class PreviewViewController: BaseViewControler {
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
 extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
-    // Helper function to map section index to PreviewSection
-    // This handles the case where depositInfo section may not be shown
-    private func previewSection(for sectionIndex: Int) -> PreviewSection? {
-        let hasDeposit = viewModel.shouldShowDepositInfo
-        
-        // Order: customerInfo → dates → products → depositInfo → notes → summary
-        switch sectionIndex {
-        case 0:
-            return .customerInfo
-        case 1:
-            return .dates
-        case 2:
-            return .products
-        case 3:
-            return hasDeposit ? .depositInfo : .notes
-        case 4:
-            return hasDeposit ? .notes : .summary
-        case 5:
-            return hasDeposit ? .summary : nil
-        default:
-            return nil
+    private func visibleSections() -> [PreviewSection] {
+        var sections: [PreviewSection] = [.customerInfo, .dates, .products]
+        if viewModel.shouldShowDepositInfo {
+            sections.append(.depositInfo)
         }
+        sections.append(.notes)
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyFeatureEnabled {
+            sections.append(.loyalty)
+        }
+        sections.append(.summary)
+        return sections
+    }
+
+    // Helper function to map section index to PreviewSection
+    private func previewSection(for sectionIndex: Int) -> PreviewSection? {
+        let sections = visibleSections()
+        guard sectionIndex >= 0, sectionIndex < sections.count else { return nil }
+        return sections[sectionIndex]
     }
     
     // Helper function to get section index from PreviewSection
-    // This handles the case where depositInfo section may not be shown
     private func sectionIndex(for previewSection: PreviewSection) -> Int? {
-        let hasDeposit = viewModel.shouldShowDepositInfo
-        
-        switch previewSection {
-        case .customerInfo:
-            return 0
-        case .dates:
-            return 1
-        case .products:
-            return 2
-        case .depositInfo:
-            return hasDeposit ? 3 : nil
-        case .notes:
-            return hasDeposit ? 4 : 3
-        case .summary:
-            return hasDeposit ? 5 : 4
-        }
+        return visibleSections().firstIndex(of: previewSection)
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        // Customer (merged with outlet), dates, products, deposit (if rent), notes, summary
-        var count = 5 // customer (merged), dates, products, notes, summary
-        if viewModel.shouldShowDepositInfo {
-            count += 1 // deposit section
-        }
-        return count
+        return visibleSections().count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -2096,9 +2076,38 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             return viewModel.shouldShowDepositInfo ? 3 : 0 // Document, Security Deposit, Damage Fee
         case .notes:
             return 1 // Notes
+        case .loyalty:
+            return 2 // Balance, redeem points
         case .summary:
-            return 3 // Subtotal, Discount, Grand Total (Deposit moved to dates section)
+            return summaryRowCount()
         }
+    }
+
+    private func summaryRowCount() -> Int {
+        var count = 3 // Subtotal, Discount, Grand Total
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyDiscount > 0 {
+            count += 2 // Loyalty discount, Amount due
+        } else if let orderViewModel = viewModel as? OrderViewModel, orderViewModel.currentOrder.loyaltyDiscount > 0 {
+            count += 2
+        }
+        return count
+    }
+
+    private func summaryRows() -> [(title: String, value: String, isHighlighted: Bool)] {
+        var rows: [(title: String, value: String, isHighlighted: Bool)] = []
+        rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
+        rows.append(("Discount".localized(), viewModel.discountText, false))
+        rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
+
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyDiscount > 0 {
+            rows.append(("Loyalty Discount".localized(), cartViewModel.loyaltyDiscount.formatStringInCommon(), false))
+            rows.append(("Amount Due".localized(), cartViewModel.loyaltyAmountDue.formatStringInCommon(), true))
+        } else if let orderViewModel = viewModel as? OrderViewModel, orderViewModel.currentOrder.loyaltyDiscount > 0 {
+            rows.append(("Loyalty Discount".localized(), orderViewModel.currentOrder.loyaltyDiscount.formatStringInCommon(), false))
+            rows.append(("Amount Due".localized(), orderViewModel.currentOrder.amountDue.formatStringInCommon(), true))
+        }
+
+        return rows
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -2295,6 +2304,32 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             let noteText = viewModel.notes.isEmpty ? nil : viewModel.notes
             cell.bind(noteText: noteText, images: noteImages, imageURLs: noteImageURLs)
             return cell
+
+        case .loyalty:
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: "LoyaltyCell")
+            var config = cell.defaultContentConfiguration()
+            guard let cartViewModel = viewModel as? CartViewModel else {
+                return cell
+            }
+
+            switch indexPath.row {
+            case 0:
+                config.text = "Balance".localized()
+                config.secondaryText = "\(cartViewModel.loyaltyBalance)"
+                cell.selectionStyle = .none
+            case 1:
+                config.text = "Use Points".localized()
+                config.secondaryText = cartViewModel.loyaltyUsePoints ? "\(cartViewModel.loyaltyRedeemPoints)" : "0"
+                cell.selectionStyle = .default
+                cell.accessoryType = .disclosureIndicator
+            default:
+                break
+            }
+
+            config.textProperties.font = Utils.regularFont(size: 16)
+            config.secondaryTextProperties.font = Utils.boldFont(size: 16)
+            cell.contentConfiguration = config
+            return cell
             
         case .products:
             let cell = tableView.dequeueReusableCell(withIdentifier: "ProductPreviewCell", for: indexPath) as! ProductPreviewCell
@@ -2343,17 +2378,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .summary:
             let cell = UITableViewCell(style: .value1, reuseIdentifier: "SummaryCell")
             var config = cell.defaultContentConfiguration()
-            
-            // Build rows array (Deposit moved to dates section)
-            var rows: [(title: String, value: String, isHighlighted: Bool)] = []
-            rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
-            rows.append(("Discount".localized(), viewModel.discountText, false))
-            rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
-            
-            // To Collect row is hidden
-            // rows.append(("To Collect".localized(), viewModel.toCollectAmount.formatStringInCommon(), true))
-            
-            // Get row data
+            let rows = summaryRows()
             if indexPath.row < rows.count {
                 let row = rows[indexPath.row]
                 config.text = row.title
@@ -2426,6 +2451,11 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         
         guard let previewSection = previewSection(for: indexPath.section) else { return }
         
+        if previewSection == .loyalty, indexPath.row == 1, let cartViewModel = viewModel as? CartViewModel {
+            showLoyaltyRedeemDialog(cartViewModel: cartViewModel)
+            return
+        }
+        
         // Handle customer info section - Phone row tap to make call
         if previewSection == .customerInfo && indexPath.row == 1 {
             // Make phone call when phone number row is tapped
@@ -2488,6 +2518,39 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    private func showLoyaltyRedeemDialog(cartViewModel: CartViewModel) {
+        let alert = UIAlertController(
+            title: "Use Loyalty Points".localized(),
+            message: "Available: \(cartViewModel.loyaltyBalance) points",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.keyboardType = .numberPad
+            textField.placeholder = "Points to redeem"
+            textField.text = cartViewModel.loyaltyUsePoints ? "\(cartViewModel.loyaltyRedeemPoints)" : ""
+        }
+
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "Clear".localized(), style: .destructive) { [weak self] _ in
+            cartViewModel.setLoyaltyUsePoints(false)
+            self?.updateSummaryValues()
+        })
+        alert.addAction(UIAlertAction(title: "Apply".localized(), style: .default) { [weak self] _ in
+            let raw = alert.textFields?.first?.text ?? ""
+            let points = Int(raw) ?? 0
+            cartViewModel.setLoyaltyUsePoints(points > 0)
+            cartViewModel.setLoyaltyRedeemPoints(points)
+            cartViewModel.validateLoyaltyRedeem {
+                DispatchQueue.main.async {
+                    self?.updateSummaryValues()
+                }
+            }
+        })
+
+        present(alert, animated: true)
+    }
+
     private func showDocumentInput() {
         let alert = UIAlertController(title: "Document".localized(), message: "Enter ID card, driver's license...".localized(), preferredStyle: .alert)
         

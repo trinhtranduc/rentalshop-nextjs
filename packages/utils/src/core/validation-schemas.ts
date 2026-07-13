@@ -308,6 +308,9 @@ const baseOrderSchema = z.object({
   returnNotesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for return notes
   damageNotes: z.string().optional(),
   damageNotesImages: z.array(z.string().url()).optional().nullable(), // Array of image URLs for damage notes
+  loyaltyRedeem: z.object({
+    points: z.number().int().positive('Redeem points must be positive'),
+  }).optional(),
 });
 
 export const orderCreateSchema = baseOrderSchema;
@@ -649,3 +652,80 @@ export interface PlanLimitsInfo {
     productPublicCheck: boolean;
   };
 }
+
+// ============================================================================
+// LOYALTY VALIDATION SCHEMAS
+// ============================================================================
+
+export const loyaltyProgramSchema = z.object({
+  name: z.string().min(1),
+  isActive: z.boolean().optional(),
+  rentEarnEnabled: z.boolean().optional(),
+  rentEarnRate: z.number().int().positive().optional(),
+  rentEarnPerAmount: z.number().positive().optional(),
+  saleEarnEnabled: z.boolean().optional(),
+  saleEarnRate: z.number().int().positive().optional(),
+  saleEarnPerAmount: z.number().positive().optional(),
+  pointValue: z.number().positive().optional(),
+  minRedeemPoints: z.number().int().min(1).optional(),
+  maxRedeemPercent: z.number().min(1).max(100).optional(),
+  redeemOnRent: z.boolean().optional(),
+  redeemOnSale: z.boolean().optional(),
+  tierMetric: z.enum(['total_spend', 'total_orders']).optional(),
+  tierPeriod: z.enum(['lifetime', 'yearly']).optional(),
+  tierDowngrade: z.enum(['never', 'immediate', 'grace_30d']).optional(),
+  pointsExpiryMode: z.enum(['never', 'per_transaction', 'yearly_reset']).optional(),
+  pointsExpiryDays: z.number().int().positive().nullable().optional(),
+  yearlyResetMonth: z.number().int().min(1).max(12).nullable().optional(),
+  yearlyResetDay: z.number().int().min(1).max(28).nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (data.pointsExpiryMode === 'per_transaction' && (!data.pointsExpiryDays || data.pointsExpiryDays <= 0)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'pointsExpiryDays required for per_transaction mode', path: ['pointsExpiryDays'] });
+  }
+  if (data.pointsExpiryMode === 'yearly_reset') {
+    if (!data.yearlyResetMonth) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'yearlyResetMonth required for yearly_reset mode', path: ['yearlyResetMonth'] });
+    }
+    if (!data.yearlyResetDay) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'yearlyResetDay required for yearly_reset mode', path: ['yearlyResetDay'] });
+    }
+  }
+});
+
+export const loyaltyTierCreateSchema = z.object({
+  name: z.string().min(1),
+  threshold: z.number().nonnegative(),
+  multiplier: z.number().min(1),
+  benefits: z.string().optional(),
+  color: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(),
+  sortOrder: z.number().int().nonnegative().optional(),
+});
+
+export const loyaltyTierUpdateSchema = loyaltyTierCreateSchema.partial();
+
+export const loyaltyValidateRedeemSchema = z.object({
+  customerId: z.coerce.number().int().positive(),
+  points: z.number().int().positive(),
+  orderTotalAmount: z.number().nonnegative(),
+  orderType: orderTypeEnum,
+});
+
+export const loyaltyCalculateEarnSchema = z.object({
+  customerId: z.coerce.number().int().positive(),
+  orderType: orderTypeEnum,
+  orderTotalAmount: z.number().nonnegative(),
+  loyaltyDiscount: z.number().nonnegative().optional().default(0),
+});
+
+export const loyaltyAdjustSchema = z.object({
+  customerId: z.coerce.number().int().positive(),
+  points: z.number().int().refine((val) => val !== 0, 'Points adjustment cannot be zero'),
+  reason: z.string().min(1),
+});
+
+export const loyaltyTransactionsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.enum(['earn', 'redeem', 'adjust', 'refund', 'expire', 'tier_upgrade']).optional(),
+});

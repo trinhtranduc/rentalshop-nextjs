@@ -178,13 +178,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Logo & Welcome */}
         <div className="text-center mb-8">
           <div className="inline-block">
-            <Logo 
-              size="2xl" 
-              variant="custom" 
-              src="/anyrent-logo-light.svg" 
-              showBackground={false}
-              blueStroke={true}
-            />
+            <Logo size="2xl" variant="blue" />
           </div>
           <h1 className="mt-6 text-3xl font-bold text-gray-900">
             {isAdmin ? "Admin Portal" : t('login.title')}

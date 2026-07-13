@@ -363,7 +363,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   }, [orderItems, calculateRentalDays]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (
+    e: React.FormEvent,
+    loyaltyRedeem?: { points: number }
+  ) => {
     e.preventDefault();
     
     // Use the ref to get the latest orderItems state to avoid stale closure issues
@@ -405,7 +408,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           unitPrice: item.unitPrice,
           deposit: item.deposit ?? 0,
           notes: item.notes || '',
-        }))
+        })),
+        ...(loyaltyRedeem ? { loyaltyRedeem } : {}),
       };
       
       // Add order ID for edit mode

@@ -3,7 +3,7 @@
 // ============================================================================
 // Functions for validating and checking plan limits
 
-import { prisma } from '@rentalshop/database';
+import { prisma, db } from '@rentalshop/database';
 import { ApiError, ErrorCode } from '../errors';
 import { PlanLimits } from '@rentalshop/constants';
 import type { PlanLimitsInfo, PlanLimitsValidationResult } from '../validation-schemas';
@@ -132,7 +132,6 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     const platform = features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
 
     // Get addon limits and add them to plan limits
-    const { db } = await import('@rentalshop/database');
     const addonLimits = await db.planLimitAddons.calculateTotal(merchantId);
     
     // Store base plan limits (before adding addons) for reference

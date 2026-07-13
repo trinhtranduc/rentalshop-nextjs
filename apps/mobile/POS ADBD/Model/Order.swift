@@ -196,6 +196,9 @@ struct Order: Codable {
     let itemCount: Int
     let paymentCount: Int
     let totalPaid: Double
+    let loyaltyPointsRedeemed: Int
+    let loyaltyDiscount: Double
+    let loyaltyPointsEarned: Int
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -254,6 +257,9 @@ struct Order: Codable {
         case itemCount
         case paymentCount
         case totalPaid
+        case loyaltyPointsRedeemed
+        case loyaltyDiscount
+        case loyaltyPointsEarned
     }
     
     // MARK: - Custom Decoding
@@ -333,6 +339,13 @@ struct Order: Codable {
         itemCount = try container.decode(Int.self, forKey: .itemCount)
         paymentCount = try container.decode(Int.self, forKey: .paymentCount)
         totalPaid = try container.decode(Double.self, forKey: .totalPaid)
+        loyaltyPointsRedeemed = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsRedeemed) ?? 0
+        loyaltyDiscount = try container.decodeIfPresent(Double.self, forKey: .loyaltyDiscount) ?? 0
+        loyaltyPointsEarned = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsEarned) ?? 0
+    }
+    
+    var amountDue: Double {
+        return max(0, totalAmount - loyaltyDiscount)
     }
     
     // MARK: - Computed Properties
@@ -416,7 +429,10 @@ struct Order: Codable {
         orderItems: [OrderItem],
         itemCount: Int,
         paymentCount: Int,
-        totalPaid: Double
+        totalPaid: Double,
+        loyaltyPointsRedeemed: Int = 0,
+        loyaltyDiscount: Double = 0,
+        loyaltyPointsEarned: Int = 0
     ) {
         self.id = id
         self.orderNumber = orderNumber
@@ -464,6 +480,9 @@ struct Order: Codable {
         self.itemCount = itemCount
         self.paymentCount = paymentCount
         self.totalPaid = totalPaid
+        self.loyaltyPointsRedeemed = loyaltyPointsRedeemed
+        self.loyaltyDiscount = loyaltyDiscount
+        self.loyaltyPointsEarned = loyaltyPointsEarned
     }
 }
 

@@ -418,10 +418,10 @@ class MainViewController: BaseViewControler {
     
     @objc private func aiSearchTapped() {
         // Open ImageSearchViewController for AI image search
-        let imageSearchVC = ImageSearchViewController()
-        let navController = UINavigationController(rootViewController: imageSearchVC)
-        navController.modalPresentationStyle = .fullScreen
-        present(navController, animated: true)
+//        let imageSearchVC = ImageSearchViewController()
+//        let navController = UINavigationController(rootViewController: imageSearchVC)
+//        navController.modalPresentationStyle = .fullScreen
+//        present(navController, animated: true)
     }
     
     private func checkCameraPermission() -> Bool {

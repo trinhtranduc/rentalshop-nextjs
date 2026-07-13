@@ -1,0 +1,59 @@
+# Tasks — Loyalty Program (refactor về chuẩn)
+
+> Đưa code loyalty hiện tại về đúng `architecture.md`. Thứ tự theo dependency + rủi ro (làm cái nền + rủi ro cao trước). Mỗi task ghi rõ file, tiêu chí done, và invariant liên quan.
+> Ký hiệu: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
+
+## Nhóm 0 — Nền tảng (làm trước, ít rủi ro)
+
+- [ ] **T0.1 — Hằng số & vocabulary.** `packages/loyalty/src/constants.ts`: export `TX_TYPE = {EARN,REDEEM,ADJUST,REFUND,TIER_UPGRADE}`, `TX_SOURCE = {SYNC:'sync'}`, các `LOYALTY_ERROR` codes (§8). Thay mọi chuỗi hard-code rải rác.
+  - _Done:_ không còn literal `'earn'`/`'Đồng bộ'` trong logic; grep sạch.
+
+- [ ] **T0.2 — Pure calc module.** Tách `packages/loyalty/src/calc.ts`: `calcEarnPoints`, `calcMaxRedeemable`, `evaluateTier` — thuần, không chạm DB. Earn/redeem/tier import từ đây.
+  - _Done:_ có unit test cho biên (floor, multiplier, cap %, remaining).
+
+- [x] **T0.3 — Partial unique index chống earn trùng (INV-4).** ✅ Migration `20260712000000_loyalty_tx_unique_per_order`: partial unique index earn + redeem (một-lần-mỗi-đơn) + dedup phòng ngừa. Áp khi `prisma migrate deploy` (start.sh).
+
+## Nhóm 1 — Sửa 2 bug rủi ro cao nhất
+
+- [x] **T1.1 — Fail-open cho status route (#4, INV-6).** ✅ `status/route.ts`: bọc try/catch fail-open quanh CANCELLED/RETURNED hook; gate chỉ chạy khi status ∈ {CANCELLED, RETURNED} (gộp luôn T2.2 cho route này).
+
+- [x] **T1.2 — Sync về ledger-authoritative (#1,#2,#3,#8, §6a).** ✅ Viết lại `sync-history/route.ts`: xóa backfill cũ theo `metadata.source='sync'`; query đơn `NOT EXISTS(earn tx)`; tạo 1 `adjust`(source=sync)/customer; **derive** points/earned/redeemed từ ledger + spent/orders từ Order + tier từ metric. Bỏ `loyaltyPointLot.deleteMany`.
+  - _Còn thiếu:_ integration test scenario "ngày 10" (cần DB) — sẽ làm ở nhóm test.
+
+## Nhóm 2 — Race-safety & perf
+
+- [x] **T2.1 — Redeem guard nguyên tử (#5, INV-5).** ✅ ĐÃ ĐẠT sẵn trong `order-hooks.ts:224` (`updateMany WHERE points>=N` + check `count===1`). Không cần sửa. (Verify lại khi viết test concurrent.)
+
+- [x] **T2.2 — Gate perf (#6, INV-7).** ✅ Status route: chỉ gọi khi CANCELLED/RETURNED. `orders/route.ts` create: resolve `merchantHasLoyaltyFeature` **1 lần**, chỉ khi có ý định loyalty (redeem hoặc SALE+customer).
+
+## Nhóm 3 — Hoàn thiện nghiệp vụ
+
+- [x] **T3.1 — Tách endpoint re-eval hạng (§6b).** ✅ `POST /api/loyalty/reevaluate-tiers` (`loyalty.manage`): `reevaluateMerchantTiers` tính lại `totalSpent/totalOrders` + `currentTierId` (never-downgrade), KHÔNG đụng điểm, log `tier_upgrade`.
+
+- [x] **T3.2 — Recalculate balance admin (§6c, Req 12.5).** ✅ `POST /api/loyalty/recalculate` (`loyalty.adjust`): `deriveMerchantLoyaltyCache` derive toàn bộ cache từ ledger + orders. Helper chung ở `apps/api/lib/loyalty-derive.ts`, dùng lại bởi cả `sync-history`.
+
+- [~] **T3.3 — Luồng edit đơn (Req 7, #7).** `orders/[orderId]/route.ts` (PUT):
+  - [x] (a) sửa làm `finalAmount<0` → **REJECT 400** (`REDEEM_EXCEEDS_TOTAL`) — quyết định đã chốt.
+  - [x] (b) đổi `customerId` → reverse loyalty customer cũ (`handleLoyaltyOnCancel`), không auto-apply customer mới.
+  - [ ] (c) sửa item SALE đã earn → tạo `adjust` chênh lệch earn *(chưa làm — phức tạp, ít gặp)*.
+  - _Còn:_ (c) + test 3 kịch bản.
+
+## Nhóm 4 — Chốt chất lượng
+
+- [ ] **T4.1 — Dọn point lots khỏi runtime V1 (§9).** Gỡ import `expiry.ts` + mọi lời gọi tạo/xóa lot khỏi earn/sync. Giữ model + file như hạ tầng ngủ. Ghi chú Phase 2.
+  - _Done:_ grep runtime không còn `loyaltyPointLot.` trong luồng V1.
+
+- [x] **T4.2 — Verify `amountDue` không đổi cho đơn cũ.** ✅ `amountDue` KHÔNG tồn tại trên `main` → field mới additive. `calculateAmountDue = max(0, total − loyaltyDiscount)`; đơn cũ loyaltyDiscount=0 → amountDue=totalAmount. Không regression.
+
+- [ ] **T4.3 — Guard "không plan cũ nào chứa loyalty".** Chạy trên DB thật trước khi bật:
+  ```sql
+  SELECT id, name, features FROM "Plan" WHERE features ILIKE '%loyalty%';
+  ```
+  Kỳ vọng: 0 dòng (hoặc chỉ đúng plan Professional/Enterprise bạn CHỦ ĐỘNG bật).
+
+- [ ] **T4.4 — Smoke test luồng cũ.** Merchant KHÔNG loyalty: tạo/sửa/hủy/trả đơn → hành vi = trước merge (INV-7).
+
+## Thứ tự thực thi
+`T0.1 → T0.2 → T0.3 → T1.1 → T1.2 → T2.1 → T2.2 → T3.1 → T3.2 → T3.3 → T4.*`
+
+Bắt đầu ngay: **T1.1 (fail-open)** và **T1.2 (sync ledger)** — 2 việc rủi ro cao nhất, đã đủ ngữ cảnh làm.

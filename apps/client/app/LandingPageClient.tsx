@@ -5,12 +5,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
+import { Button, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import { User } from 'lucide-react'
 import { createSchemas, createFAQSchema } from './lib/schemas'
+import { getAnyRentLogoUrl } from '../lib/brand'
+import { LandingBrandLogo } from './components/LandingBrandLogo'
 
 // Import Blog Section (Client Component that calls API)
 import BlogSection from './components/BlogSection'
@@ -75,7 +77,7 @@ const LandingPage = () => {
     '@type': 'Organization',
     name: 'AnyRent',
     url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
-    logo: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
+    logo: getAnyRentLogoUrl(),
     description: t('hero.description'),
     sameAs: [
       'https://apps.apple.com/vn/app/anyrent/id6754793592',
@@ -142,7 +144,7 @@ const LandingPage = () => {
       name: 'AnyRent',
       logo: {
         '@type': 'ImageObject',
-        url: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
+        url: getAnyRentLogoUrl(),
       },
     },
     datePublished: '2024-01-01',
@@ -155,7 +157,7 @@ const LandingPage = () => {
 
   // LocalBusiness Schema for Vietnam targeting
   const baseUrl = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
-  const logoUrl = `${baseUrl}/anyrent-logo-light.svg`;
+  const logoUrl = getAnyRentLogoUrl(baseUrl);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const localBusinessData: any = {
     '@context': 'https://schema.org',
@@ -299,14 +301,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <Logo 
-                  size="md" 
-                  variant="custom" 
-                  src="/anyrent-logo-light.svg"
-                  showLabel={true}
-                  labelText="AnyRent"
-                  showBackground={false}
-                />
+                <LandingBrandLogo />
               </Link>
               <div className="hidden md:flex items-center space-x-8">
                 <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
@@ -1671,10 +1666,8 @@ const Footer = React.memo(() => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-12 gap-8">
           <div className="md:col-span-4">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
-                <Store className="w-6 h-6 text-white" />
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <LandingBrandLogo size="sm" showLabel={false} />
               <span className="text-xl font-bold text-white">AnyRent</span>
             </div>
             <p className="text-gray-400 mb-4 text-sm">
