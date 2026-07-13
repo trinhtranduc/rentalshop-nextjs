@@ -115,6 +115,26 @@ fi
 echo ""
 
 # ============================================================================
+# Step 5b: Pin Prisma Query Engine location (bypass bundle path resolution)
+# ============================================================================
+# The Next.js webpack bundle resolves ".prisma/client" relative to the emitted
+# chunk, so it often can't find the native engine even after we copy it around.
+# Setting PRISMA_QUERY_ENGINE_LIBRARY to the absolute path of the engine binary
+# makes the Prisma "library" engine load it directly and skip all path search.
+echo "🔧 Step 5b: Pinning Prisma Query Engine library path..."
+ENGINE_SRC="../../node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"
+if [ -f "$ENGINE_SRC" ]; then
+  # Resolve to an absolute path (start.sh runs from apps/api)
+  export PRISMA_QUERY_ENGINE_LIBRARY="$(cd "$(dirname "$ENGINE_SRC")" && pwd)/$(basename "$ENGINE_SRC")"
+  echo "✅ PRISMA_QUERY_ENGINE_LIBRARY=$PRISMA_QUERY_ENGINE_LIBRARY"
+else
+  echo "❌ Engine binary not found at $ENGINE_SRC"
+  echo "   Available engines in ../../node_modules/.prisma/client:"
+  ls -la ../../node_modules/.prisma/client/libquery_engine-* 2>&1 || echo "   (none)"
+fi
+echo ""
+
+# ============================================================================
 # Step 6: Start Next.js Server
 # ============================================================================
 echo "🌐 Step 6: Starting Next.js server on port 3002..."
