@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_BASE_URL</key>
+	<string>$(INFOPLIST_KEY_API_BASE_URL)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>AnyRent</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string>anyrent</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>AnyRent</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>12</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.business</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>AnyRent uses Bluetooth to connect with nearby rental devices such as printers or scanners used in daily shop operations.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>AnyRent uses Bluetooth to communicate with peripheral devices used by rental shop staff</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AnyRent uses the camera to allow staff to take photos of rental items and documents for inventory and rental records.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AnyRent uses location information to support operational features such as identifying the shop location and improving service reliability.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AnyRent does not record audio and only requests microphone access if required by the operating system for specific system features.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AnyRent accesses the photo library to allow staff to upload existing photos of rental items and documents.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>SFUIText-Regular.tff</string>
+		<string>SFUIText-RegularItalic.tff</string>
+		<string>SFUIText-Light.tff</string>
+		<string>SFUIText-LightItalic.tff</string>
+		<string>SFUIText-Medium.tff</string>
+		<string>SFUIText-MediumItalic.tff</string>
+		<string>SFUIText-Semibold.tff</string>
+		<string>SFUIText-SemiboldItalic.tff</string>
+		<string>inter-black.ttf</string>
+		<string>inter-bold.ttf</string>
+		<string>inter-extra-bold.ttf</string>
+		<string>inter-extra-light.ttf</string>
+		<string>inter-light.ttf</string>
+		<string>inter-medium.ttf</string>
+		<string>inter-regular.ttf</string>
+		<string>inter-semi-bold.ttf</string>
+		<string>inter-thin.ttf</string>
+		<string>gowun-batang-regular.ttf</string>
+		<string>nanum-myeongjo-regular.ttf</string>
+		<string>nanum-gothic-regular.ttf</string>
+		<string>open-sans-regular.ttf</string>
+		<string>dmseriftext-regular.ttf</string>
+		<string>poppins-regular.ttf</string>
+		<string>roboto-regular.ttf</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>
