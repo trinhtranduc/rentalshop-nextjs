@@ -341,24 +341,15 @@ export async function searchCustomers(
   // Search only starts from 2 characters minimum
   if (q && q.trim()) {
     const searchQuery = q.trim();
-    // Normalize Vietnamese text to support search without diacritics
+    // Normalize Vietnamese text: "Hồng" → "hong" — always search with normalized form
     const normalizedQuery = removeVietnameseDiacritics(searchQuery);
     
-    // Search with both original and normalized terms to support diacritics-insensitive search
-    // Only search in firstName, lastName, and phone
+    // Use startsWith (prefix match) — "ho" matches "Hồng" but NOT "Thompson"
     const searchConditions: any[] = [
-      { firstName: { contains: searchQuery, mode: 'insensitive' } },
-      { lastName: { contains: searchQuery, mode: 'insensitive' } },
-      { phone: { contains: searchQuery } } // Phone numbers search
+      { firstName: { startsWith: normalizedQuery, mode: 'insensitive' } },
+      { lastName: { startsWith: normalizedQuery, mode: 'insensitive' } },
+      { phone: { startsWith: searchQuery } } // Phone uses original term
     ];
-    
-    // Add normalized search if different from original
-    if (normalizedQuery !== searchQuery) {
-      searchConditions.push(
-        { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
-        { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
-      );
-    }
     
     where.OR = searchConditions;
   }
@@ -677,18 +668,10 @@ export const simplifiedCustomers = {
         
         // Only search in firstName, lastName, and phone
         const searchConditions: any[] = [
-          { firstName: { contains: searchTerm, mode: 'insensitive' } },
-          { lastName: { contains: searchTerm, mode: 'insensitive' } },
-          { phone: { contains: searchTerm, mode: 'insensitive' } }
+          { firstName: { startsWith: normalizedTerm, mode: 'insensitive' } },
+          { lastName: { startsWith: normalizedTerm, mode: 'insensitive' } },
+          { phone: { startsWith: searchTerm, mode: 'insensitive' } }
         ];
-        
-        // Add normalized search for name fields if different from original
-        if (normalizedTerm !== searchTerm) {
-          searchConditions.push(
-            { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
-            { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
-          );
-        }
         
         // Merge with existing OR conditions if any
         if (where.OR) {
