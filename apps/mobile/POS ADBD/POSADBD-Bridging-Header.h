@@ -9,13 +9,6 @@
 #ifndef POSADBD_Bridging_Header_h
 #define POSADBD_Bridging_Header_h
 
-// Import CIImageValidator (Objective-C++ wrapper)
-// Note: CIImageValidator.mm will handle OpenCV imports internally
-#import "CIImageValidator.h"
-
-#ifdef __cplusplus
-#import <opencv2/opencv.hpp>
-#import <opencv2/imgcodecs/ios.h>
-#endif
+// OpenCV and ImageValidator removed — not needed for current build
 
 #endif /* POSADBD_Bridging_Header_h */
