@@ -17,10 +17,12 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
   const searchTerm = searchInput.trim();
   const normalizedTerm = removeVietnameseDiacritics(searchTerm);
 
-  // Step 1: Find customer IDs using unaccent() for diacritics-insensitive search
+  // Step 1: Find customer IDs using unaccent() in PostgreSQL for true diacritics-insensitive search
+  // Always normalize query first: "Hồng" → "hong" → matches "hong", "hồng", "hống" in DB
+  // Use prefix match (LIKE 'term%') — matches word start, not mid-word substring
   let matchingCustomerIds: number[] = [];
   try {
-    const searchPattern = `%${normalizedTerm.toLowerCase()}%`;
+    const searchPattern = `${normalizedTerm.toLowerCase()}%`;
     const customerResults: Array<{ id: number }> = await prisma.$queryRaw`
       SELECT id FROM "Customer" 
       WHERE "deletedAt" IS NULL
@@ -37,50 +39,35 @@ async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
     // unaccent extension not available — fallback silently
   }
 
-  // Step 2: Build Prisma OR conditions
+  // Step 2: Build Prisma OR conditions using startsWith (prefix match)
+  // All name searches use normalizedTerm (diacritics stripped)
+  // "ho" matches "Hồng" (prefix) but NOT "Thompson" (mid-word)
   const conditions: any[] = [
-    { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
-    { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
-    { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
-    { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
-    // Normalized (no diacritics) — matches data stored without diacritics
-    { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
-    { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } },
+    { orderNumber: { startsWith: searchTerm, mode: 'insensitive' } },
+    { customer: { phone: { startsWith: searchTerm, mode: 'insensitive' } } },
+    // Name search always uses normalized term
+    { customer: { firstName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
+    { customer: { lastName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
   ];
 
-  // Step 3: Add unaccent-matched customer IDs (true diacritics-insensitive)
+  // Step 3: Add unaccent-matched customer IDs (PostgreSQL-level diacritics-insensitive)
   if (matchingCustomerIds.length > 0) {
     conditions.push({ customerId: { in: matchingCustomerIds } });
   }
 
-  // Step 4: Full name search — split into words, each must match firstName or lastName
-  const originalWords = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
+  // Step 4: Multi-word search — each word must prefix-match firstName or lastName
   const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
   
-  if (originalWords.length > 1) {
-    // Search with original words (matches data with same diacritics)
-    const allOriginalWordsMatch = originalWords.map((word: string) => ({
+  if (normalizedWords.length > 1) {
+    const allWordsMatch = normalizedWords.map((word: string) => ({
       customer: {
         OR: [
-          { firstName: { contains: word, mode: 'insensitive' as const } },
-          { lastName: { contains: word, mode: 'insensitive' as const } }
+          { firstName: { startsWith: word, mode: 'insensitive' as const } },
+          { lastName: { startsWith: word, mode: 'insensitive' as const } }
         ]
       }
     }));
-    conditions.push({ AND: allOriginalWordsMatch });
-
-    // Search with normalized words (matches data without diacritics)
-    if (normalizedTerm !== searchTerm) {
-      const allNormalizedWordsMatch = normalizedWords.map((word: string) => ({
-        customer: {
-          OR: [
-            { firstName: { contains: word, mode: 'insensitive' as const } },
-            { lastName: { contains: word, mode: 'insensitive' as const } }
-          ]
-        }
-      }));
-      conditions.push({ AND: allNormalizedWordsMatch });
-    }
+    conditions.push({ AND: allWordsMatch });
   }
 
   return conditions;
