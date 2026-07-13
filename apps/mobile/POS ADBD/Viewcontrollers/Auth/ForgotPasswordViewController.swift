@@ -65,6 +65,7 @@ class ForgotPasswordViewController: BaseViewControler {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        installAuthEntryBackground()
         view.backgroundColor = .white//.backgroundPrimary
         // Add gradient layer
 //        view.layer.insertSublayer(gradientLayer, at: 0)

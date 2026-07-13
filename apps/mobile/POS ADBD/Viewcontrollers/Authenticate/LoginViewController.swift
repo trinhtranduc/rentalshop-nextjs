@@ -121,6 +121,7 @@ class LoginViewController: BaseViewControler {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        installAuthEntryBackground()
         // Set background color as fallback
         view.backgroundColor = .white//.backgroundPrimary
         // Add gradient layer to background
