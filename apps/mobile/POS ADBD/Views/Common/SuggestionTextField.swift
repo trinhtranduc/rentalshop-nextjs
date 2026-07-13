@@ -374,10 +374,22 @@ class SuggestionTextField: BaseViewControler {
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
 extension SuggestionTextField: UITableViewDelegate, UITableViewDataSource {
+    private func customer(at indexPath: IndexPath) -> Customer? {
+        guard indexPath.row >= 0, indexPath.row < customers.count else {
+            return nil
+        }
+        return customers[indexPath.row]
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CustomerCell", for: indexPath) as! CustomerCell
         cell.delegate = self
-        cell.bind(user: self.customers[indexPath.row], searchWords: nil)
+
+        guard let customer = customer(at: indexPath) else {
+            return cell
+        }
+
+        cell.bind(user: customer, searchWords: nil)
         return cell
     }
     
@@ -390,7 +402,9 @@ extension SuggestionTextField: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        delegate?.didSelectCustomer(customer: customers[indexPath.row], sender: self)
+        guard let customer = customer(at: indexPath) else { return }
+
+        delegate?.didSelectCustomer(customer: customer, sender: self)
         
         // Support both push (iPhone) and present (iPad) navigation
         if let navigationController = self.navigationController {

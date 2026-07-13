@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
-import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
+import { Package, Calendar, DollarSign, User, MapPin, Clock, Medal, Award, Crown, Gem, Diamond, Star } from 'lucide-react';
 import { getOrderStatusClassName } from '@rentalshop/constants';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
@@ -30,6 +30,26 @@ interface CustomerOrder {
   createdAt: Date;
   outletName: string;
 }
+
+const getTierIcon = (icon?: string | null) => {
+  switch ((icon || '').toLowerCase()) {
+    case 'medal':
+      return Medal;
+    case 'award':
+      return Award;
+    case 'crown':
+      return Crown;
+    case 'gem':
+      return Gem;
+    case 'diamond':
+      return Diamond;
+    case 'star':
+      return Star;
+    case 'user':
+    default:
+      return User;
+  }
+};
 
 export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
   open,
@@ -170,28 +190,67 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
               <CardTitle className="text-lg">Customer Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-text-tertiary" />
-                  <div>
-                    <p className="font-medium">{customer.firstName} {customer.lastName}</p>
-                    <p className="text-sm text-muted-foreground">{customer.email}</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.4fr_0.8fr_0.8fr]">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-text-tertiary" />
+                      <div>
+                        <p className="font-medium">{customer.firstName} {customer.lastName}</p>
+                        <p className="text-sm text-muted-foreground">{customer.email}</p>
+                      </div>
+                    </div>
+                    {customer.loyaltyStatus === 'active' && customer.loyalty?.tier?.name ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="inline-flex items-center gap-2 border-gray-200 bg-white px-3 py-1 text-gray-700"
+                          style={{
+                            borderColor: customer.loyalty.tier.color || undefined,
+                          }}
+                        >
+                          <span
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full"
+                            style={{
+                              color: customer.loyalty.tier.color || undefined,
+                              backgroundColor: customer.loyalty.tier.color ? `${customer.loyalty.tier.color}14` : undefined,
+                            }}
+                          >
+                            {React.createElement(getTierIcon(customer.loyalty.tier.icon), { className: 'h-3.5 w-3.5' })}
+                          </span>
+                          <span>{customer.loyalty.tier.name}</span>
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {customer.loyalty.points.toLocaleString('vi-VN')} điểm
+                        </span>
+                      </div>
+                    ) : customer.loyaltyStatus ? (
+                      <Badge variant="outline" className="border-gray-200 text-gray-500">
+                        {customer.loyaltyStatus === 'unavailable' ? 'Loyalty khóa' : 'Loyalty tắt'}
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Package className="w-5 h-5 text-text-tertiary" />
-                  <div>
-                    <p className="font-medium">{orders.length} Orders</p>
-                    <p className="text-sm text-muted-foreground">Total Orders</p>
+
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-text-tertiary" />
+                    <div>
+                      <p className="font-medium">{orders.length.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Total Orders</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-text-tertiary" />
-                  <div>
-                    <p className="font-medium">
-                      {formatCurrency(orders.reduce((sum, order) => sum + order.totalAmount, 0))}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Total Spent</p>
+
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-text-tertiary" />
+                    <div>
+                      <p className="font-medium">
+                        {formatCurrency(orders.reduce((sum, order) => sum + order.totalAmount, 0))}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Total Spent</p>
+                    </div>
                   </div>
                 </div>
               </div>

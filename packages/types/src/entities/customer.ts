@@ -41,6 +41,7 @@ export interface Customer extends BaseEntityWithMerchant, Address, ContactInfo {
   // Related entities (populated when needed)
   merchant?: MerchantReference;
   loyalty?: CustomerLoyaltySnapshot | null;
+  loyaltyStatus?: 'active' | 'inactive' | 'unavailable';
 }
 
 // ============================================================================
@@ -139,6 +140,7 @@ export interface CustomerSearchResult {
     name: string;
   };
   loyalty?: CustomerLoyaltySnapshot | null;
+  loyaltyStatus?: 'active' | 'inactive' | 'unavailable';
 }
 
 /**
