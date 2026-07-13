@@ -1,5 +1,5 @@
 import { prisma } from './client';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { ORDER_TYPE, ORDER_STATUS, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   OrderSearchFilter,
@@ -13,18 +13,28 @@ import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, forma
  * Uses PostgreSQL unaccent() to match "hong ngoc" → "Hồng Ngọc".
  * Falls back to Prisma contains if unaccent is not available.
  */
-async function buildOrderSearchConditions(searchInput: string): Promise<any[]> {
+async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
   const normalizedTerm = removeVietnameseDiacritics(searchTerm);
 
   // Step 1: Find customer IDs using unaccent() in PostgreSQL for true diacritics-insensitive search
   // "Hồng" → normalized "hong" → matches "hong", "hồng", "hống", "Hồng" in DB
+  //
+  // Scope to the current merchant. This is the ONLY matcher that works for accented
+  // names (the Prisma startsWith conditions below compare the diacritics-stripped term
+  // against raw DB values and never match "Trâm"). Without the merchant filter the
+  // LIMIT budget is consumed by other tenants' customers, so this merchant's matches
+  // can be truncated out entirely — returning 0 results even when the customer exists.
   let matchingCustomerIds: number[] = [];
   try {
     const searchPattern = `${normalizedTerm.toLowerCase()}%`;
+    const merchantFilter = merchantId != null
+      ? Prisma.sql`AND "merchantId" = ${merchantId}`
+      : Prisma.empty;
     const customerResults: Array<{ id: number }> = await prisma.$queryRaw`
-      SELECT id FROM "Customer" 
+      SELECT id FROM "Customer"
       WHERE "deletedAt" IS NULL
+      ${merchantFilter}
       AND (
         unaccent(lower("firstName")) LIKE ${searchPattern}
         OR unaccent(lower(COALESCE("lastName", ''))) LIKE ${searchPattern}
@@ -1049,7 +1059,7 @@ export const simplifiedOrders = {
 
     // Text search (case-insensitive and diacritics-insensitive for customer names)
     if (whereFilters.search) {
-      where.OR = await buildOrderSearchConditions(whereFilters.search);
+      where.OR = await buildOrderSearchConditions(whereFilters.search, whereFilters.merchantId);
     }
 
     // ✅ Build dynamic orderBy clause
@@ -1402,7 +1412,7 @@ export const simplifiedOrders = {
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
     if (search) {
-      where.OR = await buildOrderSearchConditions(search);
+      where.OR = await buildOrderSearchConditions(search, merchantId);
     }
 
     const [orders, total] = await Promise.all([
@@ -1605,7 +1615,7 @@ export const simplifiedOrders = {
     // Use 'q' parameter first, fallback to 'search' for backward compatibility
     const searchQuery = q || search;
     if (searchQuery) {
-      const searchConditions = await buildOrderSearchConditions(searchQuery);
+      const searchConditions = await buildOrderSearchConditions(searchQuery, merchantId);
       
       // Combine outlet filter with search conditions using AND
       if (outletFilter) {
