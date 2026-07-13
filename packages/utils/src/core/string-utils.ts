@@ -259,6 +259,11 @@ export const removeVietnameseDiacritics = (text: string): string => {
     return '';
   }
 
+  // Normalize to NFC first. iOS/macOS often produce decomposed (NFD) Unicode,
+  // where e.g. "ề" is "e" + U+0302 + U+0300 instead of the single codepoint U+1EC1.
+  // NFC recomposes these so the precomposed VNMAP lookup below can match them.
+  text = text.normalize('NFC');
+
   // Vietnamese character mapping
   const VNMAP: Record<string, string> = {
     'ạ': 'a', 'ả': 'a', 'ã': 'a', 'à': 'a', 'á': 'a', 'â': 'a', 'ậ': 'a', 'ầ': 'a', 'ấ': 'a',
@@ -292,8 +297,10 @@ export const removeVietnameseDiacritics = (text: string): string => {
       result += char;
     }
   }
-  
-  return result;
+
+  // Safety net: strip any residual combining diacritical marks (U+0300–U+036F)
+  // left over from decomposed input that didn't recompose via NFC.
+  return result.replace(/[\u0300-\u036f]/g, "");
 };
 
 /**
