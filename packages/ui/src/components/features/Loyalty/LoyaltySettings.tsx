@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Award, Clock3, Coins, Medal, Settings2 } from 'lucide-react';
+import { Clock3, Coins, Medal, Settings2 } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -165,22 +165,10 @@ const SectionNavButton: React.FC<{
 );
 
 const SectionCard: React.FC<{
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
-}> = ({ title, description, icon: Icon, children }) => (
+}> = ({ children }) => (
   <section className="rounded-2xl border border-border bg-white px-5 py-5">
-    <div className="mb-5 flex items-start gap-3">
-      <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-secondary text-text-primary">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
-        <p className="text-sm text-text-secondary">{description}</p>
-      </div>
-    </div>
-    <div>{children}</div>
+    {children}
   </section>
 );
 
@@ -540,11 +528,7 @@ export const LoyaltySettings: React.FC = () => {
 
           <div className="flex-1 min-w-0 space-y-6">
             {activeSection === 'overview' && (
-              <SectionCard
-                title="Tổng quan chương trình"
-                description="Trạng thái và rule xếp hạng của loyalty."
-                icon={Settings2}
-              >
+              <SectionCard>
                 <div className="overflow-hidden rounded-xl border border-border">
                   <div className="flex items-center justify-between gap-4 px-4 py-4">
                     <div className="min-w-0">
@@ -657,11 +641,7 @@ export const LoyaltySettings: React.FC = () => {
 
             {activeSection === 'earn' && (
               <div className="space-y-6">
-                <SectionCard
-                  title="Tích điểm"
-                  description="Cấu hình cách cộng điểm cho đơn thuê và đơn bán."
-                  icon={Coins}
-                >
+                <SectionCard>
                   <div className="overflow-hidden rounded-xl border border-border">
                     <div className="flex items-center justify-between gap-3 px-4 py-4">
                       <div>
@@ -768,11 +748,7 @@ export const LoyaltySettings: React.FC = () => {
                   </div>
                 </SectionCard>
 
-                <SectionCard
-                  title="Đổi điểm"
-                  description="Cấu hình giá trị quy đổi và điều kiện áp dụng điểm."
-                  icon={Coins}
-                >
+                <SectionCard>
                   <div className="overflow-hidden rounded-xl border border-border">
                     <div className="border-b border-border px-4 py-4">
                       <div className="mb-3 flex items-center gap-2">
@@ -863,11 +839,7 @@ export const LoyaltySettings: React.FC = () => {
             )}
 
             {activeSection === 'tiers' && (
-              <SectionCard
-                title="Hạng thành viên"
-                description="Chọn các hạng áp dụng cho shop. Mỗi hạng có ngưỡng và hệ số nhân riêng."
-                icon={Award}
-              >
+              <SectionCard>
                 <p className="text-sm text-text-secondary">
                   Hạng mặc định luôn bật. Các hạng còn lại có thể bật/tắt bằng checkbox.
                 </p>
@@ -995,11 +967,7 @@ export const LoyaltySettings: React.FC = () => {
             )}
 
             {activeSection === 'expiry' && (
-              <SectionCard
-                title="Hết hạn điểm"
-                description="Chọn cách giữ, reset hoặc hết hạn điểm theo chính sách của shop."
-                icon={Clock3}
-              >
+              <SectionCard>
                 <div className="overflow-hidden rounded-xl border border-border">
                   <div className="flex items-center justify-between gap-4 px-4 py-4">
                     <div>
