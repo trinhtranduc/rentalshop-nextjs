@@ -201,13 +201,10 @@ class InfoCustomerView: UIView {
         customerLoyaltyLabel.text = loyaltyLevelName
         customerLoyaltyLabel.textColor = customer.loyaltyDisplayAccentColor ?? .systemBlue
 
-        if let points = customer.loyaltyDisplayPoints {
-            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-            customerPointLabel.text = "• \(pointsText) điểm"
-            customerPointLabel.textColor = .gray
-        } else {
-            customerPointLabel.text = nil
-        }
+        let points = customer.loyaltyDisplayPoints ?? 0
+        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+        customerPointLabel.text = "• \(pointsText) điểm"
+        customerPointLabel.textColor = .gray
 
         loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer))
 

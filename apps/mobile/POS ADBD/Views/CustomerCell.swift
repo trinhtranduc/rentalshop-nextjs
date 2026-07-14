@@ -338,18 +338,15 @@ class CustomerCell: UITableViewCell {
         tierPillView.backgroundColor = accent.withAlphaComponent(0.10)
         tierPillView.layer.borderColor = accent.withAlphaComponent(0.22).cgColor
 
-        // Points badge sits on the same row as the loyalty chip.
-        if let points = user.loyaltyDisplayPoints, state == .active || state == .legacy {
-            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-            pointsLabel.text = "\(pointsText) đ"
-            pointsLabel.textColor = accent
-            pointsIconView.tintColor = accent
-            pointsBadgeView.isHidden = false
-            pointsBadgeView.backgroundColor = accent.withAlphaComponent(0.08)
-            pointsBadgeView.layer.borderColor = accent.withAlphaComponent(0.18).cgColor
-        } else {
-            pointsBadgeView.isHidden = true
-        }
+        // Points badge should always render for loyalty rows so reused cells never look stale.
+        let points = user.loyaltyDisplayPoints ?? 0
+        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+        pointsLabel.text = "\(pointsText) đ"
+        pointsLabel.textColor = accent
+        pointsIconView.tintColor = accent
+        pointsBadgeView.isHidden = false
+        pointsBadgeView.backgroundColor = accent.withAlphaComponent(0.08)
+        pointsBadgeView.layer.borderColor = accent.withAlphaComponent(0.18).cgColor
 
         phoneRowStack.isHidden = phoneLabel.text?.isEmpty ?? true
     }
