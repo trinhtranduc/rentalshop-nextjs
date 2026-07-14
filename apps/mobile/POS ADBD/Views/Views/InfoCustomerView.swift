@@ -199,49 +199,23 @@ class InfoCustomerView: UIView {
         loyaltyStackView.isHidden = false
 
         customerLoyaltyLabel.text = loyaltyLevelName
-        customerLoyaltyLabel.textColor = (customer.loyaltyDisplayState == .inactive || customer.loyaltyDisplayState == .unavailable)
-            ? .systemGray
-            : .systemBlue
+        customerLoyaltyLabel.textColor = customer.loyaltyDisplayAccentColor ?? .systemBlue
 
-        if let points = customer.loyaltyDisplayPoints {
-            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-            customerPointLabel.text = "• \(pointsText) điểm"
-            customerPointLabel.textColor = .gray
-        } else {
-            customerPointLabel.text = nil
-        }
+        let points = customer.loyaltyDisplayPoints ?? 0
+        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+        customerPointLabel.text = "• \(pointsText) điểm"
+        customerPointLabel.textColor = .gray
 
         loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer))
 
-        if customer.loyaltyDisplayState == .active, let tierColor = customer.loyalty?.tier?.color {
-            let parsed = UIColor(hexString: tierColor)
-            loyaltyIconView.layer.borderColor = parsed.withAlphaComponent(0.22).cgColor
-            loyaltyIconView.backgroundColor = parsed.withAlphaComponent(0.10)
-            loyaltyIconImageView.tintColor = parsed
-        } else if customer.loyaltyDisplayState == .unavailable {
-            loyaltyIconView.layer.borderColor = UIColor.systemGray.withAlphaComponent(0.20).cgColor
-            loyaltyIconView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.08)
-            loyaltyIconImageView.tintColor = .systemGray
-        } else {
-            loyaltyIconView.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
-            loyaltyIconView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
-            loyaltyIconImageView.tintColor = .systemBlue
-        }
+        let accent = customer.loyaltyDisplayAccentColor ?? .systemBlue
+        loyaltyIconView.layer.borderColor = accent.withAlphaComponent(0.22).cgColor
+        loyaltyIconView.backgroundColor = accent.withAlphaComponent(0.10)
+        loyaltyIconImageView.tintColor = accent
     }
 
     private func loyaltyIconName(for customer: Customer) -> String {
-        switch customer.loyaltyDisplayState {
-        case .active:
-            return customer.loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
-        case .legacy:
-            return customer.customer_level?.loyaltySystemIconName ?? ((customer.loyaltyDisplayPoints ?? 0) > 0 ? "star.fill" : "person.fill")
-        case .inactive:
-            return "sparkles"
-        case .unavailable:
-            return "lock.fill"
-        case .none:
-            return "person.fill"
-        }
+        return customer.loyaltyDisplayIconName ?? "person.fill"
     }
     
     func setupMoreButtonMenu(menu: UIMenu) {
