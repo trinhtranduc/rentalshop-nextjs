@@ -182,8 +182,8 @@ class CustomerCell: UITableViewCell {
         let stack = UIStackView(arrangedSubviews: [topRowStack, bottomRowStack, phoneRowStack])
         stack.axis = .vertical
         stack.spacing = 6
-        // .fill so each row spans the full width — points badge hugs the right edge.
-        stack.alignment = .fill
+        // Keep rows left-aligned so the tier/points chips size to their content.
+        stack.alignment = .leading
         return stack
     }()
     
@@ -235,7 +235,7 @@ class CustomerCell: UITableViewCell {
         labelsStackView.snp.makeConstraints { make in
             make.leading.equalTo(avatarImageView.snp.trailing).offset(12)
             make.centerY.equalToSuperview()
-            make.trailing.equalTo(moreButton.snp.leading).offset(-12)
+            make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-12)
         }
 
         phoneIconView.snp.makeConstraints { make in
