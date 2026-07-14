@@ -40,6 +40,28 @@ async function getCurrentBalance(tx: TxClient, customerLoyaltyId: number): Promi
   return loyalty.points;
 }
 
+async function createRefundPointLot(
+  tx: TxClient,
+  customerLoyaltyId: number,
+  refundTransactionId: number,
+  points: number,
+  program: LoyaltyProgramLike
+): Promise<void> {
+  if (program.pointsExpiryMode !== 'per_transaction' || points <= 0) return;
+
+  await tx.loyaltyPointLot.create({
+    data: {
+      customerLoyaltyId,
+      earnTransactionId: refundTransactionId,
+      pointsEarned: points,
+      remainingPoints: points,
+      expiresAt: program.pointsExpiryDays
+        ? addDays(new Date(), program.pointsExpiryDays)
+        : null,
+    },
+  });
+}
+
 export async function getLoyaltyProgram(
   merchantId: number,
   tx?: TxClient
@@ -303,6 +325,10 @@ export async function handleLoyaltyOnCancel(
 
   if (!loyalty) return;
 
+  const program = await tx.loyaltyProgram.findUnique({
+    where: { merchantId },
+  });
+
   if (order.loyaltyPointsRedeemed && order.loyaltyPointsRedeemed > 0) {
     const updated = await tx.customerLoyalty.update({
       where: { id: loyalty.id },
@@ -312,7 +338,7 @@ export async function handleLoyaltyOnCancel(
       },
     });
 
-    await tx.loyaltyTransaction.create({
+    const refundTransaction = await tx.loyaltyTransaction.create({
       data: {
         customerId: order.customerId,
         merchantId,
@@ -324,6 +350,16 @@ export async function handleLoyaltyOnCancel(
         description: `Hoàn điểm do hủy đơn #${order.orderNumber}`,
       },
     });
+
+    if (program) {
+      await createRefundPointLot(
+        tx,
+        loyalty.id,
+        refundTransaction.id,
+        order.loyaltyPointsRedeemed,
+        program
+      );
+    }
   }
 
   if (order.loyaltyPointsEarned && order.loyaltyPointsEarned > 0) {
@@ -347,6 +383,17 @@ export async function handleLoyaltyOnCancel(
         description: `Thu hồi điểm do hủy đơn #${order.orderNumber}`,
       },
     });
+
+    if (program?.pointsExpiryMode === 'per_transaction') {
+      await tx.loyaltyPointLot.deleteMany({
+        where: {
+          earnTransaction: {
+            orderId: order.id,
+            type: LOYALTY_TRANSACTION_TYPES.EARN,
+          },
+        },
+      });
+    }
   }
 
   await tx.order.update({
@@ -400,13 +447,46 @@ export async function adjustRedeemOnOrderEdit(
     }
   } else {
     const refundPoints = Math.abs(delta);
-    await tx.customerLoyalty.update({
+    const updated = await tx.customerLoyalty.update({
       where: { id: loyalty.id },
       data: {
         points: { increment: refundPoints },
         totalRedeemed: { decrement: refundPoints },
       },
     });
+
+    const refundTransaction = await tx.loyaltyTransaction.create({
+      data: {
+        customerId: order.customerId,
+        merchantId,
+        outletId: order.outletId,
+        orderId: order.id,
+        type: LOYALTY_TRANSACTION_TYPES.REFUND,
+        points: refundPoints,
+        balanceAfter: updated.points,
+        description: `Hoàn điểm điều chỉnh cho đơn #${order.orderNumber}`,
+        createdById: user.id,
+      },
+    });
+
+    await createRefundPointLot(
+      tx,
+      loyalty.id,
+      refundTransaction.id,
+      refundPoints,
+      program
+    );
+
+    const loyaltyDiscount = nextPoints * program.pointValue;
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        loyaltyPointsRedeemed: nextPoints,
+        loyaltyDiscount,
+      },
+    });
+
+    return;
   }
 
   const loyaltyDiscount = nextPoints * program.pointValue;
@@ -424,7 +504,7 @@ export async function adjustRedeemOnOrderEdit(
       merchantId,
       outletId: order.outletId,
       orderId: order.id,
-      type: delta > 0 ? LOYALTY_TRANSACTION_TYPES.REDEEM : LOYALTY_TRANSACTION_TYPES.REFUND,
+      type: LOYALTY_TRANSACTION_TYPES.REDEEM,
       points: -delta,
       balanceAfter: await getCurrentBalance(tx, loyalty.id),
       description: `Điều chỉnh điểm cho đơn #${order.orderNumber}`,
