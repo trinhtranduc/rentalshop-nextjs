@@ -68,6 +68,14 @@ struct Product: Codable, Comparable, Copying {
     var similarityPercent: Int?
     var merchant: MerchantDetail?
     
+    // Pricing type: nil/FIXED = fixed price, DAILY = per-day pricing
+    var pricingType: String?
+    
+    /// Whether this product uses per-day pricing
+    var isDailyPricing: Bool {
+        return pricingType?.uppercased() == "DAILY"
+    }
+    
     init() {}
     
     // Copying protocol implementation
@@ -100,6 +108,9 @@ struct Product: Codable, Comparable, Copying {
         self.similarity = original.similarity
         self.similarityPercent = original.similarityPercent
         self.merchant = original.merchant
+        
+        // Pricing type
+        self.pricingType = original.pricingType
     }
     
     // MARK: - Codable Implementation
@@ -140,6 +151,9 @@ struct Product: Codable, Comparable, Copying {
         case similarity
         case similarityPercent
         case merchant
+        
+        // Pricing type
+        case pricingType
     }
     
     init(from decoder: Decoder) throws {
@@ -225,6 +239,9 @@ struct Product: Codable, Comparable, Copying {
         self.similarity = try container.decodeIfPresent(Double.self, forKey: .similarity)
         self.similarityPercent = try container.decodeIfPresent(Int.self, forKey: .similarityPercent)
         self.merchant = try container.decodeIfPresent(MerchantDetail.self, forKey: .merchant)
+        
+        // Pricing type
+        self.pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -255,6 +272,7 @@ struct Product: Codable, Comparable, Copying {
         try container.encodeIfPresent(isActive, forKey: .isActive)
         try container.encodeIfPresent(merchantId, forKey: .merchantId)
         try container.encodeIfPresent(categoryId, forKey: .categoryId)
+        try container.encodeIfPresent(pricingType, forKey: .pricingType)
     }
     
     

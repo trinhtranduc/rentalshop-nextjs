@@ -39,8 +39,20 @@ struct CartItem: Codable {
     // nil = not loaded yet (loading state)
     var availabilityStatus: AvailabilityStatus? = nil
     
+    // Daily rental pricing
+    var pricingType: String?  // nil/FIXED = fixed, DAILY = per-day
+    var rentalDays: Int = 1   // Number of rental days (only used when pricingType == DAILY)
+    
+    /// Whether this cart item uses per-day pricing
+    var isDailyPricing: Bool {
+        return pricingType?.uppercased() == "DAILY"
+    }
+    
     // Computed properties
     var subTotal: Double {
+        if isDailyPricing {
+            return Double(quantity) * price * Double(rentalDays)
+        }
         return Double(quantity) * price
     }
     
@@ -91,6 +103,10 @@ struct CartItem: Codable {
         self.originalSalePrice = product.salePrice ?? product.sale
         self.customRentPrice = nil
         self.customSalePrice = nil
+        
+        // Daily pricing
+        self.pricingType = product.pricingType
+        self.rentalDays = 1
     }
     
 }
