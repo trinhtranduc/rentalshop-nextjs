@@ -43,7 +43,7 @@ class CustomerCell: UITableViewCell {
         return label
     }()
 
-    // MARK: Points badge (line 1, trailing) — "⭐ 1,250"
+    // MARK: Points badge — "⭐ 1,250 điểm"
     private lazy var pointsIconView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
@@ -85,6 +85,14 @@ class CustomerCell: UITableViewCell {
         view.setContentHuggingPriority(.required, for: .horizontal)
         view.setContentCompressionResistancePriority(.required, for: .horizontal)
         return view
+    }()
+
+    private lazy var phoneIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.image = UIImage(systemName: "phone.fill")
+        imageView.tintColor = .systemGray
+        return imageView
     }()
 
     // MARK: Tier pill (line 2, leading) — "◆ Vàng"
@@ -138,9 +146,17 @@ class CustomerCell: UITableViewCell {
     }()
 
     private lazy var bottomRowStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [tierPillView, pointsBadgeView, phoneLabel])
+        let stack = UIStackView(arrangedSubviews: [tierPillView, pointsBadgeView])
         stack.axis = .horizontal
         stack.spacing = 8
+        stack.alignment = .center
+        return stack
+    }()
+
+    private lazy var phoneRowStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [phoneIconView, phoneLabel])
+        stack.axis = .horizontal
+        stack.spacing = 6
         stack.alignment = .center
         return stack
     }()
@@ -163,9 +179,9 @@ class CustomerCell: UITableViewCell {
     }()
     
     private lazy var labelsStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [topRowStack, bottomRowStack])
+        let stack = UIStackView(arrangedSubviews: [topRowStack, bottomRowStack, phoneRowStack])
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = 6
         // .fill so each row spans the full width — points badge hugs the right edge.
         stack.alignment = .fill
         return stack
@@ -196,6 +212,7 @@ class CustomerCell: UITableViewCell {
         tierIconImageView.image = nil
         tierPillView.isHidden = true
         pointsBadgeView.isHidden = true
+        phoneRowStack.isHidden = false
         avatarImageView.image = UIImage(named: "ic_customer_empty")
     }
     
@@ -212,7 +229,7 @@ class CustomerCell: UITableViewCell {
         avatarImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(50)
+            make.width.height.equalTo(56)
         }
 
         labelsStackView.snp.makeConstraints { make in
@@ -221,12 +238,16 @@ class CustomerCell: UITableViewCell {
             make.trailing.equalTo(moreButton.snp.leading).offset(-12)
         }
 
+        phoneIconView.snp.makeConstraints { make in
+            make.width.height.equalTo(14)
+        }
+
         pointsIconView.snp.makeConstraints { make in
-            make.width.height.equalTo(12)
+            make.width.height.equalTo(13)
         }
 
         tierIconImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(12)
+            make.width.height.equalTo(13)
         }
 
         tierPillStack.snp.makeConstraints { make in
@@ -301,6 +322,7 @@ class CustomerCell: UITableViewCell {
         guard state != .none, let levelName = user.loyaltyDisplayLevelName else {
             pointsBadgeView.isHidden = true
             tierPillView.isHidden = true
+            phoneRowStack.isHidden = phoneLabel.text?.isEmpty ?? true
             return
         }
 
@@ -338,6 +360,8 @@ class CustomerCell: UITableViewCell {
         } else {
             pointsBadgeView.isHidden = true
         }
+
+        phoneRowStack.isHidden = phoneLabel.text?.isEmpty ?? true
     }
 
     func loyaltyIconName(for user: Customer) -> String {
