@@ -167,7 +167,7 @@ const SectionNavButton: React.FC<{
 const SectionCard: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => (
-  <section className="rounded-2xl border border-border bg-white px-5 py-5">
+  <section className="rounded-lg border border-border bg-white px-5 py-5">
     {children}
   </section>
 );
@@ -453,7 +453,7 @@ export const LoyaltySettings: React.FC = () => {
           </div>
         </div>
 
-        <section className="rounded-2xl border border-border bg-white px-5 py-6">
+        <section className="rounded-lg border border-border bg-white px-5 py-6">
           <div className="mb-4 flex items-start gap-3">
             <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
               <Settings2 className="h-5 w-5" />
@@ -465,7 +465,7 @@ export const LoyaltySettings: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="rounded-2xl border border-dashed border-border bg-bg-secondary/40 px-4 py-4 text-sm text-text-secondary">
+          <div className="rounded-lg border border-dashed border-border bg-bg-secondary/40 px-4 py-4 text-sm text-text-secondary">
             Dữ liệu loyalty của khách vẫn được giữ lại để mở lại sau này, nhưng các thao tác tích điểm, đổi điểm và sync lịch sử đều bị khóa.
           </div>
         </section>
@@ -493,7 +493,7 @@ export const LoyaltySettings: React.FC = () => {
         </div>
 
         {isProgramInactive && (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+          <section className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold">Loyalty đang ở trạng thái tắt</p>
@@ -510,7 +510,7 @@ export const LoyaltySettings: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-64 flex-shrink-0">
-            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+            <div className="overflow-hidden rounded-lg border border-border bg-white">
               <nav className="divide-y divide-border">
                 {sectionItems.map((item) => (
                   <SectionNavButton
@@ -529,7 +529,7 @@ export const LoyaltySettings: React.FC = () => {
           <div className="flex-1 min-w-0 space-y-6">
             {activeSection === 'overview' && (
               <SectionCard>
-                <div className="overflow-hidden rounded-xl border border-border">
+                <div className="overflow-hidden rounded-lg border border-border">
                   <div className="flex items-center justify-between gap-4 px-4 py-4">
                     <div className="min-w-0">
                       <div className="mb-1 flex items-center gap-2">
@@ -642,7 +642,7 @@ export const LoyaltySettings: React.FC = () => {
             {activeSection === 'earn' && (
               <div className="space-y-6">
                 <SectionCard>
-                  <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="overflow-hidden rounded-lg border border-border">
                     <div className="flex items-center justify-between gap-3 px-4 py-4">
                       <div>
                         <div className="mb-1 flex items-center gap-2">
@@ -749,7 +749,7 @@ export const LoyaltySettings: React.FC = () => {
                 </SectionCard>
 
                 <SectionCard>
-                  <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="overflow-hidden rounded-lg border border-border">
                     <div className="border-b border-border px-4 py-4">
                       <div className="mb-3 flex items-center gap-2">
                         <p className="font-medium text-text-primary">Giá trị quy đổi</p>
@@ -968,7 +968,7 @@ export const LoyaltySettings: React.FC = () => {
 
             {activeSection === 'expiry' && (
               <SectionCard>
-                <div className="overflow-hidden rounded-xl border border-border">
+                <div className="overflow-hidden rounded-lg border border-border">
                   <div className="flex items-center justify-between gap-4 px-4 py-4">
                     <div>
                       <p className="font-medium text-text-primary">Chế độ hết hạn điểm</p>
