@@ -87,6 +87,25 @@ enum CustomerLoyaltyLevel: String, CaseIterable {
         }
     }
 
+    var accentColor: UIColor {
+        switch self {
+        case .dong:
+            return UIColor(red: 0.73, green: 0.45, blue: 0.18, alpha: 1.0)
+        case .bac:
+            return UIColor.systemGray
+        case .vang:
+            return UIColor.systemYellow
+        case .bachKim:
+            return UIColor.systemCyan
+        case .kimCuong:
+            return UIColor.systemBlue
+        case .vip:
+            return UIColor.systemPurple
+        case .member:
+            return UIColor.systemBlue
+        }
+    }
+
     static func resolve(from rawValue: String?) -> CustomerLoyaltyLevel? {
         guard let rawValue else { return nil }
         let normalized = rawValue
@@ -375,6 +394,17 @@ struct Customer: Codable, Comparable, Copying {
             return "sparkles"
         case .unavailable:
             return "lock.fill"
+        case .none:
+            return nil
+        }
+    }
+
+    var loyaltyDisplayAccentColor: UIColor? {
+        switch loyaltyDisplayState {
+        case .active, .legacy:
+            return loyaltyLevel?.accentColor ?? .systemBlue
+        case .inactive, .unavailable:
+            return .systemBlue
         case .none:
             return nil
         }

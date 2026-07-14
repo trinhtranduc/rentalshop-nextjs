@@ -199,7 +199,7 @@ class InfoCustomerView: UIView {
         loyaltyStackView.isHidden = false
 
         customerLoyaltyLabel.text = loyaltyLevelName
-        customerLoyaltyLabel.textColor = .systemBlue
+        customerLoyaltyLabel.textColor = customer.loyaltyDisplayAccentColor ?? .systemBlue
 
         if let points = customer.loyaltyDisplayPoints {
             let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
@@ -211,16 +211,10 @@ class InfoCustomerView: UIView {
 
         loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer))
 
-        if customer.loyaltyDisplayState == .active, let tierColor = customer.loyalty?.tier?.color {
-            let parsed = UIColor(hexString: tierColor)
-            loyaltyIconView.layer.borderColor = parsed.withAlphaComponent(0.22).cgColor
-            loyaltyIconView.backgroundColor = parsed.withAlphaComponent(0.10)
-            loyaltyIconImageView.tintColor = parsed
-        } else {
-            loyaltyIconView.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
-            loyaltyIconView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
-            loyaltyIconImageView.tintColor = .systemBlue
-        }
+        let accent = customer.loyaltyDisplayAccentColor ?? .systemBlue
+        loyaltyIconView.layer.borderColor = accent.withAlphaComponent(0.22).cgColor
+        loyaltyIconView.backgroundColor = accent.withAlphaComponent(0.10)
+        loyaltyIconImageView.tintColor = accent
     }
 
     private func loyaltyIconName(for customer: Customer) -> String {
