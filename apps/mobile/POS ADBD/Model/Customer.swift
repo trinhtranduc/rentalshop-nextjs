@@ -40,6 +40,83 @@ enum CustomerLoyaltyDisplayState {
     case none
 }
 
+enum CustomerLoyaltyLevel: String, CaseIterable {
+    case dong
+    case bac
+    case vang
+    case bachKim
+    case kimCuong
+    case vip
+    case member
+
+    var displayName: String {
+        switch self {
+        case .dong:
+            return "Đồng"
+        case .bac:
+            return "Bạc"
+        case .vang:
+            return "Vàng"
+        case .bachKim:
+            return "Bạch Kim"
+        case .kimCuong:
+            return "Kim Cương"
+        case .vip:
+            return "VIP"
+        case .member:
+            return "Thành viên"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .dong:
+            return "medal.fill"
+        case .bac:
+            return "rosette"
+        case .vang:
+            return "crown.fill"
+        case .bachKim:
+            return "diamond.fill"
+        case .kimCuong:
+            return "diamond.fill"
+        case .vip:
+            return "star.fill"
+        case .member:
+            return "person.fill"
+        }
+    }
+
+    static func resolve(from rawValue: String?) -> CustomerLoyaltyLevel? {
+        guard let rawValue else { return nil }
+        let normalized = rawValue
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+
+        switch normalized {
+        case "dong":
+            return .dong
+        case "bac":
+            return .bac
+        case "vang":
+            return .vang
+        case "bach kim", "bachkim":
+            return .bachKim
+        case "kim cuong", "kimcuong":
+            return .kimCuong
+        case "vip":
+            return .vip
+        case "thanh vien", "thanhvien", "user", "member":
+            return .member
+        default:
+            return nil
+        }
+    }
+}
+
 struct Customer: Codable, Comparable, Copying {
     // Legacy fields for backward compatibility
     var full_name: String?
@@ -265,9 +342,9 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayLevelName: String? {
         switch loyaltyDisplayState {
         case .active:
-            return loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên".localized()
+            return loyaltyLevel?.displayName ?? "Thành viên".localized()
         case .legacy:
-            return customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên".localized()
+            return loyaltyLevel?.displayName ?? "Thành viên".localized()
         case .inactive:
             return "Loyalty chưa kích hoạt"
         case .unavailable:
@@ -291,16 +368,30 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayIconName: String? {
         switch loyaltyDisplayState {
         case .active:
-            let levelName = loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên"
-            return levelName.loyaltySystemIconName
+            return loyaltyLevel?.iconName ?? "person.fill"
         case .legacy:
-            let levelName = customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên"
-            return levelName.loyaltySystemIconName
+            return loyaltyLevel?.iconName ?? "person.fill"
         case .inactive:
             return "sparkles"
         case .unavailable:
             return "lock.fill"
         case .none:
+            return nil
+        }
+    }
+
+    private var loyaltyLevel: CustomerLoyaltyLevel? {
+        if let level = CustomerLoyaltyLevel.resolve(from: loyalty?.tier?.name) {
+            return level
+        }
+        if let level = CustomerLoyaltyLevel.resolve(from: customer_level) {
+            return level
+        }
+
+        switch loyaltyDisplayState {
+        case .active, .legacy:
+            return .member
+        case .inactive, .unavailable, .none:
             return nil
         }
     }
@@ -346,24 +437,5 @@ extension String {
     var nilIfEmpty: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
-    }
-
-    var loyaltySystemIconName: String {
-        switch lowercased() {
-        case "medal", "dong", "đồng":
-            return "medal.fill"
-        case "award", "bac", "bạc":
-            return "rosette"
-        case "crown", "vang", "vàng":
-            return "crown.fill"
-        case "gem", "diamond", "bach kim", "bạch kim", "kim cương", "kim cuong":
-            return "diamond.fill"
-        case "star", "vip":
-            return "star.fill"
-        case "user", "thành viên", "thanh vien":
-            return "person.fill"
-        default:
-            return "person.fill"
-        }
     }
 }
