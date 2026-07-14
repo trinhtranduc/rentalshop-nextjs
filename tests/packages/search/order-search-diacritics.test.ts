@@ -1,38 +1,35 @@
 /**
- * Test cases for diacritics-insensitive order search
- * 
- * Scenarios:
- * 1. Search WITH diacritics → matches data WITH diacritics ✓
- * 2. Search WITHOUT diacritics → matches data WITH diacritics ✓ (via unaccent)
- * 3. Search WITH diacritics → matches data WITHOUT diacritics ✓ (via normalized)
- * 4. Search WITHOUT diacritics → matches data WITHOUT diacritics ✓
- * 5. Full name search (multi-word)
- * 6. Phone and order number search unaffected
+ * Test cases for order search — mirrors buildOrderSearchConditions()
+ * in packages/database/src/order.ts
+ *
+ * Two rules under test:
+ *
+ * 1. Word-prefix matching (NOT substring): the term must start the whole name OR start
+ *    any word inside it. So "thu"/"thuy" match "Chị Thủy" but "huy" does not (mid-word).
+ *
+ * 2. Conditional accent handling driven by the QUERY:
+ *    - Query WITHOUT diacritics ("thuy") → accent-INSENSITIVE, also matches "Thủy".
+ *    - Query WITH diacritics ("thúy") → accent-SENSITIVE, matches the exact accented
+ *      form only. "thúy"/"Thụy" must NOT match "Thủy".
  */
 
-// Inline removeVietnameseDiacritics (same as @rentalshop/utils)
+// Inline removeVietnameseDiacritics (same behaviour as @rentalshop/utils)
 function removeVietnameseDiacritics(str: string): string {
   return str
+    .normalize('NFC')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D');
 }
 
-// Simulate unaccent() behavior (same as PostgreSQL unaccent extension)
-function unaccent(str: string): string {
-  return removeVietnameseDiacritics(str);
-}
-
-// Simulate PostgreSQL LIKE with unaccent
-function unaccentLike(dbValue: string, searchPattern: string): boolean {
-  const pattern = searchPattern.replace(/%/g, '');
-  return unaccent(dbValue.toLowerCase()).includes(pattern.toLowerCase());
-}
-
-// Simulate Prisma contains (ILIKE - case insensitive but NOT diacritics insensitive)
-function prismaContains(dbValue: string, searchTerm: string): boolean {
-  return dbValue.toLowerCase().includes(searchTerm.toLowerCase());
+// PostgreSQL LIKE with '%' wildcard → regex (anchored, dot matches newline)
+function like(value: string, pattern: string): boolean {
+  const rx =
+    '^' +
+    pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*') +
+    '$';
+  return new RegExp(rx, 's').test(value);
 }
 
 interface Customer {
@@ -43,33 +40,33 @@ interface Customer {
 }
 
 /**
- * Simulate buildOrderSearchConditions() logic
- * Returns true if customer matches search query
+ * Simulate buildOrderSearchConditions() customer matching.
+ * Returns true if the customer matches the search query.
  */
 function customerMatchesSearch(customer: Customer, searchInput: string): boolean {
   const searchTerm = searchInput.trim();
+  const searchTermNFC = searchTerm.normalize('NFC');
   const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+  const hasDiacritics = searchTermNFC.toLowerCase() !== normalizedTerm.toLowerCase();
 
-  // 1. Prisma contains (original term) - matches same diacritics
-  if (prismaContains(customer.firstName, searchTerm)) return true;
-  if (customer.lastName && prismaContains(customer.lastName, searchTerm)) return true;
-  if (customer.phone && prismaContains(customer.phone, searchTerm)) return true;
+  // phone: raw prefix match (phones carry no diacritics)
+  if (customer.phone && customer.phone.toLowerCase().startsWith(searchTerm.toLowerCase())) {
+    return true;
+  }
 
-  // 2. Prisma contains (normalized term) - matches data without diacritics
-  if (prismaContains(customer.firstName, normalizedTerm)) return true;
-  if (customer.lastName && prismaContains(customer.lastName, normalizedTerm)) return true;
+  const patternTerm = (hasDiacritics ? searchTermNFC : normalizedTerm).toLowerCase();
+  const startPattern = `${patternTerm}%`;
+  const wordPattern = `% ${patternTerm}%`;
 
-  // 3. PostgreSQL unaccent() - TRUE diacritics-insensitive match
-  const searchPattern = normalizedTerm.toLowerCase();
-  const fullName = customer.firstName + ' ' + (customer.lastName || '');
-  const reverseName = (customer.lastName || '') + ' ' + customer.firstName;
-  
-  if (unaccentLike(customer.firstName, searchPattern)) return true;
-  if (customer.lastName && unaccentLike(customer.lastName, searchPattern)) return true;
-  if (unaccentLike(fullName, searchPattern)) return true;
-  if (unaccentLike(reverseName, searchPattern)) return true;
+  const fwd = customer.firstName + ' ' + (customer.lastName || '');
+  const rev = (customer.lastName || '') + ' ' + customer.firstName;
+  // Accent-sensitive → compare NFC (keep accents); accent-insensitive → unaccent both sides.
+  const proj = (s: string) =>
+    hasDiacritics ? s.normalize('NFC').toLowerCase() : removeVietnameseDiacritics(s).toLowerCase();
+  const nameHit = (v: string) =>
+    like(proj(v), startPattern) || like(proj(v), wordPattern);
 
-  return false;
+  return nameHit(fwd) || nameHit(rev);
 }
 
 // Test data
@@ -81,57 +78,50 @@ const customers: Customer[] = [
   { id: 5, firstName: 'Kim', lastName: 'Phụng', phone: '0799502898' },
 ];
 
-describe('Order Search - Diacritics Insensitive', () => {
+describe('Order Search - word-prefix + conditional accent', () => {
 
-  describe('Search WITH diacritics → matches data WITH diacritics', () => {
+  describe('Search WITH diacritics → matches the exact accented form', () => {
     it('"Hồng" → matches "Hồng Ngọc"', () => {
       expect(customerMatchesSearch(customers[0], 'Hồng')).toBe(true);
     });
 
-    it('"Ngọc" → matches "Hồng Ngọc"', () => {
+    it('"Ngọc" → matches "Hồng Ngọc" (word start)', () => {
       expect(customerMatchesSearch(customers[0], 'Ngọc')).toBe(true);
     });
 
-    it('"Phương" → matches "Trần Thị Phương"', () => {
+    it('"Phương" → matches "Trần Thị Phương" (word start)', () => {
       expect(customerMatchesSearch(customers[2], 'Phương')).toBe(true);
     });
 
     it('"Nguyễn" → matches "Nguyễn Văn An"', () => {
       expect(customerMatchesSearch(customers[3], 'Nguyễn')).toBe(true);
     });
+
+    it('"Hồng" (accented) → does NOT match unaccented "Hong Ngoc"', () => {
+      // Rule: searching WITH diacritics matches the exact accented form only.
+      expect(customerMatchesSearch(customers[1], 'Hồng')).toBe(false);
+    });
   });
 
   describe('Search WITHOUT diacritics → matches data WITH diacritics (unaccent)', () => {
-    it('"Hong" → matches "Hồng Ngọc" via unaccent', () => {
+    it('"Hong" → matches "Hồng Ngọc"', () => {
       expect(customerMatchesSearch(customers[0], 'Hong')).toBe(true);
     });
 
-    it('"Ngoc" → matches "Hồng Ngọc" via unaccent', () => {
+    it('"Ngoc" → matches "Hồng Ngọc"', () => {
       expect(customerMatchesSearch(customers[0], 'Ngoc')).toBe(true);
     });
 
-    it('"Phuong" → matches "Trần Thị Phương" via unaccent', () => {
+    it('"Phuong" → matches "Trần Thị Phương"', () => {
       expect(customerMatchesSearch(customers[2], 'Phuong')).toBe(true);
     });
 
-    it('"Nguyen" → matches "Nguyễn Văn An" via unaccent', () => {
+    it('"Nguyen" → matches "Nguyễn Văn An"', () => {
       expect(customerMatchesSearch(customers[3], 'Nguyen')).toBe(true);
     });
 
-    it('"Phung" → matches "Kim Phụng" via unaccent', () => {
+    it('"Phung" → matches "Kim Phụng"', () => {
       expect(customerMatchesSearch(customers[4], 'Phung')).toBe(true);
-    });
-  });
-
-  describe('Search WITH diacritics → matches data WITHOUT diacritics (normalized)', () => {
-    it('"Hồng" → matches "Hong Ngoc" (data without diacritics)', () => {
-      // removeVietnameseDiacritics("Hồng") = "Hong"
-      // prismaContains("Hong", "Hong") = true
-      expect(customerMatchesSearch(customers[1], 'Hồng')).toBe(true);
-    });
-
-    it('"Ngọc" → matches "Hong Ngoc" (data without diacritics)', () => {
-      expect(customerMatchesSearch(customers[1], 'Ngọc')).toBe(true);
     });
   });
 
@@ -145,8 +135,8 @@ describe('Order Search - Diacritics Insensitive', () => {
     });
   });
 
-  describe('Full name search (multi-word)', () => {
-    it('"hong ngoc" → matches "Hồng Ngọc" via unaccent full name', () => {
+  describe('Full name search (multi-word, contiguous)', () => {
+    it('"hong ngoc" → matches "Hồng Ngọc"', () => {
       expect(customerMatchesSearch(customers[0], 'hong ngoc')).toBe(true);
     });
 
@@ -154,7 +144,7 @@ describe('Order Search - Diacritics Insensitive', () => {
       expect(customerMatchesSearch(customers[0], 'Hồng Ngọc')).toBe(true);
     });
 
-    it('"ngoc hong" → matches "Hồng Ngọc" (reverse name order)', () => {
+    it('"ngoc hong" → matches "Hồng Ngọc" (reverse order)', () => {
       expect(customerMatchesSearch(customers[0], 'ngoc hong')).toBe(true);
     });
 
@@ -172,7 +162,7 @@ describe('Order Search - Diacritics Insensitive', () => {
       expect(customerMatchesSearch(customers[0], '0901234567')).toBe(true);
     });
 
-    it('"0799" → partial phone match', () => {
+    it('"0799" → partial phone match (prefix)', () => {
       expect(customerMatchesSearch(customers[4], '0799')).toBe(true);
     });
   });
@@ -188,31 +178,36 @@ describe('Order Search - Diacritics Insensitive', () => {
   });
 });
 
-describe('Bug fix: "cẩm diệu" full name search', () => {
-  const camDieu: Customer = { id: 10, firstName: 'Cẩm', lastName: 'Diệu', phone: '0909000111' };
-  const camDieuReverse: Customer = { id: 11, firstName: 'Diệu', lastName: 'Cẩm', phone: '0909000222' };
+describe('Bug: "Chị Thủy" — honorific prefix + tone-mark sensitivity', () => {
+  // Try both plausible storage shapes: split fields, and everything in firstName.
+  const split: Customer = { id: 20, firstName: 'Chị', lastName: 'Thủy', phone: '0900111222' };
+  const single: Customer = { id: 21, firstName: 'Chị Thủy', lastName: null, phone: '0900333444' };
 
-  it('"cẩm" → matches (single word, contains in firstName)', () => {
-    expect(customerMatchesSearch(camDieu, 'cẩm')).toBe(true);
+  const cases: Array<[string, boolean]> = [
+    ['Chi', true],    // honorific, word start
+    ['chi', true],    // lowercase
+    ['Thu', true],    // prefix of "Thủy" (no diacritics)
+    ['thuy', true],   // full name, no diacritics → matches accented "Thủy"
+    ['Thuy', true],
+    ['thủy', true],   // exact accent
+    ['thúy', false],  // WRONG tone mark → must NOT match "Thủy"
+    ['Thụy', false],  // WRONG tone mark → must NOT match "Thủy"
+    ['huy', false],   // mid-word inside "thuy" → not a word start
+  ];
+
+  describe('firstName="Chị", lastName="Thủy"', () => {
+    for (const [q, expected] of cases) {
+      it(`"${q}" → ${expected}`, () => {
+        expect(customerMatchesSearch(split, q)).toBe(expected);
+      });
+    }
   });
 
-  it('"cẩm diệu" → matches (full name with diacritics)', () => {
-    expect(customerMatchesSearch(camDieu, 'cẩm diệu')).toBe(true);
-  });
-
-  it('"cam dieu" → matches (full name without diacritics via unaccent)', () => {
-    expect(customerMatchesSearch(camDieu, 'cam dieu')).toBe(true);
-  });
-
-  it('"diệu cẩm" → matches (reverse order)', () => {
-    expect(customerMatchesSearch(camDieu, 'diệu cẩm')).toBe(true);
-  });
-
-  it('"dieu cam" → matches (reverse order, no diacritics)', () => {
-    expect(customerMatchesSearch(camDieu, 'dieu cam')).toBe(true);
-  });
-
-  it('"Cẩm Diệu" with firstName=Diệu, lastName=Cẩm → matches', () => {
-    expect(customerMatchesSearch(camDieuReverse, 'Cẩm Diệu')).toBe(true);
+  describe('firstName="Chị Thủy", lastName=null', () => {
+    for (const [q, expected] of cases) {
+      it(`"${q}" → ${expected}`, () => {
+        expect(customerMatchesSearch(single, q)).toBe(expected);
+      });
+    }
   });
 });

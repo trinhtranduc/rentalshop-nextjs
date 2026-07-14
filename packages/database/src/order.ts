@@ -15,6 +15,7 @@ import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, forma
  */
 async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
+  const searchTermNFC = searchTerm.normalize('NFC');
   const normalizedTerm = removeVietnameseDiacritics(searchTerm);
 
   // Step 1: Find customer IDs using unaccent() in PostgreSQL for true diacritics-insensitive search
@@ -45,7 +46,7 @@ async function buildOrderSearchConditions(searchInput: string, merchantId?: numb
     `;
     matchingCustomerIds = customerResults.map(r => r.id);
   } catch {
-    // unaccent extension not available — fallback silently
+    // unaccent/normalize not available — fall back to order number + phone only.
   }
 
   // Step 2: Build Prisma OR conditions
