@@ -353,7 +353,8 @@ class ProductCell: UITableViewCell {
         
         // Rent price value
         let rentPrice = product.rentPrice ?? product.rent
-        rentPriceValueLabel.text = rentPrice.formatStringInCommon()
+        let rentPriceSuffix = product.isDailyPricing ? "/ngày" : ""
+        rentPriceValueLabel.text = rentPrice.formatStringInCommon() + rentPriceSuffix
         
         // Sale price value
         let salePrice = product.salePrice ?? product.sale
