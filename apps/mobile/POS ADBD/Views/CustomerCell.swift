@@ -215,6 +215,11 @@ class CustomerCell: UITableViewCell {
         phoneRowStack.isHidden = false
         avatarImageView.image = UIImage(named: "ic_customer_empty")
     }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        contentView.frame = bounds
+    }
     
     // MARK: - Setup
     private func setupUI() {
