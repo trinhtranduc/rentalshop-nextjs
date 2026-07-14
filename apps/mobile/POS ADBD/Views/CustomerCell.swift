@@ -207,7 +207,6 @@ class CustomerCell: UITableViewCell {
         nameLabel.attributedText = nil
         phoneLabel.text = nil
         pointsLabel.text = nil
-        pointsBadge.isHidden = true
         tierNameLabel.text = nil
         tierIconImageView.image = nil
         tierPillView.isHidden = true
