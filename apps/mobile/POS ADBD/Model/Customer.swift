@@ -280,9 +280,9 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayPoints: Int? {
         switch loyaltyDisplayState {
         case .active:
-            return loyalty?.points
+            return loyalty?.points ?? 0
         case .legacy:
-            return loyaltyLegacyPoints > 0 ? loyaltyLegacyPoints : nil
+            return loyaltyLegacyPoints
         case .inactive, .unavailable, .none:
             return nil
         }
