@@ -327,17 +327,7 @@ class CustomerCell: UITableViewCell {
         }
 
         // Accent color drives both the tier pill and the points badge so they read as one unit.
-        let accent: UIColor
-        switch state {
-        case .active:
-            accent = (user.loyalty?.tier?.color).map { UIColor(hexString: $0) } ?? .systemBlue
-        case .legacy:
-            accent = .systemBlue
-        case .inactive, .unavailable:
-            accent = .systemGray
-        case .none:
-            accent = .systemBlue
-        }
+        let accent: UIColor = (user.loyalty?.tier?.color).map { UIColor(hexString: $0) } ?? .systemBlue
 
         // Tier pill (line 2, leading)
         tierPillView.isHidden = false

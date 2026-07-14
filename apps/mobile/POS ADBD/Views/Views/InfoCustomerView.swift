@@ -199,9 +199,7 @@ class InfoCustomerView: UIView {
         loyaltyStackView.isHidden = false
 
         customerLoyaltyLabel.text = loyaltyLevelName
-        customerLoyaltyLabel.textColor = (customer.loyaltyDisplayState == .inactive || customer.loyaltyDisplayState == .unavailable)
-            ? .systemGray
-            : .systemBlue
+        customerLoyaltyLabel.textColor = .systemBlue
 
         if let points = customer.loyaltyDisplayPoints {
             let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
@@ -218,10 +216,6 @@ class InfoCustomerView: UIView {
             loyaltyIconView.layer.borderColor = parsed.withAlphaComponent(0.22).cgColor
             loyaltyIconView.backgroundColor = parsed.withAlphaComponent(0.10)
             loyaltyIconImageView.tintColor = parsed
-        } else if customer.loyaltyDisplayState == .unavailable {
-            loyaltyIconView.layer.borderColor = UIColor.systemGray.withAlphaComponent(0.20).cgColor
-            loyaltyIconView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.08)
-            loyaltyIconImageView.tintColor = .systemGray
         } else {
             loyaltyIconView.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
             loyaltyIconView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.08)
