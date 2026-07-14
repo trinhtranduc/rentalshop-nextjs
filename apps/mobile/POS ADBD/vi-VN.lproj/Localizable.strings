@@ -80,6 +80,8 @@
 "Please enter a valid postal code" = "Vui lòng nhập mã bưu điện hợp lệ";
 "Please enter a valid address" = "Vui lòng nhập địa chỉ hợp lệ";
 "Please enter a valid phone number" = "Vui lòng nhập số điện thoại hợp lệ";
+"Phone number is required" = "Vui lòng nhập số điện thoại";
+"Location is required" = "Vui lòng nhập địa chỉ";
 "Select Country" = "Chọn quốc gia";
 "Phone Number" = "Số điện thoại";
 "Phone Number (Optional)" = "Số điện thoại (Tùy chọn)";
@@ -107,6 +109,14 @@
 "Enter store name" = "Nhập tên cửa hàng";
 "Enter store address" = "Nhập địa chỉ cửa hàng";
 "Enter phone number" = "Nhập số điện thoại";
+"Optional" = "Tùy chọn";
+"e.g. Nguyen Van A" = "VD: Nguyen Van A";
+"Email for activation link" = "Email để nhận liên kết kích hoạt";
+"At least 6 characters" = "Tối thiểu 6 ký tự";
+"Re-enter your password" = "Nhập lại mật khẩu";
+"e.g. AnyRent Rental Shop" = "VD: Cửa hàng cho thuê AnyRent";
+"e.g. 01 Quang Trung, District 1, HCMC" = "VD: 01 Quang Trung, Quận 1, TP.HCM";
+"e.g. 0901234567" = "VD: 0901234567";
 "Please enter a valid email address" = "Vui lòng nhập địa chỉ email hợp lệ";
 "Registration successful! Please login with your credentials." = "Đăng ký thành công! Vui lòng đăng nhập bằng thông tin đăng nhập của bạn.";
 "Input phone" = "Nhập số điện thoại";

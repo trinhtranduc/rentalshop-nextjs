@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import { 
   User, 
   Mail, 
@@ -151,6 +152,60 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       </CardHeader>
       
       <CardContent>
+        {customer.loyaltyStatus === 'active' && customer.loyalty ? (
+          <div className="mb-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Loyalty</p>
+                <p className="text-sm text-gray-600">
+                  {customer.loyalty.tier?.name
+                    ? `Hạng hiện tại: ${customer.loyalty.tier.name}`
+                    : 'Chưa có hạng loyalty'}
+                </p>
+              </div>
+              {customer.loyalty.tier?.name && (
+                <Badge variant="secondary" className="px-3 py-1 text-sm">
+                  {customer.loyalty.tier.name}
+                </Badge>
+              )}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div>
+                <label className="block text-xs font-normal text-gray-500 mb-1">Điểm</label>
+                <p className="text-gray-900 text-base font-medium">{customer.loyalty.points.toLocaleString('vi-VN')}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-normal text-gray-500 mb-1">Đã tích lũy</label>
+                <p className="text-gray-900 text-base font-medium">{customer.loyalty.totalEarned.toLocaleString('vi-VN')}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-normal text-gray-500 mb-1">Đã đổi</label>
+                <p className="text-gray-900 text-base font-medium">{customer.loyalty.totalRedeemed.toLocaleString('vi-VN')}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-normal text-gray-500 mb-1">Đã chi tiêu</label>
+                <p className="text-gray-900 text-base font-medium">{new Intl.NumberFormat('vi-VN').format(customer.loyalty.totalSpent)}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Loyalty</p>
+                <p className="text-sm text-gray-600">
+                  {customer.loyaltyStatus === 'unavailable'
+                    ? 'Loyalty không khả dụng cho plan hiện tại.'
+                    : 'Loyalty chưa kích hoạt.'}
+                </p>
+              </div>
+              <Badge variant="outline" className="border-gray-200 text-gray-600">
+                {customer.loyaltyStatus === 'unavailable' ? 'Khóa' : 'Tắt'}
+              </Badge>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Personal Information */}
           <div className="space-y-4">

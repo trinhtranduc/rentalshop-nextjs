@@ -5,6 +5,7 @@ import { ORDER_STATUS } from '@rentalshop/constants';
 import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import {API} from '@rentalshop/constants';
+import { fetchCustomerLoyaltySnapshot, fetchMerchantLoyaltyStatus } from '@/lib/customer-loyalty';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -86,11 +87,15 @@ export async function GET(
       console.log('✅ Customer found:', customer);
 
       // Normalize date fields to UTC ISO strings using toISOString()
+      const loyaltyStatus = await fetchMerchantLoyaltyStatus(customer.merchantId);
+
       const normalizedCustomer = {
         ...customer,
         createdAt: customer.createdAt?.toISOString() || null,
         updatedAt: customer.updatedAt?.toISOString() || null,
         dateOfBirth: customer.dateOfBirth?.toISOString() || null,
+        loyaltyStatus,
+        loyalty: loyaltyStatus === 'active' ? await fetchCustomerLoyaltySnapshot(customerId) : null,
       };
 
       return NextResponse.json({

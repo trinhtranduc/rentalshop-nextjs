@@ -81,6 +81,8 @@
 "Please enter a valid postal code" = "Please enter a valid postal code";
 "Please enter a valid address" = "Please enter a valid address";
 "Please enter a valid phone number" = "Please enter a valid phone number";
+"Phone number is required" = "Phone number is required";
+"Location is required" = "Location is required";
 "Select Country" = "Select Country";
 "Phone Number" = "Phone Number";
 "Phone Number (Optional)" = "Phone Number (Optional)";
@@ -108,6 +110,14 @@
 "Enter store name" = "Enter store name";
 "Enter store address" = "Enter store address";
 "Enter phone number" = "Enter phone number";
+"Optional" = "Optional";
+"e.g. Nguyen Van A" = "e.g. Nguyen Van A";
+"Email for activation link" = "Email to receive activation link";
+"At least 6 characters" = "At least 6 characters";
+"Re-enter your password" = "Re-enter your password";
+"e.g. AnyRent Rental Shop" = "e.g. AnyRent Rental Shop";
+"e.g. 01 Quang Trung, District 1, HCMC" = "e.g. 01 Quang Trung, District 1, HCMC";
+"e.g. 0901234567" = "e.g. 0901234567";
 "Please enter a valid email address" = "Please enter a valid email address";
 "Registration successful! Please login with your credentials." = "Registration successful! Please login with your credentials.";
 "Input phone" = "Input phone";

@@ -8,10 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
-import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS, USER_ROLE, type UserRole } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
-import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
-import { getSubscriptionError } from '@rentalshop/utils/server';
+import type { ClientPlatform } from '@rentalshop/types';
 import type { Role, Permission, Resource } from './permissions';
 import { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from './permissions';
 
@@ -19,11 +18,104 @@ import { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from './permissions';
 // SUBSCRIPTION STATUS CHECK HELPER
 // ============================================================================
 
+type PlanPlatformLimits = {
+  allowWebAccess?: boolean;
+  allowMobileAccess?: boolean;
+};
+
+function detectRequestPlatform(request: NextRequest): ClientPlatform {
+  const forwardedPlatform = request.headers.get('x-platform')?.toLowerCase();
+  if (forwardedPlatform === 'web' || forwardedPlatform === 'mobile') {
+    return forwardedPlatform;
+  }
+
+  const platformHeader = request.headers.get('x-client-platform')?.toLowerCase();
+  if (platformHeader === 'web' || platformHeader === 'mobile') {
+    return platformHeader;
+  }
+
+  const deviceType = request.headers.get('x-device-type')?.toLowerCase();
+  if (deviceType === 'ios' || deviceType === 'android') {
+    return 'mobile';
+  }
+  if (deviceType === 'browser') {
+    return 'web';
+  }
+
+  const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
+  return /mobile|android|iphone|ipad|ipod/i.test(userAgent) ? 'mobile' : 'web';
+}
+
+function parsePlanPlatformLimits(rawLimits: unknown): PlanPlatformLimits {
+  if (!rawLimits) {
+    return {};
+  }
+
+  if (typeof rawLimits === 'string') {
+    try {
+      const parsed = JSON.parse(rawLimits);
+      return typeof parsed === 'object' && parsed !== null
+        ? (parsed as PlanPlatformLimits)
+        : {};
+    } catch (error) {
+      console.error('Failed to parse plan limits for platform access:', error);
+      return {};
+    }
+  }
+
+  return typeof rawLimits === 'object'
+    ? (rawLimits as PlanPlatformLimits)
+    : {};
+}
+
+function createPlatformAccessDeniedResponse(options: {
+  planName: string;
+  platform: ClientPlatform;
+  allowWebAccess: boolean;
+  allowMobileAccess: boolean;
+}): NextResponse {
+  const allowedPlatforms: string[] = [];
+
+  if (options.allowWebAccess) {
+    allowedPlatforms.push('web');
+  }
+  if (options.allowMobileAccess) {
+    allowedPlatforms.push('mobile');
+  }
+
+  const message =
+    options.platform === 'mobile'
+      ? 'Your subscription plan does not allow mobile access. Please switch to a plan that supports mobile usage.'
+      : 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.';
+
+  return NextResponse.json(
+    {
+      success: false,
+      code: 'PLATFORM_ACCESS_DENIED',
+      message,
+      data: {
+        currentPlan: options.planName,
+        currentPlatform: options.platform,
+        allowedPlatforms,
+        upgradeRequired: true,
+        upgradeUrl: '/settings/subscription',
+      },
+    },
+    {
+      status: API.STATUS.FORBIDDEN,
+      headers: {
+        'X-Platform-Access-Denied': 'true',
+        'X-Upgrade-Required': 'true',
+      },
+    }
+  );
+}
+
 /**
  * Check if merchant has active subscription
  * Returns error response if subscription is paused, cancelled, or expired
  */
-async function checkMerchantSubscriptionStatus(merchantId: number): Promise<{
+async function checkMerchantSubscriptionStatus(merchantId: number, request: NextRequest): Promise<{
   success: boolean;
   response?: NextResponse;
 }> {
@@ -147,6 +239,35 @@ async function checkMerchantSubscriptionStatus(merchantId: number): Promise<{
           },
           { status: 403 }
         )
+      };
+    }
+
+    const platform = detectRequestPlatform(request);
+    const planName = subscription.plan?.name || 'Unknown';
+    const platformLimits = parsePlanPlatformLimits(subscription.plan?.limits);
+    const allowWebAccess = platformLimits.allowWebAccess ?? true;
+    const allowMobileAccess = platformLimits.allowMobileAccess ?? true;
+    const platformDenied =
+      (platform === 'web' && !allowWebAccess) ||
+      (platform === 'mobile' && !allowMobileAccess);
+
+    if (platformDenied) {
+      console.log('❌ Platform access denied:', {
+        merchantId,
+        planName,
+        platform,
+        allowWebAccess,
+        allowMobileAccess,
+      });
+
+      return {
+        success: false,
+        response: createPlatformAccessDeniedResponse({
+          planName,
+          platform,
+          allowWebAccess,
+          allowMobileAccess,
+        }),
       };
     }
 
@@ -441,7 +562,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     // ============================================================================
     // Check if merchant has active subscription (skip for ADMIN users)
     if (user.role !== 'ADMIN' && user.role !== 'ARTICLE' && user.merchantId) {
-      const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId);
+      const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId, request);
       if (!subscriptionCheck.success) {
         return {
           success: false,

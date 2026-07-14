@@ -15,7 +15,7 @@ import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumber } from '@rentalshop/utils';
-import { Copy } from 'lucide-react';
+import { Copy, Gift } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
@@ -301,8 +301,11 @@ export const OrderTable = React.memo(function OrderTable({
                 )}
                 {/* Order Number */}
                 <td className="px-6 py-3 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
                     {order.orderNumber}
+                    {((order as any).loyaltyPointsRedeemed > 0 || (order as any).loyaltyPointsEarned > 0) && (
+                      <Gift className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" title="Có hoạt động điểm thưởng" />
+                    )}
                   </div>
                 </td>
                 

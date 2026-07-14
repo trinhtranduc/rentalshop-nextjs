@@ -105,7 +105,69 @@ class LabeledTextField: UIView {
     }
     
     func setTitle(_ text: String) {
+        titleLabel.attributedText = nil
         titleLabel.text = text
+    }
+
+    /// Shows a red asterisk after the label for required fields.
+    func setRequired(_ isRequired: Bool) {
+        let displayTitle = titleLabel.attributedText?.string ?? titleLabel.text ?? ""
+        let baseTitle = displayTitle
+            .replacingOccurrences(of: " *", with: "")
+            .replacingOccurrences(of: " (*)", with: "")
+            .trimmingCharacters(in: .whitespaces)
+
+        guard isRequired else {
+            titleLabel.attributedText = nil
+            titleLabel.text = baseTitle
+            return
+        }
+
+        let attributed = NSMutableAttributedString(
+            string: baseTitle,
+            attributes: [
+                .font: Utils.mediumFont(size: 14),
+                .foregroundColor: titleLabel.textColor ?? APP_TEXT_COLOR
+            ]
+        )
+        attributed.append(NSAttributedString(
+            string: " *",
+            attributes: [
+                .font: Utils.mediumFont(size: 14),
+                .foregroundColor: UIColor.actionDanger
+            ]
+        ))
+        titleLabel.attributedText = attributed
+    }
+
+    /// Appends a muted "(Optional)" hint to the field label.
+    func setOptional(_ isOptional: Bool) {
+        let baseTitle = (titleLabel.attributedText?.string ?? titleLabel.text ?? "")
+            .replacingOccurrences(of: " *", with: "")
+            .replacingOccurrences(of: " (\("Optional".localized()))", with: "")
+            .trimmingCharacters(in: .whitespaces)
+
+        guard isOptional else {
+            titleLabel.attributedText = nil
+            titleLabel.text = baseTitle
+            return
+        }
+
+        let attributed = NSMutableAttributedString(
+            string: baseTitle + " ",
+            attributes: [
+                .font: Utils.mediumFont(size: 14),
+                .foregroundColor: titleLabel.textColor ?? APP_TEXT_COLOR
+            ]
+        )
+        attributed.append(NSAttributedString(
+            string: "(\("Optional".localized()))",
+            attributes: [
+                .font: Utils.regularFont(size: 12),
+                .foregroundColor: UIColor.textSecondary
+            ]
+        ))
+        titleLabel.attributedText = attributed
     }
     
     func setTitleColor(_ color: UIColor) {

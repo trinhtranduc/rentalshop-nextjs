@@ -26,6 +26,11 @@ import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils';
+import {
+  calculateAmountDue,
+  handleLoyaltyOnOrderCreate,
+  merchantHasLoyaltyFeature,
+} from '@rentalshop/loyalty';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -736,19 +741,59 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     
     // Use simplified database API
     const order = await db.orders.create(orderData);
+
+    let loyaltyOrder = order;
+    // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
+    // there is an actual loyalty intent: an explicit redeem, or a SALE order with a customer
+    // (SALE earns immediately). No customer / no intent -> zero loyalty query.
+    const wantsRedeem = Boolean(parsed.data.customerId && parsed.data.loyaltyRedeem?.points);
+    const wantsSaleEarn = Boolean(
+      parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
+    );
+    if (wantsRedeem || wantsSaleEarn) {
+      const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
+      if (hasLoyalty && wantsRedeem) {
+        // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            parsed.data.loyaltyRedeem,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyError) {
+          console.error('❌ Loyalty processing failed, rolling back order:', loyaltyError);
+          await db.orders.delete(order.id).catch(() => undefined);
+          throw loyaltyError;
+        }
+      } else if (hasLoyalty && wantsSaleEarn) {
+        // Earn is FAIL-OPEN (INV-6): order stays created even if earn fails.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            undefined,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyEarnError) {
+          console.error('⚠️ Loyalty earn failed (order still created):', loyaltyEarnError);
+        }
+      }
+    }
+
     const auditHelper = createAuditHelper(prisma);
     await auditHelper.logCreate({
       entityType: 'Order',
-      entityId: String(order.id),
-      entityName: order.orderNumber || String(order.id),
-      newValues: { orderNumber: order.orderNumber, orderType: order.orderType, status: order.status, outletId: order.outletId, customerId: order.customerId },
-      description: `Order created: ${order.orderNumber || order.id}`,
+      entityId: String(loyaltyOrder.id),
+      entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
+      newValues: { orderNumber: loyaltyOrder.orderNumber, orderType: loyaltyOrder.orderType, status: loyaltyOrder.status, outletId: loyaltyOrder.outletId, customerId: loyaltyOrder.customerId },
+      description: `Order created: ${loyaltyOrder.orderNumber || loyaltyOrder.id}`,
       context: buildAuditContext(request, user, userScope)
     }).catch((err) => console.error('Audit log create failed:', err));
-    console.log('✅ Order created successfully:', order);
+    console.log('✅ Order created successfully:', loyaltyOrder);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
-    if (order.orderItems && order.orderItems.length > 0) {
+    if (loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
       try {
         // Import the function from product module (same pattern as updateOrder in order.ts)
         // Use dynamic import - order.ts uses './product' from same package
@@ -759,17 +804,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           // For SALE orders with COMPLETED status: decrease stock permanently
           // For RENT orders with RESERVED/PICKUPED status: update renting/available
           const shouldUpdateStock = 
-            (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.COMPLETED) ||
-            (order.orderType === ORDER_TYPE.RENT && (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED));
+            (loyaltyOrder.orderType === ORDER_TYPE.SALE && loyaltyOrder.status === ORDER_STATUS.COMPLETED) ||
+            (loyaltyOrder.orderType === ORDER_TYPE.RENT && (loyaltyOrder.status === ORDER_STATUS.RESERVED || loyaltyOrder.status === ORDER_STATUS.PICKUPED));
           
           if (shouldUpdateStock) {
             await updateOutletStockForOrder(
-              order.id,
+              loyaltyOrder.id,
               null, // oldStatus (null for new orders)
-              order.status,
-              order.orderType as 'RENT' | 'SALE',
-              order.outletId,
-              order.orderItems.map(item => ({
+              loyaltyOrder.status,
+              loyaltyOrder.orderType as 'RENT' | 'SALE',
+              loyaltyOrder.outletId,
+              loyaltyOrder.orderItems.map(item => ({
                 productId: item.productId || 0,
                 quantity: item.quantity,
               })).filter(item => item.productId > 0)
@@ -788,46 +833,53 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      orderType: order.orderType,
-      status: order.status,
-      outletId: order.outletId,
-      outletName: order.outlet?.name || null,
-      customerId: order.customerId,
+      id: loyaltyOrder.id,
+      orderNumber: loyaltyOrder.orderNumber,
+      orderType: loyaltyOrder.orderType,
+      status: loyaltyOrder.status,
+      outletId: loyaltyOrder.outletId,
+      outletName: loyaltyOrder.outlet?.name || null,
+      customerId: loyaltyOrder.customerId,
       customerFirstName: order.customer?.firstName || null,
       customerLastName: order.customer?.lastName || null,
-      customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) : null,
-      customerPhone: order.customer?.phone || null,
-      customerEmail: order.customer?.email || null,
+      customerName: loyaltyOrder.customer ? formatFullName(loyaltyOrder.customer.firstName, loyaltyOrder.customer.lastName) : null,
+      customerPhone: loyaltyOrder.customer?.phone || null,
+      customerEmail: loyaltyOrder.customer?.email || null,
       merchantId: null, // Will be populated from outlet if needed
       merchantName: null, // Will be populated from outlet if needed
-      createdById: order.createdById,
-      createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
-      totalAmount: order.totalAmount,
-      depositAmount: order.depositAmount,
-      securityDeposit: order.securityDeposit,
-      damageFee: order.damageFee,
-      lateFee: order.lateFee,
-      discountType: order.discountType,
-      discountValue: order.discountValue,
-      discountAmount: order.discountAmount,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      rentalDuration: order.rentalDuration,
-      isReadyToDeliver: order.isReadyToDeliver,
-      collateralType: order.collateralType,
-      collateralDetails: order.collateralDetails,
-      notes: order.notes,
-      pickupNotes: order.pickupNotes,
-      returnNotes: order.returnNotes,
-      damageNotes: order.damageNotes,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
+      createdById: loyaltyOrder.createdById,
+      createdByName: loyaltyOrder.createdBy ? formatFullName(loyaltyOrder.createdBy.firstName, loyaltyOrder.createdBy.lastName) : null,
+      totalAmount: loyaltyOrder.totalAmount,
+      depositAmount: loyaltyOrder.depositAmount,
+      securityDeposit: loyaltyOrder.securityDeposit,
+      damageFee: loyaltyOrder.damageFee,
+      lateFee: loyaltyOrder.lateFee,
+      discountType: loyaltyOrder.discountType,
+      discountValue: loyaltyOrder.discountValue,
+      discountAmount: loyaltyOrder.discountAmount,
+      loyaltyPointsRedeemed: loyaltyOrder.loyaltyPointsRedeemed ?? 0,
+      loyaltyDiscount: loyaltyOrder.loyaltyDiscount ?? 0,
+      loyaltyPointsEarned: loyaltyOrder.loyaltyPointsEarned ?? 0,
+      amountDue: calculateAmountDue(
+        loyaltyOrder.totalAmount,
+        loyaltyOrder.loyaltyDiscount ?? 0
+      ),
+      pickupPlanAt: loyaltyOrder.pickupPlanAt,
+      returnPlanAt: loyaltyOrder.returnPlanAt,
+      pickedUpAt: loyaltyOrder.pickedUpAt,
+      returnedAt: loyaltyOrder.returnedAt,
+      rentalDuration: loyaltyOrder.rentalDuration,
+      isReadyToDeliver: loyaltyOrder.isReadyToDeliver,
+      collateralType: loyaltyOrder.collateralType,
+      collateralDetails: loyaltyOrder.collateralDetails,
+      notes: loyaltyOrder.notes,
+      pickupNotes: loyaltyOrder.pickupNotes,
+      returnNotes: loyaltyOrder.returnNotes,
+      damageNotes: loyaltyOrder.damageNotes,
+      createdAt: loyaltyOrder.createdAt,
+      updatedAt: loyaltyOrder.updatedAt,
       // Flatten order items with product info
-      orderItems: order.orderItems?.map((item: any) => {
+      orderItems: loyaltyOrder.orderItems?.map((item: any) => {
         // Priority 1: Use productImages (snapshot field saved when order was created)
         // Priority 2: Fallback to product.images (from product relation - current images)
         const snapshotImages = parseProductImages(item.productImages);
@@ -850,9 +902,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         };
       }) || [],
       // Calculated fields
-      itemCount: order.orderItems?.length || 0,
-      paymentCount: order.payments?.length || 0,
-      totalPaid: order.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+      itemCount: loyaltyOrder.orderItems?.length || 0,
+      paymentCount: loyaltyOrder.payments?.length || 0,
+      totalPaid: loyaltyOrder.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     };
 
     // Normalize date fields to UTC ISO strings using toISOString()

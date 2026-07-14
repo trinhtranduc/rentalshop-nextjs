@@ -555,13 +555,15 @@ enum OverviewUIBuilder {
         valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let trailingStack = UIStackView()
-        trailingStack.axis = .vertical
-        trailingStack.spacing = 4
-        trailingStack.alignment = .trailing
-        trailingStack.addArrangedSubview(valueLabel)
+        trailingStack.axis = .horizontal
+        trailingStack.spacing = 8
+        trailingStack.alignment = .center
 
         if let onViewOrders {
+            trailingStack.addArrangedSubview(valueLabel)
             trailingStack.addArrangedSubview(makeRankingOrdersButton(action: onViewOrders))
+        } else {
+            trailingStack.addArrangedSubview(valueLabel)
         }
 
         let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, trailingStack])
@@ -587,19 +589,21 @@ enum OverviewUIBuilder {
     }
 
     static func makeRankingOrdersButton(action: @escaping () -> Void) -> UIButton {
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        let image = UIImage(systemName: "list.bullet.rectangle", withConfiguration: symbolConfig)
+
         var config = UIButton.Configuration.plain()
-        config.title = "View orders".localized()
+        config.image = image
         config.baseForegroundColor = .brandPrimary
-        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = .captionMedium(size: 12)
-            return outgoing
-        }
+        config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
 
         let button = UIButton(configuration: config, primaryAction: UIAction { _ in action() })
+        button.accessibilityLabel = "View orders".localized()
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in
+            make.width.height.equalTo(28)
+        }
         return button
     }
 
