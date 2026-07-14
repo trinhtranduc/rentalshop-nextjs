@@ -7,9 +7,109 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
+import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { removeVietnameseDiacritics } from '@rentalshop/utils';
+
+// ============================================================================
+// PRODUCT NAME SEARCH — shared with buildOrderSearchConditions() semantics
+// ============================================================================
+// Matches the order-search rules (see packages/database/src/order.ts):
+//   1. Word-prefix matching: a term must start the whole value OR start any word
+//      inside it. "dai" matches "Áo dài" (word start) but "ai" does not (mid-word).
+//   2. Conditional accent, driven by whether the QUERY carries diacritics:
+//        - query WITHOUT diacritics ("ao")  → accent-INSENSITIVE, also matches "Áo".
+//        - query WITH diacritics ("áo")     → exact accented match only.
+// Multi-word queries require ALL words to match (AND), each in name OR description.
+
+/**
+ * Resolve product IDs whose name/description match the search term at the DB level
+ * (the only place the accent rules above can be enforced correctly).
+ * Returns `null` if the raw query fails (e.g. unaccent/normalize unavailable) so the
+ * caller can fall back to the legacy Prisma `contains` matching without regressing.
+ */
+async function findMatchingProductIds(searchInput: string, merchantId?: number): Promise<number[] | null> {
+  const words = searchInput.trim().split(/\s+/).filter((w: string) => w.length > 0);
+  if (words.length === 0) return [];
+
+  try {
+    const perWord = words.map((word: string) => {
+      const nfc = word.normalize('NFC');
+      const stripped = removeVietnameseDiacritics(word);
+      const hasDiacritics = nfc.toLowerCase() !== stripped.toLowerCase();
+      const term = (hasDiacritics ? nfc : stripped).toLowerCase();
+      const startPattern = `${term}%`;
+      const wordPattern = `% ${term}%`;
+      return hasDiacritics
+        ? Prisma.sql`(
+            lower(normalize("name", NFC)) LIKE ${startPattern}
+            OR lower(normalize("name", NFC)) LIKE ${wordPattern}
+            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${startPattern}
+            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${wordPattern}
+          )`
+        : Prisma.sql`(
+            unaccent(lower("name")) LIKE ${startPattern}
+            OR unaccent(lower("name")) LIKE ${wordPattern}
+            OR unaccent(lower(COALESCE("description", ''))) LIKE ${startPattern}
+            OR unaccent(lower(COALESCE("description", ''))) LIKE ${wordPattern}
+          )`;
+    });
+    // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
+    // by other tenants (a broad term like "ao" can match a lot).
+    const nameCondition = Prisma.join(perWord, ' AND ');
+    const merchantFilter = merchantId != null
+      ? Prisma.sql`AND "merchantId" = ${merchantId}`
+      : Prisma.empty;
+    const rows: Array<{ id: number }> = await prisma.$queryRaw`
+      SELECT id FROM "Product"
+      WHERE ${nameCondition}
+      ${merchantFilter}
+      LIMIT 1000
+    `;
+    return rows.map((r) => Number(r.id));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the `where.OR` array for a product text search: DB-level name/description
+ * matching (via findMatchingProductIds) OR the given barcode condition.
+ * Falls back to legacy per-word Prisma `contains` if the raw query is unavailable.
+ */
+async function buildProductSearchOr(
+  searchTerm: string,
+  merchantId: number | undefined,
+  barcodeCondition: any
+): Promise<any[]> {
+  const ids = await findMatchingProductIds(searchTerm, merchantId);
+
+  if (ids === null) {
+    // Fallback: legacy word-by-word contains (accent-insensitive on the term only).
+    const words = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
+    const andConditions = words.map((word: string) => {
+      const originalWord = word.toLowerCase();
+      const normalizedWord = removeVietnameseDiacritics(originalWord);
+      const wordConditions: any[] = [
+        { name: { contains: originalWord, mode: 'insensitive' } },
+        { description: { contains: originalWord, mode: 'insensitive' } },
+      ];
+      if (normalizedWord !== originalWord) {
+        wordConditions.push(
+          { name: { contains: normalizedWord, mode: 'insensitive' } },
+          { description: { contains: normalizedWord, mode: 'insensitive' } }
+        );
+      }
+      return { OR: wordConditions };
+    });
+    return [{ AND: andConditions }, barcodeCondition];
+  }
+
+  const or: any[] = [barcodeCondition];
+  if (ids.length > 0) or.unshift({ id: { in: ids } });
+  return or;
+}
 
 // ============================================================================
 // PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
@@ -177,51 +277,17 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
-  // Support word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
-  // Case-insensitive and diacritics-insensitive
-  // AND logic: product must contain ALL words in name or description
+  // Word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
+  // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
-    
-    // Split query into individual words
     const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
-    
+
     if (words.length > 0) {
-      const andConditions: any[] = [];
-      
-      // For each word, create condition: word must appear in name OR description
-      // ALL words must be present (AND logic)
-      for (const word of words) {
-        const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
-        const originalWord = word.toLowerCase();
-        
-        // Word must be in name OR description (with diacritics)
-        const wordConditions: any[] = [
-          { name: { contains: originalWord, mode: 'insensitive' } },
-          { description: { contains: originalWord, mode: 'insensitive' } }
-        ];
-        
-        // Add normalized word search if different from original
-        if (normalizedWord !== originalWord) {
-          wordConditions.push(
-            { name: { contains: normalizedWord, mode: 'insensitive' } },
-            { description: { contains: normalizedWord, mode: 'insensitive' } }
-          );
-        }
-        
-        // Each word must be found (AND logic)
-        andConditions.push({ OR: wordConditions });
-      }
-      
-      // Barcode is exact match (not word-by-word) - add as OR condition
+      // Barcode is an exact match here (not word-by-word).
       const barcodeCondition = { barcode: { equals: searchTerm } };
-      
-      // Product matches if: (ALL words found) OR (barcode matches)
-      where.OR = [
-        { AND: andConditions },
-        barcodeCondition
-      ];
+      where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
     }
   }
 
@@ -1347,50 +1413,16 @@ export const simplifiedProducts = {
           }
     // If available=false or undefined, don't filter - show all products
     
-    // Text search - word-by-word search: "Áo dài đỏ" matches products with ALL words: "ao", "dai", AND "do"
-    // Case-insensitive and diacritics-insensitive
-    // AND logic: product must contain ALL words in name or description
+    // Text search - word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
+    // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
-      
-      // Split query into individual words
       const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
-      
+
       if (words.length > 0) {
-        const andConditions: any[] = [];
-        
-        // For each word, create condition: word must appear in name OR description
-        // ALL words must be present (AND logic)
-        for (const word of words) {
-          const normalizedWord = removeVietnameseDiacritics(word.toLowerCase());
-          const originalWord = word.toLowerCase();
-          
-          // Word must be in name OR description (with diacritics)
-          const wordConditions: any[] = [
-            { name: { contains: originalWord, mode: 'insensitive' } },
-            { description: { contains: originalWord, mode: 'insensitive' } }
-          ];
-          
-          // Add normalized word search if different from original
-          if (normalizedWord !== originalWord) {
-            wordConditions.push(
-              { name: { contains: normalizedWord, mode: 'insensitive' } },
-              { description: { contains: normalizedWord, mode: 'insensitive' } }
-            );
-          }
-          
-          // Each word must be found (AND logic)
-          andConditions.push({ OR: wordConditions });
-        }
-        
-        // Barcode is exact match (not word-by-word) - add as OR condition
+        // Barcode is a prefix/contains match here (kept from prior behaviour).
         const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
-        
-        // Product matches if: (ALL words found) OR (barcode matches)
-        where.OR = [
-          { AND: andConditions },
-          barcodeCondition
-        ];
+        where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
       }
     }
 
