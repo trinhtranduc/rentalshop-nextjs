@@ -355,18 +355,7 @@ class CustomerCell: UITableViewCell {
     }
 
     func loyaltyIconName(for user: Customer) -> String {
-        switch user.loyaltyDisplayState {
-        case .active:
-            return user.loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
-        case .legacy:
-            return user.customer_level?.loyaltySystemIconName ?? ((user.loyaltyDisplayPoints ?? 0) > 0 ? "star.fill" : "person.fill")
-        case .inactive:
-            return "sparkles"
-        case .unavailable:
-            return "lock.fill"
-        case .none:
-            return "person.fill"
-        }
+        return user.loyaltyDisplayIconName ?? "person.fill"
     }
     
     // MARK: - Actions

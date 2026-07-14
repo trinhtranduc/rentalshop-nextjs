@@ -224,18 +224,7 @@ class InfoCustomerView: UIView {
     }
 
     private func loyaltyIconName(for customer: Customer) -> String {
-        switch customer.loyaltyDisplayState {
-        case .active:
-            return customer.loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
-        case .legacy:
-            return customer.customer_level?.loyaltySystemIconName ?? ((customer.loyaltyDisplayPoints ?? 0) > 0 ? "star.fill" : "person.fill")
-        case .inactive:
-            return "sparkles"
-        case .unavailable:
-            return "lock.fill"
-        case .none:
-            return "person.fill"
-        }
+        return customer.loyaltyDisplayIconName ?? "person.fill"
     }
     
     func setupMoreButtonMenu(menu: UIMenu) {

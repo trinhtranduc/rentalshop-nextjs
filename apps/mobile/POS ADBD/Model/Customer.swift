@@ -291,9 +291,11 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayIconName: String? {
         switch loyaltyDisplayState {
         case .active:
-            return loyalty?.tier?.icon?.loyaltySystemIconName ?? "person.fill"
+            let levelName = loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên"
+            return levelName.loyaltySystemIconName
         case .legacy:
-            return customer_level?.loyaltySystemIconName ?? (loyaltyLegacyPoints > 0 ? "star.fill" : "person.fill")
+            let levelName = customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên"
+            return levelName.loyaltySystemIconName
         case .inactive:
             return "sparkles"
         case .unavailable:
