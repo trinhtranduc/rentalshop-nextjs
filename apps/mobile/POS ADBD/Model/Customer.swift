@@ -265,9 +265,9 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayLevelName: String? {
         switch loyaltyDisplayState {
         case .active:
-            return loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Hạng khách".localized()
+            return loyalty?.tier?.name ?? customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên".localized()
         case .legacy:
-            return customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Hạng khách".localized()
+            return customer_level?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Thành viên".localized()
         case .inactive:
             return "Loyalty chưa kích hoạt"
         case .unavailable:
