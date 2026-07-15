@@ -338,24 +338,65 @@ export async function searchCustomers(
   }
 
   // Search query for name and phone (case-insensitive and diacritics-insensitive)
-  // Matches substring anywhere in the field (consistent with order search by customer name)
+  // Supports multi-word search: "Chú Chồn" matches firstName="Chú", lastName="Chồn"
   if (q && q.trim()) {
     const searchQuery = q.trim();
-    // Normalize Vietnamese text: "Hồng" → "hong"
     const normalizedQuery = removeVietnameseDiacritics(searchQuery);
+    const words = searchQuery.split(/\s+/).filter((w: string) => w.length > 0);
     
+    // Single word or phone: search each field individually
     const searchConditions: any[] = [
       { firstName: { contains: searchQuery, mode: 'insensitive' } },
       { lastName: { contains: searchQuery, mode: 'insensitive' } },
       { phone: { contains: searchQuery } }
     ];
     
-    // Add normalized search if different from original (diacritics-insensitive)
+    // Add normalized search if different (diacritics-insensitive)
     if (normalizedQuery !== searchQuery) {
       searchConditions.push(
         { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
         { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
       );
+    }
+    
+    // Multi-word: also match across firstName + lastName combination
+    // "Chú Chồn" → firstName contains "Chú" AND lastName contains "Chồn" (or reversed)
+    if (words.length >= 2) {
+      const firstPart = words.slice(0, -1).join(' ');  // All but last word
+      const lastPart = words[words.length - 1];       // Last word
+      const firstPartNorm = removeVietnameseDiacritics(firstPart);
+      const lastPartNorm = removeVietnameseDiacritics(lastPart);
+      
+      // firstName=first words, lastName=last word
+      searchConditions.push({
+        AND: [
+          { firstName: { contains: firstPart, mode: 'insensitive' } },
+          { lastName: { contains: lastPart, mode: 'insensitive' } }
+        ]
+      });
+      // Reversed: firstName=last word, lastName=first words
+      searchConditions.push({
+        AND: [
+          { firstName: { contains: lastPart, mode: 'insensitive' } },
+          { lastName: { contains: firstPart, mode: 'insensitive' } }
+        ]
+      });
+      
+      // Also try normalized versions
+      if (firstPartNorm !== firstPart || lastPartNorm !== lastPart) {
+        searchConditions.push({
+          AND: [
+            { firstName: { contains: firstPartNorm, mode: 'insensitive' } },
+            { lastName: { contains: lastPartNorm, mode: 'insensitive' } }
+          ]
+        });
+        searchConditions.push({
+          AND: [
+            { firstName: { contains: lastPartNorm, mode: 'insensitive' } },
+            { lastName: { contains: firstPartNorm, mode: 'insensitive' } }
+          ]
+        });
+      }
     }
     
     where.OR = searchConditions;
