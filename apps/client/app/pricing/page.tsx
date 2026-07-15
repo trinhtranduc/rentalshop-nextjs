@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     url: '/pricing',
     images: [
       {
-        url: '/anyrent.png',
+        url: '/anyrent-og.jpg',
         width: 1200,
         height: 630,
         alt: 'AnyRent - Bảng giá phần mềm quản lý cho thuê',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     title: 'Bảng giá Phần mềm Quản lý Cho thuê | AnyRent',
     description:
       'Gói Basic, Professional, Enterprise. Dùng thử miễn phí 14 ngày. Giá chỉ từ 99.000đ/tháng.',
-    images: ['/anyrent.png'],
+    images: ['/anyrent-og.jpg'],
   },
 };
 
