@@ -173,7 +173,10 @@ export async function GET(
 
       // Get stock info for single outlet
       const totalStock = outletStock.stock;
-      const totalRenting = outletStock.renting;
+      // NOTE: outletStock.renting reflects CURRENT state (how many are out now),
+      // NOT how many will be out during the checked period.
+      // We'll calculate period-specific renting below after conflict check.
+      const currentRenting = outletStock.renting;
 
       // Prefer outletStock.available — updated by SALE (permanent) and RENT PICKUPED/RETURN flows.
       const totalAvailableStock = resolveTotalAvailableStock(outletStock);
@@ -181,7 +184,7 @@ export async function GET(
       console.log('🔍 Stock summary:', {
         totalStock,
         totalAvailableStock,
-        totalRenting,
+        currentRenting,
         requestedQuantity: quantity,
         outletId: finalOutletId,
         productId: productId,
@@ -199,7 +202,7 @@ export async function GET(
             productName: product.name,
             totalStock,
             totalAvailableStock,
-            totalRenting,
+            totalRenting: currentRenting,
             requestedQuantity: quantity,
             isAvailable: stockAvailable,
             availabilityByOutlet: [{
@@ -526,7 +529,7 @@ export async function GET(
         outletId: finalOutletId,
         productId: productId,
         totalStock,
-        totalRenting,
+        totalRenting: conflictingQuantity,
         totalAvailableStock,
         conflictingQuantity,
         reservedConflictQuantity,
@@ -544,6 +547,9 @@ export async function GET(
 
       const availabilityResultWithConflicts = {
         ...availabilityResult,
+        // Override renting to reflect period-specific value (conflictingQuantity)
+        // instead of current DB state (outletStock.renting)
+        renting: conflictingQuantity,
         conflicts: outletConflicts.conflicts,
       };
 
@@ -553,7 +559,7 @@ export async function GET(
           productName: product.name,
           totalStock,
           totalAvailableStock,
-          totalRenting,
+          totalRenting: conflictingQuantity,
           requestedQuantity: quantity,
           rentalPeriod: {
             startDate: rentalStart.toISOString(),
