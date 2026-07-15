@@ -4,13 +4,17 @@
 
 // Local type definitions to avoid circular dependency
 export type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY';
+export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK';
+
+// Pricing unit for time-based options (reserved for BLOCK/HOURLY)
+export type PricingUnit = 'DAY' | 'HOUR';
 
 // Type-safe constants for PricingType enum values
 export const PRICING_TYPE = {
   FIXED: 'FIXED' as const,
   HOURLY: 'HOURLY' as const,
   DAILY: 'DAILY' as const,
+  BLOCK: 'BLOCK' as const,
 } as const;
 
 // ============================================================================
@@ -173,6 +177,7 @@ export const PRICING_TYPE_LABELS = {
   FIXED: 'Fixed Price',
   HOURLY: 'Hourly',
   DAILY: 'Daily',
+  BLOCK: 'Block',
 } as const;
 
 /**
@@ -192,6 +197,7 @@ export const PRICING_TYPE_DESCRIPTIONS = {
   FIXED: 'One price per rental (e.g., equipment rental)',
   HOURLY: 'Price per hour (e.g., vehicles, tools)',
   DAILY: 'Price per day (e.g., construction equipment)',
+  BLOCK: 'Price per block of N days (reserved for future use)',
 } as const;
 
 /**
@@ -257,6 +263,7 @@ export function getDurationUnit(pricingType: PricingType): string {
   switch (pricingType) {
     case 'HOURLY': return 'hour';
     case 'DAILY': return 'day';
+    case 'BLOCK': return 'block';
     case 'FIXED': return 'rental';
     default: return 'unit';
   }

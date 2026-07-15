@@ -172,6 +172,7 @@ export async function GET(
         // Optional pricing configuration
         pricingType: product.pricingType ?? null,
         durationConfig: product.durationConfig ?? null,
+        pricingOptions: (product as any).pricingOptions ?? [],
         category: product.category,
         merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({

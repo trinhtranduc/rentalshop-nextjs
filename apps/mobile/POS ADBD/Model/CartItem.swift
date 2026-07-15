@@ -42,10 +42,28 @@ struct CartItem: Codable {
     // Daily rental pricing
     var pricingType: String?  // nil/FIXED = fixed, DAILY = per-day
     var rentalDays: Int = 1   // Number of rental days (only used when pricingType == DAILY)
-    
+
+    // Multiple pricing options (Phase 1: FIXED + DAILY)
+    var pricingOptions: [PricingOption]?
+    var selectedPricingOptionId: Int?
+
     /// Whether this cart item uses per-day pricing
     var isDailyPricing: Bool {
         return pricingType?.uppercased() == "DAILY"
+    }
+
+    /// Whether this cart item offers more than one pricing option
+    var hasMultiplePricingOptions: Bool {
+        return (pricingOptions?.count ?? 0) > 1
+    }
+
+    /// Switch to a different pricing option (updates price + pricingType)
+    mutating func selectPricingOption(_ optionId: Int) {
+        guard let opt = pricingOptions?.first(where: { $0.id == optionId }) else { return }
+        self.selectedPricingOptionId = optionId
+        self.pricingType = opt.type
+        self.price = opt.price
+        self.customRentPrice = opt.price
     }
     
     // Computed properties
@@ -104,9 +122,15 @@ struct CartItem: Codable {
         self.customRentPrice = nil
         self.customSalePrice = nil
         
-        // Daily pricing
-        self.pricingType = product.pricingType
+        // Daily pricing + multiple options
+        self.pricingOptions = product.pricingOptions
         self.rentalDays = 1
+        if let def = product.defaultPricingOption {
+            self.selectedPricingOptionId = def.id
+            self.pricingType = def.type
+        } else {
+            self.pricingType = product.pricingType
+        }
     }
     
 }

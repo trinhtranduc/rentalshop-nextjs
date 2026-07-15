@@ -32,6 +32,17 @@ extension Array where Element: Copying {
     }
 }
 
+/// A single rental pricing option for a product (Phase 1: FIXED + DAILY)
+struct PricingOption: Codable {
+    var id: Int?
+    var type: String        // "FIXED" | "DAILY"
+    var price: Double
+    var isDefault: Bool?
+    var isActive: Bool?
+
+    var isDailyType: Bool { return type.uppercased() == "DAILY" }
+}
+
 struct Product: Codable, Comparable, Copying {
     var barcode: String?
     var product_id: Int = 0
@@ -70,10 +81,24 @@ struct Product: Codable, Comparable, Copying {
     
     // Pricing type: nil/FIXED = fixed price, DAILY = per-day pricing
     var pricingType: String?
-    
+
+    // Multiple pricing options (Phase 1: FIXED + DAILY)
+    var pricingOptions: [PricingOption]?
+
     /// Whether this product uses per-day pricing
     var isDailyPricing: Bool {
         return pricingType?.uppercased() == "DAILY"
+    }
+
+    /// The default pricing option (marked isDefault, else first)
+    var defaultPricingOption: PricingOption? {
+        guard let opts = pricingOptions, !opts.isEmpty else { return nil }
+        return opts.first(where: { $0.isDefault == true }) ?? opts.first
+    }
+
+    /// Whether this product offers more than one pricing option
+    var hasMultiplePricingOptions: Bool {
+        return (pricingOptions?.count ?? 0) > 1
     }
     
     init() {}
@@ -111,6 +136,7 @@ struct Product: Codable, Comparable, Copying {
         
         // Pricing type
         self.pricingType = original.pricingType
+        self.pricingOptions = original.pricingOptions
     }
     
     // MARK: - Codable Implementation
@@ -154,6 +180,7 @@ struct Product: Codable, Comparable, Copying {
         
         // Pricing type
         case pricingType
+        case pricingOptions
     }
     
     init(from decoder: Decoder) throws {
@@ -242,6 +269,7 @@ struct Product: Codable, Comparable, Copying {
         
         // Pricing type
         self.pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
+        self.pricingOptions = try container.decodeIfPresent([PricingOption].self, forKey: .pricingOptions)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -273,6 +301,7 @@ struct Product: Codable, Comparable, Copying {
         try container.encodeIfPresent(merchantId, forKey: .merchantId)
         try container.encodeIfPresent(categoryId, forKey: .categoryId)
         try container.encodeIfPresent(pricingType, forKey: .pricingType)
+        try container.encodeIfPresent(pricingOptions, forKey: .pricingOptions)
     }
     
     

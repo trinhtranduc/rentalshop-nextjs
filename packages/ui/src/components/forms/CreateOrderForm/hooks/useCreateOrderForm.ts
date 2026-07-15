@@ -13,6 +13,44 @@ import type {
   CreateOrderFormProps 
 } from '../types';
 
+// ---- Pricing option helpers (multi-option products) ----
+const deriveRentalDays = (start?: string, end?: string): number => {
+  if (!start || !end) return 1;
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  if (isNaN(s) || isNaN(e)) return 1;
+  const days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 1;
+};
+
+const getItemOptions = (item: OrderItemFormData): Array<{ id?: number; type: string; price: number; isDefault?: boolean }> =>
+  (item.product?.pricingOptions as any[]) || [];
+
+const resolveItemOption = (item: OrderItemFormData) => {
+  const opts = getItemOptions(item);
+  if (opts.length === 0) return null;
+  if (item.selectedPricingOptionId != null) {
+    const found = opts.find(o => o.id === item.selectedPricingOptionId);
+    if (found) return found;
+  }
+  return opts.find(o => o.isDefault) || opts[0];
+};
+
+const resolveItemPricingType = (item: OrderItemFormData): string => {
+  const opt = resolveItemOption(item);
+  if (opt) return opt.type;
+  return (item.pricingType || item.product?.pricingType || 'FIXED') as string;
+};
+
+const computeLineTotal = (item: OrderItemFormData, orderType: 'RENT' | 'SALE', days: number): number => {
+  const qty = item.quantity || 1;
+  const unit = item.unitPrice || 0;
+  if (orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY') {
+    return unit * qty * Math.max(1, days);
+  }
+  return unit * qty;
+};
+
 export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const {
     outlets = [],
@@ -115,8 +153,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Calculate totals when order items change
   useEffect(() => {
-    const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    
+    const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+    const subtotal = orderItems.reduce((sum, item) => sum + computeLineTotal(item, formData.orderType, days), 0);
+
     // Calculate discount amount with validation
     let discountAmount = 0;
     if (formData.discountType === 'percentage') {
@@ -137,7 +176,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       discountAmount,
       totalAmount
     }));
-  }, [orderItems, formData.discountType, formData.discountValue]);
+  }, [orderItems, formData.discountType, formData.discountValue, formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
 
   // Calculate deposit amount for rent orders
   // Deposit = sum of (deposit per unit * quantity) for each item
@@ -278,10 +317,15 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       const rentPrice = product.rentPrice ?? 0;
       const salePrice = product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
       const deposit = product.deposit ?? 0;
-      
-      // Use salePrice for SALE orders, rentPrice for RENT orders
-      const unitPrice = formData.orderType === 'RENT' ? rentPrice : salePrice;
-      
+
+      // Resolve default pricing option (RENT only)
+      const pricingOptions = (product.pricingOptions as any[]) || [];
+      const defaultOption = pricingOptions.find((o: any) => o.isDefault) || pricingOptions[0] || null;
+      const isRent = formData.orderType === 'RENT';
+
+      // Use salePrice for SALE orders; for RENT use the default option's price (falls back to rentPrice)
+      const unitPrice = isRent ? (defaultOption ? defaultOption.price : rentPrice) : salePrice;
+
       const newItem: OrderItemFormData = {
         productId: productIdNumber,
         product: {
@@ -293,6 +337,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           rentPrice: rentPrice,
           salePrice: salePrice, // Store salePrice for later use
           deposit: deposit,
+          pricingType: product.pricingType ?? null,
+          pricingOptions: pricingOptions,
           // Store outletStock to ensure stock info is always available
           outletStock: product.outletStock || [],
           stock: product.stock,
@@ -304,6 +350,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         totalPrice: unitPrice * BUSINESS.DEFAULT_QUANTITY,
         deposit: deposit,
         notes: '',
+        selectedPricingOptionId: isRent ? (defaultOption?.id ?? null) : null,
+        pricingType: isRent ? (defaultOption?.type || (product.pricingType as string) || 'FIXED') : 'FIXED',
       };
       const newOrderItems = [...orderItems, newItem];
       setOrderItems(newOrderItems);
@@ -333,6 +381,19 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     setOrderItems(updatedItems);
   }, [orderItems]);
 
+  // Change the selected pricing option for a cart line (multi-option products)
+  const updateItemPricingOption = useCallback((productId: number, optionId: number) => {
+    setOrderItems(prev => prev.map(item => {
+      if (item.productId !== productId) return item;
+      const opt = ((item.product?.pricingOptions as any[]) || []).find(o => o.id === optionId);
+      if (!opt) return item;
+      const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+      const updated = { ...item, selectedPricingOptionId: optionId, pricingType: opt.type, unitPrice: opt.price };
+      updated.totalPrice = computeLineTotal(updated, formData.orderType, days);
+      return updated;
+    }));
+  }, [formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
+
   // Calculate rental days
   const calculateRentalDays = useCallback((startDate: string, endDate: string): number => {
     if (!startDate || !endDate) return 0;
@@ -350,17 +411,22 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       returnPlanAt: endDate,
     }));
 
-    // Update order items with new dates and recalculate prices
+    // Update order items with new dates and recalculate prices (per pricing type)
     const days = calculateRentalDays(startDate, endDate);
-    const updatedItems = orderItems.map(item => ({
-      ...item,
-      startDate,
-      endDate,
-      daysRented: days,
-      totalPrice: item.unitPrice * days * item.quantity,
-    }));
+    const effectiveDays = days > 0 ? days : 1;
+    const updatedItems = orderItems.map(item => {
+      const isDaily = formData.orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY';
+      return {
+        ...item,
+        startDate,
+        endDate,
+        daysRented: days,
+        rentalDays: isDaily ? effectiveDays : (item.rentalDays ?? 1),
+        totalPrice: computeLineTotal(item, formData.orderType, effectiveDays),
+      };
+    });
     setOrderItems(updatedItems);
-  }, [orderItems, calculateRentalDays]);
+  }, [orderItems, calculateRentalDays, formData.orderType]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (
@@ -385,6 +451,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     try {
       // Prepare API payload with proper types (send numeric IDs directly)
       // DRY: Use centralized utility function to convert local date to UTC datetime (matches mobile app format)
+      const submitDays = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
       const apiPayload = {
         orderType: formData.orderType,
         customerId: formData.customerId, // Send as number
@@ -402,13 +469,20 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         damageFee: formData.damageFee,
         totalAmount: formData.totalAmount,
         notes: formData.notes,
-        orderItems: currentOrderItems.map(item => ({
-          productId: item.productId, // Send as number
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          deposit: item.deposit ?? 0,
-          notes: item.notes || '',
-        })),
+        orderItems: currentOrderItems.map(item => {
+          const isDaily = formData.orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY';
+          const lineDays = isDaily ? Math.max(1, submitDays) : 1;
+          return {
+            productId: item.productId, // Send as number
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: computeLineTotal(item, formData.orderType, submitDays),
+            deposit: item.deposit ?? 0,
+            notes: item.notes || '',
+            rentDays: lineDays,
+            ...(item.selectedPricingOptionId != null ? { pricingOptionId: item.selectedPricingOptionId } : {}),
+          };
+        }),
         ...(loyaltyRedeem ? { loyaltyRedeem } : {}),
       };
       
@@ -561,6 +635,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
+    updateItemPricingOption,
     updateRentalDates,
     handleSubmit,
     resetForm,

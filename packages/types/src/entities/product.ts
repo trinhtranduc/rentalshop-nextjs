@@ -13,7 +13,26 @@ import {
   MerchantReference,
   OutletReference
 } from '../common/base';
-import type { PricingType } from '@rentalshop/constants';
+import type { PricingType, PricingUnit } from '@rentalshop/constants';
+
+// ============================================================================
+// PRICING OPTION
+// ============================================================================
+
+/**
+ * A single rental pricing option for a product.
+ * A product can have multiple options (Phase 1: FIXED + DAILY).
+ */
+export interface PricingOption {
+  id?: number;              // present when persisted
+  type: PricingType;        // Phase 1: 'FIXED' | 'DAILY'
+  price: number;            // per rental (FIXED) or per day (DAILY)
+  unit?: PricingUnit | null;   // reserved for BLOCK/HOURLY
+  blockSize?: number | null;   // reserved for BLOCK
+  isDefault?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+}
 
 // ============================================================================
 // CORE PRODUCT INTERFACES
@@ -46,7 +65,10 @@ export interface Product extends BaseEntityWithMerchant {
     maxDuration?: number;
     defaultDuration?: number;
   } | null;
-  
+
+  // Multiple pricing options (Phase 1: FIXED + DAILY). Empty/undefined = derive from pricingType/rentPrice.
+  pricingOptions?: PricingOption[];
+
   // Embedding tracking
   embeddingGeneratedAt?: Date | null; // Track when embedding was generated and stored in Qdrant
   
@@ -242,6 +264,8 @@ export interface ProductInput {
   // Optional pricing configuration (default FIXED if null)
   pricingType?: PricingType | null; // NULL = FIXED (default)
   durationConfig?: string | null; // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+  // Multiple pricing options (Phase 1: FIXED + DAILY)
+  pricingOptions?: PricingOption[];
 }
 
 /**

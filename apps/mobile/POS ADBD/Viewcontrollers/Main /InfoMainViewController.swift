@@ -1480,6 +1480,23 @@ extension InfoMainViewController: ProductSelectedCellDelegate {
         }
     }
 
+    func didUpdateRentalDays(_ days: Int, at index: Int) {
+        CartStore.shared.updateRentalDays(at: index, days: days)
+        reloadSelectionTable()
+        updatePreviewTotal()
+        updateDepositLabel()
+        updateCartBadge()
+    }
+
+    func didSelectPricingOption(optionId: Int, at index: Int) {
+        CartStore.shared.selectPricingOption(at: index, optionId: optionId)
+        CartStore.shared.syncRentalDaysFromDates()
+        reloadSelectionTable()
+        updatePreviewTotal()
+        updateDepositLabel()
+        updateCartBadge()
+    }
+
     func didUpdateNote(_ note: String?, at index: Int) {
         CartStore.shared.updateNote(at: index, note: note)
     }

@@ -199,6 +199,26 @@ class Cart {
         items[index].note = note
     }
     
+    /// Update rental days for item at specific index (DAILY pricing items only)
+    func updateRentalDays(at index: Int, days: Int) {
+        guard index >= 0 && index < items.count else { return }
+        items[index].rentalDays = max(1, days)
+    }
+    
+    /// Select a pricing option for item at index (multi-option products)
+    func selectPricingOption(at index: Int, optionId: Int) {
+        guard index >= 0 && index < items.count else { return }
+        items[index].selectPricingOption(optionId)
+    }
+
+    /// Auto-update rental days for all DAILY items based on pickup/return dates
+    func syncRentalDaysFromDates() {
+        guard let days = calculateRentalDays(), days >= 1 else { return }
+        for index in items.indices where items[index].isDailyPricing {
+            items[index].rentalDays = days
+        }
+    }
+    
     /// Clear all items from cart
     func clear() {
         orderId = nil // Clear order ID if editing an order
@@ -631,7 +651,12 @@ class Cart {
             // Use effective price (custom price if user changed it, otherwise original price)
             // This ensures custom prices are used when updating order
             let effectivePrice = item.effectivePrice(for: orderType)
-            let effectiveSubTotal = Double(item.quantity) * effectivePrice
+            let effectiveSubTotal: Double
+            if item.isDailyPricing {
+                effectiveSubTotal = Double(item.quantity) * effectivePrice * Double(item.rentalDays)
+            } else {
+                effectiveSubTotal = Double(item.quantity) * effectivePrice
+            }
             
             return UpdateOrderItem(
                 productId: item.productId,
@@ -640,8 +665,9 @@ class Cart {
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
                 notes: finalNote,
-                rentalDays: calculateRentalDays(),
-                imageUrl: item.imageUrl
+                rentalDays: item.isDailyPricing ? item.rentalDays : calculateRentalDays(),
+                imageUrl: item.imageUrl,
+                pricingOptionId: item.selectedPricingOptionId
             )
         }
         
@@ -708,7 +734,12 @@ class Cart {
             // Use effective price (custom price if user changed it, otherwise original price)
             // This ensures custom prices are used when creating order
             let effectivePrice = item.effectivePrice(for: orderType)
-            let effectiveSubTotal = Double(item.quantity) * effectivePrice
+            let effectiveSubTotal: Double
+            if item.isDailyPricing {
+                effectiveSubTotal = Double(item.quantity) * effectivePrice * Double(item.rentalDays)
+            } else {
+                effectiveSubTotal = Double(item.quantity) * effectivePrice
+            }
             
             return CreateOrderItem(
                 productId: item.productId,
@@ -716,7 +747,9 @@ class Cart {
                 unitPrice: effectivePrice,
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
-                notes: finalNote
+                notes: finalNote,
+                rentDays: item.isDailyPricing ? item.rentalDays : nil,
+                pricingOptionId: item.selectedPricingOptionId
             )
         }
         
@@ -751,7 +784,9 @@ class Cart {
                 discountType: discountTypeValue,
                 discountValue: discountValueValue,
                 discountAmount: discountAmountValue,
-                loyaltyRedeem: nil
+                loyaltyRedeem: nil,
+                rentalDuration: nil,
+                rentalDurationUnit: nil
             )
         }
         
@@ -772,21 +807,27 @@ class Cart {
             discountType: discountTypeValue,
             discountValue: discountValueValue,
             discountAmount: discountAmountValue,
-            loyaltyRedeem: loyaltyRedeemPoints > 0 ? CreateOrderRequest.LoyaltyRedeemRequest(points: loyaltyRedeemPoints) : nil
+            loyaltyRedeem: loyaltyRedeemPoints > 0 ? CreateOrderRequest.LoyaltyRedeemRequest(points: loyaltyRedeemPoints) : nil,
+            rentalDuration: isRentOrder ? calculateRentalDays() : nil,
+            rentalDurationUnit: isRentOrder ? "day" : nil
         )
     }
     
     // MARK: - Helper Methods for CreateOrderRequest
     
     /// Calculate rental days based on pickup and return dates
+    /// Counts inclusive calendar days between pickup and return
     private func calculateRentalDays() -> Int? {
         guard let pickup = pickupPlanAt, let returnDate = returnPlanAt else {
             return nil
         }
         
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.day], from: pickup, to: returnDate)
-        return max(1, components.day ?? 1)
+        let startDay = calendar.startOfDay(for: pickup)
+        let endDay = calendar.startOfDay(for: returnDate)
+        let components = calendar.dateComponents([.day], from: startDay, to: endDay)
+        // +1 because rental is inclusive (e.g. pickup Monday, return Tuesday = 2 days)
+        return max(1, (components.day ?? 0) + 1)
     }
     
     /// Get current user ID from user session
@@ -836,6 +877,8 @@ struct CreateOrderRequest: Codable {
     let discountValue: Double?
     let discountAmount: Double?
     let loyaltyRedeem: LoyaltyRedeemRequest?
+    let rentalDuration: Int?
+    let rentalDurationUnit: String?
     
     struct LoyaltyRedeemRequest: Codable {
         let points: Int
@@ -860,6 +903,8 @@ struct CreateOrderRequest: Codable {
         case discountValue
         case discountAmount
         case loyaltyRedeem
+        case rentalDuration
+        case rentalDurationUnit
         // Explicitly exclude 'subtotal' and 'outletId' fields
     }
     
@@ -884,6 +929,8 @@ struct CreateOrderRequest: Codable {
         try container.encodeIfPresent(discountValue, forKey: .discountValue)
         try container.encodeIfPresent(discountAmount, forKey: .discountAmount)
         try container.encodeIfPresent(loyaltyRedeem, forKey: .loyaltyRedeem)
+        try container.encodeIfPresent(rentalDuration, forKey: .rentalDuration)
+        try container.encodeIfPresent(rentalDurationUnit, forKey: .rentalDurationUnit)
         
         // Explicitly NOT encoding 'subtotal' field
     }
@@ -1000,4 +1047,6 @@ struct CreateOrderItem: Codable {
     let totalPrice: Double
     let deposit: Double?
     let notes: String?
+    let rentDays: Int?
+    let pricingOptionId: Int?
 }
