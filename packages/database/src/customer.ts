@@ -7,6 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
+import { Prisma } from '@prisma/client';
 import { removeVietnameseDiacritics } from '@rentalshop/utils';
 import type { 
   CustomerInput, 
@@ -337,69 +338,77 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name and phone (case-insensitive and diacritics-insensitive)
-  // Supports multi-word search: "Chú Chồn" matches firstName="Chú", lastName="Chồn"
+  // Search query for name and phone (diacritics-insensitive using PostgreSQL unaccent())
+  // Consistent with order search: "chon" matches "Chồn", "chu chon" matches "Chú Chồn"
   if (q && q.trim()) {
     const searchQuery = q.trim();
+    const searchQueryNFC = searchQuery.normalize('NFC');
     const normalizedQuery = removeVietnameseDiacritics(searchQuery);
-    const words = searchQuery.split(/\s+/).filter((w: string) => w.length > 0);
     
-    // Single word or phone: search each field individually
-    const searchConditions: any[] = [
-      { firstName: { contains: searchQuery, mode: 'insensitive' } },
-      { lastName: { contains: searchQuery, mode: 'insensitive' } },
-      { phone: { contains: searchQuery } }
-    ];
+    // Accent policy: if query has diacritics → accent-sensitive (NFC), else → unaccent()
+    const hasDiacritics = searchQueryNFC.toLowerCase() !== normalizedQuery.toLowerCase();
+    const patternTerm = (hasDiacritics ? searchQueryNFC : normalizedQuery).toLowerCase();
+    const startPattern = `${patternTerm}%`;
+    const wordPattern = `% ${patternTerm}%`;
     
-    // Add normalized search if different (diacritics-insensitive)
-    if (normalizedQuery !== searchQuery) {
-      searchConditions.push(
-        { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
-        { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
-      );
+    // Use raw SQL with unaccent() for true Vietnamese diacritics-insensitive search
+    let matchingCustomerIds: number[] | null = null;
+    try {
+      const merchantFilter = merchantId != null
+        ? Prisma.sql`AND c."merchantId" = (SELECT id FROM "Merchant" WHERE id = ${merchantId} LIMIT 1)`
+        : Prisma.empty;
+      
+      const nameCondition = hasDiacritics
+        ? Prisma.sql`
+          lower(normalize(c."firstName" || ' ' || COALESCE(c."lastName", ''), NFC)) LIKE ${startPattern}
+          OR lower(normalize(c."firstName" || ' ' || COALESCE(c."lastName", ''), NFC)) LIKE ${wordPattern}
+          OR lower(normalize(COALESCE(c."lastName", '') || ' ' || c."firstName", NFC)) LIKE ${startPattern}
+          OR lower(normalize(COALESCE(c."lastName", '') || ' ' || c."firstName", NFC)) LIKE ${wordPattern}
+        `
+        : Prisma.sql`
+          unaccent(lower(c."firstName" || ' ' || COALESCE(c."lastName", ''))) LIKE ${startPattern}
+          OR unaccent(lower(c."firstName" || ' ' || COALESCE(c."lastName", ''))) LIKE ${wordPattern}
+          OR unaccent(lower(COALESCE(c."lastName", '') || ' ' || c."firstName")) LIKE ${startPattern}
+          OR unaccent(lower(COALESCE(c."lastName", '') || ' ' || c."firstName")) LIKE ${wordPattern}
+        `;
+      
+      const results: Array<{ id: number }> = await prisma.$queryRaw`
+        SELECT c.id FROM "Customer" c
+        WHERE c."deletedAt" IS NULL
+        ${merchantFilter}
+        AND (${nameCondition})
+        LIMIT 5000
+      `;
+      matchingCustomerIds = results.map(r => r.id);
+    } catch {
+      // unaccent not available — fall back to Prisma contains
+      matchingCustomerIds = null;
     }
     
-    // Multi-word: also match across firstName + lastName combination
-    // "Chú Chồn" → firstName contains "Chú" AND lastName contains "Chồn" (or reversed)
-    if (words.length >= 2) {
-      const firstPart = words.slice(0, -1).join(' ');  // All but last word
-      const lastPart = words[words.length - 1];       // Last word
-      const firstPartNorm = removeVietnameseDiacritics(firstPart);
-      const lastPartNorm = removeVietnameseDiacritics(lastPart);
-      
-      // firstName=first words, lastName=last word
-      searchConditions.push({
-        AND: [
-          { firstName: { contains: firstPart, mode: 'insensitive' } },
-          { lastName: { contains: lastPart, mode: 'insensitive' } }
-        ]
-      });
-      // Reversed: firstName=last word, lastName=first words
-      searchConditions.push({
-        AND: [
-          { firstName: { contains: lastPart, mode: 'insensitive' } },
-          { lastName: { contains: firstPart, mode: 'insensitive' } }
-        ]
-      });
-      
-      // Also try normalized versions
-      if (firstPartNorm !== firstPart || lastPartNorm !== lastPart) {
-        searchConditions.push({
-          AND: [
-            { firstName: { contains: firstPartNorm, mode: 'insensitive' } },
-            { lastName: { contains: lastPartNorm, mode: 'insensitive' } }
-          ]
-        });
-        searchConditions.push({
-          AND: [
-            { firstName: { contains: lastPartNorm, mode: 'insensitive' } },
-            { lastName: { contains: firstPartNorm, mode: 'insensitive' } }
-          ]
-        });
+    if (matchingCustomerIds !== null) {
+      // Raw SQL succeeded: use customer IDs + phone search
+      const conditions: any[] = [
+        { phone: { contains: searchQuery } }
+      ];
+      if (matchingCustomerIds.length > 0) {
+        conditions.unshift({ id: { in: matchingCustomerIds } });
       }
+      where.OR = conditions;
+    } else {
+      // Fallback: Prisma contains (not diacritics-insensitive but works without unaccent)
+      const searchConditions: any[] = [
+        { firstName: { contains: searchQuery, mode: 'insensitive' } },
+        { lastName: { contains: searchQuery, mode: 'insensitive' } },
+        { phone: { contains: searchQuery } }
+      ];
+      if (normalizedQuery !== searchQuery) {
+        searchConditions.push(
+          { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
+          { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
+        );
+      }
+      where.OR = searchConditions;
     }
-    
-    where.OR = searchConditions;
   }
 
   // Get total count
