@@ -69,17 +69,18 @@ export default function MediaPage() {
       }
     } catch (err) {
       console.error('Error fetching media:', err);
-      toastError('Lỗi khi tải danh sách media');
     } finally {
       setLoading(false);
     }
-  }, [toastError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (canManage) {
       fetchMedia();
     }
-  }, [canManage, fetchMedia]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManage]);
 
   // Upload files
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
