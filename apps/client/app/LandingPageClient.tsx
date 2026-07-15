@@ -12,8 +12,12 @@ import type { Plan } from '@rentalshop/types'
 import { User } from 'lucide-react'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 
-// Import Blog Section (Client Component that calls API)
-import BlogSection from './components/BlogSection'
+// Import Blog Section (Client Component that calls API) - lazy loaded
+import dynamic from 'next/dynamic'
+const BlogSection = dynamic(() => import('./components/BlogSection'), {
+  loading: () => <div className="py-24 bg-white" />,
+  ssr: false,
+})
 import { 
   Check, 
   ChevronDown, 
@@ -493,7 +497,7 @@ const LandingPage = () => {
                       alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
                       width={288}
                       height={576}
-                      priority
+                      loading="lazy"
                       className="rounded-3xl shadow-xl border border-gray-200"
                     />
                   </div>

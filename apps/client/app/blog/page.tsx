@@ -24,13 +24,13 @@ export async function generateMetadata(): Promise<Metadata> {
       description: 'Discover expert insights, tips, and guides for managing your rental business.',
       type: 'website',
       url: blogPath,
-      images: [{ url: '/anyrent.png', width: 1200, height: 630, alt: 'AnyRent Blog' }],
+      images: [{ url: '/anyrent-og.jpg', width: 1200, height: 630, alt: 'AnyRent Blog' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: 'Blog - AnyRent',
       description: 'Discover expert insights, tips, and guides for managing your rental business.',
-      images: ['/anyrent.png'],
+      images: ['/anyrent-og.jpg'],
     },
     robots: {
       index: true,
