@@ -35,8 +35,9 @@ export async function GET(
         );
       }
 
-      // Only ADMIN can see draft posts
-      if (post.status !== 'PUBLISHED' && user.role !== USER_ROLE.ADMIN) {
+      // ADMIN and ARTICLE users can see draft posts
+      const canManagePosts = user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ARTICLE;
+      if (post.status !== 'PUBLISHED' && !canManagePosts) {
         return NextResponse.json(
           ResponseBuilder.error('POST_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }

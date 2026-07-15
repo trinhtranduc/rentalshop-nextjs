@@ -15,7 +15,8 @@ import {
   CreditCard,
   ChevronDown,
   Menu,
-  UserPlus
+  UserPlus,
+  PenTool
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useCommonTranslations } from '@rentalshop/hooks';
@@ -48,6 +49,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
     },
     { href: '/customers', label: t('navigation.customers'), icon: Users },
     { href: '/users', label: t('navigation.users'), icon: User },
+    { href: '/authors', label: t('navigation.authors') || 'Tác giả', icon: PenTool },
     { href: '/outlets', label: t('navigation.outlets'), icon: Building2 },
     { href: '/calendar', label: t('navigation.calendar'), icon: Calendar },
     { href: '/affiliate/guide', label: tAffiliate('navigation.title') || 'Affiliate', icon: UserPlus },
@@ -59,21 +61,33 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
     
     // Hide specific tabs based on user role
     if (userRole === 'OUTLET_ADMIN') {
-      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
+      // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments, authors
       return items.filter(item => 
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
-        item.href !== '/payments'
+        item.href !== '/payments' &&
+        item.href !== '/authors'
       );
     } else if (userRole === 'OUTLET_STAFF') {
-      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
+      // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments, authors (limited permissions)
       return items.filter(item => 
         item.href !== '/users' && 
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
-        item.href !== '/payments'
+        item.href !== '/payments' &&
+        item.href !== '/authors'
+      );
+    } else if (userRole === 'MERCHANT') {
+      // MERCHANT cannot see authors management
+      return items.filter(item => 
+        item.href !== '/authors'
+      );
+    } else if (userRole === 'ARTICLE') {
+      // ARTICLE users only see dashboard and authors-related items (posts)
+      return items.filter(item => 
+        item.href === '/dashboard'
       );
     }
     
