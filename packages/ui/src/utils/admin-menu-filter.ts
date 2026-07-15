@@ -9,10 +9,11 @@ export interface AdminMenuItemLike {
 }
 
 const BLOG_PREFIX = '/posts';
+const MEDIA_PATH = '/media';
 const SYSTEM_USERS_PATH = '/system-users';
 
 function isBlogPath(href: string): boolean {
-  return href === BLOG_PREFIX || href.startsWith(`${BLOG_PREFIX}/`);
+  return href === BLOG_PREFIX || href.startsWith(`${BLOG_PREFIX}/`) || href === MEDIA_PATH;
 }
 
 /**
@@ -70,5 +71,5 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
 
 export function isArticleOnlyAdminPath(pathname: string): boolean {
   if (pathname === '/login') return true;
-  return isBlogPath(pathname);
+  return isBlogPath(pathname); // Includes /posts/*, /media
 }
