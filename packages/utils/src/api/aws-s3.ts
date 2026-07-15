@@ -659,6 +659,73 @@ export function isS3Url(url: string): boolean {
   }
 }
 
+// ============================================================================
+// MEDIA / LIST FUNCTIONS
+// ============================================================================
+
+export interface ListMediaOptions {
+  prefix?: string;
+  maxKeys?: number;
+  continuationToken?: string;
+}
+
+export interface MediaFileInfo {
+  key: string;
+  url: string;
+  name: string;
+  size: number;
+  lastModified?: string;
+}
+
+export interface ListMediaResult {
+  files: MediaFileInfo[];
+  hasMore: boolean;
+  nextToken?: string;
+}
+
+/**
+ * List files from S3 under a given prefix
+ */
+export async function listS3Files(options: ListMediaOptions = {}): Promise<ListMediaResult> {
+  const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
+  
+  const { prefix = '', maxKeys = 50, continuationToken } = options;
+  
+  const client = createS3Client();
+  const command = new ListObjectsV2Command({
+    Bucket: BUCKET_NAME,
+    Prefix: prefix,
+    MaxKeys: maxKeys,
+    ContinuationToken: continuationToken,
+  });
+
+  const response = await client.send(command);
+  const cloudfrontDomain = CLOUDFRONT_DOMAIN || process.env.AWS_CLOUDFRONT_DOMAIN;
+
+  const files: MediaFileInfo[] = (response.Contents || [])
+    .filter(item => item.Key && !item.Key.endsWith('/'))
+    .map(item => {
+      const key = item.Key!;
+      const url = cloudfrontDomain
+        ? `https://${cloudfrontDomain}/${key}`
+        : `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`;
+      
+      return {
+        key,
+        url,
+        name: key.split('/').pop() || key,
+        size: item.Size || 0,
+        lastModified: item.LastModified?.toISOString(),
+      };
+    });
+
+  return {
+    files,
+    hasMore: response.IsTruncated || false,
+    nextToken: response.NextContinuationToken,
+  };
+}
+
 
 // ============================================================================
 // EXPORTS

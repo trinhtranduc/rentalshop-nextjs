@@ -33,7 +33,8 @@ import {
   ScrollText,
   Trash2,
   Activity,
-  DollarSign
+  DollarSign,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -121,6 +122,11 @@ const adminMenuItems: MenuItem[] = [
     icon: Users,
   },
   {
+    label: 'AnyRent Users',
+    href: '/system-users',
+    icon: ShieldCheck,
+  },
+  {
     label: 'Blog',
     href: '/posts',
     icon: FileText,
@@ -139,6 +145,11 @@ const adminMenuItems: MenuItem[] = [
         label: 'Tags', 
         href: '/posts/tags', 
         icon: Tag 
+      },
+      {
+        label: 'Media',
+        href: '/media',
+        icon: ImageIcon
       }
     ]
   },
