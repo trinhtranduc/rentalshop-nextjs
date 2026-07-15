@@ -122,6 +122,11 @@ const adminMenuItems: MenuItem[] = [
     icon: Users,
   },
   {
+    label: 'AnyRent Users',
+    href: '/system-users',
+    icon: ShieldCheck,
+  },
+  {
     label: 'Blog',
     href: '/posts',
     icon: FileText,
