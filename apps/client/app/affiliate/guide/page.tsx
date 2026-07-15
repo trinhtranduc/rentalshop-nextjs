@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui';
+import { Button, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui';
+import { LandingBrandLogo } from '../../components/LandingBrandLogo';
 import {
   Share2,
   CheckCircle,
@@ -79,14 +80,7 @@ export default function AffiliateGuidePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <Logo 
-                size="md" 
-                variant="custom" 
-                src="/anyrent-logo-light.svg"
-                showLabel={true}
-                labelText="AnyRent"
-                showBackground={false}
-              />
+              <LandingBrandLogo />
             </Link>
             <div className="flex items-center gap-4">
               <LanguageSwitcher variant="compact" />

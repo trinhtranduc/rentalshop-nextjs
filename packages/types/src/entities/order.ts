@@ -70,6 +70,12 @@ export interface Order extends BaseEntityWithOutlet {
   discountType?: 'amount' | 'percentage';
   discountValue?: number;
   discountAmount?: number;
+
+  // Loyalty properties
+  loyaltyPointsRedeemed?: number;
+  loyaltyDiscount?: number;
+  loyaltyPointsEarned?: number;
+  amountDue?: number;
   
   // Related entities (populated when needed)
   customer?: CustomerReference;
@@ -203,6 +209,7 @@ export interface OrderCreateInput extends BaseFormInput {
   pickupPlanAt?: Date | string;
   returnPlanAt?: Date | string;
   orderItems: OrderItemInput[];
+  loyaltyRedeem?: { points: number };
 }
 
 /**

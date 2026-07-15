@@ -1,4 +1,25 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
+const workspacePackageAliases = {
+  '@rentalshop/auth$': path.join(__dirname, '../../packages/auth/dist/index.mjs'),
+  '@rentalshop/auth/admin$': path.join(__dirname, '../../packages/auth/dist/admin.mjs'),
+  '@rentalshop/auth/client$': path.join(__dirname, '../../packages/auth/dist/client.mjs'),
+  '@rentalshop/auth/server$': path.join(__dirname, '../../packages/auth/dist/server.mjs'),
+  '@rentalshop/auth/unified-auth$': path.join(__dirname, '../../packages/auth/dist/unified-auth.mjs'),
+  '@rentalshop/constants$': path.join(__dirname, '../../packages/constants/dist/index.mjs'),
+  '@rentalshop/database$': path.join(__dirname, '../../packages/database/dist/index.mjs'),
+  '@rentalshop/database/server$': path.join(__dirname, '../../packages/database/dist/server.mjs'),
+  '@rentalshop/errors$': path.join(__dirname, '../../packages/errors/dist/index.mjs'),
+  '@rentalshop/loyalty$': path.join(__dirname, '../../packages/loyalty/dist/index.mjs'),
+  '@rentalshop/middleware$': path.join(__dirname, '../../packages/middleware/dist/index.mjs'),
+  '@rentalshop/types$': path.join(__dirname, '../../packages/types/dist/index.mjs'),
+  '@rentalshop/utils$': path.join(__dirname, '../../packages/utils/dist/index.mjs'),
+  '@rentalshop/utils/client$': path.join(__dirname, '../../packages/utils/dist/client.mjs'),
+  '@rentalshop/utils/server$': path.join(__dirname, '../../packages/utils/dist/server.mjs'),
+  '@rentalshop/validation$': path.join(__dirname, '../../packages/validation/dist/index.mjs'),
+};
+
 const nextConfig = {
   // Enable standalone output for proper Prisma binary handling
   // Only use standalone in production (Railway/Docker)
@@ -7,7 +28,7 @@ const nextConfig = {
   // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
     experimental: {
       // Point to monorepo root for file tracing
-      outputFileTracingRoot: require('path').join(__dirname, '../../'),
+      outputFileTracingRoot: path.join(__dirname, '../../'),
       serverComponentsExternalPackages: [
         '@prisma/client',
         '@prisma/engines',
@@ -26,27 +47,25 @@ const nextConfig = {
         '@rentalshop/auth/server',
         '@rentalshop/database',
       ],
+      outputFileTracingIncludes: {
+        '/api/**': [
+          '../../node_modules/.prisma/client/**/*',
+          // CRITICAL: Include entire @xenova/transformers directory for WebAssembly backend
+          // Based on: https://github.com/huggingface/transformers.js/issues/295
+          // Include all WASM files, JS files, and package structure
+          '../../node_modules/@xenova/transformers/**/*',
+          // Explicitly include WASM files (may be in dist/ or other locations)
+          '../../node_modules/@xenova/transformers/dist/**/*.wasm',
+          '../../node_modules/@xenova/transformers/dist/**/*.js',
+          '../../node_modules/@xenova/transformers/dist/**/*.mjs',
+          // Include cache directory (for model files) - @xenova/.cache
+          '../../node_modules/@xenova/.cache/**/*',
+          // Include package.json and other config files
+          '../../node_modules/@xenova/transformers/package.json',
+          '../../node_modules/@xenova/transformers/**/package.json',
+        ],
+      },
     },
-  
-  // Include Prisma binaries and transformers WASM files in file tracing (for production builds)
-  outputFileTracingIncludes: {
-    '/api/**': [
-      '../../node_modules/.prisma/client/**/*',
-      // CRITICAL: Include entire @xenova/transformers directory for WebAssembly backend
-      // Based on: https://github.com/huggingface/transformers.js/issues/295
-      // Include all WASM files, JS files, and package structure
-      '../../node_modules/@xenova/transformers/**/*',
-      // Explicitly include WASM files (may be in dist/ or other locations)
-      '../../node_modules/@xenova/transformers/dist/**/*.wasm',
-      '../../node_modules/@xenova/transformers/dist/**/*.js',
-      '../../node_modules/@xenova/transformers/dist/**/*.mjs',
-      // Include cache directory (for model files) - @xenova/.cache
-      '../../node_modules/@xenova/.cache/**/*',
-      // Include package.json and other config files
-      '../../node_modules/@xenova/transformers/package.json',
-      '../../node_modules/@xenova/transformers/**/package.json',
-    ],
-  },
   
   transpilePackages: [
     // @rentalshop/database removed - it's server-only and in serverComponentsExternalPackages
@@ -79,6 +98,10 @@ const nextConfig = {
         fs: false,
         path: false,
         crypto: false,
+      };
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        ...workspacePackageAliases,
       };
       
       // Mark server-only packages as external for client-side builds
@@ -150,9 +173,9 @@ const nextConfig = {
       }
       
       // Ensure Prisma Client resolves to root node_modules (fallback)
-      const path = require('path');
       config.resolve.alias = {
         ...config.resolve.alias,
+        ...workspacePackageAliases,
         '.prisma/client': path.join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': path.join(__dirname, '../../node_modules/@prisma/client'),
         // OFFICIAL TUTORIAL APPROACH: No need to alias onnxruntime-node

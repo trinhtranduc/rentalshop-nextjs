@@ -71,9 +71,14 @@ export type Permission =
   
   // Bank Account Management
   | 'bankAccounts.manage'
-  | 'bankAccounts.view';
+  | 'bankAccounts.view'
 
-export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts';
+  // Loyalty Program
+  | 'loyalty.view'
+  | 'loyalty.manage'
+  | 'loyalty.adjust';
+
+export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts' | 'loyalty';
 
 // ============================================================================
 // CRITICAL PERMISSIONS - Never Remove (Security & Functionality)
@@ -142,7 +147,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.view.system',
     'analytics.export',
     'billing.manage', 'billing.view',
-    'bankAccounts.manage', 'bankAccounts.view'
+    'bankAccounts.manage', 'bankAccounts.view',
+    'loyalty.view', 'loyalty.manage', 'loyalty.adjust'
   ],
   'ARTICLE': [
     'posts.manage',
@@ -164,7 +170,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.export',
     // ❌ NO analytics.view.system (admin only)
     'billing.view',
-    'bankAccounts.manage', 'bankAccounts.view' // ✅ Merchant can manage bank accounts
+    'bankAccounts.manage', 'bankAccounts.view',
+    'loyalty.view', 'loyalty.manage', 'loyalty.adjust'
   ],
   'OUTLET_ADMIN': [
     'outlet.manage', 'outlet.view', 
@@ -181,7 +188,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.export',
     // ❌ NO analytics.view.system (admin only)
     'billing.view',                      // ✅ Can view subscription status and plan limits
-    'bankAccounts.manage', 'bankAccounts.view' // ✅ Outlet admin can manage bank accounts
+    'bankAccounts.manage', 'bankAccounts.view',
+    'loyalty.view'
   ],
   'OUTLET_STAFF': [
     'outlet.view',
@@ -196,6 +204,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // ❌ NO analytics.view.orders, customers, products
     // ❌ NO analytics.export
     'billing.view',                      // ✅ Can view subscription status and plan limits (read-only)
+    'loyalty.view'
     // ❌ NO billing.manage - staff cannot modify subscription
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]

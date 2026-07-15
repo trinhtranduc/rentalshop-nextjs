@@ -92,12 +92,45 @@ if npx prisma generate --schema="${SCHEMA_PATH}" 2>&1; then
     
   # Copy Prisma Client to Next.js bundle location
     if [ -d "../../node_modules/.prisma/client" ]; then
+      # Copy to .next/server/.prisma/client (standard location)
       mkdir -p .next/server/.prisma/client
       cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
+      
+      # Copy engine binary directly to .next/server/ (where bundled chunks look)
+      cp ../../node_modules/.prisma/client/libquery_engine-* .next/server/ 2>/dev/null || true
+      
+      # Copy to local node_modules/.prisma/client (another search path)
+      mkdir -p node_modules/.prisma/client
+      cp -r ../../node_modules/.prisma/client/* node_modules/.prisma/client/ 2>/dev/null || true
+      
+      # Also ensure node_modules/@prisma/client has the engine
+      mkdir -p node_modules/@prisma/client
+      cp ../../node_modules/.prisma/client/libquery_engine-* node_modules/@prisma/client/ 2>/dev/null || true
+      
       echo "✅ Prisma Client copied to Next.js bundle location"
   fi
 else
   echo "⚠️  Failed to regenerate Prisma Client"
+fi
+echo ""
+
+# ============================================================================
+# Step 5b: Pin Prisma Query Engine location (bypass bundle path resolution)
+# ============================================================================
+# The Next.js webpack bundle resolves ".prisma/client" relative to the emitted
+# chunk, so it often can't find the native engine even after we copy it around.
+# Setting PRISMA_QUERY_ENGINE_LIBRARY to the absolute path of the engine binary
+# makes the Prisma "library" engine load it directly and skip all path search.
+echo "🔧 Step 5b: Pinning Prisma Query Engine library path..."
+ENGINE_SRC="../../node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"
+if [ -f "$ENGINE_SRC" ]; then
+  # Resolve to an absolute path (start.sh runs from apps/api)
+  export PRISMA_QUERY_ENGINE_LIBRARY="$(cd "$(dirname "$ENGINE_SRC")" && pwd)/$(basename "$ENGINE_SRC")"
+  echo "✅ PRISMA_QUERY_ENGINE_LIBRARY=$PRISMA_QUERY_ENGINE_LIBRARY"
+else
+  echo "❌ Engine binary not found at $ENGINE_SRC"
+  echo "   Available engines in ../../node_modules/.prisma/client:"
+  ls -la ../../node_modules/.prisma/client/libquery_engine-* 2>&1 || echo "   (none)"
 fi
 echo ""
 

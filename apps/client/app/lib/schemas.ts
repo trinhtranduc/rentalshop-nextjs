@@ -3,7 +3,10 @@
  * This file contains JSON-LD schema definitions for better SEO
  */
 
+import { getAnyRentLogoUrl } from '../../lib/brand';
+
 export const createSchemas = (t: any, baseUrl: string) => {
+  const logoUrl = getAnyRentLogoUrl(baseUrl);
   return {
     softwareApplication: {
       '@context': 'https://schema.org' as const,
@@ -25,7 +28,7 @@ export const createSchemas = (t: any, baseUrl: string) => {
       '@type': 'Organization' as const,
       name: 'AnyRent',
       url: baseUrl,
-      logo: `${baseUrl}/anyrent-logo-light.svg`,
+      logo: logoUrl,
       description: t('hero.description'),
       sameAs: [
         'https://apps.apple.com/vn/app/anyrent/id6754793592',
@@ -88,7 +91,7 @@ export const createSchemas = (t: any, baseUrl: string) => {
         name: 'AnyRent',
         logo: {
           '@type': 'ImageObject',
-          url: `${baseUrl}/anyrent-logo-light.svg`,
+          url: logoUrl,
         },
       },
       datePublished: '2024-01-01',
@@ -105,8 +108,8 @@ export const createSchemas = (t: any, baseUrl: string) => {
       name: 'AnyRent',
       description: t('hero.description'),
       url: baseUrl,
-      logo: `${baseUrl}/anyrent-logo-light.svg`,
-      image: `${baseUrl}/anyrent-logo-light.svg`,
+      logo: logoUrl,
+      image: logoUrl,
       priceRange: '$$',
       telephone: '+84764774647',
       email: 'trinhduc20@gmail.com',

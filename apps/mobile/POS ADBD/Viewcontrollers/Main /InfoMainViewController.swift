@@ -261,9 +261,14 @@ class InfoMainViewController: BaseViewControler {
     }()
 
     // MARK: - Properties
+    /// Set to true only right before a user-driven rent/sale switch so the
+    /// fields animate. Programmatic sets (reloadOrder on appear, reset, initial
+    /// setup) leave it false so entering the cart applies state without animating.
+    private var animateNextMethodChange = false
     private var methodSelect: OrderType = .rent {
         didSet {
-            updateMethodSelection()
+            updateMethodSelection(animated: animateNextMethodChange)
+            animateNextMethodChange = false
         }
     }
     
@@ -513,11 +518,11 @@ class InfoMainViewController: BaseViewControler {
     }
     
     // MARK: - Helper Methods
-    private func updateMethodSelection() {
+    private func updateMethodSelection(animated: Bool = false) {
         // Store current discount values before mode change
         let currentDiscount = CartStore.shared.cart.discount
         let currentDiscountType = CartStore.shared.cart.discountType
-        
+
         let shouldShowRentalFields = methodSelect == .rent
 
         if shouldShowRentalFields {
@@ -530,12 +535,14 @@ class InfoMainViewController: BaseViewControler {
         returnDateHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
         downPaymentHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
 
-        UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+        let applyLayout = {
             self.pickupDateView?.alpha = shouldShowRentalFields ? 1 : 0
             self.returnDateView?.alpha = shouldShowRentalFields ? 1 : 0
             self.downPaymentView?.alpha = shouldShowRentalFields ? 1 : 0
             self.view.layoutIfNeeded()
-        } completion: { _ in
+        }
+
+        let finalize: (Bool) -> Void = { _ in
             self.pickupDateView?.isHidden = !shouldShowRentalFields
             self.returnDateView?.isHidden = !shouldShowRentalFields
             self.downPaymentView?.isHidden = !shouldShowRentalFields
@@ -559,8 +566,17 @@ class InfoMainViewController: BaseViewControler {
             self.reloadSelectionTable()
             self.updatePreviewTotal()
         }
+
+        // Animate only on a user-driven switch; entering the cart applies the
+        // final state instantly so the UI stays put (no fade/reflow flicker).
+        if animated {
+            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState], animations: applyLayout, completion: finalize)
+        } else {
+            applyLayout()
+            finalize(true)
+        }
     }
-    
+
     /// Update prices for all cart items based on current order type (rent/sale)
     /// Uses custom price if user has manually changed it, otherwise uses original price
     private func updateCartPricesForOrderType() {
@@ -793,6 +809,8 @@ class InfoMainViewController: BaseViewControler {
             sender.selectedSegmentIndex = methodSelect == .rent ? 0 : 1
             return
         }
+        // User-initiated switch → animate the rental fields in/out.
+        animateNextMethodChange = true
         methodSelect = sender.selectedSegmentIndex == 0 ? .rent : .sale
     }
     

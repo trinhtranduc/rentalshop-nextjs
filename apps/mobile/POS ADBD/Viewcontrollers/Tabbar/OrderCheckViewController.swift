@@ -152,7 +152,7 @@ class OrderCheckViewController: BaseViewControler {
             }
         )
         navBar.setDismissButton()
-        navBar.setPreferredBarHeight(76, customTitleMaxHeight: 68)
+//        navBar.setPreferredBarHeight(76, customTitleMaxHeight: 68)
     }
 
     private func createCustomTitleView() -> UIView {

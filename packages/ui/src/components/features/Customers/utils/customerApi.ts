@@ -103,7 +103,7 @@ class CustomerApiClient {
    */
   async getCustomerById(customerId: number): Promise<CustomerWithMerchant> {
     const response = await this.makeRequest<CustomerWithMerchant>(
-      `/api/customers?customerId=${customerId}`
+      `/api/customers/${customerId}`
     );
     return response.data!;
   }
@@ -123,7 +123,7 @@ class CustomerApiClient {
    * Update an existing customer
    */
   async updateCustomer(customerId: number, customerData: CustomerUpdateInput): Promise<CustomerWithMerchant> {
-    const response = await this.makeRequest<CustomerWithMerchant>(`/api/customers?customerId=${customerId}`, {
+    const response = await this.makeRequest<CustomerWithMerchant>(`/api/customers/${customerId}`, {
       method: 'PUT',
       body: JSON.stringify(customerData),
     });
@@ -134,7 +134,7 @@ class CustomerApiClient {
    * Delete a customer (soft delete)
    */
   async deleteCustomer(customerId: number): Promise<void> {
-    await this.makeRequest(`/api/customers?customerId=${customerId}`, {
+    await this.makeRequest(`/api/customers/${customerId}`, {
       method: 'DELETE',
     });
   }

@@ -135,6 +135,9 @@ model Merchant {
   planLimitAddons PlanLimitAddon[]
   referredBy      Merchant?        @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
   referredMerchants Merchant[]     @relation("MerchantReferrals")
+  loyaltyProgram  LoyaltyProgram?
+  customerLoyalty CustomerLoyalty[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([name])
   @@index([email])
@@ -280,6 +283,8 @@ model Customer {
   merchantId  Int
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
+  loyaltyRecords CustomerLoyalty[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@unique([merchantId, phone])
   @@index([merchantId, firstName, lastName])
@@ -316,6 +321,9 @@ model Order {
   returnNotesImages  Json?
   damageNotes        String?
   damageNotesImages  Json?
+  loyaltyPointsRedeemed Int       @default(0)
+  loyaltyDiscount       Float     @default(0)
+  loyaltyPointsEarned   Int       @default(0)
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   deletedAt          DateTime?
@@ -328,6 +336,7 @@ model Order {
   outlet             Outlet      @relation(fields: [outletId], references: [id])
   orderItems         OrderItem[]
   payments           Payment[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([status, outletId])
   @@index([customerId, createdAt(sort: Desc)])
@@ -838,4 +847,138 @@ enum PostStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+// ============================================================================
+// LOYALTY PROGRAM
+// ============================================================================
+
+/// Loyalty program configuration — ONE per merchant
+model LoyaltyProgram {
+  id                Int       @id @default(autoincrement())
+  merchantId        Int       @unique
+  name              String    @default("Chương trình khách hàng thân thiết")
+  isActive          Boolean   @default(true)
+
+  rentEarnEnabled   Boolean   @default(true)
+  rentEarnRate      Int       @default(1)
+  rentEarnPerAmount Float     @default(10000)
+
+  saleEarnEnabled   Boolean   @default(true)
+  saleEarnRate      Int       @default(1)
+  saleEarnPerAmount Float     @default(10000)
+
+  pointValue        Float     @default(1000)
+  minRedeemPoints   Int       @default(10)
+  maxRedeemPercent  Float     @default(50)
+  redeemOnRent      Boolean   @default(true)
+  redeemOnSale      Boolean   @default(true)
+
+  tierMetric        String    @default("total_spend")
+  tierPeriod        String    @default("lifetime")
+  tierDowngrade     String    @default("never")
+
+  pointsExpiryMode  String    @default("never")
+  pointsExpiryDays  Int?
+  yearlyResetMonth  Int?
+  yearlyResetDay    Int?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  tiers             LoyaltyTier[]
+}
+
+/// Membership tier definition
+model LoyaltyTier {
+  id            Int       @id @default(autoincrement())
+  programId     Int
+  name          String
+  threshold     Float     @default(0)
+  multiplier    Float     @default(1.0)
+  benefits      String    @default("[]")
+  color         String?
+  icon          String?
+  sortOrder     Int       @default(0)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  program       LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  customers     CustomerLoyalty[]
+
+  @@index([programId, threshold])
+  @@index([programId, sortOrder])
+}
+
+/// Customer loyalty balance — ONE per customer per merchant
+model CustomerLoyalty {
+  id              Int       @id @default(autoincrement())
+  customerId      Int
+  merchantId      Int
+  points          Int       @default(0)
+  totalEarned     Int       @default(0)
+  totalRedeemed   Int       @default(0)
+  totalSpent      Float     @default(0)
+  totalOrders     Int       @default(0)
+  currentTierId   Int?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  currentTier     LoyaltyTier? @relation(fields: [currentTierId], references: [id], onDelete: SetNull)
+  pointLots       LoyaltyPointLot[]
+
+  @@unique([customerId, merchantId])
+  @@index([merchantId, points])
+  @@index([merchantId, totalSpent])
+  @@index([merchantId, currentTierId])
+}
+
+/// Immutable ledger of all point transactions
+model LoyaltyTransaction {
+  id              Int       @id @default(autoincrement())
+  customerId      Int
+  merchantId      Int
+  outletId        Int?
+  orderId         Int?
+  type            String
+  points          Int
+  balanceAfter    Int
+  description     String?
+  metadata        String?
+  createdAt       DateTime  @default(now())
+  createdById     Int?
+
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  order           Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  pointLots       LoyaltyPointLot[]
+
+  @@index([customerId, merchantId, createdAt])
+  @@index([orderId, type])
+  @@index([merchantId, type, createdAt])
+  @@index([outletId, createdAt])
+}
+
+/// Point lots for per-transaction expiry and FIFO redemption
+model LoyaltyPointLot {
+  id                Int       @id @default(autoincrement())
+  customerLoyaltyId Int
+  earnTransactionId Int
+  pointsEarned      Int
+  remainingPoints   Int
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  customerLoyalty   CustomerLoyalty     @relation(fields: [customerLoyaltyId], references: [id], onDelete: Cascade)
+  earnTransaction   LoyaltyTransaction  @relation(fields: [earnTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([customerLoyaltyId, expiresAt])
+  @@index([earnTransactionId])
+  @@index([expiresAt, remainingPoints])
 }

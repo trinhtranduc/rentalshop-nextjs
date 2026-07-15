@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { cn } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { cn, Button, Logo } from '@rentalshop/ui';
 import { useOptimisticNavigation, useCommonTranslations } from '@rentalshop/hooks';
 import { formatRoleDisplayName } from '../../utils/role-utils';
 import { filterAdminMenuByRole } from '../../utils/admin-menu-filter';
@@ -341,9 +340,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm">
-              <Store className="w-5 h-5 text-white" />
-            </div>
+            <Logo size="sm" variant="blue" />
             <div>
               <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
               <p className="text-xs text-text-secondary">Admin</p>
@@ -352,9 +349,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm">
-            <Store className="w-5 h-5 text-white" />
-          </div>
+          <Logo size="sm" variant="blue" />
         )}
 
         <Button

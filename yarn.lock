@@ -1963,49 +1963,14 @@
   version "1.0.0"
   resolved "file:packages/auth"
   dependencies:
-    "@rentalshop/database" "file:../database"
-    "@rentalshop/utils" "file:../utils"
+    "@rentalshop/database" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-auth-1.0.0-4d957dbb-6393-4567-85f1-e92655234626-1783776450400/node_modules/@rentalshop/database"
+    "@rentalshop/utils" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-auth-1.0.0-4d957dbb-6393-4567-85f1-e92655234626-1783776450400/node_modules/@rentalshop/utils"
     bcryptjs "^3.0.2"
     jsonwebtoken "^9.0.0"
     next-auth "^4.24.0"
 
-"@rentalshop/client@file:/Users/trinhtran/Documents/Source-Code/rentalshop-nextjs/apps/client":
-  version "1.0.0"
-  resolved "file:apps/client"
-  dependencies:
-    "@hookform/resolvers" "^3.3.0"
-    "@rentalshop/auth" "file:../../packages/auth"
-    "@rentalshop/hooks" "file:../../packages/hooks"
-    "@rentalshop/ui" "file:../../packages/ui"
-    "@rentalshop/utils" "file:../../packages/utils"
-    "@types/nprogress" "^0.2.3"
-    critters "^0.0.25"
-    formik "^2.4.6"
-    lucide-react "^0.263.0"
-    next "^14.2.35"
-    next-auth "^4.24.0"
-    next-intl "^4.3.12"
-    nprogress "^0.2.0"
-    react "^18.0.0"
-    react-dom "^18.0.0"
-    react-hook-form "^7.47.0"
-    tailwindcss-animate "^1.0.0"
-    yup "^1.7.0"
-    zod "^3.22.0"
-
-"@rentalshop/constants@file:../../packages/constants":
+"@rentalshop/constants@file:packages/constants":
   version "1.0.1"
-
-"@rentalshop/constants@file:../constants", "@rentalshop/constants@file:/Users/trinhtran/Documents/Source-Code/rentalshop-nextjs/packages/constants":
-  version "1.0.1"
-  resolved "file:packages/constants"
-
-"@rentalshop/database@file:../../packages/database":
-  version "1.0.0"
-  dependencies:
-    "@qdrant/js-client-rest" "^1.9.0"
-    "@xenova/transformers" "^2.4.2"
-    sharp "^0.33.0"
 
 "@rentalshop/database@file:../database":
   version "1.0.0"
@@ -2043,25 +2008,30 @@
 "@rentalshop/hooks@file:../../packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
+    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-hooks-1.0.0-66be31ae-5b5d-48ed-bb29-7cae9acacdc3-1783776450401/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-hooks-1.0.0-66be31ae-5b5d-48ed-bb29-7cae9acacdc3-1783776450401/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-hooks-1.0.0-66be31ae-5b5d-48ed-bb29-7cae9acacdc3-1783776450401/node_modules/@rentalshop/utils"
+
+"@rentalshop/loyalty@file:packages/loyalty":
+  version "1.0.0"
+  dependencies:
+    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-loyalty-1.0.0-ac802dbc-5105-43a0-9741-e9d7df722323-1783776450401/node_modules/packages/constants"
+    "@rentalshop/database" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-loyalty-1.0.0-ac802dbc-5105-43a0-9741-e9d7df722323-1783776450401/node_modules/packages/database"
+    "@rentalshop/types" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-loyalty-1.0.0-ac802dbc-5105-43a0-9741-e9d7df722323-1783776450401/node_modules/packages/types"
 
 "@rentalshop/hooks@file:../hooks", "@rentalshop/hooks@file:/Users/trinhtran/Documents/Source-Code/rentalshop-nextjs/packages/hooks":
   version "1.0.0"
   resolved "file:packages/hooks"
   dependencies:
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
+    "@rentalshop/auth" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-middleware-1.0.0-7444e22b-588a-4d6d-8c3d-cf563300c25a-1783776450403/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-middleware-1.0.0-7444e22b-588a-4d6d-8c3d-cf563300c25a-1783776450403/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-middleware-1.0.0-7444e22b-588a-4d6d-8c3d-cf563300c25a-1783776450403/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-middleware-1.0.0-7444e22b-588a-4d6d-8c3d-cf563300c25a-1783776450403/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:../../packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../auth"
-    "@rentalshop/database" "file:../database"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
+    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-types-1.0.0-d0204de3-eeeb-4fda-a8ad-1656603b6899-1783776450400/node_modules/@rentalshop/constants"
 
 "@rentalshop/middleware@file:/Users/trinhtran/Documents/Source-Code/rentalshop-nextjs/packages/middleware":
   version "1.0.0"
@@ -2093,10 +2063,10 @@
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
     "@react-oauth/google" "^0.12.1"
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/hooks" "file:../hooks"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
+    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-ui-1.0.0-6e29463f-f815-46f6-afd9-3894c0746690-1783776450402/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-ui-1.0.0-6e29463f-f815-46f6-afd9-3894c0746690-1783776450402/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-ui-1.0.0-6e29463f-f815-46f6-afd9-3894c0746690-1783776450402/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-ui-1.0.0-6e29463f-f815-46f6-afd9-3894c0746690-1783776450402/node_modules/@rentalshop/utils"
     "@tiptap/extension-code-block" "^2.1.13"
     "@tiptap/extension-image" "^2.1.13"
     "@tiptap/extension-link" "^2.1.13"
@@ -2171,8 +2141,8 @@
     "@aws-sdk/client-ses" "^3.921.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
     "@axiomhq/js" "^1.0.0"
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/env" "file:../env"
+    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-utils-1.0.0-785a3cb1-05d6-48c2-9926-ff4d8badc55b-1783776450401/node_modules/@rentalshop/constants"
+    "@rentalshop/env" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-utils-1.0.0-785a3cb1-05d6-48c2-9926-ff4d8badc55b-1783776450401/node_modules/@rentalshop/env"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
     pino "^9.0.0"
