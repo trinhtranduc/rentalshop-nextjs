@@ -31,10 +31,20 @@ const jsonLd = {
   offers: { '@type': 'Offer', price: '99000', priceCurrency: 'VND' },
 };
 
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop' },
+    { '@type': 'ListItem', position: 2, name: 'Cho thuê Trang thiết bị', item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/cho-thue-trang-thiet-bi` },
+  ],
+};
+
 export default function ChoThueTrangThietBiPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div className="min-h-screen bg-white">
         <section className="bg-gradient-to-br from-blue-50 to-cyan-100 py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
