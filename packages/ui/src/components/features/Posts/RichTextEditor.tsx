@@ -11,6 +11,14 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import Color from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import Youtube from '@tiptap/extension-youtube';
 import { EditorToolbar } from './EditorToolbar';
 import { PostImagePickerDialog } from './PostImagePickerDialog';
 
@@ -32,16 +40,26 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable default image handling
-        // We'll use custom image extension
+        // Disable default code block — we use custom one
+        codeBlock: false,
       }),
+      Underline,
+      TextStyle,
+      Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Subscript,
+      Superscript,
       Image.configure({
         inline: true,
-        allowBase64: false, // HTTPS image URLs only (S3 / CloudFront)
+        allowBase64: false,
         HTMLAttributes: {
           class: 'post-image max-w-full h-auto rounded-lg',
         },
-        // Handle image loading errors gracefully
         addAttributes() {
           return {
             ...this.parent?.(),
@@ -66,7 +84,7 @@ export function RichTextEditor({
       }),
       CodeBlock.configure({
         HTMLAttributes: {
-          class: 'post-code-block bg-bg-secondary p-4 rounded-lg',
+          class: 'post-code-block bg-bg-secondary p-4 rounded-lg font-mono text-sm',
         },
       }),
       Table.configure({
@@ -78,21 +96,22 @@ export function RichTextEditor({
       TableRow,
       TableCell,
       TableHeader,
+      Youtube.configure({
+        inline: false,
+        HTMLAttributes: {
+          class: 'post-youtube rounded-lg overflow-hidden',
+        },
+      }),
     ],
     content: content ? (() => {
       try {
         const parsed = JSON.parse(content);
-        // Validate content structure - must be a doc node
         if (parsed && typeof parsed === 'object' && parsed.type === 'doc') {
-          // Ensure content array exists
           if (!parsed.content || !Array.isArray(parsed.content)) {
-            console.warn('Content missing content array, initializing empty');
             return { type: 'doc', content: [] };
           }
           return parsed;
         }
-        // If invalid, return empty doc
-        console.warn('Invalid content structure, using empty document');
         return { type: 'doc', content: [] };
       } catch (error) {
         console.error('Error parsing content:', error);
@@ -101,7 +120,6 @@ export function RichTextEditor({
     })() : undefined,
     editable,
     onUpdate: ({ editor }) => {
-      // Convert to JSON string for storage
       const json = JSON.stringify(editor.getJSON());
       onChange?.(json);
     },
@@ -116,12 +134,10 @@ export function RichTextEditor({
     return <div className="p-4">Loading editor...</div>;
   }
 
-  // Check if editor is in a valid state
   try {
     editor.getJSON();
   } catch (error) {
     console.error('Editor state is invalid, resetting...', error);
-    // Try to reset editor with empty content
     setTimeout(() => {
       editor.commands.setContent({ type: 'doc', content: [] });
     }, 0);
