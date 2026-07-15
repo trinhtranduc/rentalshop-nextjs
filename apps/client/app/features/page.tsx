@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     url: '/features',
     images: [
       {
-        url: '/anyrent-iphone-product.jpg',
+        url: '/anyrent.png',
         width: 1200,
         height: 630,
         alt: 'AnyRent - Tính năng phần mềm quản lý cho thuê',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: 'Tính năng Phần mềm Quản lý Cho thuê | AnyRent',
     description:
       'Quản lý đơn hàng, kho, khách hàng, lịch đặt và báo cáo doanh thu trên iOS và Web.',
-    images: ['/anyrent-iphone-product.jpg'],
+    images: ['/anyrent.png'],
   },
 };
 
