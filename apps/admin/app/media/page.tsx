@@ -44,6 +44,7 @@ export default function MediaPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [nextToken, setNextToken] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'ARTICLE';
 
@@ -76,7 +77,8 @@ export default function MediaPage() {
   }, []);
 
   useEffect(() => {
-    if (canManage) {
+    if (canManage && !hasFetched.current) {
+      hasFetched.current = true;
       fetchMedia();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
