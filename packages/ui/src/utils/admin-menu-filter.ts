@@ -9,6 +9,7 @@ export interface AdminMenuItemLike {
 }
 
 const BLOG_PREFIX = '/posts';
+const SYSTEM_USERS_PATH = '/system-users';
 
 function isBlogPath(href: string): boolean {
   return href === BLOG_PREFIX || href.startsWith(`${BLOG_PREFIX}/`);
@@ -16,6 +17,7 @@ function isBlogPath(href: string): boolean {
 
 /**
  * ARTICLE role: blog CMS only (posts, categories, tags).
+ * System Users (/system-users) is ADMIN-only.
  */
 export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
   items: T[],
@@ -33,7 +35,7 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
   }
 
   if (userRole === 'MERCHANT') {
-    return items.filter((item) => !isBlogPath(item.href) && item.href !== '/request-logs');
+    return items.filter((item) => !isBlogPath(item.href) && item.href !== '/request-logs' && item.href !== SYSTEM_USERS_PATH);
   }
 
   if (userRole === 'OUTLET_ADMIN') {
@@ -44,7 +46,8 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
         item.href !== '/subscriptions' &&
         item.href !== '/plans' &&
         item.href !== '/payments' &&
-        item.href !== '/merchants'
+        item.href !== '/merchants' &&
+        item.href !== SYSTEM_USERS_PATH
     );
   }
 
@@ -57,7 +60,8 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
         item.href !== '/subscriptions' &&
         item.href !== '/plans' &&
         item.href !== '/payments' &&
-        item.href !== '/merchants'
+        item.href !== '/merchants' &&
+        item.href !== SYSTEM_USERS_PATH
     );
   }
 
