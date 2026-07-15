@@ -775,6 +775,20 @@ export default async function RootLayout({
             </Script>
           </>
         )}
+
+        {/* Google Ads Conversion Tracking */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18324546552"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-18324546552');
+          `}
+        </Script>
         
         <NextIntlClientProvider locale={locale} messages={messages[locale]}>
           <ToastProvider>
