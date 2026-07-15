@@ -337,19 +337,26 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name and phone only (case-insensitive and diacritics-insensitive)
-  // Search only starts from 2 characters minimum
+  // Search query for name and phone (case-insensitive and diacritics-insensitive)
+  // Matches substring anywhere in the field (consistent with order search by customer name)
   if (q && q.trim()) {
     const searchQuery = q.trim();
-    // Normalize Vietnamese text: "Hồng" → "hong" — always search with normalized form
+    // Normalize Vietnamese text: "Hồng" → "hong"
     const normalizedQuery = removeVietnameseDiacritics(searchQuery);
     
-    // Use startsWith (prefix match) — "ho" matches "Hồng" but NOT "Thompson"
     const searchConditions: any[] = [
-      { firstName: { startsWith: normalizedQuery, mode: 'insensitive' } },
-      { lastName: { startsWith: normalizedQuery, mode: 'insensitive' } },
-      { phone: { startsWith: searchQuery } } // Phone uses original term
+      { firstName: { contains: searchQuery, mode: 'insensitive' } },
+      { lastName: { contains: searchQuery, mode: 'insensitive' } },
+      { phone: { contains: searchQuery } }
     ];
+    
+    // Add normalized search if different from original (diacritics-insensitive)
+    if (normalizedQuery !== searchQuery) {
+      searchConditions.push(
+        { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
+        { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
+      );
+    }
     
     where.OR = searchConditions;
   }
