@@ -63,7 +63,7 @@ async function buildOrderSearchConditions(searchInput: string, merchantId?: numb
       WHERE "deletedAt" IS NULL
       ${merchantFilter}
       AND (${nameCondition})
-      LIMIT 200
+      LIMIT 5000
     `;
     matchingCustomerIds = customerResults.map(r => r.id);
   } catch {
