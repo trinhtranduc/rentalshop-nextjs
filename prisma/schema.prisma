@@ -70,18 +70,18 @@ model UserSession {
 }
 
 model RefreshToken {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  tokenHash   String    @unique
-  deviceId    String?
-  userAgent   String?
-  ipAddress   String?
-  isRevoked   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  replacedBy  String?   // Token rotation: points to the new token hash
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  tokenHash  String    @unique
+  deviceId   String?
+  userAgent  String?
+  ipAddress  String?
+  isRevoked  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String? // Token rotation: points to the new token hash
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRevoked])
   @@index([tokenHash])
@@ -89,55 +89,55 @@ model RefreshToken {
 }
 
 model Merchant {
-  id              Int              @id @default(autoincrement())
-  name            String
-  email           String           @unique
-  phone           String?
+  id                   Int                  @id @default(autoincrement())
+  name                 String
+  email                String               @unique
+  phone                String?
   /// Stripe customer id for subscription billing
-  stripeCustomerId String?         @unique
+  stripeCustomerId     String?              @unique
   /// Lemon Squeezy customer id (optional, synced via webhooks)
-  lemonCustomerId String?          @unique
+  lemonCustomerId      String?              @unique
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
-  tenantKey       String?          @unique
-  address         String?
-  city            String?
-  state           String?
-  zipCode         String?
-  country         String?
-  businessType    BusinessType     @default(GENERAL)
-  taxId           String?
-  website         String?
-  description     String?
-  planId          Int?
-  totalRevenue    Float            @default(0)
-  lastActiveAt    DateTime?
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  pricingConfig   String?          @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType     PricingType      @default(FIXED)
-  currency        String           @default("USD")
-  avatar          String?
+  tenantKey            String?              @unique
+  address              String?
+  city                 String?
+  state                String?
+  zipCode              String?
+  country              String?
+  businessType         BusinessType         @default(GENERAL)
+  taxId                String?
+  website              String?
+  description          String?
+  planId               Int?
+  totalRevenue         Float                @default(0)
+  lastActiveAt         DateTime?
+  isActive             Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  pricingConfig        String?              @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType          PricingType          @default(FIXED)
+  currency             String               @default("USD")
+  avatar               String?
   /// ID of merchant who referred this merchant (for referral tracking)
   referredByMerchantId Int?
-  categories      Category[]
-  customers       Customer[]
-  Plan            Plan?            @relation(fields: [planId], references: [id])
-  roles           MerchantRole[]
-  outlets         Outlet[]
-  payments        Payment[]
-  products        Product[]
-  subscription    Subscription?
-  users           User[]
-  auditLogs       AuditLog[]
-  requestLogs     RequestLog[]     @relation("RequestLogs")
-  planLimitAddons PlanLimitAddon[]
-  referredBy      Merchant?        @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
-  referredMerchants Merchant[]     @relation("MerchantReferrals")
-  loyaltyProgram  LoyaltyProgram?
-  customerLoyalty CustomerLoyalty[]
-  loyaltyTransactions LoyaltyTransaction[]
+  categories           Category[]
+  customers            Customer[]
+  Plan                 Plan?                @relation(fields: [planId], references: [id])
+  roles                MerchantRole[]
+  outlets              Outlet[]
+  payments             Payment[]
+  products             Product[]
+  subscription         Subscription?
+  users                User[]
+  auditLogs            AuditLog[]
+  requestLogs          RequestLog[]         @relation("RequestLogs")
+  planLimitAddons      PlanLimitAddon[]
+  referredBy           Merchant?            @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
+  referredMerchants    Merchant[]           @relation("MerchantReferrals")
+  loyaltyProgram       LoyaltyProgram?
+  customerLoyalty      CustomerLoyalty[]
+  loyaltyTransactions  LoyaltyTransaction[]
 
   @@index([name])
   @@index([email])
@@ -190,29 +190,30 @@ model Category {
 }
 
 model Product {
-  id                 Int           @id @default(autoincrement())
-  name               String
-  description        String?
-  barcode            String?       @unique
-  totalStock         Int           @default(0)
-  rentPrice          Float
-  salePrice          Float?
-  deposit            Float         @default(0)
-  images             Json?
-  isActive           Boolean       @default(true)
-  embeddingGeneratedAt DateTime?  // Track when embedding was generated and stored in Qdrant
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  merchantId         Int
-  categoryId         Int
-  costPrice          Float?
-  pricingType        PricingType?
-  durationConfig     String?
-  orderItems         OrderItem[]
-  outletStock        OutletStock[]
-  embeddingJobs      EmbeddingJob[]
-  category           Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  merchant           Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String?
+  barcode              String?                @unique
+  totalStock           Int                    @default(0)
+  rentPrice            Float
+  salePrice            Float?
+  deposit              Float                  @default(0)
+  images               Json?
+  isActive             Boolean                @default(true)
+  embeddingGeneratedAt DateTime? // Track when embedding was generated and stored in Qdrant
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  merchantId           Int
+  categoryId           Int
+  costPrice            Float?
+  pricingType          PricingType?
+  durationConfig       String?
+  orderItems           OrderItem[]
+  outletStock          OutletStock[]
+  embeddingJobs        EmbeddingJob[]
+  pricingOptions       ProductPricingOption[]
+  category             Category               @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant             Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([merchantId])
   @@index([categoryId])
@@ -222,20 +223,38 @@ model Product {
   @@index([embeddingGeneratedAt])
 }
 
+model ProductPricingOption {
+  id         Int          @id @default(autoincrement())
+  productId  Int
+  type       PricingType // Phase 1: FIXED | DAILY (BLOCK/HOURLY reserved for future)
+  price      Float
+  unit       PricingUnit? // null in Phase 1; used by BLOCK/HOURLY later
+  blockSize  Int? // null in Phase 1; number of units per block for BLOCK
+  isDefault  Boolean      @default(false)
+  isActive   Boolean      @default(true)
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId, isActive])
+}
+
 model EmbeddingJob {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   productId   Int
-  status      String   @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
-  source      String?  // product-create | product-update | bulk-sync | manual
-  priority    Int      @default(0)
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(5)
-  nextRunAt   DateTime @default(now())
+  status      String    @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  source      String? // product-create | product-update | bulk-sync | manual
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  nextRunAt   DateTime  @default(now())
   startedAt   DateTime?
   finishedAt  DateTime?
   lastError   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -262,28 +281,28 @@ model OutletStock {
 }
 
 model Customer {
-  id          Int       @id @default(autoincrement())
-  firstName   String
-  lastName    String?
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  country     String?
-  dateOfBirth DateTime?
-  idNumber    String?
-  idType      String?
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  merchantId  Int
-  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  orders      Order[]
-  loyaltyRecords CustomerLoyalty[]
+  id                  Int                  @id @default(autoincrement())
+  firstName           String
+  lastName            String?
+  email               String?
+  phone               String?
+  address             String?
+  city                String?
+  state               String?
+  zipCode             String?
+  country             String?
+  dateOfBirth         DateTime?
+  idNumber            String?
+  idType              String?
+  notes               String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  merchantId          Int
+  merchant            Merchant             @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders              Order[]
+  loyaltyRecords      CustomerLoyalty[]
   loyaltyTransactions LoyaltyTransaction[]
 
   @@unique([merchantId, phone])
@@ -292,51 +311,51 @@ model Customer {
 }
 
 model Order {
-  id                 Int         @id @default(autoincrement())
-  orderNumber        String      @unique
-  orderType          OrderType
-  status             OrderStatus @default(RESERVED)
-  totalAmount        Float
-  depositAmount      Float       @default(0)
-  securityDeposit    Float       @default(0)
-  damageFee          Float       @default(0)
-  lateFee            Float       @default(0)
-  discountType       String?
-  discountValue      Float       @default(0)
-  discountAmount     Float       @default(0)
-  pickupPlanAt       DateTime?
-  returnPlanAt       DateTime?
-  pickedUpAt         DateTime?
-  returnedAt         DateTime?
-  rentalDuration     Int?
-  isReadyToDeliver   Boolean     @default(false)
-  collateralType     String?
-  collateralDetails  String?
-  collateralImageUrl String?
-  notes              String?
-  notesImages        Json?
-  pickupNotes        String?
-  pickupNotesImages  Json?
-  returnNotes        String?
-  returnNotesImages  Json?
-  damageNotes        String?
-  damageNotesImages  Json?
-  loyaltyPointsRedeemed Int       @default(0)
-  loyaltyDiscount       Float     @default(0)
-  loyaltyPointsEarned   Int       @default(0)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  deletedAt          DateTime?
-  outletId           Int
-  customerId         Int?
-  createdById        Int?  // Allow null to support user deletion
-  rentalDurationUnit String?
-  createdBy          User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  customer           Customer?   @relation(fields: [customerId], references: [id])
-  outlet             Outlet      @relation(fields: [outletId], references: [id])
-  orderItems         OrderItem[]
-  payments           Payment[]
-  loyaltyTransactions LoyaltyTransaction[]
+  id                    Int                  @id @default(autoincrement())
+  orderNumber           String               @unique
+  orderType             OrderType
+  status                OrderStatus          @default(RESERVED)
+  totalAmount           Float
+  depositAmount         Float                @default(0)
+  securityDeposit       Float                @default(0)
+  damageFee             Float                @default(0)
+  lateFee               Float                @default(0)
+  discountType          String?
+  discountValue         Float                @default(0)
+  discountAmount        Float                @default(0)
+  pickupPlanAt          DateTime?
+  returnPlanAt          DateTime?
+  pickedUpAt            DateTime?
+  returnedAt            DateTime?
+  rentalDuration        Int?
+  isReadyToDeliver      Boolean              @default(false)
+  collateralType        String?
+  collateralDetails     String?
+  collateralImageUrl    String?
+  notes                 String?
+  notesImages           Json?
+  pickupNotes           String?
+  pickupNotesImages     Json?
+  returnNotes           String?
+  returnNotesImages     Json?
+  damageNotes           String?
+  damageNotesImages     Json?
+  loyaltyPointsRedeemed Int                  @default(0)
+  loyaltyDiscount       Float                @default(0)
+  loyaltyPointsEarned   Int                  @default(0)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  deletedAt             DateTime?
+  outletId              Int
+  customerId            Int?
+  createdById           Int? // Allow null to support user deletion
+  rentalDurationUnit    String?
+  createdBy             User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  customer              Customer?            @relation(fields: [customerId], references: [id])
+  outlet                Outlet               @relation(fields: [outletId], references: [id])
+  orderItems            OrderItem[]
+  payments              Payment[]
+  loyaltyTransactions   LoyaltyTransaction[]
 
   @@index([status, outletId])
   @@index([customerId, createdAt(sort: Desc)])
@@ -354,20 +373,23 @@ model Order {
 }
 
 model OrderItem {
-  id             Int      @id @default(autoincrement())
-  quantity       Int      @default(1)
-  unitPrice      Float
-  totalPrice     Float
-  deposit        Float    @default(0)
-  orderId        Int
-  productId      Int?
-  notes          String?
-  rentalDays     Int?
-  productName    String?
-  productBarcode String?
-  productImages  Json?
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id              Int                   @id @default(autoincrement())
+  quantity        Int                   @default(1)
+  unitPrice       Float
+  totalPrice      Float
+  deposit         Float                 @default(0)
+  orderId         Int
+  productId       Int?
+  notes           String?
+  rentalDays      Int?
+  productName     String?
+  productBarcode  String?
+  productImages   Json?
+  pricingType     PricingType? // snapshot of the pricing option type used
+  pricingOptionId Int? // reference to the selected option (nullable)
+  order           Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product?              @relation(fields: [productId], references: [id], onDelete: SetNull)
+  pricingOption   ProductPricingOption? @relation(fields: [pricingOptionId], references: [id], onDelete: SetNull)
 
   @@index([orderId, productId])
 }
@@ -407,21 +429,21 @@ model Payment {
 }
 
 model Plan {
-  id            Int            @id @default(autoincrement())
-  name          String         @unique
+  id            Int                       @id @default(autoincrement())
+  name          String                    @unique
   description   String
   basePrice     Float
-  currency      String         @default("USD")
+  currency      String                    @default("USD")
   /// Stripe Price ID for subscription checkout (mode=subscription)
-  stripePriceId String?        @unique
-  trialDays     Int            @default(14)
-  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
-  features      String         @default("[]")
-  isActive      Boolean        @default(true)
-  isPopular     Boolean        @default(false)
-  sortOrder     Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  stripePriceId String?                   @unique
+  trialDays     Int                       @default(14)
+  limits        String                    @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
+  features      String                    @default("[]")
+  isActive      Boolean                   @default(true)
+  isPopular     Boolean                   @default(false)
+  sortOrder     Int                       @default(0)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
   deletedAt     DateTime?
   Merchant      Merchant[]
   subscriptions Subscription[]
@@ -444,16 +466,16 @@ enum PlanBillingInterval {
 /// Map Plan ↔ Stripe Price IDs by billing interval.
 /// This supports: Basic/Pro each having 4 Stripe prices (monthly/quarterly/semi_annual/annual).
 model PlanStripePrice {
-  id             Int                @id @default(autoincrement())
-  planId         Int
+  id              Int                 @id @default(autoincrement())
+  planId          Int
   billingInterval PlanBillingInterval
-  stripePriceId  String             // no unique: allow same price in multiple plan/interval slots; save overwrites by (planId, billingInterval)
-  currency       String?
-  isActive       Boolean            @default(true)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  stripePriceId   String // no unique: allow same price in multiple plan/interval slots; save overwrites by (planId, billingInterval)
+  currency        String?
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  plan           Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@unique([planId, billingInterval])
   @@index([planId])
@@ -464,19 +486,19 @@ model PlanStripePrice {
 /// Map Plan ↔ Lemon Squeezy Variant IDs by billing interval.
 /// Each plan can have 4 variants (monthly/quarterly/semi_annual/annual).
 model PlanLemonSqueezyVariant {
-  id             Int                @id @default(autoincrement())
-  planId         Int
+  id              Int                 @id @default(autoincrement())
+  planId          Int
   billingInterval PlanBillingInterval
   /// Lemon Squeezy Variant ID (numeric string)
-  lemonVariantId String
+  lemonVariantId  String
   /// Optional override if plan variants belong to a different store
-  lemonStoreId   String?
-  currency       String?
-  isActive       Boolean            @default(true)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  lemonStoreId    String?
+  currency        String?
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  plan           Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@unique([planId, billingInterval])
   @@index([planId])
@@ -485,34 +507,34 @@ model PlanLemonSqueezyVariant {
 }
 
 model Subscription {
-  id                 Int                    @id @default(autoincrement())
-  merchantId         Int                    @unique
-  planId             Int
+  id                   Int                    @id @default(autoincrement())
+  merchantId           Int                    @unique
+  planId               Int
   /// Stripe Subscription ID for syncing status/periods via webhooks
-  stripeSubscriptionId String?              @unique
+  stripeSubscriptionId String?                @unique
   /// Lemon Squeezy Subscription ID for syncing status/periods via webhooks
-  lemonSubscriptionId String?               @unique
-  status             String                 @default("TRIAL")
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  trialStart         DateTime?
-  trialEnd           DateTime?
-  cancelAtPeriodEnd  Boolean                @default(false)
-  canceledAt         DateTime?
-  cancelReason       String?
-  amount             Float
-  currency           String                 @default("USD")
-  interval           String                 @default("month")
-  intervalCount      Int                    @default(1)
-  period             Int                    @default(1)
-  discount           Float                  @default(0)
-  savings            Float                  @default(0)
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  payments           Payment[]
-  merchant           Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  plan               Plan                   @relation(fields: [planId], references: [id])
-  activities         SubscriptionActivity[]
+  lemonSubscriptionId  String?                @unique
+  status               String                 @default("TRIAL")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAtPeriodEnd    Boolean                @default(false)
+  canceledAt           DateTime?
+  cancelReason         String?
+  amount               Float
+  currency             String                 @default("USD")
+  interval             String                 @default("month")
+  intervalCount        Int                    @default(1)
+  period               Int                    @default(1)
+  discount             Float                  @default(0)
+  savings              Float                  @default(0)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  payments             Payment[]
+  merchant             Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan                 Plan                   @relation(fields: [planId], references: [id])
+  activities           SubscriptionActivity[]
 
   @@index([merchantId])
   @@index([planId])
@@ -558,20 +580,20 @@ model PlanLimitAddon {
 }
 
 model AuditLog {
-  id          Int       @id @default(autoincrement())
-  entityType  String
-  entityId    String
-  action      String
-  details     String
-  userId      Int?
-  merchantId  Int?
-  outletId    Int?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime  @default(now())
-  user        User?     @relation(fields: [userId], references: [id])
-  merchant    Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  outlet      Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  id         Int       @id @default(autoincrement())
+  entityType String
+  entityId   String
+  action     String
+  details    String
+  userId     Int?
+  merchantId Int?
+  outletId   Int?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  user       User?     @relation(fields: [userId], references: [id])
+  merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  outlet     Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
   @@index([userId])
@@ -582,26 +604,26 @@ model AuditLog {
 }
 
 model RequestLog {
-  id            Int       @id @default(autoincrement())
-  correlationId String    @unique // Request ID để trace
-  method        String    // GET, POST, PUT, DELETE
-  path          String    // /api/orders
-  queryParams   String?   // JSON string của query params
-  requestBody   String?   // JSON string của request body (sanitized)
-  responseBody  String?   // JSON string của response body (sanitized)
-  statusCode    Int       // 200, 404, 500
-  duration      Int       // milliseconds
-  userId        Int?      // User ID nếu authenticated
-  merchantId    Int?      // Merchant ID nếu có
-  outletId      Int?      // Outlet ID nếu có
+  id            Int      @id @default(autoincrement())
+  correlationId String   @unique // Request ID để trace
+  method        String // GET, POST, PUT, DELETE
+  path          String // /api/orders
+  queryParams   String? // JSON string của query params
+  requestBody   String? // JSON string của request body (sanitized)
+  responseBody  String? // JSON string của response body (sanitized)
+  statusCode    Int // 200, 404, 500
+  duration      Int // milliseconds
+  userId        Int? // User ID nếu authenticated
+  merchantId    Int? // Merchant ID nếu có
+  outletId      Int? // Outlet ID nếu có
   ipAddress     String?
   userAgent     String?
-  errorMessage  String?   // Nếu có error
-  createdAt     DateTime  @default(now())
-  
-  user          User?     @relation("RequestLogs", fields: [userId], references: [id])
-  merchant      Merchant? @relation("RequestLogs", fields: [merchantId], references: [id])
-  
+  errorMessage  String? // Nếu có error
+  createdAt     DateTime @default(now())
+
+  user     User?     @relation("RequestLogs", fields: [userId], references: [id])
+  merchant Merchant? @relation("RequestLogs", fields: [merchantId], references: [id])
+
   @@index([correlationId])
   @@index([method, path])
   @@index([userId])
@@ -701,6 +723,12 @@ enum PricingType {
   FIXED
   HOURLY
   DAILY
+  BLOCK
+}
+
+enum PricingUnit {
+  DAY
+  HOUR
 }
 
 enum SubscriptionStatus {
@@ -759,35 +787,35 @@ enum UserRole {
 }
 
 model Post {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String
-  locale      String   @default("vi") // Language code: en, vi, zh, ko, ja
-  content     String   // Rich text content stored as JSON string (TipTap format)
-  excerpt     String?  // Short description for previews
-  
+  id      Int     @id @default(autoincrement())
+  title   String
+  slug    String
+  locale  String  @default("vi") // Language code: en, vi, zh, ko, ja
+  content String // Rich text content stored as JSON string (TipTap format)
+  excerpt String? // Short description for previews
+
   // SEO Fields
-  seoTitle    String?
+  seoTitle       String?
   seoDescription String?
-  seoKeywords String?  // Comma-separated
-  
+  seoKeywords    String? // Comma-separated
+
   // Status & Publishing
   status      PostStatus @default(DRAFT)
   publishedAt DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+
   // Author
-  authorId    Int
-  author      User      @relation("PostAuthor", fields: [authorId], references: [id])
-  
+  authorId Int
+  author   User @relation("PostAuthor", fields: [authorId], references: [id])
+
   // Relationships
-  categories  PostCategoryRelation[]
-  tags        PostTagRelation[]
-  
+  categories PostCategoryRelation[]
+  tags       PostTagRelation[]
+
   // Featured image
   featuredImage String?
-  
+
   @@unique([slug, locale]) // Slug must be unique per locale
   @@index([status, publishedAt])
   @@index([slug])
@@ -805,30 +833,30 @@ model PostCategory {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  posts       PostCategoryRelation[]
-  
+
+  posts PostCategoryRelation[]
+
   @@index([slug])
   @@index([isActive])
 }
 
 model PostTag {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
-  createdAt   DateTime @default(now())
-  
-  posts       PostTagRelation[]
-  
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  posts PostTagRelation[]
+
   @@index([slug])
 }
 
 model PostCategoryRelation {
   postId     Int
   categoryId Int
-  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post       Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   category   PostCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+
   @@id([postId, categoryId])
   @@index([categoryId])
 }
@@ -836,9 +864,9 @@ model PostCategoryRelation {
 model PostTagRelation {
   postId Int
   tagId  Int
-  post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post   Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
   tag    PostTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
+
   @@id([postId, tagId])
   @@index([tagId])
 }
@@ -855,58 +883,58 @@ enum PostStatus {
 
 /// Loyalty program configuration — ONE per merchant
 model LoyaltyProgram {
-  id                Int       @id @default(autoincrement())
-  merchantId        Int       @unique
-  name              String    @default("Chương trình khách hàng thân thiết")
-  isActive          Boolean   @default(true)
+  id         Int     @id @default(autoincrement())
+  merchantId Int     @unique
+  name       String  @default("Chương trình khách hàng thân thiết")
+  isActive   Boolean @default(true)
 
-  rentEarnEnabled   Boolean   @default(true)
-  rentEarnRate      Int       @default(1)
-  rentEarnPerAmount Float     @default(10000)
+  rentEarnEnabled   Boolean @default(true)
+  rentEarnRate      Int     @default(1)
+  rentEarnPerAmount Float   @default(10000)
 
-  saleEarnEnabled   Boolean   @default(true)
-  saleEarnRate      Int       @default(1)
-  saleEarnPerAmount Float     @default(10000)
+  saleEarnEnabled   Boolean @default(true)
+  saleEarnRate      Int     @default(1)
+  saleEarnPerAmount Float   @default(10000)
 
-  pointValue        Float     @default(1000)
-  minRedeemPoints   Int       @default(10)
-  maxRedeemPercent  Float     @default(50)
-  redeemOnRent      Boolean   @default(true)
-  redeemOnSale      Boolean   @default(true)
+  pointValue       Float   @default(1000)
+  minRedeemPoints  Int     @default(10)
+  maxRedeemPercent Float   @default(50)
+  redeemOnRent     Boolean @default(true)
+  redeemOnSale     Boolean @default(true)
 
-  tierMetric        String    @default("total_spend")
-  tierPeriod        String    @default("lifetime")
-  tierDowngrade     String    @default("never")
+  tierMetric    String @default("total_spend")
+  tierPeriod    String @default("lifetime")
+  tierDowngrade String @default("never")
 
-  pointsExpiryMode  String    @default("never")
-  pointsExpiryDays  Int?
-  yearlyResetMonth  Int?
-  yearlyResetDay    Int?
+  pointsExpiryMode String @default("never")
+  pointsExpiryDays Int?
+  yearlyResetMonth Int?
+  yearlyResetDay   Int?
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  merchant          Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  tiers             LoyaltyTier[]
+  merchant Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  tiers    LoyaltyTier[]
 }
 
 /// Membership tier definition
 model LoyaltyTier {
-  id            Int       @id @default(autoincrement())
-  programId     Int
-  name          String
-  threshold     Float     @default(0)
-  multiplier    Float     @default(1.0)
-  benefits      String    @default("[]")
-  color         String?
-  icon          String?
-  sortOrder     Int       @default(0)
+  id         Int     @id @default(autoincrement())
+  programId  Int
+  name       String
+  threshold  Float   @default(0)
+  multiplier Float   @default(1.0)
+  benefits   String  @default("[]")
+  color      String?
+  icon       String?
+  sortOrder  Int     @default(0)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  program       LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
-  customers     CustomerLoyalty[]
+  program   LoyaltyProgram    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  customers CustomerLoyalty[]
 
   @@index([programId, threshold])
   @@index([programId, sortOrder])
@@ -914,23 +942,23 @@ model LoyaltyTier {
 
 /// Customer loyalty balance — ONE per customer per merchant
 model CustomerLoyalty {
-  id              Int       @id @default(autoincrement())
-  customerId      Int
-  merchantId      Int
-  points          Int       @default(0)
-  totalEarned     Int       @default(0)
-  totalRedeemed   Int       @default(0)
-  totalSpent      Float     @default(0)
-  totalOrders     Int       @default(0)
-  currentTierId   Int?
+  id            Int   @id @default(autoincrement())
+  customerId    Int
+  merchantId    Int
+  points        Int   @default(0)
+  totalEarned   Int   @default(0)
+  totalRedeemed Int   @default(0)
+  totalSpent    Float @default(0)
+  totalOrders   Int   @default(0)
+  currentTierId Int?
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  currentTier     LoyaltyTier? @relation(fields: [currentTierId], references: [id], onDelete: SetNull)
-  pointLots       LoyaltyPointLot[]
+  customer    Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  merchant    Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  currentTier LoyaltyTier?      @relation(fields: [currentTierId], references: [id], onDelete: SetNull)
+  pointLots   LoyaltyPointLot[]
 
   @@unique([customerId, merchantId])
   @@index([merchantId, points])
@@ -940,23 +968,23 @@ model CustomerLoyalty {
 
 /// Immutable ledger of all point transactions
 model LoyaltyTransaction {
-  id              Int       @id @default(autoincrement())
-  customerId      Int
-  merchantId      Int
-  outletId        Int?
-  orderId         Int?
-  type            String
-  points          Int
-  balanceAfter    Int
-  description     String?
-  metadata        String?
-  createdAt       DateTime  @default(now())
-  createdById     Int?
+  id           Int      @id @default(autoincrement())
+  customerId   Int
+  merchantId   Int
+  outletId     Int?
+  orderId      Int?
+  type         String
+  points       Int
+  balanceAfter Int
+  description  String?
+  metadata     String?
+  createdAt    DateTime @default(now())
+  createdById  Int?
 
-  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  order           Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  pointLots       LoyaltyPointLot[]
+  customer  Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  merchant  Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  order     Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  pointLots LoyaltyPointLot[]
 
   @@index([customerId, merchantId, createdAt])
   @@index([orderId, type])
@@ -975,8 +1003,8 @@ model LoyaltyPointLot {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  customerLoyalty   CustomerLoyalty     @relation(fields: [customerLoyaltyId], references: [id], onDelete: Cascade)
-  earnTransaction   LoyaltyTransaction  @relation(fields: [earnTransactionId], references: [id], onDelete: Cascade)
+  customerLoyalty CustomerLoyalty    @relation(fields: [customerLoyaltyId], references: [id], onDelete: Cascade)
+  earnTransaction LoyaltyTransaction @relation(fields: [earnTransactionId], references: [id], onDelete: Cascade)
 
   @@index([customerLoyaltyId, expiresAt])
   @@index([earnTransactionId])

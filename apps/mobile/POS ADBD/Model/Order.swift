@@ -950,6 +950,7 @@ struct UpdateOrderItem: Codable {
     let notes: String?
     let rentalDays: Int?
     let imageUrl: String?
+    var pricingOptionId: Int? = nil
 }
 
 // MARK: - Update Order Request Extension

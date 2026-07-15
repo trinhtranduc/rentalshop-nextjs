@@ -91,6 +91,10 @@ export {
   getEffectiveDurationLimits,
   calculateDurationInUnit,
   getDurationUnitLabel,
+  // Multiple pricing options (Phase 1: FIXED + DAILY)
+  getPricingOptions,
+  resolveSelectedOption,
+  calculateOptionPricing,
   type PricingInfo,
   type CalculatedPricing,
   // Note: ValidationResult is exported explicitly from index.ts to avoid conflicts

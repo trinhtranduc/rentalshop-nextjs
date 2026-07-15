@@ -6,9 +6,10 @@ import {
   ordersQuerySchema, 
   orderCreateSchema, 
   orderUpdateSchema, 
-  PricingResolver, 
-  calculateDurationInUnit, 
-  getDurationUnitLabel, 
+  PricingResolver,
+  resolveSelectedOption,
+  calculateDurationInUnit,
+  getDurationUnitLabel,
   ResponseBuilder, 
   handleApiError, 
   formatFullName, 
@@ -609,39 +610,43 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // RENT orders start as RESERVED (scheduled rental)
     const initialStatus = parsed.data.orderType === ORDER_TYPE.SALE ? ORDER_STATUS.COMPLETED : ORDER_STATUS.RESERVED;
 
-    // Calculate rentalDuration from pickup and return dates
-    // Duration calculation depends on product pricing type
-    let rentalDuration: number | null = null;
-    
-    if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+    // Determine rentalDuration: prefer client-sent value, fallback to server calculation
+    // This ensures mobile manual override is respected (Req 2.4, 6.4)
+    let rentalDuration: number | null = parsed.data.rentalDuration ?? null;
+    let rentalDurationUnit: string | null = parsed.data.rentalDurationUnit ?? null;
+
+    // Get dominant pricing type from first product (for server-side fallback calculation)
+    let dominantPricingType: PricingType = 'FIXED';
+    if (parsed.data.orderItems && parsed.data.orderItems.length > 0) {
+      const firstProductId = parsed.data.orderItems[0].productId;
+      const firstProduct = await db.products.findById(firstProductId) as any;
+      if (firstProduct?.pricingType) {
+        dominantPricingType = firstProduct.pricingType as PricingType;
+      }
+    }
+
+    // If client didn't send rentalDuration, calculate from dates
+    if (rentalDuration == null && parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
       const pickup = new Date(parsed.data.pickupPlanAt);
       const returnDate = new Date(parsed.data.returnPlanAt);
-      
-      // Get pricing type from first product (all products in order should have same type)
-      // Default to FIXED if not set (uses enum)
-      let pricingType: PricingType = 'FIXED';
-      if (parsed.data.orderItems && parsed.data.orderItems.length > 0) {
-        const firstProductId = parsed.data.orderItems[0].productId;
-        const firstProduct = await db.products.findById(firstProductId) as any;
-        if (firstProduct?.pricingType) {
-          pricingType = firstProduct.pricingType as PricingType;
-        }
-      }
-      
-      // Calculate duration based on pricing type
-      if (pricingType === 'HOURLY') {
+
+      if (dominantPricingType === 'HOURLY') {
         const diffTime = returnDate.getTime() - pickup.getTime();
-        rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
+        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60)));
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
-      } else if (pricingType === 'DAILY') {
-      const diffTime = returnDate.getTime() - pickup.getTime();
-      rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
-      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+      } else if (dominantPricingType === 'DAILY') {
+        const diffTime = returnDate.getTime() - pickup.getTime();
+        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
-        // FIXED pricing: duration is 1 (per rental)
         rentalDuration = 1;
         console.log('🔍 FIXED pricing: rental duration = 1 rental');
       }
+    }
+
+    // Resolve rentalDurationUnit if not sent by client
+    if (!rentalDurationUnit) {
+      rentalDurationUnit = dominantPricingType === 'DAILY' ? 'day' : dominantPricingType === 'HOURLY' ? 'hour' : null;
     }
 
     // Process order items - use pricing from request (frontend calculated)
@@ -666,21 +671,29 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             notes: item.notes
           });
 
-          // Calculate rentalDays for this item based on pricing type
-          // For FIXED: rentalDays = 1 (per rental)
-          // For HOURLY/DAILY: use calculated duration
+          // Resolve the selected pricing option (multi-option products);
+          // falls back to product-level pricingType when the product has no options.
+          const selectedOption = resolveSelectedOption(product as Product, (item as any).pricingOptionId);
+          const optionType = (selectedOption?.type || PricingResolver.resolvePricingType(product as Product, merchant as any)) as PricingType;
+
+          // Determine rentalDays: prefer client-sent value (item.rentDays), then calculate from dates
+          // This ensures mobile manual override of rental days is respected (Req 2.4, 6.4)
           let rentalDays: number | null = null;
-          if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+          if (optionType === 'FIXED') {
+            rentalDays = 1;
+          } else if (item.rentDays && item.rentDays >= 1) {
+            // Trust client-sent rentDays (mobile staff may have manually entered)
+            rentalDays = item.rentDays;
+          } else if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
             const pickup = new Date(parsed.data.pickupPlanAt);
             const returnDate = new Date(parsed.data.returnPlanAt);
-            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
-            const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
-            rentalDays = productPricingType === 'FIXED' ? 1 : duration;
+            const { duration } = calculateDurationInUnit(pickup, returnDate, optionType);
+            rentalDays = Math.max(1, duration);
           } else {
             rentalDays = rentalDuration || 1;
           }
 
-          // Snapshot product info to preserve it even if product is deleted later
+          // Snapshot product info + selected option to preserve them even if changed later
           return {
             productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
             // Snapshot fields
@@ -693,7 +706,10 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             totalPrice: finalTotalPrice,
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
-            rentalDays: rentalDays
+            rentalDays: rentalDays,
+            // Pricing option snapshot
+            pricingType: optionType,
+            pricingOptionId: selectedOption?.id ?? (item as any).pricingOptionId ?? null,
           };
     }) || []);
 
@@ -720,6 +736,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
       rentalDuration: rentalDuration,
+      rentalDurationUnit: rentalDurationUnit,
       isReadyToDeliver: parsed.data.isReadyToDeliver || false,
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,

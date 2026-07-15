@@ -537,6 +537,8 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       images: imagesValue,
       pricingType: parsed.data.pricingType || 'FIXED', // Default to FIXED if not provided
       durationConfig: parsed.data.durationConfig || null,
+      // Multiple pricing options (Phase 1: FIXED + DAILY) - normalized in db layer
+      ...(parsed.data.pricingOptions && parsed.data.pricingOptions.length > 0 && { pricingOptions: parsed.data.pricingOptions }),
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
         create: outletStock.map(os => ({

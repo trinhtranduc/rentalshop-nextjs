@@ -2,7 +2,7 @@
 // REFACTORED PRICING CALCULATOR SYSTEM
 // ============================================================================
 
-import { Plan, Product, Merchant, PricingType, PricingDurationLimits } from '@rentalshop/types';
+import { Plan, Product, Merchant, PricingType, PricingDurationLimits, PricingOption } from '@rentalshop/types';
 import { BillingInterval, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
 
 // ============================================================================
@@ -640,6 +640,85 @@ export function getDurationUnitLabel(pricingType: PricingType): string {
     default:
       return 'unit';
   }
+}
+
+// ============================================================================
+// PRODUCT PRICING OPTIONS (multiple options per product)
+// ============================================================================
+
+/**
+ * Get the list of pricing options for a product.
+ * Falls back to a single derived option from pricingType/rentPrice when a product
+ * has no explicit options (backward compatible).
+ */
+export function getPricingOptions(product: Product): PricingOption[] {
+  const opts = (product as any).pricingOptions as PricingOption[] | undefined;
+  if (opts && opts.length > 0) {
+    return opts.filter(o => o.isActive !== false);
+  }
+
+  const type = ((product.pricingType as PricingType) || 'FIXED');
+  return [{
+    type,
+    price: product.rentPrice || 0,
+    isDefault: true,
+    isActive: true,
+    sortOrder: 0,
+  }];
+}
+
+/**
+ * Resolve which option applies for a cart line / order item.
+ * Priority: explicit optionId -> default option -> first option.
+ */
+export function resolveSelectedOption(product: Product, optionId?: number | null): PricingOption {
+  const options = getPricingOptions(product);
+  if (optionId != null) {
+    const found = options.find(o => o.id === optionId);
+    if (found) return found;
+  }
+  return options.find(o => o.isDefault) || options[0];
+}
+
+/**
+ * Calculate pricing for a specific option.
+ * FIXED: total = price * quantity
+ * DAILY: total = price * quantity * days (days from rental dates, min 1)
+ * Generic by unit to allow BLOCK/HOURLY later.
+ */
+export function calculateOptionPricing(
+  option: PricingOption,
+  quantity: number = 1,
+  rentalStartAt?: Date,
+  rentalEndAt?: Date
+): CalculatedPricing {
+  const unitPrice = option.price || 0;
+
+  if (option.type === 'DAILY') {
+    let days = 1;
+    if (rentalStartAt && rentalEndAt) {
+      const { duration } = calculateDurationInUnit(rentalStartAt, rentalEndAt, 'DAILY');
+      days = Math.max(1, duration);
+    }
+    return {
+      unitPrice,
+      totalPrice: unitPrice * quantity * days,
+      deposit: 0,
+      pricingType: 'DAILY',
+      duration: days,
+      durationUnit: 'day',
+    };
+  }
+
+  // FIXED (default in Phase 1)
+  return {
+    unitPrice,
+    totalPrice: unitPrice * quantity,
+    deposit: 0,
+    pricingType: 'FIXED',
+    duration: 1,
+    durationUnit: 'rental',
+  };
 }
 
 // ============================================================================
