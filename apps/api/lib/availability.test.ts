@@ -59,20 +59,20 @@ assert(
 console.log('\nTest 2: calculateEffectivelyAvailable');
 
 // Case A: Check date 27/07 - NO overlap with order 15-18/07
-// conflictingQuantity = 0, stock=3, available=2, renting=1 (DB state irrelevant)
+// conflictingQuantity = 0, stock=3 → available = 3 - 0 = 3
 assert(
   calculateEffectivelyAvailable({
     totalStock: 3,
     totalAvailableStock: 2,
-    totalRenting: 1, // DB state - irrelevant for no-conflict case
+    totalRenting: 1,
     conflictingQuantity: 0,
     reservedConflictQuantity: 0,
-  }) === 2,
-  'No conflicts (check 27/07): effectivelyAvailable = totalAvailableStock = 2'
+  }) === 3,
+  'No conflicts (check 27/07): effectivelyAvailable = stock - 0 = 3'
 );
 
 // Case B: Check date 15/07 - OVERLAP with order #870852 (PICKUPED)
-// conflictingQuantity = 1, reservedConflictQuantity = 0
+// conflictingQuantity = 1 → available = 3 - 1 = 2
 assert(
   calculateEffectivelyAvailable({
     totalStock: 3,
@@ -80,12 +80,12 @@ assert(
     totalRenting: 1,
     conflictingQuantity: 1,
     reservedConflictQuantity: 0,
-  }) === 1,
-  'PICKUPED conflict (check 15/07): effectivelyAvailable = available - conflicts = 2 - 1 = 1'
+  }) === 2,
+  'PICKUPED conflict (check 15/07): effectivelyAvailable = stock - conflicts = 3 - 1 = 2'
 );
 
 // Case C: Check date 15/07 - OVERLAP with RESERVED order
-// conflictingQuantity = 1, reservedConflictQuantity = 1
+// conflictingQuantity = 1 → available = 3 - 1 = 2
 assert(
   calculateEffectivelyAvailable({
     totalStock: 3,
@@ -98,7 +98,7 @@ assert(
 );
 
 // Case D: All items rented out but none conflict with checked period
-// stock=3, available=0, renting=3, conflicting=0
+// stock=3, conflicting=0 → available = 3
 assert(
   calculateEffectivelyAvailable({
     totalStock: 3,
@@ -107,7 +107,7 @@ assert(
     conflictingQuantity: 0,
     reservedConflictQuantity: 0,
   }) === 3,
-  'All rented, no conflicts: effectivelyAvailable = totalRenting = 3 (items will return)'
+  'All rented, no conflicts: effectivelyAvailable = stock - 0 = 3 (items will return)'
 );
 
 // ─── Test 3: buildAvailabilityMetrics ─────────────────────────────
@@ -122,8 +122,8 @@ const metricsNoConflict = buildAvailabilityMetrics({
 });
 
 assert(
-  metricsNoConflict.effectivelyAvailable === 2,
-  'No conflict: effectivelyAvailable = 2'
+  metricsNoConflict.effectivelyAvailable === 3,
+  'No conflict: effectivelyAvailable = 3 (stock - 0)'
 );
 assert(
   metricsNoConflict.canFulfillRequest === true,
@@ -139,29 +139,29 @@ const metricsWithConflict = buildAvailabilityMetrics({
 });
 
 assert(
-  metricsWithConflict.effectivelyAvailable === 1,
-  'PICKUPED conflict: effectivelyAvailable = 1'
+  metricsWithConflict.effectivelyAvailable === 2,
+  'PICKUPED conflict: effectivelyAvailable = 2 (stock - 1)'
 );
 assert(
   metricsWithConflict.canFulfillRequest === true,
-  'PICKUPED conflict: canFulfillRequest = true (1 >= 1)'
+  'PICKUPED conflict: canFulfillRequest = true (2 >= 1)'
 );
 
-// Case C: Check 15/07 requesting 2 items (1 PICKUPED conflict)
+// Case C: Check 15/07 requesting 3 items (1 PICKUPED conflict)
 const metricsConflictQty2 = buildAvailabilityMetrics({
   outletStock: { stock: 3, available: 2, renting: 1, outlet: { id: 34, name: 'Test Outlet' } },
   conflictingQuantity: 1,
   reservedConflictQuantity: 0,
-  requestedQuantity: 2,
+  requestedQuantity: 3,
 });
 
 assert(
-  metricsConflictQty2.effectivelyAvailable === 1,
-  'PICKUPED conflict, qty=2: effectivelyAvailable = 1'
+  metricsConflictQty2.effectivelyAvailable === 2,
+  'PICKUPED conflict, qty=3: effectivelyAvailable = 2 (stock - 1)'
 );
 assert(
   metricsConflictQty2.canFulfillRequest === false,
-  'PICKUPED conflict, qty=2: canFulfillRequest = false (1 < 2)'
+  'PICKUPED conflict, qty=3: canFulfillRequest = false (2 < 3)'
 );
 
 // ─── Test 4: aggregateConflictingQuantities ───────────────────────
@@ -214,8 +214,8 @@ console.log('');
 console.log('  ┌───────────────────┬────────────────────────────────────┐');
 console.log('  │ Check Date        │ Expected Mobile Display            │');
 console.log('  ├───────────────────┼────────────────────────────────────┤');
-console.log('  │ 15/07 (overlap)   │ Kho=3, Có sẵn=1, Đang thuê=1     │');
-console.log('  │ 27/07 (no overlap)│ Kho=3, Có sẵn=2, Đang thuê=0     │');
+console.log('  │ 15/07 (overlap)   │ Kho=3, Có sẵn=2, Đang thuê=1     │');
+console.log('  │ 20/07 (no overlap)│ Kho=3, Có sẵn=3, Đang thuê=0     │');
 console.log('  └───────────────────┴────────────────────────────────────┘');
 console.log('');
 console.log('  API fields mobile should use:');
