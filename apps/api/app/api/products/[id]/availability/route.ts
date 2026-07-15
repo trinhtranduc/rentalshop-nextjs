@@ -550,6 +550,9 @@ export async function GET(
         // Override renting to reflect period-specific value (conflictingQuantity)
         // instead of current DB state (outletStock.renting)
         renting: conflictingQuantity,
+        // Override available to reflect period-specific availability
+        // Mobile uses this field for "Có sẵn" display
+        available: effectivelyAvailable,
         conflicts: outletConflicts.conflicts,
       };
 
@@ -558,7 +561,8 @@ export async function GET(
           productId,
           productName: product.name,
           totalStock,
-          totalAvailableStock,
+          // Period-specific available (accounts for conflicts during checked period)
+          totalAvailableStock: effectivelyAvailable,
           totalRenting: conflictingQuantity,
           requestedQuantity: quantity,
           rentalPeriod: {
