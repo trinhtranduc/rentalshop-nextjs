@@ -1,0 +1,13 @@
+app_identifier("com.rentalspos.rentalshop") # The bundle identifier of your app
+apple_id("trinhduc20@gmail.com") # Your Apple Developer Portal username
+
+itc_team_id("118584136") # App Store Connect Team ID
+team_id("2K6L2KZC9A") # Developer Portal Team ID
+
+ENV["FASTLANE_USER"] = "Fastlane"
+ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]  = "ldug-fmph-qkoc-lxlb"
+
+
+ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"] = "ND6T9WHAR8"
+ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"] = "69a6de91-8827-47e3-e053-5b8c7c11a4d1"
+ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"] = "./ND6T9WHAR8.p8"
