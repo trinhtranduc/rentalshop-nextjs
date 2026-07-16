@@ -354,8 +354,9 @@ export async function searchCustomers(
     // Use raw SQL with unaccent() for true Vietnamese diacritics-insensitive search
     let matchingCustomerIds: number[] | null = null;
     try {
+      // Use merchantId from filter input (integer) directly for raw SQL
       const merchantFilter = merchantId != null
-        ? Prisma.sql`AND c."merchantId" = (SELECT id FROM "Merchant" WHERE id = ${merchantId} LIMIT 1)`
+        ? Prisma.sql`AND c."merchantId" = ${merchantId}`
         : Prisma.empty;
       
       const nameCondition = hasDiacritics
@@ -386,12 +387,34 @@ export async function searchCustomers(
     }
     
     if (matchingCustomerIds !== null) {
-      // Raw SQL succeeded: use customer IDs + phone search
+      // Raw SQL succeeded: use customer IDs + phone + Prisma contains fallback
       const conditions: any[] = [
-        { phone: { contains: searchQuery } }
+        { phone: { contains: searchQuery } },
+        // Single-field substring match
+        { firstName: { contains: searchQuery, mode: 'insensitive' } },
+        { lastName: { contains: searchQuery, mode: 'insensitive' } },
       ];
       if (matchingCustomerIds.length > 0) {
         conditions.unshift({ id: { in: matchingCustomerIds } });
+      }
+      // Add normalized variants
+      if (normalizedQuery !== searchQuery) {
+        conditions.push(
+          { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
+          { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
+        );
+      }
+      // Multi-word: match each word in either firstName or lastName
+      const words = searchQuery.split(/\s+/).filter((w: string) => w.length > 0);
+      if (words.length >= 2) {
+        // Each word must appear in EITHER firstName or lastName
+        const wordConditions = words.map((word: string) => ({
+          OR: [
+            { firstName: { contains: word, mode: 'insensitive' } },
+            { lastName: { contains: word, mode: 'insensitive' } },
+          ]
+        }));
+        conditions.push({ AND: wordConditions });
       }
       where.OR = conditions;
     } else {
@@ -406,6 +429,17 @@ export async function searchCustomers(
           { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
           { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
         );
+      }
+      // Multi-word fallback
+      const words = searchQuery.split(/\s+/).filter((w: string) => w.length > 0);
+      if (words.length >= 2) {
+        const wordConditions = words.map((word: string) => ({
+          OR: [
+            { firstName: { contains: word, mode: 'insensitive' } },
+            { lastName: { contains: word, mode: 'insensitive' } },
+          ]
+        }));
+        searchConditions.push({ AND: wordConditions });
       }
       where.OR = searchConditions;
     }

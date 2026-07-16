@@ -1,38 +1,11 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "extended-srgb:0.00000,0.47843,1.00000,1.00000",
-      "srgb:0.00000,0.32157,0.80000,1.00000"
-    ],
-    "orientation" : {
-      "start" : {
-        "x" : 0.5,
-        "y" : 0
-      },
-      "stop" : {
-        "x" : 0.5,
-        "y" : 0.7
-      }
-    }
-  },
+  "fill" : "automatic",
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "logo 1 copy 2@4x.png",
-          "name" : "logo 1 copy 2@4x",
-          "position-specializations" : [
-            {
-              "idiom" : "square",
-              "value" : {
-                "scale" : 0.7,
-                "translation-in-points" : [
-                  0,
-                  0
-                ]
-              }
-            }
-          ]
+          "image-name" : "Image (21)-Picsart-BackgroundRemover.png",
+          "name" : "Image (21)-Picsart-BackgroundRemover"
         }
       ],
       "shadow" : {
