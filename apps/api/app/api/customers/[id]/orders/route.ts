@@ -9,13 +9,13 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * Get customer orders with role-based access control
  * 
  * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Security: Role-based filtering ensures users only see orders within their scope:
  * - ADMIN: Can see all orders (no restrictions)
  * - MERCHANT: Can only see orders from their merchant's outlets
- * - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+ * - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their assigned outlet
  */
 export async function GET(
   request: NextRequest,
@@ -86,7 +86,7 @@ export async function GET(
       // Role-based merchant filtering:
       // - ADMIN role: Can see orders from all merchants
       // - MERCHANT role: Can only see orders from their own merchant
-      // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their merchant
+      // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their merchant
       if (user.role === USER_ROLE.ADMIN) {
         // Admins can see all orders - no merchant filtering
         // searchFilters.merchantId = undefined (no filter)
@@ -97,11 +97,11 @@ export async function GET(
 
       // Role-based outlet filtering:
       // - MERCHANT role: Can see orders from all outlets of their merchant
-      // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+      // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their assigned outlet
       if (user.role === USER_ROLE.MERCHANT) {
         // Merchants can see all outlets - no outlet filtering
         // searchFilters.outletId = undefined (no filter)
-      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         // Outlet users can only see orders from their assigned outlet
         searchFilters.outletId = userScope.outletId;
       }

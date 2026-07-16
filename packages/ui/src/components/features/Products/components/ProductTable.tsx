@@ -46,7 +46,7 @@ export function ProductTable({
   scopedOutletId
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
-  const { canManageProducts, canAddOrEditProducts, canViewProducts, canDeleteOrders } = usePermissions();
+  const { canManageProducts, canAddOrEditProducts, canViewProducts, canDeleteProducts, canDeleteOrders } = usePermissions();
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
@@ -421,8 +421,8 @@ export function ProductTable({
                         {product.isActive ? t('actions.deactivate') : t('actions.activate')}
                       </DropdownMenuItem> */}
                       
-                      {/* ✅ Delete - Only available if user can manage products */}
-                      {canManageProducts && (
+                      {/* ✅ Delete - manage (import/bulk) OR products.delete (OUTLET_MANAGER) */}
+                      {canDeleteProducts && (
                         <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 

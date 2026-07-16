@@ -20,7 +20,7 @@ import {API} from '@rentalshop/constants';
  * 
  * Authorization: All roles with 'orders.export' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot export (does not have 'orders.export' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot export (does not have 'orders.export' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Query parameters:

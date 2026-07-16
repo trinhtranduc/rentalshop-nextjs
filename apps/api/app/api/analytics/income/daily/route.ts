@@ -37,12 +37,12 @@ import { API } from '@rentalshop/constants';
  * 
  * PHÂN QUYỀN:
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Xem toàn bộ analytics (analytics.view.revenue)
- * - OUTLET_STAFF: Chỉ xem doanh thu theo ngày (analytics.view.revenue.daily)
+ * - OUTLET_STAFF/OUTLET_MANAGER: Chỉ xem doanh thu theo ngày (analytics.view.revenue.daily)
  * - Nguồn phân quyền: ROLE_PERMISSIONS trong packages/auth/src/core.ts
  *
  * PHẠM VI OUTLET (compatible current API):
  * - Không có outletId trong scope (ADMIN, MERCHANT) → trả về dữ liệu tất cả outlet trong phạm vi (ADMIN = toàn hệ thống, MERCHANT = tất cả outlet của merchant).
- * - Có outletId trong scope (OUTLET_ADMIN, OUTLET_STAFF) → chỉ trả về dữ liệu của outlet đó.
+ * - Có outletId trong scope (OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER) → chỉ trả về dữ liệu của outlet đó.
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
@@ -164,7 +164,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     // ÁP DỤNG LỌC THEO PHẠM VI NGƯỜI DÙNG (compatible: không có outletId → tất cả outlet trong scope)
     // ============================================================================
     if (userScope.outletId) {
-      // OUTLET_ADMIN / OUTLET_STAFF: chỉ xem đơn của cửa hàng mình
+      // OUTLET_ADMIN / OUTLET_STAFF / OUTLET_MANAGER: chỉ xem đơn của cửa hàng mình
       const outletObj = await db.outlets.findById(userScope.outletId);
       if (outletObj) {
         ordersWhereClause.outletId = outletObj.id;

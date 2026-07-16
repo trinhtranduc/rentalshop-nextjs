@@ -9,7 +9,7 @@ import { API, USER_ROLE, ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants'
  * 
  * Authorization: Roles with 'analytics.view.orders' permission can access
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view order analytics
- * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - OUTLET_STAFF/OUTLET_MANAGER: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
@@ -92,7 +92,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         if (merchant && merchant.outlets) {
           orderWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
         }
-      } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+      } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && userScope.outletId) {
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;

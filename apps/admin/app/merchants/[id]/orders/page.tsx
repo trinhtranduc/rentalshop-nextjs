@@ -311,7 +311,7 @@ export default function MerchantOrdersPage() {
   }, [ordersToDeleteBatch, toastSuccess, toastError]);
 
   // Get user role (default to ADMIN for merchant orders page)
-  const userRole = (user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF') || 'ADMIN';
+  const userRole = (user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER') || 'ADMIN';
 
   // ============================================================================
   // RENDER

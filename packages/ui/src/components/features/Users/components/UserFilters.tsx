@@ -87,6 +87,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
           <SelectItem value="MERCHANT">Merchant</SelectItem>
           <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
           <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
+          <SelectItem value="OUTLET_MANAGER">Outlet Manager</SelectItem>
         </SelectContent>
       </Select>
 

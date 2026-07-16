@@ -21,7 +21,7 @@ import {
 // USER ROLES
 // ============================================================================
 
-export type UserRole = 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+export type UserRole = 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_MANAGER' | 'OUTLET_STAFF';
 
 // ============================================================================
 // CORE USER INTERFACES

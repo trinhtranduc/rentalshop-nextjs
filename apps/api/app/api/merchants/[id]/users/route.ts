@@ -11,7 +11,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * 
  * Authorization: All roles with 'users.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Security: Role-based filtering ensures users only see users within their scope:
@@ -125,7 +125,7 @@ export async function GET(
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Security: Validates merchant ownership and outlet restrictions before creating user
@@ -232,8 +232,8 @@ export async function POST(
       }
 
       // NOTE: Only MERCHANT users need email verification
-      // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
-      const isOutletUser = role === USER_ROLE.OUTLET_ADMIN || role === USER_ROLE.OUTLET_STAFF;
+      // OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER can use any email without verification
+      const isOutletUser = role === USER_ROLE.OUTLET_ADMIN || role === USER_ROLE.OUTLET_STAFF || role === USER_ROLE.OUTLET_MANAGER;
 
       // Prepare user data with hashed password (same as /api/users)
       const userData = {

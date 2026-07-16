@@ -40,6 +40,7 @@ export const registerSchema = z.object({
     USER_ROLE.ADMIN,
     USER_ROLE.MERCHANT,
     USER_ROLE.OUTLET_ADMIN,
+    USER_ROLE.OUTLET_MANAGER,
     USER_ROLE.OUTLET_STAFF,
     // Legacy roles for backward compatibility
     'CLIENT',
@@ -327,6 +328,7 @@ const userRoleEnum = z.enum([
   USER_ROLE.ARTICLE,
   USER_ROLE.MERCHANT,
   USER_ROLE.OUTLET_ADMIN,
+  USER_ROLE.OUTLET_MANAGER,
   USER_ROLE.OUTLET_STAFF,
 ] as [string, ...string[]]);
 

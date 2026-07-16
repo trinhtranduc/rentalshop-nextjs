@@ -37,7 +37,7 @@ const statusUpdateSchema = z.object({
  * Update order status with additional metadata
  * 
  * Authorization: All roles with 'orders.update' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * This endpoint is specifically designed for status updates and includes:

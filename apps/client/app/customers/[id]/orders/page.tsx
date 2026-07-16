@@ -283,7 +283,7 @@ export default function CustomerOrdersPage() {
             handleFiltersChange({ sortBy: column, sortOrder: newSortOrder });
           }}
           showStats={false}
-          userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+          userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER'}
         />
     </PageWrapper>
   );

@@ -177,7 +177,7 @@ async function commitOrderNotesImages(
  * Get order by ID
  * 
  * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * - No subscription required (read-only operation)
  */
@@ -276,7 +276,7 @@ export const GET = async (
  * Update order by ID
  * 
  * Authorization: All roles with 'orders.update' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = async (
@@ -485,7 +485,7 @@ export const PUT = async (
           }
 
           // Outlet users cannot change order outlet
-          if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
             if (targetOutletId !== userScope.outletId) {
               return NextResponse.json(
                 ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -520,7 +520,7 @@ export const PUT = async (
               );
             }
           }
-        } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
           // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
@@ -531,7 +531,7 @@ export const PUT = async (
         }
       } else {
         // If no outletId in update, validate existing order belongs to user's scope
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
@@ -771,7 +771,7 @@ export const PUT = async (
  * Authorization: Users with 'orders.manage' permission can delete orders
  * - ADMIN: can delete any order regardless of status
  * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
- * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER: cannot delete orders (no orders.manage permission)
  */
 export const DELETE = async (
   request: NextRequest,
@@ -807,7 +807,7 @@ export const DELETE = async (
 
       // Only allow deleting CANCELLED orders for MERCHANT and OUTLET_ADMIN
       // ADMIN can delete any order regardless of status
-      // OUTLET_STAFF cannot delete orders (no orders.manage permission)
+      // OUTLET_STAFF/OUTLET_MANAGER cannot delete orders (no orders.manage permission)
       if (user.role !== USER_ROLE.ADMIN && existingOrder.status !== ORDER_STATUS.CANCELLED) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_DELETE_NON_CANCELLED_ORDER'),
@@ -816,8 +816,8 @@ export const DELETE = async (
         }
 
       // Authorization checks based on user role
-      // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      // OUTLET_STAFF/OUTLET_MANAGER cannot delete orders (no orders.manage permission, but double-check here)
+      if (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         return NextResponse.json(
           ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: API.STATUS.FORBIDDEN }

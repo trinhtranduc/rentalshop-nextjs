@@ -99,11 +99,21 @@ class PermissionManager {
     
     // MARK: - Convenience Methods for Common Permissions
     
-    /// Check if user can manage products (create, update, delete)
+    /// Check if user can fully manage products (import / bulk / categories)
     func canManageProducts() -> Bool {
         return hasPermission("products.manage")
     }
-    
+
+    /// Check if user can add or edit products (OUTLET_STAFF/OUTLET_MANAGER have create/update)
+    func canAddOrEditProducts() -> Bool {
+        return hasAnyPermission(["products.manage", "products.create", "products.update"])
+    }
+
+    /// Check if user can delete products (full manage OR granular products.delete for OUTLET_MANAGER)
+    func canDeleteProducts() -> Bool {
+        return hasAnyPermission(["products.manage", "products.delete"])
+    }
+
     /// Check if user can view products
     func canViewProducts() -> Bool {
         return hasAnyPermission(["products.view", "products.manage"])

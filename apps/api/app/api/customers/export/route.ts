@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/customers/export
  * Export customers to Excel or CSV (Admin, Merchant, Outlet Admin only)
- * OUTLET_STAFF cannot export customers
+ * OUTLET_STAFF/OUTLET_MANAGER cannot export customers
  * 
  * Query parameters:
  * - format: 'excel' (default) or 'csv'
@@ -29,7 +29,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
   try {
     // User is already authenticated and authorized to export customers
     // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
-    // OUTLET_STAFF will automatically get 403 Forbidden
+    // OUTLET_STAFF/OUTLET_MANAGER will automatically get 403 Forbidden
     const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);

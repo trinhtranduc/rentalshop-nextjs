@@ -88,8 +88,8 @@ export async function POST(
   
   return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
-      // Block OUTLET_STAFF from creating bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      // Block OUTLET_STAFF/OUTLET_MANAGER from creating bank accounts
+      if (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }

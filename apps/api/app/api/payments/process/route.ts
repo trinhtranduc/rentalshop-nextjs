@@ -9,7 +9,7 @@ import { API } from '@rentalshop/constants';
  * Process payment
  */
 export async function POST(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_MANAGER'])(async (request, { user, userScope }) => {
     try {
       const body = await request.json();
       const { orderId, amount, method, reference } = body;

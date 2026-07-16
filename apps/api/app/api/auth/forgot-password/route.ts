@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     
     // Security: Don't reveal if email exists (security best practice)
     // Always return success to prevent email enumeration attacks
-    // Allow password reset for all users (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+    // Allow password reset for all users (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER)
     if (!user) {
       console.log('ℹ️ [Forget Password] User not found (security: returning success)');
       // Return success even if user doesn't exist (security best practice)

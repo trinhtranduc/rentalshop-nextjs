@@ -12,7 +12,7 @@
 export const formatRoleDisplayName = (role: string, t?: (key: string) => string): string => {
   // If translation function is provided, use it
   if (t) {
-    const roleKey = role as 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+    const roleKey = role as 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_MANAGER' | 'OUTLET_STAFF';
     const translated = t(`roles.${roleKey}` as any);
     if (translated && translated !== `roles.${roleKey}`) {
       return translated;
@@ -25,6 +25,8 @@ export const formatRoleDisplayName = (role: string, t?: (key: string) => string)
       return 'Merchant';
     case 'OUTLET_ADMIN':
       return 'Outlet Admin';
+    case 'OUTLET_MANAGER':
+      return 'Outlet Manager';
     case 'OUTLET_STAFF':
       return 'Outlet Staff';
     case 'ADMIN':

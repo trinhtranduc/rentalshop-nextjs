@@ -701,7 +701,7 @@ export default function AdminDashboard() {
       bgColor: 'bg-blue-100'
     },
     // Platform Revenue - Hidden for OUTLET_STAFF
-    ...(user?.role !== 'OUTLET_STAFF' ? [{
+    ...(user?.role !== 'OUTLET_STAFF' && user?.role !== 'OUTLET_MANAGER' ? [{
       title: 'Platform Revenue',
       value: `$${metrics.totalRevenue.toLocaleString()}`,
       change: growthMetrics.revenueGrowth ? { 
@@ -841,7 +841,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Revenue & Orders Charts */}
-        {user?.role !== 'OUTLET_STAFF' && (
+        {user?.role !== 'OUTLET_STAFF' && user?.role !== 'OUTLET_MANAGER' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <Card>
               <CardHeader>

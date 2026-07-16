@@ -15,7 +15,7 @@ export interface RegistrationInput {
   password: string;
   name: string;
   phone?: string;
-  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_MANAGER' | 'OUTLET_STAFF';
   // For merchant registration
   businessName?: string;
   outletName?: string;
@@ -79,7 +79,7 @@ export async function registerUser(
 
       if (registrationType === 'MERCHANT') {
         return await registerMerchant(tx, data);
-      } else if (registrationType === 'OUTLET_ADMIN' || registrationType === 'OUTLET_STAFF') {
+      } else if (registrationType === 'OUTLET_ADMIN' || registrationType === 'OUTLET_MANAGER' || registrationType === 'OUTLET_STAFF') {
         return await registerOutletUser(tx, data);
       } else {
         return await registerBasicUser(tx, data);
@@ -96,12 +96,12 @@ export async function registerUser(
 /**
  * Determine registration type based on input data
  */
-function determineRegistrationType(data: RegistrationInput): 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'BASIC' {
+function determineRegistrationType(data: RegistrationInput): 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_MANAGER' | 'OUTLET_STAFF' | 'BASIC' {
   // If role is explicitly set, use it
   if (data.role === 'MERCHANT') {
     return 'MERCHANT';
   }
-  if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+  if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_MANAGER' || data.role === 'OUTLET_STAFF') {
     return data.role;
   }
 

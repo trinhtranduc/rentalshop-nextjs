@@ -158,7 +158,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
         item.href !== '/posts' &&
         item.href !== '/request-logs'
       );
-    } else if (userRole === 'OUTLET_STAFF') {
+    } else if (userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_MANAGER') {
       // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments, blog (limited permissions)
       return items.filter(item => 
         item.href !== '/users' && 

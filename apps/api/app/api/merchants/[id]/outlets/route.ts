@@ -12,7 +12,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * Security: Role-based filtering ensures users only see outlets within their scope:
  * - ADMIN: Can see all outlets (no restrictions)
  * - MERCHANT: Can only see outlets from their own merchant
- * - OUTLET_ADMIN/OUTLET_STAFF: Can only see their assigned outlet
+ * - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see their assigned outlet
  */
 export async function GET(
   request: NextRequest,
@@ -38,8 +38,8 @@ export async function GET(
       };
 
       // Role-based outlet filtering:
-      // - OUTLET_ADMIN/OUTLET_STAFF: Can only see their assigned outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see their assigned outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         if (userScope.outletId) {
           searchFilters.outletId = userScope.outletId;
         }

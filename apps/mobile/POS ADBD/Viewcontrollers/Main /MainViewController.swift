@@ -266,8 +266,8 @@ class MainViewController: BaseViewControler {
         )
         
         // Add left buttons
-        // Only show add button if user has canManageProducts permission
-        if PermissionManager.shared.canManageProducts() {
+        // Only show add button if user can add/edit products (staff/manager included)
+        if PermissionManager.shared.canAddOrEditProducts() {
             navBar.addLeftButton(addButton, size: CGSize(width: 44, height: 44))
         }
         navBar.addLeftButton(barcodeScanButton, size: CGSize(width: 44, height: 44))
@@ -725,8 +725,8 @@ extension MainViewController: ProductCellDelegate {
         }
         menuActions.append(checkAction)
         
-        // Update and delete actions (only if user has permission)
-        if PermissionManager.shared.canManageProducts() {
+        // Update action (staff/manager can add/edit products)
+        if PermissionManager.shared.canAddOrEditProducts() {
             let updateAction = UIAction(
                 title: "Update product".localized(),
                 image: UIImage(systemName: "pencil")
@@ -734,7 +734,10 @@ extension MainViewController: ProductCellDelegate {
                 self?.presentProductView(product: product)
             }
             menuActions.append(updateAction)
-            
+        }
+
+        // Delete action (full manage OR products.delete for OUTLET_MANAGER)
+        if PermissionManager.shared.canDeleteProducts() {
             let deleteAction = UIAction(
                 title: "Delete product".localized(),
                 image: UIImage(systemName: "trash"),

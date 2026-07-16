@@ -127,7 +127,7 @@ export const GET = withReadOnlyAuth(async (
         // Remove outlet filter if outletId is specified
         delete where.outlet;
       }
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
       // OUTLET users: Can only see orders from their assigned outlet
       where.outletId = userScope.outletId;
     }

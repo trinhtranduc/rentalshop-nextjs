@@ -115,7 +115,7 @@ export function ProductActions({
       icon: '🔍',
       variant: 'outline' as const,
       onClick: () => onAction('inventory-check'),
-      roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'] // All roles can do inventory check
+      roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF'] // All roles can do inventory check
     }
   ];
 

@@ -10,7 +10,7 @@ import { API } from '@rentalshop/constants';
  * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
  * 
  * Authorization: All roles with 'products.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * - Categories are part of products management, so use products.view permission
  */

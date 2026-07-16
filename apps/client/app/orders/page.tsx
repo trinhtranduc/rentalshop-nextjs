@@ -520,7 +520,7 @@ export default function OrdersPage() {
             showQuickFilters={false}                        // 🆕 Hide date range filter
             filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
             showStats={false}
-            userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+            userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER'}
             onImageSearchResult={handleImageSearchResult}   // 🆕 AI Image Search for products
             hideCopyPhone={true}                            // ⭐ Hide copy phone button on /orders page
           />

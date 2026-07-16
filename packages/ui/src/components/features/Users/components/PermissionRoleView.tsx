@@ -156,7 +156,7 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
-type OutletRole = typeof USER_ROLE.OUTLET_ADMIN | typeof USER_ROLE.OUTLET_STAFF;
+type OutletRole = typeof USER_ROLE.OUTLET_ADMIN | typeof USER_ROLE.OUTLET_MANAGER | typeof USER_ROLE.OUTLET_STAFF;
 
 interface PermissionRoleViewProps {
   role?: OutletRole;
@@ -170,7 +170,7 @@ export const PermissionRoleView: React.FC<PermissionRoleViewProps> = ({
   const [selectedRole, setSelectedRole] = useState<OutletRole>(initialRole);
 
   const handleRoleChange = (newRole: string) => {
-    if (newRole === USER_ROLE.OUTLET_ADMIN || newRole === USER_ROLE.OUTLET_STAFF) {
+    if (newRole === USER_ROLE.OUTLET_ADMIN || newRole === USER_ROLE.OUTLET_MANAGER || newRole === USER_ROLE.OUTLET_STAFF) {
       const role = newRole as OutletRole;
       setSelectedRole(role);
       onRoleChange?.(role);
@@ -203,11 +203,12 @@ export const PermissionRoleView: React.FC<PermissionRoleViewProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={USER_ROLE.OUTLET_ADMIN}>Outlet Admin</SelectItem>
+                <SelectItem value={USER_ROLE.OUTLET_MANAGER}>Outlet Manager</SelectItem>
                 <SelectItem value={USER_ROLE.OUTLET_STAFF}>Outlet Staff</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-gray-600 mt-2">
-              View default permissions for {selectedRole === USER_ROLE.OUTLET_ADMIN ? 'Outlet Admin' : 'Outlet Staff'} role
+              View default permissions for {selectedRole === USER_ROLE.OUTLET_ADMIN ? 'Outlet Admin' : selectedRole === USER_ROLE.OUTLET_MANAGER ? 'Outlet Manager' : 'Outlet Staff'} role
             </p>
           </div>
         </CardContent>

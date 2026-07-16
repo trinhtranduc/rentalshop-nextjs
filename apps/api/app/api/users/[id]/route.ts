@@ -10,7 +10,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * 
  * Authorization: All roles with 'users.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
@@ -71,7 +71,7 @@ export async function GET(
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
@@ -163,7 +163,7 @@ export async function PUT(
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(

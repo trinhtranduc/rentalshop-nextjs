@@ -30,7 +30,7 @@ export async function GET(
     
     if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       where.merchantId = userScope.merchantId;
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && userScope.outletId) {
       // Find outlet by id to get merchant
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {

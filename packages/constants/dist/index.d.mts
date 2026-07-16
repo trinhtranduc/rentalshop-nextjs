@@ -49,6 +49,7 @@ declare const USER_ROLE: {
     readonly ARTICLE: "ARTICLE";
     readonly MERCHANT: "MERCHANT";
     readonly OUTLET_ADMIN: "OUTLET_ADMIN";
+    readonly OUTLET_MANAGER: "OUTLET_MANAGER";
     readonly OUTLET_STAFF: "OUTLET_STAFF";
 };
 type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE];

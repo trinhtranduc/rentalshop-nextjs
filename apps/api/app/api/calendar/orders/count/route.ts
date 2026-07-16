@@ -105,7 +105,7 @@ function buildWhereClause(
     } else {
       where.outlet = { merchantId: userScope.merchantId };
     }
-  } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+  } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
     // OUTLET users: Can only see orders from their assigned outlet
     const allowedOutletId = filters.outletId && filters.outletId === userScope.outletId
       ? filters.outletId

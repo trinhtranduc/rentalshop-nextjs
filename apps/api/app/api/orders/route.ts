@@ -50,7 +50,7 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
  * Get orders with filtering, pagination
  * 
  * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['orders.view'])(async (request, { user, userScope }) => {
@@ -124,7 +124,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // Role-based merchant filtering:
     // - ADMIN role: Can see orders from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see orders from their own merchant
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their merchant
     if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       searchFilters.merchantId = queryMerchantId;
@@ -135,11 +135,11 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 
     // Role-based outlet filtering:
     // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+    // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their assigned outlet
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
     } else if (user.role === USER_ROLE.ADMIN) {
@@ -374,7 +374,7 @@ async function commitOrderNotesImages(
  * Supports both JSON and FormData formats (similar to product creation)
  * 
  * Authorization: All roles with 'orders.create' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const POST = withPermissions(['orders.create'])(async (request, { user, userScope }) => {
@@ -521,7 +521,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     // ✅ Validate outletId based on user role
-    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
       // Outlet users can only create orders for their assigned outlet
       if (parsed.data.outletId !== userScope.outletId) {
         console.log('❌ Outlet user trying to create order for different outlet:', {
@@ -939,7 +939,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
  * Update an order using simplified database API
  * 
  * Authorization: All roles with 'orders.update' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['orders.update'])(async (request, { user, userScope }) => {
@@ -1007,7 +1007,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         }
 
         // Outlet users cannot change order outlet
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
           if (targetOutletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -1042,7 +1042,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
             );
           }
         }
-      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
@@ -1053,7 +1053,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       }
     } else {
       // If no outletId in update, validate existing order belongs to user's scope
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),

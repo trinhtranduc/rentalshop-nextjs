@@ -8,7 +8,7 @@ import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalsh
 // GET MERCHANT PRICING CONFIGURATION
 // ============================================================================
 // 
-// **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+// **Why OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER need access:**
 // - They create orders and need to know merchant pricing rules
 // - They need to calculate rental prices (HOURLY, DAILY, WEEKLY)
 // - They work for the merchant, so should have READ access
@@ -27,10 +27,10 @@ export async function GET(
    * Get merchant pricing configuration
    * 
    * Authorization: All roles with 'analytics.view' permission can access
-   * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+   * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
    * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
    * 
-   * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+   * **Why OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER need access:**
    * - They create orders and need to know merchant pricing rules
    * - They need to calculate rental prices (HOURLY, DAILY, WEEKLY)
    * - They work for the merchant, so should have READ access

@@ -460,7 +460,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     // AUTHORIZATION: Outlet-scoped roles — stock only at their outlet
     // ============================================================================
     if (
-      (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+      (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) &&
       userScope.outletId
     ) {
       if (!outletStockData || !Array.isArray(outletStockData) || outletStockData.length === 0) {

@@ -10,11 +10,11 @@ import { API } from '@rentalshop/constants';
  * Get subscription status for the authenticated merchant
  * 
  * Authorization: All roles with 'billing.view' or 'analytics.view' permission can access
- * - ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: All have 'billing.view' permission
- * - OUTLET_STAFF: Need access to see plan limits (products, users, outlets) for their outlet
+ * - ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER: All have 'billing.view' permission
+ * - OUTLET_STAFF/OUTLET_MANAGER: Need access to see plan limits (products, users, outlets) for their outlet
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
- * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+ *
+ * **Why OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER need access:**
  * - They need to know plan limits (products, users, outlets)
  * - They need to see subscription status for their outlet
  * - They work for the merchant, so should have read access
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     requireActiveSubscription: false,
   })(async (request, { user, userScope }) => {
     try {
-      // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
+      // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
       // If ADMIN doesn't provide merchantId, return no subscription (ADMIN doesn't have own subscription)
       const { searchParams } = new URL(request.url);

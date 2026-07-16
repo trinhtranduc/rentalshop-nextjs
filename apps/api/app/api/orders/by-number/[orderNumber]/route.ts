@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
  * Get order by order number
  * 
  * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(

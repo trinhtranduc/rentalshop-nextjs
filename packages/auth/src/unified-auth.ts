@@ -210,7 +210,7 @@ export const withManagementAuth = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_AD
  * export const GET = withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
  * ```
  */
-export const withOutletAuth = withAuthRoles(['OUTLET_ADMIN', 'OUTLET_STAFF']);
+export const withOutletAuth = withAuthRoles(['OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
 
 /**
  * Any authenticated user (No role restrictions)

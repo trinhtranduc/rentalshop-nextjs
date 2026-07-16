@@ -138,7 +138,7 @@ function resolveMerchantId(user: any, userScope: any, requestedMerchantId?: numb
  * Get customers with filtering and pagination using simplified database API
  * 
  * Authorization: All roles with 'customers.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['customers.view'])(async (request, { user, userScope }) => {
@@ -255,7 +255,7 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
  * Create a new customer
  * 
  * Authorization: All roles with 'customers.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const POST = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
@@ -414,7 +414,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
  * Update a customer
  * 
  * Authorization: All roles with 'customers.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {

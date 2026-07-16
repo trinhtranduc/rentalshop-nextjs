@@ -17,7 +17,7 @@ export const GET = withReadOnlyAuth(async (request, { user, userScope }) => {
     // Parse query parameters
     const filters = {
       merchantId: userScope.merchantId,
-      outletId: user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' ? userScope.outletId : undefined,
+      outletId: user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' || user.role === 'OUTLET_MANAGER' ? userScope.outletId : undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
     };

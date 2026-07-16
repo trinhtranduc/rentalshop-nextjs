@@ -108,9 +108,9 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Only show permission manager for OUTLET_STAFF when current user is OUTLET_ADMIN, MERCHANT, or ADMIN
+  // Only show permission manager for OUTLET_STAFF / OUTLET_MANAGER when current user is OUTLET_ADMIN, MERCHANT, or ADMIN
   const canManagePermissions =
-    userRole === 'OUTLET_STAFF' &&
+    (userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_MANAGER') &&
     (currentUserRole === 'OUTLET_ADMIN' ||
       currentUserRole === 'MERCHANT' ||
       currentUserRole === 'ADMIN');

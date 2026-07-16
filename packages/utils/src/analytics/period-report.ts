@@ -87,7 +87,7 @@ export async function resolveAnalyticsOutletFilter(
     return {};
   }
   if (
-    (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+    (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) &&
     userScope.outletId
   ) {
     const outlet = await db.outlets.findById(userScope.outletId);
@@ -520,7 +520,7 @@ export async function buildAnalyticsPeriodReport(
         orderCount: item.orderCount,
         rentalCount: item.rentalCount,
         saleCount: item.saleCount,
-        totalSpent: userRole !== USER_ROLE.OUTLET_STAFF ? item.totalRevenue : null
+        totalSpent: userRole !== USER_ROLE.OUTLET_STAFF && userRole !== USER_ROLE.OUTLET_MANAGER ? item.totalRevenue : null
       });
     }
     return result;

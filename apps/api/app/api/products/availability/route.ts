@@ -113,7 +113,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       // Role-based outlet filtering
       let finalOutletId = queryOutletId;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || userScope.outletId;
       } else if (user.role === USER_ROLE.MERCHANT) {

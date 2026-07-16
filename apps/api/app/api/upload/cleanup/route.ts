@@ -7,7 +7,7 @@ import { cleanupStagingFiles } from '@rentalshop/utils/server';
  * POST /api/upload/cleanup
  * Clean up orphaned staging files (when user uploads but doesn't create product)
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_MANAGER'])(async (request: NextRequest) => {
   try {
     const body = await request.json();
     

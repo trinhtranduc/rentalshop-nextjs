@@ -53,7 +53,7 @@ const createSettingsMenuItems = (t: any) => [
     label: t('menuItems.outlet.label'),
     icon: Store,
     description: t('menuItems.outlet.description'),
-    roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
+    roles: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_MANAGER']
   },
   {
     id: 'bank-accounts',
@@ -350,7 +350,7 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
       });
     }
     
-    if (user?.outlet && (user?.role === 'OUTLET_ADMIN' || user?.role === 'OUTLET_STAFF')) {
+    if (user?.outlet && (user?.role === 'OUTLET_ADMIN' || user?.role === 'OUTLET_STAFF' || user?.role === 'OUTLET_MANAGER')) {
       setOutletFormData({
         name: user.outlet.name || '',
         phone: user.outlet.phone || '',

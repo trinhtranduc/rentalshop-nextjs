@@ -25,7 +25,7 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
  * Get customer by ID
  * 
  * Authorization: All roles with 'customers.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
@@ -120,7 +120,7 @@ export async function GET(
  * Update customer by ID
  * 
  * Authorization: All roles with 'customers.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
@@ -233,7 +233,7 @@ export async function PUT(
  * Delete customer by ID (soft delete)
  * 
  * Authorization: All roles with 'customers.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(

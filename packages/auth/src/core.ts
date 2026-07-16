@@ -906,6 +906,7 @@ function normalizeRole(role: string | undefined | null): Role | null {
   if (upper === 'ARTICLE') return 'ARTICLE';
   if (upper === 'MERCHANT') return 'MERCHANT';
   if (upper === 'OUTLET_ADMIN') return 'OUTLET_ADMIN';
+  if (upper === 'OUTLET_MANAGER') return 'OUTLET_MANAGER';
   if (upper === 'OUTLET_STAFF') return 'OUTLET_STAFF';
   return null;
 }
@@ -933,7 +934,7 @@ export function isMerchantLevel(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user has outlet-level access
  */
 export function isOutletTeam(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
 }
 
 /**
@@ -964,7 +965,8 @@ export function canManageOutlets(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user can manage products
  */
 export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  // OUTLET_MANAGER can manage products (add/edit/delete) like OUTLET_ADMIN
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER']);
 }
 
 /**
@@ -982,21 +984,21 @@ export function canAccessUserManagement(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user can create orders
  */
 export function canCreateOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
 }
 
 /**
  * Check if user can view orders
  */
 export function canViewOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
 }
 
 /**
  * Check if user can update orders
  */
 export function canUpdateOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
 }
 
 /**
@@ -1153,8 +1155,8 @@ export function validateMerchantOutletAccess(
     outletId
   } = options;
 
-  // Block OUTLET_STAFF if specified
-  if (blockOutletStaff && user.role === USER_ROLE.OUTLET_STAFF) {
+  // Block OUTLET_STAFF / OUTLET_MANAGER if specified (both are non-admin outlet roles)
+  if (blockOutletStaff && (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER)) {
     return {
       authorized: false,
       error: NextResponse.json(
@@ -1194,8 +1196,8 @@ export function validateMerchantOutletAccess(
   
   // OUTLET_ADMIN/OUTLET_STAFF roles: check outlet ownership if outletId provided
   // If only merchantId is provided (no outletId), check merchant ownership instead
-  if ((user.role === USER_ROLE.OUTLET_ADMIN || 
-       (user.role === USER_ROLE.OUTLET_STAFF && !blockOutletStaff))) {
+  if ((user.role === USER_ROLE.OUTLET_ADMIN ||
+       ((user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && !blockOutletStaff))) {
     if (outletId !== undefined) {
       // When outletId is provided, check outlet ownership
       requiredScope.outletId = outletId;
@@ -1397,7 +1399,7 @@ export async function validateMerchantAccess(
 
     // Validate outlet scope: OUTLET_ADMIN/OUTLET_STAFF can only access their assigned outlet
     const outletScopeCheck = validateScope(userScope, { outletId: outletPublicId });
-    if (!outletScopeCheck.valid && (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF)) {
+    if (!outletScopeCheck.valid && (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF)) {
       // Return NOT_FOUND for security (don't reveal outlet exists)
       return {
         valid: false,

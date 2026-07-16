@@ -21,7 +21,7 @@ const batchDeleteSchema = z.object({
  * Authorization: Users with 'orders.manage' permission can delete orders
  * - ADMIN: can delete any orders regardless of status
  * - MERCHANT, OUTLET_ADMIN: can only delete CANCELLED orders
- * - OUTLET_STAFF: cannot delete orders (no orders.manage permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER: cannot delete orders (no orders.manage permission)
  */
 export const POST = withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
   try {
@@ -41,8 +41,8 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
 
     const { orderIds } = parsed.data;
 
-    // OUTLET_STAFF cannot delete orders
-    if (user.role === USER_ROLE.OUTLET_STAFF) {
+    // OUTLET_STAFF/OUTLET_MANAGER cannot delete orders
+    if (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
       return NextResponse.json(
         ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
         { status: API.STATUS.FORBIDDEN }

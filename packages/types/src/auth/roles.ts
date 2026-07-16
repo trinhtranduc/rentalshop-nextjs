@@ -2,7 +2,7 @@
 // USER ROLES TYPES
 // ============================================================================
 
-export type UserRole = 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+export type UserRole = 'ADMIN' | 'ARTICLE' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_MANAGER' | 'OUTLET_STAFF';
 
 export interface RolePermissions {
   canManageUsers: boolean;
@@ -49,6 +49,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageOrders: true,
     canManageCustomers: true,
     canViewAnalytics: true,
+    canManageSettings: false,
+  },
+  OUTLET_MANAGER: {
+    canManageUsers: false,
+    canManageOutlets: false,
+    canManageProducts: true, // ✅ Full product CRUD (add/edit/delete) — distinguishes from OUTLET_STAFF
+    canManageOrders: true,
+    canManageCustomers: false,
+    canViewAnalytics: false,
     canManageSettings: false,
   },
   OUTLET_STAFF: {

@@ -4233,6 +4233,10 @@ function usePermissions() {
   );
   const canViewProducts = (0, import_react7.useMemo)(() => hasPermission("products.view"), [hasPermission]);
   const canExportProducts = (0, import_react7.useMemo)(() => hasPermission("products.export"), [hasPermission]);
+  const canDeleteProducts = (0, import_react7.useMemo)(
+    () => hasPermission("products.manage") || hasPermission("products.delete"),
+    [hasPermission]
+  );
   const canManageOrders = (0, import_react7.useMemo)(() => hasPermission("orders.manage"), [hasPermission]);
   const canCreateOrders = (0, import_react7.useMemo)(() => hasPermission("orders.create"), [hasPermission]);
   const canUpdateOrders = (0, import_react7.useMemo)(() => hasPermission("orders.update"), [hasPermission]);
@@ -4272,6 +4276,7 @@ function usePermissions() {
     canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
+    canDeleteProducts,
     // Convenience methods for orders
     canManageOrders,
     canCreateOrders,
@@ -5692,10 +5697,12 @@ function useUserRole() {
     isAdmin: role === "ADMIN",
     isMerchant: role === "MERCHANT",
     isOutletAdmin: role === "OUTLET_ADMIN",
+    isOutletManager: role === "OUTLET_MANAGER",
     isOutletStaff: role === "OUTLET_STAFF",
     // Permission checks
     canManageUsers: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN",
-    canManageProducts: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN",
+    // OUTLET_MANAGER can manage products (add/edit/delete) like OUTLET_ADMIN
+    canManageProducts: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN" || role === "OUTLET_MANAGER",
     canManageCategories: role === "ADMIN" || role === "MERCHANT",
     canManageOutlets: role === "ADMIN" || role === "MERCHANT",
     canManageSubscriptions: role === "ADMIN" || role === "MERCHANT",

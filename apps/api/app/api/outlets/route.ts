@@ -53,7 +53,7 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
         : userScope.merchantId,           // Others restricted to their merchant
       
       // Outlet-level users can only see their own outlet
-      outletId: (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) 
+      outletId: (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER)
         ? userScope.outletId 
         : undefined,
         
@@ -254,7 +254,7 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
     // - ADMIN: Can update any outlet
     // - MERCHANT: Can update outlets of their merchant (check merchantId)
     // - OUTLET_ADMIN: Can update their assigned outlet (check outletId)
-    // - OUTLET_STAFF: Cannot update (only view permission)
+    // - OUTLET_STAFF/OUTLET_MANAGER: Cannot update (only view permission)
     if (user.role !== USER_ROLE.ADMIN) {
       if (user.role === USER_ROLE.MERCHANT) {
         // MERCHANT: Must be same merchant
@@ -273,7 +273,7 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
           );
         }
       } else {
-        // OUTLET_STAFF or other roles: Cannot update outlets
+        // OUTLET_STAFF/OUTLET_MANAGER or other roles: Cannot update outlets
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }

@@ -59,10 +59,11 @@ export function UserTable({
       ADMIN: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       MERCHANT: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       OUTLET_ADMIN: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      OUTLET_STAFF: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+      OUTLET_STAFF: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      OUTLET_MANAGER: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     };
-    
-    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+
+    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER';
     const roleTranslation = t(`roles.${roleKey}` as any) || role.replace('_', ' ');
     return (
       <Badge className={variants[role] || variants.OUTLET_STAFF}>

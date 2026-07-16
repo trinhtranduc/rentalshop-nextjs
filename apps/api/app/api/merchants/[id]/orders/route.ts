@@ -9,13 +9,13 @@ import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
  * Get merchant orders with role-based access control
  * 
  * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Security: Role-based filtering ensures users only see orders within their scope:
  * - ADMIN: Can see all orders (no restrictions)
  * - MERCHANT: Can only see orders from their own merchant
- * - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+ * - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their assigned outlet
  */
 export async function GET(
   request: NextRequest,
@@ -81,8 +81,8 @@ export async function GET(
       // Role-based outlet filtering:
       // - ADMIN role: Can see orders from all outlets
       // - MERCHANT role: Can see orders from all outlets of their merchant
-      // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see orders from their assigned outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         // Outlet users can only see orders from their assigned outlet
         searchFilters.outletId = userScope.outletId;
       } else if (queryOutletId) {
@@ -145,7 +145,7 @@ export async function GET(
  * Create new order with role-based access control
  * 
  * Authorization: All roles with 'orders.create' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * 
  * Security: Validates merchant ownership before creating order
@@ -191,8 +191,8 @@ export async function POST(
           );
         }
 
-        // For OUTLET_ADMIN/OUTLET_STAFF, verify they can only create orders for their outlet
-        if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && outletId !== userScope.outletId) {
+        // For OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER, verify they can only create orders for their outlet
+        if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && outletId !== userScope.outletId) {
           console.log('❌ Outlet user trying to create order for different outlet:', {
             requestedOutletId: outletId,
             userOutletId: userScope.outletId

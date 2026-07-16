@@ -22,7 +22,7 @@ const bulkUpdatePermissionsSchema = z.object({
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const POST = withPermissions(['users.manage'])(
@@ -59,10 +59,10 @@ export const POST = withPermissions(['users.manage'])(
         );
       }
 
-      // Authorization check: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF in their outlet
+      // Authorization check: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF/OUTLET_MANAGER in their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN) {
         const invalidUsers = users.filter(
-          (u) => u.outletId !== userScope.outletId || u.role !== USER_ROLE.OUTLET_STAFF
+          (u) => u.outletId !== userScope.outletId || (u.role !== USER_ROLE.OUTLET_STAFF && u.role !== USER_ROLE.OUTLET_MANAGER)
         );
         if (invalidUsers.length > 0) {
           return NextResponse.json(

@@ -69,7 +69,7 @@ export default function ProductsPage() {
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
   // ✅ Use permissions hook to check if user can manage products
-  const { canManageProducts, canAddOrEditProducts } = usePermissions();
+  const { canManageProducts, canAddOrEditProducts, canDeleteProducts } = usePermissions();
   
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
@@ -438,8 +438,8 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Batch Delete button - only show when items are selected and user can manage products */}
-            {canManageProducts && selectedProductIds.length > 0 && (
+            {/* Batch Delete button - show when items selected and user can delete products (manage or products.delete) */}
+            {canDeleteProducts && selectedProductIds.length > 0 && (
               <Button
                 onClick={() => setShowBatchDeleteConfirm(true)}
                 variant="destructive"

@@ -7,7 +7,7 @@ import { API } from '@rentalshop/constants';
  * GET /api/auth/verify - Verify authentication token and return user information
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_MANAGER'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/auth/verify - User: ${user.email}`);
   
   try {

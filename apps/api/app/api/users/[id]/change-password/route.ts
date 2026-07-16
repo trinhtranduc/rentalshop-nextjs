@@ -12,7 +12,7 @@ import {API, USER_ROLE} from '@rentalshop/constants';
  * - ADMIN: Can change any user's password
  * - MERCHANT: Can change passwords for users in their merchant
  * - OUTLET_ADMIN: Can change passwords for users in their outlet
- * - OUTLET_STAFF: Can change passwords for users in their outlet
+ * - OUTLET_STAFF/OUTLET_MANAGER: Can change passwords for users in their outlet
  */
 export async function PATCH(
   request: NextRequest,
@@ -100,7 +100,7 @@ export async function PATCH(
           userScopeMerchantId: userScope.merchantId
         });
       }
-    } else if (currentUser.role === USER_ROLE.OUTLET_ADMIN || currentUser.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (currentUser.role === USER_ROLE.OUTLET_ADMIN || currentUser.role === USER_ROLE.OUTLET_STAFF || currentUser.role === USER_ROLE.OUTLET_MANAGER) {
       // OUTLET_* can change passwords for users in their outlet
       // Compare both outletId (direct field) and outlet.id (relation) with userScope.outletId
       if (targetOutletId && userScope.outletId && targetOutletId === userScope.outletId) {

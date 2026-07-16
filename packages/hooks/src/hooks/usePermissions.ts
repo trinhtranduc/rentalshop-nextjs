@@ -183,6 +183,11 @@ export function usePermissions() {
   );
   const canViewProducts = useMemo(() => hasPermission('products.view'), [hasPermission]);
   const canExportProducts = useMemo(() => hasPermission('products.export'), [hasPermission]);
+  /** Delete catalog items: full manage (import/bulk) OR granular products.delete (OUTLET_MANAGER) */
+  const canDeleteProducts = useMemo(
+    () => hasPermission('products.manage') || hasPermission('products.delete'),
+    [hasPermission]
+  );
   
   const canManageOrders = useMemo(() => hasPermission('orders.manage'), [hasPermission]);
   const canCreateOrders = useMemo(() => hasPermission('orders.create'), [hasPermission]);
@@ -233,6 +238,7 @@ export function usePermissions() {
     canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
+    canDeleteProducts,
     
     // Convenience methods for orders
     canManageOrders,

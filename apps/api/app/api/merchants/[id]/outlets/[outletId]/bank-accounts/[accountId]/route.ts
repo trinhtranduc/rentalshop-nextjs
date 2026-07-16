@@ -111,8 +111,8 @@ export async function PUT(
         );
       }
 
-      // Block OUTLET_STAFF from updating bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      // Block OUTLET_STAFF/OUTLET_MANAGER from updating bank accounts
+      if (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
@@ -254,8 +254,8 @@ export async function DELETE(
         );
       }
 
-      // Block OUTLET_STAFF from deleting bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      // Block OUTLET_STAFF/OUTLET_MANAGER from deleting bank accounts
+      if (user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }

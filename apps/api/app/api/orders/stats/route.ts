@@ -9,7 +9,7 @@ import {API} from '@rentalshop/constants';
  * GET /api/orders/stats - Get order statistics
  * 
  * Authorization: All roles with 'orders.view' or 'analytics.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF (via orders.view)
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_MANAGER (via orders.view)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
  */

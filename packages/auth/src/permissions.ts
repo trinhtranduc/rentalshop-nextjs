@@ -34,6 +34,7 @@ export type Permission =
   | 'products.manage'
   | 'products.create'
   | 'products.update'
+  | 'products.delete'
   | 'products.view'
   | 'products.export'
   
@@ -121,6 +122,16 @@ export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
     'products.update',      // May update products at outlet
     'orders.view',          // Must view orders to process them
     'customers.view',       // Must view customers for order management
+  ],
+
+  'OUTLET_MANAGER': [
+    'outlet.view',          // Must view own outlet
+    'products.view',        // Must view products to check availability
+    'products.create',      // ✅ Can add products at outlet
+    'products.update',      // ✅ Can update products at outlet
+    'products.delete',      // ✅ Critical: Can delete products (this is what distinguishes it from OUTLET_STAFF)
+    'orders.view',          // Must view orders to process them
+    'customers.view',       // Must view customers for order management
   ]
 };
 
@@ -134,7 +145,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'merchant.manage', 'merchant.view',
     'outlet.manage', 'outlet.view',
     'users.manage', 'users.view',
-    'products.manage', 'products.view', 'products.export',
+    'products.manage', 'products.create', 'products.update', 'products.delete', 'products.view', 'products.export',
     'posts.manage', 'posts.view',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
@@ -158,7 +169,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'merchant.manage', 'merchant.view', // ✅ Merchant can manage their own merchant information
     'outlet.manage', 'outlet.view',
     'users.manage', 'users.view',
-    'products.manage', 'products.view', 'products.export',
+    'products.manage', 'products.create', 'products.update', 'products.delete', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access - can see all outlets
@@ -176,7 +187,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   'OUTLET_ADMIN': [
     'outlet.manage', 'outlet.view', 
     'users.manage', 'users.view',
-    'products.manage', 'products.view', 'products.export',
+    'products.manage', 'products.create', 'products.update', 'products.delete', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access - can see their outlet
@@ -207,5 +218,23 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'loyalty.view'
     // ❌ NO billing.manage - staff cannot modify subscription
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
+  ],
+  // OUTLET_MANAGER: identical to OUTLET_STAFF but with full product CRUD (can DELETE products).
+  // ❌ Still NO products.manage (import/bulk), NO products.export, NO users.manage, NO orders.delete/export.
+  'OUTLET_MANAGER': [
+    'outlet.view',
+    'products.view',
+    'products.create',
+    'products.update',
+    'products.delete',                   // ✅ Can delete products (distinguishes from OUTLET_STAFF)
+    // ❌ NO products.manage (import/bulk-edit/categories), NO products.export
+    'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
+    'customers.view', 'customers.manage', // ❌ NO customers.export
+    'analytics.view.dashboard',
+    'analytics.view.revenue.daily',
+    'billing.view',
+    'loyalty.view'
+    // ❌ NO users.manage - manager cannot manage users
+    // ❌ NO bankAccounts permissions
   ]
 };

@@ -179,6 +179,7 @@
     "ARTICLE": "Article Editor",
     "MERCHANT": "Merchant",
     "OUTLET_ADMIN": "Outlet Admin",
+    "OUTLET_MANAGER": "Outlet Manager",
     "OUTLET_STAFF": "Outlet Staff"
   },
   "import": {

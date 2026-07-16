@@ -145,7 +145,7 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
       if (data.outletId) {
         errors.outletId = tv ? tv('fields.outletId.shouldNotBeSelected') : 'Outlet should not be selected for merchant role';
       }
-    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF' || data.role === 'OUTLET_MANAGER') {
       // OUTLET users must have both merchantId and outletId
       if (!data.merchantId) {
         errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';
@@ -213,7 +213,7 @@ export const validateUserUpdateInput = (data: UserUpdateFormData, tv?: Translati
       if (data.outletId) {
         errors.outletId = tv ? tv('fields.outletId.shouldNotBeSelected') : 'Outlet should not be selected for merchant role';
       }
-    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
+    } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF' || data.role === 'OUTLET_MANAGER') {
       // OUTLET users must have both merchantId and outletId
       if (!data.merchantId) {
         errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';

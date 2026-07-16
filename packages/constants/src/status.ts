@@ -92,7 +92,8 @@ export const USER_ROLE = {
   ADMIN: 'ADMIN',                    // System Administrator
   ARTICLE: 'ARTICLE',                // Blog / CMS editor only
   MERCHANT: 'MERCHANT',              // Business Owner
-  OUTLET_ADMIN: 'OUTLET_ADMIN',      // Outlet Manager
+  OUTLET_ADMIN: 'OUTLET_ADMIN',      // Outlet Admin (full outlet control incl. user management)
+  OUTLET_MANAGER: 'OUTLET_MANAGER',  // Outlet Manager (staff + full product CRUD: add/edit/delete)
   OUTLET_STAFF: 'OUTLET_STAFF'       // Outlet Employee
 } as const;
 

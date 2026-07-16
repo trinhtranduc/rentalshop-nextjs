@@ -156,7 +156,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
         item.href !== '/plans' && 
         item.href !== '/payments'
       );
-    } else if (normalizedUserRole === 'OUTLET_STAFF') {
+    } else if (normalizedUserRole === 'OUTLET_STAFF' || normalizedUserRole === 'OUTLET_MANAGER') {
       // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
       return items.filter(item =>
         (!item.roles || item.roles.some((role) => role.toUpperCase() === normalizedUserRole)) &&

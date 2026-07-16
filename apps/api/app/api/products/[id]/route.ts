@@ -458,7 +458,7 @@ export async function PUT(
 
       // For OUTLET_ADMIN / OUTLET_STAFF: same outlet scope as create
       if (
-        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) &&
         userScope.outletId
       ) {
         // Check if product currently has stock at user's outlet
@@ -493,7 +493,7 @@ export async function PUT(
         outletStock &&
         Array.isArray(outletStock) &&
         outletStock.length > 0 &&
-        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) &&
         userScope.outletId
       ) {
         const wrongOutlet = outletStock.filter((os: any) => os.outletId !== userScope.outletId);
@@ -767,7 +767,7 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage', 'products.delete'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -815,8 +815,14 @@ export async function DELETE(
         );
       }
 
-      // For OUTLET_ADMIN: Verify product has stock at their outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+      // For outlet-scoped roles (OUTLET_ADMIN / OUTLET_MANAGER / OUTLET_STAFF):
+      // Verify product has stock at their outlet before allowing delete
+      if (
+        (user.role === USER_ROLE.OUTLET_ADMIN ||
+          user.role === USER_ROLE.OUTLET_MANAGER ||
+          user.role === USER_ROLE.OUTLET_STAFF) &&
+        userScope.outletId
+      ) {
         const hasStockAtOutlet = existingProduct.outletStock?.some(
           (os: any) => os.outlet?.id === userScope.outletId
         );

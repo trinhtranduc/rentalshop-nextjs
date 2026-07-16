@@ -21,7 +21,7 @@ const updatePermissionsSchema = z.object({
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['users.manage'])(
@@ -65,8 +65,8 @@ export const GET = withPermissions(['users.manage'])(
             { status: API.STATUS.FORBIDDEN }
           );
         }
-        // OUTLET_ADMIN can only manage OUTLET_STAFF
-        if (foundUser.role !== USER_ROLE.OUTLET_STAFF) {
+        // OUTLET_ADMIN can only manage OUTLET_STAFF/OUTLET_MANAGER
+        if (foundUser.role !== USER_ROLE.OUTLET_STAFF && foundUser.role !== USER_ROLE.OUTLET_MANAGER) {
           return NextResponse.json(
             ResponseBuilder.error('FORBIDDEN'),
             { status: API.STATUS.FORBIDDEN }
@@ -104,10 +104,10 @@ export const GET = withPermissions(['users.manage'])(
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
- * Note: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF in their outlet
+ *
+ * Note: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF/OUTLET_MANAGER in their outlet
  * MERCHANT and ADMIN can manage permissions of any user in their scope
  */
 export const PUT = withPermissions(['users.manage'])(
@@ -152,7 +152,7 @@ export const PUT = withPermissions(['users.manage'])(
         );
       }
 
-      // Authorization check: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF in their outlet
+      // Authorization check: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF/OUTLET_MANAGER in their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN) {
         if (foundUser.outletId !== userScope.outletId) {
           return NextResponse.json(
@@ -160,8 +160,8 @@ export const PUT = withPermissions(['users.manage'])(
             { status: API.STATUS.FORBIDDEN }
           );
         }
-        // OUTLET_ADMIN can only manage OUTLET_STAFF
-        if (foundUser.role !== USER_ROLE.OUTLET_STAFF) {
+        // OUTLET_ADMIN can only manage OUTLET_STAFF/OUTLET_MANAGER
+        if (foundUser.role !== USER_ROLE.OUTLET_STAFF && foundUser.role !== USER_ROLE.OUTLET_MANAGER) {
           return NextResponse.json(
             ResponseBuilder.error('FORBIDDEN'),
             { status: API.STATUS.FORBIDDEN }

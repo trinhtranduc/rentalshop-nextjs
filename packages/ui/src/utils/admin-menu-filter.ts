@@ -52,7 +52,7 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
     );
   }
 
-  if (userRole === 'OUTLET_STAFF') {
+  if (userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_MANAGER') {
     return items.filter(
       (item) =>
         !isBlogPath(item.href) &&

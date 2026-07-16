@@ -43,6 +43,7 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
       case 'OUTLET_ADMIN':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
       case 'OUTLET_STAFF':
+      case 'OUTLET_MANAGER':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
       case 'CLIENT':
         return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800';
@@ -60,7 +61,7 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
   };
 
   const getRoleDisplayName = (role: string) => {
-    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER';
     return t(`roles.${roleKey}` as any) || role;
   };
 

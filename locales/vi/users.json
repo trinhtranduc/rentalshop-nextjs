@@ -56,7 +56,8 @@
   "roles": {
     "ADMIN": "Quản trị hệ thống",
     "MERCHANT": "Chủ thương hiệu",
-    "OUTLET_ADMIN": "Quản lý cửa hàng",
+    "OUTLET_ADMIN": "Quản trị cửa hàng",
+    "OUTLET_MANAGER": "Quản lý cửa hàng",
     "OUTLET_STAFF": "Nhân viên"
   },
   "actions": {

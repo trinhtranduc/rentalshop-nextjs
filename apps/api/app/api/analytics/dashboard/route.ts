@@ -11,7 +11,7 @@ import { API } from '@rentalshop/constants';
  * 
  * Authorization: Roles with 'analytics.view.dashboard' permission can access
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Full analytics access
- * - OUTLET_STAFF: Dashboard only (daily/today metrics)
+ * - OUTLET_STAFF/OUTLET_MANAGER: Dashboard only (daily/today metrics)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
@@ -73,7 +73,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           })
         );
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {

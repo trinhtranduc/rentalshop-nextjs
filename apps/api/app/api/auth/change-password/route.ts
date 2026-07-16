@@ -9,7 +9,7 @@ import {API} from '@rentalshop/constants';
  * POST /api/auth/change-password - Change current user's password
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_MANAGER'])(async (request, { user, userScope }) => {
   console.log(`🔐 POST /api/auth/change-password - User: ${user.email}`);
   
   try {

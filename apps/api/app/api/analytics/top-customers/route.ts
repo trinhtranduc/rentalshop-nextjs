@@ -11,7 +11,7 @@ import { API } from '@rentalshop/constants';
  * 
  * Authorization: Roles with 'analytics.view.customers' permission can access
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view customer analytics
- * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - OUTLET_STAFF/OUTLET_MANAGER: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['analytics.view.customers'])(async (request, { user, userScope }) => {
@@ -64,7 +64,7 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {
@@ -240,14 +240,14 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         orderCount: item.orderCount, // Total orders (rental + sale)
         rentalCount: item.rentalCount, // Only rental orders
         saleCount: item.saleCount, // Only sale orders
-        // Hide financial data from OUTLET_STAFF
-        totalSpent: user.role !== USER_ROLE.OUTLET_STAFF ? item.totalRevenue : null,
+        // Hide financial data from OUTLET_STAFF/OUTLET_MANAGER
+        totalSpent: (user.role !== USER_ROLE.OUTLET_STAFF && user.role !== USER_ROLE.OUTLET_MANAGER) ? item.totalRevenue : null,
       });
     }
 
     // Return a flat array to match the documented contract and mobile decoder
     // (APITopCustomersResponse.data: [TopCustomer]). Financial data (totalSpent)
-    // is already nulled for OUTLET_STAFF above, so userRole is no longer needed here.
+    // is already nulled for OUTLET_STAFF/OUTLET_MANAGER above, so userRole is no longer needed here.
     const responseData = ResponseBuilder.success('TOP_CUSTOMERS_SUCCESS', topCustomersWithDetails);
     const dataString = JSON.stringify(responseData);
     const etag = crypto.createHash('sha1').update(dataString).digest('hex');

@@ -22,9 +22,10 @@ const batchDeleteSchema = z.object({
  * - Order items store product info separately (productId, productName, productBarcode, productImages)
  *   so product records can be safely deleted without losing order history
  * 
- * Authorization: Users with 'products.manage' permission can delete products
+ * Authorization: Users with 'products.manage' OR 'products.delete' permission can delete products
+ * (OUTLET_MANAGER has 'products.delete' but not 'products.manage')
  */
-export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+export const POST = withPermissions(['products.manage', 'products.delete'])(async (request, { user, userScope }) => {
   try {
     console.log(`🔍 POST /api/products/batch-delete - User: ${user.email} (${user.role})`);
 
@@ -66,6 +67,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             id: true, // Merchant.id is also Int (public ID)
           },
         },
+        // Needed for outlet-scoped roles (OUTLET_ADMIN/OUTLET_MANAGER/OUTLET_STAFF)
+        outletStock: {
+          select: {
+            outlet: { select: { id: true } },
+          },
+        },
       },
     });
 
@@ -89,6 +96,13 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const unauthorizedProducts: Array<{ id: number; name: string }> = [];
     
     if (user.role !== USER_ROLE.ADMIN) {
+      // Outlet-scoped roles can only delete products stocked at their own outlet
+      const isOutletScoped =
+        (user.role === USER_ROLE.OUTLET_ADMIN ||
+          user.role === USER_ROLE.OUTLET_MANAGER ||
+          user.role === USER_ROLE.OUTLET_STAFF) &&
+        !!userScope.outletId;
+
       for (const product of products) {
         const productMerchantId = product.merchant?.id; // Merchant.id is Int (public ID)
         if (productMerchantId !== userMerchantId) {
@@ -96,6 +110,19 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             id: product.id, // Product.id is Int (public ID)
             name: product.name,
           });
+          continue;
+        }
+
+        if (isOutletScoped) {
+          const hasStockAtOutlet = (product as any).outletStock?.some(
+            (os: any) => os.outlet?.id === userScope.outletId
+          );
+          if (!hasStockAtOutlet) {
+            unauthorizedProducts.push({
+              id: product.id,
+              name: product.name,
+            });
+          }
         }
       }
     }

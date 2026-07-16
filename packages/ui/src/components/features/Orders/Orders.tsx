@@ -33,7 +33,7 @@ interface OrdersProps {
   showQuickFilters?: boolean;
   filterStyle?: 'buttons' | 'dropdown'; // ⭐ Choose UI style
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
-  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // Add user role
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER'; // Add user role
   hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
 

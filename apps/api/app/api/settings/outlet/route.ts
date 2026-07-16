@@ -10,11 +10,11 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * 
  * Authorization: Roles with 'outlet.manage' or 'outlet.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN (via outlet.manage)
- * - OUTLET_STAFF has 'outlet.view' only, but endpoint allows them to update
+ * - OUTLET_STAFF/OUTLET_MANAGER have 'outlet.view' only, but endpoint allows them to update
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
- * Note: OUTLET_STAFF currently has 'outlet.view' but this endpoint allows updates.
- * Consider adding 'outlet.manage' to OUTLET_STAFF if they should update outlet info.
+ *
+ * Note: OUTLET_STAFF/OUTLET_MANAGER currently have 'outlet.view' but this endpoint allows updates.
+ * Consider adding 'outlet.manage' to OUTLET_STAFF/OUTLET_MANAGER if they should update outlet info.
  */
 export const PUT = withPermissions(['outlet.manage', 'outlet.view'])(async (request: NextRequest, { user, userScope }) => {
   try {

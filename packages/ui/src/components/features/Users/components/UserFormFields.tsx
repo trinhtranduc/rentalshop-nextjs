@@ -94,7 +94,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
 }) => {
   console.log('🔍 RoleSelect: Current value:', value, 'Type:', typeof value);
   console.log('🔍 RoleSelect: Current user role:', currentUserRole);
-  console.log('🔍 RoleSelect: Available roles for current user:', currentUserRole === 'ADMIN' ? ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'] : ['OUTLET_ADMIN', 'OUTLET_STAFF']);
+  console.log('🔍 RoleSelect: Available roles for current user:', currentUserRole === 'ADMIN' ? ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF'] : ['OUTLET_ADMIN', 'OUTLET_MANAGER', 'OUTLET_STAFF']);
   
   return (
     <div className="space-y-2">
@@ -116,6 +116,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
             </>
           )}
           <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
+          <SelectItem value="OUTLET_MANAGER">Outlet Manager</SelectItem>
           <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
         </SelectContent>
       </Select>

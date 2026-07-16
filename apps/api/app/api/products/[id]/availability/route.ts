@@ -96,7 +96,7 @@ export async function GET(
       let finalOutletId: number;
       const { outletId } = query;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {

@@ -14,7 +14,7 @@ interface OrderFiltersProps {
   onFiltersChange: (filters: OrderFiltersType) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
-  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // Add user role for conditional logic
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER'; // Add user role for conditional logic
 }
 
 interface Outlet {
@@ -89,7 +89,7 @@ export const OrderFilters = React.memo(function OrderFilters({
       return false;
     }
     // OUTLET_ADMIN and OUTLET_STAFF should not see outlet filter
-    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
+    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_MANAGER') {
       return false;
     }
     // ADMIN and MERCHANT can see outlet filter

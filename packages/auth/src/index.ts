@@ -46,7 +46,8 @@ function hasAnyRole(user: Pick<AuthUser, 'role'>, allowed: UserRole[]): boolean 
 }
 
 export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  // OUTLET_MANAGER can manage products (add/edit/delete) like OUTLET_ADMIN
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_MANAGER']);
 }
 
 // ============================================================================

@@ -163,6 +163,7 @@
     "ADMIN": "管理者",
     "MERCHANT": "事業者",
     "OUTLET_ADMIN": "店舗管理者",
+    "OUTLET_MANAGER": "店舗マネージャー",
     "OUTLET_STAFF": "店舗スタッフ"
   }
 }

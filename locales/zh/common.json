@@ -163,6 +163,7 @@
     "ADMIN": "管理员",
     "MERCHANT": "商户",
     "OUTLET_ADMIN": "门店管理员",
+    "OUTLET_MANAGER": "门店经理",
     "OUTLET_STAFF": "门店员工"
   }
 }

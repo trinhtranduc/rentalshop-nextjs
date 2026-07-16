@@ -11,6 +11,7 @@ export interface UserRoleInfo {
   isAdmin: boolean;
   isMerchant: boolean;
   isOutletAdmin: boolean;
+  isOutletManager: boolean;
   isOutletStaff: boolean;
   canManageUsers: boolean;
   canManageProducts: boolean;
@@ -31,11 +32,13 @@ export function useUserRole(): UserRoleInfo {
     isAdmin: role === 'ADMIN',
     isMerchant: role === 'MERCHANT',
     isOutletAdmin: role === 'OUTLET_ADMIN',
+    isOutletManager: role === 'OUTLET_MANAGER',
     isOutletStaff: role === 'OUTLET_STAFF',
-    
+
     // Permission checks
     canManageUsers: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
-    canManageProducts: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
+    // OUTLET_MANAGER can manage products (add/edit/delete) like OUTLET_ADMIN
+    canManageProducts: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN' || role === 'OUTLET_MANAGER',
     canManageCategories: role === 'ADMIN' || role === 'MERCHANT',
     canManageOutlets: role === 'ADMIN' || role === 'MERCHANT',
     canManageSubscriptions: role === 'ADMIN' || role === 'MERCHANT',

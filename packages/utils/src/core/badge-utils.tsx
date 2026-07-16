@@ -58,7 +58,7 @@ export interface RoleBadgeProps {
 export const formatRoleDisplayName = (role: string, t?: (key: string) => string): string => {
   // If translation function is provided, use it
   if (t) {
-    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_MANAGER';
     const translated = t(`roles.${roleKey}` as any);
     if (translated && translated !== `roles.${roleKey}`) {
       return translated;
@@ -73,6 +73,8 @@ export const formatRoleDisplayName = (role: string, t?: (key: string) => string)
       return 'Outlet Admin';
     case 'OUTLET_STAFF':
       return 'Outlet Staff';
+    case 'OUTLET_MANAGER':
+      return 'Outlet Manager';
     case 'ADMIN':
       return 'Admin';
     default:
@@ -146,7 +148,8 @@ export const getRoleBadgeConfig = (role: string): BadgeConfig => {
     [USER_ROLE.ADMIN]: { color: 'bg-red-100 text-red-800', icon: Shield, text: 'Admin' },
     [USER_ROLE.MERCHANT]: { color: 'bg-blue-100 text-blue-800', icon: Building2, text: 'Merchant' },
     [USER_ROLE.OUTLET_ADMIN]: { color: 'bg-green-100 text-green-800', icon: Store, text: 'Outlet Admin' },
-    [USER_ROLE.OUTLET_STAFF]: { color: 'bg-gray-100 text-gray-800', icon: UserIcon, text: 'Outlet Staff' }
+    [USER_ROLE.OUTLET_STAFF]: { color: 'bg-gray-100 text-gray-800', icon: UserIcon, text: 'Outlet Staff' },
+    [USER_ROLE.OUTLET_MANAGER]: { color: 'bg-gray-100 text-gray-800', icon: UserIcon, text: 'Outlet Manager' }
   };
   
   return roleConfig[role as keyof typeof roleConfig] || {

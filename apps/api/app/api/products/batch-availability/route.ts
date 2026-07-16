@@ -135,7 +135,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // Determine outlet ID based on user role
       let finalOutletId: number;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_MANAGER || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {

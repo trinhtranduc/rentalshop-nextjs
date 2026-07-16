@@ -62,7 +62,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       const stats = await db.orders.getStatistics({
         merchantId: userScope.merchantId,
         outletId:
-          user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF
+          user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER
             ? userScope.outletId
             : undefined,
         startDate: new Date(startDate),

@@ -43,7 +43,7 @@ export interface UserListOptions {
  * 
  * Authorization: All roles with 'users.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['users.view'])(async (request, { user, userScope }) => {
@@ -82,7 +82,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     // Role-based merchant filtering:
     // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see users from their own merchant
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see users from their merchant
     if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       searchFilters.merchantId = q.merchantId;
@@ -93,11 +93,11 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
 
     // Role-based outlet filtering:
     // - MERCHANT role: Can see users from all outlets of their merchant (unless queryOutletId is specified)
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their assigned outlet
+    // - OUTLET_ADMIN/OUTLET_STAFF/OUTLET_MANAGER: Can only see users from their assigned outlet
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = q.outletId;
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF || user.role === USER_ROLE.OUTLET_MANAGER) {
       // Outlet users can only see users from their assigned outlet
       searchFilters.outletId = userScope.outletId;
     } else if (user.role === USER_ROLE.ADMIN) {
@@ -105,14 +105,14 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
       searchFilters.outletId = q.outletId;
     }
 
-    // If user is MERCHANT, only return OUTLET_ADMIN and OUTLET_STAFF users
+    // If user is MERCHANT, only return OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER users
     // Do not return other MERCHANT users
     if (user.role === USER_ROLE.MERCHANT) {
       if (!q.role) {
         // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF, USER_ROLE.OUTLET_MANAGER];
         delete searchFilters.role; // Remove single role filter since we're using roles array
-        console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
+        console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER only');
       } else if (q.role === USER_ROLE.MERCHANT) {
         // If merchant specifically requests MERCHANT role, return empty (merchants shouldn't see other merchants)
         console.log('🚫 MERCHANT user: Blocked request for MERCHANT role users');
@@ -127,20 +127,20 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF || q.role === USER_ROLE.OUTLET_MANAGER) {
         // Allow these specific role requests from merchant
         console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
       }
     }
 
-    // If user is OUTLET_ADMIN, only return OUTLET_ADMIN and OUTLET_STAFF users from their outlet
+    // If user is OUTLET_ADMIN, only return OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER users from their outlet
     // Do not return ADMIN or MERCHANT users (even if they have the same outletId)
     if (user.role === USER_ROLE.OUTLET_ADMIN) {
       if (!q.role) {
         // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF, USER_ROLE.OUTLET_MANAGER];
         delete searchFilters.role; // Remove single role filter since we're using roles array
-        console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
+        console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER only');
       } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.MERCHANT) {
         // Outlet admin should not see ADMIN or MERCHANT users
         console.log(`🚫 OUTLET_ADMIN user: Blocked request for ${q.role} users`);
@@ -155,7 +155,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF || q.role === USER_ROLE.OUTLET_MANAGER) {
         // Allow these specific role requests from outlet admin
         console.log(`✅ OUTLET_ADMIN user: Allowed request for ${q.role} users`);
       }
@@ -192,7 +192,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
  * POST /api/users
  * Create a new user
  * REFACTORED: Uses unified withAuth pattern
- * Note: OUTLET_STAFF cannot create users
+ * Note: OUTLET_STAFF/OUTLET_MANAGER cannot create users
  */
 /**
  * POST /api/users
@@ -200,7 +200,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const POST = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
@@ -229,7 +229,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
       // MERCHANT must have merchantId, no outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
       outletId = undefined;
-    } else if (parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF || parsed.data.role === USER_ROLE.OUTLET_MANAGER) {
       // OUTLET users must have both merchantId and outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
       outletId = parsed.data.outletId || userScope.outletId;
@@ -244,8 +244,8 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     }
 
     // NOTE: Only MERCHANT users need email verification
-    // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
-    const isOutletUser = parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF;
+    // OUTLET_ADMIN, OUTLET_STAFF, and OUTLET_MANAGER can use any email without verification
+    const isOutletUser = parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF || parsed.data.role === USER_ROLE.OUTLET_MANAGER;
 
     const userData = {
       ...parsed.data,
@@ -306,7 +306,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
@@ -415,7 +415,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - OUTLET_STAFF/OUTLET_MANAGER cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const DELETE = withPermissions(['users.manage'])(async (request, { user, userScope }) => {

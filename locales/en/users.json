@@ -53,7 +53,8 @@
   "roles": {
     "ADMIN": "System Administrator",
     "MERCHANT": "Merchant Owner",
-    "OUTLET_ADMIN": "Outlet Manager",
+    "OUTLET_ADMIN": "Outlet Admin",
+    "OUTLET_MANAGER": "Outlet Manager",
     "OUTLET_STAFF": "Outlet Staff"
   },
   "actions": {

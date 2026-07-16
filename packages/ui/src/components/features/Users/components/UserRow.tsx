@@ -48,6 +48,7 @@ export function UserRow({
       case 'OUTLET_ADMIN':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
       case 'OUTLET_STAFF':
+      case 'OUTLET_MANAGER':
         return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
@@ -63,6 +64,7 @@ export function UserRow({
       case 'OUTLET_ADMIN':
         return 'Outlet Admin';
       case 'OUTLET_STAFF':
+      case 'OUTLET_MANAGER':
         return 'Outlet Staff';
       default:
         return role;
