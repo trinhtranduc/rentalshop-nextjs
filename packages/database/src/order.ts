@@ -9,74 +9,64 @@ import type {
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 /**
- * Build search conditions for orders with diacritics-insensitive Vietnamese name search.
- * Uses PostgreSQL unaccent() to match "hong ngoc" → "Hồng Ngọc".
- * Falls back to Prisma contains if unaccent is not available.
+ * Build search conditions for orders with contains matching across:
+ * - order number
+ * - customer phone
+ * - customer first name / last name / full name
+ *
+ * Customer-name matching is diacritics-insensitive via PostgreSQL unaccent(),
+ * so "hong ngoc" matches both "Hồng Ngọc" and "Hong Ngoc".
  */
 async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
-  const searchTermNFC = searchTerm.normalize('NFC');
-  const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+  const normalizedTerm = removeVietnameseDiacritics(searchTerm).toLowerCase();
+  const namePattern = `%${normalizedTerm}%`;
 
-  // Accent policy — driven by whether the QUERY carries diacritics:
-  //  - Query WITHOUT diacritics ("thuy") → accent-INSENSITIVE: unaccent() the DB side so it
-  //    also matches accented names ("Thủy").
-  //  - Query WITH diacritics ("thúy") → accent-SENSITIVE: match the exact accented form only
-  //    (NFC-normalized, case-insensitive). So "thúy"/"Thụy" must NOT match "Thủy".
-  const hasDiacritics = searchTermNFC.toLowerCase() !== normalizedTerm.toLowerCase();
+  if (!searchTerm) {
+    return [];
+  }
 
-  // Word-prefix matching (NOT substring):
-  //  - startPattern "thuy%"   → term is the start of the whole name.
-  //  - wordPattern  "% thuy%" → term is the start of ANY word inside the name.
-  // This lets "chi" / "thu" / "thuy" find "Chị Thủy" (a leading honorific pushes the real
-  // name mid-string), while "huy" is rejected because it sits mid-word, not at a word start.
-  const patternTerm = (hasDiacritics ? searchTermNFC : normalizedTerm).toLowerCase();
-  const startPattern = `${patternTerm}%`;
-  const wordPattern = `% ${patternTerm}%`;
-
-  // Step 1: Resolve matching customer IDs at the DB level — the only place the accent rules
-  // above can be enforced correctly. Scope to the current merchant so the LIMIT budget isn't
-  // consumed by other tenants, which would truncate this merchant's matches out entirely.
+  // Step 1: Resolve matching customer IDs at the DB level so name matching is both
+  // diacritics-insensitive and works across concatenated full names.
   let matchingCustomerIds: number[] = [];
   try {
     const merchantFilter = merchantId != null
       ? Prisma.sql`AND "merchantId" = ${merchantId}`
       : Prisma.empty;
-    // Match against both name orders (firstName-first and lastName-first) so either field can
-    // start the match. Accent-sensitive path uses normalize(...,NFC) (no unaccent); the
-    // accent-insensitive path unaccents both the DB column and the search term.
-    const nameCondition = hasDiacritics
-      ? Prisma.sql`
-        lower(normalize("firstName" || ' ' || COALESCE("lastName", ''), NFC)) LIKE ${startPattern}
-        OR lower(normalize("firstName" || ' ' || COALESCE("lastName", ''), NFC)) LIKE ${wordPattern}
-        OR lower(normalize(COALESCE("lastName", '') || ' ' || "firstName", NFC)) LIKE ${startPattern}
-        OR lower(normalize(COALESCE("lastName", '') || ' ' || "firstName", NFC)) LIKE ${wordPattern}
-      `
-      : Prisma.sql`
-        unaccent(lower("firstName" || ' ' || COALESCE("lastName", ''))) LIKE ${startPattern}
-        OR unaccent(lower("firstName" || ' ' || COALESCE("lastName", ''))) LIKE ${wordPattern}
-        OR unaccent(lower(COALESCE("lastName", '') || ' ' || "firstName")) LIKE ${startPattern}
-        OR unaccent(lower(COALESCE("lastName", '') || ' ' || "firstName")) LIKE ${wordPattern}
-      `;
     const customerResults: Array<{ id: number }> = await prisma.$queryRaw`
       SELECT id FROM "Customer"
       WHERE "deletedAt" IS NULL
       ${merchantFilter}
-      AND (${nameCondition})
+      AND (
+        unaccent(lower(COALESCE("firstName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("lastName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("firstName", '') || ' ' || COALESCE("lastName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("lastName", '') || ' ' || COALESCE("firstName", ''))) LIKE ${namePattern}
+      )
       LIMIT 5000
     `;
     matchingCustomerIds = customerResults.map(r => r.id);
   } catch {
-    // unaccent/normalize not available — fall back to order number + phone only.
+    // unaccent() unavailable — keep best-effort field-level fallback below.
   }
 
-  // Step 2: Prisma OR conditions. Name matching is handled entirely by the customer IDs from
-  // Step 1 (so the accent rules stay consistent). Here we only add the diacritics-free fields
-  // — order number and phone — using the raw term.
+  // Step 2: Build Prisma OR conditions. Order number and phone use direct contains matching.
+  // Name fallback keeps first/last-name matching working even if the raw SQL path is unavailable.
   const conditions: any[] = [
-    { orderNumber: { startsWith: searchTerm, mode: 'insensitive' } },
-    { customer: { phone: { startsWith: searchTerm, mode: 'insensitive' } } },
+    { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+    { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
   ];
+
+  const fallbackNameTerms = Array.from(
+    new Set([searchTerm, normalizedTerm].map(term => term.trim()).filter(Boolean))
+  );
+
+  for (const term of fallbackNameTerms) {
+    conditions.push(
+      { customer: { firstName: { contains: term, mode: 'insensitive' } } },
+      { customer: { lastName: { contains: term, mode: 'insensitive' } } }
+    );
+  }
 
   if (matchingCustomerIds.length > 0) {
     conditions.push({ customerId: { in: matchingCustomerIds } });
@@ -708,8 +698,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
 
   // Text search (diacritics-insensitive for customer names)
   // Uses PostgreSQL unaccent() for true Vietnamese search: "hong ngoc" matches "Hồng Ngọc"
-  if (q) {
-    where.OR = await buildOrderSearchConditions(q);
+  const trimmedQuery = q?.trim();
+  if (trimmedQuery) {
+    where.OR = await buildOrderSearchConditions(trimmedQuery);
   }
 
   // Filter by outlet
@@ -1055,8 +1046,9 @@ export const simplifiedOrders = {
     }
 
     // Text search (case-insensitive and diacritics-insensitive for customer names)
-    if (whereFilters.search) {
-      where.OR = await buildOrderSearchConditions(whereFilters.search, whereFilters.merchantId);
+    const trimmedSearch = whereFilters.search?.trim();
+    if (trimmedSearch) {
+      where.OR = await buildOrderSearchConditions(trimmedSearch, whereFilters.merchantId);
     }
 
     // ✅ Build dynamic orderBy clause
@@ -1408,8 +1400,9 @@ export const simplifiedOrders = {
       if (normalizedStart) where.createdAt.gte = normalizedStart;
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
-    if (search) {
-      where.OR = await buildOrderSearchConditions(search, merchantId);
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch) {
+      where.OR = await buildOrderSearchConditions(trimmedSearch, merchantId);
     }
 
     const [orders, total] = await Promise.all([
@@ -1610,7 +1603,7 @@ export const simplifiedOrders = {
 
     // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
     // Use 'q' parameter first, fallback to 'search' for backward compatibility
-    const searchQuery = q || search;
+    const searchQuery = (q || search)?.trim();
     if (searchQuery) {
       const searchConditions = await buildOrderSearchConditions(searchQuery, merchantId);
       
