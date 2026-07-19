@@ -233,7 +233,7 @@ class NewProductViewController: BaseViewControler {
         fieldsStack.spacing = 0
         fieldsStack.distribution = .fill
         
-        let allFields = [nameField, rentField, dailyPriceField, quantityField, saleField, costPriceField, depositField, barcodeField]
+        let allFields = [nameField, barcodeField, rentField, dailyPriceField, quantityField, saleField, costPriceField, depositField]
         
         // Add each field with wrapper view for padding - title and value on same row
         for (index, field) in allFields.enumerated() {
@@ -843,6 +843,8 @@ extension NewProductViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         switch textField {
         case nameField.textField:
+            barcodeField.textField.becomeFirstResponder()
+        case barcodeField.textField:
             rentField.textField.becomeFirstResponder()
         case rentField.textField:
             dailyPriceField.textField.becomeFirstResponder()
@@ -855,8 +857,6 @@ extension NewProductViewController: UITextFieldDelegate {
         case costPriceField.textField:
             depositField.textField.becomeFirstResponder()
         case depositField.textField:
-            barcodeField.textField.becomeFirstResponder()
-        case barcodeField.textField:
             textField.resignFirstResponder()
         default:
             break
