@@ -19,6 +19,17 @@ import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3K
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 
+function buildImageUploadErrorResponse(detail?: string) {
+  const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
+  return NextResponse.json(
+    {
+      ...base,
+      error: detail || base.error
+    },
+    { status: 500 }
+  );
+}
+
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
     userId: String(user.id),
@@ -342,10 +353,7 @@ export async function PUT(
           
           if (!uploadResult.success || !uploadResult.data) {
             console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
-            return NextResponse.json(
-              ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
-              { status: 500 }
-            );
+            return buildImageUploadErrorResponse(uploadResult.error);
           }
           
           uploadedFiles.push(uploadResult.data.url);

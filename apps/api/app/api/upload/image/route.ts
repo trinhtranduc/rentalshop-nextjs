@@ -11,6 +11,17 @@ const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 // Allow larger initial upload (5MB), will be compressed to 400KB
 const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
 
+function buildUploadImageFailedResponse(detail?: string) {
+  const base = ResponseBuilder.error('UPLOAD_IMAGE_FAILED');
+  return NextResponse.json(
+    {
+      ...base,
+      error: detail || base.error
+    },
+    { status: 500 }
+  );
+}
+
 /**
  * Validate image file
  */
@@ -234,9 +245,6 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
 
   } catch (error) {
     console.error('Error uploading image:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('UPLOAD_IMAGE_FAILED'),
-      { status: 500 }
-    );
+    return buildUploadImageFailedResponse(error instanceof Error ? error.message : undefined);
   }
 });

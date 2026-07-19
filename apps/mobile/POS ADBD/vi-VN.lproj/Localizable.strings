@@ -561,21 +561,33 @@
 "Cost Price" = "Giá vốn";
 "Cost Price *" = "Giá vốn *";
 "Enter cost price" = "Nhập giá vốn";
+"Enter cost price (optional)" = "Nhập giá vốn (tùy chọn)";
 "Cost price must be greater than or equal to 0" = "Giá vốn phải lớn hơn hoặc bằng 0";
 "Deposit Price" = "Tiền đặt cọc";
 "Deposit Price *" = "Tiền đặt cọc *";
 "Enter deposit price" = "Nhập tiền đặt cọc";
+"Enter deposit price (optional)" = "Nhập tiền đặt cọc (tùy chọn)";
 "Deposit price must be greater than or equal to 0" = "Tiền đặt cọc phải lớn hơn hoặc bằng 0";
 "Tồn" = "Tồn";
 "Quantity" = "Số lượng";
 "Quantity *" = "Số lượng *";
+"Quantity must be greater than or equal to 0" = "Số lượng phải lớn hơn hoặc bằng 0";
 
 // MARK: - New Product
 "Enter product name" = "Nhập tên sản phẩm";
 "Enter quantity" = "Nhập số lượng";
+"Enter quantity (optional)" = "Nhập số lượng (tùy chọn)";
 "Enter rent price" = "Nhập giá thuê";
 "Enter sale price" = "Nhập giá bán";
+"Enter sale price (optional)" = "Nhập giá bán (tùy chọn)";
 "Enter barcode" = "Nhập mã vạch";
+"Enter barcode (optional)" = "Nhập mã vạch (tùy chọn)";
+"Rent Price / rental *" = "Giá thuê theo lần *";
+"Enter price per rental" = "Nhập giá thuê theo lần";
+"Rent Price / day" = "Giá thuê theo ngày";
+"Enter price per day (optional)" = "Nhập giá thuê theo ngày (tùy chọn)";
+"Daily price must be greater than 0" = "Giá thuê theo ngày phải lớn hơn 0";
+"Sale price must be greater than or equal to 0" = "Giá bán phải lớn hơn hoặc bằng 0";
 "Select Image Source" = "Chọn nguồn ảnh";
 "Camera" = "Máy ảnh";
 "Photo Library" = "Thư viện ảnh";
