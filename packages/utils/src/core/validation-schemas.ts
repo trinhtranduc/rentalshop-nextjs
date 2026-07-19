@@ -125,6 +125,17 @@ const productBaseSchema = z.object({
   // Optional pricing configuration (default FIXED if null or undefined)
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().default('FIXED'), // Default to FIXED
   durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+  // Multiple pricing options (Phase 1: FIXED + DAILY only; BLOCK/HOURLY blocked here)
+  pricingOptions: z.array(z.object({
+    id: z.coerce.number().int().positive().optional(),
+    type: z.enum(['FIXED', 'DAILY']),
+    price: z.number().positive('Option price must be greater than 0'),
+    unit: z.enum(['DAY', 'HOUR']).nullable().optional(),
+    blockSize: z.number().int().positive().nullable().optional(),
+    isDefault: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    sortOrder: z.number().int().optional(),
+  })).optional(),
   durationLimits: z.object({
     min: z.number().int().min(1).optional(),
     max: z.number().int().min(1).optional(),
@@ -280,6 +291,7 @@ const orderItemSchema = z.object({
   deposit: z.number().nonnegative('Deposit must be non-negative').optional(), // Optional, deposit per unit
   notes: z.string().optional(), // Optional notes for this item
   rentDays: z.number().int().min(1).optional(), // For rental orders
+  pricingOptionId: z.coerce.number().int().positive().optional(), // Selected pricing option (multi-option products)
 });
 
 const baseOrderSchema = z.object({
@@ -311,6 +323,9 @@ const baseOrderSchema = z.object({
   loyaltyRedeem: z.object({
     points: z.number().int().positive('Redeem points must be positive'),
   }).optional(),
+  // Rental duration fields (sent by mobile for DAILY/HOURLY products)
+  rentalDuration: z.number().int().min(1).optional(),
+  rentalDurationUnit: z.enum(['day', 'hour']).optional(),
 });
 
 export const orderCreateSchema = baseOrderSchema;

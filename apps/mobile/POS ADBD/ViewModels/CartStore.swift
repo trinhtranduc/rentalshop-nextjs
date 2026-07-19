@@ -47,11 +47,13 @@ final class CartStore {
 
     func setPickupDate(_ date: Date?) {
         storage.pickupPlanAt = date
+        storage.syncRentalDaysFromDates()
         notifyDidChange()
     }
 
     func setReturnDate(_ date: Date?) {
         storage.returnPlanAt = date
+        storage.syncRentalDaysFromDates()
         notifyDidChange()
     }
 
@@ -107,6 +109,21 @@ final class CartStore {
 
     func updateNote(at index: Int, note: String?) {
         storage.updateNote(at: index, note: note)
+        notifyDidChange()
+    }
+
+    func updateRentalDays(at index: Int, days: Int) {
+        storage.updateRentalDays(at: index, days: days)
+        notifyDidChange()
+    }
+
+    func selectPricingOption(at index: Int, optionId: Int) {
+        storage.selectPricingOption(at: index, optionId: optionId)
+        notifyDidChange()
+    }
+
+    func syncRentalDaysFromDates() {
+        storage.syncRentalDaysFromDates()
         notifyDidChange()
     }
 

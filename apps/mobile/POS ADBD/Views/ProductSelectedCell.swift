@@ -16,6 +16,14 @@ protocol ProductSelectedCellDelegate: AnyObject {
     func didUpdateNote(_ note: String?, at index: Int)
     func didTapDelete(at index: Int)
     func didTapStatus(at index: Int)
+    func didUpdateRentalDays(_ days: Int, at index: Int)
+    func didSelectPricingOption(optionId: Int, at index: Int)
+}
+
+// Default implementation so existing conformers don't break
+extension ProductSelectedCellDelegate {
+    func didUpdateRentalDays(_ days: Int, at index: Int) {}
+    func didSelectPricingOption(optionId: Int, at index: Int) {}
 }
 
 /// Layout style for cart item cell
@@ -75,6 +83,8 @@ class ProductSelectedCell: UITableViewCell {
         let stack = UIStackView(arrangedSubviews: [
             topStackView,
             controlsStackView,
+            pricingOptionContainer,
+            rentalDaysContainer,
             noteTextField
         ])
         stack.axis = .vertical
@@ -312,6 +322,122 @@ class ProductSelectedCell: UITableViewCell {
         return field
     }()
 
+    // MARK: - Rental Duration UI (for DAILY pricing items)
+    private lazy var rentalDaysContainer: UIView = {
+        let view = UIView()
+        view.isHidden = true // Hidden by default, shown only for DAILY items
+        return view
+    }()
+
+    private lazy var rentalDaysLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .secondaryLabel
+        label.text = "Số ngày thuê:"
+        return label
+    }()
+
+    private lazy var rentalDaysValueLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.boldFont(size: 15)
+        label.textAlignment = .center
+        label.textColor = .systemBlue
+        label.text = "1"
+        return label
+    }()
+
+    private lazy var rentalDaysSuffixLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .secondaryLabel
+        label.text = "ngày"
+        return label
+    }()
+
+    private lazy var decreaseDaysButton: UIButton = createQuantityButton(title: "-", action: #selector(decreaseDaysTapped))
+    private lazy var increaseDaysButton: UIButton = createQuantityButton(title: "+", action: #selector(increaseDaysTapped))
+
+    // Compact layout rental days
+    private lazy var compactRentalDaysContainer: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var compactRentalDaysLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .secondaryLabel
+        label.text = "Số ngày:"
+        return label
+    }()
+
+    private lazy var compactRentalDaysValueLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.boldFont(size: 13)
+        label.textAlignment = .center
+        label.textColor = .systemBlue
+        label.text = "1"
+        return label
+    }()
+
+    private lazy var compactRentalDaysSuffixLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .secondaryLabel
+        label.text = "ngày"
+        return label
+    }()
+
+    private lazy var compactDecreaseDaysButton: UIButton = {
+        let b = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+        b.setImage(UIImage(systemName: "minus", withConfiguration: config), for: .normal)
+        b.tintColor = APP_TEXT_COLOR
+        b.addTarget(self, action: #selector(decreaseDaysTapped), for: .touchUpInside)
+        return b
+    }()
+
+    private lazy var compactIncreaseDaysButton: UIButton = {
+        let b = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+        b.setImage(UIImage(systemName: "plus", withConfiguration: config), for: .normal)
+        b.tintColor = APP_TEXT_COLOR
+        b.addTarget(self, action: #selector(increaseDaysTapped), for: .touchUpInside)
+        return b
+    }()
+
+    private var rentalDays: Int = 1 {
+        didSet {
+            rentalDaysValueLabel.text = "\(rentalDays)"
+            compactRentalDaysValueLabel.text = "\(rentalDays)"
+            updateSubtotal()
+        }
+    }
+
+    // MARK: - Pricing Option selector (multi-option items)
+    private var currentOptions: [PricingOption] = []
+
+    private lazy var pricingOptionContainer: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var pricingOptionLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .secondaryLabel
+        label.text = "Loại giá:"
+        return label
+    }()
+
+    private lazy var pricingOptionSegment: UISegmentedControl = {
+        let seg = UISegmentedControl()
+        seg.addTarget(self, action: #selector(pricingOptionChanged), for: .valueChanged)
+        return seg
+    }()
+
     // MARK: - Compact layout
     private lazy var compactContainerView: UIView = {
         let v = UIView()
@@ -430,6 +556,11 @@ class ProductSelectedCell: UITableViewCell {
         itemIndex = nil
         quantity = 0
         price = 0
+        rentalDays = 1
+        rentalDaysContainer.isHidden = true
+        compactRentalDaysContainer.isHidden = true
+        pricingOptionContainer.isHidden = true
+        currentOptions = []
         noteTextField.text = nil
         compactNoteField.text = nil
         currentStatus = .available
@@ -462,6 +593,12 @@ class ProductSelectedCell: UITableViewCell {
             make.edges.equalTo(contentView.layoutMarginsGuide)
         }
 
+        // Setup rental days container (default layout)
+        setupRentalDaysView()
+
+        // Setup pricing option selector (default layout)
+        setupPricingOptionView()
+
         // Compact layout: [Image] [Col: name+status, qty row, price=subtotal, note]
         contentView.addSubview(compactContainerView)
         compactContainerView.snp.makeConstraints { make in
@@ -492,10 +629,13 @@ class ProductSelectedCell: UITableViewCell {
         compactPriceRow.alignment = .center
         compactSubtotalLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let compactCol = UIStackView(arrangedSubviews: [compactTopRow, compactPriceRow, compactNoteField])
+        let compactCol = UIStackView(arrangedSubviews: [compactTopRow, compactPriceRow, compactRentalDaysContainer, compactNoteField])
         compactCol.axis = .vertical
         compactCol.spacing = 8
         compactCol.alignment = .fill
+
+        // Setup compact rental days container
+        setupCompactRentalDaysView()
 
         compactContainerView.addSubview(compactImageView)
         compactContainerView.addSubview(compactCol)
@@ -516,6 +656,84 @@ class ProductSelectedCell: UITableViewCell {
         let isCompact = (style == .compact)
         containerStackView.isHidden = isCompact
         compactContainerView.isHidden = !isCompact
+    }
+
+    // MARK: - Rental Days View Setup
+    private func setupPricingOptionView() {
+        pricingOptionLabel.setContentHuggingPriority(.required, for: .horizontal)
+        let stack = UIStackView(arrangedSubviews: [pricingOptionLabel, pricingOptionSegment])
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        pricingOptionContainer.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        pricingOptionContainer.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(32)
+        }
+    }
+
+    private func setupRentalDaysView() {
+        decreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
+        increaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
+        rentalDaysValueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(24) }
+
+        let daysDisplayStack = UIStackView(arrangedSubviews: [
+            decreaseDaysButton,
+            rentalDaysValueLabel,
+            increaseDaysButton,
+            rentalDaysSuffixLabel
+        ])
+        daysDisplayStack.axis = .horizontal
+        daysDisplayStack.spacing = 4
+        daysDisplayStack.alignment = .center
+
+        let rentalDaysSpacer = UIView()
+        rentalDaysSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let rentalDaysStack = UIStackView(arrangedSubviews: [rentalDaysLabel, rentalDaysSpacer, daysDisplayStack])
+        rentalDaysStack.axis = .horizontal
+        rentalDaysStack.spacing = 8
+        rentalDaysStack.alignment = .center
+
+        rentalDaysContainer.addSubview(rentalDaysStack)
+        rentalDaysStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        rentalDaysContainer.snp.makeConstraints { make in
+            make.height.equalTo(36)
+        }
+    }
+
+    private func setupCompactRentalDaysView() {
+        compactDecreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(24) }
+        compactIncreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(24) }
+        compactRentalDaysValueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(20) }
+
+        let compactDaysDisplayStack = UIStackView(arrangedSubviews: [
+            compactDecreaseDaysButton,
+            compactRentalDaysValueLabel,
+            compactIncreaseDaysButton,
+            compactRentalDaysSuffixLabel
+        ])
+        compactDaysDisplayStack.axis = .horizontal
+        compactDaysDisplayStack.spacing = 3
+        compactDaysDisplayStack.alignment = .center
+
+        let compactDaysSpacer = UIView()
+        compactDaysSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let compactDaysStack = UIStackView(arrangedSubviews: [compactRentalDaysLabel, compactDaysSpacer, compactDaysDisplayStack])
+        compactDaysStack.axis = .horizontal
+        compactDaysStack.spacing = 6
+        compactDaysStack.alignment = .center
+
+        compactRentalDaysContainer.addSubview(compactDaysStack)
+        compactDaysStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        compactRentalDaysContainer.snp.makeConstraints { make in
+            make.height.equalTo(28)
+        }
     }
 
     private func setCompactStatus(_ status: BookingStatus) {
@@ -574,8 +792,27 @@ class ProductSelectedCell: UITableViewCell {
         compactNameLabel.text = cartItem.productName
         quantity = cartItem.quantity
         price = cartItem.price
+        rentalDays = cartItem.rentalDays
         noteTextField.text = cartItem.note
         compactNoteField.text = cartItem.note
+
+        // Pricing option selector (multi-option products)
+        currentOptions = cartItem.pricingOptions ?? []
+        let showOptions = currentOptions.count > 1
+        pricingOptionContainer.isHidden = !showOptions
+        if showOptions {
+            pricingOptionSegment.removeAllSegments()
+            for (i, opt) in currentOptions.enumerated() {
+                pricingOptionSegment.insertSegment(withTitle: opt.isDailyType ? "Theo ngày" : "Theo lần", at: i, animated: false)
+            }
+            let selectedIdx = currentOptions.firstIndex(where: { $0.id == cartItem.selectedPricingOptionId }) ?? 0
+            pricingOptionSegment.selectedSegmentIndex = selectedIdx
+        }
+
+        // Show/hide rental days controls based on pricing type
+        let showRentalDays = cartItem.isDailyPricing
+        rentalDaysContainer.isHidden = !showRentalDays
+        compactRentalDaysContainer.isHidden = !showRentalDays
 
         if let imageUrl = cartItem.imageUrl, !imageUrl.isEmpty {
             productImageView.kf.setImage(with: URL(string: imageUrl), placeholder: UIImage(named: "no-image"))
@@ -624,6 +861,26 @@ class ProductSelectedCell: UITableViewCell {
         delegate?.didEndEditing(value: Double(quantity), isQuantity: true, at: index)
     }
     
+    @objc private func pricingOptionChanged() {
+        guard let index = itemIndex else { return }
+        let i = pricingOptionSegment.selectedSegmentIndex
+        guard i >= 0 && i < currentOptions.count, let optId = currentOptions[i].id else { return }
+        delegate?.didSelectPricingOption(optionId: optId, at: index)
+    }
+
+    @objc private func increaseDaysTapped() {
+        guard let index = itemIndex else { return }
+        rentalDays += 1
+        delegate?.didUpdateRentalDays(rentalDays, at: index)
+    }
+
+    @objc private func decreaseDaysTapped() {
+        guard rentalDays > 1 else { return }
+        guard let index = itemIndex else { return }
+        rentalDays -= 1
+        delegate?.didUpdateRentalDays(rentalDays, at: index)
+    }
+
     @objc private func quantityTapped() {
         guard itemIndex != nil else { return }
         
@@ -657,7 +914,12 @@ class ProductSelectedCell: UITableViewCell {
     }
     
     private func updateSubtotal() {
-        let subtotal = Double(quantity) * price
+        let subtotal: Double
+        if cartItem?.isDailyPricing == true {
+            subtotal = Double(quantity) * price * Double(rentalDays)
+        } else {
+            subtotal = Double(quantity) * price
+        }
         subtotalLabel.text = subtotal.formatStringInCommon()
         compactSubtotalLabel.text = subtotal.formatStringInCommon()
     }

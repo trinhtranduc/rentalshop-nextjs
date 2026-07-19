@@ -160,6 +160,7 @@ export {
 export type {
   BusinessType,
   PricingType,
+  PricingUnit,
   BusinessTypeOption,
   PricingTypeOption,
   PricingBusinessRules,

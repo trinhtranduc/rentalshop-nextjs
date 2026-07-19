@@ -105,8 +105,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var rentField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Rent Price *".localized(),
-            placeholder: "Enter rent price".localized()
+            title: "Rent Price / rental *".localized(),
+            placeholder: "Enter price per rental".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.square.fill"))
@@ -115,7 +115,19 @@ class NewProductViewController: BaseViewControler {
 //        field.titleLabel.font = Utils.mediumFont(size: 14)
         return field
     }()
-    
+
+    // Optional per-day rental price (creates a DAILY pricing option when > 0)
+    private lazy var dailyPriceField: LabeledTextField = {
+        let field = LabeledTextField(
+            title: "Rent Price / day".localized(),
+            placeholder: "Enter price per day (optional)".localized()
+        )
+        field.textField.keyboardType = .decimalPad
+        field.textField.setLeftIcon(UIImage(systemName: "calendar"))
+        field.setTitleColor(APP_TEXT_COLOR)
+        return field
+    }()
+
     private lazy var saleField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Sale Price *".localized(),
@@ -149,6 +161,22 @@ class NewProductViewController: BaseViewControler {
         return field
     }()
     
+    // Pricing type selector: index 0 = FIXED (per rental), index 1 = DAILY (per day)
+    private lazy var pricingTypeSegment: UISegmentedControl = {
+        let seg = UISegmentedControl(items: ["Per rental".localized(), "Per day".localized()])
+        seg.selectedSegmentIndex = 0
+        seg.addTarget(self, action: #selector(pricingTypeChanged), for: .valueChanged)
+        return seg
+    }()
+
+    private lazy var pricingCaptionLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 13)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
     private lazy var barcodeField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Barcode *".localized(),
@@ -221,7 +249,7 @@ class NewProductViewController: BaseViewControler {
         fieldsStack.spacing = 0
         fieldsStack.distribution = .fill
         
-        let allFields = [nameField, barcodeField, quantityField, costPriceField, rentField, saleField, depositField]
+        let allFields = [nameField, barcodeField, quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField]
         
         // Add each field with wrapper view for padding - title and value on same row
         for (index, field) in allFields.enumerated() {
@@ -290,6 +318,17 @@ class NewProductViewController: BaseViewControler {
             }
         }
         
+        // Insert pricing type selector as the first row of the fields card
+        let pricingRow = makePricingTypeRow()
+        fieldsStack.insertArrangedSubview(pricingRow, at: 0)
+        let pricingSeparator = UIView()
+        pricingSeparator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
+        fieldsStack.insertArrangedSubview(pricingSeparator, at: 1)
+        pricingSeparator.snp.makeConstraints { make in
+            make.height.equalTo(0.5)
+        }
+        updatePricingCaption()
+
         fieldsCardContainer.addSubview(fieldsStack)
         fieldsStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -344,13 +383,13 @@ class NewProductViewController: BaseViewControler {
         }
         
         // Setup delegates and text change monitoring
-        [nameField, barcodeField, quantityField, costPriceField, rentField, saleField, depositField].forEach { field in
+        [nameField, barcodeField, quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField].forEach { field in
             field.textField.delegate = self
             field.textField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         }
         
         // Configure number formatting for quantity, cost price, rent, sale, and deposit fields
-        [quantityField, costPriceField, rentField, saleField, depositField].forEach { field in
+        [quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField].forEach { field in
             field.textField.configureNumberFormatting()
         }
     }
@@ -401,7 +440,22 @@ class NewProductViewController: BaseViewControler {
             } else {
                 depositField.textField.text = ""
             }
-            
+
+            // Populate pricing options (per-rental + per-day) and default selector
+            if let options = product.pricingOptions, !options.isEmpty {
+                if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
+                    rentField.textField.text = fixedOpt.price.formatStringInCommon()
+                }
+                if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
+                    dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
+                }
+                let defaultIsDaily = options.first(where: { $0.isDefault == true })?.type.uppercased() == "DAILY"
+                pricingTypeSegment.selectedSegmentIndex = defaultIsDaily ? 1 : 0
+            } else {
+                pricingTypeSegment.selectedSegmentIndex = (product.pricingType?.uppercased() == "DAILY") ? 1 : 0
+            }
+            updatePricingCaption()
+
             if let url = product.image_url {
                 let processor = RoundCornerImageProcessor(cornerRadius: 5)
                 img.kf.setImage(with: URL(string: url), 
@@ -504,7 +558,22 @@ class NewProductViewController: BaseViewControler {
         } else {
             depositField.textField.text = ""
         }
-        
+
+        // Populate pricing options (per-rental + per-day) and default selector
+        if let options = product.pricingOptions, !options.isEmpty {
+            if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
+                rentField.textField.text = fixedOpt.price.formatStringInCommon()
+            }
+            if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
+                dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
+            }
+            let defaultIsDaily = options.first(where: { $0.isDefault == true })?.type.uppercased() == "DAILY"
+            pricingTypeSegment.selectedSegmentIndex = defaultIsDaily ? 1 : 0
+        } else {
+            pricingTypeSegment.selectedSegmentIndex = (product.pricingType?.uppercased() == "DAILY") ? 1 : 0
+        }
+        updatePricingCaption()
+
         // Load image if available
         if let imageUrl = product.image_url, !imageUrl.isEmpty {
             let processor = RoundCornerImageProcessor(cornerRadius: 5)
@@ -524,6 +593,82 @@ class NewProductViewController: BaseViewControler {
         selectedImage = image
     }
     
+    // MARK: - Pricing Options Helpers
+
+    /// The default pricing type chosen by the segment: index 1 = DAILY, else FIXED
+    private var selectedPricingType: String {
+        return pricingTypeSegment.selectedSegmentIndex == 1 ? "DAILY" : "FIXED"
+    }
+
+    /// API requires durationConfig (JSON string) when the derived pricingType == "DAILY"
+    private var currentDurationConfig: String? {
+        guard selectedPricingType == "DAILY" else { return nil }
+        return "{\"minDuration\":1,\"maxDuration\":30,\"defaultDuration\":1}"
+    }
+
+    /// Build pricing options from the price fields (FIXED always; DAILY when a per-day price is set)
+    private func buildPricingOptions() -> [PricingOptionRequest] {
+        let rentVal = Double((rentField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
+        let dailyVal = Double((dailyPriceField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
+        let defaultIsDaily = pricingTypeSegment.selectedSegmentIndex == 1 && dailyVal > 0
+
+        var options: [PricingOptionRequest] = []
+        if rentVal > 0 {
+            options.append(PricingOptionRequest(type: "FIXED", price: rentVal, isDefault: !defaultIsDaily))
+        }
+        if dailyVal > 0 {
+            options.append(PricingOptionRequest(type: "DAILY", price: dailyVal, isDefault: defaultIsDaily))
+        }
+        // Guarantee exactly one default
+        if !options.isEmpty && !options.contains(where: { $0.isDefault }) {
+            let first = options[0]
+            options[0] = PricingOptionRequest(type: first.type, price: first.price, isDefault: true)
+        }
+        return options
+    }
+
+    private func makePricingTypeRow() -> UIView {
+        let wrapper = UIView()
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Default price".localized()
+        titleLabel.font = Utils.regularFont(size: 16)
+        titleLabel.textColor = .label
+        titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+        pricingTypeSegment.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let rowStack = UIStackView(arrangedSubviews: [titleLabel, pricingTypeSegment])
+        rowStack.axis = .horizontal
+        rowStack.spacing = 12
+        rowStack.alignment = .center
+        rowStack.distribution = .fill
+
+        let vStack = UIStackView(arrangedSubviews: [rowStack, pricingCaptionLabel])
+        vStack.axis = .vertical
+        vStack.spacing = 6
+        vStack.alignment = .fill
+
+        wrapper.addSubview(vStack)
+        vStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
+            make.height.greaterThanOrEqualTo(44)
+        }
+        return wrapper
+    }
+
+    private func updatePricingCaption() {
+        if selectedPricingType == "DAILY" {
+            pricingCaptionLabel.text = "Default: charged per day (× rental days)".localized()
+        } else {
+            pricingCaptionLabel.text = "Default: charged once per rental".localized()
+        }
+    }
+
+    @objc private func pricingTypeChanged() {
+        updatePricingCaption()
+    }
+
     // MARK: - Actions
     @objc private func addImage() {
         // Check if the device has a camera
@@ -611,7 +756,7 @@ class NewProductViewController: BaseViewControler {
     }
     
     @objc private func textFieldDidChange(_ textField: UITextField) {
-        if let field = [nameField, barcodeField, quantityField, costPriceField, rentField, saleField, depositField]
+        if let field = [nameField, barcodeField, quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField]
             .first(where: { $0.textField == textField }) {
             field.clearError()
         }
@@ -656,7 +801,10 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
             merchantId: merchantId ?? 0,
             outletStock: outletStock,
             images: nil,
-            isActive: true
+            isActive: true,
+            pricingType: selectedPricingType,
+            durationConfig: currentDurationConfig,
+            pricingOptions: buildPricingOptions()
         )
         
         showProgressText(text: "Loading...".localized())
@@ -720,7 +868,10 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
             categoryId: nil, // Set to null as requested
             merchantId: merchantId,
             outletId: outletId,
-            images: nil
+            images: nil,
+            pricingType: selectedPricingType,
+            durationConfig: currentDurationConfig,
+            pricingOptions: buildPricingOptions()
         )
         
         showProgressText(text: "Loading...".localized())
@@ -758,10 +909,11 @@ extension NewProductViewController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, 
                   replacementString string: String) -> Bool {
         // Handle number formatting for quantity, cost price, rent, sale, and deposit fields
-        if textField == quantityField.textField || 
+        if textField == quantityField.textField ||
            textField == costPriceField.textField ||
-           textField == rentField.textField || 
-           textField == saleField.textField || 
+           textField == rentField.textField ||
+           textField == dailyPriceField.textField ||
+           textField == saleField.textField ||
            textField == depositField.textField {
             return textField.shouldChangeCharactersForNumberFormatting(in: range, replacementString: string)
         }

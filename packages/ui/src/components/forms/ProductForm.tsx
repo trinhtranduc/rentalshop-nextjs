@@ -86,6 +86,12 @@ interface ProductFormData {
     maxDuration?: number;
     defaultDuration?: number;
   } | null;
+  // Multiple pricing options (Phase 1: FIXED + DAILY)
+  pricingOptions?: Array<{
+    type: PricingType;
+    price: number;
+    isDefault: boolean;
+  }>;
 }
 
 interface ProductFormProps {
@@ -140,9 +146,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     images: [],
     outletStock: [],
     sku: '',
-    pricingType: null, // Always FIXED (null = FIXED) - Pricing type selection disabled for now
+    pricingType: null,
     durationConfig: null,
-    ...initialData
+    ...initialData,
+    // Seed pricing options: use provided options, otherwise default rows (per-rental + per-day)
+    pricingOptions: (initialData as any)?.pricingOptions?.length
+      ? (initialData as any).pricingOptions.map((o: any) => ({
+          type: o.type as PricingType,
+          price: Number(o.price) || 0,
+          isDefault: !!o.isDefault,
+        }))
+      : [
+          { type: PRICING_TYPE.FIXED as PricingType, price: initialData.rentPrice ?? 0, isDefault: true },
+          { type: PRICING_TYPE.DAILY as PricingType, price: 0, isDefault: false },
+        ],
   });
 
   
@@ -472,25 +489,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     
 
 
-    const productData: ProductInput & { pricingType?: PricingType | null; durationConfig?: string | null; costPrice?: number | null } = {
+    // Normalize pricing options: keep only priced options, ensure one default
+    const validOptions = (formData.pricingOptions || []).filter(o => o.price > 0);
+    if (validOptions.length > 0 && !validOptions.some(o => o.isDefault)) {
+      validOptions[0] = { ...validOptions[0], isDefault: true };
+    }
+    const defaultOption = validOptions.find(o => o.isDefault) || validOptions[0];
+    const hasOptions = validOptions.length > 0;
+
+    const productData: ProductInput & { pricingType?: PricingType | null; durationConfig?: string | null; costPrice?: number | null; pricingOptions?: Array<{ type: PricingType; price: number; isDefault: boolean }> } = {
       merchantId: typeof merchantId === 'string' ? parseInt(merchantId) || 0 : merchantId || 0,
       categoryId: formData.categoryId,
       name: formData.name,
       description: formData.description,
       barcode: formData.barcode,
       totalStock: formData.totalStock,
-      rentPrice: formData.rentPrice,
+      // Sync rentPrice to the default option's price when options are used (backward compat)
+      rentPrice: hasOptions ? defaultOption.price : formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
       // Only include costPrice if user has products.manage permission
       ...(canManageProducts && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
-      // Optional pricing configuration (null = FIXED default)
-      pricingType: formData.pricingType || null,
-      durationConfig: formData.pricingType === PRICING_TYPE.HOURLY || formData.pricingType === PRICING_TYPE.DAILY 
-        ? (formData.durationConfig ? JSON.stringify(formData.durationConfig) : null)
-        : null,
+      // Derive pricingType from the default option (backward compat); durationConfig no longer required for options
+      pricingType: hasOptions ? defaultOption.type : (formData.pricingType || null),
+      durationConfig: null,
+      // Multiple pricing options (Phase 1: FIXED + DAILY)
+      ...(hasOptions ? { pricingOptions: validOptions } : {}),
     };
 
     // Pass files when using multipart upload
@@ -499,6 +525,52 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     } else {
       onSubmit(productData);
     }
+  };
+
+  // ---- Pricing options (multiple options per product) ----
+  // Keep rentPrice synced to the default option's price (backward compat + validation)
+  const syncRentPrice = (options: Array<{ type: PricingType; price: number; isDefault: boolean }>): number => {
+    const priced = options.filter(o => o.price > 0);
+    const def = priced.find(o => o.isDefault) || priced[0];
+    return def ? def.price : 0;
+  };
+
+  const updatePricingOption = (index: number, field: 'type' | 'price' | 'isDefault', value: any) => {
+    setFormData(prev => {
+      const options = [...(prev.pricingOptions || [])];
+      if (!options[index]) return prev;
+      if (field === 'isDefault') {
+        options.forEach((o, i) => { options[i] = { ...o, isDefault: i === index }; });
+      } else if (field === 'price') {
+        options[index] = { ...options[index], price: parseFloat(value) || 0 };
+      } else if (field === 'type') {
+        options[index] = { ...options[index], type: value as PricingType };
+      }
+      return { ...prev, pricingOptions: options, rentPrice: syncRentPrice(options) };
+    });
+  };
+
+  const addPricingOption = () => {
+    setFormData(prev => {
+      const options = [...(prev.pricingOptions || [])];
+      const hasDaily = options.some(o => o.type === PRICING_TYPE.DAILY);
+      options.push({
+        type: (hasDaily ? PRICING_TYPE.FIXED : PRICING_TYPE.DAILY) as PricingType,
+        price: 0,
+        isDefault: options.length === 0,
+      });
+      return { ...prev, pricingOptions: options };
+    });
+  };
+
+  const removePricingOption = (index: number) => {
+    setFormData(prev => {
+      const options = (prev.pricingOptions || []).filter((_, i) => i !== index);
+      if (options.length > 0 && !options.some(o => o.isDefault)) {
+        options[0] = { ...options[0], isDefault: true };
+      }
+      return { ...prev, pricingOptions: options, rentPrice: syncRentPrice(options) };
+    });
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -886,28 +958,72 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
-            {/* Pricing Type Configuration - REMOVED: Will be supported in the future */}
-            {/* TODO: Re-add pricing type selection when ready to support HOURLY/DAILY pricing */}
-            {/* Code has been removed to prevent any pricing type selection UI from appearing */}
-
-            {/* Rental Price - Always Fixed Price (FIXED pricing type) */}
+            {/* Rental Pricing Options (multiple options: per-rental / per-day) */}
             <div className="pt-4 border-t border-border">
-              <div className="space-y-2">
-                <NumericInput
-                  label={t('pricing.pricePerRental')}
-                  value={formData.rentPrice}
-                  onChange={(value) => handleInputChange('rentPrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.rentPrice}
-                  required
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
-                <p className="text-xs text-gray-500">
-                  {t('pricing.fixedDescription')}
-                </p>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-semibold text-muted-foreground">
+                  Giá thuê
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addPricingOption}
+                >
+                  + Thêm giá
+                </Button>
               </div>
+
+              <div className="space-y-3">
+                {(formData.pricingOptions || []).map((option, index) => (
+                  <div key={index} className="flex items-end gap-2 p-2 rounded-lg border border-border">
+                    <div className="w-32">
+                      <label className="block text-[11px] text-muted-foreground mb-1">Loại</label>
+                      <select
+                        value={option.type}
+                        onChange={(e) => updatePricingOption(index, 'type', e.target.value)}
+                        className="h-9 w-full rounded-md border border-border bg-transparent px-2 text-sm"
+                      >
+                        <option value={PRICING_TYPE.FIXED}>Theo lần</option>
+                        <option value={PRICING_TYPE.DAILY}>Theo ngày</option>
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <NumericInput
+                        label={option.type === PRICING_TYPE.DAILY ? 'Giá / ngày' : 'Giá / lần'}
+                        value={option.price}
+                        onChange={(value) => updatePricingOption(index, 'price', value)}
+                        placeholder="0.00"
+                        allowDecimals={true}
+                        maxDecimalPlaces={2}
+                      />
+                    </div>
+                    <label className="flex items-center gap-1 h-9 px-2 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
+                      <input
+                        type="radio"
+                        name="pricingOptionDefault"
+                        checked={!!option.isDefault}
+                        onChange={() => updatePricingOption(index, 'isDefault', true)}
+                      />
+                      Mặc định
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 text-red-500"
+                      onClick={() => removePricingOption(index)}
+                      disabled={(formData.pricingOptions || []).length <= 1}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {errors.rentPrice && <p className="text-sm text-red-500 mt-1">{errors.rentPrice}</p>}
+              <p className="text-xs text-gray-500 mt-2">
+                {t('pricing.fixedDescription')}
+              </p>
             </div>
 
             {/* Other Pricing & Inventory Section */}

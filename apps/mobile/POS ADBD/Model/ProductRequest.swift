@@ -23,12 +23,25 @@ struct CreateProductRequest: Codable {
     let merchantId: Int? // Optional - server may set default
     let outletStock: [OutletStockItem] // Array of outlet stock objects
     let images: [String]? // Optional image URLs/filenames
+    // Pricing configuration (default FIXED if nil). "FIXED" = per rental, "DAILY" = per day.
+    let pricingType: String?
+    // JSON string { minDuration, maxDuration, defaultDuration } - required by API when pricingType == "DAILY"
+    let durationConfig: String?
+    // Multiple pricing options (Phase 1: FIXED + DAILY)
+    let pricingOptions: [PricingOptionRequest]?
 }
 
 // MARK: - Outlet Stock Item Model
 struct OutletStockItem: Codable {
     let outletId: Int
     let stock: Int
+}
+
+// MARK: - Pricing Option Request Model (Phase 1: FIXED + DAILY)
+struct PricingOptionRequest: Codable {
+    let type: String        // "FIXED" | "DAILY"
+    let price: Double
+    let isDefault: Bool
 }
 
 // MARK: - Create Product Request Extension
@@ -92,10 +105,13 @@ extension CreateProductRequest {
         categoryId: Int? = nil,
         merchantId: Int? = nil,
         outletId: Int,
-        images: [String]? = nil
+        images: [String]? = nil,
+        pricingType: String? = nil,
+        durationConfig: String? = nil,
+        pricingOptions: [PricingOptionRequest]? = nil
     ) -> CreateProductRequest {
         let outletStock = [OutletStockItem(outletId: outletId, stock: totalStock)]
-        
+
         return CreateProductRequest(
             name: name,
             description: description,
@@ -108,7 +124,10 @@ extension CreateProductRequest {
             categoryId: categoryId,
             merchantId: merchantId,
             outletStock: outletStock,
-            images: images
+            images: images,
+            pricingType: pricingType,
+            durationConfig: durationConfig,
+            pricingOptions: pricingOptions
         )
     }
 }
@@ -129,7 +148,50 @@ struct UpdateProductRequest: Codable {
     let outletStock: [OutletStockItem]? // Array of outlet stock objects
     let images: [String]? // Optional image URLs/filenames
     let isActive: Bool?
-    
+    // Pricing configuration (nil = leave unchanged). "FIXED" = per rental, "DAILY" = per day.
+    let pricingType: String?
+    // JSON string { minDuration, maxDuration, defaultDuration } - required by API when pricingType == "DAILY"
+    let durationConfig: String?
+    // Multiple pricing options (Phase 1: FIXED + DAILY)
+    let pricingOptions: [PricingOptionRequest]?
+
+    // Default nil so existing factory methods (which omit these) keep compiling
+    init(
+        name: String?,
+        description: String?,
+        barcode: String?,
+        rentPrice: Double?,
+        salePrice: Double?,
+        costPrice: Double?,
+        deposit: Double?,
+        totalStock: Int?,
+        categoryId: Int?,
+        merchantId: Int?,
+        outletStock: [OutletStockItem]?,
+        images: [String]?,
+        isActive: Bool?,
+        pricingType: String? = nil,
+        durationConfig: String? = nil,
+        pricingOptions: [PricingOptionRequest]? = nil
+    ) {
+        self.name = name
+        self.description = description
+        self.barcode = barcode
+        self.rentPrice = rentPrice
+        self.salePrice = salePrice
+        self.costPrice = costPrice
+        self.deposit = deposit
+        self.totalStock = totalStock
+        self.categoryId = categoryId
+        self.merchantId = merchantId
+        self.outletStock = outletStock
+        self.images = images
+        self.isActive = isActive
+        self.pricingType = pricingType
+        self.durationConfig = durationConfig
+        self.pricingOptions = pricingOptions
+    }
+
     // MARK: - Validation
     func validate() -> (isValid: Bool, errors: [String]) {
         var errors: [String] = []
@@ -332,7 +394,12 @@ extension UpdateProductRequest {
             formData["outletStock"] = outletStockArray
         }
         if let isActive = isActive { formData["isActive"] = isActive }
-        
+        if let pricingType = pricingType { formData["pricingType"] = pricingType }
+        if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
+        if let pricingOptions = pricingOptions {
+            formData["pricingOptions"] = pricingOptions.map { ["type": $0.type, "price": $0.price, "isDefault": $0.isDefault] as [String: Any] }
+        }
+
         return formData
     }
 }
@@ -356,7 +423,13 @@ extension CreateProductRequest {
         // Convert outletStock array to array of dictionaries
         let outletStockArray = outletStock.map { ["outletId": $0.outletId, "stock": $0.stock] }
         formData["outletStock"] = outletStockArray
-        
+
+        if let pricingType = pricingType { formData["pricingType"] = pricingType }
+        if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
+        if let pricingOptions = pricingOptions {
+            formData["pricingOptions"] = pricingOptions.map { ["type": $0.type, "price": $0.price, "isDefault": $0.isDefault] as [String: Any] }
+        }
+
         return formData
     }
 }

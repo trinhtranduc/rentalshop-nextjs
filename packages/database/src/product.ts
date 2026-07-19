@@ -353,8 +353,24 @@ export async function searchProducts(filters: ProductSearchFilter) {
         deposit: true,
         images: true,
         isActive: true,
+        pricingType: true,
+        durationConfig: true,
         createdAt: true,
         updatedAt: true,
+        pricingOptions: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            type: true,
+            price: true,
+            unit: true,
+            blockSize: true,
+            isDefault: true,
+            isActive: true,
+            sortOrder: true
+          }
+        },
         category: {
           select: {
       id: true,
@@ -413,6 +429,9 @@ export async function searchProducts(filters: ProductSearchFilter) {
       deposit: product.deposit,
       images: product.images,
       isActive: product.isActive,
+      pricingType: product.pricingType,
+      durationConfig: product.durationConfig,
+      pricingOptions: product.pricingOptions ?? [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
       category: {
@@ -497,6 +516,34 @@ async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
  * Create new product - follows dual ID system
  * Input: ids (numbers), Output: id (number)
  */
+/**
+ * Normalize pricing options for persistence:
+ * - keep only Phase 1 types (FIXED/DAILY) with price > 0
+ * - ensure exactly one isDefault (first one if none/many)
+ */
+function normalizePricingOptions(options: any[] | undefined): any[] {
+  const allowed = (options || []).filter(
+    (o) => o && (o.type === 'FIXED' || o.type === 'DAILY') && Number(o.price) > 0
+  );
+  if (allowed.length === 0) return [];
+  let defaultAssigned = false;
+  const normalized = allowed.map((o, i) => {
+    const isDefault = !!o.isDefault && !defaultAssigned;
+    if (isDefault) defaultAssigned = true;
+    return {
+      type: o.type,
+      price: Number(o.price),
+      unit: o.unit ?? null,
+      blockSize: o.blockSize ?? null,
+      isDefault,
+      isActive: o.isActive ?? true,
+      sortOrder: o.sortOrder ?? i,
+    };
+  });
+  if (!defaultAssigned) normalized[0].isDefault = true;
+  return normalized;
+}
+
 export async function createProduct(input: any): Promise<any> {
   // Find merchant by id
   const merchant = await prisma.merchant.findUnique({
@@ -543,6 +590,15 @@ export async function createProduct(input: any): Promise<any> {
     productData.categoryId = category.id;
   }
 
+  // Multiple pricing options: sync default option -> rentPrice/pricingType (backward compat)
+  const normalizedOptions = normalizePricingOptions(input.pricingOptions);
+  if (normalizedOptions.length > 0) {
+    const def = normalizedOptions.find((o) => o.isDefault) || normalizedOptions[0];
+    productData.rentPrice = def.price;
+    productData.pricingType = def.type;
+    productData.pricingOptions = { create: normalizedOptions };
+  }
+
   const product = await prisma.product.create({
     data: productData,
     include: {
@@ -558,6 +614,7 @@ export async function createProduct(input: any): Promise<any> {
           name: true,
         },
       },
+      pricingOptions: true,
     },
   });
 
@@ -624,24 +681,36 @@ export async function updateProduct(
   if (input.isActive !== undefined) updateData.isActive = input.isActive;
   if (categoryId !== undefined) updateData.categoryId = categoryId;
 
-  // Update product
-  const updatedProduct = await prisma.product.update({
-    where: { id },
-    data: updateData,
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
+  // Multiple pricing options: replace set and sync default -> rentPrice/pricingType
+  const hasOptions = input.pricingOptions !== undefined;
+  const normalizedOptions = hasOptions ? normalizePricingOptions(input.pricingOptions) : [];
+  if (hasOptions && normalizedOptions.length > 0) {
+    const def = normalizedOptions.find((o) => o.isDefault) || normalizedOptions[0];
+    updateData.rentPrice = def.price;
+    updateData.pricingType = def.type;
+  }
+
+  // Update product (+ replace pricing options atomically when provided)
+  const updatedProduct = await prisma.$transaction(async (tx) => {
+    if (hasOptions) {
+      // Deleting an option sets OrderItem.pricingOptionId to NULL (FK onDelete: SetNull);
+      // OrderItem keeps its pricingType snapshot so historical orders stay correct.
+      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      if (normalizedOptions.length > 0) {
+        await tx.productPricingOption.createMany({
+          data: normalizedOptions.map((o) => ({ ...o, productId: id })),
+        });
+      }
+    }
+    return tx.product.update({
+      where: { id },
+      data: updateData,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        pricingOptions: true,
       },
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
+    });
   });
 
   return updatedProduct;
@@ -1129,7 +1198,8 @@ export const simplifiedProducts = {
           include: {
             outlet: { select: { id: true, name: true, address: true } }
           }
-        }
+        },
+        pricingOptions: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
       }
     });
   },
@@ -1167,7 +1237,8 @@ export const simplifiedProducts = {
           include: {
             outlet: { select: { id: true, name: true } }
           }
-        }
+        },
+        pricingOptions: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
       }
     });
   },
@@ -1187,7 +1258,8 @@ export const simplifiedProducts = {
           include: {
             outlet: { select: { id: true, name: true, address: true } }
           }
-        }
+        },
+        pricingOptions: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
       }
     });
   },
@@ -1232,7 +1304,20 @@ export const simplifiedProducts = {
         const defaultCategory = await getOrCreateDefaultCategory(merchantId);
         data.category = { connect: { id: defaultCategory.id } };
       }
-      
+
+      // Multiple pricing options: normalize, sync default -> rentPrice/pricingType, nest for create
+      if (Array.isArray(data.pricingOptions)) {
+        const normalized = normalizePricingOptions(data.pricingOptions);
+        if (normalized.length > 0) {
+          const def = normalized.find((o) => o.isDefault) || normalized[0];
+          data.rentPrice = def.price;
+          data.pricingType = def.type;
+          data.pricingOptions = { create: normalized };
+        } else {
+          delete data.pricingOptions;
+        }
+      }
+
       // Create product
       const product = await prisma.product.create({
         data,
@@ -1243,10 +1328,11 @@ export const simplifiedProducts = {
             include: {
               outlet: { select: { id: true, name: true } }
             }
-          }
+          },
+          pricingOptions: true
         }
       });
-      
+
       return product;
     } catch (error) {
       console.error('❌ Error in simplifiedProducts.create:', error);
@@ -1258,18 +1344,43 @@ export const simplifiedProducts = {
    * Update product (simplified API)
    */
   update: async (id: number, data: any) => {
-    return await prisma.product.update({
-      where: { id },
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } },
-        category: { select: { id: true, name: true } },
-        outletStock: {
-          include: {
-            outlet: { select: { id: true, name: true } }
-          }
-        }
+    // Extract pricing options (replace-set) so they aren't passed to product.update directly
+    const hasOptions = Array.isArray(data.pricingOptions);
+    let normalized: any[] = [];
+    if (hasOptions) {
+      normalized = normalizePricingOptions(data.pricingOptions);
+      delete data.pricingOptions;
+      if (normalized.length > 0) {
+        const def = normalized.find((o) => o.isDefault) || normalized[0];
+        data.rentPrice = def.price;
+        data.pricingType = def.type;
       }
+    }
+
+    const include = {
+      merchant: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true } },
+      outletStock: {
+        include: {
+          outlet: { select: { id: true, name: true } }
+        }
+      },
+      pricingOptions: true
+    };
+
+    if (!hasOptions) {
+      return await prisma.product.update({ where: { id }, data, include });
+    }
+
+    // Replace option set atomically (FK onDelete: SetNull keeps OrderItem snapshots intact)
+    return await prisma.$transaction(async (tx) => {
+      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      if (normalized.length > 0) {
+        await tx.productPricingOption.createMany({
+          data: normalized.map((o) => ({ ...o, productId: id }))
+        });
+      }
+      return tx.product.update({ where: { id }, data, include });
     });
   },
 
@@ -1298,7 +1409,8 @@ export const simplifiedProducts = {
           include: {
             outlet: { select: { id: true, name: true } }
           }
-        }
+        },
+        pricingOptions: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
       }
     });
   },
