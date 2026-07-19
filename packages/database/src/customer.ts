@@ -755,15 +755,72 @@ export const simplifiedCustomers = {
       const searchTerm = String(searchQuery).trim();
       // Only perform search if search term has at least 2 characters
       if (searchTerm && searchTerm.length >= 2) {
+        const searchQueryNFC = searchTerm.normalize('NFC');
         const normalizedTerm = removeVietnameseDiacritics(searchTerm);
-        
-        // Only search in firstName, lastName, and phone
+
+        // Accent policy: if query has diacritics -> accent-sensitive (NFC), else -> unaccent()
+        const hasDiacritics = searchQueryNFC.toLowerCase() !== normalizedTerm.toLowerCase();
+        const patternTerm = (hasDiacritics ? searchQueryNFC : normalizedTerm).toLowerCase();
+        const startPattern = `${patternTerm}%`;
+        const wordPattern = `% ${patternTerm}%`;
+
+        let matchingCustomerIds: number[] | null = null;
+        try {
+          const merchantFilter = whereFilters.merchantId != null
+            ? Prisma.sql`AND c."merchantId" = ${whereFilters.merchantId}`
+            : Prisma.empty;
+
+          const nameCondition = hasDiacritics
+            ? Prisma.sql`
+              lower(normalize(c."firstName" || ' ' || COALESCE(c."lastName", ''), NFC)) LIKE ${startPattern}
+              OR lower(normalize(c."firstName" || ' ' || COALESCE(c."lastName", ''), NFC)) LIKE ${wordPattern}
+              OR lower(normalize(COALESCE(c."lastName", '') || ' ' || c."firstName", NFC)) LIKE ${startPattern}
+              OR lower(normalize(COALESCE(c."lastName", '') || ' ' || c."firstName", NFC)) LIKE ${wordPattern}
+            `
+            : Prisma.sql`
+              unaccent(lower(c."firstName" || ' ' || COALESCE(c."lastName", ''))) LIKE ${startPattern}
+              OR unaccent(lower(c."firstName" || ' ' || COALESCE(c."lastName", ''))) LIKE ${wordPattern}
+              OR unaccent(lower(COALESCE(c."lastName", '') || ' ' || c."firstName")) LIKE ${startPattern}
+              OR unaccent(lower(COALESCE(c."lastName", '') || ' ' || c."firstName")) LIKE ${wordPattern}
+            `;
+
+          const results: Array<{ id: number }> = await prisma.$queryRaw`
+            SELECT c.id FROM "Customer" c
+            WHERE c."deletedAt" IS NULL
+            ${merchantFilter}
+            AND (${nameCondition})
+            LIMIT 5000
+          `;
+          matchingCustomerIds = results.map((result) => result.id);
+        } catch {
+          matchingCustomerIds = null;
+        }
+
         const searchConditions: any[] = [
-          { firstName: { startsWith: normalizedTerm, mode: 'insensitive' } },
-          { lastName: { startsWith: normalizedTerm, mode: 'insensitive' } },
-          { phone: { startsWith: searchTerm, mode: 'insensitive' } }
+          { phone: { contains: searchTerm, mode: 'insensitive' } },
+          { firstName: { contains: searchTerm, mode: 'insensitive' } },
+          { lastName: { contains: searchTerm, mode: 'insensitive' } }
         ];
-        
+        if (matchingCustomerIds !== null && matchingCustomerIds.length > 0) {
+          searchConditions.unshift({ id: { in: matchingCustomerIds } });
+        }
+        if (normalizedTerm !== searchTerm) {
+          searchConditions.push(
+            { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
+            { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
+          );
+        }
+        const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
+        if (words.length >= 2) {
+          const wordConditions = words.map((word: string) => ({
+            OR: [
+              { firstName: { contains: word, mode: 'insensitive' } },
+              { lastName: { contains: word, mode: 'insensitive' } },
+            ]
+          }));
+          searchConditions.push({ AND: wordConditions });
+        }
+
         // Merge with existing OR conditions if any
         if (where.OR) {
           where.OR = [...where.OR, ...searchConditions];

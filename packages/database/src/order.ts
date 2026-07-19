@@ -9,26 +9,27 @@ import type {
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 /**
- * Build search conditions for orders with diacritics-insensitive Vietnamese name search.
- * Uses PostgreSQL unaccent() to match "hong ngoc" → "Hồng Ngọc".
- * Falls back to Prisma contains if unaccent is not available.
+ * Build search conditions for orders with contains matching across:
+ * - order number
+ * - customer phone
+ * - customer first name / last name / full name
+ *
+ * Customer-name matching is diacritics-insensitive via PostgreSQL unaccent(),
+ * so "hong ngoc" matches both "Hồng Ngọc" and "Hong Ngoc".
  */
 async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
-  const searchTermNFC = searchTerm.normalize('NFC');
-  const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+  const normalizedTerm = removeVietnameseDiacritics(searchTerm).toLowerCase();
+  const namePattern = `%${normalizedTerm}%`;
 
-  // Step 1: Find customer IDs using unaccent() in PostgreSQL for true diacritics-insensitive search
-  // "Hồng" → normalized "hong" → matches "hong", "hồng", "hống", "Hồng" in DB
-  //
-  // Scope to the current merchant. This is the ONLY matcher that works for accented
-  // names (the Prisma startsWith conditions below compare the diacritics-stripped term
-  // against raw DB values and never match "Trâm"). Without the merchant filter the
-  // LIMIT budget is consumed by other tenants' customers, so this merchant's matches
-  // can be truncated out entirely — returning 0 results even when the customer exists.
+  if (!searchTerm) {
+    return [];
+  }
+
+  // Step 1: Resolve matching customer IDs at the DB level so name matching is both
+  // diacritics-insensitive and works across concatenated full names.
   let matchingCustomerIds: number[] = [];
   try {
-    const searchPattern = `${normalizedTerm.toLowerCase()}%`;
     const merchantFilter = merchantId != null
       ? Prisma.sql`AND "merchantId" = ${merchantId}`
       : Prisma.empty;
@@ -37,47 +38,38 @@ async function buildOrderSearchConditions(searchInput: string, merchantId?: numb
       WHERE "deletedAt" IS NULL
       ${merchantFilter}
       AND (
-        unaccent(lower("firstName")) LIKE ${searchPattern}
-        OR unaccent(lower(COALESCE("lastName", ''))) LIKE ${searchPattern}
-        OR unaccent(lower("firstName" || ' ' || COALESCE("lastName", ''))) LIKE ${searchPattern}
-        OR unaccent(lower(COALESCE("lastName", '') || ' ' || "firstName")) LIKE ${searchPattern}
+        unaccent(lower(COALESCE("firstName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("lastName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("firstName", '') || ' ' || COALESCE("lastName", ''))) LIKE ${namePattern}
+        OR unaccent(lower(COALESCE("lastName", '') || ' ' || COALESCE("firstName", ''))) LIKE ${namePattern}
       )
-      LIMIT 200
+      LIMIT 5000
     `;
-    matchingCustomerIds = customerResults.map(r => r.id);
+    matchingCustomerIds = customerResults.map((result) => result.id);
   } catch {
-    // unaccent/normalize not available — fall back to order number + phone only.
+    // unaccent() unavailable — keep best-effort field-level fallback below.
   }
 
-  // Step 2: Build Prisma OR conditions
-  // All name searches use normalizedTerm (diacritics stripped) with startsWith (prefix match)
-  // orderNumber and phone keep original searchTerm (they don't have diacritics)
+  // Step 2: Build Prisma OR conditions. Order number and phone use direct contains matching.
+  // Name fallback keeps first/last-name matching working even if the raw SQL path is unavailable.
   const conditions: any[] = [
-    { orderNumber: { startsWith: searchTerm, mode: 'insensitive' } },
-    { customer: { phone: { startsWith: searchTerm, mode: 'insensitive' } } },
-    // Name search always uses normalized term — "Hồng" and "hong" both become "hong"
-    { customer: { firstName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
-    { customer: { lastName: { startsWith: normalizedTerm, mode: 'insensitive' } } },
+    { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+    { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
   ];
 
-  // Step 3: Add unaccent-matched customer IDs (PostgreSQL-level diacritics-insensitive)
-  if (matchingCustomerIds.length > 0) {
-    conditions.push({ customerId: { in: matchingCustomerIds } });
+  const fallbackNameTerms = Array.from(
+    new Set([searchTerm, normalizedTerm].map((term) => term.trim()).filter(Boolean))
+  );
+
+  for (const term of fallbackNameTerms) {
+    conditions.push(
+      { customer: { firstName: { contains: term, mode: 'insensitive' } } },
+      { customer: { lastName: { contains: term, mode: 'insensitive' } } }
+    );
   }
 
-  // Step 4: Multi-word search — each word must prefix-match firstName or lastName
-  const normalizedWords = normalizedTerm.split(/\s+/).filter((w: string) => w.length > 0);
-  
-  if (normalizedWords.length > 1) {
-    const allWordsMatch = normalizedWords.map((word: string) => ({
-      customer: {
-        OR: [
-          { firstName: { startsWith: word, mode: 'insensitive' as const } },
-          { lastName: { startsWith: word, mode: 'insensitive' as const } }
-        ]
-      }
-    }));
-    conditions.push({ AND: allWordsMatch });
+  if (matchingCustomerIds.length > 0) {
+    conditions.push({ customerId: { in: matchingCustomerIds } });
   }
 
   return conditions;
@@ -712,8 +704,9 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
 
   // Text search (diacritics-insensitive for customer names)
   // Uses PostgreSQL unaccent() for true Vietnamese search: "hong ngoc" matches "Hồng Ngọc"
-  if (q) {
-    where.OR = await buildOrderSearchConditions(q);
+  const trimmedQuery = q?.trim();
+  if (trimmedQuery) {
+    where.OR = await buildOrderSearchConditions(trimmedQuery);
   }
 
   // Filter by outlet
@@ -1059,8 +1052,9 @@ export const simplifiedOrders = {
     }
 
     // Text search (case-insensitive and diacritics-insensitive for customer names)
-    if (whereFilters.search) {
-      where.OR = await buildOrderSearchConditions(whereFilters.search, whereFilters.merchantId);
+    const trimmedSearch = whereFilters.search?.trim();
+    if (trimmedSearch) {
+      where.OR = await buildOrderSearchConditions(trimmedSearch, whereFilters.merchantId);
     }
 
     // ✅ Build dynamic orderBy clause
@@ -1412,8 +1406,9 @@ export const simplifiedOrders = {
       if (normalizedStart) where.createdAt.gte = normalizedStart;
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
-    if (search) {
-      where.OR = await buildOrderSearchConditions(search, merchantId);
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch) {
+      where.OR = await buildOrderSearchConditions(trimmedSearch, merchantId);
     }
 
     const [orders, total] = await Promise.all([
@@ -1614,7 +1609,7 @@ export const simplifiedOrders = {
 
     // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
     // Use 'q' parameter first, fallback to 'search' for backward compatibility
-    const searchQuery = q || search;
+    const searchQuery = (q || search)?.trim();
     if (searchQuery) {
       const searchConditions = await buildOrderSearchConditions(searchQuery, merchantId);
       
