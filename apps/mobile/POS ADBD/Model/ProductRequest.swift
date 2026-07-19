@@ -15,7 +15,7 @@ struct CreateProductRequest: Codable {
     let description: String?
     let barcode: String?
     let rentPrice: Double
-    let salePrice: Double // Required
+    let salePrice: Double?
     let costPrice: Double?
     let deposit: Double?
     let totalStock: Int
@@ -59,7 +59,7 @@ extension CreateProductRequest {
             errors.append("Rent price must be non-negative")
         }
         
-        if salePrice < 0 {
+        if let salePrice = salePrice, salePrice < 0 {
             errors.append("Sale price must be non-negative")
         }
         
@@ -98,7 +98,7 @@ extension CreateProductRequest {
         description: String? = nil,
         barcode: String? = nil,
         rentPrice: Double,
-        salePrice: Double,
+        salePrice: Double? = nil,
         costPrice: Double? = nil,
         deposit: Double? = nil,
         totalStock: Int,
@@ -413,7 +413,7 @@ extension CreateProductRequest {
         if let description = description { formData["description"] = description }
         if let barcode = barcode { formData["barcode"] = barcode }
         formData["rentPrice"] = rentPrice
-        formData["salePrice"] = salePrice
+        if let salePrice = salePrice { formData["salePrice"] = salePrice }
         if let costPrice = costPrice { formData["costPrice"] = costPrice }
         if let deposit = deposit { formData["deposit"] = deposit }
         formData["totalStock"] = totalStock

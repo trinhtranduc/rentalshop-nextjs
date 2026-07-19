@@ -562,22 +562,34 @@
 "Cost Price" = "Cost Price";
 "Cost Price *" = "Cost Price *";
 "Enter cost price" = "Enter cost price";
+"Enter cost price (optional)" = "Enter cost price (optional)";
 "Cost price must be greater than or equal to 0" = "Cost price must be greater than or equal to 0";
 "Deposit Price" = "Deposit Price";
 "Deposit Price *" = "Deposit Price *";
 
 "Enter deposit price" = "Enter deposit price";
+"Enter deposit price (optional)" = "Enter deposit price (optional)";
 "Deposit price must be greater than or equal to 0" = "Deposit price must be greater than or equal to 0";
 "Tồn" = "Stock";
 "Quantity" = "Quantity";
 "Quantity *" = "Quantity *";
+"Quantity must be greater than or equal to 0" = "Quantity must be greater than or equal to 0";
 
 // MARK: - New Product
 "Enter product name" = "Enter product name";
 "Enter quantity" = "Enter quantity";
+"Enter quantity (optional)" = "Enter quantity (optional)";
 "Enter rent price" = "Enter rent price";
 "Enter sale price" = "Enter sale price";
+"Enter sale price (optional)" = "Enter sale price (optional)";
 "Enter barcode" = "Enter barcode";
+"Enter barcode (optional)" = "Enter barcode (optional)";
+"Rent Price / rental *" = "Rent Price / rental *";
+"Enter price per rental" = "Enter price per rental";
+"Rent Price / day" = "Rent Price / day";
+"Enter price per day (optional)" = "Enter price per day (optional)";
+"Daily price must be greater than 0" = "Daily price must be greater than 0";
+"Sale price must be greater than or equal to 0" = "Sale price must be greater than or equal to 0";
 "Select Image Source" = "Select Image Source";
 "Camera" = "Camera";
 "Photo Library" = "Photo Library";

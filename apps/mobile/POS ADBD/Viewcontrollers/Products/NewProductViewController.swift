@@ -92,8 +92,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var quantityField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Quantity *".localized(),
-            placeholder: "Enter quantity".localized()
+            title: "Quantity".localized(),
+            placeholder: "Enter quantity (optional)".localized()
         )
         field.textField.keyboardType = .numberPad
         field.textField.setLeftIcon(UIImage(systemName: "number.square.fill"))
@@ -130,8 +130,8 @@ class NewProductViewController: BaseViewControler {
 
     private lazy var saleField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Sale Price *".localized(),
-            placeholder: "Enter sale price".localized()
+            title: "Sale Price".localized(),
+            placeholder: "Enter sale price (optional)".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.circle.fill"))
@@ -141,8 +141,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var costPriceField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Cost Price *".localized(),
-            placeholder: "Enter cost price".localized()
+            title: "Cost Price".localized(),
+            placeholder: "Enter cost price (optional)".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.square"))
@@ -152,8 +152,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var depositField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Deposit Price *".localized(),
-            placeholder: "Enter deposit price".localized()
+            title: "Deposit Price".localized(),
+            placeholder: "Enter deposit price (optional)".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
@@ -161,26 +161,10 @@ class NewProductViewController: BaseViewControler {
         return field
     }()
     
-    // Pricing type selector: index 0 = FIXED (per rental), index 1 = DAILY (per day)
-    private lazy var pricingTypeSegment: UISegmentedControl = {
-        let seg = UISegmentedControl(items: ["Per rental".localized(), "Per day".localized()])
-        seg.selectedSegmentIndex = 0
-        seg.addTarget(self, action: #selector(pricingTypeChanged), for: .valueChanged)
-        return seg
-    }()
-
-    private lazy var pricingCaptionLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 13)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
     private lazy var barcodeField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Barcode *".localized(),
-            placeholder: "Enter barcode".localized()
+            title: "Barcode".localized(),
+            placeholder: "Enter barcode (optional)".localized()
         )
         if let barcodeIcon = UIImage(systemName: "barcode") {
             field.textField.setLeftIcon(barcodeIcon)
@@ -249,7 +233,7 @@ class NewProductViewController: BaseViewControler {
         fieldsStack.spacing = 0
         fieldsStack.distribution = .fill
         
-        let allFields = [nameField, barcodeField, quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField]
+        let allFields = [nameField, rentField, dailyPriceField, quantityField, saleField, costPriceField, depositField, barcodeField]
         
         // Add each field with wrapper view for padding - title and value on same row
         for (index, field) in allFields.enumerated() {
@@ -318,17 +302,6 @@ class NewProductViewController: BaseViewControler {
             }
         }
         
-        // Insert pricing type selector as the first row of the fields card
-        let pricingRow = makePricingTypeRow()
-        fieldsStack.insertArrangedSubview(pricingRow, at: 0)
-        let pricingSeparator = UIView()
-        pricingSeparator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
-        fieldsStack.insertArrangedSubview(pricingSeparator, at: 1)
-        pricingSeparator.snp.makeConstraints { make in
-            make.height.equalTo(0.5)
-        }
-        updatePricingCaption()
-
         fieldsCardContainer.addSubview(fieldsStack)
         fieldsStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -422,7 +395,7 @@ class NewProductViewController: BaseViewControler {
             
             nameField.textField.text = product.name
             barcodeField.textField.text = product.barcode
-            quantityField.textField.text = product.quantity.formatStringInCommon()
+            quantityField.textField.text = (product.totalStock ?? product.quantity).formatStringInCommon()
             
             // Load cost price with formatting
             if let costPrice = product.costPrice {
@@ -432,7 +405,11 @@ class NewProductViewController: BaseViewControler {
             }
             
             rentField.textField.text = product.rent.formatStringInCommon()
-            saleField.textField.text = product.sale.formatStringInCommon()
+            if let salePrice = product.salePrice {
+                saleField.textField.text = salePrice.formatStringInCommon()
+            } else {
+                saleField.textField.text = ""
+            }
             
             // Load deposit with formatting
             if let deposit = product.deposit {
@@ -441,7 +418,7 @@ class NewProductViewController: BaseViewControler {
                 depositField.textField.text = ""
             }
 
-            // Populate pricing options (per-rental + per-day) and default selector
+            // Populate pricing options (per-rental + per-day)
             if let options = product.pricingOptions, !options.isEmpty {
                 if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
                     rentField.textField.text = fixedOpt.price.formatStringInCommon()
@@ -449,12 +426,7 @@ class NewProductViewController: BaseViewControler {
                 if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
                     dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
                 }
-                let defaultIsDaily = options.first(where: { $0.isDefault == true })?.type.uppercased() == "DAILY"
-                pricingTypeSegment.selectedSegmentIndex = defaultIsDaily ? 1 : 0
-            } else {
-                pricingTypeSegment.selectedSegmentIndex = (product.pricingType?.uppercased() == "DAILY") ? 1 : 0
             }
-            updatePricingCaption()
 
             if let url = product.image_url {
                 let processor = RoundCornerImageProcessor(cornerRadius: 5)
@@ -470,23 +442,29 @@ class NewProductViewController: BaseViewControler {
             customNavBar?.title = "Add product".localized()
             saveNavButton.setTitle("Add".localized(), for: .normal)
             
-            barcodeField.textField.text = Utils.randomString(length: 6)
+            barcodeField.textField.text = ""
         }
     }
     
     // MARK: - Validation
     private func validateField(_ field: LabeledTextField, value: String?) -> Bool {
         field.clearError()
-        
-        guard let text = value, !text.isEmpty else {
-            field.showError("This field is required".localized())
-            return false
+
+        let text = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if field == nameField || field == rentField {
+            guard !text.isEmpty else {
+                field.showError("This field is required".localized())
+                return false
+            }
+        } else if text.isEmpty {
+            return true
         }
-        
+
         switch field {
         case quantityField:
-            guard let quantity = Int(text.formatStringRemoveCommon()), quantity > 0 else {
-                field.showError("Quantity must be greater than 0".localized())
+            guard let quantity = Int(text.formatStringRemoveCommon()), quantity >= 0 else {
+                field.showError("Quantity must be greater than or equal to 0".localized())
                 return false
             }
         case rentField:
@@ -494,24 +472,25 @@ class NewProductViewController: BaseViewControler {
                 field.showError("Rent price must be greater than 0".localized())
                 return false
             }
-        case saleField:
+        case dailyPriceField:
             guard let price = Double(text.formatStringRemoveCommon()), price > 0 else {
-                field.showError("Sale price must be greater than 0".localized())
+                field.showError("Daily price must be greater than 0".localized())
+                return false
+            }
+        case saleField:
+            guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
+                field.showError("Sale price must be greater than or equal to 0".localized())
                 return false
             }
         case costPriceField:
-            // Cost price is required and must be >= 0
-                guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
-                    field.showError("Cost price must be greater than or equal to 0".localized())
-                    return false
+            guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
+                field.showError("Cost price must be greater than or equal to 0".localized())
+                return false
             }
         case depositField:
-            // Deposit is optional, but if provided must be >= 0
-            if !text.isEmpty {
-                guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
-                    field.showError("Deposit price must be greater than or equal to 0".localized())
-                    return false
-                }
+            guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
+                field.showError("Deposit price must be greater than or equal to 0".localized())
+                return false
             }
         default:
             break
@@ -526,13 +505,14 @@ class NewProductViewController: BaseViewControler {
         let isQuantityValid = validateField(quantityField, value: quantityField.textField.text)
         let isCostPriceValid = validateField(costPriceField, value: costPriceField.textField.text)
         let isRentValid = validateField(rentField, value: rentField.textField.text)
+        let isDailyPriceValid = validateField(dailyPriceField, value: dailyPriceField.textField.text)
         let isSaleValid = validateField(saleField, value: saleField.textField.text)
         let isDepositValid = validateField(depositField, value: depositField.textField.text)
         
         // Image is now optional - no validation required
         // Users can create products without images
         
-        return isNameValid && isBarcodeValid && isQuantityValid && isCostPriceValid && isRentValid && isSaleValid && isDepositValid
+        return isNameValid && isBarcodeValid && isQuantityValid && isCostPriceValid && isRentValid && isDailyPriceValid && isSaleValid && isDepositValid
     }
     
     // MARK: - Public Methods
@@ -542,7 +522,7 @@ class NewProductViewController: BaseViewControler {
         // Load product data into UI
         nameField.textField.text = product.name
         barcodeField.textField.text = product.barcode
-        quantityField.textField.text = product.quantity.formatStringInCommon()
+        quantityField.textField.text = (product.totalStock ?? product.quantity).formatStringInCommon()
         
         if let costPrice = product.costPrice {
             costPriceField.textField.text = costPrice.formatStringInCommon()
@@ -551,7 +531,11 @@ class NewProductViewController: BaseViewControler {
         }
         
         rentField.textField.text = product.rent.formatStringInCommon()
-        saleField.textField.text = product.sale.formatStringInCommon()
+        if let salePrice = product.salePrice {
+            saleField.textField.text = salePrice.formatStringInCommon()
+        } else {
+            saleField.textField.text = ""
+        }
         
         if let deposit = product.deposit {
             depositField.textField.text = deposit.formatStringInCommon()
@@ -559,7 +543,7 @@ class NewProductViewController: BaseViewControler {
             depositField.textField.text = ""
         }
 
-        // Populate pricing options (per-rental + per-day) and default selector
+        // Populate pricing options (per-rental + per-day)
         if let options = product.pricingOptions, !options.isEmpty {
             if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
                 rentField.textField.text = fixedOpt.price.formatStringInCommon()
@@ -567,12 +551,7 @@ class NewProductViewController: BaseViewControler {
             if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
                 dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
             }
-            let defaultIsDaily = options.first(where: { $0.isDefault == true })?.type.uppercased() == "DAILY"
-            pricingTypeSegment.selectedSegmentIndex = defaultIsDaily ? 1 : 0
-        } else {
-            pricingTypeSegment.selectedSegmentIndex = (product.pricingType?.uppercased() == "DAILY") ? 1 : 0
         }
-        updatePricingCaption()
 
         // Load image if available
         if let imageUrl = product.image_url, !imageUrl.isEmpty {
@@ -595,78 +574,20 @@ class NewProductViewController: BaseViewControler {
     
     // MARK: - Pricing Options Helpers
 
-    /// The default pricing type chosen by the segment: index 1 = DAILY, else FIXED
-    private var selectedPricingType: String {
-        return pricingTypeSegment.selectedSegmentIndex == 1 ? "DAILY" : "FIXED"
-    }
-
-    /// API requires durationConfig (JSON string) when the derived pricingType == "DAILY"
-    private var currentDurationConfig: String? {
-        guard selectedPricingType == "DAILY" else { return nil }
-        return "{\"minDuration\":1,\"maxDuration\":30,\"defaultDuration\":1}"
-    }
-
-    /// Build pricing options from the price fields (FIXED always; DAILY when a per-day price is set)
+    /// Build pricing options from the price fields.
+    /// Per-rental is always the default. Per-day is added only when provided.
     private func buildPricingOptions() -> [PricingOptionRequest] {
         let rentVal = Double((rentField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
         let dailyVal = Double((dailyPriceField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
-        let defaultIsDaily = pricingTypeSegment.selectedSegmentIndex == 1 && dailyVal > 0
 
         var options: [PricingOptionRequest] = []
         if rentVal > 0 {
-            options.append(PricingOptionRequest(type: "FIXED", price: rentVal, isDefault: !defaultIsDaily))
+            options.append(PricingOptionRequest(type: "FIXED", price: rentVal, isDefault: true))
         }
         if dailyVal > 0 {
-            options.append(PricingOptionRequest(type: "DAILY", price: dailyVal, isDefault: defaultIsDaily))
-        }
-        // Guarantee exactly one default
-        if !options.isEmpty && !options.contains(where: { $0.isDefault }) {
-            let first = options[0]
-            options[0] = PricingOptionRequest(type: first.type, price: first.price, isDefault: true)
+            options.append(PricingOptionRequest(type: "DAILY", price: dailyVal, isDefault: false))
         }
         return options
-    }
-
-    private func makePricingTypeRow() -> UIView {
-        let wrapper = UIView()
-
-        let titleLabel = UILabel()
-        titleLabel.text = "Default price".localized()
-        titleLabel.font = Utils.regularFont(size: 16)
-        titleLabel.textColor = .label
-        titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-
-        pricingTypeSegment.setContentHuggingPriority(.defaultLow, for: .horizontal)
-
-        let rowStack = UIStackView(arrangedSubviews: [titleLabel, pricingTypeSegment])
-        rowStack.axis = .horizontal
-        rowStack.spacing = 12
-        rowStack.alignment = .center
-        rowStack.distribution = .fill
-
-        let vStack = UIStackView(arrangedSubviews: [rowStack, pricingCaptionLabel])
-        vStack.axis = .vertical
-        vStack.spacing = 6
-        vStack.alignment = .fill
-
-        wrapper.addSubview(vStack)
-        vStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
-            make.height.greaterThanOrEqualTo(44)
-        }
-        return wrapper
-    }
-
-    private func updatePricingCaption() {
-        if selectedPricingType == "DAILY" {
-            pricingCaptionLabel.text = "Default: charged per day (× rental days)".localized()
-        } else {
-            pricingCaptionLabel.text = "Default: charged once per rental".localized()
-        }
-    }
-
-    @objc private func pricingTypeChanged() {
-        updatePricingCaption()
     }
 
     // MARK: - Actions
@@ -723,7 +644,7 @@ class NewProductViewController: BaseViewControler {
         guard validateInputs() else { return }
         
         let productName = nameField.textField.text?.trim() ?? ""
-        let barcode = barcodeField.textField.text ?? ""
+        let barcode = barcodeField.textField.text?.trim() ?? ""
         let quantity = quantityField.textField.text ?? ""
         let costPrice = costPriceField.textField.text ?? ""
         let rent = rentField.textField.text ?? ""
@@ -780,30 +701,27 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
         
         print("📋 Update Product - Using outlet ID: \(outletId), merchant ID: \(merchantId ?? 0)")
         
-        // Create update request with all fields
-        // Cost price is now required, so we must have a value
-        guard let costPriceValue = Double(costPrice.formatStringRemoveCommon()), costPriceValue >= 0 else {
-            costPriceField.showError("Cost price is required and must be greater than or equal to 0".localized())
-            return
-        }
-        
-        let outletStock = [OutletStockItem(outletId: outletId, stock: Int(quantity.formatStringRemoveCommon()) ?? 0)]
+        let parsedQuantity = Int(quantity.formatStringRemoveCommon())
+        let quantityValue = quantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? (product.totalStock ?? product.quantity)
+            : (parsedQuantity ?? 0)
+        let outletStock = [OutletStockItem(outletId: outletId, stock: quantityValue)]
         let request = UpdateProductRequest(
             name: productName,
             description: "", // TODO: Add description field to UI
             barcode: barcode.isEmpty ? nil : barcode,
             rentPrice: Double(rent.formatStringRemoveCommon()) ?? 0.0,
-            salePrice: Double(sale.formatStringRemoveCommon()) ?? 0.0,
-            costPrice: costPriceValue, // Now required, not optional
-            deposit: deposit.isEmpty ? nil : Double(deposit.formatStringRemoveCommon()),
-            totalStock: Int(quantity.formatStringRemoveCommon()) ?? 0,
+            salePrice: sale.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(sale.formatStringRemoveCommon()),
+            costPrice: costPrice.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(costPrice.formatStringRemoveCommon()),
+            deposit: deposit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(deposit.formatStringRemoveCommon()),
+            totalStock: quantityValue,
             categoryId: nil, // Set to null as requested
             merchantId: merchantId ?? 0,
             outletStock: outletStock,
             images: nil,
             isActive: true,
-            pricingType: selectedPricingType,
-            durationConfig: currentDurationConfig,
+            pricingType: "FIXED",
+            durationConfig: nil,
             pricingOptions: buildPricingOptions()
         )
         
@@ -849,28 +767,24 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
         
         print("📋 Create Product - Using outlet ID: \(outletId), merchant ID: \(merchantId ?? 0)")
         
-        // Create request using factory method
-        // Cost price is now required, so we must have a value
-        guard let costPriceValue = Double(costPrice.formatStringRemoveCommon()), costPriceValue >= 0 else {
-            costPriceField.showError("Cost price is required and must be greater than or equal to 0".localized())
-            return
-        }
-        
+        let quantityValue = quantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? 0
+            : (Int(quantity.formatStringRemoveCommon()) ?? 0)
         let request = CreateProductRequest.create(
             name: productName,
             description: "", // TODO: Add description field to UI
             barcode: barcode.isEmpty ? nil : barcode,
             rentPrice: Double(rent.formatStringRemoveCommon()) ?? 0.0,
-            salePrice: Double(sale.formatStringRemoveCommon()) ?? 0.0,
-            costPrice: costPriceValue, // Now required, not optional
-            deposit: deposit.isEmpty ? nil : Double(deposit.formatStringRemoveCommon()),
-            totalStock: Int(quantity.formatStringRemoveCommon()) ?? 0,
+            salePrice: sale.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(sale.formatStringRemoveCommon()),
+            costPrice: costPrice.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(costPrice.formatStringRemoveCommon()),
+            deposit: deposit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Double(deposit.formatStringRemoveCommon()),
+            totalStock: quantityValue,
             categoryId: nil, // Set to null as requested
             merchantId: merchantId,
             outletId: outletId,
             images: nil,
-            pricingType: selectedPricingType,
-            durationConfig: currentDurationConfig,
+            pricingType: "FIXED",
+            durationConfig: nil,
             pricingOptions: buildPricingOptions()
         )
         
@@ -923,18 +837,20 @@ extension NewProductViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         switch textField {
         case nameField.textField:
-            barcodeField.textField.becomeFirstResponder()
-        case barcodeField.textField:
-            quantityField.textField.becomeFirstResponder()
-        case quantityField.textField:
-            costPriceField.textField.becomeFirstResponder()
-        case costPriceField.textField:
             rentField.textField.becomeFirstResponder()
         case rentField.textField:
+            dailyPriceField.textField.becomeFirstResponder()
+        case dailyPriceField.textField:
+            quantityField.textField.becomeFirstResponder()
+        case quantityField.textField:
             saleField.textField.becomeFirstResponder()
         case saleField.textField:
+            costPriceField.textField.becomeFirstResponder()
+        case costPriceField.textField:
             depositField.textField.becomeFirstResponder()
         case depositField.textField:
+            barcodeField.textField.becomeFirstResponder()
+        case barcodeField.textField:
             textField.resignFirstResponder()
         default:
             break
