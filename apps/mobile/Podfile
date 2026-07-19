@@ -1,0 +1,30 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '15.0'
+
+use_frameworks!
+
+target 'POS ADBD' do
+  # Comment the next line if you're not using Swift and don't want to use dynamic frameworks
+  
+  pod 'GestureRecognizerClosures'
+  pod 'QRCodeReader.swift'
+  pod 'MBProgressHUD'
+#  pod 'Presentr'
+#  pod 'DKImagePickerController'
+  # add pods for any other desired Firebase products
+  # https://firebase.google.com/docs/ios/setup#available-pods
+#  pod 'SkyFloatingLabelTextField'
+  pod 'PullToRefresher'
+  pod 'SwiftyJSON'
+  pod 'RealmSwift', :modular_headers => true
+end
+
+post_install do |installer|
+    installer.generated_projects.each do |project|
+          project.targets.each do |target|
+              target.build_configurations.each do |config|
+                  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+               end
+          end
+   end
+end
