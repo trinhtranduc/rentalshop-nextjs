@@ -92,8 +92,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var quantityField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Quantity".localized(),
-            placeholder: "Enter quantity (optional)".localized()
+            title: "Quantity *".localized(),
+            placeholder: "Enter quantity".localized()
         )
         field.textField.keyboardType = .numberPad
         field.textField.setLeftIcon(UIImage(systemName: "number.square.fill"))
@@ -163,8 +163,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var barcodeField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Barcode".localized(),
-            placeholder: "Enter barcode (optional)".localized()
+            title: "Barcode *".localized(),
+            placeholder: "Enter barcode".localized()
         )
         if let barcodeIcon = UIImage(systemName: "barcode") {
             field.textField.setLeftIcon(barcodeIcon)
@@ -386,6 +386,11 @@ class NewProductViewController: BaseViewControler {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
     }
+
+    private func generatedBarcode(from existingValue: String? = nil) -> String {
+        let trimmedValue = existingValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmedValue.isEmpty ? Utils.randomString(length: 6) : trimmedValue
+    }
     
     private func loadInitialData() {
         if let product = product {
@@ -394,7 +399,7 @@ class NewProductViewController: BaseViewControler {
             saveNavButton.setTitle("Update".localized(), for: .normal)
             
             nameField.textField.text = product.name
-            barcodeField.textField.text = product.barcode
+            barcodeField.textField.text = generatedBarcode(from: product.barcode)
             quantityField.textField.text = (product.totalStock ?? product.quantity).formatStringInCommon()
             
             // Load cost price with formatting
@@ -442,7 +447,7 @@ class NewProductViewController: BaseViewControler {
             customNavBar?.title = "Add product".localized()
             saveNavButton.setTitle("Add".localized(), for: .normal)
             
-            barcodeField.textField.text = ""
+            barcodeField.textField.text = generatedBarcode()
         }
     }
     
@@ -452,7 +457,7 @@ class NewProductViewController: BaseViewControler {
 
         let text = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if field == nameField || field == rentField {
+        if field == nameField || field == barcodeField || field == quantityField || field == rentField {
             guard !text.isEmpty else {
                 field.showError("This field is required".localized())
                 return false
@@ -521,7 +526,7 @@ class NewProductViewController: BaseViewControler {
         
         // Load product data into UI
         nameField.textField.text = product.name
-        barcodeField.textField.text = product.barcode
+        barcodeField.textField.text = generatedBarcode(from: product.barcode)
         quantityField.textField.text = (product.totalStock ?? product.quantity).formatStringInCommon()
         
         if let costPrice = product.costPrice {
@@ -641,6 +646,7 @@ class NewProductViewController: BaseViewControler {
     }
     
     @objc private func save() {
+        barcodeField.textField.text = generatedBarcode(from: barcodeField.textField.text)
         guard validateInputs() else { return }
         
         let productName = nameField.textField.text?.trim() ?? ""
