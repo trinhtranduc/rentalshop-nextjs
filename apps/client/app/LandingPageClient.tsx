@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
+import { Button, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
-import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
+import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
-import { User } from 'lucide-react'
 import { createSchemas, createFAQSchema } from './lib/schemas'
+import PublicSiteFooter from './components/PublicSiteFooter'
+import PublicSiteHeader from './components/PublicSiteHeader'
 
 // Import Blog Section (Client Component that calls API) - lazy loaded
 import dynamic from 'next/dynamic'
@@ -32,13 +32,11 @@ import {
   DollarSign,
   Star,
   Mail,
-  Phone,
   MapPin,
   ExternalLink,
   BarChart,
   AlertTriangle,
   X,
-  Store,
   Sparkles,
   ShoppingBag,
   Zap,
@@ -53,8 +51,6 @@ import {
 
 const LandingPage = () => {
   const t = useTranslations('landing')
-  const router = useRouter()
-  const { user } = useAuth()
   
   // Structured Data for SEO (JSON-LD)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,75 +294,7 @@ const LandingPage = () => {
       
     <div className="min-h-screen bg-white overflow-x-hidden">
       
-        {/* Header */}
-        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50" role="banner">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <Logo 
-                  size="md" 
-                  variant="custom" 
-                  src="/anyrent-logo-light.svg"
-                  showLabel={true}
-                  labelText="AnyRent"
-                  showBackground={false}
-                />
-              </Link>
-              <div className="hidden md:flex items-center space-x-8">
-                <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</a>
-                {/* <a href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.blog')}</a> */}
-                <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
-                <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
-                <LanguageSwitcher variant="compact" />
-                {user ? (
-                  <Button
-                    onClick={() => router.push('/dashboard')}
-                    variant="default"
-                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2"
-                  >
-                    <User className="h-4 w-4" />
-                    {user.name || user.email || 'User'}
-                  </Button>
-                ) : (
-                <Button
-                  asChild
-                  variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium"
-                >
-                  <Link href="/login">
-                    {t('navigation.login')}
-                  </Link>
-                </Button>
-                )}
-              </div>
-              {/* Mobile menu - simplified */}
-              <div className="md:hidden flex items-center space-x-3">
-                <LanguageSwitcher variant="compact" />
-                {user ? (
-                  <Button
-                    onClick={() => router.push('/dashboard')}
-                    variant="default"
-                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium flex items-center gap-2"
-                  >
-                    <User className="h-4 w-4" />
-                    {user.name || user.email || 'User'}
-                  </Button>
-                ) : (
-                <Button
-                  asChild
-                  variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium"
-                >
-                  <Link href="/login">
-                    {t('navigation.login')}
-                  </Link>
-                </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <PublicSiteHeader />
 
         {/* Hero Banner - Clean & Modern */}
         <section className="relative overflow-hidden pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white" aria-label="Hero section">
@@ -907,7 +835,7 @@ const LandingPage = () => {
       <Pricing />
 
       {/* Footer - Below the fold */}
-      <Footer />
+      <PublicSiteFooter />
       
       {/* FloatingButtons */}
       <FloatingButtons />
@@ -1668,80 +1596,6 @@ const Pricing = React.memo(() => {
   );
 });
 
-const Footer = React.memo(() => {
-  const tf = useTranslations('landing.footer')
-  return (
-    <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-12 gap-8">
-          <div className="md:col-span-4">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3">
-                <Store className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">AnyRent</span>
-            </div>
-            <p className="text-gray-400 mb-4 text-sm">
-              {tf('description')}
-            </p>
-            <div className="flex space-x-4">
-              <a href="mailto:trinhduc20@gmail.com" className="text-gray-400 hover:text-white transition-colors" aria-label="Email">
-                <Mail className="w-5 h-5" />
-              </a>
-              <a href="https://wa.me/840764774647" className="text-gray-400 hover:text-white transition-colors" aria-label="WhatsApp">
-                <Phone className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-          
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
-            <ul className="space-y-2">
-              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</a></li>
-              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
-            </ul>
-          </div>
-          
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">Ngành nghề</h3>
-            <ul className="space-y-2">
-              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo dài</Link></li>
-              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo cưới</Link></li>
-              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê thiết bị</Link></li>
-              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê trang phục</Link></li>
-            </ul>
-          </div>
-          
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
-            <ul className="space-y-2">
-              <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.faq')}</a></li>
-              <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.documentation')}</Link></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.contact')}</a></li>
-            </ul>
-          </div>
-          
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
-            <ul className="space-y-2">
-              <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</Link></li>
-              <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.terms')}</Link></li>
-              <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.privacy')}</Link></li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400 text-sm">
-            {tf('copyright')}
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-});
-
 // FloatingButtons component with CSS transitions (no framer-motion)
 const FloatingButtons = React.memo(() => {
   // Số điện thoại: 0764774647
@@ -1872,4 +1726,4 @@ const FloatingButtons = React.memo(() => {
   );
 });
 
-export default LandingPage; 
+export default LandingPage;
