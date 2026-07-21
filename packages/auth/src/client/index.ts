@@ -19,14 +19,14 @@ export {
 import { authApi, getCurrentUser } from '@rentalshop/utils';
 
 // Re-export auth API functions with simpler names
-export const loginUser = authApi.login;
-export const logoutUser = authApi.logout;
-export const verifyTokenWithServer = authApi.verifyToken;
+export const loginUser: typeof authApi.login = authApi.login;
+export const logoutUser: typeof authApi.logout = authApi.logout;
+export const verifyTokenWithServer: typeof authApi.verifyToken = authApi.verifyToken;
 
 // Client-specific aliases for compatibility
-export const loginUserClient = authApi.login;
-export const logoutUserClient = authApi.logout;
-export const getCurrentUserClient = getCurrentUser;
+export const loginUserClient: typeof authApi.login = authApi.login;
+export const logoutUserClient: typeof authApi.logout = authApi.logout;
+export const getCurrentUserClient: typeof getCurrentUser = getCurrentUser;
 
 // Export types
 export type { AuthResponse } from '@rentalshop/utils';
@@ -41,4 +41,4 @@ export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
   } catch (error) {
     return false;
   }
-}; 
+};
