@@ -43,6 +43,7 @@ export default function ClientLayout({
   const isAffiliateGuidePage = pathname?.includes('/affiliate/guide');
   const isBlogPage = pathname?.startsWith('/blog');
   const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isBlogPage;
+  const canRenderWithoutAuth = isPublicPage && !isAuthPage;
 
   // ============================================================================
   // AUTH STATE
@@ -83,8 +84,8 @@ export default function ClientLayout({
   // EARLY RETURNS - Auth guards and loading states
   // ============================================================================
   
-  // Show loading while auth is initializing
-  if (loading) {
+  // Public content must not be blocked by auth initialization or stale tokens.
+  if (loading && !canRenderWithoutAuth) {
     return <LoadingScreen message={`${t('labels.loading')}...`} />;
   }
   
@@ -93,8 +94,8 @@ export default function ClientLayout({
     return <LoadingScreen message="Redirecting..." />;
   }
   
-  // Wait for user state sync if token exists
-  if (hasToken && !user) {
+  // Protected and auth pages still wait for user state synchronization.
+  if (hasToken && !user && !canRenderWithoutAuth) {
     return <LoadingScreen message={`${t('labels.loading')}...`} />;
   }
   
