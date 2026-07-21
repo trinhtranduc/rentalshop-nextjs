@@ -6,7 +6,7 @@
   "rewrites": [],
   "headers": [
     {
-      "source": "/(.*)\\.(?:jpg|jpeg|png|webp|avif|svg|ico)$",
+      "source": "/:path*.:ext(jpg|jpeg|png|webp|avif|svg|ico)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "source": "/(.*)\\.(?:js|css)$",
+      "source": "/:path*.:ext(js|css)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -24,7 +24,7 @@
       ]
     },
     {
-      "source": "/(.*)\\.(?:woff|woff2|ttf|eot)$",
+      "source": "/:path*.:ext(woff|woff2|ttf|eot)",
       "headers": [
         {
           "key": "Cache-Control",
