@@ -652,8 +652,15 @@ class InfoMainViewController: BaseViewControler {
     private func updateCustomerSelectButton() {
         var config = customerSelectButton.configuration ?? UIButton.Configuration.plain()
 
-        config.title = "Customer".localized()
-        config.subtitle = "Select customer".localized()
+        var customerTitle = AttributedString("Customer".localized())
+        customerTitle.font = Utils.regularFont(size: 11)
+        customerTitle.foregroundColor = .textPrimary
+        config.attributedTitle = customerTitle
+
+        var selectCustomerTitle = AttributedString("Select customer".localized())
+        selectCustomerTitle.font = Utils.mediumFont(size: 15)
+        selectCustomerTitle.foregroundColor = .textPrimary
+        config.attributedSubtitle = selectCustomerTitle
         let avatarConfiguration = UIImage.SymbolConfiguration(
             pointSize: 28,
             weight: .regular
@@ -667,19 +674,7 @@ class InfoMainViewController: BaseViewControler {
             withConfiguration: avatarConfiguration
         )
         config.preferredSymbolConfigurationForImage = avatarConfiguration
-        config.baseForegroundColor = .secondaryLabel
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = Utils.regularFont(size: 11)
-            outgoing.foregroundColor = UIColor.textPrimary
-            return outgoing
-        }
-        config.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = Utils.mediumFont(size: 15)
-            outgoing.foregroundColor = UIColor.textPrimary
-            return outgoing
-        }
+        config.baseForegroundColor = .textPrimary
 
         let chevronImage = UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate)
         let accessoryImageView = UIImageView(image: chevronImage)
@@ -1055,9 +1050,11 @@ class InfoMainViewController: BaseViewControler {
     private lazy var clearCartButton: UIButton = {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
-        button.setImage(trashImage, for: .normal)
+        let clearImage = UIImage(systemName: "broom.fill", withConfiguration: config)
+            ?? UIImage(systemName: "paintbrush.fill", withConfiguration: config)
+        button.setImage(clearImage, for: .normal)
         button.tintColor = .black
+        button.accessibilityLabel = "Clear Cart".localized()
         button.addTarget(self, action: #selector(clearCartTapped), for: .touchUpInside)
         return button
     }()
