@@ -156,7 +156,7 @@ class ProductPreviewCell: UITableViewCell {
     private lazy var priceInfoStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.alignment = .center
+        stackView.alignment = .top
         stackView.distribution = .equalSpacing
         return stackView
     }()
