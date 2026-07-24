@@ -664,8 +664,10 @@ class OrderViewModel: PreviewViewModelProtocol {
                     totalPrice: orderItem.totalPrice,
                     deposit: orderItem.productDeposit,
                     notes: finalNote,
-                    rentalDays: order.rentalDuration,
-                    imageUrl: orderItem.productImages?.first
+                    rentalDays: orderItem.rentalDays ?? order.rentalDuration,
+                    imageUrl: orderItem.productImages?.first,
+                    pricingType: orderItem.pricingType,
+                    pricingOptionId: orderItem.pricingOptionId
                 )
             }
         )

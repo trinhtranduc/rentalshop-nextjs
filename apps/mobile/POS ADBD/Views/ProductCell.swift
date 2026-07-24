@@ -351,10 +351,28 @@ class ProductCell: UITableViewCell {
         availableBadgeLabel.text = "  " + "Available".localized() + ": \(availableText)  "
         availableBadgeLabel.isHidden = false
         
-        // Rent price value
-        let rentPrice = product.rentPrice ?? product.rent
-        let rentPriceSuffix = product.isDailyPricing ? "/ngày" : ""
-        rentPriceValueLabel.text = rentPrice.formatStringInCommon() + rentPriceSuffix
+        // Rent price value + its default calculation unit.
+        let defaultPricingOption = product.defaultPricingOption
+        let rentPrice = defaultPricingOption?.price ?? product.rentPrice ?? product.rent
+        let pricingType = defaultPricingOption?.type ?? product.pricingType ?? "FIXED"
+        let rentPriceSuffix = pricingType.uppercased() == "DAILY"
+            ? "/rental day".localized()
+            : "/rental".localized()
+        let rentPriceText = NSMutableAttributedString(
+            string: rentPrice.formatStringInCommon(),
+            attributes: [
+                .font: Utils.mediumFont(size: 15),
+                .foregroundColor: UIColor.textPrimary
+            ]
+        )
+        rentPriceText.append(NSAttributedString(
+            string: rentPriceSuffix,
+            attributes: [
+                .font: Utils.regularFont(size: 13),
+                .foregroundColor: UIColor.textSecondary
+            ]
+        ))
+        rentPriceValueLabel.attributedText = rentPriceText
         
         // Sale price value
         let salePrice = product.salePrice ?? product.sale

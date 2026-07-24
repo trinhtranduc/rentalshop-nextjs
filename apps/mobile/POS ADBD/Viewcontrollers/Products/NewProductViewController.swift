@@ -55,6 +55,10 @@ class NewProductViewController: BaseViewControler {
         iv.layer.cornerRadius = 5
         iv.backgroundColor = .systemGray6
         iv.isUserInteractionEnabled = true
+        iv.isAccessibilityElement = true
+        iv.accessibilityTraits = UIAccessibilityTraitButton
+        iv.accessibilityLabel = "Product image".localized()
+        iv.accessibilityHint = "Choose a product image".localized()
         
         // Add camera icon overlay
         let cameraIcon = UIImageView(image: UIImage(systemName: "camera.fill"))
@@ -73,6 +77,16 @@ class NewProductViewController: BaseViewControler {
         iv.addGestureRecognizer(tap)
         
         return iv
+    }()
+
+    private let imageErrorLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .actionDanger
+        label.numberOfLines = 0
+        label.isHidden = true
+        label.adjustsFontForContentSizeCategory = true
+        return label
     }()
     
     private lazy var nameField: LabeledTextField = {
@@ -120,7 +134,7 @@ class NewProductViewController: BaseViewControler {
     private lazy var dailyPriceField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Rent Price / day".localized(),
-            placeholder: "Enter price per day (optional)".localized()
+            placeholder: "Enter price per day".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "calendar"))
@@ -131,7 +145,7 @@ class NewProductViewController: BaseViewControler {
     private lazy var saleField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Sale Price".localized(),
-            placeholder: "Enter sale price (optional)".localized()
+            placeholder: "Enter sale price".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.circle.fill"))
@@ -142,7 +156,7 @@ class NewProductViewController: BaseViewControler {
     private lazy var costPriceField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Cost Price".localized(),
-            placeholder: "Enter cost price (optional)".localized()
+            placeholder: "Enter cost price".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.square"))
@@ -153,7 +167,7 @@ class NewProductViewController: BaseViewControler {
     private lazy var depositField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Deposit Price".localized(),
-            placeholder: "Enter deposit price (optional)".localized()
+            placeholder: "Enter deposit price".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
@@ -182,6 +196,33 @@ class NewProductViewController: BaseViewControler {
         stack.distribution = .fill
         return stack
     }()
+
+    private var additionalPricingContainer: UIView?
+    private var optionalDetailsContainer: UIView?
+    private var isAdditionalPricingExpanded = false
+    private var isOptionalDetailsExpanded = false
+
+    private let additionalPricingChevron: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
+        imageView.tintColor = .textSecondary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let optionalDetailsChevron: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
+        imageView.tintColor = .textSecondary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    /// Add future pricing units here (for example HOURLY or MONTHLY).
+    /// The form and request builder render and serialize this collection automatically.
+    private var additionalPricingFields: [(type: String, field: LabeledTextField)] {
+        [
+            (type: "DAILY", field: dailyPriceField)
+        ]
+    }
     
     private lazy var saveButton: RCPrimaryButton = {
         let button = RCPrimaryButton(
@@ -210,104 +251,69 @@ class NewProductViewController: BaseViewControler {
         view.addSubview(scrollView)
         view.addSubview(saveButton)
         scrollView.addSubview(containerView)
-        
-        // Create card container for image
-        let imageCardContainer = UIView()
-        imageCardContainer.backgroundColor = .white
-        imageCardContainer.layer.cornerRadius = 10
-        imageCardContainer.layer.borderWidth = 0.5
-        imageCardContainer.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
-        imageCardContainer.addSubview(img)
-        containerView.addSubview(imageCardContainer)
-        
-        // Create one card container for all fields
-        let fieldsCardContainer = UIView()
-        fieldsCardContainer.backgroundColor = .white
-        fieldsCardContainer.layer.cornerRadius = 10
-        fieldsCardContainer.layer.borderWidth = 0.5
-        fieldsCardContainer.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
-        
-        // Create inner stack for fields with separators
-        let fieldsStack = UIStackView()
-        fieldsStack.axis = .vertical
-        fieldsStack.spacing = 0
-        fieldsStack.distribution = .fill
-        
-        let allFields = [nameField, barcodeField, rentField, dailyPriceField, quantityField, saleField, costPriceField, depositField]
-        
-        // Add each field with wrapper view for padding - title and value on same row
-        for (index, field) in allFields.enumerated() {
-            let fieldWrapper = UIView()
-            
-            // Create horizontal stack for title and value
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.spacing = 12
-            rowStack.alignment = .center
-            rowStack.distribution = .fill
-            
-            // Title label with required indicator
-            let titleLabel = UILabel()
-            let titleText = field.titleLabel.text ?? ""
-            titleLabel.text = titleText
-            titleLabel.font = Utils.regularFont(size: 16) // Match AccountViewController
-            titleLabel.textColor = .label
-            titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            
-            // Add red asterisk for required fields (fields with * in title)
-            if titleText.contains("*") {
-                let attributedText = NSMutableAttributedString(string: titleText)
-                let asteriskRange = (titleText as NSString).range(of: "*")
-                if asteriskRange.location != NSNotFound {
-                    attributedText.addAttribute(.foregroundColor, value: UIColor.systemRed, range: asteriskRange)
-                }
-                titleLabel.attributedText = attributedText
-            }
-            
-            // Use existing textField with disabled padding for clean right alignment
-            let valueTextField = field.textField
-            valueTextField.font = Utils.regularFont(size: 16) // Match AccountViewController
-            valueTextField.textAlignment = .right
-            valueTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            
-            // Remove border, icon, and padding for clean right alignment
-            valueTextField.layer.borderWidth = 0
-            valueTextField.layer.borderColor = UIColor.clear.cgColor
-            valueTextField.backgroundColor = .clear
-            valueTextField.leftView = nil
-            valueTextField.leftViewMode = .never
-            valueTextField.rightView = nil
-            valueTextField.rightViewMode = .never
-            //valueTextField.disablePadding = true // Disable padding for right alignment
-            
-            rowStack.addArrangedSubview(titleLabel)
-            rowStack.addArrangedSubview(valueTextField)
-            
-            fieldWrapper.addSubview(rowStack)
-            rowStack.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
-                make.height.greaterThanOrEqualTo(44)
-            }
-            
-            fieldsStack.addArrangedSubview(fieldWrapper)
-            
-            // Add separator after each field except the last one
-            if index < allFields.count - 1 {
-                let separator = UIView()
-                separator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
-                fieldsStack.addArrangedSubview(separator)
-                separator.snp.makeConstraints { make in
-                    make.height.equalTo(0.5)
-                }
-            }
-        }
-        
-        fieldsCardContainer.addSubview(fieldsStack)
-        fieldsStack.snp.makeConstraints { make in
+
+        let imageCard = makeCard(containing: makeImageRow())
+
+        let requiredFieldsCard = makeSectionCard(
+            title: "Required information".localized(),
+            subtitle: "Complete these fields to create a product".localized(),
+            content: makeFieldsStack([nameField, barcodeField, quantityField])
+        )
+
+        let pricingStack = makeVerticalStack()
+        pricingStack.addArrangedSubview(makeSectionHeader(
+            title: "Rental pricing".localized(),
+            subtitle: "Per rental is the default required price".localized()
+        ))
+        pricingStack.addArrangedSubview(makeSeparator())
+        pricingStack.addArrangedSubview(makeFieldRow(rentField))
+        pricingStack.addArrangedSubview(makeSeparator())
+        pricingStack.addArrangedSubview(makeDisclosureRow(
+            title: "Additional rental prices".localized(),
+            subtitle: "Add pricing by day, hour or month".localized(),
+            chevron: additionalPricingChevron,
+            action: #selector(toggleAdditionalPricing)
+        ))
+
+        let additionalPricingContent = UIView()
+        let additionalPricingStack = makeVerticalStack()
+        additionalPricingStack.addArrangedSubview(makeSeparator())
+        appendFields(additionalPricingFields.map(\.field), to: additionalPricingStack)
+        additionalPricingContent.addSubview(additionalPricingStack)
+        additionalPricingStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        
-        containerView.addSubview(fieldsCardContainer)
+        additionalPricingContent.isHidden = true
+        additionalPricingContainer = additionalPricingContent
+        pricingStack.addArrangedSubview(additionalPricingContent)
+        let pricingCard = makeCard(containing: pricingStack)
+
+        let optionalStack = makeVerticalStack()
+        optionalStack.addArrangedSubview(makeDisclosureRow(
+            title: "Optional details".localized(),
+            subtitle: "Sale price, cost price and deposit".localized(),
+            chevron: optionalDetailsChevron,
+            action: #selector(toggleOptionalDetails)
+        ))
+
+        let optionalContent = UIView()
+        let optionalContentStack = makeVerticalStack()
+        optionalContentStack.addArrangedSubview(makeSeparator())
+        appendFields([saleField, costPriceField, depositField], to: optionalContentStack)
+        optionalContent.addSubview(optionalContentStack)
+        optionalContentStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        optionalContent.isHidden = true
+        optionalDetailsContainer = optionalContent
+        optionalStack.addArrangedSubview(optionalContent)
+        let optionalCard = makeCard(containing: optionalStack)
+
+        stackView.addArrangedSubview(imageCard)
+        stackView.addArrangedSubview(requiredFieldsCard)
+        stackView.addArrangedSubview(pricingCard)
+        stackView.addArrangedSubview(optionalCard)
+        containerView.addSubview(stackView)
         
         // Save button constraints
         saveButton.snp.makeConstraints { make in
@@ -328,25 +334,10 @@ class NewProductViewController: BaseViewControler {
             make.top.leading.trailing.bottom.equalToSuperview()
             make.width.equalToSuperview() // This ensures horizontal scrolling is disabled
         }
-        
-        // Image card container constraints
-        imageCardContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(5)
-            make.centerX.equalToSuperview()
-            make.width.height.equalTo(182) // 150 + 16*2 padding
-        }
-        
-        // Image constraints (inside card)
-        img.snp.remakeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(150)
-        }
-        
-        // Fields card container constraints
-        fieldsCardContainer.snp.makeConstraints { make in
-            make.top.equalTo(imageCardContainer.snp.bottom).offset(16)
-            make.leading.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-12)
+
+        stackView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(8)
+            make.leading.trailing.equalToSuperview().inset(12)
             make.bottom.equalToSuperview().offset(-16)
         }
         
@@ -365,6 +356,229 @@ class NewProductViewController: BaseViewControler {
         [quantityField, costPriceField, rentField, dailyPriceField, saleField, depositField].forEach { field in
             field.textField.configureNumberFormatting()
         }
+    }
+
+    private func makeVerticalStack() -> UIStackView {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.distribution = .fill
+        return stack
+    }
+
+    private func makeCard(containing content: UIView) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .backgroundCard
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 0.5
+        card.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
+        card.clipsToBounds = true
+        card.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        return card
+    }
+
+    private func makeSectionCard(title: String, subtitle: String, content: UIView) -> UIView {
+        let sectionStack = makeVerticalStack()
+        sectionStack.addArrangedSubview(makeSectionHeader(title: title, subtitle: subtitle))
+        sectionStack.addArrangedSubview(makeSeparator())
+        sectionStack.addArrangedSubview(content)
+        return makeCard(containing: sectionStack)
+    }
+
+    private func makeSectionHeader(title: String, subtitle: String) -> UIView {
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = Utils.mediumFont(size: 16)
+        titleLabel.textColor = .textPrimary
+        titleLabel.adjustsFontForContentSizeCategory = true
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = Utils.regularFont(size: 12)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 0
+        subtitleLabel.adjustsFontForContentSizeCategory = true
+
+        let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        labels.axis = .vertical
+        labels.spacing = 3
+
+        let wrapper = UIView()
+        wrapper.addSubview(labels)
+        labels.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 16, bottom: 12, right: 16))
+        }
+        return wrapper
+    }
+
+    private func makeDisclosureRow(
+        title: String,
+        subtitle: String,
+        chevron: UIImageView,
+        action: Selector
+    ) -> UIView {
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = Utils.mediumFont(size: 16)
+        titleLabel.textColor = .textPrimary
+        titleLabel.adjustsFontForContentSizeCategory = true
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = Utils.regularFont(size: 12)
+        subtitleLabel.textColor = .textSecondary
+        subtitleLabel.numberOfLines = 0
+        subtitleLabel.adjustsFontForContentSizeCategory = true
+
+        let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        labels.axis = .vertical
+        labels.spacing = 3
+
+        let row = UIStackView(arrangedSubviews: [labels, chevron])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.isUserInteractionEnabled = false
+
+        chevron.snp.makeConstraints { make in
+            make.width.height.equalTo(16)
+        }
+
+        let wrapper = UIView()
+        wrapper.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
+        }
+
+        let button = UIButton(type: .system)
+        button.addTarget(self, action: action, for: .touchUpInside)
+        button.accessibilityLabel = title
+        button.accessibilityHint = subtitle
+        wrapper.addSubview(button)
+        button.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.greaterThanOrEqualTo(56)
+        }
+        return wrapper
+    }
+
+    private func makeFieldsStack(_ fields: [LabeledTextField]) -> UIStackView {
+        let fieldsStack = makeVerticalStack()
+        appendFields(fields, to: fieldsStack)
+        return fieldsStack
+    }
+
+    private func appendFields(_ fields: [LabeledTextField], to stack: UIStackView) {
+        for (index, field) in fields.enumerated() {
+            stack.addArrangedSubview(makeFieldRow(field))
+            if index < fields.count - 1 {
+                stack.addArrangedSubview(makeSeparator())
+            }
+        }
+    }
+
+    private func makeFieldRow(_ field: LabeledTextField) -> UIView {
+        let fieldWrapper = UIView()
+        let rowStack = UIStackView()
+        rowStack.axis = .horizontal
+        rowStack.spacing = 12
+        rowStack.alignment = .center
+        rowStack.distribution = .fill
+
+        let titleLabel = UILabel()
+        let titleText = field.titleLabel.text ?? ""
+        titleLabel.text = titleText
+        titleLabel.font = Utils.regularFont(size: 16)
+        titleLabel.textColor = .textPrimary
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+        if titleText.contains("*") {
+            let attributedText = NSMutableAttributedString(string: titleText)
+            let asteriskRange = (titleText as NSString).range(of: "*")
+            if asteriskRange.location != NSNotFound {
+                attributedText.addAttribute(.foregroundColor, value: UIColor.actionDanger, range: asteriskRange)
+            }
+            titleLabel.attributedText = attributedText
+        }
+
+        let valueTextField = field.textField
+        valueTextField.accessibilityLabel = titleText.replacingOccurrences(of: "*", with: "").trim()
+        valueTextField.font = Utils.regularFont(size: 16)
+        valueTextField.textAlignment = .right
+        valueTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        valueTextField.layer.borderWidth = 0
+        valueTextField.layer.borderColor = UIColor.clear.cgColor
+        valueTextField.backgroundColor = .clear
+        valueTextField.leftView = nil
+        valueTextField.leftViewMode = .never
+        valueTextField.rightView = nil
+        valueTextField.rightViewMode = .never
+
+        rowStack.addArrangedSubview(titleLabel)
+        rowStack.addArrangedSubview(valueTextField)
+        fieldWrapper.addSubview(rowStack)
+        rowStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
+            make.height.greaterThanOrEqualTo(44)
+        }
+        return fieldWrapper
+    }
+
+    private func makeImageRow() -> UIView {
+        let titleLabel = UILabel()
+        let title = "Product image".localized()
+        let attributedTitle = NSMutableAttributedString(
+            string: title,
+            attributes: [
+                .font: Utils.mediumFont(size: 16),
+                .foregroundColor: UIColor.textPrimary
+            ]
+        )
+        attributedTitle.append(NSAttributedString(
+            string: " *",
+            attributes: [
+                .font: Utils.mediumFont(size: 16),
+                .foregroundColor: UIColor.actionDanger
+            ]
+        ))
+        titleLabel.attributedText = attributedTitle
+        titleLabel.font = Utils.regularFont(size: 16)
+        titleLabel.textColor = .textPrimary
+        titleLabel.adjustsFontForContentSizeCategory = true
+
+        let wrapper = UIView()
+        wrapper.addSubview(titleLabel)
+        wrapper.addSubview(img)
+        wrapper.addSubview(imageErrorLabel)
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(16)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
+        }
+        img.snp.remakeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(12)
+            make.centerX.equalToSuperview()
+            make.width.height.equalTo(140)
+        }
+        imageErrorLabel.snp.makeConstraints { make in
+            make.top.equalTo(img.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+        return wrapper
+    }
+
+    private func makeSeparator() -> UIView {
+        let separator = UIView()
+        separator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
+        separator.snp.makeConstraints { make in
+            make.height.equalTo(0.5)
+        }
+        return separator
     }
     
     // MARK: - Custom Navigation Bar Setup
@@ -428,8 +642,10 @@ class NewProductViewController: BaseViewControler {
                 if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
                     rentField.textField.text = fixedOpt.price.formatStringInCommon()
                 }
-                if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
-                    dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
+                for definition in additionalPricingFields {
+                    if let option = options.first(where: { $0.type.uppercased() == definition.type }) {
+                        definition.field.textField.text = option.price.formatStringInCommon()
+                    }
                 }
             }
 
@@ -449,6 +665,8 @@ class NewProductViewController: BaseViewControler {
             
             barcodeField.textField.text = generatedBarcode()
         }
+
+        syncExpandedSectionsWithData()
     }
     
     // MARK: - Validation
@@ -505,6 +723,7 @@ class NewProductViewController: BaseViewControler {
     }
     
     private func validateInputs() -> Bool {
+        let isImageValid = validateImage()
         let isNameValid = validateField(nameField, value: nameField.textField.text)
         let isBarcodeValid = validateField(barcodeField, value: barcodeField.textField.text)
         let isQuantityValid = validateField(quantityField, value: quantityField.textField.text)
@@ -514,10 +733,17 @@ class NewProductViewController: BaseViewControler {
         let isSaleValid = validateField(saleField, value: saleField.textField.text)
         let isDepositValid = validateField(depositField, value: depositField.textField.text)
         
-        // Image is now optional - no validation required
-        // Users can create products without images
-        
-        return isNameValid && isBarcodeValid && isQuantityValid && isCostPriceValid && isRentValid && isDailyPriceValid && isSaleValid && isDepositValid
+        return isImageValid && isNameValid && isBarcodeValid && isQuantityValid && isCostPriceValid && isRentValid && isDailyPriceValid && isSaleValid && isDepositValid
+    }
+
+    private func validateImage() -> Bool {
+        let hasExistingImage = !(product?.image_url ?? "").isEmpty
+        let isValid = selectedImage != nil || img.image != nil || hasExistingImage
+        imageErrorLabel.text = isValid ? nil : "Product image is required".localized()
+        imageErrorLabel.isHidden = isValid
+        img.layer.borderWidth = isValid ? 0 : 1
+        img.layer.borderColor = isValid ? UIColor.clear.cgColor : UIColor.actionDanger.cgColor
+        return isValid
     }
     
     // MARK: - Public Methods
@@ -553,8 +779,10 @@ class NewProductViewController: BaseViewControler {
             if let fixedOpt = options.first(where: { $0.type.uppercased() == "FIXED" }) {
                 rentField.textField.text = fixedOpt.price.formatStringInCommon()
             }
-            if let dailyOpt = options.first(where: { $0.type.uppercased() == "DAILY" }) {
-                dailyPriceField.textField.text = dailyOpt.price.formatStringInCommon()
+            for definition in additionalPricingFields {
+                if let option = options.first(where: { $0.type.uppercased() == definition.type }) {
+                    definition.field.textField.text = option.price.formatStringInCommon()
+                }
             }
         }
 
@@ -566,8 +794,10 @@ class NewProductViewController: BaseViewControler {
                                   .transition(.fade(0.1))]) { [weak self] result in
                 // Hide camera icon when image is loaded
                 self?.img.subviews.first?.isHidden = true
-            }
+                          }
         }
+
+        syncExpandedSectionsWithData()
     }
     
     // Method to set the product image from an external source (like MainViewController)
@@ -583,19 +813,97 @@ class NewProductViewController: BaseViewControler {
     /// Per-rental is always the default. Per-day is added only when provided.
     private func buildPricingOptions() -> [PricingOptionRequest] {
         let rentVal = Double((rentField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
-        let dailyVal = Double((dailyPriceField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
 
         var options: [PricingOptionRequest] = []
         if rentVal > 0 {
             options.append(PricingOptionRequest(type: "FIXED", price: rentVal, isDefault: true))
         }
-        if dailyVal > 0 {
-            options.append(PricingOptionRequest(type: "DAILY", price: dailyVal, isDefault: false))
+
+        for definition in additionalPricingFields {
+            let price = Double((definition.field.textField.text ?? "").formatStringRemoveCommon()) ?? 0
+            if price > 0 {
+                options.append(PricingOptionRequest(
+                    type: definition.type,
+                    price: price,
+                    isDefault: false
+                ))
+            }
         }
         return options
     }
 
     // MARK: - Actions
+
+    @objc private func toggleAdditionalPricing() {
+        setAdditionalPricingExpanded(!isAdditionalPricingExpanded, animated: true)
+    }
+
+    @objc private func toggleOptionalDetails() {
+        setOptionalDetailsExpanded(!isOptionalDetailsExpanded, animated: true)
+    }
+
+    private func setAdditionalPricingExpanded(_ expanded: Bool, animated: Bool) {
+        isAdditionalPricingExpanded = expanded
+        additionalPricingContainer?.isHidden = !expanded
+        updateDisclosure(
+            chevron: additionalPricingChevron,
+            expanded: expanded,
+            accessibilityContainer: additionalPricingContainer
+        )
+        animateDisclosureChange(animated)
+    }
+
+    private func setOptionalDetailsExpanded(_ expanded: Bool, animated: Bool) {
+        isOptionalDetailsExpanded = expanded
+        optionalDetailsContainer?.isHidden = !expanded
+        updateDisclosure(
+            chevron: optionalDetailsChevron,
+            expanded: expanded,
+            accessibilityContainer: optionalDetailsContainer
+        )
+        animateDisclosureChange(animated)
+    }
+
+    private func updateDisclosure(
+        chevron: UIImageView,
+        expanded: Bool,
+        accessibilityContainer: UIView?
+    ) {
+        chevron.image = UIImage(systemName: expanded ? "chevron.up" : "chevron.down")
+        accessibilityContainer?.accessibilityElementsHidden = !expanded
+    }
+
+    private func animateDisclosureChange(_ animated: Bool) {
+        guard animated else {
+            view.layoutIfNeeded()
+            return
+        }
+
+        UIView.animate(
+            withDuration: 0.22,
+            delay: 0,
+            options: [.curveEaseInOut, .beginFromCurrentState]
+        ) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    private func syncExpandedSectionsWithData() {
+        let hasAdditionalPricing = additionalPricingFields.contains {
+            !($0.field.textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        let hasOptionalDetails = [
+            saleField.textField.text,
+            costPriceField.textField.text,
+            depositField.textField.text
+        ].contains {
+            !($0 ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        setAdditionalPricingExpanded(hasAdditionalPricing, animated: false)
+        setOptionalDetailsExpanded(hasOptionalDetails, animated: false)
+    }
+
     @objc private func addImage() {
         // Check if the device has a camera
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -657,7 +965,7 @@ class NewProductViewController: BaseViewControler {
         let sale = saleField.textField.text ?? ""
         let deposit = depositField.textField.text ?? ""
         
-        // Image is now optional - check if user has selected an image
+        // Image is required and has already been validated above.
         let productImage = img.image
         
         if let product = product {
@@ -845,13 +1153,23 @@ extension NewProductViewController: UITextFieldDelegate {
         case nameField.textField:
             barcodeField.textField.becomeFirstResponder()
         case barcodeField.textField:
-            rentField.textField.becomeFirstResponder()
-        case rentField.textField:
-            dailyPriceField.textField.becomeFirstResponder()
-        case dailyPriceField.textField:
             quantityField.textField.becomeFirstResponder()
         case quantityField.textField:
-            saleField.textField.becomeFirstResponder()
+            rentField.textField.becomeFirstResponder()
+        case rentField.textField:
+            if isAdditionalPricingExpanded {
+                dailyPriceField.textField.becomeFirstResponder()
+            } else if isOptionalDetailsExpanded {
+                saleField.textField.becomeFirstResponder()
+            } else {
+                textField.resignFirstResponder()
+            }
+        case dailyPriceField.textField:
+            if isOptionalDetailsExpanded {
+                saleField.textField.becomeFirstResponder()
+            } else {
+                textField.resignFirstResponder()
+            }
         case saleField.textField:
             costPriceField.textField.becomeFirstResponder()
         case costPriceField.textField:
@@ -880,6 +1198,8 @@ extension NewProductViewController: UIImagePickerControllerDelegate, UINavigatio
             
             // Hide camera icon when image is set
             img.subviews.first?.isHidden = true
+            imageErrorLabel.isHidden = true
+            img.layer.borderWidth = 0
         }
         
         // Dismiss the picker

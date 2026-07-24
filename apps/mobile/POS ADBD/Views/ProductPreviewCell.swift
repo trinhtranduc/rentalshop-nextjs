@@ -63,7 +63,7 @@ class ProductPreviewCell: UITableViewCell {
     
     private lazy var nameLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
+        label.font = .bodyRegular(size: 16)
         label.textColor = .black
         label.numberOfLines = 0 // Allow multiple lines for product name as well
         return label
@@ -73,6 +73,9 @@ class ProductPreviewCell: UITableViewCell {
         let label = UILabel()
         label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
         label.textColor = .darkGray
+        label.numberOfLines = 2
+        label.lineBreakMode = .byWordWrapping
+        label.adjustsFontSizeToFitWidth = false
         return label
     }()
     
@@ -153,7 +156,7 @@ class ProductPreviewCell: UITableViewCell {
     private lazy var priceInfoStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.alignment = .center
+        stackView.alignment = .top
         stackView.distribution = .equalSpacing
         return stackView
     }()
@@ -212,7 +215,7 @@ class ProductPreviewCell: UITableViewCell {
         nameLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         
         quantityPriceLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        quantityPriceLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        quantityPriceLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
         totalLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         totalLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -227,10 +230,13 @@ class ProductPreviewCell: UITableViewCell {
         
         nameLabel.text = cartItem.productName
         
-        // Format the quantity and price on the left
-        let quantity = cartItem.quantity.inString()
-        let price = cartItem.price.formatStringInCommon()
-        quantityPriceLabel.text = "\(quantity) × \(price)"
+        quantityPriceLabel.text = pricingCalculationText(
+            quantity: cartItem.quantity,
+            unitPrice: cartItem.price,
+            pricingType: cartItem.pricingType,
+            rentalDays: cartItem.rentalDays,
+            orderType: orderType
+        )
         
         // Display total on the right
         totalLabel.text = "= \(cartItem.subTotal.formatStringInCommon())"
@@ -267,10 +273,13 @@ class ProductPreviewCell: UITableViewCell {
         
         nameLabel.text = orderItem.productName
         
-        // Format the quantity and price on the left
-        let quantity = orderItem.quantity.inString()
-        let price = orderItem.unitPrice.formatStringInCommon()
-        quantityPriceLabel.text = "\(quantity) × \(price)"
+        quantityPriceLabel.text = pricingCalculationText(
+            quantity: orderItem.quantity,
+            unitPrice: orderItem.unitPrice,
+            pricingType: orderItem.pricingType,
+            rentalDays: orderItem.rentalDays,
+            orderType: orderType
+        )
         
         // Display total on the right
         totalLabel.text = "= \(orderItem.totalPrice.formatStringInCommon())"
@@ -298,6 +307,25 @@ class ProductPreviewCell: UITableViewCell {
         }
         
         availabilityIndicator.isHidden = true
+    }
+
+    private func pricingCalculationText(
+        quantity: Int,
+        unitPrice: Double,
+        pricingType: String?,
+        rentalDays: Int?,
+        orderType: OrderType
+    ) -> String {
+        let base = "\(quantity.inString()) × \(unitPrice.formatStringInCommon())"
+        guard orderType == .rent else { return base }
+
+        if pricingType?.uppercased() == "DAILY" {
+            let days = max(1, rentalDays ?? 1)
+            return "\(base) \("/rental day".localized()) × \(days.inString()) \("day".localized())"
+        }
+
+        // Orders created before pricing snapshots existed are fixed-price rentals.
+        return "\(base) \("/rental".localized())"
     }
     
     // Legacy bind method removed - use bind(cartItem:) or bind(orderItem:) instead

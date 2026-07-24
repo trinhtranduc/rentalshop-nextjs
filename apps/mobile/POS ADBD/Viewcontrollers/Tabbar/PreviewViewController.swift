@@ -459,6 +459,7 @@ class PreviewViewController: BaseViewControler {
     init(viewModel: PreviewViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+        self.hidesBottomBarWhenPushed = true
     }
     
     // Convenience initializers
@@ -487,9 +488,6 @@ class PreviewViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .backgroundPrimary  // Match AccountViewController
-        
-        // Ensure tabbar is hidden
-        self.hidesBottomBarWhenPushed = true
         
         // Add views to the main view first
         view.addSubview(previewTableView)
@@ -531,8 +529,6 @@ class PreviewViewController: BaseViewControler {
         // Update summary with calculations
         updateSummaryValues()
         
-        // Ensure tabbar is hidden
-        self.tabBarController?.tabBar.isHidden = true
     }
     
     // MARK: - Pull to Refresh
@@ -561,12 +557,6 @@ class PreviewViewController: BaseViewControler {
                 }
             }
         }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        // Show tabbar when leaving
-        self.tabBarController?.tabBar.isHidden = false
     }
     
     // MARK: - Helper Methods
@@ -2142,7 +2132,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 0 && indexPath.row != 1 {
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14 (same as AccountViewController)
                 config.secondaryTextProperties.color = .secondaryLabel // Value color: secondaryLabel (same as AccountViewController)
@@ -2216,7 +2206,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 4 { // Don't override deposit row styling
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14)
                 config.secondaryTextProperties.color = .secondaryLabel
@@ -2262,7 +2252,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             
             // Apply highlight based on row and editability
             switch indexPath.row {
@@ -2326,7 +2316,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
 
-            config.textProperties.font = Utils.regularFont(size: 16)
+            config.textProperties.font = .bodyRegular(size: 16)
             config.secondaryTextProperties.font = Utils.boldFont(size: 16)
             cell.contentConfiguration = config
             return cell
@@ -2385,7 +2375,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 config.secondaryText = row.value
                 
                 // All summary values should be bold and highlighted
-                config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular
+                config.textProperties.font = .bodyRegular(size: 16)
                 
                 // Check if this is deposit row and if it's editable
                 let isDepositRow = viewModel.shouldShowDepositInfo && indexPath.row == 3

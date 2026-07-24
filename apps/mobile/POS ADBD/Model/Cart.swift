@@ -148,7 +148,7 @@ class Cart {
         
         // Save custom price based on current order type
         if orderType == .rent {
-            items[index].customRentPrice = price
+            items[index].setCustomRentalPrice(price)
         } else {
             items[index].customSalePrice = price
         }
@@ -209,6 +209,13 @@ class Cart {
     func selectPricingOption(at index: Int, optionId: Int) {
         guard index >= 0 && index < items.count else { return }
         items[index].selectPricingOption(optionId)
+    }
+
+    /// Select FIXED or DAILY even when the product has no configured option
+    /// for that mode. Missing prices intentionally resolve to zero.
+    func selectPricingType(at index: Int, type: String) {
+        guard index >= 0 && index < items.count else { return }
+        items[index].selectPricingType(type)
     }
 
     /// Auto-update rental days for all DAILY items based on pickup/return dates
@@ -296,7 +303,7 @@ class Cart {
             let unitPrice = orderItem.unitPrice
             let customRentPrice = cart.orderType == .rent ? unitPrice : nil
             let customSalePrice = cart.orderType == .sale ? unitPrice : nil
-            return CartItem(
+            var cartItem = CartItem(
                 productId: orderItem.productId ?? 0,
                 productName: orderItem.productName,
                 barcode: orderItem.productBarcode,
@@ -310,6 +317,10 @@ class Cart {
                 customRentPrice: customRentPrice,
                 customSalePrice: customSalePrice
             )
+            cartItem.pricingType = orderItem.pricingType ?? "FIXED"
+            cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
+            cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            return cartItem
         }
         
         return cart
@@ -420,7 +431,10 @@ class Cart {
                     productBarcode: cartItem.barcode,
                     productImages: cartItem.imageUrl != nil ? [cartItem.imageUrl!] : nil,
                     productRentPrice: nil,
-                    productDeposit: cartItem.deposit
+                    productDeposit: cartItem.deposit,
+                    rentalDays: cartItem.rentalDays,
+                    pricingType: cartItem.pricingType ?? "FIXED",
+                    pricingOptionId: cartItem.selectedPricingOptionId
                 )
             },
             payments: []
@@ -477,7 +491,7 @@ class Cart {
             let unitPrice = orderItem.unitPrice
             let customRentPrice = cart.orderType == .rent ? unitPrice : nil
             let customSalePrice = cart.orderType == .sale ? unitPrice : nil
-            return CartItem(
+            var cartItem = CartItem(
                 productId: orderItem.productId ?? 0,
                 productName: orderItem.productName,
                 barcode: orderItem.productBarcode,
@@ -491,6 +505,10 @@ class Cart {
                 customRentPrice: customRentPrice,
                 customSalePrice: customSalePrice
             )
+            cartItem.pricingType = orderItem.pricingType ?? "FIXED"
+            cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
+            cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            return cartItem
         }
         
         return cart
@@ -667,6 +685,7 @@ class Cart {
                 notes: finalNote,
                 rentalDays: item.isDailyPricing ? item.rentalDays : calculateRentalDays(),
                 imageUrl: item.imageUrl,
+                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
                 pricingOptionId: item.selectedPricingOptionId
             )
         }
@@ -749,6 +768,7 @@ class Cart {
                 deposit: item.deposit,
                 notes: finalNote,
                 rentDays: item.isDailyPricing ? item.rentalDays : nil,
+                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
                 pricingOptionId: item.selectedPricingOptionId
             )
         }
@@ -1048,5 +1068,6 @@ struct CreateOrderItem: Codable {
     let deposit: Double?
     let notes: String?
     let rentDays: Int?
+    let pricingType: String?
     let pricingOptionId: Int?
 }

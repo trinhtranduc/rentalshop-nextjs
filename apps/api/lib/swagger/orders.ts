@@ -610,7 +610,13 @@ export const orderSwaggerConfig = {
                 totalPrice: { type: 'number' },
                 deposit: { type: 'number' },
                 notes: { type: 'string', nullable: true },
-                rentalDays: { type: 'number', nullable: true }
+                rentalDays: { type: 'number', nullable: true },
+                pricingType: {
+                  type: 'string',
+                  enum: ['FIXED', 'HOURLY', 'DAILY'],
+                  nullable: true
+                },
+                pricingOptionId: { type: 'number', nullable: true }
               }
             }
           }

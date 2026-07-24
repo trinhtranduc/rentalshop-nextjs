@@ -121,10 +121,12 @@ class MainViewController: BaseViewControler {
     
     private lazy var trashButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
-        button.setImage(trashImage, for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        let clearImage = UIImage(systemName: "broom.fill", withConfiguration: config)
+            ?? UIImage(systemName: "paintbrush.fill", withConfiguration: config)
+        button.setImage(clearImage, for: .normal)
         button.tintColor = .black
+        button.accessibilityLabel = "Clear Cart".localized()
         button.addTarget(self, action: #selector(trashButtonTapped), for: .touchUpInside)
         return button
     }()
@@ -496,6 +498,9 @@ class MainViewController: BaseViewControler {
     
     private func setupInfoViewController() {
         infoViewController = InfoMainViewController()
+        // Cart is a pushed workflow on iPhone and must keep the tab bar hidden,
+        // including when returning from Order Detail.
+        infoViewController?.hidesBottomBarWhenPushed = true
         
         if UIDevice.current.userInterfaceIdiom == .pad {
             if let infoVC = infoViewController {
