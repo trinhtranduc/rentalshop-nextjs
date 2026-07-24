@@ -919,7 +919,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           totalPrice: item.totalPrice,
           deposit: item.deposit,
           notes: item.notes,
-          rentalDays: item.rentalDays
+          rentalDays: item.rentalDays,
+          pricingType: item.pricingType,
+          pricingOptionId: item.pricingOptionId
         };
       }) || [],
       // Calculated fields
