@@ -11,6 +11,173 @@ import UIKit
 import SnapKit
 import Kingfisher
 
+private final class ExpandedTouchButton: UIButton {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard !isHidden, alpha > 0.01, isUserInteractionEnabled else { return false }
+        let horizontalExpansion = max(0, (44 - bounds.width) / 2)
+        let verticalExpansion = max(0, (44 - bounds.height) / 2)
+        return bounds.insetBy(dx: -horizontalExpansion, dy: -verticalExpansion).contains(point)
+    }
+}
+
+private struct PricingMethodSheetOption {
+    let type: String
+    let title: String
+    let price: String
+    let isSelected: Bool
+}
+
+private final class PricingMethodSheetViewController: UIViewController {
+    var onSelect: ((String) -> Void)?
+    var onEditPrice: (() -> Void)?
+
+    private let options: [PricingMethodSheetOption]
+    private let editTitle: String
+
+    init(options: [PricingMethodSheetOption], editTitle: String) {
+        self.options = options
+        self.editTitle = editTitle
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .pageSheet
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Price and pricing method".localized()
+        titleLabel.font = Utils.mediumFont(size: 20)
+        titleLabel.textColor = .textPrimary
+        titleLabel.adjustsFontForContentSizeCategory = true
+
+        let closeButton = UIButton(type: .system)
+        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeButton.tintColor = .textSecondary
+        closeButton.accessibilityLabel = "Close".localized()
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        closeButton.snp.makeConstraints { make in
+            make.width.height.equalTo(44)
+        }
+
+        let headerSpacer = UIView()
+        let header = UIStackView(arrangedSubviews: [titleLabel, headerSpacer, closeButton])
+        header.axis = .horizontal
+        header.alignment = .center
+
+        let optionStack = UIStackView()
+        optionStack.axis = .vertical
+        optionStack.spacing = 4
+
+        for (index, option) in options.enumerated() {
+            optionStack.addArrangedSubview(makeOptionButton(option, index: index))
+        }
+
+        let editButton = UIButton(type: .system)
+        var editConfiguration = UIButton.Configuration.tinted()
+        editConfiguration.title = editTitle
+        editConfiguration.image = UIImage(systemName: "square.and.pencil")
+        editConfiguration.imagePlacement = .leading
+        editConfiguration.imagePadding = 8
+        editConfiguration.cornerStyle = .medium
+        editConfiguration.baseForegroundColor = APP_TONE_COLOR
+        editConfiguration.baseBackgroundColor = APP_TONE_COLOR
+        editConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.mediumFont(size: 16)
+            return outgoing
+        }
+        editButton.configuration = editConfiguration
+        editButton.addTarget(self, action: #selector(editPriceTapped), for: .touchUpInside)
+        editButton.snp.makeConstraints { make in
+            make.height.equalTo(48)
+        }
+
+        let contentStack = UIStackView(arrangedSubviews: [
+            header,
+            optionStack,
+            editButton
+        ])
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+
+        view.addSubview(contentStack)
+        contentStack.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(12)
+        }
+    }
+
+    private func makeOptionButton(
+        _ option: PricingMethodSheetOption,
+        index: Int
+    ) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+
+        var priceTitle = AttributedString(option.price)
+        priceTitle.font = Utils.mediumFont(size: 18)
+        priceTitle.foregroundColor = option.isSelected
+            ? APP_TONE_COLOR
+            : UIColor.textPrimary
+
+        var pricingMethodTitle = AttributedString(" / \(option.title)")
+        pricingMethodTitle.font = Utils.regularFont(size: 14)
+        pricingMethodTitle.foregroundColor = UIColor.textSecondary
+        priceTitle.append(pricingMethodTitle)
+
+        configuration.attributedTitle = priceTitle
+        configuration.titleAlignment = .leading
+        configuration.image = option.isSelected
+            ? UIImage(systemName: "checkmark.circle.fill")
+            : UIImage(systemName: "circle")
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 12
+        configuration.baseForegroundColor = option.isSelected ? APP_TONE_COLOR : .textPrimary
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: 8,
+            leading: 4,
+            bottom: 8,
+            trailing: 4
+        )
+        button.configuration = configuration
+        button.tag = index
+        button.contentHorizontalAlignment = .fill
+        button.accessibilityLabel = option.title
+        button.accessibilityTraits = option.isSelected
+            ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected
+            : UIAccessibilityTraitButton
+        button.accessibilityValue = option.price
+        button.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(52)
+        }
+        return button
+    }
+
+    @objc private func optionTapped(_ sender: UIButton) {
+        guard options.indices.contains(sender.tag) else { return }
+        onSelect?(options[sender.tag].type)
+    }
+
+    @objc private func editPriceTapped() {
+        onEditPrice?()
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
+}
+
 protocol ProductSelectedCellDelegate: AnyObject {
     func didEndEditing(value: Double, isQuantity: Bool, at index: Int)
     func didUpdateNote(_ note: String?, at index: Int)
@@ -18,12 +185,14 @@ protocol ProductSelectedCellDelegate: AnyObject {
     func didTapStatus(at index: Int)
     func didUpdateRentalDays(_ days: Int, at index: Int)
     func didSelectPricingOption(optionId: Int, at index: Int)
+    func didSelectPricingType(_ type: String, at index: Int)
 }
 
 // Default implementation so existing conformers don't break
 extension ProductSelectedCellDelegate {
     func didUpdateRentalDays(_ days: Int, at index: Int) {}
     func didSelectPricingOption(optionId: Int, at index: Int) {}
+    func didSelectPricingType(_ type: String, at index: Int) {}
 }
 
 /// Layout style for cart item cell
@@ -49,8 +218,16 @@ class ProductSelectedCell: UITableViewCell {
 
     private var price: Double = 0 {
         didSet {
-            priceButton.setTitleWithOutAnimation(title: price.formatStringInCommon())
-            compactPriceButton.setTitleWithOutAnimation(title: price.formatStringInCommon())
+            if currentOrderType == .rent {
+                if currentPricingType.uppercased() == "DAILY" {
+                    dailyRatePrice = price
+                } else {
+                    fixedRatePrice = price
+                }
+            } else {
+                fixedRatePrice = price
+            }
+            updatePriceControl()
             updateSubtotal()
         }
     }
@@ -79,53 +256,70 @@ class ProductSelectedCell: UITableViewCell {
     }
     
     // MARK: - UI Components
+    private lazy var cardView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        view.layer.cornerRadius = 8
+        view.layer.borderWidth = 0.5
+        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.4).cgColor
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.035
+        view.layer.shadowRadius = 8
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layoutMargins = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        return view
+    }()
+
     private lazy var containerStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
             topStackView,
             controlsStackView,
-            pricingOptionContainer,
+            priceSummaryView,
             rentalDaysContainer,
+            noteActionButton,
             noteTextField
         ])
         stack.axis = .vertical
-        stack.spacing = 16
+        stack.spacing = 6
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
     
     private lazy var topStackView: UIStackView = {
-        // Container for product name and status
-        let container = UIView()
-        
-        // Add subviews
-        container.addSubview(productNameLabel)
-        container.addSubview(statusView)
-        
-        // Setup constraints using SnapKit
-        productNameLabel.snp.makeConstraints { make in
-            make.top.leading.bottom.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(statusView.snp.leading).offset(-8)
+        let titleRow = UIStackView(arrangedSubviews: [productNameLabel, statusView])
+        titleRow.axis = .horizontal
+        titleRow.spacing = 8
+        titleRow.alignment = .top
+        productNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        statusView.setContentHuggingPriority(.required, for: .horizontal)
+
+        let infoStack = UIStackView(arrangedSubviews: [
+            titleRow,
+            productCodeLabel
+        ])
+        infoStack.axis = .vertical
+        infoStack.spacing = 4
+        infoStack.alignment = .fill
+
+        let stack = UIStackView(arrangedSubviews: [productImageView, infoStack])
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .top
+
+        productImageView.snp.makeConstraints { make in
+            make.width.height.equalTo(44)
         }
-        
-        statusView.snp.makeConstraints { make in
-            make.centerY.equalTo(container.snp.top).offset(10)
-            make.trailing.equalToSuperview()
-        }
-        
-        // Create stack view with container
-        let stack = UIStackView(arrangedSubviews: [container])
-        stack.axis = .vertical
-        stack.spacing = 4
-        stack.alignment = .fill
         return stack
     }()
     
     private lazy var controlsStackView: UIStackView = {
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
         let stack = UIStackView(arrangedSubviews: [
             quantityControlView,
-            priceButton,
-            equalLabel,
-            subtotalLabel
+            spacer,
+            rateSelectorButton
         ])
         stack.axis = .horizontal
         stack.spacing = 8
@@ -133,19 +327,130 @@ class ProductSelectedCell: UITableViewCell {
         stack.distribution = .fill
         
         quantityControlView.setContentHuggingPriority(.required, for: .horizontal)
-        priceButton.setContentHuggingPriority(.required, for: .horizontal)
-        equalLabel.setContentHuggingPriority(.required, for: .horizontal)
-        subtotalLabel.setContentHuggingPriority(.required, for: .horizontal)
+        rateSelectorButton.setContentHuggingPriority(.required, for: .horizontal)
         
         return stack
+    }()
+
+    private lazy var rateSelectorButton: UIButton = {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+        configuration.titleAlignment = .trailing
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 4
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: 8,
+            leading: 12,
+            bottom: 8,
+            trailing: 0
+        )
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .right
+        button.backgroundColor = .clear
+        button.layer.borderWidth = 0
+        button.addTarget(self, action: #selector(rateSelectorTapped), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.height.equalTo(44)
+            make.width.greaterThanOrEqualTo(132)
+        }
+        return button
+    }()
+
+    private lazy var priceSummaryView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+
+        let divider = UIView()
+        divider.backgroundColor = UIColor.borderColor.withAlphaComponent(0.35)
+
+        let unitPriceStack = UIStackView(arrangedSubviews: [
+            unitPriceCaptionLabel,
+            unitPriceButton
+        ])
+        unitPriceStack.axis = .vertical
+        unitPriceStack.spacing = 0
+        unitPriceStack.alignment = .leading
+
+        let subtotalStack = UIStackView(arrangedSubviews: [
+            subtotalCaptionLabel,
+            subtotalLabel
+        ])
+        subtotalStack.axis = .vertical
+        subtotalStack.spacing = 1
+        subtotalStack.alignment = .trailing
+
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let row = UIStackView(arrangedSubviews: [
+            unitPriceStack,
+            spacer,
+            subtotalStack
+        ])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+
+        unitPriceStack.setContentHuggingPriority(.required, for: .horizontal)
+        subtotalStack.setContentHuggingPriority(.required, for: .horizontal)
+        view.addSubview(divider)
+        view.addSubview(row)
+        divider.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(0.5)
+        }
+        row.snp.makeConstraints { make in
+            make.top.equalTo(divider.snp.bottom).offset(4)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().inset(4)
+        }
+        view.snp.makeConstraints { make in
+            make.height.equalTo(52)
+        }
+        return view
+    }()
+
+    private lazy var unitPriceCaptionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Unit price".localized()
+        label.font = Utils.regularFont(size: 11)
+        label.textColor = .textSecondary
+        label.adjustsFontForContentSizeCategory = true
+        return label
+    }()
+
+    private lazy var unitPriceButton: UIButton = {
+        let button = ExpandedTouchButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+        configuration.titleAlignment = .leading
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 5
+        configuration.contentInsets = .zero
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .leading
+        button.addTarget(self, action: #selector(priceTapped), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.height.equalTo(30)
+        }
+        return button
     }()
     
     private lazy var productNameLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 17)
-        label.textColor = .black
-        label.numberOfLines = 0
+        label.font = Utils.mediumFont(size: 16)
+        label.textColor = .textPrimary
+        label.numberOfLines = 2
+        label.adjustsFontForContentSizeCategory = true
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
+    }()
+
+    private lazy var productCodeLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .textSecondary
+        label.numberOfLines = 1
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
     
@@ -156,47 +461,35 @@ class ProductSelectedCell: UITableViewCell {
         imageView.layer.cornerRadius = 8
         imageView.backgroundColor = UIColor.systemGray6
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isAccessibilityElement = true
         return imageView
     }()
-    
-    private lazy var multiplyLabel: UILabel = {
-        let label = UILabel()
-        label.text = "×"
-        label.font = Utils.boldFont(size: 15)
-        label.textColor = .gray
-        label.textAlignment = .center
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-    
-    private lazy var equalLabel: UILabel = {
-        let label = UILabel()
-        label.text = "="
-        label.font = Utils.boldFont(size: 15)
-        label.textColor = .gray
-        label.textAlignment = .center
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-    
+
     private lazy var subtotalLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.boldFont(size: 16)
-        label.textColor = .black
+        label.font = Utils.boldFont(size: 17)
+        label.textColor = .textPrimary
         label.textAlignment = .right
+        label.adjustsFontForContentSizeCategory = true
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        
-        // Use SnapKit for constraints
-        label.snp.makeConstraints { make in
-            make.width.equalTo(100)
-        }
-        
         return label
     }()
-    
+
+    private lazy var subtotalCaptionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Subtotal".localized()
+        label.font = Utils.regularFont(size: 12)
+        label.textColor = .textSecondary
+        label.textAlignment = .right
+        label.adjustsFontForContentSizeCategory = true
+        return label
+    }()
+
     private lazy var quantityControlView: UIView = {
         let view = UIView()
+        view.backgroundColor = .clear
+        view.layer.borderWidth = 0
         
         let decreaseButton = createQuantityButton(title: "-", action: #selector(decreaseTapped))
         let increaseButton = createQuantityButton(title: "+", action: #selector(increaseTapped))
@@ -211,22 +504,22 @@ class ProductSelectedCell: UITableViewCell {
         decreaseButton.snp.makeConstraints { make in
             make.leading.equalToSuperview()
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(32) // Square buttons for better appearance
+            make.width.height.equalTo(44)
         }
         
         quantityLabel.snp.makeConstraints { make in
             make.center.equalToSuperview()
-            make.width.equalTo(40)
+            make.width.equalTo(16)
         }
         
         increaseButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview()
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(32) // Square buttons for better appearance
+            make.width.height.equalTo(44)
         }
         
         view.snp.makeConstraints { make in
-            make.width.equalTo(120)
+            make.width.equalTo(104)
             make.height.equalTo(44)
         }
         
@@ -238,36 +531,15 @@ class ProductSelectedCell: UITableViewCell {
     private lazy var quantityLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 16)
+        label.textColor = APP_TONE_COLOR
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private lazy var priceButton: UIButton = {
-        let button = UIButton(type: .system)
-        var configuration = UIButton.Configuration.plain()
-        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
-        configuration.baseForegroundColor = .systemBlue
-        button.configuration = configuration
-        button.titleLabel?.font = Utils.mediumFont(size: 16)
-        button.addTarget(self, action: #selector(priceTapped), for: .touchUpInside)
-        
-        // Match the style of the quantity buttons
-//        button.backgroundColor = UIColor.systemGray6.withAlphaComponent(0.5)
-//        button.layer.cornerRadius = 8
-        
-        // Use SnapKit for constraints
-        button.snp.makeConstraints { make in
-            make.width.equalTo(120)
-            make.height.equalTo(44)
-        }
-        
-        return button
-    }()
-    
     // Update status view
     private lazy var statusView: UIButton = {
-        let button = UIButton(type: .system)
+        let button = ExpandedTouchButton(type: .system)
         
         // Configure button appearance using UIButtonConfiguration (iOS 15+)
         var config = UIButton.Configuration.plain()
@@ -276,7 +548,7 @@ class ProductSelectedCell: UITableViewCell {
             outgoing.font = Utils.regularFont(size: 11)
             return outgoing
         }
-        config.contentInsets = NSDirectionalEdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8)
+        config.contentInsets = NSDirectionalEdgeInsets(top: 3, leading: 0, bottom: 3, trailing: 0)
         config.imagePadding = 3
         config.imagePlacement = .leading
         
@@ -302,17 +574,44 @@ class ProductSelectedCell: UITableViewCell {
     // Keep track of current status
     private var currentStatus: BookingStatus = .available
     
-    // Add back noteTextField
+    private lazy var noteActionButton: UIButton = {
+        let button = ExpandedTouchButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = "Add note".localized()
+        configuration.image = UIImage(systemName: "plus")
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+            pointSize: 14,
+            weight: .regular
+        )
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 6
+        configuration.baseForegroundColor = .textSecondary
+        configuration.contentInsets = .zero
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.regularFont(size: 13)
+            return outgoing
+        }
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .leading
+        button.addTarget(self, action: #selector(showNoteEditor), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.height.equalTo(32)
+        }
+        return button
+    }()
+
     private lazy var noteTextField: RCTextFieldPadding = {
         let field = RCTextFieldPadding()
         field.placeholder = "Note".localized()
         field.font = Utils.regularFont(size: 15)
         field.delegate = self
         field.backgroundColor = .backgroundTertiary
-        field.layer.cornerRadius = 8
+        field.layer.cornerRadius = 10
         field.layer.borderWidth = 0
         field.returnKeyType = .done
         field.clearButtonMode = .whileEditing
+        field.isHidden = true
         
         // Use SnapKit for constraints
         field.snp.makeConstraints { make in
@@ -322,42 +621,24 @@ class ProductSelectedCell: UITableViewCell {
         return field
     }()
 
-    // MARK: - Rental Duration UI (for DAILY pricing items)
+    // MARK: - Order duration (read-only; dates are selected for the whole order)
     private lazy var rentalDaysContainer: UIView = {
         let view = UIView()
-        view.isHidden = true // Hidden by default, shown only for DAILY items
+        view.isHidden = true
+        view.backgroundColor = .clear
+        view.layer.cornerRadius = 0
         return view
     }()
 
     private lazy var rentalDaysLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 14)
-        label.textColor = .secondaryLabel
-        label.text = "Số ngày thuê:"
+        label.font = Utils.regularFont(size: 13)
+        label.textColor = .textSecondary
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 1
         return label
     }()
 
-    private lazy var rentalDaysValueLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.boldFont(size: 15)
-        label.textAlignment = .center
-        label.textColor = .systemBlue
-        label.text = "1"
-        return label
-    }()
-
-    private lazy var rentalDaysSuffixLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 14)
-        label.textColor = .secondaryLabel
-        label.text = "ngày"
-        return label
-    }()
-
-    private lazy var decreaseDaysButton: UIButton = createQuantityButton(title: "-", action: #selector(decreaseDaysTapped))
-    private lazy var increaseDaysButton: UIButton = createQuantityButton(title: "+", action: #selector(increaseDaysTapped))
-
-    // Compact layout rental days
     private lazy var compactRentalDaysContainer: UIView = {
         let view = UIView()
         view.isHidden = true
@@ -368,75 +649,24 @@ class ProductSelectedCell: UITableViewCell {
         let label = UILabel()
         label.font = Utils.regularFont(size: 12)
         label.textColor = .secondaryLabel
-        label.text = "Số ngày:"
+        label.numberOfLines = 1
         return label
     }()
 
-    private lazy var compactRentalDaysValueLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.boldFont(size: 13)
-        label.textAlignment = .center
-        label.textColor = .systemBlue
-        label.text = "1"
-        return label
-    }()
-
-    private lazy var compactRentalDaysSuffixLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 12)
-        label.textColor = .secondaryLabel
-        label.text = "ngày"
-        return label
-    }()
-
-    private lazy var compactDecreaseDaysButton: UIButton = {
-        let b = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
-        b.setImage(UIImage(systemName: "minus", withConfiguration: config), for: .normal)
-        b.tintColor = APP_TEXT_COLOR
-        b.addTarget(self, action: #selector(decreaseDaysTapped), for: .touchUpInside)
-        return b
-    }()
-
-    private lazy var compactIncreaseDaysButton: UIButton = {
-        let b = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
-        b.setImage(UIImage(systemName: "plus", withConfiguration: config), for: .normal)
-        b.tintColor = APP_TEXT_COLOR
-        b.addTarget(self, action: #selector(increaseDaysTapped), for: .touchUpInside)
-        return b
-    }()
-
+    private var hasCompleteOrderDates = false
     private var rentalDays: Int = 1 {
         didSet {
-            rentalDaysValueLabel.text = "\(rentalDays)"
-            compactRentalDaysValueLabel.text = "\(rentalDays)"
+            updateRentalDaysControl()
             updateSubtotal()
         }
     }
 
-    // MARK: - Pricing Option selector (multi-option items)
+    // MARK: - Pricing options
     private var currentOptions: [PricingOption] = []
-
-    private lazy var pricingOptionContainer: UIView = {
-        let view = UIView()
-        view.isHidden = true
-        return view
-    }()
-
-    private lazy var pricingOptionLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.regularFont(size: 14)
-        label.textColor = .secondaryLabel
-        label.text = "Loại giá:"
-        return label
-    }()
-
-    private lazy var pricingOptionSegment: UISegmentedControl = {
-        let seg = UISegmentedControl()
-        seg.addTarget(self, action: #selector(pricingOptionChanged), for: .valueChanged)
-        return seg
-    }()
+    private var currentPricingType = "FIXED"
+    private var currentOrderType: OrderType = .rent
+    private var fixedRatePrice: Double = 0
+    private var dailyRatePrice: Double = 0
 
     // MARK: - Compact layout
     private lazy var compactContainerView: UIView = {
@@ -463,7 +693,7 @@ class ProductSelectedCell: UITableViewCell {
     }()
 
     private lazy var compactStatusButton: UIButton = {
-        let b = UIButton(type: .system)
+        let b = ExpandedTouchButton(type: .system)
         var config = UIButton.Configuration.plain()
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { inc in
             var out = inc
@@ -486,7 +716,7 @@ class ProductSelectedCell: UITableViewCell {
         let l = UILabel()
         l.font = Utils.mediumFont(size: 14)
         l.textAlignment = .center
-        l.textColor = .label
+        l.textColor = APP_TONE_COLOR
         return l
     }()
 
@@ -515,7 +745,7 @@ class ProductSelectedCell: UITableViewCell {
         config.baseForegroundColor = .systemBlue
         b.configuration = config
         b.titleLabel?.font = Utils.mediumFont(size: 14)
-        b.addTarget(self, action: #selector(priceTapped), for: .touchUpInside)
+        b.addTarget(self, action: #selector(rateSelectorTapped), for: .touchUpInside)
         return b
     }()
 
@@ -557,52 +787,52 @@ class ProductSelectedCell: UITableViewCell {
         quantity = 0
         price = 0
         rentalDays = 1
+        hasCompleteOrderDates = false
         rentalDaysContainer.isHidden = true
         compactRentalDaysContainer.isHidden = true
-        pricingOptionContainer.isHidden = true
         currentOptions = []
+        currentPricingType = "FIXED"
+        currentOrderType = .rent
+        fixedRatePrice = 0
+        dailyRatePrice = 0
         noteTextField.text = nil
         compactNoteField.text = nil
+        updateNotePresentation(note: nil)
         currentStatus = .available
         setStatus(.available)
     }
     
     // MARK: - Setup
     private func setupUI() {
-        contentView.backgroundColor = .white
-        contentView.layer.cornerRadius = 12
-        contentView.layer.shadowColor = UIColor.black.cgColor
-        contentView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        contentView.layer.shadowRadius = 4
-        contentView.layer.shadowOpacity = 0.08
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
 
         let backgroundView = UIView()
-        backgroundView.backgroundColor = .white
-        backgroundView.layer.cornerRadius = 12
+        backgroundView.backgroundColor = .clear
         self.backgroundView = backgroundView
 
         let selectedBackgroundView = UIView()
-        selectedBackgroundView.backgroundColor = UIColor.systemGray6.withAlphaComponent(0.3)
-        selectedBackgroundView.layer.cornerRadius = 12
+        selectedBackgroundView.backgroundColor = APP_TONE_COLOR.withAlphaComponent(0.06)
         self.selectedBackgroundView = selectedBackgroundView
 
-        contentView.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-
-        contentView.addSubview(containerStackView)
-        containerStackView.snp.makeConstraints { make in
-            make.edges.equalTo(contentView.layoutMarginsGuide)
+        contentView.addSubview(cardView)
+        cardView.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(5)
+            make.leading.trailing.equalToSuperview().inset(12)
         }
 
-        // Setup rental days container (default layout)
+        cardView.addSubview(containerStackView)
+        containerStackView.snp.makeConstraints { make in
+            make.edges.equalTo(cardView.layoutMarginsGuide)
+        }
+
+        // Read-only duration from the order pickup/return dates.
         setupRentalDaysView()
 
-        // Setup pricing option selector (default layout)
-        setupPricingOptionView()
-
         // Compact layout: [Image] [Col: name+status, qty row, price=subtotal, note]
-        contentView.addSubview(compactContainerView)
+        cardView.addSubview(compactContainerView)
         compactContainerView.snp.makeConstraints { make in
-            make.edges.equalTo(contentView.layoutMarginsGuide)
+            make.edges.equalTo(cardView.layoutMarginsGuide)
         }
 
         let compactTopRow = UIStackView(arrangedSubviews: [compactNameLabel, compactStatusButton])
@@ -613,28 +843,33 @@ class ProductSelectedCell: UITableViewCell {
 
         let compactQtyStack = UIStackView(arrangedSubviews: [compactDecreaseButton, compactQuantityLabel, compactIncreaseButton])
         compactQtyStack.axis = .horizontal
-        compactQtyStack.spacing = 4
+        compactQtyStack.spacing = 0
         compactQtyStack.alignment = .center
-        compactDecreaseButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
-        compactIncreaseButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
-        compactQuantityLabel.snp.makeConstraints { make in make.width.equalTo(36) }
+        compactDecreaseButton.snp.makeConstraints { make in make.width.height.equalTo(44) }
+        compactIncreaseButton.snp.makeConstraints { make in make.width.height.equalTo(44) }
+        compactQuantityLabel.snp.makeConstraints { make in make.width.equalTo(28) }
 
-        let eqLabel = UILabel()
-        eqLabel.text = "="
-        eqLabel.font = Utils.boldFont(size: 12)
-        eqLabel.textColor = .gray
-        let compactPriceRow = UIStackView(arrangedSubviews: [compactQtyStack, compactPriceButton, eqLabel, compactSubtotalLabel])
-        compactPriceRow.axis = .horizontal
-        compactPriceRow.spacing = 6
-        compactPriceRow.alignment = .center
+        let compactSpacer = UIView()
+        compactSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let compactControlRow = UIStackView(arrangedSubviews: [compactQtyStack, compactSpacer, compactSubtotalLabel])
+        compactControlRow.axis = .horizontal
+        compactControlRow.spacing = 8
+        compactControlRow.alignment = .center
         compactSubtotalLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let compactCol = UIStackView(arrangedSubviews: [compactTopRow, compactPriceRow, compactRentalDaysContainer, compactNoteField])
+        compactPriceButton.snp.makeConstraints { make in make.height.equalTo(44) }
+        let compactCol = UIStackView(arrangedSubviews: [
+            compactTopRow,
+            compactPriceButton,
+            compactControlRow,
+            compactRentalDaysContainer,
+            compactNoteField
+        ])
         compactCol.axis = .vertical
         compactCol.spacing = 8
         compactCol.alignment = .fill
 
-        // Setup compact rental days container
+        // Compact layout uses the same read-only order duration.
         setupCompactRentalDaysView()
 
         compactContainerView.addSubview(compactImageView)
@@ -659,70 +894,39 @@ class ProductSelectedCell: UITableViewCell {
     }
 
     // MARK: - Rental Days View Setup
-    private func setupPricingOptionView() {
-        pricingOptionLabel.setContentHuggingPriority(.required, for: .horizontal)
-        let stack = UIStackView(arrangedSubviews: [pricingOptionLabel, pricingOptionSegment])
+    private func setupRentalDaysView() {
+        let iconView = UIImageView(image: UIImage(systemName: "calendar"))
+        iconView.tintColor = .textSecondary
+        iconView.contentMode = .scaleAspectFit
+        iconView.snp.makeConstraints { make in
+            make.width.height.equalTo(16)
+        }
+
+        let stack = UIStackView(arrangedSubviews: [iconView, rentalDaysLabel])
         stack.axis = .horizontal
         stack.spacing = 8
         stack.alignment = .center
-        pricingOptionContainer.addSubview(stack)
+
+        rentalDaysContainer.addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        pricingOptionContainer.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(32)
-        }
-    }
-
-    private func setupRentalDaysView() {
-        decreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
-        increaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(28) }
-        rentalDaysValueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(24) }
-
-        let daysDisplayStack = UIStackView(arrangedSubviews: [
-            decreaseDaysButton,
-            rentalDaysValueLabel,
-            increaseDaysButton,
-            rentalDaysSuffixLabel
-        ])
-        daysDisplayStack.axis = .horizontal
-        daysDisplayStack.spacing = 4
-        daysDisplayStack.alignment = .center
-
-        let rentalDaysSpacer = UIView()
-        rentalDaysSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let rentalDaysStack = UIStackView(arrangedSubviews: [rentalDaysLabel, rentalDaysSpacer, daysDisplayStack])
-        rentalDaysStack.axis = .horizontal
-        rentalDaysStack.spacing = 8
-        rentalDaysStack.alignment = .center
-
-        rentalDaysContainer.addSubview(rentalDaysStack)
-        rentalDaysStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.top.bottom.equalToSuperview()
         }
         rentalDaysContainer.snp.makeConstraints { make in
-            make.height.equalTo(36)
+            make.height.equalTo(32)
         }
+        updateRentalDaysControl()
     }
 
     private func setupCompactRentalDaysView() {
-        compactDecreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(24) }
-        compactIncreaseDaysButton.snp.makeConstraints { make in make.width.height.equalTo(24) }
-        compactRentalDaysValueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(20) }
+        let iconView = UIImageView(image: UIImage(systemName: "calendar"))
+        iconView.tintColor = .secondaryLabel
+        iconView.contentMode = .scaleAspectFit
+        iconView.snp.makeConstraints { make in
+            make.width.height.equalTo(14)
+        }
 
-        let compactDaysDisplayStack = UIStackView(arrangedSubviews: [
-            compactDecreaseDaysButton,
-            compactRentalDaysValueLabel,
-            compactIncreaseDaysButton,
-            compactRentalDaysSuffixLabel
-        ])
-        compactDaysDisplayStack.axis = .horizontal
-        compactDaysDisplayStack.spacing = 3
-        compactDaysDisplayStack.alignment = .center
-
-        let compactDaysSpacer = UIView()
-        compactDaysSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let compactDaysStack = UIStackView(arrangedSubviews: [compactRentalDaysLabel, compactDaysSpacer, compactDaysDisplayStack])
+        let compactDaysStack = UIStackView(arrangedSubviews: [iconView, compactRentalDaysLabel])
         compactDaysStack.axis = .horizontal
         compactDaysStack.spacing = 6
         compactDaysStack.alignment = .center
@@ -732,7 +936,7 @@ class ProductSelectedCell: UITableViewCell {
             make.edges.equalToSuperview()
         }
         compactRentalDaysContainer.snp.makeConstraints { make in
-            make.height.equalTo(28)
+            make.height.equalTo(24)
         }
     }
 
@@ -767,10 +971,30 @@ class ProductSelectedCell: UITableViewCell {
         
         button.setImage(image, for: .normal)
         button.tintColor = APP_TEXT_COLOR
+        button.accessibilityLabel = title == "+" ? "Increase".localized() : "Decrease".localized()
         
         button.addTarget(self, action: action, for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
+    }
+
+    private func updateRentalDaysControl() {
+        let text: String
+        if hasCompleteOrderDates {
+            text = String(format: "%d days from order dates".localized(), rentalDays)
+        } else {
+            text = "Select order dates to calculate".localized()
+        }
+        rentalDaysLabel.text = text
+        compactRentalDaysLabel.text = text
+        rentalDaysContainer.accessibilityLabel = text
+        compactRentalDaysContainer.accessibilityLabel = text
+    }
+
+    private func updateNotePresentation(note: String?) {
+        let hasNote = !(note?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        noteActionButton.isHidden = hasNote
+        noteTextField.isHidden = !hasNote
     }
     
     // MARK: - Public Methods
@@ -783,33 +1007,60 @@ class ProductSelectedCell: UITableViewCell {
     ///   - returnDate: Return date (optional)
     ///   - availabilityStatus: Availability status - nil means loading
     ///   - layout: Visual layout style (.default or .compact)
-    func configureCell(cartItem: CartItem, at index: Int, getDate: Date? = nil, returnDate: Date? = nil, availabilityStatus: AvailabilityStatus? = nil, layout: CartItemLayoutStyle = .default) {
+    func configureCell(
+        cartItem: CartItem,
+        at index: Int,
+        getDate: Date? = nil,
+        returnDate: Date? = nil,
+        availabilityStatus: AvailabilityStatus? = nil,
+        orderType: OrderType = .rent,
+        layout: CartItemLayoutStyle = .default
+    ) {
         self.cartItem = cartItem
         self.itemIndex = index
+        currentOrderType = orderType
         applyLayout(layout)
 
         productNameLabel.text = cartItem.productName
         compactNameLabel.text = cartItem.productName
+        let barcode = (cartItem.barcode ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        productCodeLabel.text = barcode.isEmpty ? nil : "#\(barcode)"
+        productCodeLabel.isHidden = barcode.isEmpty
+        productImageView.accessibilityLabel = cartItem.productName
+        compactImageView.accessibilityLabel = cartItem.productName
         quantity = cartItem.quantity
-        price = cartItem.price
+        hasCompleteOrderDates = getDate != nil && returnDate != nil
         rentalDays = cartItem.rentalDays
         noteTextField.text = cartItem.note
         compactNoteField.text = cartItem.note
+        updateNotePresentation(note: cartItem.note)
 
-        // Pricing option selector (multi-option products)
-        currentOptions = cartItem.pricingOptions ?? []
-        let showOptions = currentOptions.count > 1
-        pricingOptionContainer.isHidden = !showOptions
-        if showOptions {
-            pricingOptionSegment.removeAllSegments()
-            for (i, opt) in currentOptions.enumerated() {
-                pricingOptionSegment.insertSegment(withTitle: opt.isDailyType ? "Theo ngày" : "Theo lần", at: i, animated: false)
-            }
-            let selectedIdx = currentOptions.firstIndex(where: { $0.id == cartItem.selectedPricingOptionId }) ?? 0
-            pricingOptionSegment.selectedSegmentIndex = selectedIdx
+        // Keep both supported rental rates available behind the single,
+        // compact price control.
+        currentOptions = orderType == .rent ? (cartItem.pricingOptions ?? []) : []
+        if let selectedOptionId = cartItem.selectedPricingOptionId,
+           let selectedOption = currentOptions.first(where: { $0.id == selectedOptionId }) {
+            currentPricingType = selectedOption.type
+        } else {
+            currentPricingType = cartItem.pricingType ?? "FIXED"
         }
+        let configuredFixedPrice = currentOptions.first {
+            $0.type.uppercased() == "FIXED"
+        }?.price
+        let configuredDailyPrice = currentOptions.first {
+            $0.type.uppercased() == "DAILY"
+        }?.price
+        fixedRatePrice = cartItem.customFixedPrice
+            ?? configuredFixedPrice
+            ?? (currentPricingType.uppercased() == "FIXED" ? cartItem.price : 0)
+        dailyRatePrice = cartItem.customDailyPrice
+            ?? configuredDailyPrice
+            ?? (currentPricingType.uppercased() == "DAILY" ? cartItem.price : 0)
+        price = cartItem.price
+        updatePriceControl()
 
-        // Show/hide rental days controls based on pricing type
+        // Duration is informative only. Pickup/return dates are edited once
+        // for the whole order, then synced to all per-day items.
         let showRentalDays = cartItem.isDailyPricing
         rentalDaysContainer.isHidden = !showRentalDays
         compactRentalDaysContainer.isHidden = !showRentalDays
@@ -861,24 +1112,191 @@ class ProductSelectedCell: UITableViewCell {
         delegate?.didEndEditing(value: Double(quantity), isQuantity: true, at: index)
     }
     
-    @objc private func pricingOptionChanged() {
-        guard let index = itemIndex else { return }
-        let i = pricingOptionSegment.selectedSegmentIndex
-        guard i >= 0 && i < currentOptions.count, let optId = currentOptions[i].id else { return }
-        delegate?.didSelectPricingOption(optionId: optId, at: index)
+    @objc private func rateSelectorTapped() {
+        if currentOrderType == .rent {
+            presentPricingMethodSheet()
+        } else {
+            priceTapped()
+        }
     }
 
-    @objc private func increaseDaysTapped() {
+    private func selectPricingType(_ type: String) {
         guard let index = itemIndex else { return }
-        rentalDays += 1
-        delegate?.didUpdateRentalDays(rentalDays, at: index)
+        guard currentOrderType == .rent else { return }
+        guard currentPricingType.uppercased() != type else { return }
+        currentPricingType = type
+        updatePriceControl()
+        UISelectionFeedbackGenerator().selectionChanged()
+        delegate?.didSelectPricingType(type, at: index)
+        UIAccessibilityPostNotification(
+            UIAccessibilityAnnouncementNotification,
+            String(
+                format: "Pricing changed to %@".localized(),
+                pricingTitle(for: type)
+            ) as NSString
+        )
     }
 
-    @objc private func decreaseDaysTapped() {
-        guard rentalDays > 1 else { return }
-        guard let index = itemIndex else { return }
-        rentalDays -= 1
-        delegate?.didUpdateRentalDays(rentalDays, at: index)
+    private func updatePriceControl() {
+        updateRateSelectorButton()
+        updateUnitPriceButton()
+
+        if currentOrderType == .rent {
+            let compactTitle = NSMutableAttributedString(
+                string: price.formatStringInCommon(),
+                attributes: [
+                    .font: Utils.mediumFont(size: 14),
+                    .foregroundColor: APP_TEXT_COLOR
+                ]
+            )
+            compactTitle.append(NSAttributedString(
+                string: pricingSuffix(for: currentPricingType),
+                attributes: [
+                    .font: Utils.regularFont(size: 12),
+                    .foregroundColor: UIColor.textSecondary
+                ]
+            ))
+            compactPriceButton.setAttributedTitle(compactTitle, for: .normal)
+        } else {
+            compactPriceButton.setAttributedTitle(nil, for: .normal)
+            compactPriceButton.setTitleWithOutAnimation(
+                title: "\(price.formatStringInCommon()) · \("Sale Price".localized())"
+            )
+        }
+        compactPriceButton.accessibilityLabel = "Unit price".localized()
+        let accessibleModeTitle = currentOrderType == .rent
+            ? pricingTitle(for: currentPricingType)
+            : "Sale Price".localized()
+        compactPriceButton.accessibilityValue =
+            "\(price.formatStringInCommon()), \(accessibleModeTitle)"
+        compactPriceButton.accessibilityHint = currentOrderType == .rent
+            ? "Double tap to change pricing method".localized()
+            : "Double tap to edit unit price".localized()
+        compactPriceButton.menu = nil
+        compactPriceButton.showsMenuAsPrimaryAction = false
+    }
+
+    private func updateRateSelectorButton() {
+        var configuration = rateSelectorButton.configuration ?? UIButton.Configuration.plain()
+        let isRent = currentOrderType == .rent
+
+        var attributedTitle = AttributedString(
+            isRent ? pricingTitle(for: currentPricingType) : "Sale Price".localized()
+        )
+        attributedTitle.font = Utils.mediumFont(size: 14)
+        attributedTitle.foregroundColor = UIColor.textPrimary
+        configuration.attributedTitle = attributedTitle
+        let chevronConfiguration = UIImage.SymbolConfiguration(
+            pointSize: 10,
+            weight: .semibold
+        )
+        configuration.image = isRent
+            ? UIImage(systemName: "chevron.down", withConfiguration: chevronConfiguration)
+            : nil
+        configuration.baseForegroundColor = UIColor.textSecondary
+        rateSelectorButton.configuration = configuration
+        rateSelectorButton.isHidden = !isRent
+        rateSelectorButton.accessibilityLabel = isRent
+            ? "Price and pricing method".localized()
+            : "Sale Price".localized()
+        rateSelectorButton.accessibilityValue = pricingTitle(for: currentPricingType)
+        rateSelectorButton.accessibilityHint = "Double tap to change pricing method".localized()
+        rateSelectorButton.accessibilityTraits = UIAccessibilityTraitButton
+        rateSelectorButton.menu = nil
+        rateSelectorButton.showsMenuAsPrimaryAction = false
+    }
+
+    private func updateUnitPriceButton() {
+        var configuration = unitPriceButton.configuration ?? UIButton.Configuration.plain()
+        let suffix = currentOrderType == .rent
+            ? pricingSuffix(for: currentPricingType)
+            : ""
+
+        var attributedTitle = AttributedString(price.formatStringInCommon())
+        attributedTitle.font = Utils.mediumFont(size: 16)
+        attributedTitle.foregroundColor = APP_TONE_COLOR
+
+        configuration.attributedTitle = attributedTitle
+        configuration.image = nil
+        configuration.baseForegroundColor = APP_TONE_COLOR
+        unitPriceButton.configuration = configuration
+        unitPriceCaptionLabel.text = currentOrderType == .rent
+            ? "Unit price".localized()
+            : "Sale Price".localized()
+        unitPriceButton.accessibilityLabel = unitPriceCaptionLabel.text
+        unitPriceButton.accessibilityValue = "\(price.formatStringInCommon())\(suffix)"
+        unitPriceButton.accessibilityHint = "Double tap to edit unit price".localized()
+    }
+
+    private func presentPricingMethodSheet() {
+        let options = ["FIXED", "DAILY"].map { type in
+            let optionPrice = type == "DAILY" ? dailyRatePrice : fixedRatePrice
+            return PricingMethodSheetOption(
+                type: type,
+                title: pricingTitle(for: type),
+                price: optionPrice.formatStringInCommon(),
+                isSelected: currentPricingType.uppercased() == type
+            )
+        }
+        let controller = PricingMethodSheetViewController(
+            options: options,
+            editTitle: "Edit unit price".localized()
+        )
+        controller.onSelect = { [weak self, weak controller] type in
+            self?.selectPricingType(type)
+            controller?.dismiss(animated: true)
+        }
+        controller.onEditPrice = { [weak self, weak controller] in
+            controller?.dismiss(animated: true) {
+                self?.priceTapped()
+            }
+        }
+
+        if let sheet = controller.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                sheet.detents = [
+                    .custom(identifier: .init("pricing-method")) { _ in 246 }
+                ]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+        presentSheet(controller)
+    }
+
+    private func pricingTitle(for type: String) -> String {
+        switch type.uppercased() {
+        case "DAILY":
+            return "Per day".localized()
+        case "HOURLY":
+            return "Per hour".localized()
+        case "MONTHLY":
+            return "Per month".localized()
+        default:
+            return "Per rental".localized()
+        }
+    }
+
+    private func pricingSuffix(for type: String) -> String {
+        switch type.uppercased() {
+        case "DAILY":
+            return "/rental day".localized()
+        case "HOURLY":
+            return "/rental hour".localized()
+        case "MONTHLY":
+            return "/rental month".localized()
+        default:
+            return "/rental".localized()
+        }
+    }
+
+    @objc private func showNoteEditor() {
+        noteActionButton.isHidden = true
+        noteTextField.isHidden = false
+        noteTextField.becomeFirstResponder()
     }
 
     @objc private func quantityTapped() {
@@ -887,14 +1305,11 @@ class ProductSelectedCell: UITableViewCell {
         let controller = NumberPickerViewController.instance()
         controller.delegate = self
         controller.tag = 1 // Tag for quantity
-        controller.configure(initialValue: Double(quantity))
-        
-        // Present from the window's root view controller
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootVC = window.rootViewController {
-            rootVC.present(controller, animated: true)
-        }
+        controller.configure(
+            initialValue: Double(quantity),
+            title: "Quantity".localized()
+        )
+        presentSheet(controller)
     }
     
     @objc private func priceTapped() {
@@ -903,14 +1318,32 @@ class ProductSelectedCell: UITableViewCell {
         let controller = NumberPickerViewController.instance()
         controller.delegate = self
         controller.tag = 2 // Tag for price
-        controller.configure(initialValue: price)
-        
-        // Present from the window's root view controller
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootVC = window.rootViewController {
-            rootVC.present(controller, animated: true)
+        controller.configure(
+            initialValue: price,
+            title: unitPriceCaptionLabel.text ?? "Unit price".localized()
+        )
+        presentSheet(controller)
+    }
+
+    private func presentSheet(_ controller: UIViewController) {
+        var responder: UIResponder? = self
+        while let currentResponder = responder {
+            if let viewController = currentResponder as? UIViewController {
+                viewController.present(controller, animated: true)
+                return
+            }
+            responder = currentResponder.next
         }
+
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }),
+              let rootViewController = windowScene.windows
+            .first(where: { $0.isKeyWindow })?
+            .rootViewController else {
+            return
+        }
+        rootViewController.present(controller, animated: true)
     }
     
     private func updateSubtotal() {
@@ -954,7 +1387,7 @@ class ProductSelectedCell: UITableViewCell {
     private func setStatus(_ status: BookingStatus) {
         switch status {
         case .available:
-            statusView.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.2)
+            statusView.backgroundColor = .clear
             statusView.setTitle("Available".localized(), for: .normal)
             statusView.setTitleColor(.systemGreen, for: .normal)
             statusView.tintColor = .systemGreen
@@ -963,7 +1396,7 @@ class ProductSelectedCell: UITableViewCell {
             statusView.layer.removeAllAnimations()
             
         case .warning:
-            statusView.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.2)
+            statusView.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.1)
             statusView.setTitle("Low Stock".localized(), for: .normal)
             statusView.setTitleColor(.systemOrange, for: .normal)
             statusView.tintColor = .systemOrange
@@ -974,7 +1407,7 @@ class ProductSelectedCell: UITableViewCell {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             
         case .loading:
-            statusView.backgroundColor = UIColor.systemGray.withAlphaComponent(0.2)
+            statusView.backgroundColor = .clear
             statusView.setTitle("Checking...".localized(), for: .normal)
             statusView.setTitleColor(.systemGray, for: .normal)
             statusView.tintColor = .systemGray
@@ -1048,6 +1481,9 @@ extension ProductSelectedCell: UITextFieldDelegate {
         let noteText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedNote = (noteText?.isEmpty ?? true) ? nil : noteText
         delegate?.didUpdateNote(normalizedNote, at: index)
+        if textField === noteTextField {
+            updateNotePresentation(note: normalizedNote)
+        }
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -1071,7 +1507,7 @@ extension ProductSelectedCell: NumberPickerViewControllerDelegate {
             }
             
             delegate?.didEndEditing(value: value, isQuantity: true, at: index)
-        } else { // Price
+        } else if sender.tag == 2 { // Price
             price = value
             delegate?.didEndEditing(value: value, isQuantity: false, at: index)
         }

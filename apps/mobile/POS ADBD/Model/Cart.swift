@@ -148,7 +148,7 @@ class Cart {
         
         // Save custom price based on current order type
         if orderType == .rent {
-            items[index].customRentPrice = price
+            items[index].setCustomRentalPrice(price)
         } else {
             items[index].customSalePrice = price
         }
@@ -209,6 +209,13 @@ class Cart {
     func selectPricingOption(at index: Int, optionId: Int) {
         guard index >= 0 && index < items.count else { return }
         items[index].selectPricingOption(optionId)
+    }
+
+    /// Select FIXED or DAILY even when the product has no configured option
+    /// for that mode. Missing prices intentionally resolve to zero.
+    func selectPricingType(at index: Int, type: String) {
+        guard index >= 0 && index < items.count else { return }
+        items[index].selectPricingType(type)
     }
 
     /// Auto-update rental days for all DAILY items based on pickup/return dates
