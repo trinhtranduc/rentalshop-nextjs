@@ -658,7 +658,9 @@ class InfoMainViewController: BaseViewControler {
             pointSize: 28,
             weight: .regular
         ).applying(
-            UIImage.SymbolConfiguration(hierarchicalColor: .systemGray3)
+            UIImage.SymbolConfiguration(
+                paletteColors: [.systemGray3, .systemGray6]
+            )
         )
         config.image = UIImage(
             systemName: "person.crop.circle.fill",
@@ -669,7 +671,7 @@ class InfoMainViewController: BaseViewControler {
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = Utils.regularFont(size: 11)
-            outgoing.foregroundColor = UIColor.secondaryLabel
+            outgoing.foregroundColor = UIColor.textPrimary
             return outgoing
         }
         config.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
