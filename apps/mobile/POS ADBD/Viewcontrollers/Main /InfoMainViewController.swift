@@ -1049,7 +1049,7 @@ class InfoMainViewController: BaseViewControler {
     // MARK: - Clear Cart Button
     private lazy var clearCartButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         let clearImage = UIImage(systemName: "broom.fill", withConfiguration: config)
             ?? UIImage(systemName: "paintbrush.fill", withConfiguration: config)
         button.setImage(clearImage, for: .normal)
