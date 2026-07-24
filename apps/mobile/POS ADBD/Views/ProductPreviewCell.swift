@@ -63,7 +63,7 @@ class ProductPreviewCell: UITableViewCell {
     
     private lazy var nameLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
+        label.font = .bodyRegular(size: 16)
         label.textColor = .black
         label.numberOfLines = 0 // Allow multiple lines for product name as well
         return label

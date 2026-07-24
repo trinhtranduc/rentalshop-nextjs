@@ -2142,7 +2142,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 0 && indexPath.row != 1 {
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14 (same as AccountViewController)
                 config.secondaryTextProperties.color = .secondaryLabel // Value color: secondaryLabel (same as AccountViewController)
@@ -2216,7 +2216,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 4 { // Don't override deposit row styling
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14)
                 config.secondaryTextProperties.color = .secondaryLabel
@@ -2262,7 +2262,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             
             // Apply highlight based on row and editability
             switch indexPath.row {
@@ -2326,7 +2326,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
 
-            config.textProperties.font = Utils.regularFont(size: 16)
+            config.textProperties.font = .bodyRegular(size: 16)
             config.secondaryTextProperties.font = Utils.boldFont(size: 16)
             cell.contentConfiguration = config
             return cell
@@ -2385,7 +2385,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 config.secondaryText = row.value
                 
                 // All summary values should be bold and highlighted
-                config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular
+                config.textProperties.font = .bodyRegular(size: 16)
                 
                 // Check if this is deposit row and if it's editable
                 let isDepositRow = viewModel.shouldShowDepositInfo && indexPath.row == 3
