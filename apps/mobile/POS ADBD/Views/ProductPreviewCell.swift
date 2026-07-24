@@ -73,9 +73,9 @@ class ProductPreviewCell: UITableViewCell {
         let label = UILabel()
         label.font = Utils.regularFont(size: 14) // Match AccountViewController text phụ
         label.textColor = .darkGray
-        label.numberOfLines = 1
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.8
+        label.numberOfLines = 2
+        label.lineBreakMode = .byWordWrapping
+        label.adjustsFontSizeToFitWidth = false
         return label
     }()
     
