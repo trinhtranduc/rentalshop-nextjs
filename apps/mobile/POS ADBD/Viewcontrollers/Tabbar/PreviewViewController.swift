@@ -392,68 +392,162 @@ class PreviewViewController: BaseViewControler {
         return stack
     }()
     
-    // Footer action buttons. Visual hierarchy (all share the same frame in the
-    // fillEqually stack, so weight is conveyed by fill vs outline vs tint):
-    //   - Primary state action (save/pickup/return/update) -> solid brand fill
-    //   - Print -> secondary, outline (was a competing solid green)
-    //   - Cancel/Delete -> destructive, soft red tint (was heavy solid red next to primary)
+    // Footer action buttons — fixed-width chips with leading SF Symbols.
+    // Hierarchy: primary solid → secondary outline → destructive dark red.
+    // All styles use `.filled()` so background paint is reliable (bordered configs
+    // often drop the fill and look "empty" next to solid buttons).
+    private let footerActionButtonWidth: CGFloat = 120
+    private let footerActionButtonHeight: CGFloat = 44
+
     private lazy var saveButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .brandPrimary
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(saveOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: viewModel.saveButtonTitle,
+            symbolName: viewModel.saveButtonSymbolName,
+            style: .primary,
+            action: #selector(saveOrder)
+        )
     }()
 
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Cancel".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .statusCancelledFill
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(cancelOrder), for: .touchUpInside)
-        return button
-    }()
-
-    // Add more buttons to footer
     private lazy var printButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Print".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .clear
-        button.setTitleColor(.brandPrimary, for: .normal)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.brandPrimary.cgColor
-        button.addTarget(self, action: #selector(printOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: PreviewAction.print.title,
+            symbolName: PreviewAction.print.symbolName,
+            style: .secondaryOutline,
+            action: #selector(printOrder)
+        )
     }()
 
     private lazy var updateButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Update".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .brandPrimary
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(updateOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: PreviewAction.update.title,
+            symbolName: PreviewAction.update.symbolName,
+            style: .primary,
+            action: #selector(updateOrder)
+        )
     }()
 
     private lazy var deleteButton: UIButton = {
+        makeFooterActionButton(
+            title: PreviewAction.delete.title,
+            symbolName: PreviewAction.delete.symbolName,
+            style: .destructiveOutline,
+            action: #selector(deleteOrder)
+        )
+    }()
+
+    /// Overflow control: Cancel stays behind ⋯ to avoid accidental taps.
+    private lazy var moreActionsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Delete".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .statusCancelledFill
-        button.setTitleColor(.statusCancelledText, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(deleteOrder), for: .touchUpInside)
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .backgroundSecondary
+        config.baseForegroundColor = .textSecondary
+        config.background.strokeColor = UIColor.borderColor.withAlphaComponent(0.7)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+        config.image = UIImage(systemName: "ellipsis", withConfiguration: symbolConfig)
+        button.configuration = config
+        button.accessibilityLabel = "More".localized()
+        button.showsMenuAsPrimaryAction = true
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in
+            make.width.equalTo(44)
+            make.height.equalTo(footerActionButtonHeight)
+        }
         return button
     }()
+
+    private lazy var footerButtonStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [
+            // Primary row: Save / Print / Update / Delete — Cancel lives under ⋯
+            saveButton, printButton, updateButton, deleteButton, moreActionsButton
+        ])
+        stack.axis = .horizontal
+        stack.alignment = .fill
+        stack.distribution = .fill
+        stack.spacing = 10
+        return stack
+    }()
+
+    private enum FooterActionButtonStyle {
+        case primary
+        case secondaryOutline
+        case destructive
+        case destructiveOutline
+    }
+
+    private func makeFooterActionButton(
+        title: String,
+        symbolName: String,
+        style: FooterActionButtonStyle,
+        action: Selector
+    ) -> UIButton {
+        let button = UIButton(type: .system)
+        applyFooterActionStyle(to: button, title: title, symbolName: symbolName, style: style)
+        button.addTarget(self, action: action, for: .touchUpInside)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in
+            make.width.equalTo(footerActionButtonWidth)
+            make.height.equalTo(footerActionButtonHeight)
+        }
+        return button
+    }
+
+    private func applyFooterActionStyle(
+        to button: UIButton,
+        title: String,
+        symbolName: String,
+        style: FooterActionButtonStyle
+    ) {
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        let image = UIImage(systemName: symbolName, withConfiguration: symbolConfig)
+
+        // Always use filled — outline look is stroke + light fill, never clear.
+        var config = UIButton.Configuration.filled()
+        switch style {
+        case .primary:
+            config.baseBackgroundColor = .brandPrimary
+            config.baseForegroundColor = .textInverted
+            config.background.strokeWidth = 0
+        case .secondaryOutline:
+            config.baseBackgroundColor = .backgroundCard
+            config.baseForegroundColor = .brandPrimary
+            config.background.strokeColor = UIColor.brandPrimary.withAlphaComponent(0.55)
+            config.background.strokeWidth = 1.5
+        case .destructive:
+            config.baseBackgroundColor = .statusCancelledFill
+            config.baseForegroundColor = .textInverted
+            config.background.strokeWidth = 0
+        case .destructiveOutline:
+            config.baseBackgroundColor = UIColor.statusCancelledFill.withAlphaComponent(0.10)
+            config.baseForegroundColor = .statusCancelledFill
+            config.background.strokeColor = UIColor.statusCancelledFill.withAlphaComponent(0.45)
+            config.background.strokeWidth = 1.5
+        }
+
+        config.title = title
+        config.image = image
+        config.imagePadding = 5
+        config.imagePlacement = .leading
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        config.titleLineBreakMode = .byTruncatingTail
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.mediumFont(size: 13)
+            return outgoing
+        }
+
+        button.configuration = config
+        button.clipsToBounds = true
+        button.backgroundColor = .clear
+    }
     
     // MARK: - Initialization
     init(viewModel: PreviewViewModelProtocol) {
@@ -849,31 +943,102 @@ class PreviewViewController: BaseViewControler {
         
         // Reset all buttons to hidden first
         saveButton.isHidden = true
-        cancelButton.isHidden = true
         printButton.isHidden = true
         updateButton.isHidden = true
         deleteButton.isHidden = true
+        moreActionsButton.isHidden = true
+        moreActionsButton.menu = nil
         
-        // Show buttons based on available actions
+        // Show buttons based on available actions.
+        // Cancel is never on the primary row — it lives under ⋯ to avoid
+        // accidental taps and keep Save/Print/Update readable.
+        var canShowCancelInMore = false
         for action in actions {
             switch action {
             case .save:
                 saveButton.isHidden = false
-                saveButton.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
+                applyFooterActionStyle(
+                    to: saveButton,
+                    title: viewModel.saveButtonTitle,
+                    symbolName: viewModel.saveButtonSymbolName,
+                    style: .primary
+                )
             case .cancel:
-                cancelButton.isHidden = false
+                canShowCancelInMore = true
             case .print:
                 printButton.isHidden = false
+                applyFooterActionStyle(
+                    to: printButton,
+                    title: PreviewAction.print.title,
+                    symbolName: PreviewAction.print.symbolName,
+                    style: .secondaryOutline
+                )
             case .update:
-                // Show update button when update action is available
                 updateButton.isHidden = false
+                applyFooterActionStyle(
+                    to: updateButton,
+                    title: PreviewAction.update.title,
+                    symbolName: PreviewAction.update.symbolName,
+                    style: .primary
+                )
             case .delete:
                 deleteButton.isHidden = false
+                applyFooterActionStyle(
+                    to: deleteButton,
+                    title: PreviewAction.delete.title,
+                    symbolName: PreviewAction.delete.symbolName,
+                    style: .destructiveOutline
+                )
             }
         }
+
+        if canShowCancelInMore {
+            moreActionsButton.isHidden = false
+            let cancelAction = UIAction(
+                title: PreviewAction.cancel.title,
+                image: UIImage(systemName: PreviewAction.cancel.symbolName),
+                attributes: .destructive
+            ) { [weak self] _ in
+                self?.cancelOrder()
+            }
+            moreActionsButton.menu = UIMenu(children: [cancelAction])
+        }
+
+        refreshFooterButtonWidths()
         
         // Show deposit info based on viewModel
         // depositInfoView.isHidden = !viewModel.shouldShowDepositInfo - Disabled: Using table view sections
+    }
+
+    /// Keep every visible primary action the same width (capped).
+    /// The ⋯ overflow button stays compact (fixed 44pt).
+    private func refreshFooterButtonWidths() {
+        let primaryButtons = [saveButton, printButton, updateButton, deleteButton]
+        let visiblePrimary = primaryButtons.filter { !$0.isHidden }
+        let moreVisible = !moreActionsButton.isHidden
+        let moreWidth: CGFloat = 44
+        let horizontalInset: CGFloat = 32
+        let itemCount = visiblePrimary.count + (moreVisible ? 1 : 0)
+        let spacing = footerButtonStackView.spacing * CGFloat(max(itemCount - 1, 0))
+        let reservedForMore = moreVisible ? moreWidth : 0
+        let availableForPrimary = max(
+            UIScreen.main.bounds.width - horizontalInset - spacing - reservedForMore,
+            footerActionButtonWidth
+        )
+        let primaryCount = max(visiblePrimary.count, 1)
+        let width = min(footerActionButtonWidth, floor(availableForPrimary / CGFloat(primaryCount)))
+
+        primaryButtons.forEach { button in
+            button.snp.updateConstraints { make in
+                make.width.equalTo(width)
+                make.height.equalTo(footerActionButtonHeight)
+            }
+        }
+        moreActionsButton.snp.updateConstraints { make in
+            make.width.equalTo(moreWidth)
+            make.height.equalTo(footerActionButtonHeight)
+        }
+        footerButtonStackView.setNeedsLayout()
     }
     
     // Update input fields based on viewModel
@@ -2753,14 +2918,7 @@ extension PreviewViewController{
         let separatorView = UIView()
         separatorView.backgroundColor = .backgroundTertiary
         footerView.addSubview(separatorView)
-        
-        // Create a horizontal stack view for buttons only
-        let buttonStackView = UIStackView(arrangedSubviews: [saveButton, cancelButton, printButton, updateButton, deleteButton])
-        buttonStackView.axis = .horizontal
-        buttonStackView.alignment = .fill
-        buttonStackView.distribution = .fillEqually
-        buttonStackView.spacing = 16
-        footerView.addSubview(buttonStackView)
+        footerView.addSubview(footerButtonStackView)
         
         // Layout constraints for subviews within footerView
         separatorView.snp.makeConstraints { make in
@@ -2768,11 +2926,14 @@ extension PreviewViewController{
             make.height.equalTo(1)
         }
         
-        buttonStackView.snp.makeConstraints { make in
-            make.top.equalTo(separatorView.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.height.equalTo(44)
-            make.bottom.equalToSuperview().offset(-20)
+        // Fixed-width buttons centered in the footer (do not stretch to full width).
+        footerButtonStackView.snp.makeConstraints { make in
+            make.top.equalTo(separatorView.snp.bottom).offset(14)
+            make.centerX.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().inset(16)
+            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.height.equalTo(footerActionButtonHeight)
+            make.bottom.equalToSuperview().offset(-16)
         }
     }
 }

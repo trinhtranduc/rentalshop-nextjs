@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import {
+  fetchCustomerLoyaltySnapshot,
+  fetchMerchantLoyaltyStatus,
+} from '@/lib/customer-loyalty';
 
 /**
  * GET /api/customers/[id]/orders
- * Get customer orders with role-based access control
- * 
- * Authorization: All roles with 'orders.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
- * Security: Role-based filtering ensures users only see orders within their scope:
- * - ADMIN: Can see all orders (no restrictions)
- * - MERCHANT: Can only see orders from their merchant's outlets
- * - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
+ * Get orders for one customer only (dedicated filter endpoint).
+ *
+ * Query: page, limit, sortBy, sortOrder, startDate?, endDate?
+ *
+ * Response includes:
+ * - orders (paginated, role-scoped)
+ * - customer snapshot + loyalty tier (Kim Cương, …)
+ * - summary.totalOrders / summary.totalAmount for the same scope
+ *
+ * Security (role scope):
+ * - ADMIN: all merchants / outlets
+ * - MERCHANT: own merchant
+ * - OUTLET_ADMIN / OUTLET_STAFF: assigned outlet only
  */
 export async function GET(
   request: NextRequest,
@@ -73,6 +80,8 @@ export async function GET(
       const limit = parseInt(searchParams.get('limit') || '50');
       const sortBy = searchParams.get('sortBy') || 'createdAt';
       const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+      const startDate = searchParams.get('startDate') || undefined;
+      const endDate = searchParams.get('endDate') || undefined;
 
       // Build search filters with role-based access control
       const searchFilters: any = {
@@ -80,7 +89,9 @@ export async function GET(
         page,
         limit,
         sortBy,
-        sortOrder
+        sortOrder,
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
       };
 
       // Role-based merchant filtering:
@@ -111,6 +122,8 @@ export async function GET(
         customerId,
         page,
         limit,
+        startDate,
+        endDate,
         'userScope.merchantId': userScope.merchantId,
         'userScope.outletId': userScope.outletId,
         'final merchantId filter': searchFilters.merchantId,
@@ -118,15 +131,44 @@ export async function GET(
         'searchFilters': JSON.stringify(searchFilters, null, 2)
       });
 
-      // Get orders for this customer with role-based filtering
-      const orders = await db.orders.search(searchFilters);
+      // Same scope as list search — used for accurate totalAmount in header
+      const aggregateWhere: any = {
+        deletedAt: null,
+        customerId,
+      };
+      if (searchFilters.outletId) {
+        aggregateWhere.outletId = searchFilters.outletId;
+      } else if (searchFilters.merchantId) {
+        aggregateWhere.outlet = { merchantId: searchFilters.merchantId };
+      }
+      if (startDate || endDate) {
+        aggregateWhere.createdAt = {};
+        if (startDate) aggregateWhere.createdAt.gte = new Date(startDate);
+        if (endDate) aggregateWhere.createdAt.lte = new Date(endDate);
+      }
+
+      // Get orders + loyalty + money total for this customer
+      const [orders, amountAgg, loyaltyStatus] = await Promise.all([
+        db.orders.search(searchFilters),
+        prisma.order.aggregate({
+          where: aggregateWhere,
+          _sum: { totalAmount: true },
+        }),
+        fetchMerchantLoyaltyStatus(customer.merchantId),
+      ]);
+
+      const loyalty =
+        loyaltyStatus === 'active'
+          ? await fetchCustomerLoyaltySnapshot(customerId)
+          : null;
       
       console.log(`✅ Customer orders search result:`, {
         total: orders.total || 0,
         page: orders.page || page,
         limit: orders.limit || limit,
         dataLength: orders.data?.length || 0,
-        hasData: !!(orders.data && orders.data.length > 0)
+        hasData: !!(orders.data && orders.data.length > 0),
+        totalAmount: amountAgg._sum.totalAmount || 0,
       });
 
       // Normalize date fields in order list to UTC ISO strings using toISOString()
@@ -140,17 +182,34 @@ export async function GET(
         returnedAt: order.returnedAt?.toISOString() || null,
       }));
 
+      const total = orders.total || 0;
+      const resolvedPage = orders.page || page;
+      const resolvedLimit = orders.limit || limit;
+
       // Use ResponseBuilder.success() for consistent response format
-      // Match response structure with /api/orders endpoint
+      // Match response structure with /api/orders endpoint + customer/summary for mobile header
       return NextResponse.json(
         ResponseBuilder.success('CUSTOMER_ORDERS_FOUND', {
           orders: normalizedOrders,
-          total: orders.total || 0,
-          page: orders.page || page,
-          limit: orders.limit || limit,
-          offset: ((orders.page || page) - 1) * (orders.limit || limit),
-          hasMore: (orders.page || page) * (orders.limit || limit) < (orders.total || 0),
-          totalPages: Math.ceil((orders.total || 0) / (orders.limit || limit))
+          total,
+          page: resolvedPage,
+          limit: resolvedLimit,
+          offset: (resolvedPage - 1) * resolvedLimit,
+          hasMore: resolvedPage * resolvedLimit < total,
+          totalPages: Math.ceil(total / resolvedLimit) || 0,
+          customer: {
+            id: customer.id,
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            phone: customer.phone,
+            merchantId: customer.merchantId,
+            loyaltyStatus,
+            loyalty,
+          },
+          summary: {
+            totalOrders: total,
+            totalAmount: amountAgg._sum.totalAmount || 0,
+          },
         })
       );
 

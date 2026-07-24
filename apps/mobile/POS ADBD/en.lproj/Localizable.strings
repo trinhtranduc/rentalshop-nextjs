@@ -780,6 +780,7 @@
 "Orders by customer" = "Orders by customer";
 "Orders by product" = "Orders by product";
 "No orders found for this period" = "No orders found for this period";
+"All time" = "All time";
 "Most valuable customers" = "Most valuable customers";
 "View all" = "View all";
 "vs previous period" = "vs previous period";
@@ -1251,3 +1252,4 @@
 "Retake" = "Retake";
 "Quality" = "Quality";
 "Image quality" = "Image quality";
+"More" = "More";

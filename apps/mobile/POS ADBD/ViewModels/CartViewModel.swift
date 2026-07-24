@@ -22,7 +22,11 @@ class CartViewModel: PreviewViewModelProtocol {
     }
     
     var saveButtonTitle: String {
-        isEditMode ? "Update Order".localized().uppercased() : "Create Order".localized().uppercased()
+        isEditMode ? "Update Order".localized() : "Create Order".localized()
+    }
+
+    var saveButtonSymbolName: String {
+        isEditMode ? "square.and.pencil" : "plus.circle.fill"
     }
     
     var shouldShowDepositInfo: Bool { orderType == .rent }

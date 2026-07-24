@@ -778,6 +778,7 @@
 "Orders by customer" = "Đơn theo khách hàng";
 "Orders by product" = "Đơn theo sản phẩm";
 "No orders found for this period" = "Không có đơn hàng trong kỳ này";
+"All time" = "Tất cả thời gian";
 "Most valuable customers" = "Khách chi tiêu nhiều nhất";
 "View all" = "Xem tất cả";
 "vs previous period" = "so với kỳ trước";
@@ -1251,3 +1252,4 @@
 "Retake" = "Chụp lại";
 "Quality" = "Chất lượng";
 "Image quality" = "Chất lượng ảnh";
+"More" = "Thêm";
