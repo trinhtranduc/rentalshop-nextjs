@@ -399,11 +399,6 @@ class InfoMainViewController: BaseViewControler {
             customNavBar?.isHidden = true
         }
         
-        // Hide tab bar when pushed
-        if let tabBar = self.tabBarController?.tabBar {
-            tabBar.isHidden = true
-        }
-        
         reloadOrder()
         updateSegmentedControlState() // Update segmented control state when view appears
         updateCartBadge() // Update cart badge when view appears
@@ -414,15 +409,6 @@ class InfoMainViewController: BaseViewControler {
         reloadSelectionTable()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        
-        // Show tab bar when leaving
-        if let tabBar = self.tabBarController?.tabBar {
-            tabBar.isHidden = false
-        }
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         layoutCartTableHeaderView()

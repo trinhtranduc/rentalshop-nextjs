@@ -498,6 +498,9 @@ class MainViewController: BaseViewControler {
     
     private func setupInfoViewController() {
         infoViewController = InfoMainViewController()
+        // Cart is a pushed workflow on iPhone and must keep the tab bar hidden,
+        // including when returning from Order Detail.
+        infoViewController?.hidesBottomBarWhenPushed = true
         
         if UIDevice.current.userInterfaceIdiom == .pad {
             if let infoVC = infoViewController {

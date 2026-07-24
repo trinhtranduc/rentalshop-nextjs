@@ -459,6 +459,7 @@ class PreviewViewController: BaseViewControler {
     init(viewModel: PreviewViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+        self.hidesBottomBarWhenPushed = true
     }
     
     // Convenience initializers
@@ -487,9 +488,6 @@ class PreviewViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .backgroundPrimary  // Match AccountViewController
-        
-        // Ensure tabbar is hidden
-        self.hidesBottomBarWhenPushed = true
         
         // Add views to the main view first
         view.addSubview(previewTableView)
@@ -531,8 +529,6 @@ class PreviewViewController: BaseViewControler {
         // Update summary with calculations
         updateSummaryValues()
         
-        // Ensure tabbar is hidden
-        self.tabBarController?.tabBar.isHidden = true
     }
     
     // MARK: - Pull to Refresh
@@ -561,12 +557,6 @@ class PreviewViewController: BaseViewControler {
                 }
             }
         }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        // Show tabbar when leaving
-        self.tabBarController?.tabBar.isHidden = false
     }
     
     // MARK: - Helper Methods
