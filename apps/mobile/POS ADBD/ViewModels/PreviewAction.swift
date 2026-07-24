@@ -9,11 +9,21 @@ enum PreviewAction {
     
     var title: String {
         switch self {
-        case .save: return "Save".localized().uppercased()
-        case .cancel: return "Cancel".localized().uppercased()
-        case .print: return "Print".localized().uppercased()
-        case .update: return "Update".localized().uppercased()
-        case .delete: return "Delete".localized().uppercased()
+        case .save: return "Save".localized()
+        case .cancel: return "Cancel".localized()
+        case .print: return "Print".localized()
+        case .update: return "Update".localized()
+        case .delete: return "Delete".localized()
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .save: return "checkmark.circle.fill"
+        case .cancel: return "xmark"
+        case .print: return "printer"
+        case .update: return "square.and.pencil"
+        case .delete: return "trash"
         }
     }
     

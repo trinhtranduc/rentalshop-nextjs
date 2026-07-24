@@ -4,6 +4,8 @@ protocol PreviewViewModelProtocol {
     // MARK: - Basic Properties
     var title: String { get }
     var saveButtonTitle: String { get }
+    /// SF Symbol for the primary footer save/pickup/return button.
+    var saveButtonSymbolName: String { get }
     var shouldShowDepositInfo: Bool { get }
     var availableActions: [PreviewAction] { get }
     

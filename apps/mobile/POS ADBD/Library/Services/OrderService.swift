@@ -3,6 +3,8 @@ import FirebaseAnalytics
 
 protocol OrderServiceProtocol {
     func loadOrders(from: Date?, productIds: [Int]?, productId: Int?, customerId: Int?, startDate: Date?, endDate: Date?, keyword: String?, page: Int?, limit: Int?, orderType: OrderType?, sortBy: String?, sortOrder: String?, status: OrderStatus?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
+    /// Dedicated customer-only list: `GET /api/customers/{id}/orders` (includes loyalty + summary).
+    func loadCustomerOrders(customerId: Int, startDate: Date?, endDate: Date?, page: Int?, limit: Int?, sortBy: String?, sortOrder: String?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     func forceLoadOrders(productId: Int?, keyword: String?, page: Int?, limit: Int?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     func deleteOrder(orderId: Int, completion: @escaping (_ error: NSError?) -> Void)
     func loadOverviewOrder(from: Date?, to: Date?, completion: @escaping (_ orders: [Order]?, _ error: NSError?) -> Void)
@@ -118,6 +120,73 @@ class OrderService: BaseService, OrderServiceProtocol {
     }
     
     static let shared = OrderService()
+
+    /// Loads orders for one customer only via `GET /api/customers/{id}/orders`.
+    /// Why dedicated endpoint: backend always scopes to that customer + role outlet/merchant,
+    /// and returns loyalty tier + accurate totalAmount for the header (not just the loaded page).
+    func loadCustomerOrders(
+        customerId: Int,
+        startDate: Date? = nil,
+        endDate: Date? = nil,
+        page: Int? = nil,
+        limit: Int? = nil,
+        sortBy: String? = nil,
+        sortOrder: String? = nil,
+        completion: @escaping (OrdersResponse?, NSError?) -> Void
+    ) {
+        let path = "\(APIEndpoint.Path.customerOrders)/\(customerId)/orders"
+
+        var params: [String: Any] = [:]
+        if let page = page { params["page"] = page }
+        if let limit = limit { params["limit"] = limit }
+        if let sortBy = sortBy { params["sortBy"] = sortBy }
+        if let sortOrder = sortOrder { params["sortOrder"] = sortOrder }
+        if let startDate = startDate, let startDateString = startDate.dateServerISOString() {
+            params["startDate"] = startDateString
+        }
+        if let endDate = endDate, let endDateString = endDate.dateServerISOString() {
+            params["endDate"] = endDateString
+        }
+
+        performGET(
+            path: path,
+            parameters: params.isEmpty ? nil : params,
+            responseType: OrdersResponse.self,
+            context: "OrderService.loadCustomerOrders"
+        ) { [weak self] ordersResponse, error in
+            guard let self = self else { return }
+
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+
+            guard let ordersResponse = ordersResponse else {
+                let error = NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
+                completion(nil, error)
+                return
+            }
+
+            if ordersResponse.success {
+                guard ordersResponse.data != nil else {
+                    let error = NSError.errorWithOwnMessage(message: "No data received from server", domain: "RC")
+                    completion(nil, error)
+                    return
+                }
+                completion(ordersResponse, nil)
+            } else {
+                let nsError = self.createErrorFromResponse(
+                    success: ordersResponse.success,
+                    code: ordersResponse.code,
+                    message: ordersResponse.message,
+                    error: nil,
+                    httpStatusCode: nil,
+                    defaultMessage: "Failed to load customer orders"
+                )
+                completion(nil, nsError)
+            }
+        }
+    }
     
     func loadOrders(from: Date? = nil, productIds: [Int]?, productId: Int? = nil, customerId: Int? = nil, startDate: Date? = nil, endDate: Date? = nil, keyword: String?, page: Int? = nil, limit: Int? = nil, orderType: OrderType? = nil, sortBy: String? = nil, sortOrder: String? = nil, status: OrderStatus? = nil, completion: @escaping (OrdersResponse?, NSError?) -> Void) {
         let path = APIEndpoint.Path.orders

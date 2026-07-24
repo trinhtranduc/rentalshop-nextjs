@@ -677,7 +677,7 @@ private final class OverviewRankingPhoneSubtitleView: UIView {
         revealButton.tintColor = .textSecondary
         revealButton.addTarget(self, action: #selector(toggleReveal), for: .touchUpInside)
         revealButton.snp.makeConstraints { make in
-            make.width.height.equalTo(24)
+            make.width.height.equalTo(18)
         }
 
         trailingLabel.font = .captionMedium(size: 12)
