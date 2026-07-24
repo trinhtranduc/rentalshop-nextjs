@@ -131,6 +131,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         unitPrice: item.unitPrice || 0,
         totalPrice: item.totalPrice || 0,
         rentalDays: item.rentalDays || 0,
+        pricingType: item.pricingType || 'FIXED',
+        selectedPricingOptionId: item.pricingOptionId ?? null,
         deposit: item.deposit ?? 0,
         notes: item.notes || '',
       }));
@@ -480,6 +482,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
             deposit: item.deposit ?? 0,
             notes: item.notes || '',
             rentDays: lineDays,
+            pricingType: resolveItemPricingType(item),
             ...(item.selectedPricingOptionId != null ? { pricingOptionId: item.selectedPricingOptionId } : {}),
           };
         }),
@@ -571,6 +574,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         unitPrice: item.unitPrice || 0,
         totalPrice: item.totalPrice || 0,
         rentalDays: item.rentalDays || 0,
+        pricingType: item.pricingType || 'FIXED',
+        selectedPricingOptionId: item.pricingOptionId ?? null,
         deposit: item.deposit ?? 0,
         notes: item.notes || '',
       };
