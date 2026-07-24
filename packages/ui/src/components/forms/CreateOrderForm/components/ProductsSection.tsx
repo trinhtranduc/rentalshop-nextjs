@@ -209,6 +209,18 @@ const getLineDisplay = (
   return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
 };
 
+const getPricingLabel = (pricingType?: string | null): string => {
+  if (pricingType === 'DAILY') return 'Theo ngày';
+  if (pricingType === 'HOURLY') return 'Theo giờ';
+  return 'Theo lần';
+};
+
+const getPricingUnit = (pricingType?: string | null): string => {
+  if (pricingType === 'DAILY') return '/ngày';
+  if (pricingType === 'HOURLY') return '/giờ';
+  return '/lần thuê';
+};
+
 interface ProductsSectionProps {
   orderItems: OrderItemFormData[];
   products: ProductWithStock[];
@@ -653,7 +665,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Unit Price */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.unitPrice')}
+            {t('messages.unitPrice')} · {getPricingLabel(item.pricingType)}
           </label>
           <NumberInput
             value={item.unitPrice}
@@ -686,7 +698,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       {/* Pricing option selector (multi-option products, RENT only) */}
       {orderType === 'RENT' && ((item.product?.pricingOptions as any[])?.length ?? 0) > 1 && (
         <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1">Loại giá</label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Cách tính giá</label>
           <select
             value={item.selectedPricingOptionId ?? ''}
             onChange={(e) => onUpdatePricingOption?.(item.productId, parseInt(e.target.value))}
@@ -694,7 +706,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           >
             {(item.product?.pricingOptions as any[]).map((opt) => (
               <option key={opt.id} value={opt.id}>
-                {opt.type === 'DAILY' ? 'Theo ngày' : 'Theo lần'} · {formatMoney(opt.price)}{opt.type === 'DAILY' ? '/ngày' : ''}
+                {getPricingLabel(opt.type)} · {formatMoney(opt.price)}{getPricingUnit(opt.type)}
               </option>
             ))}
           </select>
@@ -720,7 +732,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           const d = getLineDisplay(item, orderType, pickupDate, returnDate);
           return (
             <div className="text-sm text-gray-600">
-              Total: {item.quantity} × {formatMoney(item.unitPrice)}{d.isDaily ? ` × ${d.days} ngày` : ''} = {formatMoney(d.total)}
+              {item.quantity} × {formatMoney(item.unitPrice)} {getPricingUnit(item.pricingType)}{d.isDaily ? ` × ${d.days} ngày` : ''} = {formatMoney(d.total)}
             </div>
           );
         })()}
