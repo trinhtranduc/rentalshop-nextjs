@@ -681,6 +681,9 @@ struct OrderItem: Codable {
     let unitPrice: Double
     let totalPrice: Double
     let notes: String?
+    let rentalDays: Int?
+    let pricingType: String?
+    let pricingOptionId: Int?
     
     // Flattened product data - make some fields optional to handle API variations
     let productId: Int?
@@ -700,12 +703,15 @@ struct OrderItem: Codable {
     }
     
     // Default initializer for manual creation
-    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil) {
+    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil) {
         self.id = id
         self.quantity = quantity
         self.unitPrice = unitPrice
         self.totalPrice = totalPrice
         self.notes = notes
+        self.rentalDays = rentalDays
+        self.pricingType = pricingType
+        self.pricingOptionId = pricingOptionId
         self.productId = productId
         self.productName = productName
         self.productBarcode = productBarcode
@@ -724,6 +730,9 @@ struct OrderItem: Codable {
         unitPrice = try container.decode(Double.self, forKey: .unitPrice)
         totalPrice = try container.decode(Double.self, forKey: .totalPrice)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        rentalDays = try container.decodeIfPresent(Int.self, forKey: .rentalDays)
+        pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
+        pricingOptionId = try container.decodeIfPresent(Int.self, forKey: .pricingOptionId)
         
         let embedded = try container.decodeIfPresent(EmbeddedProduct.self, forKey: .product)
         
@@ -778,6 +787,9 @@ struct OrderItem: Codable {
         try container.encode(unitPrice, forKey: .unitPrice)
         try container.encode(totalPrice, forKey: .totalPrice)
         try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(rentalDays, forKey: .rentalDays)
+        try container.encodeIfPresent(pricingType, forKey: .pricingType)
+        try container.encodeIfPresent(pricingOptionId, forKey: .pricingOptionId)
         try container.encodeIfPresent(productId, forKey: .productId)
         try container.encode(productName, forKey: .productName)
         try container.encodeIfPresent(productBarcode, forKey: .productBarcode)
@@ -794,6 +806,7 @@ struct OrderItem: Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, quantity, unitPrice, totalPrice, notes
+        case rentalDays, pricingType, pricingOptionId
         case productId, productName, productBarcode, productImages, productRentPrice, productDeposit
         case product
         case deposit
@@ -950,6 +963,7 @@ struct UpdateOrderItem: Codable {
     let notes: String?
     let rentalDays: Int?
     let imageUrl: String?
+    var pricingType: String? = nil
     var pricingOptionId: Int? = nil
 }
 

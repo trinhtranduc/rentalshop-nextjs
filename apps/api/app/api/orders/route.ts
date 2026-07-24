@@ -674,7 +674,11 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           // Resolve the selected pricing option (multi-option products);
           // falls back to product-level pricingType when the product has no options.
           const selectedOption = resolveSelectedOption(product as Product, (item as any).pricingOptionId);
-          const optionType = (selectedOption?.type || PricingResolver.resolvePricingType(product as Product, merchant as any)) as PricingType;
+          const optionType = (
+            selectedOption?.type ||
+            item.pricingType ||
+            PricingResolver.resolvePricingType(product as Product, merchant as any)
+          ) as PricingType;
 
           // Determine rentalDays: prefer client-sent value (item.rentDays), then calculate from dates
           // This ensures mobile manual override of rental days is respected (Req 2.4, 6.4)
@@ -709,7 +713,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             rentalDays: rentalDays,
             // Pricing option snapshot
             pricingType: optionType,
-            pricingOptionId: selectedOption?.id ?? (item as any).pricingOptionId ?? null,
+            pricingOptionId: selectedOption?.id ?? item.pricingOptionId ?? null,
           };
     }) || []);
 
