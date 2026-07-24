@@ -324,8 +324,8 @@ class ProductPreviewCell: UITableViewCell {
             return "\(base) \("/rental day".localized()) × \(days.inString()) \("day".localized())"
         }
 
-        // Orders created before pricing snapshots existed are fixed-price rentals.
-        return "\(base) \("/rental".localized())"
+        // FIXED (per rental): show qty × price only — no "/rental" suffix
+        return base
     }
     
     // Legacy bind method removed - use bind(cartItem:) or bind(orderItem:) instead

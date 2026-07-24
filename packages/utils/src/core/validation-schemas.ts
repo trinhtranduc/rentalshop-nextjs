@@ -292,7 +292,8 @@ const orderItemSchema = z.object({
   notes: z.string().optional(), // Optional notes for this item
   rentDays: z.number().int().min(1).optional(), // For rental orders
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().optional(),
-  pricingOptionId: z.coerce.number().int().positive().optional(), // Selected pricing option (multi-option products)
+  // nullish: Swift JSONEncoder sends null for Optional.none (not omitted keys)
+  pricingOptionId: z.coerce.number().int().positive().nullish(), // Selected pricing option (multi-option products)
 });
 
 const baseOrderSchema = z.object({

@@ -153,7 +153,8 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
     if (item.pricingType === 'HOURLY') {
       return '/ per hour';
     }
-    return '/ per rental';
+    // FIXED (per rental): no unit suffix
+    return '';
   };
   // Calculate rental duration for rental orders
   const getRentalDuration = () => {
