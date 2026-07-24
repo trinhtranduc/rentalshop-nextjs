@@ -98,6 +98,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     removeProductFromOrder,
     updateOrderItem,
     updateItemPricingOption,
+    updateItemPricingType,
     updateRentalDates,
     handleSubmit,
     resetForm,
@@ -781,6 +782,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onRemoveProduct={removeProductFromOrder}
               onUpdateOrderItem={updateOrderItem}
               onUpdatePricingOption={updateItemPricingOption}
+              onUpdatePricingType={updateItemPricingType}
               onSearchProducts={handleProductSearch} // Use our custom search function
               isLoadingProducts={isLoadingProducts}
               orderType={formData.orderType}

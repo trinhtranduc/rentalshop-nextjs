@@ -1289,7 +1289,8 @@ class ProductSelectedCell: UITableViewCell {
         case "MONTHLY":
             return "/rental month".localized()
         default:
-            return "/rental".localized()
+            // FIXED (per rental): no unit suffix next to the price
+            return ""
         }
     }
 

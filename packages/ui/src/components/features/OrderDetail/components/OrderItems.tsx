@@ -37,7 +37,8 @@ const OrderItem: React.FC<{ item: OrderData['orderItems'][0] }> = ({ item }) => 
   const imageSrc = resolveOrderItemImageUrl(item.product.images);
   const isDaily = item.pricingType === 'DAILY';
   const isHourly = item.pricingType === 'HOURLY';
-  const pricingUnit = isDaily ? '/ per day' : isHourly ? '/ per hour' : '/ per rental';
+  // Only show unit suffix for daily/hourly — FIXED (per rental) has no suffix
+  const pricingUnit = isDaily ? '/ per day' : isHourly ? '/ per hour' : '';
   const rentalDays = Math.max(1, item.rentalDays || 1);
   const durationSuffix = isDaily && rentalDays > 1 ? ` × ${rentalDays} days` : '';
 

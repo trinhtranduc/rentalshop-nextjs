@@ -357,7 +357,7 @@ class ProductCell: UITableViewCell {
         let pricingType = defaultPricingOption?.type ?? product.pricingType ?? "FIXED"
         let rentPriceSuffix = pricingType.uppercased() == "DAILY"
             ? "/rental day".localized()
-            : "/rental".localized()
+            : ""
         let rentPriceText = NSMutableAttributedString(
             string: rentPrice.formatStringInCommon(),
             attributes: [
