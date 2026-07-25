@@ -1975,10 +1975,10 @@ class PreviewViewController: BaseViewControler {
         // Show confirmation alert before canceling order
         UIAlertController.alert(
             parent: self,
-            title: "Cancel Order".localized(),
-            message: "You are cancel the order. Are you sure?".localized(),
-            okTitle: "Yes, sure!".localized(),
-            cancelTitle: "Cancel".localized(),
+            title: "order.cancel.title".localized(),
+            message: "order.cancel.confirmation".localized(),
+            okTitle: "common.action.confirm".localized(),
+            cancelTitle: "common.action.cancel".localized(),
             okAction: { [weak self] _ in
                 self?.proceedWithCancelOrder()
             },
@@ -2676,13 +2676,16 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
     private func showLoyaltyRedeemDialog(cartViewModel: CartViewModel) {
         let alert = UIAlertController(
             title: "Use Loyalty Points".localized(),
-            message: "Available: \(cartViewModel.loyaltyBalance) points",
+            message: String(
+                format: "loyalty.redeem.availablePoints".localized(),
+                cartViewModel.loyaltyBalance
+            ),
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
             textField.keyboardType = .numberPad
-            textField.placeholder = "Points to redeem"
+            textField.placeholder = "loyalty.redeem.pointsPlaceholder".localized()
             textField.text = cartViewModel.loyaltyUsePoints ? "\(cartViewModel.loyaltyRedeemPoints)" : ""
         }
 

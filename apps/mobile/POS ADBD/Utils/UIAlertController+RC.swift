@@ -12,7 +12,11 @@ import UIKit
 
 extension UIAlertController{
     class func errorAlert(parent: UIViewController? , error: Error, handler:((UIAlertAction?) -> Void)? = nil){
-        let alert = UIAlertController(title:"Error".localized(), message:error.localizedDescription, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(
+            title: "Error".localized(),
+            message: error.localizedDescription.localized(),
+            preferredStyle: UIAlertControllerStyle.alert
+        )
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default, handler:handler))
         if parent != nil{
             parent!.present(alert, animated: true, completion: nil)

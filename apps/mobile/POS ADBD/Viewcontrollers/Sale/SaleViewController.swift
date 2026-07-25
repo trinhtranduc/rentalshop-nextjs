@@ -560,7 +560,7 @@ class SaleViewController : BaseViewControler{
     private func showPrintErrorAlert(error: Error) {
         let alert = UIAlertController(
             title: "Print Error".localized(),
-            message: "Failed to print order: \(error.localizedDescription)".localized(),
+            message: String(format: "Failed to print order: %@".localized(), error.localizedDescription),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))

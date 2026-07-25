@@ -215,7 +215,10 @@ class InfoCustomerView: UIView {
 
         let points = customer.loyaltyDisplayPoints ?? 0
         let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-        customerPointLabel.text = "• \(pointsText) điểm"
+        customerPointLabel.text = String(
+            format: "loyalty.points.bulletFormat".localized(),
+            pointsText
+        )
         customerPointLabel.textColor = .gray
 
         loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer))

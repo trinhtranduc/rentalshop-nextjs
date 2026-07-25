@@ -97,11 +97,21 @@ extension WebViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         loadingIndicator.stopAnimating()
-        showError("Failed to load content: \(error.localizedDescription)")
+        showError(
+            String(
+                format: "common.error.loadContent".localized(),
+                error.localizedDescription
+            )
+        )
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingIndicator.stopAnimating()
-        showError("Failed to load content: \(error.localizedDescription)")
+        showError(
+            String(
+                format: "common.error.loadContent".localized(),
+                error.localizedDescription
+            )
+        )
     }
-} 
+}
