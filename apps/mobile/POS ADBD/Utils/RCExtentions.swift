@@ -46,7 +46,7 @@ enum AppIcon {
     static let delete = "trash"
     static let clearCart = "broom.fill"
     static let productCheck = "list.bullet.rectangle"
-    static let adjustProduct = "slider.horizontal.3"
+    static let adjustProduct = "gearshape"
 
     // User management
     static let manageUser = "person.crop.circle.badge.gear"
