@@ -671,10 +671,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             notes: item.notes
           });
 
-          // Resolve the selected pricing option (multi-option products);
-          // falls back to product-level pricingType when the product has no options.
-          const selectedOption = resolveSelectedOption(product as Product, (item as any).pricingOptionId);
-          const optionType = (selectedOption?.type || PricingResolver.resolvePricingType(product as Product, merchant as any)) as PricingType;
+          // Resolve pricing mode for this line:
+          // 1) explicit pricingOptionId → that option's type
+          // 2) client-sent pricingType (mobile may send DAILY without an option id)
+          // 3) product default option / product.pricingType
+          // IMPORTANT: resolveSelectedOption() always returns a default, so it must
+          // NOT override an explicit item.pricingType when pricingOptionId is absent.
+          const requestedOptionId = (item as any).pricingOptionId ?? null;
+          const selectedOption = resolveSelectedOption(product as Product, requestedOptionId);
+          const optionType = (
+            (requestedOptionId != null ? selectedOption?.type : null) ||
+            item.pricingType ||
+            selectedOption?.type ||
+            PricingResolver.resolvePricingType(product as Product, merchant as any)
+          ) as PricingType;
 
           // Determine rentalDays: prefer client-sent value (item.rentDays), then calculate from dates
           // This ensures mobile manual override of rental days is respected (Req 2.4, 6.4)
@@ -707,9 +717,14 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
             rentalDays: rentalDays,
-            // Pricing option snapshot
+            // Pricing option snapshot — only attach option id when client selected one
+            // or the resolved option actually matches optionType (avoid stamping FIXED
+            // default id onto a DAILY line that only sent pricingType).
             pricingType: optionType,
-            pricingOptionId: selectedOption?.id ?? (item as any).pricingOptionId ?? null,
+            pricingOptionId:
+              requestedOptionId ??
+              (selectedOption?.type === optionType ? selectedOption?.id ?? null : null) ??
+              null,
           };
     }) || []);
 
@@ -915,7 +930,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           totalPrice: item.totalPrice,
           deposit: item.deposit,
           notes: item.notes,
-          rentalDays: item.rentalDays
+          rentalDays: item.rentalDays,
+          pricingType: item.pricingType,
+          pricingOptionId: item.pricingOptionId
         };
       }) || [],
       // Calculated fields

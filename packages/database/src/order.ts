@@ -234,6 +234,11 @@ const orderInclude = {
       unitPrice: true,
       totalPrice: true,
       productId: true,
+      deposit: true,
+      notes: true,
+      rentalDays: true,
+      pricingType: true,
+      pricingOptionId: true,
       product: {
         select: {
           id: true,
@@ -451,6 +456,8 @@ export async function updateOrder(
       deposit?: number
       notes?: string
       rentalDays?: number
+      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null
+      pricingOptionId?: number | null
     }>
   }>
 ): Promise<OrderWithRelations> {
@@ -515,7 +522,9 @@ export async function updateOrder(
         totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
         deposit: item.deposit || 0,
         notes: item.notes,
-        rentalDays: item.rentalDays
+        rentalDays: item.rentalDays,
+        pricingType: item.pricingType,
+        pricingOptionId: item.pricingOptionId
       }))
     }
     console.log('🔧 Converted orderItems to nested write format');
@@ -867,6 +876,8 @@ export const simplifiedOrders = {
             productId: true,
             notes: true,
             rentalDays: true,
+            pricingType: true,
+            pricingOptionId: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -905,6 +916,8 @@ export const simplifiedOrders = {
             productId: true,
             notes: true,
             rentalDays: true,
+            pricingType: true,
+            pricingOptionId: true,
             productImages: true, // Snapshot images saved when order was created
             product: { select: { id: true, name: true, barcode: true, images: true } } // Include product images for fallback
           }
@@ -934,6 +947,8 @@ export const simplifiedOrders = {
             productId: true,
             notes: true,
             rentalDays: true,
+            pricingType: true,
+            pricingOptionId: true,
             productName: true,
             productBarcode: true,
             productImages: true,
@@ -1336,6 +1351,8 @@ export const simplifiedOrders = {
               productId: true,
               notes: true,
               rentalDays: true,
+              pricingType: true,
+              pricingOptionId: true,
               productImages: true, // Snapshot images saved when order was created
               product: {
                 select: {
@@ -1716,6 +1733,10 @@ export const simplifiedOrders = {
               unitPrice: true,
               totalPrice: true,
               notes: true,
+              productId: true,
+              rentalDays: true,
+              pricingType: true,
+              pricingOptionId: true,
               product: {
                 select: {
                   id: true,
@@ -1824,8 +1845,11 @@ export const simplifiedOrders = {
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
           notes: item.notes,
+          rentalDays: item.rentalDays,
+          pricingType: item.pricingType,
+          pricingOptionId: item.pricingOptionId,
           // Flatten product data
-          productId: item.product?.id,
+          productId: item.productId ?? item.product?.id,
           productName: item.product?.name,
           productBarcode: item.product?.barcode,
           productImages: productImages,
@@ -1973,6 +1997,8 @@ export const simplifiedOrders = {
             deposit: true,
             notes: true,
             rentalDays: true,
+            pricingType: true,
+            pricingOptionId: true,
             product: {
               select: {
                 id: true,
@@ -2172,6 +2198,8 @@ export const simplifiedOrders = {
           productId: true,
           notes: true,
           rentalDays: true,
+          pricingType: true,
+          pricingOptionId: true,
           product: {
             select: {
               id: true,
@@ -2365,6 +2393,10 @@ export const simplifiedOrders = {
             unitPrice: true,
             totalPrice: true,
             notes: true,
+            productId: true,
+            rentalDays: true,
+            pricingType: true,
+            pricingOptionId: true,
             product: {
               select: {
                 id: true,

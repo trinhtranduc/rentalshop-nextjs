@@ -38,17 +38,9 @@ export function getRentalPriceUnit(
     return `/${t('pricing.durationUnitHours')}`;
   } else if (pricingType === 'DAILY') {
     return `/${t('pricing.durationUnitDays')}`;
-    } else {
-    // FIXED or null (default to FIXED) - use "lần" for Vietnamese, "rental" for English
-    const label = t('pricing.pricePerRental');
-    // Extract unit from translation - simple approach
-    if (label.toLowerCase().includes('lần')) {
-      return '/lần';
-    } else if (label.toLowerCase().includes('rental')) {
-      return '/rental';
-    }
-    return '';
   }
+  // FIXED (per rental): no unit suffix next to the price
+  return '';
 }
 
 /**

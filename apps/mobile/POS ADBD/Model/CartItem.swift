@@ -34,6 +34,8 @@ struct CartItem: Codable {
     // Store custom prices if user manually changes them
     var customRentPrice: Double?
     var customSalePrice: Double?
+    var customFixedPrice: Double?
+    var customDailyPrice: Double?
     
     // Product availability status (for rent orders)
     // nil = not loaded yet (loading state)
@@ -64,6 +66,51 @@ struct CartItem: Codable {
         self.pricingType = opt.type
         self.price = opt.price
         self.customRentPrice = opt.price
+    }
+
+    /// Switch between the two cart pricing modes. Products created before
+    /// pricingOptions existed keep their current price as a legacy option;
+    /// the missing mode is still selectable with a zero price.
+    mutating func selectPricingType(_ type: String) {
+        let normalizedType = type.uppercased()
+        let currentType = pricingType?.uppercased() ?? "FIXED"
+
+        if pricingOptions?.contains(where: { $0.type.uppercased() == currentType }) != true {
+            let legacyOption = PricingOption(
+                id: selectedPricingOptionId,
+                type: currentType,
+                price: price,
+                isDefault: true,
+                isActive: true
+            )
+            if pricingOptions == nil {
+                pricingOptions = []
+            }
+            pricingOptions?.append(legacyOption)
+        }
+
+        let option = pricingOptions?.first(where: { $0.type.uppercased() == normalizedType })
+        selectedPricingOptionId = option?.id
+        pricingType = normalizedType
+        if normalizedType == "DAILY" {
+            price = customDailyPrice ?? option?.price ?? 0
+        } else {
+            price = customFixedPrice ?? option?.price ?? 0
+        }
+        customRentPrice = price
+    }
+
+    /// Save a manual rental price for the currently selected pricing mode.
+    /// FIXED and DAILY values are intentionally independent.
+    mutating func setCustomRentalPrice(_ value: Double) {
+        let currentType = pricingType?.uppercased() ?? "FIXED"
+        if currentType == "DAILY" {
+            customDailyPrice = value
+        } else {
+            customFixedPrice = value
+        }
+        customRentPrice = value
+        price = value
     }
     
     // Computed properties
@@ -102,18 +149,22 @@ struct CartItem: Codable {
         self.originalSalePrice = originalSalePrice
         self.customRentPrice = customRentPrice
         self.customSalePrice = customSalePrice
+        self.customFixedPrice = customRentPrice
+        self.customDailyPrice = nil
         self.availabilityStatus = availabilityStatus
     }
     
     // Convenience init from Product model
     init(from product: Product, quantity: Int, price: Double) {
-        self.productId = product.product_id ?? product.id ?? 0
+        self.productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
         self.productName = product.name
         self.barcode = product.barcode
         self.quantity = quantity
         self.price = price
         self.deposit = product.deposit ?? 0
-        self.note = product.note
+        // A cart note belongs to this order line and must start empty. Product
+        // description/note metadata should not prefill an editable order note.
+        self.note = nil
         self.imageUrl = product.image_url ?? product.images?.first
         
         // Store original prices from product
@@ -121,17 +172,36 @@ struct CartItem: Codable {
         self.originalSalePrice = product.salePrice ?? product.sale
         self.customRentPrice = nil
         self.customSalePrice = nil
+        self.customFixedPrice = nil
+        self.customDailyPrice = nil
         
-        // Daily pricing + multiple options
-        self.pricingOptions = product.pricingOptions
+        // Daily pricing + multiple options. Legacy products expose their
+        // existing rent price as the configured mode so the cart can still
+        // offer the missing FIXED/DAILY mode at price zero.
+        let activeOptions = product.pricingOptions?.filter { $0.isActive != false } ?? []
+        if activeOptions.isEmpty {
+            let legacyType = product.pricingType?.uppercased() ?? "FIXED"
+            self.pricingOptions = [
+                PricingOption(
+                    id: nil,
+                    type: legacyType,
+                    price: product.rentPrice ?? product.rent,
+                    isDefault: true,
+                    isActive: true
+                )
+            ]
+        } else {
+            self.pricingOptions = activeOptions
+        }
         self.rentalDays = 1
-        if let def = product.defaultPricingOption {
+        if let def = self.pricingOptions?.first(where: { $0.isDefault == true })
+            ?? self.pricingOptions?.first {
             self.selectedPricingOptionId = def.id
             self.pricingType = def.type
+            self.price = def.price
         } else {
-            self.pricingType = product.pricingType
+            self.pricingType = product.pricingType ?? "FIXED"
         }
     }
     
 }
-

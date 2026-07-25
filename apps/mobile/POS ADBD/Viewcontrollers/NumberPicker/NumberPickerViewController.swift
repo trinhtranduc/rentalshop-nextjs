@@ -215,13 +215,17 @@ class NumberPickerViewController: UIViewController {
     }
     
     // MARK: - Public Methods
-    func configure(initialValue: Double = 0, mode: NumberPickerMode = .normal) {
+    func configure(
+        initialValue: Double = 0,
+        mode: NumberPickerMode = .normal,
+        title: String? = nil
+    ) {
         self.currentValue = initialValue
         self.mode = mode
         
         switch mode {
         case .normal:
-            titleLabel.text = "Input price or quantity".localized()
+            titleLabel.text = title ?? "Input price or quantity".localized()
             discountTypeStack.isHidden = true
             self.result = initialValue.inString()
             
@@ -313,6 +317,7 @@ class NumberPickerViewController: UIViewController {
 extension NumberPickerViewController {
     static func instance() -> NumberPickerViewController {
         let controller = NumberPickerViewController()
+        controller.modalPresentationStyle = .pageSheet
         
         if let sheet = controller.sheetPresentationController {
             // Calculate heights

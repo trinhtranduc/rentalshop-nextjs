@@ -209,6 +209,19 @@ const getLineDisplay = (
   return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
 };
 
+const getPricingLabel = (pricingType?: string | null): string => {
+  if (pricingType === 'DAILY') return 'Theo ngày';
+  if (pricingType === 'HOURLY') return 'Theo giờ';
+  return 'Theo lần';
+};
+
+const getPricingUnit = (pricingType?: string | null): string => {
+  if (pricingType === 'DAILY') return '/ngày';
+  if (pricingType === 'HOURLY') return '/giờ';
+  // FIXED (per rental): no unit suffix — only daily/hourly need a unit label
+  return '';
+};
+
 interface ProductsSectionProps {
   orderItems: OrderItemFormData[];
   products: ProductWithStock[];
@@ -216,6 +229,8 @@ interface ProductsSectionProps {
   onRemoveProduct: (productId: number) => void;
   onUpdateOrderItem: (productId: number, field: keyof OrderItemFormData, value: string | number) => void;
   onUpdatePricingOption?: (productId: number, optionId: number) => void;
+  /** Switch FIXED (per rental) ↔ DAILY (per day) — available for every RENT line */
+  onUpdatePricingType?: (productId: number, type: string) => void;
   onSearchProducts: (query: string) => Promise<any[]>;
   isLoadingProducts: boolean;
   orderType: 'RENT' | 'SALE';
@@ -233,6 +248,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   onRemoveProduct,
   onUpdateOrderItem,
   onUpdatePricingOption,
+  onUpdatePricingType,
   onSearchProducts,
   isLoadingProducts,
   orderType,
@@ -357,6 +373,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                       onRemove={onRemoveProduct}
                       onUpdate={onUpdateOrderItem}
                       onUpdatePricingOption={onUpdatePricingOption}
+                      onUpdatePricingType={onUpdatePricingType}
                       orderType={orderType}
                       pickupDate={pickupDate}
                       returnDate={returnDate}
@@ -381,6 +398,7 @@ interface OrderItemCardProps {
   onRemove: (productId: number) => void;
   onUpdate: (productId: number, field: keyof OrderItemFormData, value: string | number) => void;
   onUpdatePricingOption?: (productId: number, optionId: number) => void;
+  onUpdatePricingType?: (productId: number, type: string) => void;
   orderType: 'RENT' | 'SALE';
   pickupDate?: string;
   returnDate?: string;
@@ -394,6 +412,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   onRemove,
   onUpdate,
   onUpdatePricingOption,
+  onUpdatePricingType,
   orderType,
   pickupDate,
   returnDate,
@@ -653,7 +672,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Unit Price */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.unitPrice')}
+            {t('messages.unitPrice')} · {getPricingLabel(item.pricingType)}
           </label>
           <NumberInput
             value={item.unitPrice}
@@ -683,20 +702,36 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         )}
       </div>
 
-      {/* Pricing option selector (multi-option products, RENT only) */}
-      {orderType === 'RENT' && ((item.product?.pricingOptions as any[])?.length ?? 0) > 1 && (
+      {/* Pricing mode: always allow Per rental (FIXED) / Per day (DAILY) on RENT lines — matches mobile */}
+      {orderType === 'RENT' && (
         <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1">Loại giá</label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Cách tính giá</label>
           <select
-            value={item.selectedPricingOptionId ?? ''}
-            onChange={(e) => onUpdatePricingOption?.(item.productId, parseInt(e.target.value))}
+            value={(item.pricingType || 'FIXED').toUpperCase()}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              // Prefer configured option id when present; otherwise switch by type only
+              const opts = (item.product?.pricingOptions as any[]) || [];
+              const matched = opts.find((opt: any) => (opt.type || '').toUpperCase() === nextType);
+              if (matched?.id != null && onUpdatePricingOption) {
+                onUpdatePricingOption(item.productId, matched.id);
+              } else {
+                onUpdatePricingType?.(item.productId, nextType);
+              }
+            }}
             className="h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm"
           >
-            {(item.product?.pricingOptions as any[]).map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.type === 'DAILY' ? 'Theo ngày' : 'Theo lần'} · {formatMoney(opt.price)}{opt.type === 'DAILY' ? '/ngày' : ''}
-              </option>
-            ))}
+            {(['FIXED', 'DAILY'] as const).map((type) => {
+              const opt = ((item.product?.pricingOptions as any[]) || []).find(
+                (option: any) => (option.type || '').toUpperCase() === type
+              );
+              const priceLabel = opt?.price != null ? ` · ${formatMoney(opt.price)}${getPricingUnit(type)}` : '';
+              return (
+                <option key={type} value={type}>
+                  {getPricingLabel(type)}{priceLabel}
+                </option>
+              );
+            })}
           </select>
         </div>
       )}
@@ -720,7 +755,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           const d = getLineDisplay(item, orderType, pickupDate, returnDate);
           return (
             <div className="text-sm text-gray-600">
-              Total: {item.quantity} × {formatMoney(item.unitPrice)}{d.isDaily ? ` × ${d.days} ngày` : ''} = {formatMoney(d.total)}
+              {item.quantity} × {formatMoney(item.unitPrice)} {getPricingUnit(item.pricingType)}{d.isDaily ? ` × ${d.days} ngày` : ''} = {formatMoney(d.total)}
             </div>
           );
         })()}

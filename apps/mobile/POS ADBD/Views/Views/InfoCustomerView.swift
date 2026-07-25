@@ -35,10 +35,9 @@ class InfoCustomerView: UIView {
     private lazy var containerView: UIView = {
         let view = UIView()
         view.isUserInteractionEnabled = true
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 10
-        view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
+        view.backgroundColor = .systemBackground
+        view.layer.cornerRadius = 8
+        view.layer.borderWidth = 0
         return view
     }()
     
@@ -46,15 +45,14 @@ class InfoCustomerView: UIView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.image = UIImage(systemName: "person.circle.fill")
-        imageView.tintColor = .systemGray
+        imageView.image = Self.defaultAvatarImage()
         return imageView
     }()
     
     private lazy var customerNameLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.boldFont(size: 15)
-        label.textColor = .black
+        label.textColor = .textPrimary
         return label
     }()
     
@@ -181,13 +179,27 @@ class InfoCustomerView: UIView {
         if let avatar = customer.avatar {
             customerAvatar.kf.setImage(
                 with: URL(string: avatar),
-                placeholder: UIImage(systemName: "person.circle.fill"),
+                placeholder: Self.defaultAvatarImage(),
                 options: [.transition(.fade(0.1))]
             )
         } else {
-            customerAvatar.image = UIImage(systemName: "person.circle.fill")
-            customerAvatar.tintColor = .systemGray
+            customerAvatar.image = Self.defaultAvatarImage()
         }
+    }
+
+    private static func defaultAvatarImage() -> UIImage? {
+        let configuration = UIImage.SymbolConfiguration(
+            pointSize: 42,
+            weight: .regular
+        ).applying(
+            UIImage.SymbolConfiguration(
+                paletteColors: [.systemGray3, .systemGray6]
+            )
+        )
+        return UIImage(
+            systemName: "person.crop.circle.fill",
+            withConfiguration: configuration
+        )
     }
 
     private func updateLoyaltyUI(customer: Customer) {

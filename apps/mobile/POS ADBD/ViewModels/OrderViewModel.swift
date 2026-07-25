@@ -20,15 +20,30 @@ class OrderViewModel: PreviewViewModelProtocol {
     var saveButtonTitle: String {
         switch (orderType, order.status) {
         case (.sale, _):
-            return "Checkout".localized().uppercased()
+            return "Checkout".localized()
         case (.rent, .draft):
-            return "Action_Reserved".localized().uppercased()
+            return "Action_Reserved".localized()
         case (.rent, .reserved):
-            return "Action_Pickup".localized().uppercased()
+            return "Action_Pickup".localized()
         case (.rent, .pickuped):
-            return "Action_Return".localized().uppercased()
+            return "Action_Return".localized()
         default:
-            return "Save".localized().uppercased()
+            return "Save".localized()
+        }
+    }
+
+    var saveButtonSymbolName: String {
+        switch (orderType, order.status) {
+        case (.sale, _):
+            return "cart.fill"
+        case (.rent, .draft):
+            return "bookmark.fill"
+        case (.rent, .reserved):
+            return "shippingbox.fill"
+        case (.rent, .pickuped):
+            return "arrow.uturn.backward"
+        default:
+            return "checkmark.circle.fill"
         }
     }
     
@@ -664,8 +679,10 @@ class OrderViewModel: PreviewViewModelProtocol {
                     totalPrice: orderItem.totalPrice,
                     deposit: orderItem.productDeposit,
                     notes: finalNote,
-                    rentalDays: order.rentalDuration,
-                    imageUrl: orderItem.productImages?.first
+                    rentalDays: orderItem.rentalDays ?? order.rentalDuration,
+                    imageUrl: orderItem.productImages?.first,
+                    pricingType: orderItem.pricingType,
+                    pricingOptionId: orderItem.pricingOptionId
                 )
             }
         )

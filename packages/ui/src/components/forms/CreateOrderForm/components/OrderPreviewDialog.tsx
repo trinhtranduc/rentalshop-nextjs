@@ -44,6 +44,8 @@ interface OrderPreviewDialogProps {
       quantity: number;
       unitPrice: number;
       totalPrice: number;
+      rentalDays?: number;
+      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
       deposit: number;
       notes: string;
     }>;

@@ -81,6 +81,9 @@ class ProductService: BaseService, ProductServiceProtocol {
                     print("✅ Product operation response parsed successfully with Codable")
                     print("   Success: \(apiResponse.success)")
                     print("   Message: \(apiResponse.message ?? "No message")")
+                    if let rawError = apiResponse.error, rawError != apiResponse.message {
+                        print("   Error Detail: \(rawError)")
+                    }
                     
                     if apiResponse.success, let product = apiResponse.data {
                         print("✅ Product operation successful: \(product.name ?? "Unknown")")

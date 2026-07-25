@@ -97,6 +97,8 @@ export interface OrderPreviewData {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    rentalDays?: number;
+    pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
     deposit?: number;
     notes?: string;
   }>;
@@ -142,6 +144,18 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
   className = ''
 }) => {
   const t = useOrderTranslations();
+
+  const getPricingText = (item: OrderPreviewData['orderItems'][number]) => {
+    if (item.pricingType === 'DAILY') {
+      const days = Math.max(1, item.rentalDays || 1);
+      return `/ per day${days > 1 ? ` × ${days} days` : ''}`;
+    }
+    if (item.pricingType === 'HOURLY') {
+      return '/ per hour';
+    }
+    // FIXED (per rental): no unit suffix
+    return '';
+  };
   // Calculate rental duration for rental orders
   const getRentalDuration = () => {
     if (orderData.orderType === 'RENT' && orderData.pickupPlanAt && orderData.returnPlanAt) {
@@ -292,12 +306,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
             </div>
           ) : (
             <>
-              {console.log('🔍 OrderPreviewForm received orderItems:', orderData.orderItems)}
-              {console.log('🔍 OrderPreviewForm orderItems length:', orderData.orderItems.length)}
               <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 text-sm text-gray-600">
-                  Debug: Showing {orderData.orderItems.length} order items
-                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -310,7 +319,6 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                   </TableHeader>
                   <TableBody>
                     {orderData.orderItems.map((item, index) => {
-                      console.log(`🔍 Rendering order item ${index}:`, item);
                       // Use the product information that's already stored in the orderItems
                       // This ensures consistency between the cart and preview
                       return (
@@ -344,7 +352,10 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                             <Badge variant="outline">{item.quantity}</Badge>
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(item.unitPrice)}
+                            <div className="whitespace-nowrap">
+                              <div>{formatCurrency(item.unitPrice)}</div>
+                              <div className="text-xs text-gray-500">{getPricingText(item)}</div>
+                            </div>
                           </TableCell>
                           <TableCell className="font-medium">
                             {formatCurrency(item.totalPrice)}

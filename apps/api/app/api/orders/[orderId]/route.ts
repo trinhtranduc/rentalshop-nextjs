@@ -552,6 +552,31 @@ export const PUT = async (
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
       const { subtotal, taxAmount, id, loyaltyRedeem, ...validUpdateData } = body;
+
+      // Preserve each item's pricing snapshot when older clients update an order
+      // without sending the newly supported pricing fields.
+      if (Array.isArray(validUpdateData.orderItems)) {
+        validUpdateData.orderItems = validUpdateData.orderItems.map((item: any) => {
+          const existingItem = existingOrder.orderItems?.find(
+            (candidate: any) => candidate.productId === item.productId
+          );
+          const sendsPricingType = Object.prototype.hasOwnProperty.call(item, 'pricingType');
+          const sendsPricingOptionId = Object.prototype.hasOwnProperty.call(item, 'pricingOptionId');
+
+          return {
+            ...item,
+            rentalDays: item.rentalDays ?? item.rentDays ?? existingItem?.rentalDays,
+            pricingType: item.pricingType ?? existingItem?.pricingType,
+            // A new client sends pricingType whenever it intentionally chooses a
+            // mode. If that mode has no configured option, clear the old option ID.
+            pricingOptionId: sendsPricingOptionId
+              ? item.pricingOptionId
+              : sendsPricingType
+                ? null
+                : existingItem?.pricingOptionId,
+          };
+        });
+      }
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
 
@@ -726,6 +751,8 @@ export const PUT = async (
             deposit: item.deposit,
             notes: item.notes,
             rentalDays: item.rentalDays,
+            pricingType: item.pricingType,
+            pricingOptionId: item.pricingOptionId,
             // Include product object if available (for backward compatibility)
             product: item.product || null
           };

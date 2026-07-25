@@ -44,6 +44,7 @@ enum AppIcon {
     static let scanBarcode = "barcode.viewfinder"
     static let cart = "cart"
     static let delete = "trash"
+    static let clearCart = "broom.fill"
     static let productCheck = "list.bullet.rectangle"
     static let adjustProduct = "slider.horizontal.3"
 

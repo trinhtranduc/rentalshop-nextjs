@@ -89,6 +89,7 @@ final class CartStore {
 
     func addItem(_ cartItem: CartItem) {
         storage.addItem(cartItem)
+        storage.syncRentalDaysFromDates()
         notifyDidChange()
     }
 
@@ -119,6 +120,12 @@ final class CartStore {
 
     func selectPricingOption(at index: Int, optionId: Int) {
         storage.selectPricingOption(at: index, optionId: optionId)
+        notifyDidChange()
+    }
+
+    func selectPricingType(at index: Int, type: String) {
+        storage.selectPricingType(at: index, type: type)
+        storage.syncRentalDaysFromDates()
         notifyDidChange()
     }
 

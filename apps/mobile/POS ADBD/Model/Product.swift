@@ -245,13 +245,11 @@ struct Product: Codable, Comparable, Copying {
         
         self.image_name = try container.decodeIfPresent(String.self, forKey: .image_name)
         
-        // Note/Description mapping - prefer new format first
-        if let descriptionValue = try? container.decode(String.self, forKey: .description) {
-            self.note = descriptionValue
-            self.description = descriptionValue
-        } else {
-            self.note = try container.decodeIfPresent(String.self, forKey: .note)
-        }
+        // Product description and order-item note are separate concepts.
+        // Keeping them independent prevents product copy from appearing as an
+        // editable note whenever the product is added to the cart.
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.note = try container.decodeIfPresent(String.self, forKey: .note)
         
         // Additional new fields
         self.isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive)
@@ -370,5 +368,4 @@ struct Product: Codable, Comparable, Copying {
         }
     }
 }
-
 

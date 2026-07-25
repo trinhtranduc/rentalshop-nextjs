@@ -329,6 +329,39 @@ class SuggestionTextField: BaseViewControler {
         controller.delegate = self // Set delegate to receive callbacks when customer is created/updated
         self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true)
     }
+
+    private func showCustomerOrders(customer: Customer?) {
+        guard let customer = customer else {
+            UIAlertController.alert(
+                parent: self,
+                title: "Error".localized(),
+                message: "Invalid customer ID".localized()
+            )
+            return
+        }
+
+        let customerId = customer.id ?? customer.customer_id
+        guard customerId > 0 else {
+            UIAlertController.alert(
+                parent: self,
+                title: "Error".localized(),
+                message: "Invalid customer ID".localized()
+            )
+            return
+        }
+
+        // Pass full Customer so header can show loyalty tier (Kim Cương, …) immediately;
+        // dedicated API then refreshes tier + accurate totals.
+        let controller = OverviewRankingOrdersViewController(customer: customer)
+        controller.hidesBottomBarWhenPushed = true
+
+        if let navigationController = navigationController {
+            navigationController.pushViewController(controller, animated: true)
+        } else {
+            let nav = UINavigationController(rootViewController: controller)
+            present(nav, animated: true)
+        }
+    }
     
     private func processSearch(text: String) {
         let searchText = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -473,6 +506,10 @@ extension SuggestionTextField: UISearchBarDelegate {
 extension SuggestionTextField: CustomerCellDelegate {
     func more(user: Customer?, sender: CustomerCell) {
         let optionMenu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        let viewOrdersAction = UIAlertAction(title: "View orders".localized(), style: .default) { [weak self] _ in
+            self?.showCustomerOrders(customer: user)
+        }
         
         let updateAction = UIAlertAction(title: "Update customer".localized(), style: .default) { [weak self] _ in
             self?.showCustomerView(customer: user)
@@ -525,6 +562,7 @@ extension SuggestionTextField: CustomerCellDelegate {
         
         let cancelAction = UIAlertAction(title: "Cancel".localized(), style: .cancel)
         
+        optionMenu.addAction(viewOrdersAction)
         optionMenu.addAction(updateAction)
         optionMenu.addAction(deleteAction)
         optionMenu.addAction(cancelAction)
