@@ -21,6 +21,39 @@ let numberFormatter: NumberFormatter = {
     return formatter
 }()
 
+/// Shared SF Symbols for navigation and common actions.
+///
+/// Keep this catalog semantic (what the user is doing), not visual (how an
+/// individual screen happens to draw it). Product photos, logos and avatars
+/// are deliberately excluded because they are content, not app controls.
+enum AppIcon {
+    // Navigation
+    static let home = "house"
+    static let homeSelected = "house.fill"
+    static let orders = "list.bullet.rectangle"
+    static let ordersSelected = "list.bullet.rectangle.fill"
+    static let calendar = "calendar"
+    static let calendarSelected = "calendar.fill"
+    static let reports = "chart.bar"
+    static let reportsSelected = "chart.bar.fill"
+    static let settings = "gearshape"
+    static let settingsSelected = "gearshape.fill"
+
+    // Global actions
+    static let add = "plus"
+    static let scanBarcode = "barcode.viewfinder"
+    static let cart = "cart"
+    static let delete = "trash"
+    static let productCheck = "list.bullet.rectangle"
+    static let adjustProduct = "slider.horizontal.3"
+
+    // User management
+    static let manageUser = "person.crop.circle.badge.gear"
+    static let changePassword = "key"
+    static let deactivateUser = "person.crop.circle.badge.xmark"
+    static let activateUser = "person.crop.circle.badge.checkmark"
+}
+
 enum LangCode :String {
     case en, vi
 }

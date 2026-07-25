@@ -101,16 +101,16 @@ class TabbarViewController: UITabBarController {
         let child_0 = MainViewController()
         child_0.tabBarItem = UITabBarItem(
             title: child0Title,
-            image: UIImage(systemName: "house")?.withConfiguration(symbolConfig),
-            selectedImage: UIImage(systemName: "house.fill")?.withConfiguration(symbolConfig)
+            image: UIImage(systemName: AppIcon.home)?.withConfiguration(symbolConfig),
+            selectedImage: UIImage(systemName: AppIcon.homeSelected)?.withConfiguration(symbolConfig)
         )
         child_0.navigationItem.title = child0Title
         
         let child_1 = SaleViewController()
         child_1.tabBarItem = UITabBarItem(
             title: child1Title,
-            image: UIImage(systemName: "list.bullet.rectangle")?.withConfiguration(symbolConfig),
-            selectedImage: UIImage(systemName: "list.bullet.rectangle.fill")?.withConfiguration(symbolConfig)
+            image: UIImage(systemName: AppIcon.orders)?.withConfiguration(symbolConfig),
+            selectedImage: UIImage(systemName: AppIcon.ordersSelected)?.withConfiguration(symbolConfig)
         )
         child_1.navigationItem.title = child1Title
         
@@ -118,24 +118,24 @@ class TabbarViewController: UITabBarController {
         child_2.navigationItem.title = child2Title
         child_2.tabBarItem = UITabBarItem(
             title: child2Title,
-            image: UIImage(systemName: "calendar")?.withConfiguration(symbolConfig),
-            selectedImage: UIImage(systemName: "calendar.fill")?.withConfiguration(symbolConfig)
+            image: UIImage(systemName: AppIcon.calendar)?.withConfiguration(symbolConfig),
+            selectedImage: UIImage(systemName: AppIcon.calendarSelected)?.withConfiguration(symbolConfig)
         )
         
         let child_3 = OverviewViewController()
         child_3.navigationItem.title = child3Title
         child_3.tabBarItem = UITabBarItem(
             title: child3Title,
-            image: UIImage(systemName: "chart.bar")?.withConfiguration(symbolConfig),
-            selectedImage: UIImage(systemName: "chart.bar.fill")?.withConfiguration(symbolConfig)
+            image: UIImage(systemName: AppIcon.reports)?.withConfiguration(symbolConfig),
+            selectedImage: UIImage(systemName: AppIcon.reportsSelected)?.withConfiguration(symbolConfig)
         )
         
         let child_5 = SettingsViewController()
         child_5.navigationItem.title = child4Title
         child_5.tabBarItem = UITabBarItem(
             title: child4Title,
-            image: UIImage(systemName: "gearshape")?.withConfiguration(symbolConfig),
-            selectedImage: UIImage(systemName: "gearshape.fill")?.withConfiguration(symbolConfig)
+            image: UIImage(systemName: AppIcon.settings)?.withConfiguration(symbolConfig),
+            selectedImage: UIImage(systemName: AppIcon.settingsSelected)?.withConfiguration(symbolConfig)
         )
         
         // Create navigation controllers

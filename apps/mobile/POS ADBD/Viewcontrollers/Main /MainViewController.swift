@@ -79,7 +79,7 @@ class MainViewController: BaseViewControler {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 23, weight: .regular)
         button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
-        button.setImage(UIImage(systemName: "plus"), for: .normal)
+        button.setImage(UIImage(systemName: AppIcon.add), for: .normal)
         button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(addNewProduct), for: .touchUpInside)
         button.accessibilityLabel = "Add product".localized()
@@ -90,7 +90,7 @@ class MainViewController: BaseViewControler {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
         button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
-        button.setImage(UIImage(systemName: "barcode.viewfinder"), for: .normal)
+        button.setImage(UIImage(systemName: AppIcon.scanBarcode), for: .normal)
         button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(barcodeScanTapped), for: .touchUpInside)
         button.accessibilityLabel = "Scan barcode".localized()
@@ -108,7 +108,7 @@ class MainViewController: BaseViewControler {
         let button = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
         let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
         button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
-        button.setImage(UIImage(systemName: "cart"), for: .normal)
+        button.setImage(UIImage(systemName: AppIcon.cart), for: .normal)
         button.tintColor = .textPrimary
         button.badgeBackgroundColor = .brandPrimary
         button.badgeTextColor = .white
@@ -122,7 +122,7 @@ class MainViewController: BaseViewControler {
     private lazy var trashButton: UIButton = {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
+        let trashImage = UIImage(systemName: AppIcon.delete, withConfiguration: config)
         button.setImage(trashImage, for: .normal)
         button.tintColor = .black
         button.addTarget(self, action: #selector(trashButtonTapped), for: .touchUpInside)
@@ -719,7 +719,7 @@ extension MainViewController: ProductCellDelegate {
         // Product check action
         let checkAction = UIAction(
             title: "Product check".localized(),
-            image: UIImage(systemName: "list.bullet.rectangle")
+            image: UIImage(systemName: AppIcon.productCheck)
         ) { [weak self] _ in
             self?.previewOrders(sender: cell, product: product)
         }
@@ -729,7 +729,7 @@ extension MainViewController: ProductCellDelegate {
         if PermissionManager.shared.canManageProducts() {
             let updateAction = UIAction(
                 title: "Update product".localized(),
-                image: UIImage(systemName: "slider.horizontal.3")
+                image: UIImage(systemName: AppIcon.adjustProduct)
             ) { [weak self] _ in
                 self?.presentProductView(product: product)
             }
@@ -737,7 +737,7 @@ extension MainViewController: ProductCellDelegate {
             
             let deleteAction = UIAction(
                 title: "Delete product".localized(),
-                image: UIImage(systemName: "trash"),
+                image: UIImage(systemName: AppIcon.delete),
                 attributes: .destructive
             ) { [weak self] _ in
                 self?.handleProductDeletion(product)

@@ -59,7 +59,7 @@ class UserManagementViewController: BaseViewControler {
     
     private lazy var addButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "plus"), for: .normal)
+        button.setImage(UIImage(systemName: AppIcon.add), for: .normal)
         button.tintColor = .black
         button.addTarget(self, action: #selector(addNewUser), for: .touchUpInside)
         return button
@@ -218,7 +218,7 @@ class UserManagementViewController: BaseViewControler {
         // Edit action
         let editAction = UIAction(
             title: "Edit".localized(),
-            image: UIImage(systemName: "person.crop.circle.badge.gear")
+            image: UIImage(systemName: AppIcon.manageUser)
         ) { [weak self] _ in
             self?.editUser(user)
         }
@@ -227,7 +227,7 @@ class UserManagementViewController: BaseViewControler {
         // Change password action
         let changePasswordAction = UIAction(
             title: "Change Password".localized(),
-            image: UIImage(systemName: "key")
+            image: UIImage(systemName: AppIcon.changePassword)
         ) { [weak self] _ in
             self?.changePassword(for: user)
         }
@@ -236,7 +236,7 @@ class UserManagementViewController: BaseViewControler {
         // Disable/Enable action
         let statusAction = UIAction(
             title: user.isActive ? "Disable".localized() : "Enable".localized(),
-            image: UIImage(systemName: user.isActive ? "person.crop.circle.badge.xmark" : "person.crop.circle.badge.checkmark")
+            image: UIImage(systemName: user.isActive ? AppIcon.deactivateUser : AppIcon.activateUser)
         ) { [weak self] _ in
             self?.toggleUserStatus(user)
         }
@@ -245,7 +245,7 @@ class UserManagementViewController: BaseViewControler {
         // Delete action
         let deleteAction = UIAction(
             title: "Delete".localized(),
-            image: UIImage(systemName: "trash"),
+            image: UIImage(systemName: AppIcon.delete),
             attributes: .destructive
         ) { [weak self] _ in
             self?.deleteUser(user)
