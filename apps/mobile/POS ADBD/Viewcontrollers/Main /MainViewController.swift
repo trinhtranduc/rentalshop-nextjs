@@ -729,7 +729,7 @@ extension MainViewController: ProductCellDelegate {
         if PermissionManager.shared.canManageProducts() {
             let updateAction = UIAction(
                 title: "Update product".localized(),
-                image: UIImage(systemName: "pencil")
+                image: UIImage(systemName: "slider.horizontal.3")
             ) { [weak self] _ in
                 self?.presentProductView(product: product)
             }

@@ -218,7 +218,7 @@ class UserManagementViewController: BaseViewControler {
         // Edit action
         let editAction = UIAction(
             title: "Edit".localized(),
-            image: UIImage(systemName: "pencil")
+            image: UIImage(systemName: "person.crop.circle.badge.gear")
         ) { [weak self] _ in
             self?.editUser(user)
         }
@@ -462,4 +462,3 @@ extension UserManagementViewController: UserFormViewControllerDelegate {
         loadUsers()
     }
 }
-
