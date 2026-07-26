@@ -6,10 +6,19 @@ import SnapKit
 // Import enums and models
 // OrderType and DiscountType are defined in Cart.swift
 
+/// Keeps the sheet's isolated layout area from blocking touches on the table
+/// when the visible sheet is shorter than its maximum height.
+private final class CartSheetLayoutContainerView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let target = super.hitTest(point, with: event)
+        return target === self ? nil : target
+    }
+}
+
 class InfoMainViewController: BaseViewControler {
-    /// "Select customer" bar — short; card state is slightly taller (avatar + labels).
+    /// Customer card stays compact in Create Order; loyalty details are intentionally omitted.
     private static let customerSelectRowHeight: CGFloat = 58
-    private static let customerCardRowHeight: CGFloat = 76
+    private static let customerCardRowHeight: CGFloat = 58
 
     // MARK: - Properties
     // Debounce manager for batch availability API calls
@@ -39,6 +48,7 @@ class InfoMainViewController: BaseViewControler {
     private lazy var customerInfoView: InfoCustomerView = {
         let view = InfoCustomerView()
         view.delegate = self
+        view.showsLoyaltyInfo = false
         view.isHidden = true
         view.backgroundColor = UIColor(hexString: "EDF4F4")
         view.layer.cornerRadius = 8
@@ -86,34 +96,168 @@ class InfoMainViewController: BaseViewControler {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 0
-        stack.backgroundColor = .white
+        stack.backgroundColor = .backgroundCard
+        stack.layer.cornerRadius = 18
+        stack.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        stack.clipsToBounds = true
         stack.translatesAutoresizingMaskIntoConstraints = false
         
         // Create and add views
-        let pickupDateView = createDateView(title: "Pickup date".localized(), action: #selector(getDateTapped))
-        let returnDateView = createDateView(title: "Return date".localized(), action: #selector(returnDateTapped))
         let downPaymentView = createPaymentView(title: "Deposit".localized(), value: "0")
         let discountView = createPaymentView(title: "Discount".localized(), value: "0")
         
         // Store references
-        self.pickupDateView = pickupDateView
-        self.returnDateView = returnDateView
         self.downPaymentView = downPaymentView
         self.discountView = discountView
+
+        let detailsStack = UIStackView(arrangedSubviews: [downPaymentView, discountView])
+        detailsStack.axis = .vertical
+        detailsStack.spacing = 0
+        detailsStack.distribution = .fill
+
+        let detailsContainer = UIView()
+        detailsContainer.backgroundColor = .backgroundCard
+        detailsContainer.clipsToBounds = true
+        detailsContainer.addSubview(detailsStack)
+        detailsStack.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+        }
+
+        let detailsHeightConstraint = detailsContainer.heightAnchor.constraint(
+            equalToConstant: cartSheetRowHeight * 2
+        )
+        detailsHeightConstraint.isActive = true
+        self.cartSheetDetailsHeightConstraint = detailsHeightConstraint
         
         // Add views to stack
-        stack.addArrangedSubview(pickupDateView)
-        stack.addArrangedSubview(returnDateView)
-        stack.addArrangedSubview(downPaymentView)
-        stack.addArrangedSubview(discountView)
+        stack.addArrangedSubview(saleCartSheetGrabberContainer)
+        stack.addArrangedSubview(cartSheetHeaderView)
+        stack.addArrangedSubview(detailsContainer)
         
         return stack
     }()
-    
+
+    private let cartSheetHeaderHeight: CGFloat = 58
+    private let cartSheetRowHeight: CGFloat = 44
+    private let cartSheetPreviewHeight: CGFloat = 50
+    private let cartSheetTableGap: CGFloat = 16
+    private var cartSheetDragStartProgress: CGFloat = 0
+    private var cartSheetExpansionProgress: CGFloat = 0
+    private var isCartSheetExpanded = false
+    private var lastTableHeaderLayoutWidth: CGFloat = 0
+
+    /// A fixed-size layout island keeps interactive sheet updates away from
+    /// the self-sizing cart table and the rest of the controller hierarchy.
+    private lazy var cartSheetLayoutContainer: UIView = {
+        let container = CartSheetLayoutContainerView()
+        container.backgroundColor = .clear
+        return container
+    }()
+
+    private lazy var saleCartSheetGrabberContainer: UIView = {
+        let container = UIView()
+        container.backgroundColor = .backgroundCard
+        container.isHidden = true
+
+        let grabber = UIView()
+        grabber.backgroundColor = .borderColor
+        grabber.layer.cornerRadius = 2.5
+        container.addSubview(grabber)
+
+        grabber.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(7)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(38)
+            make.height.equalTo(5)
+        }
+        container.snp.makeConstraints { make in
+            make.height.equalTo(20)
+        }
+        return container
+    }()
+
+    private lazy var cartSheetHeaderView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        view.isAccessibilityElement = true
+        view.accessibilityTraits = UIAccessibilityTraitButton
+        view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handleCartSheetPan(_:))))
+
+        view.addSubview(cartSheetGrabberView)
+        view.addSubview(cartSheetTitleLabel)
+        view.addSubview(cartSheetSummaryLabel)
+        view.addSubview(cartSheetChevronView)
+
+        cartSheetGrabberView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(7)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(38)
+            make.height.equalTo(5)
+        }
+        cartSheetTitleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.top.equalTo(cartSheetGrabberView.snp.bottom).offset(7)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+        cartSheetChevronView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalTo(cartSheetTitleLabel)
+            make.width.height.equalTo(16)
+        }
+        cartSheetSummaryLabel.snp.makeConstraints { make in
+            make.leading.greaterThanOrEqualTo(cartSheetTitleLabel.snp.trailing).offset(12)
+            make.trailing.equalTo(cartSheetChevronView.snp.leading).offset(-8)
+            make.centerY.equalTo(cartSheetTitleLabel)
+        }
+        view.snp.makeConstraints { make in
+            make.height.equalTo(cartSheetHeaderHeight)
+        }
+        return view
+    }()
+
+    private lazy var cartSheetGrabberView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .borderColor
+        view.layer.cornerRadius = 2.5
+        view.isUserInteractionEnabled = true
+        view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleCartSheet)))
+        return view
+    }()
+
+    private lazy var cartSheetChevronView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.up"))
+        imageView.tintColor = .textSecondary
+        imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleCartSheet)))
+        return imageView
+    }()
+
+    private lazy var cartSheetTitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 16)
+        label.textColor = .brandPrimary
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(rentalPeriodTapped)))
+        return label
+    }()
+
+    private lazy var cartSheetSummaryLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 16)
+        label.textColor = .textPrimary
+        label.textAlignment = .right
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.72
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(rentalPeriodTapped)))
+        return label
+    }()
+
     private lazy var totalLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.boldFont(size: 16)
-        label.textColor = .white
+        label.textColor = .textInverted
         label.textAlignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -121,8 +265,8 @@ class InfoMainViewController: BaseViewControler {
     
     private lazy var previewContainer: UIButton = {
         let button = UIButton(type: .custom)
-        button.backgroundColor = .systemGreen
-        button.layer.cornerRadius = 5
+        button.backgroundColor = .brandPrimary
+        button.layer.cornerRadius = 12
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(previewTapped), for: .touchUpInside)
@@ -165,7 +309,7 @@ class InfoMainViewController: BaseViewControler {
         let label = UILabel()
         label.text = "Preview".localized().uppercased()
         label.font = Utils.boldFont(size: 16)
-        label.textColor = .white
+        label.textColor = .textInverted
         label.isUserInteractionEnabled = false
         return label
     }()
@@ -174,7 +318,7 @@ class InfoMainViewController: BaseViewControler {
     private lazy var previewCountLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.boldFont(size: 16)
-        label.textColor = .white
+        label.textColor = .textInverted
         label.textAlignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
         label.isUserInteractionEnabled = false
@@ -346,7 +490,7 @@ class InfoMainViewController: BaseViewControler {
     private lazy var downPaymentLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        label.textColor = .black
+        label.textColor = .textPrimary
         label.textAlignment = .right
         return label
     }()
@@ -354,7 +498,7 @@ class InfoMainViewController: BaseViewControler {
     private lazy var discountLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        label.textColor = .black
+        label.textColor = .textPrimary
         label.textAlignment = .right
         return label
     }()
@@ -363,13 +507,10 @@ class InfoMainViewController: BaseViewControler {
     private var tableViewBottomToDateStack: NSLayoutConstraint?
     private var tableViewBottomToPreview: NSLayoutConstraint?
     
-    private var pickupDateView: UIView?
-    private var returnDateView: UIView?
     private var downPaymentView: UIView?
     private var discountView: UIView?
-    private var pickupDateHeightConstraint: Constraint?
-    private var returnDateHeightConstraint: Constraint?
-    private var downPaymentHeightConstraint: Constraint?
+    private var cartSheetDetailsHeightConstraint: NSLayoutConstraint?
+    private var cartSheetHeightConstraint: NSLayoutConstraint?
     private weak var currentSuggestionTextField: SuggestionTextField?
     
     // MARK: - Lifecycle
@@ -411,6 +552,11 @@ class InfoMainViewController: BaseViewControler {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        let width = selectedProductTableView.bounds.width
+        guard width > 0, abs(width - lastTableHeaderLayoutWidth) >= 0.5 else {
+            return
+        }
+        lastTableHeaderLayoutWidth = width
         layoutCartTableHeaderView()
     }
     
@@ -431,17 +577,9 @@ class InfoMainViewController: BaseViewControler {
         selectedProductTableView.tableHeaderView = headerView
         layoutCartTableHeaderView()
         
-        // Initialize dateStackView state based on current method
-        if methodSelect == .sale {
-            dateStackView.alpha = 0
-            dateStackView.isHidden = true
-        } else {
-            dateStackView.alpha = 1
-            dateStackView.isHidden = false
-        }
-        
         // Update method selection to set initial state
         updateMethodSelection()
+        setCartSheet(expanded: true, animated: false)
         
         // Add tap gesture to dismiss keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -451,9 +589,10 @@ class InfoMainViewController: BaseViewControler {
     
     private func setupSubviews() {
         // Add subviews to the view hierarchy
-        [selectedProductTableView, dateStackView].forEach {
+        [selectedProductTableView, cartSheetLayoutContainer].forEach {
             view.addSubview($0)
         }
+        cartSheetLayoutContainer.addSubview(dateStackView)
         
         customerInputView.addSubview(customerSelectButton)
         
@@ -477,17 +616,50 @@ class InfoMainViewController: BaseViewControler {
         // Setup constraints for previewContainer
         // Setup constraints for previewContainer (now inside dateStackView)
         previewContainer.snp.makeConstraints { make in
-            make.height.equalTo(50)
+            make.height.equalTo(cartSheetPreviewHeight)
             make.leading.equalToSuperview().offset(16)
             make.trailing.equalToSuperview().offset(-16)
         }
         
-        // Setup constraints for dateStackView
-        dateStackView.snp.makeConstraints { make in
+        // Keep a fixed layout island for the sheet. Its unused transparent
+        // area passes touches through to the cart table.
+        cartSheetLayoutContainer.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.height.equalTo(
+                cartSheetHeaderHeight
+                    + (cartSheetRowHeight * 2)
+                    + cartSheetPreviewHeight
+            )
+        }
+
+        // Setup constraints for dateStackView inside the isolated container.
+        dateStackView.snp.makeConstraints { make in
+            make.bottom.equalToSuperview()
             make.leading.equalToSuperview()
             make.trailing.equalToSuperview()
         }
+        let initialSheetHeight = cartSheetHeaderHeight
+            + (cartSheetRowHeight * 2)
+            + cartSheetPreviewHeight
+        cartSheetHeightConstraint = dateStackView.heightAnchor.constraint(
+            equalToConstant: initialSheetHeight
+        )
+        cartSheetHeightConstraint?.isActive = true
+
+        // Keep the table frame stable while the sheet expands. The additional
+        // inset lets the last cart item scroll above the overlaid detail rows.
+        let expandedRowsInset = cartSheetRowHeight * 2 + cartSheetTableGap
+        selectedProductTableView.contentInset.bottom = expandedRowsInset
+        selectedProductTableView.verticalScrollIndicatorInsets = UIEdgeInsets(
+            top: 0,
+            left: 0,
+            bottom: expandedRowsInset,
+            right: 0
+        )
+        let collapsedSheetReserve = cartSheetHeaderHeight
+            + cartSheetPreviewHeight
+            + cartSheetTableGap
         
         // Setup constraints for selectedProductTableView based on current mode
         if UIDevice.current.userInterfaceIdiom == .phone {
@@ -496,7 +668,7 @@ class InfoMainViewController: BaseViewControler {
         selectedProductTableView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar.snp.bottom)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(dateStackView.snp.top).offset(-16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-collapsedSheetReserve)
             }
         } else {
             // On iPad, container view already starts from below navigation bar
@@ -504,41 +676,140 @@ class InfoMainViewController: BaseViewControler {
             selectedProductTableView.snp.makeConstraints { make in
                 make.top.equalTo(view.safeAreaLayoutGuide)
                 make.leading.trailing.equalToSuperview()
-                make.bottom.equalTo(dateStackView.snp.top).offset(-16)
+                make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-collapsedSheetReserve)
             }
         }
         
     }
     
     // MARK: - Helper Methods
+    private func prepareCartSheetRowsForAnimation() {
+        discountView?.isHidden = false
+        downPaymentView?.isHidden = methodSelect != .rent
+    }
+
+    private func applyCartSheetProgress(_ progress: CGFloat) {
+        let clampedProgress = min(max(progress, 0), 1)
+        cartSheetExpansionProgress = clampedProgress
+        let expandedDetailHeight = methodSelect == .rent
+            ? cartSheetRowHeight * 2
+            : cartSheetRowHeight
+        let detailsHeight = methodSelect == .rent
+            ? expandedDetailHeight * clampedProgress
+            : expandedDetailHeight
+        cartSheetDetailsHeightConstraint?.constant = detailsHeight
+
+        let topHandleHeight = methodSelect == .rent
+            ? cartSheetHeaderHeight
+            : 20
+        cartSheetHeightConstraint?.constant =
+            topHandleHeight + detailsHeight + cartSheetPreviewHeight
+
+        cartSheetChevronView.transform = CGAffineTransform(
+            rotationAngle: .pi * clampedProgress
+        )
+    }
+
+    private func finalizeCartSheetVisibility() {
+        let isCollapsed = cartSheetExpansionProgress < 0.01
+        let isRentalOrder = methodSelect == .rent
+        cartSheetHeaderView.isHidden = !isRentalOrder
+        saleCartSheetGrabberContainer.isHidden = isRentalOrder
+        downPaymentView?.isHidden = isCollapsed || !isRentalOrder
+        discountView?.isHidden = isRentalOrder && isCollapsed
+    }
+
+    private func updateCartSheetHeader() {
+        if methodSelect == .rent {
+            cartSheetHeaderView.isHidden = false
+            saleCartSheetGrabberContainer.isHidden = true
+            cartSheetTitleLabel.text = "Rental Period".localized()
+            let pickupText = getDate?.dateInString() ?? "__/__/__"
+            let returnText = returnDate?.dateInString() ?? "__/__/__"
+            cartSheetSummaryLabel.text = "\(pickupText)  →  \(returnText)"
+        } else {
+            // Sale orders do not need rental-period or summary details.
+            cartSheetHeaderView.isHidden = true
+            saleCartSheetGrabberContainer.isHidden = false
+        }
+        if !cartSheetHeaderView.isHidden {
+            cartSheetHeaderView.accessibilityLabel = cartSheetTitleLabel.text
+            cartSheetHeaderView.accessibilityValue = cartSheetSummaryLabel.text
+        }
+    }
+
+    private func setCartSheet(expanded: Bool, animated: Bool) {
+        isCartSheetExpanded = expanded
+        if expanded {
+            prepareCartSheetRowsForAnimation()
+        }
+        cartSheetLayoutContainer.layoutIfNeeded()
+
+        let changes = {
+            self.applyCartSheetProgress(expanded ? 1 : 0)
+            self.cartSheetLayoutContainer.layoutIfNeeded()
+        }
+        let completion: (Bool) -> Void = { finished in
+            guard finished else { return }
+            self.finalizeCartSheetVisibility()
+        }
+
+        if animated && !UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(
+                withDuration: 0.22,
+                delay: 0,
+                options: [.allowUserInteraction, .beginFromCurrentState, .curveEaseOut],
+                animations: changes,
+                completion: completion
+            )
+        } else {
+            changes()
+            completion(true)
+        }
+    }
+
+    @objc private func toggleCartSheet() {
+        setCartSheet(expanded: !isCartSheetExpanded, animated: true)
+    }
+
+    @objc private func handleCartSheetPan(_ gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            cartSheetDragStartProgress = cartSheetExpansionProgress
+            prepareCartSheetRowsForAnimation()
+        case .changed:
+            let rowCount: CGFloat = methodSelect == .rent ? 2 : 1
+            let expandableHeight = max(cartSheetRowHeight * rowCount, cartSheetRowHeight)
+            let translation = gesture.translation(in: view).y
+            let progress = cartSheetDragStartProgress - (translation / expandableHeight)
+            applyCartSheetProgress(progress)
+            cartSheetLayoutContainer.layoutIfNeeded()
+        case .ended, .cancelled, .failed:
+            let velocity = gesture.velocity(in: view).y
+            let shouldExpand = velocity < -250
+                || (abs(velocity) < 250 && cartSheetExpansionProgress > 0.5)
+            setCartSheet(expanded: shouldExpand, animated: true)
+        default:
+            break
+        }
+    }
+
     private func updateMethodSelection(animated: Bool = false) {
         // Store current discount values before mode change
         let currentDiscount = CartStore.shared.cart.discount
         let currentDiscountType = CartStore.shared.cart.discountType
 
         let shouldShowRentalFields = methodSelect == .rent
-
-        if shouldShowRentalFields {
-            pickupDateView?.isHidden = false
-            returnDateView?.isHidden = false
-            downPaymentView?.isHidden = false
-        }
-
-        pickupDateHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
-        returnDateHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
-        downPaymentHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
+        prepareCartSheetRowsForAnimation()
 
         let applyLayout = {
-            self.pickupDateView?.alpha = shouldShowRentalFields ? 1 : 0
-            self.returnDateView?.alpha = shouldShowRentalFields ? 1 : 0
-            self.downPaymentView?.alpha = shouldShowRentalFields ? 1 : 0
-            self.view.layoutIfNeeded()
+            self.applyCartSheetProgress(self.isCartSheetExpanded ? 1 : 0)
+            self.cartSheetLayoutContainer.layoutIfNeeded()
         }
 
-        let finalize: (Bool) -> Void = { _ in
-            self.pickupDateView?.isHidden = !shouldShowRentalFields
-            self.returnDateView?.isHidden = !shouldShowRentalFields
-            self.downPaymentView?.isHidden = !shouldShowRentalFields
+        let finalize: (Bool) -> Void = { finished in
+            guard finished else { return }
+            self.finalizeCartSheetVisibility()
 
             if !shouldShowRentalFields {
                 CartStore.shared.setDiscount(currentDiscount)
@@ -558,6 +829,7 @@ class InfoMainViewController: BaseViewControler {
             self.updateCartPricesForOrderType()
             self.reloadSelectionTable()
             self.updatePreviewTotal()
+            self.updateCartSheetHeader()
         }
 
         // Animate only on a user-driven switch; entering the cart applies the
@@ -717,10 +989,12 @@ class InfoMainViewController: BaseViewControler {
         } else {
             discountLabel.text = value.formatStringInCommon()
         }
+        updateCartSheetHeader()
     }
     
     private func updateDepositLabel() {
         downPaymentLabel.text = CartStore.shared.cart.depositAmount.formatStringInCommon()
+        updateCartSheetHeader()
     }
     
     private func updateGetDateLabel() {
@@ -732,6 +1006,7 @@ class InfoMainViewController: BaseViewControler {
             pickupDateLabel.text = "__/__/__"
             pickupDateLabel.textColor = .secondaryLabel
         }
+        updateCartSheetHeader()
     }
     
     private func updateReturnDateLabel() {
@@ -743,6 +1018,7 @@ class InfoMainViewController: BaseViewControler {
             returnDateLabel.text = "__/__/__"
             returnDateLabel.textColor = .secondaryLabel
         }
+        updateCartSheetHeader()
     }
     
     private func reloadSelectionTable() {
@@ -757,6 +1033,7 @@ class InfoMainViewController: BaseViewControler {
         let totalCount = CartStore.shared.cart.items.count
         previewCountLabel.text = "(\(itemCount))"
         totalLabel.text = CartStore.shared.cart.totalAmount.formatStringInCommon()
+        updateCartSheetHeader()
         updateCartBadge() // Update cart badge whenever total is recalculated
     }
     
@@ -877,6 +1154,25 @@ class InfoMainViewController: BaseViewControler {
         } else {
             methodSegmentControl.alpha = 1.0
         }
+    }
+
+    @objc private func rentalPeriodTapped() {
+        let controller = DatePickerViewController.instance()
+        controller.delegate = self
+        controller.tag = 3 // Combined rental period
+
+        let calendar = Calendar.current
+        let today = Date()
+        let minimumDate = calendar.date(byAdding: .year, value: -1, to: today)!
+        let maximumDate = calendar.date(byAdding: .year, value: 1, to: today)!
+
+        controller.configureForDateRange(
+            startDate: getDate,
+            endDate: returnDate,
+            minimumDate: minimumDate,
+            maximumDate: maximumDate
+        )
+        present(controller, animated: true)
     }
     
     @objc private func getDateTapped() {
@@ -1857,12 +2153,7 @@ extension InfoMainViewController {
         
         // Set fixed height for container
         container.snp.makeConstraints { make in
-            let heightConstraint = make.height.equalTo(44).constraint
-            if title == "Pickup date".localized() {
-                self.pickupDateHeightConstraint = heightConstraint
-            } else if title == "Return date".localized() {
-                self.returnDateHeightConstraint = heightConstraint
-            }
+            make.height.equalTo(44)
         }
         
         let tapGesture = UITapGestureRecognizer(target: self, action: action)
@@ -1875,12 +2166,12 @@ extension InfoMainViewController {
     // Update payment view creation
     private func createPaymentView(title: String, value: String) -> UIView {
         let container = UIView()
-        container.backgroundColor = .white
+        container.backgroundColor = .backgroundCard
         
         let titleLabel = UILabel()
         titleLabel.text = title
         titleLabel.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-        titleLabel.textColor = .systemBlue
+        titleLabel.textColor = .brandPrimary
         
         let valueLabel: UILabel
         if title == "Deposit".localized() {
@@ -1898,7 +2189,7 @@ extension InfoMainViewController {
         } else {
             valueLabel = UILabel()
             valueLabel.font = Utils.regularFont(size: 16) // Match AccountViewController text chính
-            valueLabel.textColor = .black
+            valueLabel.textColor = .textPrimary
             valueLabel.textAlignment = .right
             valueLabel.text = value
         }
@@ -1918,12 +2209,10 @@ extension InfoMainViewController {
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
         }
         
-        // Set fixed height for container
+        // Keep row content at a stable height. The parent clips it while the
+        // sheet moves, avoiding label compression and per-frame text layout.
         container.snp.makeConstraints { make in
-            let heightConstraint = make.height.equalTo(44).constraint
-            if title == "Deposit".localized() {
-                self.downPaymentHeightConstraint = heightConstraint
-            }
+            make.height.equalTo(cartSheetRowHeight)
         }
         
         return container
@@ -1978,7 +2267,11 @@ extension InfoMainViewController: SuggestionTextFieldDelegate {
 // MARK: - DatePickerViewControllerDelegate
 extension InfoMainViewController: DatePickerViewControllerDelegate {
     func didSelectDate(_ date: Date, sender: DatePickerViewController) {
-        if sender.tag == 1 { // Pickup date
+        if sender.tag == 3 {
+            // Combined rental period picker with only one day selected.
+            getDate = date
+            returnDate = date
+        } else if sender.tag == 1 { // Pickup date
             getDate = date
             
             // If return date is earlier than the new pickup date, update return date

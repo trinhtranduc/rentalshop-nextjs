@@ -19,6 +19,7 @@ class InfoCustomerView: UIView {
     // MARK: - Properties
     weak var delegate: InfoCustomerViewDelegate?
     var customer: Customer?
+    var showsLoyaltyInfo = true
     
     // Expose infoButton for menu setup
     lazy var infoButton: UIButton = {
@@ -203,6 +204,11 @@ class InfoCustomerView: UIView {
     }
 
     private func updateLoyaltyUI(customer: Customer) {
+        guard showsLoyaltyInfo else {
+            loyaltyStackView.isHidden = true
+            return
+        }
+
         guard customer.loyaltyDisplayState != .none, let loyaltyLevelName = customer.loyaltyDisplayLevelName else {
             loyaltyStackView.isHidden = true
             return

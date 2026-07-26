@@ -392,12 +392,13 @@ class PreviewViewController: BaseViewControler {
         return stack
     }()
     
-    // Footer action buttons — fixed-width chips with leading SF Symbols.
+    // Footer action buttons fill the available width with consistent margins.
+    // A single action stretches; multiple actions share the remaining space.
     // Hierarchy: primary solid → secondary outline → destructive dark red.
     // All styles use `.filled()` so background paint is reliable (bordered configs
     // often drop the fill and look "empty" next to solid buttons).
-    private let footerActionButtonWidth: CGFloat = 120
     private let footerActionButtonHeight: CGFloat = 44
+    private var footerPrimaryEqualWidthConstraints: [NSLayoutConstraint] = []
 
     private lazy var saveButton: UIButton = {
         makeFooterActionButton(
@@ -489,10 +490,9 @@ class PreviewViewController: BaseViewControler {
         let button = UIButton(type: .system)
         applyFooterActionStyle(to: button, title: title, symbolName: symbolName, style: style)
         button.addTarget(self, action: action, for: .touchUpInside)
-        button.setContentHuggingPriority(.required, for: .horizontal)
-        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         button.snp.makeConstraints { make in
-            make.width.equalTo(footerActionButtonWidth)
             make.height.equalTo(footerActionButtonHeight)
         }
         return button
@@ -504,7 +504,7 @@ class PreviewViewController: BaseViewControler {
         symbolName: String,
         style: FooterActionButtonStyle
     ) {
-        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
         let image = UIImage(systemName: symbolName, withConfiguration: symbolConfig)
 
         // Always use filled — outline look is stroke + light fill, never clear.
@@ -540,7 +540,7 @@ class PreviewViewController: BaseViewControler {
         config.titleLineBreakMode = .byTruncatingTail
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = Utils.mediumFont(size: 13)
+            outgoing.font = Utils.mediumFont(size: 15)
             return outgoing
         }
 
@@ -1010,34 +1010,49 @@ class PreviewViewController: BaseViewControler {
         // depositInfoView.isHidden = !viewModel.shouldShowDepositInfo - Disabled: Using table view sections
     }
 
-    /// Keep every visible primary action the same width (capped).
-    /// The ⋯ overflow button stays compact (fixed 44pt).
+    /// One action fills the footer; multiple primary actions divide it evenly.
+    /// The ⋯ overflow control remains compact at 44pt.
     private func refreshFooterButtonWidths() {
         let primaryButtons = [saveButton, printButton, updateButton, deleteButton]
         let visiblePrimary = primaryButtons.filter { !$0.isHidden }
         let moreVisible = !moreActionsButton.isHidden
-        let moreWidth: CGFloat = 44
-        let horizontalInset: CGFloat = 32
-        let itemCount = visiblePrimary.count + (moreVisible ? 1 : 0)
-        let spacing = footerButtonStackView.spacing * CGFloat(max(itemCount - 1, 0))
-        let reservedForMore = moreVisible ? moreWidth : 0
-        let availableForPrimary = max(
-            UIScreen.main.bounds.width - horizontalInset - spacing - reservedForMore,
-            footerActionButtonWidth
-        )
-        let primaryCount = max(visiblePrimary.count, 1)
-        let width = min(footerActionButtonWidth, floor(availableForPrimary / CGFloat(primaryCount)))
+        NSLayoutConstraint.deactivate(footerPrimaryEqualWidthConstraints)
+        footerPrimaryEqualWidthConstraints.removeAll()
+
+        footerButtonStackView.isLayoutMarginsRelativeArrangement = false
+        footerButtonStackView.layoutMargins = .zero
+        let isOrderDetail = !(viewModel is CartViewModel)
+        let footerHorizontalInset: CGFloat = isOrderDetail ? 32 : 16
+        let footerBottomInset: CGFloat = 32
+        footerButtonStackView.snp.updateConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(footerHorizontalInset)
+            make.bottom.equalToSuperview().offset(-footerBottomInset)
+        }
 
         primaryButtons.forEach { button in
-            button.snp.updateConstraints { make in
-                make.width.equalTo(width)
+            button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            button.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            button.snp.remakeConstraints { make in
                 make.height.equalTo(footerActionButtonHeight)
             }
         }
-        moreActionsButton.snp.updateConstraints { make in
-            make.width.equalTo(moreWidth)
+        moreActionsButton.snp.remakeConstraints { make in
+            make.width.equalTo(44)
             make.height.equalTo(footerActionButtonHeight)
         }
+
+        if moreVisible {
+            footerButtonStackView.distribution = .fill
+            if let firstButton = visiblePrimary.first {
+                footerPrimaryEqualWidthConstraints = visiblePrimary.dropFirst().map {
+                    $0.widthAnchor.constraint(equalTo: firstButton.widthAnchor)
+                }
+                NSLayoutConstraint.activate(footerPrimaryEqualWidthConstraints)
+            }
+        } else {
+            footerButtonStackView.distribution = .fillEqually
+        }
+
         footerButtonStackView.setNeedsLayout()
     }
     
@@ -2194,9 +2209,6 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             sections.append(.depositInfo)
         }
         sections.append(.notes)
-        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyFeatureEnabled {
-            sections.append(.loyalty)
-        }
         sections.append(.summary)
         return sections
     }
@@ -2929,12 +2941,9 @@ extension PreviewViewController{
             make.height.equalTo(1)
         }
         
-        // Fixed-width buttons centered in the footer (do not stretch to full width).
         footerButtonStackView.snp.makeConstraints { make in
             make.top.equalTo(separatorView.snp.bottom).offset(14)
-            make.centerX.equalToSuperview()
-            make.leading.greaterThanOrEqualToSuperview().inset(16)
-            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(footerActionButtonHeight)
             make.bottom.equalToSuperview().offset(-16)
         }
