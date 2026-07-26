@@ -487,12 +487,36 @@ class MainViewController: BaseViewControler {
     }
     
     private func presentProductView(product: Product) {
+        let productId = product.id ?? product.product_id
+        guard productId > 0 else {
+            showProductEditor(product: product)
+            return
+        }
+
+        // The list endpoint can contain a stale product object. Fetch the
+        // detail record so pricingOptions (including DAILY) is always present
+        // before the edit form is created.
+        showProgressText(text: "Loading...".localized())
+        ProductService.shared.loadProduct(productId: productId) { [weak self] latestProduct, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.hideProgress()
+
+                if let error = error {
+                    print("⚠️ Failed to load product detail for edit: \(error.localizedDescription)")
+                }
+
+                self.showProductEditor(product: latestProduct ?? product)
+            }
+        }
+    }
+
+    private func showProductEditor(product: Product) {
         controller = NewProductViewController()
         controller?.delegate = self
         controller?.loadProduct(product: product)
         if let controller = controller {
-            self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true, completion: {
-            })
+            self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true)
         }
     }
     
