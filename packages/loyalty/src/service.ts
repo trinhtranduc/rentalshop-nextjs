@@ -33,7 +33,8 @@ export async function upsertLoyaltyProgram(
     create: {
       merchantId,
       name: data.name,
-      isActive: data.isActive ?? true,
+      // New programs start inactive; only Super Admin may activate.
+      isActive: data.isActive ?? false,
       rentEarnEnabled: data.rentEarnEnabled ?? true,
       rentEarnRate: data.rentEarnRate ?? 1,
       rentEarnPerAmount: data.rentEarnPerAmount ?? 10000,

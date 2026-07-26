@@ -278,7 +278,7 @@ export const LoyaltySettings: React.FC = () => {
     try {
       const payload: Partial<LoyaltyProgram> & { name: string } = {
         name: (program.name || defaultProgramState.name || 'Loyalty Program').trim(),
-        isActive: !!program.isActive,
+        // isActive is Super Admin only — never send from merchant settings
         rentEarnEnabled: !!program.rentEarnEnabled,
         rentEarnRate: Number(program.rentEarnRate || 0),
         rentEarnPerAmount: Number(program.rentEarnPerAmount || 0),
@@ -541,7 +541,7 @@ export const LoyaltySettings: React.FC = () => {
             {activeSection === 'overview' && (
               <SectionCard
                 title="Tổng quan chương trình"
-                description="Bật/tắt loyalty và rule xếp hạng của shop."
+                description="Xem trạng thái loyalty và rule xếp hạng của shop."
                 action={
                   <Badge variant={isProgramActive ? 'secondary' : 'outline'} className={statusBadgeClass(isProgramActive)}>
                     {isProgramActive ? 'Đang bật' : 'Chưa kích hoạt'}
@@ -551,16 +551,19 @@ export const LoyaltySettings: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="font-medium text-text-primary">Kích hoạt loyalty</p>
-                      <p className="text-sm text-text-secondary">Tắt để tạm dừng toàn bộ tính năng loyalty.</p>
+                      <p className="font-medium text-text-primary">Trạng thái loyalty</p>
+                      <p className="text-sm text-text-secondary">
+                        {isProgramActive
+                          ? 'Chương trình đang chạy. Liên hệ Super Admin nếu cần tạm dừng.'
+                          : 'Chương trình chưa được kích hoạt. Chỉ Super Admin mới có thể bật loyalty.'}
+                      </p>
                     </div>
-                    <Switch
-                      checked={!!program.isActive}
-                      onCheckedChange={(checked) => {
-                        updateProgramField('isActive', checked);
-                        setAccessState(checked ? 'available' : 'inactive');
-                      }}
-                    />
+                    <Badge
+                      variant={isProgramActive ? 'secondary' : 'outline'}
+                      className={statusBadgeClass(isProgramActive)}
+                    >
+                      {isProgramActive ? 'Đang bật' : 'Chưa kích hoạt'}
+                    </Badge>
                   </div>
 
                   {isProgramActive && program.id && (

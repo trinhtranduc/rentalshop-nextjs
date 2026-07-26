@@ -102,6 +102,28 @@ export const merchantsApi = {
   },
 
   /**
+   * Super Admin: get loyalty program status for a merchant
+   */
+  async getMerchantLoyalty(merchantId: number): Promise<ApiResponse<{ merchant: { id: number; name: string }; program: any }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyalty(merchantId));
+    return await parseApiResponse(response);
+  },
+
+  /**
+   * Super Admin: enable/disable loyalty for a merchant
+   */
+  async setMerchantLoyaltyActive(
+    merchantId: number,
+    isActive: boolean
+  ): Promise<ApiResponse<{ merchant: { id: number; name: string }; program: any }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyalty(merchantId), {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    });
+    return await parseApiResponse(response);
+  },
+
+  /**
    * Create new merchant
    */
   async createMerchant(merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {

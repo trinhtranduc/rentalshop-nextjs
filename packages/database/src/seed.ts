@@ -1,4 +1,5 @@
 import { prisma } from './client';
+import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -14,6 +15,11 @@ async function main() {
   await prisma.category.deleteMany({});
   await prisma.outlet.deleteMany({});
   await prisma.user.deleteMany({});
+  // Loyalty cascades from merchant, but clear explicitly for clarity
+  await prisma.loyaltyTransaction.deleteMany({}).catch(() => undefined);
+  await prisma.customerLoyalty.deleteMany({}).catch(() => undefined);
+  await prisma.loyaltyTier.deleteMany({}).catch(() => undefined);
+  await prisma.loyaltyProgram.deleteMany({}).catch(() => undefined);
   await prisma.merchant.deleteMany({});
   await prisma.plan.deleteMany({});
 
@@ -69,6 +75,8 @@ async function main() {
         isActive: true,
       } as any,
     });
+
+    await provisionDefaultLoyaltyProgram(prisma, merchant.id);
 
     const outlet = await prisma.outlet.create({
       data: {

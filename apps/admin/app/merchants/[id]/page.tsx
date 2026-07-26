@@ -33,6 +33,10 @@ export default function MerchantDetailPage() {
   const [addonCount, setAddonCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loyaltyActive, setLoyaltyActive] = useState(false);
+  const [loyaltyProgramName, setLoyaltyProgramName] = useState<string | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
+  const [loyaltySaving, setLoyaltySaving] = useState(false);
 
   useEffect(() => {
     fetchMerchantDetails();
@@ -67,14 +71,43 @@ export default function MerchantDetailPage() {
         setAddonCount(addonsResponse.data.total || 0);
       }
 
+      // Fetch loyalty status (Super Admin control)
+      setLoyaltyLoading(true);
+      const loyaltyResponse = await merchantsApi.getMerchantLoyalty(Number(merchantId));
+      if (loyaltyResponse.success && loyaltyResponse.data?.program) {
+        setLoyaltyActive(!!loyaltyResponse.data.program.isActive);
+        setLoyaltyProgramName(loyaltyResponse.data.program.name || null);
+      } else {
+        setLoyaltyActive(false);
+        setLoyaltyProgramName(null);
+      }
+
     } catch (error) {
       console.error('Error fetching merchant details:', error);
       setError('Failed to fetch merchant details');
     } finally {
+      setLoyaltyLoading(false);
       setLoading(false);
     }
   };
 
+
+  const handleLoyaltyToggle = async (nextActive: boolean) => {
+    try {
+      setLoyaltySaving(true);
+      const response = await merchantsApi.setMerchantLoyaltyActive(Number(merchantId), nextActive);
+      if (response.success && response.data?.program) {
+        setLoyaltyActive(!!response.data.program.isActive);
+        setLoyaltyProgramName(response.data.program.name || null);
+      } else {
+        console.error('Failed to update loyalty status:', response.message);
+      }
+    } catch (error) {
+      console.error('Error updating loyalty status:', error);
+    } finally {
+      setLoyaltySaving(false);
+    }
+  };
 
   const handleMerchantAction = (action: string, merchantId: number) => {
     switch (action) {
@@ -344,6 +377,11 @@ export default function MerchantDetailPage() {
           plans={plans}
           addonCount={addonCount}
           currentUserRole={user?.role}
+          loyaltyActive={loyaltyActive}
+          loyaltyProgramName={loyaltyProgramName}
+          loyaltyLoading={loyaltyLoading}
+          loyaltySaving={loyaltySaving}
+          onLoyaltyToggle={handleLoyaltyToggle}
           onMerchantAction={handleMerchantAction}
           onOutletAction={handleOutletAction}
           onUserAction={handleUserAction}

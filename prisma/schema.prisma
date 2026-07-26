@@ -886,7 +886,7 @@ model LoyaltyProgram {
   id         Int     @id @default(autoincrement())
   merchantId Int     @unique
   name       String  @default("Chương trình khách hàng thân thiết")
-  isActive   Boolean @default(true)
+  isActive   Boolean @default(false)
 
   rentEarnEnabled   Boolean @default(true)
   rentEarnRate      Int     @default(1)
