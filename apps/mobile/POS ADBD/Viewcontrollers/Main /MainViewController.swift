@@ -512,12 +512,18 @@ class MainViewController: BaseViewControler {
     }
 
     private func showProductEditor(product: Product) {
-        controller = NewProductViewController()
-        controller?.delegate = self
-        controller?.loadProduct(product: product)
-        if let controller = controller {
-            self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true)
-        }
+        let productController = NewProductViewController()
+        productController.delegate = self
+
+        // Embed first so loadProduct() can safely trigger viewDidLoad while
+        // the child already has a navigationController. This lets the custom
+        // navigation bar hide the system UINavigationBar instead of stacking
+        // two bars with an extra top gap.
+        let productNavigationController = UINavigationController(rootViewController: productController)
+        controller = productController
+        productController.loadProduct(product: product)
+
+        self.navigationController?.present(productNavigationController, animated: true)
     }
     
     private func setupInfoViewController() {
