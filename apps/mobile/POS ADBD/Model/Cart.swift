@@ -399,6 +399,7 @@ class Cart {
                     zipCode: nil,
                     country: nil,
                     businessType: nil,
+                    businessTags: nil,
                     taxId: nil,
                     currency: "USD",
                     pricingType: nil,

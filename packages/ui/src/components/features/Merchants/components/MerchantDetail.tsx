@@ -12,6 +12,7 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle,
+  Badge,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -20,8 +21,23 @@ import {
 } from '../../../ui';
 import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown, UserCircle } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
-import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import {
+  SUBSCRIPTION_STATUS,
+  normalizeSubscriptionStatus,
+  BUSINESS_TAG_OPTIONS,
+  type BusinessTag,
+} from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
+
+function normalizeMerchantTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0);
+}
+
+function getBusinessTagLabel(tag: string): string {
+  const option = BUSINESS_TAG_OPTIONS.find((item) => item.value === (tag as BusinessTag));
+  return option?.label ?? tag;
+}
 
 interface MerchantDetailProps {
   data: MerchantDetailData;
@@ -82,6 +98,7 @@ export function MerchantDetail({
 }: MerchantDetailProps) {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const businessTags = normalizeMerchantTags(data.merchant.businessTags);
 
   const navigateToPage = (page: string, id?: number) => {
     // Navigate within the admin app
@@ -235,6 +252,30 @@ export function MerchantDetail({
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</label>
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business type</label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {data.merchant.businessType || 'GENERAL'}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business tags</label>
+                {businessTags.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {businessTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                      >
+                        {getBusinessTagLabel(tag)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No tags selected</p>
+                )}
               </div>
               <div className="md:col-span-2">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
