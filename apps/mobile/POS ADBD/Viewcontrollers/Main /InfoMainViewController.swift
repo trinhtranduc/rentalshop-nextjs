@@ -16,9 +16,10 @@ private final class CartSheetLayoutContainerView: UIView {
 }
 
 class InfoMainViewController: BaseViewControler {
-    /// Customer card stays compact in Create Order; loyalty details are intentionally omitted.
     private static let customerSelectRowHeight: CGFloat = 58
     private static let customerCardRowHeight: CGFloat = 58
+    /// Extra space for level + points row between name and phone.
+    private static let customerCardWithLoyaltyRowHeight: CGFloat = 80
 
     // MARK: - Properties
     // Debounce manager for batch availability API calls
@@ -48,7 +49,8 @@ class InfoMainViewController: BaseViewControler {
     private lazy var customerInfoView: InfoCustomerView = {
         let view = InfoCustomerView()
         view.delegate = self
-        view.showsLoyaltyInfo = false
+        // Show level + points when merchant has loyalty enabled and customer has active/legacy data.
+        view.showsLoyaltyInfo = User.account()?.hasLoyaltyFeature == true
         view.isHidden = true
         view.backgroundColor = UIColor(hexString: "EDF4F4")
         view.layer.cornerRadius = 8
@@ -858,12 +860,13 @@ class InfoMainViewController: BaseViewControler {
             customerSelectionShowsError = false
         }
         customerHeaderContainer.snp.updateConstraints { make in
-            make.height.equalTo(customer != nil ? Self.customerCardRowHeight : Self.customerSelectRowHeight)
+            make.height.equalTo(customerHeaderHeight(for: customer))
         }
         if let customer = customer {
             // Show customer info view and hide input view
             customerInfoView.isHidden = false
             customerInputView.isHidden = true
+            customerInfoView.showsLoyaltyInfo = User.account()?.hasLoyaltyFeature == true
             customerInfoView.bind(customer: customer)
             // Setup menu for more button
             let menu = createCustomerMenu()
@@ -875,6 +878,14 @@ class InfoMainViewController: BaseViewControler {
             updateCustomerSelectButton()
         }
         layoutCartTableHeaderView()
+    }
+
+    private func customerHeaderHeight(for customer: Customer?) -> CGFloat {
+        guard let customer else { return Self.customerSelectRowHeight }
+        if customer.shouldDisplayLoyaltyBadges {
+            return Self.customerCardWithLoyaltyRowHeight
+        }
+        return Self.customerCardRowHeight
     }
 
     /// `UITableView.tableHeaderView` does not size from constraints alone; fit height from Auto Layout.

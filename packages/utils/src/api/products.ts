@@ -289,12 +289,14 @@ export const productsApi = {
     endDate?: string;
     format?: 'excel' | 'csv';
     productIds?: number[];
+    merchantId?: number;
   }): Promise<Blob> {
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
     if (params.format) queryParams.append('format', params.format);
+    if (params.merchantId) queryParams.append('merchantId', params.merchantId.toString());
     
     // Add product IDs if provided
     if (params.productIds && params.productIds.length > 0) {

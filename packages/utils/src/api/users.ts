@@ -244,5 +244,38 @@ export const usersApi = {
       body: JSON.stringify(permissionsData),
     });
     return await parseApiResponse<UserApiResponse>(response);
+  },
+
+  /**
+   * Export users to Excel or CSV
+   */
+  async exportUsers(params: {
+    period?: '1month' | '3months' | '6months' | '1year' | 'custom';
+    startDate?: string;
+    endDate?: string;
+    format?: 'excel' | 'csv';
+    merchantId?: number;
+    userIds?: number[];
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.merchantId) queryParams.append('merchantId', params.merchantId.toString());
+    if (params.userIds && params.userIds.length > 0) {
+      params.userIds.forEach((id) => {
+        queryParams.append('userIds', id.toString());
+      });
+    }
+
+    const url = `${apiUrls.users.export}?${queryParams.toString()}`;
+    const response = await authenticatedFetch(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to export users');
+    }
+
+    return await response.blob();
   }
 };

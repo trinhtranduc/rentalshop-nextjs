@@ -58,8 +58,15 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     };
 
     // Apply scope restrictions
+    // ADMIN may optionally pass merchantId to export one merchant's customers
+    const merchantIdParam = searchParams.get('merchantId');
     if (userScope.merchantId) {
       filters.merchantId = userScope.merchantId;
+    } else if (merchantIdParam) {
+      const merchantId = parseInt(merchantIdParam, 10);
+      if (!Number.isNaN(merchantId)) {
+        filters.merchantId = merchantId;
+      }
     }
     if (userScope.outletId) {
       filters.outletId = userScope.outletId;
@@ -69,15 +76,29 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     const result = await db.customers.search(filters);
     let customers = result.data || [];
 
-    // Filter by date range (createdAt)
-    customers = customers.filter((customer: any) => {
-      if (!customer.createdAt) return false;
-      const createdAt = new Date(customer.createdAt);
-      return createdAt >= startDate && createdAt <= endDate;
-    });
+    // Optionally filter by selected IDs (selection export — skip date filter)
+    const customerIds = searchParams
+      .getAll('customerIds')
+      .map((id) => parseInt(id, 10))
+      .filter((id) => !Number.isNaN(id));
+    const hasSelection = customerIds.length > 0;
+
+    if (hasSelection) {
+      customers = customers.filter((customer: any) => customerIds.includes(customer.id));
+    } else {
+      // Filter by date range (createdAt) only when exporting by period
+      customers = customers.filter((customer: any) => {
+        if (!customer.createdAt) return false;
+        const createdAt = new Date(customer.createdAt);
+        return createdAt >= startDate && createdAt <= endDate;
+      });
+    }
+
+    const includeMerchant = !userScope.merchantId;
 
     // Prepare data for export (exclude system IDs)
     const exportData = customers.map((customer: any) => ({
+      ...(includeMerchant ? { merchantName: customer.merchant?.name || '' } : {}),
       firstName: customer.firstName || '',
       lastName: customer.lastName || '',
       email: customer.email || '',
@@ -97,6 +118,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     // Excel export
     if (format === 'excel') {
       const columns: ExcelColumn[] = [
+        ...(includeMerchant ? [{ header: 'Merchant', key: 'merchantName', width: 25 }] : []),
         { header: 'First Name', key: 'firstName', width: 15 },
         { header: 'Last Name', key: 'lastName', width: 15 },
         { header: 'Email', key: 'email', width: 25 },
@@ -128,6 +150,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
 
     // CSV export (backward compatibility)
     const csvHeaders = [
+      ...(includeMerchant ? ['Merchant'] : []),
       'First Name',
       'Last Name',
       'Email',
@@ -145,6 +168,7 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     ];
 
     const csvRows = exportData.map((customer: any) => [
+      ...(includeMerchant ? [`"${customer.merchantName || ''}"`] : []),
       `"${customer.firstName}"`,
       `"${customer.lastName}"`,
       `"${customer.email}"`,

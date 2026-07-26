@@ -402,5 +402,36 @@ export const merchantsApi = {
     });
     const result = await parseApiResponse<any>(response);
     return result;
+  },
+
+  /**
+   * Export merchants to Excel or CSV (Admin only)
+   */
+  async exportMerchants(params: {
+    period?: '1month' | '3months' | '6months' | '1year' | 'custom';
+    startDate?: string;
+    endDate?: string;
+    format?: 'excel' | 'csv';
+    merchantIds?: number[];
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.merchantIds && params.merchantIds.length > 0) {
+      params.merchantIds.forEach((id) => {
+        queryParams.append('merchantIds', id.toString());
+      });
+    }
+
+    const url = `${apiUrls.merchants.export}?${queryParams.toString()}`;
+    const response = await authenticatedFetch(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to export merchants');
+    }
+
+    return await response.blob();
   }
 };
