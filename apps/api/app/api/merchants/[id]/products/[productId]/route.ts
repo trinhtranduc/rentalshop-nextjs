@@ -67,6 +67,9 @@ export async function GET(
           categoryId: product.categoryId,
           rentPrice: product.rentPrice,
           salePrice: product.salePrice,
+          pricingType: product.pricingType ?? null,
+          durationConfig: product.durationConfig ?? null,
+          pricingOptions: (product as any).pricingOptions ?? [],
           // Only include costPrice if user has products.manage permission
           ...(canViewCostPrice ? { costPrice: product.costPrice } : {}),
           deposit: product.deposit,
@@ -130,7 +133,22 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const { name, description, barcode, categoryId, rentPrice, salePrice, deposit, totalStock, images, isActive, outletStock } = body;
+      const {
+        name,
+        description,
+        barcode,
+        categoryId,
+        rentPrice,
+        salePrice,
+        deposit,
+        totalStock,
+        images,
+        isActive,
+        outletStock,
+        pricingType,
+        durationConfig,
+        pricingOptions
+      } = body;
       
       console.log('🔍 PUT Product - received body outletStock:', outletStock);
       console.log('🔍 PUT Product - typeof outletStock:', typeof outletStock, 'isArray:', Array.isArray(outletStock));
@@ -152,6 +170,9 @@ export async function PUT(
         salePrice: salePrice ?? null,
         deposit,
         totalStock,
+        ...(pricingType !== undefined ? { pricingType } : {}),
+        ...(durationConfig !== undefined ? { durationConfig } : {}),
+        ...(pricingOptions !== undefined ? { pricingOptions } : {}),
         // ✅ STANDARDIZED: Always store as array, Prisma will serialize to JSON
         images: Array.isArray(images) ? images : images ? [images] : [],
         isActive: body.isActive ?? true
