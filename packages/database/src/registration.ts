@@ -22,6 +22,7 @@ export interface RegistrationInput {
   outletName?: string;
   // Business configuration (locked after registration)
   businessType?: 'GENERAL' | 'VEHICLE' | 'CLOTHING' | 'EQUIPMENT';
+  businessTags?: string[];
   pricingType?: 'FIXED' | 'HOURLY' | 'DAILY';
   // Address fields for merchant registration
   address?: string;

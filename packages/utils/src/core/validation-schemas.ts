@@ -51,6 +51,11 @@ export const registerSchema = z.object({
   referralCode: z.string().min(1).optional(),
   // Business configuration (optional - defaults will be used)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
+  // Niche tags (multi-select). Prefer these over businessType when present.
+  businessTags: z
+    .array(z.enum(['AO_DAI', 'WEDDING_DRESS', 'VEHICLE', 'EQUIPMENT', 'OTHER']))
+    .max(10)
+    .optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
   // Store address: optional — merchant/outlet can update later
   address: z.string().optional(),
@@ -85,6 +90,10 @@ export const merchantGoogleRegisterSchema = z.object({
   businessName: z.string().min(2, 'Business name is required'),
   phone: z.string().min(8, 'Phone is required'),
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
+  businessTags: z
+    .array(z.enum(['AO_DAI', 'WEDDING_DRESS', 'VEHICLE', 'EQUIPMENT', 'OTHER']))
+    .max(10)
+    .optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
   address: z.string().optional(),
   tenantKey: z
@@ -100,6 +109,9 @@ export const merchantGoogleRegisterSchema = z.object({
 export const loginGoogleSchema = z.object({
   idToken: z.string().min(20, 'Invalid Google credential'),
 });
+
+/** Public catalog of niche business tags for signup UIs */
+export const businessTagCatalogQuerySchema = z.object({}).optional();
 
 // Product validation schemas (aligned with API routes and DB types)
 const outletStockItemSchema = z.object({

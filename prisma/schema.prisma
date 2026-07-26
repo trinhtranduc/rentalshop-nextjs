@@ -106,6 +106,8 @@ model Merchant {
   zipCode              String?
   country              String?
   businessType         BusinessType         @default(GENERAL)
+  /// Niche rental tags selected at signup (JSON string[] of BusinessTag codes)
+  businessTags         Json?
   taxId                String?
   website              String?
   description          String?

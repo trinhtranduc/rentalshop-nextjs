@@ -55,6 +55,9 @@ export interface ApiUrls {
     registerMerchantGoogle: string;
     loginGoogle: string;
   };
+  businessTags: {
+    list: string;
+  };
   categories: {
     list: string;
     create: string;
@@ -610,6 +613,9 @@ function createApiUrls(): ApiUrls {
       resendVerification: `${base}/api/auth/resend-verification`,
       registerMerchantGoogle: `${base}/api/auth/register/merchant-google`,
       loginGoogle: `${base}/api/auth/login/google`,
+    },
+    businessTags: {
+      list: `${base}/api/business-tags`,
     },
     categories: {
       list: `${base}/api/categories`,
