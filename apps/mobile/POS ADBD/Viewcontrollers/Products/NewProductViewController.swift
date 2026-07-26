@@ -240,6 +240,14 @@ class NewProductViewController: BaseViewControler {
         // transitions so the system bar cannot appear underneath it.
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // UIKit can restore the system bar while the sheet transition
+        // completes. Keep it hidden after the final layout pass as well.
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
     
     // MARK: - Setup
     override func setupUI() {
@@ -518,6 +526,16 @@ class NewProductViewController: BaseViewControler {
                 self?.dismiss(animated: true)
             }
         )
+
+        // Product editor is presented as a sheet. The navigation controller's
+        // safe-area top includes the hidden system bar, which otherwise leaves
+        // a second, empty navigation region above this custom bar. Pin the
+        // custom bar to the sheet itself so it occupies that region.
+        navBar.snp.remakeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+        }
+
         navBar.setDismissButton() // Use X button for dismiss
     }
     
