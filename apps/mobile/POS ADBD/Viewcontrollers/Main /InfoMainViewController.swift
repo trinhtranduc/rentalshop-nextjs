@@ -16,9 +16,10 @@ private final class CartSheetLayoutContainerView: UIView {
 }
 
 class InfoMainViewController: BaseViewControler {
-    /// Customer card stays compact in Create Order; loyalty details are intentionally omitted.
     private static let customerSelectRowHeight: CGFloat = 58
     private static let customerCardRowHeight: CGFloat = 58
+    /// Extra space for level + points row between name and phone.
+    private static let customerCardWithLoyaltyRowHeight: CGFloat = 80
 
     // MARK: - Properties
     // Debounce manager for batch availability API calls
@@ -48,7 +49,8 @@ class InfoMainViewController: BaseViewControler {
     private lazy var customerInfoView: InfoCustomerView = {
         let view = InfoCustomerView()
         view.delegate = self
-        view.showsLoyaltyInfo = false
+        // Show level + points when merchant has loyalty enabled and customer has active/legacy data.
+        view.showsLoyaltyInfo = User.account()?.hasLoyaltyFeature == true
         view.isHidden = true
         view.backgroundColor = UIColor(hexString: "EDF4F4")
         view.layer.cornerRadius = 8
@@ -186,7 +188,6 @@ class InfoMainViewController: BaseViewControler {
         view.addSubview(cartSheetGrabberView)
         view.addSubview(cartSheetTitleLabel)
         view.addSubview(cartSheetSummaryLabel)
-        view.addSubview(cartSheetChevronView)
 
         cartSheetGrabberView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(7)
@@ -199,14 +200,9 @@ class InfoMainViewController: BaseViewControler {
             make.top.equalTo(cartSheetGrabberView.snp.bottom).offset(7)
             make.bottom.equalToSuperview().offset(-8)
         }
-        cartSheetChevronView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalTo(cartSheetTitleLabel)
-            make.width.height.equalTo(16)
-        }
         cartSheetSummaryLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(cartSheetTitleLabel.snp.trailing).offset(12)
-            make.trailing.equalTo(cartSheetChevronView.snp.leading).offset(-8)
+            make.trailing.equalToSuperview().offset(-16)
             make.centerY.equalTo(cartSheetTitleLabel)
         }
         view.snp.makeConstraints { make in
@@ -222,15 +218,6 @@ class InfoMainViewController: BaseViewControler {
         view.isUserInteractionEnabled = true
         view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleCartSheet)))
         return view
-    }()
-
-    private lazy var cartSheetChevronView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.up"))
-        imageView.tintColor = .textSecondary
-        imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = true
-        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleCartSheet)))
-        return imageView
     }()
 
     private lazy var cartSheetTitleLabel: UILabel = {
@@ -266,7 +253,7 @@ class InfoMainViewController: BaseViewControler {
     private lazy var previewContainer: UIButton = {
         let button = UIButton(type: .custom)
         button.backgroundColor = .brandPrimary
-        button.layer.cornerRadius = 12
+        button.layer.cornerRadius = 8
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(previewTapped), for: .touchUpInside)
@@ -705,9 +692,15 @@ class InfoMainViewController: BaseViewControler {
         cartSheetHeightConstraint?.constant =
             topHandleHeight + detailsHeight + cartSheetPreviewHeight
 
-        cartSheetChevronView.transform = CGAffineTransform(
-            rotationAngle: .pi * clampedProgress
-        )
+        // Fade the detail rows with the sheet height so their values do not
+        // pop in or remain visible while the container is being clipped.
+        if methodSelect == .rent {
+            downPaymentView?.alpha = clampedProgress
+            discountView?.alpha = clampedProgress
+        } else {
+            downPaymentView?.alpha = 0
+            discountView?.alpha = 1
+        }
     }
 
     private func finalizeCartSheetVisibility() {
@@ -717,6 +710,8 @@ class InfoMainViewController: BaseViewControler {
         saleCartSheetGrabberContainer.isHidden = isRentalOrder
         downPaymentView?.isHidden = isCollapsed || !isRentalOrder
         discountView?.isHidden = isRentalOrder && isCollapsed
+        downPaymentView?.alpha = isCollapsed || !isRentalOrder ? 0 : 1
+        discountView?.alpha = isRentalOrder && isCollapsed ? 0 : 1
     }
 
     private func updateCartSheetHeader() {
@@ -865,12 +860,13 @@ class InfoMainViewController: BaseViewControler {
             customerSelectionShowsError = false
         }
         customerHeaderContainer.snp.updateConstraints { make in
-            make.height.equalTo(customer != nil ? Self.customerCardRowHeight : Self.customerSelectRowHeight)
+            make.height.equalTo(customerHeaderHeight(for: customer))
         }
         if let customer = customer {
             // Show customer info view and hide input view
             customerInfoView.isHidden = false
             customerInputView.isHidden = true
+            customerInfoView.showsLoyaltyInfo = User.account()?.hasLoyaltyFeature == true
             customerInfoView.bind(customer: customer)
             // Setup menu for more button
             let menu = createCustomerMenu()
@@ -882,6 +878,14 @@ class InfoMainViewController: BaseViewControler {
             updateCustomerSelectButton()
         }
         layoutCartTableHeaderView()
+    }
+
+    private func customerHeaderHeight(for customer: Customer?) -> CGFloat {
+        guard let customer else { return Self.customerSelectRowHeight }
+        if customer.shouldDisplayLoyaltyBadges {
+            return Self.customerCardWithLoyaltyRowHeight
+        }
+        return Self.customerCardRowHeight
     }
 
     /// `UITableView.tableHeaderView` does not size from constraints alone; fit height from Auto Layout.
@@ -2250,8 +2254,7 @@ extension InfoMainViewController: SuggestionTextFieldDelegate {
         let controller = CustomerViewController()
         // Set delegate to SuggestionTextField so it can update the customer list
         controller.delegate = sender
-        self.navigationController?.present(controller, animated: true)
-//        presentController(size: CGSize(width: 800, height: 400),
+        presentWithHiddenNavigationBar(controller)
     }
     
     func didCreateCustomer(customer: Customer, sender: SuggestionTextField) {

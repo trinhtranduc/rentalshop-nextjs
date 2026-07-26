@@ -8,6 +8,7 @@ import { prisma } from './client';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import type { SimpleFilters, SimpleResponse } from './index';
 import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 // ============================================================================
 // TYPES
@@ -34,6 +35,8 @@ export interface MerchantCreateData {
   zipCode?: string;
   country?: string;
   businessType?: BusinessTypeEnum;
+  /** Niche rental tags (JSON array of BusinessTag codes) */
+  businessTags?: string[];
   pricingType?: PricingTypeEnum;
   taxId?: string;
   website?: string;
@@ -455,12 +458,17 @@ export async function create(data: MerchantCreateData) {
     createdAt: new Date(),
     updatedAt: new Date()
   };
-  return await prisma.merchant.create({
-    data: createData,
-    include: {
-      Plan: true,
-      subscription: true
-    }
+
+  return await prisma.$transaction(async (tx) => {
+    const merchant = await tx.merchant.create({
+      data: createData,
+      include: {
+        Plan: true,
+        subscription: true
+      }
+    });
+    await provisionDefaultLoyaltyProgram(tx, merchant.id);
+    return merchant;
   });
 }
 

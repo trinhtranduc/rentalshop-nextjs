@@ -159,7 +159,7 @@ class OrderFilterViewController: UIViewController {
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = Utils.boldFont(size: 16)
         button.backgroundColor = .brandPrimary
-        button.layer.cornerRadius = 25
+        button.layer.cornerRadius = 14
         button.layer.masksToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
@@ -256,8 +256,9 @@ class OrderFilterViewController: UIViewController {
 
             resetButton.leadingAnchor.constraint(equalTo: footerView.leadingAnchor),
             resetButton.centerYAnchor.constraint(equalTo: footerView.centerYAnchor),
+            resetButton.widthAnchor.constraint(equalToConstant: 88),
 
-            applyButton.leadingAnchor.constraint(equalTo: resetButton.trailingAnchor, constant: 16),
+            applyButton.leadingAnchor.constraint(equalTo: resetButton.trailingAnchor, constant: 12),
             applyButton.trailingAnchor.constraint(equalTo: footerView.trailingAnchor),
             applyButton.topAnchor.constraint(equalTo: footerView.topAnchor),
             applyButton.bottomAnchor.constraint(equalTo: footerView.bottomAnchor),

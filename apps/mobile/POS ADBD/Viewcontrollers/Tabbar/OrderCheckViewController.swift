@@ -47,6 +47,7 @@ class OrderCheckViewController: BaseViewControler {
 
     private var isHistoryExpanded = true
     private var hasLaidOutTableHeader = false
+    private var isLoadingAvailability = false
 
     private var currentOutletId: Int? {
         User.current()?.outlet?.id ?? User.current()?.outletId
@@ -110,6 +111,8 @@ class OrderCheckViewController: BaseViewControler {
             make.top.equalTo(customNavBar!.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
+        orderTableView.isHidden = true
+        orderTableView.alpha = 0
     }
 
     private func resizeTableHeaderIfNeeded() {
@@ -256,7 +259,6 @@ class OrderCheckViewController: BaseViewControler {
 
     override func setupData() {
         if let product = self.product {
-            showProgressText(text: "Loading...".localized())
             loadOrdersForProduct(productId: product.product_id)
         }
     }
@@ -267,6 +269,7 @@ class OrderCheckViewController: BaseViewControler {
     }
 
     private func loadProductAvailabilityV2(productId: Int, date: Date) {
+        beginAvailabilityLoading()
         OrderService.shared.loadProductAvailabilityV2(
             productId: productId,
             date: date,
@@ -279,6 +282,27 @@ class OrderCheckViewController: BaseViewControler {
             } else if let availabilityResponse = response {
                 self?.handleNewAvailabilityResponse(availabilityResponse)
             }
+        }
+    }
+
+    private func beginAvailabilityLoading() {
+        isLoadingAvailability = true
+        orderTableView.isHidden = true
+        orderTableView.alpha = 0
+        showProgressText(text: "Loading...".localized())
+    }
+
+    private func revealAvailabilityContent() {
+        guard isLoadingAvailability else { return }
+
+        isLoadingAvailability = false
+        orderTableView.isHidden = false
+        UIView.animate(
+            withDuration: 0.2,
+            delay: 0,
+            options: [.beginFromCurrentState, .curveEaseOut]
+        ) {
+            self.orderTableView.alpha = 1
         }
     }
 
@@ -312,6 +336,7 @@ class OrderCheckViewController: BaseViewControler {
                 self.resizeTableHeaderIfNeeded()
 
                 self.availabilityOrders = self.sortedAvailabilityOrders(data.orders ?? [])
+                self.revealAvailabilityContent()
 
                 print("📊 New Availability Response:")
                 print("   Product: \(data.productName ?? "Unknown")")
@@ -574,7 +599,6 @@ extension OrderCheckViewController: DatePickerViewControllerDelegate {
     func didSelectDate(_ date: Date, sender: DatePickerViewController) {
         self.date = date
         if let product = self.product {
-            showProgressText(text: "Loading...".localized())
             loadProductAvailabilityV2(productId: product.product_id, date: date)
         }
     }

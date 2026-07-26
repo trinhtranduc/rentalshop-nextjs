@@ -293,6 +293,12 @@ export { searchOrders } from './order'; // Legacy order search function
 // Registration functions
 export { registerUser, registerMerchantWithTrial } from './registration';
 export type { RegistrationInput, RegistrationResult } from './registration';
+export {
+  provisionDefaultLoyaltyProgram,
+  DEFAULT_LOYALTY_PROGRAM_NAME,
+  DEFAULT_LOYALTY_TIER_NAME,
+} from './loyalty-provision';
+export type { LoyaltyProvisionClient } from './loyalty-provision';
 
 // Email verification functions
 export * from './email-verification';

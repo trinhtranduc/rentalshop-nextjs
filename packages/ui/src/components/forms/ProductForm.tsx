@@ -42,18 +42,9 @@ import type {
   ProductUpdateInput
 } from '@rentalshop/types';
 import { 
-  PRICING_TYPE_OPTIONS, 
-  getPricingTypeLabel, 
-  getPricingTypeDescription, 
+  PRICING_TYPE, 
   type PricingType 
 } from '@rentalshop/constants';
-
-// Import PRICING_TYPE constants for type-safe comparisons
-const PRICING_TYPE = {
-  FIXED: 'FIXED' as const,
-  HOURLY: 'HOURLY' as const,
-  DAILY: 'DAILY' as const,
-} as const;
 
 // Define Category interface locally since it's not exported from database
 interface Category {
@@ -86,7 +77,7 @@ interface ProductFormData {
     maxDuration?: number;
     defaultDuration?: number;
   } | null;
-  // Multiple pricing options (Phase 1: FIXED + DAILY)
+  // Multiple pricing options — FIXED (required) + DAILY (optional)
   pricingOptions?: Array<{
     type: PricingType;
     price: number;
@@ -242,7 +233,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         sku: '',
         pricingType: null,
         durationConfig: null,
-        ...parsedInitialData
+        ...parsedInitialData,
+        pricingOptions: (parsedInitialData as any)?.pricingOptions?.length
+          ? (parsedInitialData as any).pricingOptions.map((o: any) => ({
+              type: o.type as PricingType,
+              price: Number(o.price) || 0,
+              isDefault: !!o.isDefault,
+            }))
+          : [
+              { type: PRICING_TYPE.FIXED as PricingType, price: parsedInitialData.rentPrice ?? 0, isDefault: true },
+              { type: PRICING_TYPE.DAILY as PricingType, price: 0, isDefault: false },
+            ],
       });
     }
   }, [initialData]);
@@ -345,24 +346,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.name = tv('fields.productName.required');
     }
 
-    if (!formData.barcode.trim()) {
-      newErrors.barcode = 'Barcode is required';
+    if (!formData.categoryId) {
+      newErrors.categoryId = tv('fields.category.required');
     }
 
     if (formData.rentPrice <= 0) {
       newErrors.rentPrice = tv('fields.rentPrice.required');
     }
 
+    if (formData.salePrice <= 0) {
+      newErrors.salePrice = tv('fields.salePrice.required');
+    }
+
     if (formData.deposit < 0) {
       newErrors.deposit = tv('fields.deposit.cannotBeNegative');
     }
 
-    if (formData.totalStock < 0) {
+    if (formData.totalStock <= 0) {
       newErrors.totalStock = tv('fields.totalStock.required');
-    }
-
-    if (mode === 'create' && currentImageCount === 0) {
-      newErrors.images = 'Product image is required';
     }
 
     // Validate duration config if pricingType is HOURLY or DAILY
@@ -447,24 +448,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         newErrors.name = tv('fields.productName.required');
       }
 
-      if (!formData.barcode.trim()) {
-        newErrors.barcode = 'Barcode is required';
+      if (!formData.categoryId) {
+        newErrors.categoryId = tv('fields.category.required');
       }
 
       if (formData.rentPrice <= 0) {
         newErrors.rentPrice = tv('fields.rentPrice.required');
       }
 
+      if (formData.salePrice <= 0) {
+        newErrors.salePrice = tv('fields.salePrice.required');
+      }
+
       if (formData.deposit < 0) {
         newErrors.deposit = tv('fields.deposit.cannotBeNegative');
       }
 
-      if (formData.totalStock < 0) {
+      if (formData.totalStock <= 0) {
         newErrors.totalStock = tv('fields.totalStock.required');
-      }
-
-      if (mode === 'create' && currentImageCount === 0) {
-        newErrors.images = 'Product image is required';
       }
 
       // Validate outlet stock - ensure outlet stock is provided
@@ -527,49 +528,48 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
-  // ---- Pricing options (multiple options per product) ----
-  // Keep rentPrice synced to the default option's price (backward compat + validation)
-  const syncRentPrice = (options: Array<{ type: PricingType; price: number; isDefault: boolean }>): number => {
-    const priced = options.filter(o => o.price > 0);
-    const def = priced.find(o => o.isDefault) || priced[0];
-    return def ? def.price : 0;
+  // ---- Compact rental pricing (FIXED required + DAILY optional) ----
+  const getOptionPrice = (type: PricingType): number => {
+    const option = (formData.pricingOptions || []).find(o => o.type === type);
+    if (option) return option.price;
+    return type === PRICING_TYPE.FIXED ? formData.rentPrice : 0;
   };
 
-  const updatePricingOption = (index: number, field: 'type' | 'price' | 'isDefault', value: any) => {
+  const updateRentPricing = (type: typeof PRICING_TYPE.FIXED | typeof PRICING_TYPE.DAILY, price: number) => {
     setFormData(prev => {
-      const options = [...(prev.pricingOptions || [])];
-      if (!options[index]) return prev;
-      if (field === 'isDefault') {
-        options.forEach((o, i) => { options[i] = { ...o, isDefault: i === index }; });
-      } else if (field === 'price') {
-        options[index] = { ...options[index], price: parseFloat(value) || 0 };
-      } else if (field === 'type') {
-        options[index] = { ...options[index], type: value as PricingType };
+      let options = [...(prev.pricingOptions || [])];
+      const idx = options.findIndex(o => o.type === type);
+
+      if (idx >= 0) {
+        options[idx] = { ...options[idx], price };
+      } else {
+        options.push({
+          type: type as PricingType,
+          price,
+          isDefault: type === PRICING_TYPE.FIXED,
+        });
       }
-      return { ...prev, pricingOptions: options, rentPrice: syncRentPrice(options) };
-    });
-  };
 
-  const addPricingOption = () => {
-    setFormData(prev => {
-      const options = [...(prev.pricingOptions || [])];
-      const hasDaily = options.some(o => o.type === PRICING_TYPE.DAILY);
-      options.push({
-        type: (hasDaily ? PRICING_TYPE.FIXED : PRICING_TYPE.DAILY) as PricingType,
-        price: 0,
-        isDefault: options.length === 0,
-      });
-      return { ...prev, pricingOptions: options };
-    });
-  };
-
-  const removePricingOption = (index: number) => {
-    setFormData(prev => {
-      const options = (prev.pricingOptions || []).filter((_, i) => i !== index);
-      if (options.length > 0 && !options.some(o => o.isDefault)) {
-        options[0] = { ...options[0], isDefault: true };
+      // Always keep a FIXED row (required)
+      if (!options.some(o => o.type === PRICING_TYPE.FIXED)) {
+        options = [
+          {
+            type: PRICING_TYPE.FIXED as PricingType,
+            price: type === PRICING_TYPE.FIXED ? price : prev.rentPrice,
+            isDefault: true,
+          },
+          ...options,
+        ];
       }
-      return { ...prev, pricingOptions: options, rentPrice: syncRentPrice(options) };
+
+      // FIXED is always the default option
+      options = options.map(o => ({
+        ...o,
+        isDefault: o.type === PRICING_TYPE.FIXED,
+      }));
+
+      const rentPrice = options.find(o => o.type === PRICING_TYPE.FIXED)?.price ?? 0;
+      return { ...prev, pricingOptions: options, rentPrice };
     });
   };
 
@@ -845,10 +845,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       {!hideHeader && (
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary mb-2">{title}</h1>
+            <h1 className="text-2xl font-bold text-text-primary mb-1">{title}</h1>
           
             {mode === 'edit' && (
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-1">
                 {autoSaveStatus === 'saving' && (
                   <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-text-secondary" />
@@ -881,18 +881,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       <form id={formId} onSubmit={handleSubmit} className="space-y-4">
         {/* Product Information */}
         <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t('fields.name')}
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
+              <Input
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder={t('fields.name')}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.sku')}</label>
                 <Input
@@ -901,17 +901,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   placeholder={t('fields.sku')}
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')} *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
                     placeholder={t('fields.barcode')}
-                    className={`flex-1 ${errors.barcode ? 'border-red-500' : ''}`}
+                    className="flex-1"
                   />
                   <Button
                     type="button"
@@ -923,11 +921,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </div>
-                {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')}</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -955,152 +952,107 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder={t('fields.description')}
-                rows={3}
+                rows={2}
               />
             </div>
 
-            {/* Rental Pricing Options (multiple options: per-rental / per-day) */}
-            <div className="pt-3 border-t border-border">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-semibold text-muted-foreground">
-                  Giá thuê
-                </label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addPricingOption}
-                >
-                  + Thêm giá
-                </Button>
+            {/* Compact pricing — no dynamic "add price" rows */}
+            <div className="pt-3 border-t border-border space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground">{t('pricing.title')}</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <NumericInput
+                    label={`${t('pricing.pricePerRental')} *`}
+                    value={getOptionPrice(PRICING_TYPE.FIXED)}
+                    onChange={(value) => updateRentPricing(PRICING_TYPE.FIXED, value)}
+                    placeholder="0.00"
+                    error={!!errors.rentPrice}
+                    required
+                    allowDecimals={true}
+                    maxDecimalPlaces={2}
+                  />
+                  {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
+                </div>
+
+                <div>
+                  <NumericInput
+                    label={t('pricing.pricePerDay')}
+                    value={getOptionPrice(PRICING_TYPE.DAILY)}
+                    onChange={(value) => updateRentPricing(PRICING_TYPE.DAILY, value)}
+                    placeholder="0.00"
+                    allowDecimals={true}
+                    maxDecimalPlaces={2}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {t('pricing.dailyDescription')}
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {(formData.pricingOptions || []).map((option, index) => (
-                  <div key={index} className="flex items-end gap-2 p-1.5 rounded-lg border border-border">
-                    <div className="w-32">
-                      <label className="block text-[11px] text-muted-foreground mb-1">Loại</label>
-                      <select
-                        value={option.type}
-                        onChange={(e) => updatePricingOption(index, 'type', e.target.value)}
-                        className="h-9 w-full rounded-md border border-border bg-transparent px-2 text-sm"
-                      >
-                        <option value={PRICING_TYPE.FIXED}>Theo lần</option>
-                        <option value={PRICING_TYPE.DAILY}>Theo ngày</option>
-                      </select>
-                    </div>
-                    <div className="flex-1">
-                      <NumericInput
-                        label={option.type === PRICING_TYPE.DAILY ? 'Giá / ngày' : 'Giá / lần'}
-                        value={option.price}
-                        onChange={(value) => updatePricingOption(index, 'price', value)}
-                        placeholder="0.00"
-                        allowDecimals={true}
-                        maxDecimalPlaces={2}
-                      />
-                    </div>
-                    <label className="flex items-center gap-1 h-9 px-2 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
-                      <input
-                        type="radio"
-                        name="pricingOptionDefault"
-                        checked={!!option.isDefault}
-                        onChange={() => updatePricingOption(index, 'isDefault', true)}
-                      />
-                      Mặc định
-                    </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 text-red-500"
-                      onClick={() => removePricingOption(index)}
-                      disabled={(formData.pricingOptions || []).length <= 1}
-                    >
-                      ✕
-                    </Button>
+              <div className={`grid grid-cols-1 gap-3 ${canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                <div>
+                  <NumericInput
+                    label={t('fields.deposit')}
+                    value={formData.deposit}
+                    onChange={(value) => handleInputChange('deposit', value)}
+                    placeholder="0.00"
+                    error={!!errors.deposit}
+                    allowDecimals={true}
+                    maxDecimalPlaces={2}
+                  />
+                  {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
+                </div>
+
+                <div>
+                  <NumericInput
+                    label={t('fields.salePrice')}
+                    value={formData.salePrice}
+                    onChange={(value) => handleInputChange('salePrice', value)}
+                    placeholder="0.00"
+                    error={!!errors.salePrice}
+                    allowDecimals={true}
+                    maxDecimalPlaces={2}
+                  />
+                  {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
+                </div>
+
+                {canManageProducts && (
+                  <div>
+                    <NumericInput
+                      label={t('fields.costPrice')}
+                      value={formData.costPrice}
+                      onChange={(value) => handleInputChange('costPrice', value)}
+                      placeholder="0.00"
+                      error={!!errors.costPrice}
+                      allowDecimals={true}
+                      maxDecimalPlaces={2}
+                    />
+                    {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
                   </div>
-                ))}
-              </div>
-              {errors.rentPrice && <p className="text-sm text-red-500 mt-1">{errors.rentPrice}</p>}
-              <p className="text-xs text-gray-500 mt-2">
-                {t('pricing.fixedDescription')}
-              </p>
-            </div>
+                )}
 
-            {/* Other Pricing & Inventory Section */}
-            <div className="pt-3 border-t border-border">
-              <h3 className="text-xs font-semibold text-muted-foreground mb-2">{t('pricing.title')}</h3>
-              
-              <div className="space-y-3">
-                {/* Deposit, Sale Price, and Cost Price */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <NumericInput
-                      label={t('fields.deposit')}
-                      value={formData.deposit}
-                      onChange={(value) => handleInputChange('deposit', value)}
-                  placeholder="0.00"
-                      error={!!errors.deposit}
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                    {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
+                <div>
+                  <NumericInput
+                    label={`${t('fields.stock')} *`}
+                    value={formData.totalStock}
+                    onChange={(value) => handleInputChange('totalStock', value)}
+                    placeholder="0"
+                    error={!!errors.totalStock}
+                    required
+                    allowDecimals={false}
+                    min={0}
+                  />
+                  {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
+                </div>
               </div>
-
-              <div>
-                <NumericInput
-                  label={t('fields.salePrice')}
-                  value={formData.salePrice}
-                  onChange={(value) => handleInputChange('salePrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.salePrice}
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
-              </div>
-
-              {/* Only show cost price input if user has products.manage permission */}
-              {canManageProducts && (
-              <div>
-                <NumericInput
-                  label={t('fields.costPrice')}
-                  value={formData.costPrice}
-                  onChange={(value) => handleInputChange('costPrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.costPrice}
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
-              </div>
-              )}
-            </div>
-
-                {/* Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <NumericInput
-                  label={t('fields.stock')}
-                  value={formData.totalStock}
-                  onChange={(value) => handleInputChange('totalStock', value)}
-                  placeholder="0"
-                  error={!!errors.totalStock}
-                  required
-                  allowDecimals={false}
-                  min={0}
-                />
-                {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
-              </div>
-            </div>
-            </div>
             </div>
         </div>
 
         {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
         {outlets.length > 1 ? (
-          <div className="border-t pt-4 mt-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('inventory.outletStockDistribution')} *</h3>
+          <div className="border-t pt-3 mt-3">
+            <h3 className="text-xs font-semibold text-muted-foreground mb-3">{t('inventory.outletStockDistribution')} *</h3>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
@@ -1160,15 +1112,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         ) : null}
 
         {/* Enhanced Image Management */}
-        <div className="border-t pt-3 mt-3">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-2">
-            {t('fields.images')}{mode === 'create' ? ' *' : ''}
-          </h3>
-          {errors.images && <p className="text-sm text-red-500 mb-2">{errors.images}</p>}
-          <div className="space-y-3">
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
+          <div className="space-y-4">
             {/* Drag & Drop Zone */}
             <div
-              className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                 dragActive && !isMaxImagesReached
                   ? 'border-action-primary bg-action-primary/10' 
                   : isMaxImagesReached
@@ -1267,7 +1216,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
             
             {currentImageCount > 0 && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {useMultipartUpload ? (
                   // Render selected files for multipart upload
                   selectedFiles.map((file, index) => {
@@ -1277,7 +1226,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         <img
                           src={previewUrl}
                           alt={`${file.name}`}
-                          className="w-full h-20 object-cover rounded-lg border"
+                          className="w-full h-24 object-cover rounded-lg border"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate">
                           {file.name}
@@ -1337,7 +1286,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                             <img
                               src={image}
                               alt={`${t('fields.name')} ${index + 1}`}
-                              className="w-full h-20 object-cover rounded-lg border"
+                              className="w-full h-24 object-cover rounded-lg border"
                             />
                             <Button
                               variant="ghost"
@@ -1369,7 +1318,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isSubmitting || loading}
+              disabled={isSubmitting || !validateForm()}
               className="min-w-[120px]"
             >
               {isSubmitting ? (
@@ -1390,3 +1339,4 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     </div>
   );
 };
+

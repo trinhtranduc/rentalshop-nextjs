@@ -9,7 +9,7 @@ import {
 } from '@rentalshop/utils';
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { getDefaultPricingConfig, type BusinessType } from '@rentalshop/constants';
+import { getDefaultPricingConfig, normalizeBusinessTags, deriveBusinessTypeFromTags, type BusinessType } from '@rentalshop/constants';
 import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 import { verifyGoogleIdToken } from '../../../../../lib/verify-google-id-token';
 import { buildAuthLoginSuccessResponse } from '../../../../../lib/build-auth-login-response';
@@ -161,6 +161,12 @@ export async function POST(request: NextRequest) {
         referredByMerchantId = referringMerchant?.id;
       }
 
+      const businessTags = normalizeBusinessTags(validated.businessTags);
+      const businessType: BusinessType =
+        businessTags.length > 0
+          ? deriveBusinessTypeFromTags(businessTags)
+          : ((validated.businessType as BusinessType) || 'GENERAL');
+
       const merchant = await tx.merchant.create({
         data: {
           name: validated.businessName,
@@ -172,10 +178,11 @@ export async function POST(request: NextRequest) {
           state: undefined,
           zipCode: undefined,
           country: validated.country,
-          businessType: validated.businessType || 'GENERAL',
+          businessType,
+          businessTags: businessTags.length > 0 ? businessTags : undefined,
           pricingType: validated.pricingType || 'FIXED',
           referredByMerchantId,
-          pricingConfig: buildPricingConfig(validated.businessType, validated.pricingType),
+          pricingConfig: buildPricingConfig(businessType, validated.pricingType),
         } as any,
       });
 

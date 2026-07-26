@@ -11,7 +11,7 @@ import {
 } from '../../../ui/dropdown-menu';
 import { User } from '@rentalshop/types';
 import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX, MailCheck, Send, CheckCircle, XCircle } from 'lucide-react';
-import { useUsersTranslations } from '@rentalshop/hooks';
+import { useUsersTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
 
 interface UserTableProps {
@@ -20,6 +20,7 @@ interface UserTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedUserIds: number[]) => void;
 }
 
 export function UserTable({ 
@@ -27,10 +28,19 @@ export function UserTable({
   onUserAction, 
   sortBy = 'createdAt', 
   sortOrder = 'desc',
-  onSort 
+  onSort,
+  onSelectionChange
 }: UserTableProps) {
   const t = useUsersTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+
+  const {
+    allSelected,
+    someSelected,
+    handleToggleSelect,
+    handleSelectAll,
+    isSelected,
+  } = useTableSelection(users, onSelectionChange);
   
   if (users.length === 0) {
     return (
@@ -114,6 +124,20 @@ export function UserTable({
             {/* Table Header with Sorting - Sticky */}
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
+                {onSelectionChange && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = someSelected;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      title={allSelected ? 'Deselect all' : 'Select all'}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   {t('fields.name')}
                 </th>
@@ -140,8 +164,27 @@ export function UserTable({
             
             {/* Table Body */}
             <tbody className="bg-bg-card divide-y divide-border">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-bg-secondary transition-colors">
+              {users.map((user) => {
+                const userIsSelected = isSelected(user.id);
+                return (
+                <tr
+                  key={user.id}
+                  className={`transition-colors ${
+                    userIsSelected
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : 'hover:bg-bg-secondary'
+                  }`}
+                >
+                  {onSelectionChange && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={userIsSelected}
+                        onChange={() => handleToggleSelect(user.id)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {/* User Info (Name + Email) */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -243,7 +286,8 @@ export function UserTable({
                     </DropdownMenu>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

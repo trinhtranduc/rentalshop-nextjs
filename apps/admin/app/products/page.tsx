@@ -278,6 +278,17 @@ export default function AdminProductsPage() {
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
+            {/* Export — only when rows are selected (same pattern as client) */}
+            {canExportProducts && selectedProductIds.length > 0 && (
+              <Button
+                onClick={() => setShowExportDialog(true)}
+                variant="default"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {`Export (${selectedProductIds.length})`}
+              </Button>
+            )}
             {canManageProducts && (
               <>
                 {/* Batch Delete button - only show when products are selected */}
@@ -305,14 +316,6 @@ export default function AdminProductsPage() {
                       <Upload className="w-4 h-4 mr-2" />
                       Import Products
                     </DropdownMenuItem>
-                    {canExportProducts && (
-                      <DropdownMenuItem
-                        onClick={() => setShowExportDialog(true)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Products
-                      </DropdownMenuItem>
-                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
@@ -388,20 +391,36 @@ export default function AdminProductsPage() {
           open={showExportDialog}
           onOpenChange={setShowExportDialog}
           resourceName="Products"
+          isLoading={isExporting}
+          selectedCount={selectedProductIds.length}
           onExport={async (params) => {
             try {
               setIsExporting(true);
-              // TODO: Implement export functionality
-              console.log('Export products with params:', params);
-              toastSuccess('Success', 'Export started');
+              if (selectedProductIds.length === 0) {
+                toastError('Error', 'Select at least one product to export');
+                return;
+              }
+              const blob = await productsApi.exportProducts({
+                ...params,
+                productIds: selectedProductIds,
+              });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `products-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+              toastSuccess('Success', 'Export completed successfully');
               setShowExportDialog(false);
+              setSelectedProductIds([]);
             } catch (error) {
-              console.error('Export error:', error);
+              toastError('Error', (error as Error).message || 'Failed to export products');
             } finally {
               setIsExporting(false);
             }
           }}
-          isLoading={isExporting}
         />
       )}
 

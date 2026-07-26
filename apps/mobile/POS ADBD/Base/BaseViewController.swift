@@ -134,6 +134,9 @@ class BaseViewControler : UIViewController{
     ///   - titleCentered: Whether to center the title (default: true)
     ///   - hideBackButton: Whether to hide the back button (default: true)
     ///   - backAction: Type of back action (default: .pop)
+    ///   - pinToSafeArea: When `true` (default), pin below the status-bar safe area (pushed screens).
+    ///     When `false`, pin to the top of the view and skip the status-bar filler —
+    ///     use this for modal/sheet presentations so you don't get a blank duplicate bar.
     /// - Returns: The created RCCustomNavigationBar instance for further customization if needed
     @discardableResult
     func setupCustomNavigationBar(
@@ -141,7 +144,8 @@ class BaseViewControler : UIViewController{
         statusBarBackgroundColor: UIColor = .white,
         titleCentered: Bool = true,
         hideBackButton: Bool = true,
-        backAction: NavigationBackAction = .pop
+        backAction: NavigationBackAction = .pop,
+        pinToSafeArea: Bool = true
     ) -> RCCustomNavigationBar {
         // Create customNavBar automatically (title will be set via setupCustomNavigationBar)
         let navBar = RCCustomNavigationBar()
@@ -154,7 +158,8 @@ class BaseViewControler : UIViewController{
             statusBarBackgroundColor: statusBarBackgroundColor,
             titleCentered: titleCentered,
             hideBackButton: hideBackButton,
-            backAction: backAction
+            backAction: backAction,
+            pinToSafeArea: pinToSafeArea
         )
         
         return navBar
@@ -170,6 +175,9 @@ class BaseViewControler : UIViewController{
     ///   - customTitleView: Optional custom title view to replace default title label (overrides title parameter)
     ///   - hideBackButton: Whether to hide the back button (default: true)
     ///   - backAction: Type of back action (default: .pop)
+    ///   - pinToSafeArea: When `true` (default), pin below the status-bar safe area (pushed screens).
+    ///     When `false`, pin to the top of the view and skip the status-bar filler —
+    ///     use this for modal/sheet presentations so you don't get a blank duplicate bar.
     func setupCustomNavigationBar(
         _ customNavBar: RCCustomNavigationBar,
         title: String? = nil,
@@ -177,7 +185,8 @@ class BaseViewControler : UIViewController{
         titleCentered: Bool = true,
         customTitleView: UIView? = nil,
         hideBackButton: Bool = true,
-        backAction: NavigationBackAction = .pop
+        backAction: NavigationBackAction = .pop,
+        pinToSafeArea: Bool = true
     ) {
         // Store customNavBar reference for access in subclasses
         self.customNavBar = customNavBar
@@ -188,8 +197,14 @@ class BaseViewControler : UIViewController{
         // Hide default navigation bar
         navigationController?.setNavigationBarHidden(true, animated: false)
         
-        // Setup status bar background
-        setupStatusBarBackground(color: statusBarBackgroundColor)
+        // Status-bar filler is only for pushed screens under the notch/Dynamic Island.
+        // Sheet presentations already sit below the system chrome; adding this filler
+        // creates the blank "duplicate navigation bar" gap above the custom bar.
+        if pinToSafeArea {
+            setupStatusBarBackground(color: statusBarBackgroundColor)
+        } else {
+            hideStatusBarBackground()
+        }
         
         // Setup custom navigation bar background color
         customNavBar.barBackgroundColor = statusBarBackgroundColor
@@ -236,11 +251,37 @@ class BaseViewControler : UIViewController{
         // Setup status bar style callback
         setupStatusBarStyleCallback(for: customNavBar)
         
-        // Setup constraints
+        // Pushed VCs: pin below safe area (status bar clearance).
+        // Sheet/modals: pin to view top so we don't leave a blank gap where the
+        // hidden UINavigationBar's safe-area inset used to be.
         customNavBar.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
+            if pinToSafeArea {
+                make.top.equalTo(view.safeAreaLayoutGuide)
+            } else {
+                make.top.equalToSuperview()
+            }
             make.leading.trailing.equalToSuperview()
         }
+    }
+    
+    /// Present a view controller wrapped in a UINavigationController with the
+    /// system navigation bar hidden up front.
+    ///
+    /// Why: if you hide the bar only in the child's `viewDidLoad`, the sheet's
+    /// safe area still reserves space for that bar → blank gap / "duplicate" nav.
+    func presentWithHiddenNavigationBar(
+        _ viewController: UIViewController,
+        animated: Bool = true,
+        completion: (() -> Void)? = nil
+    ) {
+        let nav: UINavigationController
+        if let existingNav = viewController as? UINavigationController {
+            nav = existingNav
+        } else {
+            nav = UINavigationController(rootViewController: viewController)
+        }
+        nav.setNavigationBarHidden(true, animated: false)
+        present(nav, animated: animated, completion: completion)
     }
     
     /// Handle navigation back action

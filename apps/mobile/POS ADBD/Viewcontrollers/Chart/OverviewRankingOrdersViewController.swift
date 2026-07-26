@@ -291,8 +291,7 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             return
         }
 
-        let state = customer.loyaltyDisplayState
-        guard state != .none, let levelName = customer.loyaltyDisplayLevelName else {
+        guard customer.shouldDisplayLoyaltyBadges, let levelName = customer.loyaltyDisplayLevelName else {
             loyaltyRowStack.isHidden = true
             return
         }

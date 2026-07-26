@@ -119,6 +119,7 @@
 		04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301082F40000100A005 /* OverviewChartsSectionView.swift */; };
 		04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */; };
 		04F3010D2F40000100A007 /* OverviewRankingOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */; };
+		04F7A0012F70000100A0B2 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F7A0012F70000100A0B1 /* OnboardingViewController.swift */; };
 		04F302012F40000200B001 /* OverviewPeriodFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F302002F40000200B001 /* OverviewPeriodFilterView.swift */; };
 		04F96B012D805CB6009A56D8 /* PreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F96B002D805CB6009A56D8 /* PreviewViewController.swift */; };
 		04FBE0A82EDB2C700057EDF8 /* PaymentCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */; };
@@ -355,6 +356,7 @@
 		04F301082F40000100A005 /* OverviewChartsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewChartsSectionView.swift; sourceTree = "<group>"; };
 		04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewInsightsPanelView.swift; sourceTree = "<group>"; };
 		04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewRankingOrdersViewController.swift; sourceTree = "<group>"; };
+		04F7A0012F70000100A0B1 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
 		04F302002F40000200B001 /* OverviewPeriodFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewPeriodFilterView.swift; sourceTree = "<group>"; };
 		04F96B002D805CB6009A56D8 /* PreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController.swift; sourceTree = "<group>"; };
 		04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentCollectionViewController.swift; sourceTree = "<group>"; };
@@ -852,6 +854,7 @@
 		88E4148E21A99D1500BAF4A1 /* Viewcontrollers */ = {
 			isa = PBXGroup;
 			children = (
+				04F7A0012F70000100A0B3 /* Onboarding */,
 				04FBE0A72EDB2C700057EDF8 /* Payment */,
 				04E55FB22E220F77003F00D0 /* Common */,
 				048839872D7D898D00069256 /* NumberPicker */,
@@ -868,6 +871,14 @@
 				88E414A121A99FEC00BAF4A1 /* Sale */,
 			);
 			path = Viewcontrollers;
+			sourceTree = "<group>";
+		};
+		04F7A0012F70000100A0B3 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				04F7A0012F70000100A0B1 /* OnboardingViewController.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		88E4148F21A99D1D00BAF4A1 /* Views */ = {
@@ -1383,6 +1394,7 @@
 				04F301092F40000100A005 /* OverviewChartsSectionView.swift in Sources */,
 				04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */,
 				04F3010D2F40000100A007 /* OverviewRankingOrdersViewController.swift in Sources */,
+				04F7A0012F70000100A0B2 /* OnboardingViewController.swift in Sources */,
 				886B188121AE39560029CFB1 /* OverviewViewController.swift in Sources */,
 				048838F52D78241600069256 /* LoginViewController.swift in Sources */,
 				C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */,

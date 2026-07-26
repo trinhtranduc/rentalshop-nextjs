@@ -40,33 +40,37 @@ class SuggestionTextField: BaseViewControler {
         tableView.tableHeaderView = UIView()
         tableView.tableFooterView = UIView()
         tableView.backgroundColor = .white
+        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.estimatedRowHeight = 64
         return tableView
     }()
     
     private lazy var addCustomerButton: UIButton = {
         var config = UIButton.Configuration.filled()
         config.title = "Add new customer".localized()
-        config.titleAlignment = .leading
+        config.titleAlignment = .center
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = Utils.regularFont(size: 17)
+            outgoing.font = Utils.mediumFont(size: 16)
             outgoing.foregroundColor = APP_TONE_COLOR
             return outgoing
         }
-        
-        let imageConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
-        let image = UIImage(systemName: "plus.circle", withConfiguration: imageConfig)
-        config.image = image
-        config.imageColorTransformer = UIConfigurationColorTransformer { _ in
-            return APP_TONE_COLOR
-        }
-        
-        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
+
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        config.image = UIImage(systemName: "plus.circle.fill", withConfiguration: imageConfig)
+        config.imagePlacement = .leading
         config.imagePadding = 8
-        config.background.backgroundColor = UIColor(hexString: "EDF4F4")
-        config.background.cornerRadius = 10
+        config.imageColorTransformer = UIConfigurationColorTransformer { _ in
+            APP_TONE_COLOR
+        }
+
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+        config.background.backgroundColor = APP_TONE_COLOR.withAlphaComponent(0.08)
+        config.background.cornerRadius = 12
+        config.background.strokeColor = APP_TONE_COLOR.withAlphaComponent(0.18)
+        config.background.strokeWidth = 1
         config.baseForegroundColor = APP_TONE_COLOR
-        
+
         let button = UIButton(configuration: config)
         button.addTarget(self, action: #selector(addNewCustomer), for: .touchUpInside)
         button.addTarget(self, action: #selector(addCustomerTouchDown), for: .touchDown)
@@ -74,8 +78,8 @@ class SuggestionTextField: BaseViewControler {
         button.configurationUpdateHandler = { button in
             guard var updatedConfig = button.configuration else { return }
             updatedConfig.background.backgroundColor = button.isHighlighted
-                ? UIColor(hexString: "DDEEEE")
-                : UIColor(hexString: "EDF4F4")
+                ? APP_TONE_COLOR.withAlphaComponent(0.14)
+                : APP_TONE_COLOR.withAlphaComponent(0.08)
             button.configuration = updatedConfig
         }
         return button
@@ -184,13 +188,13 @@ class SuggestionTextField: BaseViewControler {
         
         addCustomerButton.snp.makeConstraints { make in
             make.top.equalTo(searchBar.snp.bottom).offset(8)
-            make.leading.equalToSuperview()
-            make.trailing.equalToSuperview()
-            make.height.equalTo(44)
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+            make.height.equalTo(48)
         }
         
         customerTableView.snp.makeConstraints { make in
-            make.top.equalTo(addCustomerButton.snp.bottom).offset(8)
+            make.top.equalTo(addCustomerButton.snp.bottom).offset(12)
             make.leading.trailing.bottom.equalToSuperview()
         }
         
@@ -327,7 +331,8 @@ class SuggestionTextField: BaseViewControler {
         controller.customer = customer
         controller.customerText = self.searchBar.text
         controller.delegate = self // Set delegate to receive callbacks when customer is created/updated
-        self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true)
+        // Hide system nav before present to avoid blank safe-area gap on the sheet
+        presentWithHiddenNavigationBar(controller)
     }
 
     private func showCustomerOrders(customer: Customer?) {
@@ -431,7 +436,7 @@ extension SuggestionTextField: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 92
+        return UITableViewAutomaticDimension
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

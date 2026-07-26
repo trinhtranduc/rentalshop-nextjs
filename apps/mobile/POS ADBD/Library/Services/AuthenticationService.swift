@@ -4,7 +4,7 @@ import SwiftyJSON
 protocol AuthenticationServiceProtocol {
     func login(emailUser: String, passwordUser: String, completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
     func logout(completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
-    func createAccount(loginName: String, password: String, storeName: String, address: String, name: String, phone: String, completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
+    func createAccount(loginName: String, password: String, storeName: String, address: String, name: String, phone: String, businessTags: [String], completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
     func accountDeletion(completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
     func validateAccount(completion: @escaping (_ error: NSError?) -> Void)
     func resendVerification(email: String, completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
@@ -121,7 +121,16 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
             }
     }
     
-    func createAccount(loginName: String, password: String, storeName: String, address: String, name: String, phone: String, completion: @escaping (User?, NSError?) -> Void) {
+    func createAccount(
+        loginName: String,
+        password: String,
+        storeName: String,
+        address: String,
+        name: String,
+        phone: String,
+        businessTags: [String] = ["OTHER"],
+        completion: @escaping (User?, NSError?) -> Void
+    ) {
         let path = APIEndpoint.Path.register
         let fullURL = APIEndpoint.currentBaseURL + path
         
@@ -131,6 +140,15 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         let nameComponents = name.trimmingCharacters(in: .whitespaces).components(separatedBy: " ").filter { !$0.isEmpty }
         let firstName = nameComponents.first ?? name
         let lastName = nameComponents.count > 1 ? nameComponents.dropFirst().joined(separator: " ") : ""
+        
+        // Niche tags — server derives businessType from these
+        let allowedTags: Set<String> = [
+            "AO_DAI", "COSTUME", "WEDDING_DRESS", "EQUIPMENT", "VEHICLE", "FILM_EQUIPMENT", "OTHER"
+        ]
+        let resolvedTags = businessTags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
+            .filter { allowedTags.contains($0) }
+        let tagsPayload = resolvedTags.isEmpty ? ["OTHER"] : Array(Set(resolvedTags))
         
         // Updated request format according to API documentation
         let params: [String: Any] = [
@@ -142,7 +160,8 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
             "role": "MERCHANT",
             "businessName": storeName,
             "outletName": storeName,
-            "businessType": "GENERAL",
+            "address": address,
+            "businessTags": tagsPayload,
             "pricingType": "FIXED"
         ]
         

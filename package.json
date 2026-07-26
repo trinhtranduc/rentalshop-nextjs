@@ -24,6 +24,7 @@
     "test": "turbo run test",
     "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
     "db:create-admin": "node scripts/create-super-admin.js",
+    "db:backfill-loyalty": "node scripts/backfill-loyalty-programs.js",
     "db:update-admin-password": "node scripts/update-admin-password.js",
     "db:update-admin-password:prod": "bash scripts/update-admin-password-prod.sh",
     "db:reset-railway": "node scripts/reset-railway-database.js",

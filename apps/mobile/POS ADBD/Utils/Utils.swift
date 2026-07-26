@@ -252,4 +252,16 @@ class Utils: NSObject {
     class func shouldHideFinancialDataForStaff() -> Bool {
         return UserDefaults.standard.bool(forKey: "HideFinancialDataForStaff")
     }
+
+    // MARK: - First-login onboarding
+    private static let hasCompletedOnboardingKey = "HasCompletedOnboarding"
+
+    class func hasCompletedOnboarding() -> Bool {
+        return UserDefaults.standard.bool(forKey: hasCompletedOnboardingKey)
+    }
+
+    class func markOnboardingCompleted() {
+        UserDefaults.standard.set(true, forKey: hasCompletedOnboardingKey)
+        UserDefaults.standard.synchronize()
+    }
 }

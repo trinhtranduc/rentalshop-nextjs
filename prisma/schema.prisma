@@ -106,6 +106,8 @@ model Merchant {
   zipCode              String?
   country              String?
   businessType         BusinessType         @default(GENERAL)
+  /// Niche rental tags selected at signup (JSON string[] of BusinessTag codes)
+  businessTags         Json?
   taxId                String?
   website              String?
   description          String?
@@ -886,7 +888,7 @@ model LoyaltyProgram {
   id         Int     @id @default(autoincrement())
   merchantId Int     @unique
   name       String  @default("Chương trình khách hàng thân thiết")
-  isActive   Boolean @default(true)
+  isActive   Boolean @default(false)
 
   rentEarnEnabled   Boolean @default(true)
   rentEarnRate      Int     @default(1)

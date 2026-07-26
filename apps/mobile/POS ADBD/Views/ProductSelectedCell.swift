@@ -1061,8 +1061,9 @@ class ProductSelectedCell: UITableViewCell {
 
         // Duration is informative only. Pickup/return dates are edited once
         // for the whole order, then synced to all per-day items.
-        // Sale orders do not use the rental calendar, even when the selected
-        // product has a daily rental pricing option.
+        // Rental duration is only relevant to RENT orders. A DAILY pricing
+        // option may remain selected on an item when switching the cart to SALE,
+        // but sale lines must not display days derived from the order calendar.
         let showRentalDays = orderType == .rent && cartItem.isDailyPricing
         rentalDaysContainer.isHidden = !showRentalDays
         compactRentalDaysContainer.isHidden = !showRentalDays

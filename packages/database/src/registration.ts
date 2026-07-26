@@ -9,6 +9,7 @@ import { hashPassword } from '@rentalshop/auth/server';
 import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
 import { createMerchantOnboardingSampleData } from './onboarding-sample';
+import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 export interface RegistrationInput {
   email: string;
@@ -21,6 +22,7 @@ export interface RegistrationInput {
   outletName?: string;
   // Business configuration (locked after registration)
   businessType?: 'GENERAL' | 'VEHICLE' | 'CLOTHING' | 'EQUIPMENT';
+  businessTags?: string[];
   pricingType?: 'FIXED' | 'HOURLY' | 'DAILY';
   // Address fields for merchant registration
   address?: string;
@@ -264,7 +266,11 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     console.log(`ℹ️ Onboarding sample skipped for merchant ${merchant.id}: ${sampleResult.reason}`);
   }
 
-  // 9. Create trial subscription
+  // 9. Provision default inactive loyalty program (Super Admin enables later)
+  await provisionDefaultLoyaltyProgram(tx, merchant.id);
+  console.log(`✅ Default loyalty program provisioned (inactive) for merchant ${merchant.id}`);
+
+  // 10. Create trial subscription
   const subscriptionStartDate = new Date();
   const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   const subscription = await tx.subscription.create({

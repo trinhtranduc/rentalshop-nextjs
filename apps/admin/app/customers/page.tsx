@@ -344,6 +344,17 @@ export default function AdminCustomersPage() {
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
+            {/* Export — only when rows are selected (same pattern as client) */}
+            {canExportCustomers && selectedCustomerIds.length > 0 && (
+              <Button
+                onClick={() => setShowExportDialog(true)}
+                variant="default"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {`Export (${selectedCustomerIds.length})`}
+              </Button>
+            )}
             {canManageCustomers && (
               <>
                 {/* Batch Delete button - only show when customers are selected */}
@@ -379,14 +390,6 @@ export default function AdminCustomersPage() {
                       <Upload className="w-4 h-4 mr-2" />
                       Import Customers
                     </DropdownMenuItem>
-                    {canExportCustomers && (
-                      <DropdownMenuItem
-                        onClick={() => setShowExportDialog(true)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Customers
-                      </DropdownMenuItem>
-                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
@@ -502,20 +505,36 @@ export default function AdminCustomersPage() {
           open={showExportDialog}
           onOpenChange={setShowExportDialog}
           resourceName="Customers"
+          isLoading={isExporting}
+          selectedCount={selectedCustomerIds.length}
           onExport={async (params) => {
             try {
               setIsExporting(true);
-              // TODO: Implement export functionality
-              console.log('Export customers with params:', params);
-              toastSuccess('Success', 'Export started');
+              if (selectedCustomerIds.length === 0) {
+                toastError('Error', 'Select at least one customer to export');
+                return;
+              }
+              const blob = await customersApi.exportCustomers({
+                ...params,
+                customerIds: selectedCustomerIds,
+              });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `customers-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+              toastSuccess('Success', 'Export completed successfully');
               setShowExportDialog(false);
+              setSelectedCustomerIds([]);
             } catch (error) {
-              console.error('Export error:', error);
+              toastError('Error', (error as Error).message || 'Failed to export customers');
             } finally {
               setIsExporting(false);
             }
           }}
-          isLoading={isExporting}
         />
       )}
 

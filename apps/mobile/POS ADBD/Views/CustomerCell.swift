@@ -22,10 +22,9 @@ class CustomerCell: UITableViewCell {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
 
-        label.font = Utils.regularFont(size: isIPad ? 18 : 16)
+        label.font = Utils.mediumFont(size: isIPad ? 17 : 15)
         label.textColor = .black
         label.lineBreakMode = .byTruncatingTail
-        // Name yields to the points badge when space is tight.
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return label
@@ -35,9 +34,8 @@ class CustomerCell: UITableViewCell {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
 
-        label.font = Utils.regularFont(size: isIPad ? 16 : 14)
+        label.font = Utils.regularFont(size: isIPad ? 14 : 13)
         label.textColor = .gray
-        // Phone yields horizontal space so the tier pill keeps its full text.
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return label
@@ -56,7 +54,7 @@ class CustomerCell: UITableViewCell {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
 
-        label.font = Utils.mediumFont(size: isIPad ? 15 : 13)
+        label.font = Utils.mediumFont(size: isIPad ? 13 : 11)
         label.textColor = .systemBlue
         label.numberOfLines = 1
         return label
@@ -68,8 +66,7 @@ class CustomerCell: UITableViewCell {
         stack.spacing = 3
         stack.alignment = .center
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
-        // Points must never be squeezed out by a long name.
+        stack.layoutMargins = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
         stack.setContentHuggingPriority(.required, for: .horizontal)
         stack.setContentCompressionResistancePriority(.required, for: .horizontal)
         return stack
@@ -77,7 +74,7 @@ class CustomerCell: UITableViewCell {
 
     private lazy var pointsBadgeView: UIView = {
         let view = UIView()
-        view.layer.cornerRadius = 11
+        view.layer.cornerRadius = 9
         view.layer.masksToBounds = true
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.18).cgColor
@@ -95,7 +92,7 @@ class CustomerCell: UITableViewCell {
         return imageView
     }()
 
-    // MARK: Tier pill (line 2, leading) — "◆ Vàng"
+    // MARK: Tier pill (line 2, leading)
     private lazy var tierIconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
@@ -107,7 +104,7 @@ class CustomerCell: UITableViewCell {
         let label = UILabel()
         let isIPad = traitCollection.horizontalSizeClass == .regular
 
-        label.font = Utils.mediumFont(size: isIPad ? 14 : 12)
+        label.font = Utils.mediumFont(size: isIPad ? 12 : 11)
         label.textColor = .systemBlue
         label.numberOfLines = 1
         return label
@@ -116,21 +113,20 @@ class CustomerCell: UITableViewCell {
     private lazy var tierPillStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [tierIconImageView, tierNameLabel])
         stack.axis = .horizontal
-        stack.spacing = 4
+        stack.spacing = 3
         stack.alignment = .center
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
+        stack.layoutMargins = UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)
         return stack
     }()
 
     private lazy var tierPillView: UIView = {
         let view = UIView()
-        view.layer.cornerRadius = 11
+        view.layer.cornerRadius = 9
         view.layer.masksToBounds = true
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.22).cgColor
         view.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.10)
-        // Keep the pill sized to its text; don't let it stretch or truncate.
         view.setContentHuggingPriority(.required, for: .horizontal)
         view.setContentCompressionResistancePriority(.required, for: .horizontal)
         return view
@@ -138,7 +134,7 @@ class CustomerCell: UITableViewCell {
 
     // MARK: Row containers
     private lazy var topRowStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [nameLabel, UIView()])
+        let stack = UIStackView(arrangedSubviews: [nameLabel])
         stack.axis = .horizontal
         stack.spacing = 8
         stack.alignment = .center
@@ -148,22 +144,23 @@ class CustomerCell: UITableViewCell {
     private lazy var bottomRowStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [tierPillView, pointsBadgeView])
         stack.axis = .horizontal
-        stack.spacing = 8
+        stack.spacing = 6
         stack.alignment = .center
+        stack.isHidden = true
         return stack
     }()
 
     private lazy var phoneRowStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [phoneIconView, phoneLabel])
         stack.axis = .horizontal
-        stack.spacing = 6
+        stack.spacing = 5
         stack.alignment = .center
         return stack
     }()
 
     var moreButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
         let image = UIImage(systemName: "ellipsis", withConfiguration: config)
         button.setImage(image, for: .normal)
         button.tintColor = .gray
@@ -174,15 +171,15 @@ class CustomerCell: UITableViewCell {
     private lazy var avatarImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
-        imageView.tintColor = .lightGray
+        imageView.clipsToBounds = true
+        imageView.image = Self.defaultAvatarImage()
         return imageView
     }()
     
     private lazy var labelsStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [topRowStack, bottomRowStack, phoneRowStack])
         stack.axis = .vertical
-        stack.spacing = 6
-        // Keep rows left-aligned so the tier/points chips size to their content.
+        stack.spacing = 3
         stack.alignment = .leading
         return stack
     }()
@@ -211,47 +208,49 @@ class CustomerCell: UITableViewCell {
         tierIconImageView.image = nil
         tierPillView.isHidden = true
         pointsBadgeView.isHidden = true
+        bottomRowStack.isHidden = true
         phoneRowStack.isHidden = false
-        avatarImageView.image = UIImage(named: "ic_customer_empty")
+        avatarImageView.image = Self.defaultAvatarImage()
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        contentView.frame = bounds
+        avatarImageView.layer.cornerRadius = avatarImageView.bounds.width / 2
     }
     
     // MARK: - Setup
     private func setupUI() {
-        // Add subviews
         contentView.addSubview(avatarImageView)
         contentView.addSubview(labelsStackView)
         contentView.addSubview(moreButton)
         tierPillView.addSubview(tierPillStack)
         pointsBadgeView.addSubview(pointsBadge)
 
-        // Setup constraints
+        // Pin top/bottom so UITableViewAutomaticDimension sizes to content
         avatarImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(56)
+            make.top.equalToSuperview().offset(10)
+            make.bottom.lessThanOrEqualToSuperview().offset(-10)
+            make.width.height.equalTo(36)
         }
 
         labelsStackView.snp.makeConstraints { make in
-            make.leading.equalTo(avatarImageView.snp.trailing).offset(12)
-            make.centerY.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-12)
+            make.leading.equalTo(avatarImageView.snp.trailing).offset(10)
+            make.top.equalToSuperview().offset(10)
+            make.bottom.equalToSuperview().offset(-10)
+            make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
         }
 
         phoneIconView.snp.makeConstraints { make in
-            make.width.height.equalTo(14)
+            make.width.height.equalTo(12)
         }
 
         pointsIconView.snp.makeConstraints { make in
-            make.width.height.equalTo(13)
+            make.width.height.equalTo(11)
         }
 
         tierIconImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(13)
+            make.width.height.equalTo(11)
         }
 
         tierPillStack.snp.makeConstraints { make in
@@ -263,9 +262,9 @@ class CustomerCell: UITableViewCell {
         }
 
         moreButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
+            make.trailing.equalToSuperview().offset(-12)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(44)
+            make.width.height.equalTo(36)
         }
     }
     
@@ -275,16 +274,7 @@ class CustomerCell: UITableViewCell {
         nameLabel.text = user.full_name
         phoneLabel.text = user.phone
         updateLoyaltyUI(for: user)
-        
-        if let avatar = user.avatar, let url = URL(string: avatar) {
-            avatarImageView.kf.setImage(
-                with: url,
-                placeholder: UIImage(named: "ic_customer_empty"),
-                options: [.transition(.fade(0.1))]
-            )
-        } else {
-            avatarImageView.image = UIImage(named: "ic_customer_empty")
-        }
+        setAvatar(from: user)
     }
     
     func bind(user: Customer, searchWords: [String]?) {
@@ -298,7 +288,7 @@ class CustomerCell: UITableViewCell {
                 let range = (name.lowercased() as NSString).range(of: word)
                 attributes.addAttributes([
                     .foregroundColor: UIColor.blue,
-                    .font: Utils.boldFont(size: 16),
+                    .font: Utils.boldFont(size: 15),
                     .underlineStyle: NSUnderlineStyle.styleSingle.rawValue
                 ], range: range)
             }
@@ -307,33 +297,54 @@ class CustomerCell: UITableViewCell {
             nameLabel.text = user.full_name
         }
         
-        // Set avatar image
+        setAvatar(from: user)
+    }
+
+    private func setAvatar(from user: Customer) {
         if let avatar = user.avatar, let url = URL(string: avatar) {
             avatarImageView.kf.setImage(
                 with: url,
-                placeholder: UIImage(named: "ic_customer_empty"),
+                placeholder: Self.defaultAvatarImage(),
                 options: [.transition(.fade(0.1))]
             )
         } else {
-            avatarImageView.image = UIImage(named: "ic_customer_empty")
+            avatarImageView.image = Self.defaultAvatarImage()
         }
     }
 
-    private func updateLoyaltyUI(for user: Customer) {
-        let state = user.loyaltyDisplayState
+    /// Soft placeholder avatar — lighter than the old asset icon.
+    private static func defaultAvatarImage() -> UIImage? {
+        let configuration = UIImage.SymbolConfiguration(
+            pointSize: 30,
+            weight: .regular
+        ).applying(
+            UIImage.SymbolConfiguration(
+                paletteColors: [
+                    UIColor.systemGray4,
+                    UIColor.systemGray6
+                ]
+            )
+        )
+        return UIImage(
+            systemName: "person.crop.circle.fill",
+            withConfiguration: configuration
+        )
+    }
 
-        // No loyalty at all → line 2 is just the phone, exactly like a plain customer.
-        guard state != .none, let levelName = user.loyaltyDisplayLevelName else {
+    private func updateLoyaltyUI(for user: Customer) {
+        // Hide level/points when loyalty is not activated for this merchant/customer.
+        guard user.shouldDisplayLoyaltyBadges, let levelName = user.loyaltyDisplayLevelName else {
             pointsBadgeView.isHidden = true
             tierPillView.isHidden = true
+            bottomRowStack.isHidden = true
             phoneRowStack.isHidden = phoneLabel.text?.isEmpty ?? true
             return
         }
 
-        // Accent color now comes from the local loyalty level map so the UI stays consistent.
+        bottomRowStack.isHidden = false
+
         let accent: UIColor = user.loyaltyDisplayAccentColor ?? .systemBlue
 
-        // Tier pill (line 2, leading)
         tierPillView.isHidden = false
         tierNameLabel.text = levelName
         tierNameLabel.textColor = accent
@@ -342,18 +353,20 @@ class CustomerCell: UITableViewCell {
         tierPillView.backgroundColor = accent.withAlphaComponent(0.10)
         tierPillView.layer.borderColor = accent.withAlphaComponent(0.22).cgColor
 
-        // Points badge should always render for loyalty rows so reused cells never look stale.
-        let points = user.loyaltyDisplayPoints ?? 0
-        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-        pointsLabel.text = String(
-            format: "loyalty.points.compactFormat".localized(),
-            pointsText
-        )
-        pointsLabel.textColor = accent
-        pointsIconView.tintColor = accent
-        pointsBadgeView.isHidden = false
-        pointsBadgeView.backgroundColor = accent.withAlphaComponent(0.08)
-        pointsBadgeView.layer.borderColor = accent.withAlphaComponent(0.18).cgColor
+        if let points = user.loyaltyDisplayPoints {
+            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+            pointsLabel.text = String(
+                format: "loyalty.points.compactFormat".localized(),
+                pointsText
+            )
+            pointsLabel.textColor = accent
+            pointsIconView.tintColor = accent
+            pointsBadgeView.isHidden = false
+            pointsBadgeView.backgroundColor = accent.withAlphaComponent(0.08)
+            pointsBadgeView.layer.borderColor = accent.withAlphaComponent(0.18).cgColor
+        } else {
+            pointsBadgeView.isHidden = true
+        }
 
         phoneRowStack.isHidden = phoneLabel.text?.isEmpty ?? true
     }

@@ -393,6 +393,25 @@ async function createMerchants() {
         isActive: true
       }
     });
+
+    // Default inactive loyalty — Super Admin enables later
+    const loyaltyProgram = await prisma.loyaltyProgram.create({
+      data: {
+        merchantId: merchant.id,
+        name: 'Chương trình khách hàng thân thiết',
+        isActive: false,
+      },
+    });
+    await prisma.loyaltyTier.create({
+      data: {
+        programId: loyaltyProgram.id,
+        name: 'Thành viên',
+        threshold: 0,
+        multiplier: 1,
+        color: '#888888',
+        sortOrder: 0,
+      },
+    });
     
     console.log(`✅ Created merchant: ${merchant.name} (ID: ${merchant.id})`);
     
