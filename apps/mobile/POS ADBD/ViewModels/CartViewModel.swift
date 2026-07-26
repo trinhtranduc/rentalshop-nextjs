@@ -98,7 +98,7 @@ class CartViewModel: PreviewViewModelProtocol {
     
     // MARK: - Financial Info
     var subtotal: Double {
-        cart.items.reduce(0) { $0 + ($1.price * Double($1.quantity)) }
+        cart.subtotalAmount
     }
     
     var discountAmount: Double { cart.discountAmount }

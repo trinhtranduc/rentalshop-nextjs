@@ -122,7 +122,6 @@ class CustomerViewController: BaseViewControler {
         
         guard let customNavBar = customNavBar else { return }
         
-        // Setup view hierarchy
         view.addSubview(scrollView)
         scrollView.addSubview(containerView)
         
@@ -156,7 +155,7 @@ class CustomerViewController: BaseViewControler {
             let titleLabel = UILabel()
             let titleText = field.titleLabel.text ?? ""
             titleLabel.text = titleText
-            titleLabel.font = Utils.regularFont(size: 16) // Match AccountViewController
+            titleLabel.font = Utils.regularFont(size: 16)
             titleLabel.textColor = .label
             titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
             
@@ -170,13 +169,12 @@ class CustomerViewController: BaseViewControler {
                 titleLabel.attributedText = attributedText
             }
             
-            // Value textField - remove title from field and use only textField
+            // Value textField - clean right alignment
             let valueTextField = field.textField
-            valueTextField.font = Utils.regularFont(size: 16) // Match AccountViewController
+            valueTextField.font = Utils.regularFont(size: 16)
             valueTextField.textAlignment = .right
             valueTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
             
-            // Remove border, icon, and padding for clean right alignment
             valueTextField.layer.borderWidth = 0
             valueTextField.layer.borderColor = UIColor.clear.cgColor
             valueTextField.backgroundColor = .clear
@@ -184,7 +182,6 @@ class CustomerViewController: BaseViewControler {
             valueTextField.leftViewMode = .never
             valueTextField.rightView = nil
             valueTextField.rightViewMode = .never
-            //valueTextField.disablePadding = true // Disable padding for right alignment
             
             rowStack.addArrangedSubview(titleLabel)
             rowStack.addArrangedSubview(valueTextField)
@@ -197,7 +194,6 @@ class CustomerViewController: BaseViewControler {
             
             fieldsStack.addArrangedSubview(fieldWrapper)
             
-            // Add separator after each field except the last one
             if index < allFields.count - 1 {
                 let separator = UIView()
                 separator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
@@ -215,7 +211,6 @@ class CustomerViewController: BaseViewControler {
         
         containerView.addSubview(fieldsCardContainer)
         
-        // Setup constraints
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar.snp.bottom)
             make.leading.trailing.equalToSuperview()
@@ -223,16 +218,15 @@ class CustomerViewController: BaseViewControler {
         }
         
         containerView.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView)
-            make.width.equalTo(scrollView)
-            make.height.greaterThanOrEqualTo(scrollView)
+            make.top.leading.trailing.bottom.equalToSuperview()
+            make.width.equalToSuperview()
         }
         
         fieldsCardContainer.snp.makeConstraints { make in
-            make.top.equalTo(containerView).offset(16)
-            make.leading.equalTo(containerView).offset(12)
-            make.trailing.equalTo(containerView).offset(-12)
-            make.bottom.lessThanOrEqualTo(containerView).offset(-16)
+            make.top.equalToSuperview().offset(16)
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.equalToSuperview().offset(-12)
+            make.bottom.equalToSuperview().offset(-16)
         }
     }
     
@@ -246,10 +240,11 @@ class CustomerViewController: BaseViewControler {
             hideBackButton: false,
             backAction: .custom { [weak self] in
                 self?.dismiss(animated: true)
-            }
+            },
+            pinToSafeArea: false
         )
-        navBar.setDismissButton() // Use X button for dismiss
-        navBar.backButtonTintColor = .black // Black X button for white background
+        navBar.setDismissButton()
+        navBar.backButtonTintColor = .black
         navBar.addRightButton(saveButton)
     }
     

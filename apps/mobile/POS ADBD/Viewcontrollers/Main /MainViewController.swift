@@ -379,8 +379,8 @@ class MainViewController: BaseViewControler {
     @objc private func addNewProduct() {
         controller = NewProductViewController()
         controller?.delegate = self
-        let nav = UINavigationController(rootViewController: controller!)
-        present(nav, animated: true)
+        // Hide system nav BEFORE present so the sheet doesn't reserve a blank safe-area gap
+        presentWithHiddenNavigationBar(controller!)
     }
     
     @objc private func cartButtonTapped() {
@@ -491,8 +491,8 @@ class MainViewController: BaseViewControler {
         controller?.delegate = self
         controller?.loadProduct(product: product)
         if let controller = controller {
-            self.navigationController?.present(UINavigationController(rootViewController: controller), animated: true, completion: {
-            })
+            // Hide system nav BEFORE present so the sheet doesn't reserve a blank safe-area gap
+            presentWithHiddenNavigationBar(controller)
         }
     }
     

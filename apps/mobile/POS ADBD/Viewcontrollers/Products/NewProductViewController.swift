@@ -232,6 +232,12 @@ class NewProductViewController: BaseViewControler {
         setupData()
         loadInitialData()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Keep system nav hidden — otherwise the sheet reserves a blank safe-area gap
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
     
     // MARK: - Setup
     override func setupUI() {
@@ -501,6 +507,9 @@ class NewProductViewController: BaseViewControler {
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let title = product == nil ? "Add product".localized() : "Update product".localized()
+        // pinToSafeArea: false — this screen is always presented as a sheet inside
+        // UINavigationController. Pinning below safe area + statusBarBackground would
+        // leave a blank white strip that looks like a duplicate navigation bar.
         let navBar = setupCustomNavigationBar(
             title: title,
             statusBarBackgroundColor: .white,
@@ -508,16 +517,10 @@ class NewProductViewController: BaseViewControler {
             hideBackButton: false,
             backAction: .custom { [weak self] in
                 self?.dismiss(animated: true)
-            }
+            },
+            pinToSafeArea: false
         )
         navBar.setDismissButton() // Use X button for dismiss
-        
-        // Fix: Pin nav bar to top of view (not safe area) for sheet presentation
-        // This removes the blank gap above the custom bar
-        navBar.snp.remakeConstraints { make in
-            make.top.equalToSuperview()
-            make.leading.trailing.equalToSuperview()
-        }
     }
     
     override func setupData() {

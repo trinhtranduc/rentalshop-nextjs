@@ -1199,7 +1199,7 @@ class PreviewViewController: BaseViewControler {
                     productName: cartItem.productName ?? "",
                     quantity: cartItem.quantity,
                     unitPrice: cartItem.price,
-                    totalPrice: cartItem.subTotal,
+                    totalPrice: cartItem.subTotal(for: cartViewModel.orderType),
                     notes: cartItem.note
                 )
             }
