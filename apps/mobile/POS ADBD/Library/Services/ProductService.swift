@@ -4,6 +4,7 @@ import Foundation
 
 protocol ProductServiceProtocol {
     func loadProducts(keyword: String?, page: Int?, limit: Int?, sortBy: String?, sortOrder: String?, outletId: Int?, completion: @escaping (_ productsResponse: ProductsResponse?, _ error: NSError?) -> Void)
+    func loadProduct(productId: Int, completion: @escaping (_ product: Product?, _ error: NSError?) -> Void)
     func deleteProduct(productId: Int, completion: @escaping (_ error: NSError?) -> Void)
     
     // New request model methods
@@ -197,6 +198,48 @@ class ProductService: BaseService, ProductServiceProtocol {
                 print("❌ API Error: \(nsError.localizedDescription)")
                 completion(nil, nsError)
             }
+        }
+    }
+
+    /// Load one product with its full pricing configuration before editing.
+    /// This avoids presenting a stale list item that may not contain pricingOptions.
+    func loadProduct(productId: Int, completion: @escaping (Product?, NSError?) -> Void) {
+        let path = "\(APIEndpoint.Path.products)/\(productId)"
+
+        performGET(
+            path: path,
+            responseType: APIProductResponse.self,
+            context: "ProductService.loadProduct"
+        ) { apiResponse, error in
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+
+            guard let apiResponse = apiResponse else {
+                completion(
+                    nil,
+                    NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
+                )
+                return
+            }
+
+            guard apiResponse.success, let product = apiResponse.data else {
+                let nsError = self.createErrorFromResponse(
+                    success: apiResponse.success,
+                    code: apiResponse.code,
+                    message: apiResponse.message,
+                    error: apiResponse.error,
+                    httpStatusCode: nil,
+                    defaultMessage: "Failed to load product"
+                )
+                completion(nil, nsError)
+                return
+            }
+
+            print("✅ Loaded product \(productId) for edit")
+            print("   Pricing options: \(product.pricingOptions ?? [])")
+            completion(product, nil)
         }
     }
     
