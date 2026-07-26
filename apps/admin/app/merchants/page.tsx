@@ -1,14 +1,19 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Merchants,
+import {
+  Merchants,
   PageWrapper,
   PageHeader,
   PageTitle,
-  useToast } from '@rentalshop/ui';
+  Button,
+  ExportDialog,
+  useToast,
+} from '@rentalshop/ui';
+import { Download } from 'lucide-react';
 import { useMerchantsData } from '@rentalshop/hooks';
-import type { Merchant } from '@rentalshop/types';
+import { merchantsApi } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN MERCHANTS PAGE (URL State Pattern)
@@ -25,7 +30,10 @@ export default function MerchantsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { toastError } = useToast();
+  const { toastSuccess, toastError } = useToast();
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [selectedMerchantIds, setSelectedMerchantIds] = useState<number[]>([]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -89,14 +97,9 @@ export default function MerchantsPage() {
       }
     });
     
-    const newURL = `${pathname}?${params.toString()}`;
-    console.log('🔄 updateURL:', { updates, newURL });
-    router.push(newURL, { scroll: false });
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
-
-  // ============================================================================
-  // FILTER HANDLERS - Simple URL Updates
-  // ============================================================================
   
   const handleSearchChange = useCallback((searchValue: string) => {
     console.log('🔍 Page: Search changed to:', searchValue);
@@ -217,9 +220,21 @@ export default function MerchantsPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <PageTitle subtitle="Manage all merchants across the platform">
-          Merchant Management
-        </PageTitle>
+        <div className="flex items-center justify-between w-full gap-3">
+          <PageTitle subtitle="Manage all merchants across the platform">
+            Merchant Management
+          </PageTitle>
+          {selectedMerchantIds.length > 0 && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowExportDialog(true)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {`Export (${selectedMerchantIds.length})`}
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
@@ -232,8 +247,45 @@ export default function MerchantsPage() {
           onMerchantAction={handleMerchantAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          onSelectionChange={setSelectedMerchantIds}
         />
       </div>
+
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        resourceName="Merchants"
+        isLoading={isExporting}
+        selectedCount={selectedMerchantIds.length}
+        onExport={async (params) => {
+          try {
+            setIsExporting(true);
+            if (selectedMerchantIds.length === 0) {
+              toastError('Error', 'Select at least one merchant to export');
+              return;
+            }
+            const blob = await merchantsApi.exportMerchants({
+              ...params,
+              merchantIds: selectedMerchantIds,
+            });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `merchants-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            toastSuccess('Success', 'Export completed successfully');
+            setShowExportDialog(false);
+            setSelectedMerchantIds([]);
+          } catch (error) {
+            toastError('Error', (error as Error).message || 'Failed to export merchants');
+          } finally {
+            setIsExporting(false);
+          }
+        }}
+      />
     </PageWrapper>
   );
 }

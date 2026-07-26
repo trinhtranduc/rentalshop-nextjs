@@ -682,6 +682,7 @@ function createApiUrls(): ApiUrls {
       activateByPublicId: (id: number) => `${base}/api/users/${id}`,
       deactivateByPublicId: (id: number) => `${base}/api/users/${id}`,
       deleteByPublicId: (id: number) => `${base}/api/users/${id}`,
+      export: `${base}/api/users/export`,
     },
     plans: {
       list: `${base}/api/plans`,
@@ -766,6 +767,7 @@ function createApiUrls(): ApiUrls {
       cancelPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       loyalty: (id: number) => `${base}/api/merchants/${id}/loyalty`,
       loyaltySyncHistory: (id: number) => `${base}/api/merchants/${id}/loyalty/sync-history`,
+      export: `${base}/api/merchants/export`,
       pricing: {
         get: (id: number) => `${base}/api/merchants/${id}/pricing`,
         update: (id: number) => `${base}/api/merchants/${id}/pricing`,

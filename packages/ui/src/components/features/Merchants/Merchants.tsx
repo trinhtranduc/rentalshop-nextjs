@@ -40,6 +40,7 @@ interface MerchantsProps {
   onMerchantAction: (action: string, merchantId: number) => void;
   onPageChange: (page: number) => void;
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedIds: number[]) => void;
 }
 
 /**
@@ -59,7 +60,8 @@ export function Merchants({
   onClearFilters,
   onMerchantAction, 
   onPageChange,
-  onSort
+  onSort,
+  onSelectionChange
 }: MerchantsProps) {
   
   // Debug: Log data to check pagination condition
@@ -110,6 +112,7 @@ export function Merchants({
           sortBy={filters.sortBy || 'createdAt'}
           sortOrder={filters.sortOrder || 'desc'}
           onSort={memoizedOnSort}
+          onSelectionChange={onSelectionChange}
         />
       </div>
       

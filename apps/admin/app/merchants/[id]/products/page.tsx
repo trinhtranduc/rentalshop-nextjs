@@ -216,15 +216,23 @@ export default function MerchantProductsPage() {
   }, [toastSuccess, refetch]);
 
   const handleExportProducts = useCallback(async (params: any) => {
+    if (selectedProductIds.length === 0) {
+      toastError('Error', 'Select at least one product to export');
+      return;
+    }
     setIsExporting(true);
     try {
-      const blob = await productsApi.exportProducts(params);
+      const blob = await productsApi.exportProducts({
+        ...params,
+        merchantId: parseInt(merchantId, 10),
+        productIds: selectedProductIds,
+      });
       
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `products-${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `products-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -239,7 +247,7 @@ export default function MerchantProductsPage() {
     } finally {
       setIsExporting(false);
     }
-  }, [toastSuccess]);
+  }, [merchantId, selectedProductIds, toastSuccess, toastError]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -292,6 +300,16 @@ export default function MerchantProductsPage() {
         <div className="flex items-center justify-between w-full">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <div className="flex items-center gap-2">
+            {canExportProducts && selectedProductIds.length > 0 && (
+              <Button
+                onClick={() => setShowExportDialog(true)}
+                variant="default"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {`Export (${selectedProductIds.length})`}
+              </Button>
+            )}
             {canManageProducts && (
               <>
                 {/* Batch Delete button - only show when products are selected */}
@@ -319,35 +337,9 @@ export default function MerchantProductsPage() {
                       <Upload className="w-4 h-4 mr-2" />
                       Import Products
                     </DropdownMenuItem>
-                    {canExportProducts && (
-                      <DropdownMenuItem
-                        onClick={() => setShowExportDialog(true)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Products
-                      </DropdownMenuItem>
-                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            )}
-            {/* Show export dropdown if user can export but cannot manage */}
-            {!canManageProducts && canExportProducts && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setShowExportDialog(true)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Products
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             )}
           </div>
         </div>
