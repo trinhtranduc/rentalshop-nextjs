@@ -32,7 +32,9 @@ interface MerchantDetailProps {
   loyaltyProgramName?: string | null;
   loyaltyLoading?: boolean;
   loyaltySaving?: boolean;
+  loyaltySyncing?: boolean;
   onLoyaltyToggle?: (nextActive: boolean) => Promise<void> | void;
+  onLoyaltySyncHistory?: () => Promise<void> | void;
   onMerchantAction: (action: string, merchantId: number) => void;
   onOutletAction: (action: string, outletId: number) => void;
   onUserAction: (action: string, userId: number) => void;
@@ -64,7 +66,9 @@ export function MerchantDetail({
   loyaltyProgramName,
   loyaltyLoading = false,
   loyaltySaving = false,
+  loyaltySyncing = false,
   onLoyaltyToggle,
+  onLoyaltySyncHistory,
   onMerchantAction,
   onOutletAction,
   onUserAction,
@@ -285,7 +289,9 @@ export function MerchantDetail({
           programName={loyaltyProgramName}
           loading={loyaltyLoading}
           saving={loyaltySaving}
+          syncing={loyaltySyncing}
           onToggle={onLoyaltyToggle}
+          onSyncHistory={onLoyaltySyncHistory}
         />
       )}
 

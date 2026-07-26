@@ -124,6 +124,18 @@ export const merchantsApi = {
   },
 
   /**
+   * Super Admin: import historical order points/tiers for a merchant
+   */
+  async syncMerchantLoyaltyHistory(
+    merchantId: number
+  ): Promise<ApiResponse<{ customersProcessed: number; totalPointsIssued: number }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyaltySyncHistory(merchantId), {
+      method: 'POST',
+    });
+    return await parseApiResponse(response);
+  },
+
+  /**
    * Create new merchant
    */
   async createMerchant(merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {
