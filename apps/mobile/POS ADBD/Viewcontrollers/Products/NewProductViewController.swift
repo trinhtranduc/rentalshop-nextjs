@@ -511,6 +511,13 @@ class NewProductViewController: BaseViewControler {
             }
         )
         navBar.setDismissButton() // Use X button for dismiss
+        
+        // Fix: Pin nav bar to top of view (not safe area) for sheet presentation
+        // This removes the blank gap above the custom bar
+        navBar.snp.remakeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+        }
     }
     
     override func setupData() {

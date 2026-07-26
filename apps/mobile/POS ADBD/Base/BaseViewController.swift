@@ -237,6 +237,9 @@ class BaseViewControler : UIViewController{
         setupStatusBarStyleCallback(for: customNavBar)
         
         // Setup constraints
+        // Pin to safe area by default (for pushed VCs that need status bar clearance).
+        // Sheet presentations should override this in their own setupNavigationBar()
+        // by remaking constraints with make.top.equalToSuperview().
         customNavBar.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
