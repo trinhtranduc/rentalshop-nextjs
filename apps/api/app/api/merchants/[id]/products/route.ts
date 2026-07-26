@@ -105,7 +105,20 @@ export async function POST(
       const merchant = validation.merchant!;
 
       const body = await request.json();
-      const { name, description, barcode, categoryId, rentPrice, salePrice, deposit, totalStock, images } = body;
+      const {
+        name,
+        description,
+        barcode,
+        categoryId,
+        rentPrice,
+        salePrice,
+        deposit,
+        totalStock,
+        images,
+        pricingType,
+        durationConfig,
+        pricingOptions
+      } = body;
 
       const imageUrls = Array.isArray(images) ? images : images ? [images] : [];
 
@@ -119,6 +132,9 @@ export async function POST(
         salePrice,
         deposit,
         totalStock,
+        ...(pricingType !== undefined ? { pricingType } : {}),
+        ...(durationConfig !== undefined ? { durationConfig } : {}),
+        ...(pricingOptions !== undefined ? { pricingOptions } : {}),
         // ✅ STANDARDIZED: Always store as array, Prisma will serialize to JSON
         images: imageUrls,
         merchantId: merchant.id,
