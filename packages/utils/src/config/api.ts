@@ -55,6 +55,9 @@ export interface ApiUrls {
     registerMerchantGoogle: string;
     loginGoogle: string;
   };
+  businessTags: {
+    list: string;
+  };
   categories: {
     list: string;
     create: string;
@@ -128,6 +131,7 @@ export interface ApiUrls {
     activateByPublicId: (id: number) => string;
     deactivateByPublicId: (id: number) => string;
     deleteByPublicId: (id: number) => string;
+    export: string;
   };
   plans: {
     list: string;
@@ -210,6 +214,9 @@ export interface ApiUrls {
     getPlan: (id: number) => string;
     extendPlan: (id: number) => string;
     cancelPlan: (id: number) => string;
+    loyalty: (id: number) => string;
+    loyaltySyncHistory: (id: number) => string;
+    export: string;
     pricing: {
       get: (id: number) => string;
       update: (id: number) => string;
@@ -607,6 +614,9 @@ function createApiUrls(): ApiUrls {
       registerMerchantGoogle: `${base}/api/auth/register/merchant-google`,
       loginGoogle: `${base}/api/auth/login/google`,
     },
+    businessTags: {
+      list: `${base}/api/business-tags`,
+    },
     categories: {
       list: `${base}/api/categories`,
       create: `${base}/api/categories`,
@@ -680,6 +690,7 @@ function createApiUrls(): ApiUrls {
       activateByPublicId: (id: number) => `${base}/api/users/${id}`,
       deactivateByPublicId: (id: number) => `${base}/api/users/${id}`,
       deleteByPublicId: (id: number) => `${base}/api/users/${id}`,
+      export: `${base}/api/users/export`,
     },
     plans: {
       list: `${base}/api/plans`,
@@ -762,6 +773,9 @@ function createApiUrls(): ApiUrls {
       getPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       extendPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       cancelPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
+      loyalty: (id: number) => `${base}/api/merchants/${id}/loyalty`,
+      loyaltySyncHistory: (id: number) => `${base}/api/merchants/${id}/loyalty/sync-history`,
+      export: `${base}/api/merchants/export`,
       pricing: {
         get: (id: number) => `${base}/api/merchants/${id}/pricing`,
         update: (id: number) => `${base}/api/merchants/${id}/pricing`,

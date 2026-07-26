@@ -194,7 +194,10 @@ class InfoCustomerView: UIView {
             weight: .regular
         ).applying(
             UIImage.SymbolConfiguration(
-                paletteColors: [.systemGray3, .systemGray6]
+                paletteColors: [
+                    UIColor.systemGray4,
+                    UIColor.systemGray6
+                ]
             )
         )
         return UIImage(
@@ -204,12 +207,12 @@ class InfoCustomerView: UIView {
     }
 
     private func updateLoyaltyUI(customer: Customer) {
-        guard showsLoyaltyInfo else {
+        guard showsLoyaltyInfo, customer.shouldDisplayLoyaltyBadges else {
             loyaltyStackView.isHidden = true
             return
         }
 
-        guard customer.loyaltyDisplayState != .none, let loyaltyLevelName = customer.loyaltyDisplayLevelName else {
+        guard let loyaltyLevelName = customer.loyaltyDisplayLevelName else {
             loyaltyStackView.isHidden = true
             return
         }
@@ -219,13 +222,17 @@ class InfoCustomerView: UIView {
         customerLoyaltyLabel.text = loyaltyLevelName
         customerLoyaltyLabel.textColor = customer.loyaltyDisplayAccentColor ?? .systemBlue
 
-        let points = customer.loyaltyDisplayPoints ?? 0
-        let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-        customerPointLabel.text = String(
-            format: "loyalty.points.bulletFormat".localized(),
-            pointsText
-        )
-        customerPointLabel.textColor = .gray
+        if let points = customer.loyaltyDisplayPoints {
+            let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
+            customerPointLabel.isHidden = false
+            customerPointLabel.text = String(
+                format: "loyalty.points.bulletFormat".localized(),
+                pointsText
+            )
+            customerPointLabel.textColor = .gray
+        } else {
+            customerPointLabel.isHidden = true
+        }
 
         loyaltyIconImageView.image = UIImage(systemName: loyaltyIconName(for: customer))
 

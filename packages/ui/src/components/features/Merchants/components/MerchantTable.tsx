@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { DropdownMenuSeparator } from '../../../ui/dropdown-menu';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { useTableSelection } from '@rentalshop/hooks';
 import type { Merchant } from '@rentalshop/types';
 
 interface MerchantTableProps {
@@ -24,6 +25,7 @@ interface MerchantTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedMerchantIds: number[]) => void;
 }
 
 
@@ -33,7 +35,8 @@ export function MerchantTable({
   onMerchantAction, 
   sortBy = 'name', 
   sortOrder = 'asc',
-  onSort
+  onSort,
+  onSelectionChange
 }: MerchantTableProps) {
   // Use centralized date formatting hooks (DRY principle)
   const formatDate = (dateString: string | Date | undefined) => {
@@ -45,6 +48,14 @@ export function MerchantTable({
     return useFormattedDateTime(dateString);
   };
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const {
+    allSelected,
+    someSelected,
+    handleToggleSelect,
+    handleSelectAll,
+    isSelected,
+  } = useTableSelection(merchants, onSelectionChange);
 
   const getStatusBadge = (merchant: Merchant) => {
     if (!merchant.isActive) {
@@ -79,6 +90,20 @@ export function MerchantTable({
           <table className="w-full">
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
+                {onSelectionChange && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = someSelected;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      title={allSelected ? 'Deselect all' : 'Select all'}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Merchant Name
                 </th>
@@ -104,11 +129,26 @@ export function MerchantTable({
                 const fullAddress = [merchant.address, merchant.city, merchant.state, merchant.zipCode, merchant.country]
                   .filter(Boolean)
                   .join(', ');
+                const merchantIsSelected = isSelected(merchant.id);
                 return (
                 <tr 
                   key={merchant.id} 
-                  className="hover:bg-bg-secondary transition-colors"
+                  className={`transition-colors ${
+                    merchantIsSelected
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : 'hover:bg-bg-secondary'
+                  }`}
                 >
+                  {onSelectionChange && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={merchantIsSelected}
+                        onChange={() => handleToggleSelect(merchant.id)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {/* Merchant Name */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

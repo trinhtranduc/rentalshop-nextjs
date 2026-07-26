@@ -35,12 +35,12 @@ class Cart {
     }
     
     var totalAmount: Double {
-        let subtotal = items.reduce(0) { $0 + $1.subTotal }
+        let subtotal = items.reduce(0) { $0 + $1.subTotal(for: orderType) }
         return applyDiscount(to: subtotal)
     }
     
     var subtotalAmount: Double {
-        return items.reduce(0) { $0 + $1.subTotal }
+        return items.reduce(0) { $0 + $1.subTotal(for: orderType) }
     }
     
     var discountAmount: Double {
@@ -220,6 +220,7 @@ class Cart {
 
     /// Auto-update rental days for all DAILY items based on pickup/return dates
     func syncRentalDaysFromDates() {
+        guard orderType == .rent else { return }
         guard let days = calculateRentalDays(), days >= 1 else { return }
         for index in items.indices where items[index].isDailyPricing {
             items[index].rentalDays = days
@@ -424,7 +425,7 @@ class Cart {
                     id: 0,
                     quantity: cartItem.quantity,
                     unitPrice: cartItem.price,
-                    totalPrice: cartItem.subTotal,
+                    totalPrice: cartItem.subTotal(for: orderType),
                     notes: cartItem.note,
                     productId: cartItem.productId,
                     productName: cartItem.productName ?? "",
@@ -432,8 +433,8 @@ class Cart {
                     productImages: cartItem.imageUrl != nil ? [cartItem.imageUrl!] : nil,
                     productRentPrice: nil,
                     productDeposit: cartItem.deposit,
-                    rentalDays: cartItem.rentalDays,
-                    pricingType: cartItem.pricingType ?? "FIXED",
+                    rentalDays: orderType == .rent ? cartItem.rentalDays : nil,
+                    pricingType: orderType == .rent ? (cartItem.pricingType ?? "FIXED") : nil,
                     pricingOptionId: cartItem.selectedPricingOptionId
                 )
             },
@@ -670,7 +671,7 @@ class Cart {
             // This ensures custom prices are used when updating order
             let effectivePrice = item.effectivePrice(for: orderType)
             let effectiveSubTotal: Double
-            if item.isDailyPricing {
+            if orderType == .rent && item.isDailyPricing {
                 effectiveSubTotal = Double(item.quantity) * effectivePrice * Double(item.rentalDays)
             } else {
                 effectiveSubTotal = Double(item.quantity) * effectivePrice
@@ -683,7 +684,9 @@ class Cart {
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
                 notes: finalNote,
-                rentalDays: item.isDailyPricing ? item.rentalDays : calculateRentalDays(),
+                rentalDays: orderType == .rent
+                    ? (item.isDailyPricing ? item.rentalDays : calculateRentalDays())
+                    : nil,
                 imageUrl: item.imageUrl,
                 pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
                 pricingOptionId: item.selectedPricingOptionId
@@ -754,7 +757,7 @@ class Cart {
             // This ensures custom prices are used when creating order
             let effectivePrice = item.effectivePrice(for: orderType)
             let effectiveSubTotal: Double
-            if item.isDailyPricing {
+            if orderType == .rent && item.isDailyPricing {
                 effectiveSubTotal = Double(item.quantity) * effectivePrice * Double(item.rentalDays)
             } else {
                 effectiveSubTotal = Double(item.quantity) * effectivePrice
@@ -767,7 +770,7 @@ class Cart {
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
                 notes: finalNote,
-                rentDays: item.isDailyPricing ? item.rentalDays : nil,
+                rentDays: orderType == .rent && item.isDailyPricing ? item.rentalDays : nil,
                 pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
                 pricingOptionId: item.selectedPricingOptionId
             )

@@ -39,6 +39,7 @@ export interface UsersProps {
   onUserAction?: (action: string, userId: number) => void;
   onPageChange?: (page: number) => void;
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedIds: number[]) => void;
   
   // Display props
   title?: string;
@@ -72,6 +73,7 @@ export const Users: React.FC<UsersProps> = ({
   onUserAction = () => {},
   onPageChange = () => {},
   onSort = () => {},
+  onSelectionChange,
   
   // Display props
   title = "User Management",
@@ -182,6 +184,7 @@ export const Users: React.FC<UsersProps> = ({
             sortBy={filters.sortBy || "createdAt"}
             sortOrder={filters.sortOrder || "desc"}
             onSort={memoizedOnSort}
+            onSelectionChange={onSelectionChange}
           />
         ) : (
           <EmptyState

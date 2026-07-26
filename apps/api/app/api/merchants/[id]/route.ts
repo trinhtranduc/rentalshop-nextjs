@@ -82,6 +82,16 @@ export async function PUT(
       const body = await request.json();
       console.log('🔍 PUT /api/merchants/[id] - Update request body:', body);
 
+      // Normalize niche tags and derive businessType when tags are sent
+      if (body.businessTags !== undefined) {
+        const { normalizeBusinessTags, deriveBusinessTypeFromTags } = await import('@rentalshop/constants');
+        const tags = normalizeBusinessTags(body.businessTags);
+        body.businessTags = tags;
+        if (tags.length > 0 && body.businessType === undefined) {
+          body.businessType = deriveBusinessTypeFromTags(tags);
+        }
+      }
+
       // Check for duplicate phone or email if being updated
       if (body.phone || body.email) {
         const emailToCheck = (body.email && body.email !== existingMerchant.email) ? body.email : undefined;

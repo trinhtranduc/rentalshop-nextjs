@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MerchantHeader } from './MerchantHeader';
 import { MerchantPlanManagement } from './MerchantPlanManagement';
 import { MerchantSubscriptionSection } from './MerchantSubscriptionSection';
+import { MerchantLoyaltySection } from './MerchantLoyaltySection';
 import { 
   Button, 
   Card, 
@@ -27,6 +28,13 @@ interface MerchantDetailProps {
   plans?: Plan[];
   addonCount?: number; // Number of active addons
   currentUserRole?: string;
+  loyaltyActive?: boolean;
+  loyaltyProgramName?: string | null;
+  loyaltyLoading?: boolean;
+  loyaltySaving?: boolean;
+  loyaltySyncing?: boolean;
+  onLoyaltyToggle?: (nextActive: boolean) => Promise<void> | void;
+  onLoyaltySyncHistory?: () => Promise<void> | void;
   onMerchantAction: (action: string, merchantId: number) => void;
   onOutletAction: (action: string, outletId: number) => void;
   onUserAction: (action: string, userId: number) => void;
@@ -54,6 +62,13 @@ export function MerchantDetail({
   plans = [],
   addonCount = 0,
   currentUserRole,
+  loyaltyActive = false,
+  loyaltyProgramName,
+  loyaltyLoading = false,
+  loyaltySaving = false,
+  loyaltySyncing = false,
+  onLoyaltyToggle,
+  onLoyaltySyncHistory,
   onMerchantAction,
   onOutletAction,
   onUserAction,
@@ -267,6 +282,18 @@ export function MerchantDetail({
         </Card>
 
       </div>
+
+      {onLoyaltyToggle && (
+        <MerchantLoyaltySection
+          isActive={loyaltyActive}
+          programName={loyaltyProgramName}
+          loading={loyaltyLoading}
+          saving={loyaltySaving}
+          syncing={loyaltySyncing}
+          onToggle={onLoyaltyToggle}
+          onSyncHistory={onLoyaltySyncHistory}
+        />
+      )}
 
       {/* Plan Management - Compact version, only show if needed */}
       {onPlanChange && data.merchant.subscription && (

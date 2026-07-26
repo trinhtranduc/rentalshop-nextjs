@@ -26,6 +26,10 @@ struct CustomerLoyaltySnapshot: Codable {
     var tier: CustomerLoyaltyTier?
 }
 
+private struct CustomerOrdersCount: Codable {
+    var orders: Int?
+}
+
 enum CustomerLoyaltyStatus: String, Codable {
     case active
     case inactive
@@ -149,6 +153,8 @@ struct Customer: Codable, Comparable, Copying {
     var sale_point: Int = 0
     var loyalty: CustomerLoyaltySnapshot?
     var loyaltyStatus: CustomerLoyaltyStatus?
+    /// Total orders for this customer (from API `orderCount` or `_count.orders`)
+    var orderCount: Int = 0
     
     // New API fields according to documentation
     var id: Int?
@@ -178,6 +184,7 @@ struct Customer: Codable, Comparable, Copying {
         self.sale_point = original.sale_point
         self.loyalty = original.loyalty
         self.loyaltyStatus = original.loyaltyStatus
+        self.orderCount = original.orderCount
         self.id = original.id
         self.firstName = original.firstName
         self.lastName = original.lastName
@@ -205,6 +212,8 @@ struct Customer: Codable, Comparable, Copying {
         case sale_point = "royal_sale_point"
         case loyalty
         case loyaltyStatus
+        case orderCount
+        case count = "_count"
         
         // New API fields
         case id
@@ -254,6 +263,15 @@ struct Customer: Codable, Comparable, Copying {
         self.sale_point = try container.decodeIfPresent(Int.self, forKey: .sale_point) ?? 0
         self.loyalty = try container.decodeIfPresent(CustomerLoyaltySnapshot.self, forKey: .loyalty)
         self.loyaltyStatus = try container.decodeIfPresent(CustomerLoyaltyStatus.self, forKey: .loyaltyStatus)
+
+        // Order count: prefer flat `orderCount`, then nested `_count.orders`, then loyalty snapshot
+        if let flatCount = try container.decodeIfPresent(Int.self, forKey: .orderCount) {
+            self.orderCount = flatCount
+        } else if let nested = try container.decodeIfPresent(CustomerOrdersCount.self, forKey: .count) {
+            self.orderCount = nested.orders ?? 0
+        } else {
+            self.orderCount = self.loyalty?.totalOrders ?? 0
+        }
         
         // New API fields
         self.city = try container.decodeIfPresent(String.self, forKey: .city)
@@ -280,6 +298,7 @@ struct Customer: Codable, Comparable, Copying {
         try container.encode(sale_point, forKey: .sale_point)
         try container.encodeIfPresent(loyalty, forKey: .loyalty)
         try container.encodeIfPresent(loyaltyStatus, forKey: .loyaltyStatus)
+        try container.encode(orderCount, forKey: .orderCount)
         
         // New API fields
         try container.encodeIfPresent(id, forKey: .id)
@@ -360,6 +379,18 @@ struct Customer: Codable, Comparable, Copying {
         }
 
         return .none
+    }
+
+    /// Whether the list/header should show loyalty level + points.
+    /// Hidden when the merchant has not activated loyalty, or when status is inactive/unavailable.
+    var shouldDisplayLoyaltyBadges: Bool {
+        guard User.account()?.hasLoyaltyFeature == true else { return false }
+        switch loyaltyDisplayState {
+        case .active, .legacy:
+            return loyaltyDisplayLevelName != nil
+        case .inactive, .unavailable, .none:
+            return false
+        }
     }
 
     var loyaltyDisplayLevelName: String? {

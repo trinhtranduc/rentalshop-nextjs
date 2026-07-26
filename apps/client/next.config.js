@@ -187,4 +187,4 @@ const nextConfig = {
 };
 
 // Export config wrapped with next-intl plugin
-module.exports = withNextIntl(nextConfig); 
+module.exports = withNextIntl(nextConfig);

@@ -205,6 +205,7 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
     // Normalize date fields in customer list to UTC ISO strings using toISOString()
     const normalizedCustomers = (result.data || []).map(customer => ({
       ...customer,
+      orderCount: customer._count?.orders ?? 0,
       createdAt: customer.createdAt?.toISOString() || null,
       updatedAt: customer.updatedAt?.toISOString() || null,
       dateOfBirth: customer.dateOfBirth?.toISOString() || null,

@@ -232,6 +232,22 @@ class NewProductViewController: BaseViewControler {
         setupData()
         loadInitialData()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // The form is presented inside a UINavigationController but owns the
+        // compact custom bar. Re-apply the hidden state after presentation
+        // transitions so the system bar cannot appear underneath it.
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // UIKit can restore the system bar while the sheet transition
+        // completes. Keep it hidden after the final layout pass as well.
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
     
     // MARK: - Setup
     override func setupUI() {
@@ -501,6 +517,9 @@ class NewProductViewController: BaseViewControler {
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let title = product == nil ? "Add product".localized() : "Update product".localized()
+        // pinToSafeArea: false — this screen is always presented as a sheet inside
+        // UINavigationController. Pinning below safe area + statusBarBackground would
+        // leave a blank white strip that looks like a duplicate navigation bar.
         let navBar = setupCustomNavigationBar(
             title: title,
             statusBarBackgroundColor: .white,
@@ -508,8 +527,19 @@ class NewProductViewController: BaseViewControler {
             hideBackButton: false,
             backAction: .custom { [weak self] in
                 self?.dismiss(animated: true)
-            }
+            },
+            pinToSafeArea: false
         )
+
+        // Product editor is presented as a sheet. The navigation controller's
+        // safe-area top includes the hidden system bar, which otherwise leaves
+        // a second, empty navigation region above this custom bar. Pin the
+        // custom bar to the sheet itself so it occupies that region.
+        navBar.snp.remakeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+        }
+
         navBar.setDismissButton() // Use X button for dismiss
     }
     

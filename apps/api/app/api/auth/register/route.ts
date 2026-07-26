@@ -5,7 +5,12 @@ import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { getDefaultPricingConfig, type BusinessType } from '@rentalshop/constants';
+import {
+  getDefaultPricingConfig,
+  normalizeBusinessTags,
+  deriveBusinessTypeFromTags,
+  type BusinessType,
+} from '@rentalshop/constants';
 
 /**
  * Parse name into firstName and lastName
@@ -252,6 +257,13 @@ export async function POST(request: NextRequest) {
           referredByMerchantId = referringMerchant?.id;
         }
         
+        // Resolve niche tags + derive pricing businessType when tags provided
+        const businessTags = normalizeBusinessTags(validatedData.businessTags);
+        const businessType: BusinessType =
+          businessTags.length > 0
+            ? deriveBusinessTypeFromTags(businessTags)
+            : ((validatedData.businessType as BusinessType) || 'GENERAL');
+
         // Create merchant
         const merchant = await tx.merchant.create({
           data: {
@@ -264,10 +276,11 @@ export async function POST(request: NextRequest) {
             state: validatedData.state,
             zipCode: validatedData.zipCode,
             country: validatedData.country,
-            businessType: validatedData.businessType || 'GENERAL',
+            businessType,
+            businessTags: businessTags.length > 0 ? businessTags : undefined,
             pricingType: validatedData.pricingType || 'FIXED',
             referredByMerchantId,
-            pricingConfig: buildPricingConfig(validatedData.businessType, validatedData.pricingType)
+            pricingConfig: buildPricingConfig(businessType, validatedData.pricingType)
           } as any
         });
         
@@ -367,6 +380,7 @@ export async function POST(request: NextRequest) {
               id: result.merchant.id,
               name: result.merchant.name,
               businessType: result.merchant.businessType,
+              businessTags: (result.merchant as any).businessTags ?? [],
               pricingType: result.merchant.pricingType
             },
             outlet: {

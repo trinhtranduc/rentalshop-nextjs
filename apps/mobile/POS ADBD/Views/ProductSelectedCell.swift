@@ -1061,7 +1061,10 @@ class ProductSelectedCell: UITableViewCell {
 
         // Duration is informative only. Pickup/return dates are edited once
         // for the whole order, then synced to all per-day items.
-        let showRentalDays = cartItem.isDailyPricing
+        // Rental duration is only relevant to RENT orders. A DAILY pricing
+        // option may remain selected on an item when switching the cart to SALE,
+        // but sale lines must not display days derived from the order calendar.
+        let showRentalDays = orderType == .rent && cartItem.isDailyPricing
         rentalDaysContainer.isHidden = !showRentalDays
         compactRentalDaysContainer.isHidden = !showRentalDays
 
@@ -1349,7 +1352,7 @@ class ProductSelectedCell: UITableViewCell {
     
     private func updateSubtotal() {
         let subtotal: Double
-        if cartItem?.isDailyPricing == true {
+        if currentOrderType == .rent && cartItem?.isDailyPricing == true {
             subtotal = Double(quantity) * price * Double(rentalDays)
         } else {
             subtotal = Double(quantity) * price

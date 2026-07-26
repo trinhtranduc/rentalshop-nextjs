@@ -102,6 +102,40 @@ export const merchantsApi = {
   },
 
   /**
+   * Super Admin: get loyalty program status for a merchant
+   */
+  async getMerchantLoyalty(merchantId: number): Promise<ApiResponse<{ merchant: { id: number; name: string }; program: any }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyalty(merchantId));
+    return await parseApiResponse(response);
+  },
+
+  /**
+   * Super Admin: enable/disable loyalty for a merchant
+   */
+  async setMerchantLoyaltyActive(
+    merchantId: number,
+    isActive: boolean
+  ): Promise<ApiResponse<{ merchant: { id: number; name: string }; program: any }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyalty(merchantId), {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    });
+    return await parseApiResponse(response);
+  },
+
+  /**
+   * Super Admin: import historical order points/tiers for a merchant
+   */
+  async syncMerchantLoyaltyHistory(
+    merchantId: number
+  ): Promise<ApiResponse<{ customersProcessed: number; totalPointsIssued: number }>> {
+    const response = await authenticatedFetch(apiUrls.merchants.loyaltySyncHistory(merchantId), {
+      method: 'POST',
+    });
+    return await parseApiResponse(response);
+  },
+
+  /**
    * Create new merchant
    */
   async createMerchant(merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {
@@ -368,5 +402,36 @@ export const merchantsApi = {
     });
     const result = await parseApiResponse<any>(response);
     return result;
+  },
+
+  /**
+   * Export merchants to Excel or CSV (Admin only)
+   */
+  async exportMerchants(params: {
+    period?: '1month' | '3months' | '6months' | '1year' | 'custom';
+    startDate?: string;
+    endDate?: string;
+    format?: 'excel' | 'csv';
+    merchantIds?: number[];
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.merchantIds && params.merchantIds.length > 0) {
+      params.merchantIds.forEach((id) => {
+        queryParams.append('merchantIds', id.toString());
+      });
+    }
+
+    const url = `${apiUrls.merchants.export}?${queryParams.toString()}`;
+    const response = await authenticatedFetch(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to export merchants');
+    }
+
+    return await response.blob();
   }
 };

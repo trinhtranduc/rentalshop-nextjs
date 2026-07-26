@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { prisma } from '@rentalshop/database';
+import { prisma, provisionDefaultLoyaltyProgram } from '@rentalshop/database';
 import {
   upsertLoyaltyProgram,
 } from '@rentalshop/loyalty';
-import { handleApiError, loyaltyProgramSchema, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, loyaltyProgramSchema, ResponseBuilder, ApiError, ErrorCode } from '@rentalshop/utils';
+import { USER_ROLE } from '@rentalshop/constants';
 import {
   loyaltyErrorResponse,
   resolveLoyaltyMerchantId,
@@ -16,9 +17,17 @@ export const GET = withPermissions(['loyalty.view'])(async (_request, { user, us
     const merchantId = await resolveLoyaltyMerchantId(user, userScope);
     await withLoyaltyPlanGate(merchantId);
 
-    const program = await prisma.loyaltyProgram.findUnique({
+    let program = await prisma.loyaltyProgram.findUnique({
       where: { merchantId },
     });
+
+    // Auto-heal merchants registered before provision-on-signup
+    if (!program) {
+      await provisionDefaultLoyaltyProgram(prisma, merchantId);
+      program = await prisma.loyaltyProgram.findUnique({
+        where: { merchantId },
+      });
+    }
 
     return NextResponse.json(ResponseBuilder.success('LOYALTY_PROGRAM_FOUND', program));
   } catch (error) {
@@ -46,7 +55,23 @@ export const PUT = withPermissions(['loyalty.manage'])(async (request: NextReque
       });
     }
 
-    const program = await upsertLoyaltyProgram(merchantId, parsed.data);
+    const payload = { ...parsed.data };
+
+    // Only Super Admin may change isActive. Merchants configure rates/tiers only.
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (Object.prototype.hasOwnProperty.call(body, 'isActive')) {
+        const existing = await prisma.loyaltyProgram.findUnique({
+          where: { merchantId },
+          select: { isActive: true },
+        });
+        if (existing && body.isActive !== existing.isActive) {
+          throw new ApiError(ErrorCode.INSUFFICIENT_PERMISSIONS);
+        }
+      }
+      delete payload.isActive;
+    }
+
+    const program = await upsertLoyaltyProgram(merchantId, payload as typeof parsed.data & { name: string });
     return NextResponse.json(ResponseBuilder.success('PROGRAM_UPDATED', program));
   } catch (error) {
     const gateResponse = loyaltyErrorResponse(error);

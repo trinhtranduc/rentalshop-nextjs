@@ -76,11 +76,11 @@ class PreviewProductCell: UITableViewCell {
     }
     
     /// Bind with CartItem
-    func bindProduct(cartItem: CartItem) {
+    func bindProduct(cartItem: CartItem, orderType: OrderType = .rent) {
         nameLabel.text = cartItem.productName
         qtyLabel.text = cartItem.quantity.formatStringInCommon()
         priceLabel.text = cartItem.price.formatStringInCommon()
-        totalLabel.text = cartItem.subTotal.formatStringInCommon()
+        totalLabel.text = cartItem.subTotal(for: orderType).formatStringInCommon()
     }
     
     /// Bind with OrderItem

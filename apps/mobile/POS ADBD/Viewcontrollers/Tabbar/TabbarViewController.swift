@@ -18,45 +18,25 @@ class TabbarViewController: UITabBarController {
     init() {
         super.init(nibName: nil, bundle: nil)
         setupTabBarAppearance()
-        setupViewControllers()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupTabBarAppearance()
-        setupViewControllers()
     }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        if #available(iOS 17.0, *) {
-//            traitOverrides.horizontalSizeClass = .compact
-//        } else {
-//            
-//        }
-
-        
         // Setup haptic feedback for tab bar items using the delegate approach
         hapticDelegate = HapticTabBarDelegate(style: .medium)
         hapticDelegate?.applyTo(tabBarController: self)
         
-        
-        // Setup view controllers
+        // Build tabs once here — previously also ran in init(), so every launch
+        // created 5 VCs twice and called setViewControllers(animated: true) twice.
+        // That made the tab bar feel laggy right after finishing onboarding.
         setupViewControllers()
-        
-//        AuthenticationService.shared.validateAccount { [weak self] error in
-//            guard let self = self else { return }
-//            if let _err = error, _err.code == EXPIRED_DATE_CODE {
-//                UIAlertController.alert(
-//                    parent: self,
-//                    title: "Error".localized(),
-//                    message: "You're account has been expired. Please check a payment to extend account duration".localized()
-//                ) { _ in
-//                }
-//            }
-//        }
     }
     
     override func viewDidLayoutSubviews() {
@@ -157,6 +137,8 @@ class TabbarViewController: UITabBarController {
             viewControllers = [nav_0, nav_1, nav_2, nav_5]
         }
         
-        setViewControllers(viewControllers, animated: true)
+        // animated: false — initial tab setup must not animate; animation on first
+        // load (especially after swapping root from onboarding) janks the tab bar.
+        setViewControllers(viewControllers, animated: false)
     }
 }

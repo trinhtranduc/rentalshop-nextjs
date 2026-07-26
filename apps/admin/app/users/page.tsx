@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   UserForm,
+  ExportDialog,
   useToast
 } from '@rentalshop/ui';
 import { useAuth, useUsersData } from '@rentalshop/hooks';
@@ -42,6 +43,9 @@ export default function UsersPage() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -279,17 +283,55 @@ export default function UsersPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           onUserAction={handleUserAction}
+          onSelectionChange={setSelectedUserIds}
           onAdd={() => setShowAddDialog(true)}
+          onExport={() => setShowExportDialog(true)}
           title="User Management"
           subtitle="Manage all users across the platform"
-          showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
+          showExportButton={selectedUserIds.length > 0}
           showAddButton={true}
           addButtonText="Add User"
-          exportButtonText="Export Users"
+          exportButtonText={`Export (${selectedUserIds.length})`}
           showStats={true}
           currentUser={currentUser}
         />
       </div>
+
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        resourceName="Users"
+        isLoading={isExporting}
+        selectedCount={selectedUserIds.length}
+        onExport={async (params) => {
+          try {
+            setIsExporting(true);
+            if (selectedUserIds.length === 0) {
+              toastError('Error', 'Select at least one user to export');
+              return;
+            }
+            const blob = await usersApi.exportUsers({
+              ...params,
+              userIds: selectedUserIds,
+            });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `users-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            toastSuccess('Success', 'Export completed successfully');
+            setShowExportDialog(false);
+            setSelectedUserIds([]);
+          } catch (error) {
+            toastError('Error', (error as Error).message || 'Failed to export users');
+          } finally {
+            setIsExporting(false);
+          }
+        }}
+      />
 
       {/* User Detail Dialog */}
       {selectedUser && (
