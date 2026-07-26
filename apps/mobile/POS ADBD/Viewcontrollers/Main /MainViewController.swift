@@ -487,13 +487,44 @@ class MainViewController: BaseViewControler {
     }
     
     private func presentProductView(product: Product) {
-        controller = NewProductViewController()
-        controller?.delegate = self
-        controller?.loadProduct(product: product)
-        if let controller = controller {
-            // Hide system nav BEFORE present so the sheet doesn't reserve a blank safe-area gap
-            presentWithHiddenNavigationBar(controller)
+        let productId = product.id ?? product.product_id
+        guard productId > 0 else {
+            showProductEditor(product: product)
+            return
         }
+
+        // The list endpoint can contain a stale product object. Fetch the
+        // detail record so pricingOptions (including DAILY) is always present
+        // before the edit form is created.
+        showProgressText(text: "Loading...".localized())
+        ProductService.shared.loadProduct(productId: productId) { [weak self] latestProduct, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.hideProgress()
+
+                if let error = error {
+                    print("⚠️ Failed to load product detail for edit: \(error.localizedDescription)")
+                }
+
+                self.showProductEditor(product: latestProduct ?? product)
+            }
+        }
+    }
+
+    private func showProductEditor(product: Product) {
+        let productController = NewProductViewController()
+        productController.delegate = self
+
+        // Embed first so loadProduct() can safely trigger viewDidLoad while
+        // the child already has a navigationController. This lets the custom
+        // navigation bar hide the system UINavigationBar instead of stacking
+        // two bars with an extra top gap.
+        let productNavigationController = UINavigationController(rootViewController: productController)
+        productNavigationController.setNavigationBarHidden(true, animated: false)
+        controller = productController
+        productController.loadProduct(product: product)
+
+        presentWithHiddenNavigationBar(productNavigationController)
     }
     
     private func setupInfoViewController() {

@@ -38,12 +38,35 @@ const jsonLd = {
   },
 };
 
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Trang chủ',
+      item: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Cho thuê Áo cưới',
+      item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/cho-thue-ao-cuoi`,
+    },
+  ],
+};
+
 export default function ChoThueAoCuoiPage() {
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       
       <div className="min-h-screen bg-white">

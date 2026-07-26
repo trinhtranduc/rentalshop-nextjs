@@ -1369,6 +1369,16 @@ export const simplifiedProducts = {
     };
 
     if (!hasOptions) {
+      // Legacy mobile clients only send rentPrice. Keep the default option in
+      // sync without deleting additional options (for example DAILY).
+      if (data.rentPrice !== undefined) {
+        data.pricingOptions = {
+          updateMany: {
+            where: { isDefault: true },
+            data: { price: data.rentPrice }
+          }
+        };
+      }
       return await prisma.product.update({ where: { id }, data, include });
     }
 
@@ -1558,6 +1568,10 @@ export const simplifiedProducts = {
             include: {
               outlet: { select: { id: true, name: true, address: true } }
             }
+          },
+          pricingOptions: {
+            where: { isActive: true },
+            orderBy: { sortOrder: 'asc' }
           }
         },
         orderBy,

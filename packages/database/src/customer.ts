@@ -282,6 +282,11 @@ function buildCustomerOrderByClause(sortBy?: string, sortOrder?: string): any {
 /**
  * Search customers - follows dual ID system
  * Input: ids (numbers), Output: ids (numbers)
+ *
+ * @deprecated NOT wired to any route. The `/api/customers` endpoint uses
+ * `simplifiedCustomers.search` (this file, `db.customers.search`). Keep the two
+ * search implementations in sync, or consolidate onto one, to avoid the fix
+ * landing in the wrong function.
  */
 export async function searchCustomers(
   filters: CustomerSearchFilter

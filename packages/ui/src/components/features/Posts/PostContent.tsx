@@ -5,6 +5,14 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import CodeBlock from '@tiptap/extension-code-block';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import Color from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import Youtube from '@tiptap/extension-youtube';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
@@ -16,9 +24,28 @@ interface PostContentProps {
 
 export function PostContent({ content }: PostContentProps) {
   const editor = useEditor({
+    // Blog posts are server-rendered by Next.js; initialize Tiptap after hydration.
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Use the configured code block extension below.
+        codeBlock: false,
+      }),
+      Underline,
+      TextStyle,
+      Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Subscript,
+      Superscript,
       Image.configure({
+        // The editor stores images inline inside paragraphs.
+        inline: true,
+        allowBase64: false,
         HTMLAttributes: {
           class: 'post-image max-w-full h-auto rounded-lg',
         },
@@ -54,6 +81,12 @@ export function PostContent({ content }: PostContentProps) {
       TableRow,
       TableCell,
       TableHeader,
+      Youtube.configure({
+        inline: false,
+        HTMLAttributes: {
+          class: 'post-youtube rounded-lg overflow-hidden',
+        },
+      }),
     ],
     content: (() => {
       try {

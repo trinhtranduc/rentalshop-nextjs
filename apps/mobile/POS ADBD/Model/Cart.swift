@@ -433,8 +433,8 @@ class Cart {
                     productImages: cartItem.imageUrl != nil ? [cartItem.imageUrl!] : nil,
                     productRentPrice: nil,
                     productDeposit: cartItem.deposit,
-                    rentalDays: cartItem.rentalDays,
-                    pricingType: cartItem.pricingType ?? "FIXED",
+                    rentalDays: orderType == .rent ? cartItem.rentalDays : nil,
+                    pricingType: orderType == .rent ? (cartItem.pricingType ?? "FIXED") : nil,
                     pricingOptionId: cartItem.selectedPricingOptionId
                 )
             },

@@ -1352,7 +1352,7 @@ class ProductSelectedCell: UITableViewCell {
     
     private func updateSubtotal() {
         let subtotal: Double
-        if cartItem?.isDailyPricing == true {
+        if currentOrderType == .rent && cartItem?.isDailyPricing == true {
             subtotal = Double(quantity) * price * Double(rentalDays)
         } else {
             subtotal = Double(quantity) * price
