@@ -114,11 +114,16 @@ struct CartItem: Codable {
     }
     
     // Computed properties
-    var subTotal: Double {
-        if isDailyPricing {
+    func subTotal(for orderType: OrderType) -> Double {
+        if orderType == .rent && isDailyPricing {
             return Double(quantity) * price * Double(rentalDays)
         }
         return Double(quantity) * price
+    }
+
+    /// Backward-compatible subtotal for rental contexts.
+    var subTotal: Double {
+        subTotal(for: .rent)
     }
     
     var totalDeposit: Double {

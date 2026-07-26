@@ -235,21 +235,17 @@ class NewProductViewController: BaseViewControler {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        // The controller is presented inside a navigation controller. UIKit
-        // can restore the system bar during the sheet presentation transition,
-        // even though setupNavigationBar() hid it in viewDidLoad. Re-apply the
-        // hidden state here so the custom bar is the only navigation bar and
-        // the content does not inherit a second bar's top inset.
+        // The form is presented inside a UINavigationController but owns the
+        // compact custom bar. Re-apply the hidden state after presentation
+        // transitions so the system bar cannot appear underneath it.
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        // Re-apply after the presentation transition as well. This is
-        // intentionally non-animated so the custom bar does not jump once the
-        // sheet finishes presenting.
+        // UIKit can restore the system bar while the sheet transition
+        // completes. Keep it hidden after the final layout pass as well.
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
