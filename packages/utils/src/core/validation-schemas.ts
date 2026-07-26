@@ -53,7 +53,17 @@ export const registerSchema = z.object({
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   // Niche tags (multi-select). Prefer these over businessType when present.
   businessTags: z
-    .array(z.enum(['AO_DAI', 'WEDDING_DRESS', 'VEHICLE', 'EQUIPMENT', 'OTHER']))
+    .array(
+      z.enum([
+        'AO_DAI',
+        'COSTUME',
+        'WEDDING_DRESS',
+        'EQUIPMENT',
+        'VEHICLE',
+        'FILM_EQUIPMENT',
+        'OTHER',
+      ])
+    )
     .max(10)
     .optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
@@ -91,7 +101,17 @@ export const merchantGoogleRegisterSchema = z.object({
   phone: z.string().min(8, 'Phone is required'),
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   businessTags: z
-    .array(z.enum(['AO_DAI', 'WEDDING_DRESS', 'VEHICLE', 'EQUIPMENT', 'OTHER']))
+    .array(
+      z.enum([
+        'AO_DAI',
+        'COSTUME',
+        'WEDDING_DRESS',
+        'EQUIPMENT',
+        'VEHICLE',
+        'FILM_EQUIPMENT',
+        'OTHER',
+      ])
+    )
     .max(10)
     .optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
