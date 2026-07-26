@@ -156,6 +156,14 @@ export {
   getDurationUnit
 } from './pricing';
 
+export {
+  BUSINESS_TAG,
+  BUSINESS_TAG_VALUES,
+  BUSINESS_TAG_OPTIONS,
+  normalizeBusinessTags,
+  deriveBusinessTypeFromTags,
+} from './business-tags';
+
 // Export pricing types
 export type {
   BusinessType,
@@ -167,3 +175,5 @@ export type {
   PricingDurationLimits,
   MerchantPricingConfig
 } from './pricing';
+
+export type { BusinessTag, BusinessTagOption } from './business-tags';

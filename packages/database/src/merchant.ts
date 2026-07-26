@@ -35,6 +35,8 @@ export interface MerchantCreateData {
   zipCode?: string;
   country?: string;
   businessType?: BusinessTypeEnum;
+  /** Niche rental tags (JSON array of BusinessTag codes) */
+  businessTags?: string[];
   pricingType?: PricingTypeEnum;
   taxId?: string;
   website?: string;

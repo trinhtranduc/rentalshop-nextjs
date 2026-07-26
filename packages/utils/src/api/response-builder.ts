@@ -184,6 +184,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'OUTLET_CREATED_SUCCESS': 'Outlet created successfully',
   'PLAN_CREATED_SUCCESS': 'Plan created successfully',
   'MERCHANT_CREATED_SUCCESS': 'Merchant created successfully with default outlet',
+  'BUSINESS_TAGS_RETRIEVED': 'Business tags retrieved successfully',
   
   // Update Operations
   'USER_UPDATED_SUCCESS': 'User updated successfully',

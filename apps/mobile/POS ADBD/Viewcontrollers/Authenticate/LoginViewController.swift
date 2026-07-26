@@ -88,11 +88,20 @@ class LoginViewController: BaseViewControler {
         return button
     }()
     
+    // High-contrast secondary CTA on the auth background so signup is easy to spot.
     private lazy var registerButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Create new store account".localized(), for: .normal)
         button.setTitleColor(APP_TONE_COLOR, for: .normal)
-        button.titleLabel?.font = Utils.regularFont(size: 14)
+        button.titleLabel?.font = Utils.boldFont(size: 16)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 25
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.9).cgColor
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.08
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 6
         button.addTarget(self, action: #selector(register), for: .touchUpInside)
         return button
     }()
@@ -221,15 +230,16 @@ class LoginViewController: BaseViewControler {
             make.height.equalTo(50)
         }
         
-        // Register button constraints
+        // Register button — same footprint as Login so it reads as a real CTA.
         registerButton.snp.makeConstraints { make in
             make.top.equalTo(containerView.snp.bottom).offset(20)
             make.centerX.equalToSuperview()
+            make.height.equalTo(50)
         }
         
         if isIPad {
             registerButton.snp.makeConstraints { make in
-                make.width.equalTo(400) // Match container width on iPad
+                make.width.equalTo(400)
             }
         } else {
             registerButton.snp.makeConstraints { make in

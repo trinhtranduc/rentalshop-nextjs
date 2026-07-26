@@ -21,6 +21,7 @@ struct Merchant: Codable {
     let zipCode: String?
     let country: String?
     let businessType: String?
+    let businessTags: [String]?
     let taxId: String?
     let currency: String?
     let pricingType: String?

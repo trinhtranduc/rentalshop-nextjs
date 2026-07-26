@@ -1,8 +1,22 @@
 import UIKit
 import SnapKit
 
+/// 3-step merchant signup: Shop → Owner → Business field.
+/// Keeps each step short; Previous preserves entered data.
 class RegisterStoreViewController: BaseViewControler {
-    // MARK: - UI Components
+
+    private enum Step: Int, CaseIterable {
+        case shop = 0
+        case owner = 1
+        case business = 2
+    }
+
+    private struct BusinessOption {
+        let titleKey: String
+        let apiValue: String
+    }
+
+    // MARK: - UI: Chrome
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.showsVerticalScrollIndicator = true
@@ -10,14 +24,13 @@ class RegisterStoreViewController: BaseViewControler {
         scrollView.backgroundColor = .clear
         return scrollView
     }()
-    
+
     private lazy var containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
         return view
     }()
 
-    // Glass card wrapping the form, matching LoginViewController / Create Account.
     private lazy var cardView: UIView = {
         let view = UIView()
         view.backgroundColor = .surfaceAuthCard
@@ -31,13 +44,87 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 24
+        stack.spacing = 20
         stack.distribution = .fill
         stack.backgroundColor = .clear
         return stack
     }()
-    
-    // MARK: - Personal Information Fields
+
+    private lazy var progressLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 13)
+        label.textColor = APP_TEXT_COLOR.withAlphaComponent(0.55)
+        label.textAlignment = .center
+        return label
+    }()
+
+    private lazy var pageControl: UIPageControl = {
+        let control = UIPageControl()
+        control.numberOfPages = Step.allCases.count
+        control.currentPage = 0
+        control.currentPageIndicatorTintColor = APP_TONE_COLOR
+        control.pageIndicatorTintColor = APP_TONE_COLOR.withAlphaComponent(0.25)
+        control.isUserInteractionEnabled = false
+        return control
+    }()
+
+    private lazy var stepTitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.mediumFont(size: 18)
+        label.textColor = APP_TEXT_COLOR
+        label.numberOfLines = 0
+        return label
+    }()
+
+    private lazy var stepSubtitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = APP_TEXT_COLOR.withAlphaComponent(0.65)
+        label.numberOfLines = 0
+        return label
+    }()
+
+    // MARK: - Step containers
+    private lazy var shopStepView = UIStackView()
+    private lazy var ownerStepView = UIStackView()
+    private lazy var businessStepView = UIStackView()
+
+    // MARK: - Shop fields
+    private lazy var storeNameField: LabeledTextField = {
+        let field = LabeledTextField(
+            title: "Store Name".localized(),
+            placeholder: "e.g. AnyRent Rental Shop".localized()
+        )
+        field.setRequired(true)
+        field.textField.setLeftIcon(UIImage(systemName: "building.2.fill"))
+        field.textField.autocapitalizationType = .words
+        field.textField.autocorrectionType = .no
+        return field
+    }()
+
+    private lazy var phoneField: LabeledTextField = {
+        let field = LabeledTextField(
+            title: "Phone Number".localized(),
+            placeholder: "e.g. 0901234567".localized()
+        )
+        field.setRequired(true)
+        field.textField.keyboardType = .phonePad
+        field.textField.setLeftIcon(UIImage(systemName: "phone.fill"))
+        return field
+    }()
+
+    private lazy var locationField: LabeledTextField = {
+        let field = LabeledTextField(
+            title: "Location".localized(),
+            placeholder: "e.g. 01 Quang Trung, District 1, HCMC".localized()
+        )
+        field.setRequired(true)
+        field.textField.setLeftIcon(UIImage(systemName: "location.fill"))
+        field.textField.autocapitalizationType = .words
+        return field
+    }()
+
+    // MARK: - Owner fields
     private lazy var nameField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Name".localized(),
@@ -48,7 +135,7 @@ class RegisterStoreViewController: BaseViewControler {
         field.textField.setLeftIcon(UIImage(systemName: "person.fill"))
         return field
     }()
-    
+
     private lazy var emailField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Email".localized(),
@@ -60,7 +147,7 @@ class RegisterStoreViewController: BaseViewControler {
         field.textField.setLeftIcon(UIImage(systemName: "envelope.fill"))
         return field
     }()
-    
+
     private lazy var passwordField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Password".localized(),
@@ -69,12 +156,14 @@ class RegisterStoreViewController: BaseViewControler {
         field.setRequired(true)
         field.textField.isSecureTextEntry = true
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
-        field.textField.setRightIcon(UIImage(systemName: "eye.fill"),
-                                    action: #selector(togglePasswordVisibility),
-                                    target: self)
+        field.textField.setRightIcon(
+            UIImage(systemName: "eye.fill"),
+            action: #selector(togglePasswordVisibility),
+            target: self
+        )
         return field
     }()
-    
+
     private lazy var retypePasswordField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Confirm Password".localized(),
@@ -83,74 +172,52 @@ class RegisterStoreViewController: BaseViewControler {
         field.setRequired(true)
         field.textField.isSecureTextEntry = true
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
-        field.textField.setRightIcon(UIImage(systemName: "eye.fill"),
-                                    action: #selector(toggleRetypePasswordVisibility),
-                                    target: self)
-        return field
-    }()
-    
-    // MARK: - Store Information Fields
-    private lazy var storeNameField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Store Name".localized(),
-            placeholder: "e.g. AnyRent Rental Shop".localized()
+        field.textField.setRightIcon(
+            UIImage(systemName: "eye.fill"),
+            action: #selector(toggleRetypePasswordVisibility),
+            target: self
         )
-        field.setRequired(true)
-        field.textField.setLeftIcon(UIImage(systemName: "building.2.fill"))
-        // Enable auto-capitalization for store name
-        field.textField.autocapitalizationType = .words
-        field.textField.autocorrectionType = .no
         return field
     }()
-    
-    private lazy var locationField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Location".localized(),
-            placeholder: "e.g. 01 Quang Trung, District 1, HCMC".localized()
-        )
-        field.setRequired(true)
-        field.textField.setLeftIcon(UIImage(systemName: "location.fill"))
-        field.textField.autocapitalizationType = .words
-        return field
+
+    // MARK: - Business field chips (multi-select tags)
+    private let businessOptions: [BusinessOption] = [
+        BusinessOption(titleKey: "Ao dai rental", apiValue: "AO_DAI"),
+        BusinessOption(titleKey: "Wedding dress rental", apiValue: "WEDDING_DRESS"),
+        BusinessOption(titleKey: "Vehicle rental", apiValue: "VEHICLE"),
+        BusinessOption(titleKey: "Equipment rental", apiValue: "EQUIPMENT"),
+        BusinessOption(titleKey: "Other / General", apiValue: "OTHER")
+    ]
+
+    private lazy var chipsStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 10
+        stack.distribution = .fill
+        return stack
     }()
-    
-    private lazy var phoneField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Phone Number".localized(),
-            placeholder: "e.g. 0901234567".localized()
-        )
-        field.setRequired(true)
-        field.textField.keyboardType = .phonePad
-        field.textField.setLeftIcon(UIImage(systemName: "phone.fill"))
-        return field
-    }()
-    
-    // Add privacy policy checkbox
+
+    private var chipButtons: [UIButton] = []
+
+    // MARK: - Privacy + nav
     private lazy var privacyPolicyView: UIView = {
-        let view = UIView()
-        return view
+        UIView()
     }()
-    
+
     private lazy var privacyCheckbox: UIButton = {
         let button = UIButton(type: .custom)
-        
-        // Configure button to scale images properly
         var config = UIButton.Configuration.plain()
         config.imagePlacement = .all
         config.imagePadding = 0
         config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         button.configuration = config
-        
         button.setImage(UIImage(systemName: "square"), for: .normal)
         button.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
         button.tintColor = APP_TONE_COLOR
         button.addTarget(self, action: #selector(privacyCheckboxTapped), for: .touchUpInside)
         return button
     }()
-    
-    // Single flowing consent line: "I agree to the Privacy Policy and Terms of
-    // Service" with the two link phrases tappable. Replaces the old label + two
-    // separate buttons that were forced onto their own line (broke mid-sentence).
+
     private lazy var privacyTextView: UITextView = {
         let tv = UITextView()
         tv.isScrollEnabled = false
@@ -160,45 +227,47 @@ class RegisterStoreViewController: BaseViewControler {
         tv.textContainerInset = .zero
         tv.textContainer.lineFragmentPadding = 0
         tv.delegate = self
-        tv.tintColor = .brandPrimary // UITextView renders .link ranges in the tint color
+        tv.tintColor = .brandPrimary
         return tv
     }()
-    
-    private lazy var registerButton: RCPrimaryButton = {
-        let button = RCPrimaryButton(title: "Register".localized(), backgroundColor: APP_TONE_COLOR)
-        button.isEnabled = false
-        button.addTarget(self, action: #selector(registerButtonTapped), for: .touchUpInside)
+
+    private lazy var navButtonsStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private lazy var previousButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(
+            title: "Previous".localized(),
+            borderStyle: true,
+            borderColor: APP_TONE_COLOR
+        )
+        button.addTarget(self, action: #selector(previousTapped), for: .touchUpInside)
+        button.isHidden = true
         return button
     }()
-    
-    // MARK: - Section Headers
-    private lazy var personalInfoHeader: UILabel = {
-        let label = UILabel()
-        label.text = "Personal Information".localized()
-        label.font = Utils.mediumFont(size: 16)
-        label.textColor = APP_TEXT_COLOR.withAlphaComponent(0.8)
-        return label
+
+    private lazy var primaryButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(title: "Next".localized(), backgroundColor: APP_TONE_COLOR)
+        button.isEnabled = false
+        button.addTarget(self, action: #selector(primaryTapped), for: .touchUpInside)
+        return button
     }()
-    
-    private lazy var storeInfoHeader: UILabel = {
-        let label = UILabel()
-        label.text = "Store Information".localized()
-        label.font = Utils.mediumFont(size: 16)
-        label.textColor = APP_TEXT_COLOR.withAlphaComponent(0.8)
-        return label
-    }()
-    
-    // Add property
+
     private lazy var tapGesture: UITapGestureRecognizer = {
-        let gesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        return gesture
+        UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
     }()
-    
-    // MARK: - Properties
-    var registrationData: RegistrationData!
-    private let authService = AuthenticationService.shared
+
+    // MARK: - State
+    private var currentStep: Step = .shop
+    /// Multi-select niche tags (API codes). Default OTHER so signup is never blocked.
+    private var selectedBusinessTags: Set<String> = ["OTHER"]
     private var isPrivacyPolicyAccepted = false
-    
+    private let authService = AuthenticationService.shared
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -207,12 +276,11 @@ class RegisterStoreViewController: BaseViewControler {
         setupNavigationBar()
         setupUI()
         setupGestures()
-        
-        // Set dark status bar text for light backgrounds
-        setStatusBarStyle(.darkContent) // or .default
+        setStatusBarStyle(.darkContent)
+        showStep(.shop, animated: false)
+        updatePrimaryButtonState()
     }
-    
-    // MARK: - Custom Navigation Bar Setup
+
     private func setupNavigationBar() {
         setupCustomNavigationBar(
             title: "Create Account".localized(),
@@ -222,57 +290,38 @@ class RegisterStoreViewController: BaseViewControler {
             backAction: .pop
         )
     }
-    
+
     // MARK: - UI Setup
     override func setupUI() {
-        // Add subviews — fixed card, scroll INSIDE the card.
         view.addSubview(cardView)
         cardView.addSubview(scrollView)
         scrollView.addSubview(containerView)
         containerView.addSubview(stackView)
-        
-        // Setup privacy policy view
-        privacyPolicyView.addSubview(privacyCheckbox)
-        privacyPolicyView.addSubview(privacyTextView)
-        
-        // Personal Information Section
-        // Add spacing before first section header
-        let firstSpacer = UIView()
-        firstSpacer.snp.makeConstraints { make in
-            make.height.equalTo(8)
-        }
-        stackView.addArrangedSubview(firstSpacer)
-        stackView.addArrangedSubview(personalInfoHeader)
-        stackView.addArrangedSubview(nameField)
-        stackView.addArrangedSubview(emailField)
-        stackView.addArrangedSubview(passwordField)
-        stackView.addArrangedSubview(retypePasswordField)
-        
-        // Store Information Section
-        // Add spacing before second section header
-        let secondSpacer = UIView()
-        secondSpacer.snp.makeConstraints { make in
-            make.height.equalTo(8)
-        }
-        stackView.addArrangedSubview(secondSpacer)
-        stackView.addArrangedSubview(storeInfoHeader)
-        stackView.addArrangedSubview(storeNameField)
-        stackView.addArrangedSubview(phoneField)
-        stackView.addArrangedSubview(locationField)
-        
-        // Privacy Policy and Register Button
-        stackView.addArrangedSubview(privacyPolicyView)
-        stackView.addArrangedSubview(registerButton)
-        
+
+        configureStepStacks()
+        buildBusinessChips()
+        setupPrivacyPolicyView()
+
+        stackView.addArrangedSubview(progressLabel)
+        stackView.addArrangedSubview(pageControl)
+        stackView.addArrangedSubview(stepTitleLabel)
+        stackView.addArrangedSubview(stepSubtitleLabel)
+        stackView.addArrangedSubview(shopStepView)
+        stackView.addArrangedSubview(ownerStepView)
+        stackView.addArrangedSubview(businessStepView)
+        stackView.addArrangedSubview(navButtonsStack)
+
+        navButtonsStack.addArrangedSubview(previousButton)
+        navButtonsStack.addArrangedSubview(primaryButton)
+
         let isIPad = traitCollection.horizontalSizeClass == .regular
-        
-        // Setup privacy policy view constraints
+
         privacyCheckbox.snp.makeConstraints { make in
             make.leading.equalToSuperview()
             make.top.equalToSuperview().offset(8)
             make.width.height.equalTo(24)
         }
-        
+
         privacyTextView.snp.makeConstraints { make in
             make.leading.equalTo(privacyCheckbox.snp.trailing).offset(12)
             make.top.equalToSuperview().offset(4)
@@ -281,18 +330,18 @@ class RegisterStoreViewController: BaseViewControler {
         }
 
         privacyPolicyView.snp.makeConstraints { make in
-            // Ensure the checkbox always fits even if the consent text is a single line.
             make.height.greaterThanOrEqualTo(32)
         }
-        
-        // Register button height
-        registerButton.snp.makeConstraints { make in
+
+        previousButton.snp.makeConstraints { make in
             make.height.equalTo(50)
         }
-        
+        primaryButton.snp.makeConstraints { make in
+            make.height.equalTo(50)
+        }
+
         guard let customNavBar = customNavBar else { return }
 
-        // Fixed card: pinned below the nav bar with a 20pt top gap; it does NOT scroll.
         cardView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar.snp.bottom).offset(20)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
@@ -305,225 +354,287 @@ class RegisterStoreViewController: BaseViewControler {
             }
         }
 
-        // Scroll view fills the card; the card's rounded corners clip the scrolling content.
         scrollView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
-        // ContainerView pins to scroll content; width = scroll frame width (vertical scroll only).
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
             make.width.equalToSuperview()
         }
 
-        // StackView pins to the container edges with 20pt inner padding.
         stackView.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(20)
         }
-        
-        // Setup delegates and text change monitoring
-        [nameField.textField, emailField.textField, passwordField.textField, retypePasswordField.textField, storeNameField.textField, locationField.textField, phoneField.textField].forEach { field in
+
+        let fields = [
+            storeNameField.textField, phoneField.textField, locationField.textField,
+            nameField.textField, emailField.textField,
+            passwordField.textField, retypePasswordField.textField
+        ]
+        fields.forEach { field in
             field.delegate = self
             field.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         }
-        
-        // Setup privacy policy label with localization and iPad font sizing
+
         setupPrivacyPolicyLabel()
     }
-    
-    private func createTextField(placeholder: String) -> RCTextFieldPadding {
-        let field = RCTextFieldPadding()
-        field.placeholder = placeholder.localized()
-        field.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        return field
+
+    private func configureStepStacks() {
+        [shopStepView, ownerStepView, businessStepView].forEach { stack in
+            stack.axis = .vertical
+            stack.spacing = 20
+            stack.distribution = .fill
+        }
+
+        [storeNameField, phoneField, locationField].forEach {
+            shopStepView.addArrangedSubview($0)
+        }
+
+        [nameField, emailField, passwordField, retypePasswordField].forEach {
+            ownerStepView.addArrangedSubview($0)
+        }
+
+        businessStepView.addArrangedSubview(chipsStackView)
+        businessStepView.addArrangedSubview(privacyPolicyView)
     }
-    
+
+    private func setupPrivacyPolicyView() {
+        privacyPolicyView.addSubview(privacyCheckbox)
+        privacyPolicyView.addSubview(privacyTextView)
+    }
+
+    private func buildBusinessChips() {
+        chipButtons.removeAll()
+        chipsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        for (index, option) in businessOptions.enumerated() {
+            let button = makeChipButton(title: option.titleKey.localized(), tag: index)
+            chipButtons.append(button)
+            chipsStackView.addArrangedSubview(button)
+            button.snp.makeConstraints { make in
+                make.height.equalTo(46)
+            }
+        }
+        updateChipSelection()
+    }
+
+    private func makeChipButton(title: String, tag: Int) -> UIButton {
+        let button = UIButton(type: .system)
+        button.tag = tag
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = Utils.mediumFont(size: 15)
+        button.titleLabel?.numberOfLines = 1
+        button.contentHorizontalAlignment = .left
+        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        button.layer.cornerRadius = 14
+        button.layer.borderWidth = 1
+        button.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
+        return button
+    }
+
+    // MARK: - Step navigation
+    private func showStep(_ step: Step, animated: Bool) {
+        currentStep = step
+        pageControl.currentPage = step.rawValue
+        progressLabel.text = String(
+            format: "Step %d of %d".localized(),
+            step.rawValue + 1,
+            Step.allCases.count
+        )
+
+        switch step {
+        case .shop:
+            stepTitleLabel.text = "Shop Information".localized()
+            stepSubtitleLabel.text = "Tell us about your rental store".localized()
+        case .owner:
+            stepTitleLabel.text = "Shop Owner Information".localized()
+            stepSubtitleLabel.text = "This account will manage your store".localized()
+        case .business:
+            stepTitleLabel.text = "What do you rent?".localized()
+            stepSubtitleLabel.text = "Select all that apply".localized()
+        }
+
+        let updates = {
+            self.shopStepView.isHidden = step != .shop
+            self.ownerStepView.isHidden = step != .owner
+            self.businessStepView.isHidden = step != .business
+            self.previousButton.isHidden = step == .shop
+            self.primaryButton.setButtonTitle(
+                step == .business ? "Register".localized() : "Next".localized()
+            )
+            self.updatePrimaryButtonState()
+            self.scrollView.setContentOffset(.zero, animated: false)
+        }
+
+        if animated {
+            UIView.transition(with: stackView, duration: 0.2, options: .transitionCrossDissolve, animations: updates)
+        } else {
+            updates()
+        }
+    }
+
+    @objc private func previousTapped() {
+        dismissKeyboard()
+        guard let previous = Step(rawValue: currentStep.rawValue - 1) else { return }
+        showStep(previous, animated: true)
+    }
+
+    @objc private func primaryTapped() {
+        dismissKeyboard()
+        switch currentStep {
+        case .shop:
+            guard validateShopStep() else { return }
+            showStep(.owner, animated: true)
+        case .owner:
+            guard validateOwnerStep() else { return }
+            showStep(.business, animated: true)
+        case .business:
+            guard validateBusinessStep() else { return }
+            submitRegistration()
+        }
+    }
+
+    // MARK: - Business chips (multi-select)
+    @objc private func chipTapped(_ sender: UIButton) {
+        guard businessOptions.indices.contains(sender.tag) else { return }
+        let tag = businessOptions[sender.tag].apiValue
+
+        if selectedBusinessTags.contains(tag) {
+            // Keep at least one tag selected
+            if selectedBusinessTags.count > 1 {
+                selectedBusinessTags.remove(tag)
+            }
+        } else {
+            selectedBusinessTags.insert(tag)
+            // Picking a specific niche replaces bare "OTHER" so tags stay meaningful
+            if tag != "OTHER" {
+                selectedBusinessTags.remove("OTHER")
+            }
+        }
+
+        updateChipSelection()
+        updatePrimaryButtonState()
+    }
+
+    private func updateChipSelection() {
+        for (index, button) in chipButtons.enumerated() {
+            guard businessOptions.indices.contains(index) else { continue }
+            let selected = selectedBusinessTags.contains(businessOptions[index].apiValue)
+            if selected {
+                button.backgroundColor = APP_TONE_COLOR
+                button.setTitleColor(.white, for: .normal)
+                button.layer.borderColor = APP_TONE_COLOR.cgColor
+                // Checkmark prefix for multi-select affordance
+                let title = businessOptions[index].titleKey.localized()
+                button.setTitle("✓  \(title)", for: .normal)
+            } else {
+                button.backgroundColor = UIColor.white.withAlphaComponent(0.55)
+                button.setTitleColor(APP_TEXT_COLOR, for: .normal)
+                button.layer.borderColor = UIColor.white.withAlphaComponent(0.85).cgColor
+                button.setTitle(businessOptions[index].titleKey.localized(), for: .normal)
+            }
+        }
+    }
+
+    private var selectedBusinessTagsPayload: [String] {
+        // Stable order matching catalog
+        businessOptions
+            .map(\.apiValue)
+            .filter { selectedBusinessTags.contains($0) }
+    }
+
+    // MARK: - Privacy
     private func setupPrivacyPolicyLabel() {
         let isIPad = traitCollection.horizontalSizeClass == .regular
         let fontSize: CGFloat = isIPad ? 16 : 14
         let font = Utils.regularFont(size: fontSize)
-
-        // One flowing sentence with two tappable link phrases.
         let baseAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: APP_TEXT_COLOR]
         let text = NSMutableAttributedString(string: "I agree to the ".localized(), attributes: baseAttrs)
-        text.append(NSAttributedString(string: "Privacy Policy".localized(),
-                                       attributes: [.font: font, .link: URL(string: "anyrent://privacy")!]))
+        text.append(NSAttributedString(
+            string: "Privacy Policy".localized(),
+            attributes: [.font: font, .link: URL(string: "anyrent://privacy")!]
+        ))
         text.append(NSAttributedString(string: " and ".localized(), attributes: baseAttrs))
-        text.append(NSAttributedString(string: "Terms of Service".localized(),
-                                       attributes: [.font: font, .link: URL(string: "anyrent://terms")!]))
-
+        text.append(NSAttributedString(
+            string: "Terms of Service".localized(),
+            attributes: [.font: font, .link: URL(string: "anyrent://terms")!]
+        ))
         privacyTextView.attributedText = text
     }
-    
-    // MARK: - Privacy Policy Actions
+
     @objc private func privacyCheckboxTapped() {
         isPrivacyPolicyAccepted.toggle()
         privacyCheckbox.isSelected = isPrivacyPolicyAccepted
-        updateRegisterButtonState()
+        updatePrimaryButtonState()
     }
-    
-    @objc private func privacyPolicyButtonTapped() {
-        openPrivacyPolicy()
-    }
-    
-    @objc private func termsButtonTapped() {
-        openTermsOfService()
-    }
-    
+
     private func openPrivacyPolicy() {
-        let urlString: String
-        urlString = "https://www.anyrent.shop/privacy"
-        
-        if let url = URL(string: urlString) {
+        if let url = URL(string: "https://www.anyrent.shop/privacy") {
             presentWebView(url: url, title: "Privacy Policy".localized())
         }
     }
-    
+
     private func openTermsOfService() {
-        let urlString: String
-        urlString = "https://www.anyrent.shop/terms"
-        
-        if let url = URL(string: urlString) {
+        if let url = URL(string: "https://www.anyrent.shop/terms") {
             presentWebView(url: url, title: "Terms of Service".localized())
         }
     }
-    
+
     private func presentWebView(url: URL, title: String) {
         let webViewController = WebViewController()
         webViewController.url = url
         webViewController.title = title
-        
         let navigationController = UINavigationController(rootViewController: webViewController)
         navigationController.modalPresentationStyle = .formSheet
-        
         present(navigationController, animated: true)
     }
-    
-    private func updateRegisterButtonState() {
-        let name = nameField.textField.text ?? ""
-        let email = emailField.textField.text ?? ""
-        let password = passwordField.textField.text ?? ""
-        let retypePassword = retypePasswordField.textField.text ?? ""
+
+    // MARK: - Validation / button state
+    private func updatePrimaryButtonState() {
+        switch currentStep {
+        case .shop:
+            primaryButton.isEnabled = isShopValid
+        case .owner:
+            primaryButton.isEnabled = isOwnerValid
+        case .business:
+            primaryButton.isEnabled = isPrivacyPolicyAccepted && !selectedBusinessTags.isEmpty
+        }
+    }
+
+    private var isShopValid: Bool {
         let storeName = storeNameField.textField.text ?? ""
         let location = locationField.textField.text ?? ""
         let phone = phoneField.textField.text ?? ""
-        
-        // Required fields validation
-        let isNameValid = !name.isEmpty && name.count >= 2
-        let isEmailValid = !email.isEmpty && email.isValidEmail()
-        let isPasswordValid = !password.isEmpty && password.count >= 6
-        let isRetypePasswordValid = !retypePassword.isEmpty && password == retypePassword
-        let isStoreNameValid = !storeName.isEmpty && storeName.count >= 3
-        
-        let isLocationValid = !location.isEmpty && location.count >= 3
-        let phoneRegex = "^[0-9+]{10,13}$"
-        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
-        let isPhoneValid = !phone.isEmpty && phonePredicate.evaluate(with: phone)
-        
-        registerButton.isEnabled = isNameValid && isEmailValid && isPasswordValid && isRetypePasswordValid && isStoreNameValid && isLocationValid && isPhoneValid && isPrivacyPolicyAccepted
+        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", "^[0-9+]{10,13}$")
+        return storeName.count >= 3
+            && location.count >= 3
+            && phonePredicate.evaluate(with: phone)
     }
-    
-    // MARK: - Actions
-    @objc private func registerButtonTapped(_ sender: UIButton) {
-        guard validateInputs() else { return }
-        
-        showProgressText(text: "Processing...".localized())
-        AuthenticationService.shared.createAccount(
-            loginName: emailField.textField.text ?? "",
-            password: passwordField.textField.text ?? "",
-            storeName: storeNameField.textField.text ?? "",
-            address: locationField.textField.text ?? "", // Use location as address
-            name: nameField.textField.text ?? "",
-            phone: phoneField.textField.text ?? "",
-            completion: { [weak self] account, error in
-                self?.hideProgress()
-                
-                if let error = error {
-                    UIAlertController.errorAlert(parent: self, error: error)
-                } else {
-                    // Handle successful registration
-                    self?.showSuccessAndDismiss()
-                }
-            }
-        )
-    }
-    
-    @objc private func togglePasswordVisibility() {
-        passwordField.textField.isSecureTextEntry.toggle()
-        let iconName = passwordField.textField.isSecureTextEntry ? "eye.fill" : "eye.slash.fill"
-        passwordField.textField.setRightIcon(UIImage(systemName: iconName),
-                                           action: #selector(togglePasswordVisibility),
-                                           target: self)
-    }
-    
-    @objc private func toggleRetypePasswordVisibility() {
-        retypePasswordField.textField.isSecureTextEntry.toggle()
-        let iconName = retypePasswordField.textField.isSecureTextEntry ? "eye.fill" : "eye.slash.fill"
-        retypePasswordField.textField.setRightIcon(UIImage(systemName: iconName),
-                                                 action: #selector(toggleRetypePasswordVisibility),
-                                                 target: self)
-    }
-    
-    // MARK: - Validation
-    @objc private func textFieldDidChange(_ textField: UITextField) {
-        // Update button state when typing
-        updateRegisterButtonState()
-    }
-    
-    private func validateInputs() -> Bool {
+
+    private var isOwnerValid: Bool {
         let name = nameField.textField.text ?? ""
         let email = emailField.textField.text ?? ""
         let password = passwordField.textField.text ?? ""
-        let retypePassword = retypePasswordField.textField.text ?? ""
+        let retype = retypePasswordField.textField.text ?? ""
+        return name.count >= 2
+            && email.isValidEmail()
+            && password.count >= 6
+            && password == retype
+    }
+
+    @discardableResult
+    private func validateShopStep() -> Bool {
         let storeName = storeNameField.textField.text ?? ""
         let location = locationField.textField.text ?? ""
         let phone = phoneField.textField.text ?? ""
-        
-        // Clear previous errors
-        nameField.clearError()
-        emailField.clearError()
-        passwordField.clearError()
-        retypePasswordField.clearError()
+
         storeNameField.clearError()
         locationField.clearError()
         phoneField.clearError()
-        
+
         var isValid = true
-        
-        // Personal Information Validation
-        if name.isEmpty {
-            nameField.showError("Name is required".localized())
-            isValid = false
-        } else if name.count < 2 {
-            nameField.showError("Name must be at least 2 characters".localized())
-            isValid = false
-        }
-        
-        if email.isEmpty {
-            emailField.showError("Email is required".localized())
-            isValid = false
-        } else if !email.isValidEmail() {
-            emailField.showError("Please enter a valid email address".localized())
-            isValid = false
-        }
-        
-        if password.isEmpty {
-            passwordField.showError("Password is required".localized())
-            isValid = false
-        } else if password.count < 6 {
-            passwordField.showError("Password must be at least 6 characters".localized())
-            isValid = false
-        }
-        
-        if retypePassword.isEmpty {
-            retypePasswordField.showError("Please confirm your password".localized())
-            isValid = false
-        } else if password != retypePassword {
-            retypePasswordField.showError("Passwords do not match".localized())
-            isValid = false
-        }
-        
-        // Store Information Validation
+
         if storeName.isEmpty {
             storeNameField.showError("Store name is required".localized())
             isValid = false
@@ -531,7 +642,7 @@ class RegisterStoreViewController: BaseViewControler {
             storeNameField.showError("Store name must be at least 3 characters".localized())
             isValid = false
         }
-        
+
         if location.isEmpty {
             locationField.showError("Location is required".localized())
             isValid = false
@@ -539,70 +650,152 @@ class RegisterStoreViewController: BaseViewControler {
             locationField.showError("Please enter a valid location (City, Province)".localized())
             isValid = false
         }
-        
+
         if phone.isEmpty {
             phoneField.showError("Phone number is required".localized())
             isValid = false
         } else {
-            let phoneRegex = "^[0-9+]{10,13}$"
-            let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
+            let phonePredicate = NSPredicate(format: "SELF MATCHES %@", "^[0-9+]{10,13}$")
             if !phonePredicate.evaluate(with: phone) {
                 phoneField.showError("Please enter a valid phone number".localized())
                 isValid = false
             }
         }
-        
-        if !isPrivacyPolicyAccepted {
-            showAlert(title: "Privacy Policy Required".localized(), message: "Please accept the Privacy Policy and Terms of Service to continue.".localized())
-            return false
-        }
-        
+
         return isValid
     }
-    
+
+    @discardableResult
+    private func validateOwnerStep() -> Bool {
+        let name = nameField.textField.text ?? ""
+        let email = emailField.textField.text ?? ""
+        let password = passwordField.textField.text ?? ""
+        let retypePassword = retypePasswordField.textField.text ?? ""
+
+        nameField.clearError()
+        emailField.clearError()
+        passwordField.clearError()
+        retypePasswordField.clearError()
+
+        var isValid = true
+
+        if name.isEmpty {
+            nameField.showError("Name is required".localized())
+            isValid = false
+        } else if name.count < 2 {
+            nameField.showError("Name must be at least 2 characters".localized())
+            isValid = false
+        }
+
+        if email.isEmpty {
+            emailField.showError("Email is required".localized())
+            isValid = false
+        } else if !email.isValidEmail() {
+            emailField.showError("Please enter a valid email address".localized())
+            isValid = false
+        }
+
+        if password.isEmpty {
+            passwordField.showError("Password is required".localized())
+            isValid = false
+        } else if password.count < 6 {
+            passwordField.showError("Password must be at least 6 characters".localized())
+            isValid = false
+        }
+
+        if retypePassword.isEmpty {
+            retypePasswordField.showError("Please confirm your password".localized())
+            isValid = false
+        } else if password != retypePassword {
+            retypePasswordField.showError("Passwords do not match".localized())
+            isValid = false
+        }
+
+        return isValid
+    }
+
+    @discardableResult
+    private func validateBusinessStep() -> Bool {
+        if selectedBusinessTags.isEmpty {
+            showAlert(
+                title: "Business field required".localized(),
+                message: "Please select at least one rental type".localized()
+            )
+            return false
+        }
+        if !isPrivacyPolicyAccepted {
+            showAlert(
+                title: "Privacy Policy Required".localized(),
+                message: "Please accept the Privacy Policy and Terms of Service to continue.".localized()
+            )
+            return false
+        }
+        return true
+    }
+
     private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(
-            title: title.localized(),
-            message: message.localized(),
-            preferredStyle: .alert
-        )
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
         present(alert, animated: true)
     }
-    
+
+    // MARK: - Submit
+    private func submitRegistration() {
+        showProgressText(text: "Processing...".localized())
+        authService.createAccount(
+            loginName: emailField.textField.text ?? "",
+            password: passwordField.textField.text ?? "",
+            storeName: storeNameField.textField.text ?? "",
+            address: locationField.textField.text ?? "",
+            name: nameField.textField.text ?? "",
+            phone: phoneField.textField.text ?? "",
+            businessTags: selectedBusinessTagsPayload
+        ) { [weak self] _, error in
+            self?.hideProgress()
+            if let error = error {
+                UIAlertController.errorAlert(parent: self, error: error)
+            } else {
+                self?.showSuccessAndDismiss()
+            }
+        }
+    }
+
     private func showSuccessAndDismiss() {
-        // Navigate to check email page with registration context
         let checkEmailVC = CheckEmailViewController()
-        checkEmailVC.email = self.emailField.textField.text
+        checkEmailVC.email = emailField.textField.text
         checkEmailVC.context = "registration"
         navigationController?.pushViewController(checkEmailVC, animated: true)
     }
-    
-    // MARK: - Keyboard Handling
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+
+    // MARK: - Field helpers
+    @objc private func togglePasswordVisibility() {
+        passwordField.textField.isSecureTextEntry.toggle()
+        let iconName = passwordField.textField.isSecureTextEntry ? "eye.fill" : "eye.slash.fill"
+        passwordField.textField.setRightIcon(
+            UIImage(systemName: iconName),
+            action: #selector(togglePasswordVisibility),
+            target: self
+        )
     }
-    
-    // Add login button action
-    @objc private func loginButtonTapped() {
-        // Add animation
-//        UIView.animate(withDuration: 0.1) {
-//            self.loginButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
-//        } completion: { _ in
-//            UIView.animate(withDuration: 0.1) {
-//                self.loginButton.transform = .identity
-//            } completion: { _ in
-                self.navigationController?.popToRootViewController(animated: true)
-//            }
-//        }
+
+    @objc private func toggleRetypePasswordVisibility() {
+        retypePasswordField.textField.isSecureTextEntry.toggle()
+        let iconName = retypePasswordField.textField.isSecureTextEntry ? "eye.fill" : "eye.slash.fill"
+        retypePasswordField.textField.setRightIcon(
+            UIImage(systemName: iconName),
+            action: #selector(toggleRetypePasswordVisibility),
+            target: self
+        )
     }
-    
-    // Add setup method
+
+    @objc private func textFieldDidChange(_ textField: UITextField) {
+        updatePrimaryButtonState()
+    }
+
     private func setupGestures() {
         view.addGestureRecognizer(tapGesture)
     }
-    
-    // Add dismiss method
+
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
@@ -611,29 +804,29 @@ class RegisterStoreViewController: BaseViewControler {
 // MARK: - UITextFieldDelegate
 extension RegisterStoreViewController: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
-        // Update button state when field loses focus
-        updateRegisterButtonState()
-        
-        // Clear errors when user finishes editing
-        if textField == nameField.textField {
-            nameField.clearError()
-        } else if textField == emailField.textField {
-            emailField.clearError()
-        } else if textField == passwordField.textField {
-            passwordField.clearError()
-        } else if textField == retypePasswordField.textField {
-            retypePasswordField.clearError()
-        } else if textField == storeNameField.textField {
-            storeNameField.clearError()
-        } else if textField == locationField.textField {
-            locationField.clearError()
-        } else if textField == phoneField.textField {
-            phoneField.clearError()
+        updatePrimaryButtonState()
+
+        switch textField {
+        case nameField.textField: nameField.clearError()
+        case emailField.textField: emailField.clearError()
+        case passwordField.textField: passwordField.clearError()
+        case retypePasswordField.textField: retypePasswordField.clearError()
+        case storeNameField.textField: storeNameField.clearError()
+        case locationField.textField: locationField.clearError()
+        case phoneField.textField: phoneField.clearError()
+        default: break
         }
     }
-    
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         switch textField {
+        case storeNameField.textField:
+            phoneField.textField.becomeFirstResponder()
+        case phoneField.textField:
+            locationField.textField.becomeFirstResponder()
+        case locationField.textField:
+            textField.resignFirstResponder()
+            if primaryButton.isEnabled { primaryTapped() }
         case nameField.textField:
             emailField.textField.becomeFirstResponder()
         case emailField.textField:
@@ -641,16 +834,8 @@ extension RegisterStoreViewController: UITextFieldDelegate {
         case passwordField.textField:
             retypePasswordField.textField.becomeFirstResponder()
         case retypePasswordField.textField:
-            storeNameField.textField.becomeFirstResponder()
-        case storeNameField.textField:
-            phoneField.textField.becomeFirstResponder()
-        case phoneField.textField:
-            locationField.textField.becomeFirstResponder()
-        case locationField.textField:
             textField.resignFirstResponder()
-            if registerButton.isEnabled {
-                registerButtonTapped(registerButton)
-            }
+            if primaryButton.isEnabled { primaryTapped() }
         default:
             break
         }
@@ -658,19 +843,19 @@ extension RegisterStoreViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - UITextViewDelegate (consent link taps)
+// MARK: - UITextViewDelegate
 extension RegisterStoreViewController: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+    func textView(
+        _ textView: UITextView,
+        shouldInteractWith URL: URL,
+        in characterRange: NSRange,
+        interaction: UITextItemInteraction
+    ) -> Bool {
         switch URL.absoluteString {
-        case "anyrent://privacy":
-            openPrivacyPolicy()
-        case "anyrent://terms":
-            openTermsOfService()
-        default:
-            break
+        case "anyrent://privacy": openPrivacyPolicy()
+        case "anyrent://terms": openTermsOfService()
+        default: break
         }
         return false
     }
 }
-
- 

@@ -33,6 +33,8 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   email: string;
   description?: string;
   businessType?: string;
+  /** Niche rental tags selected at signup (e.g. AO_DAI, WEDDING_DRESS) */
+  businessTags?: string[];
   pricingType?: string; // FIXED, HOURLY, DAILY
   taxId?: string;
   currency: string; // Currency code (USD, VND)
@@ -109,6 +111,7 @@ export interface MerchantCreateInput extends BaseFormInput {
   description?: string;
   currency?: string; // Currency code (USD, VND), defaults to USD
   businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  businessTags?: string[]; // Niche tags (AO_DAI, WEDDING_DRESS, ...)
   pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   planId?: number;
   isActive?: boolean;
@@ -129,6 +132,7 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
   zipCode?: string;
   country?: string;
   businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  businessTags?: string[]; // Niche tags (AO_DAI, WEDDING_DRESS, ...)
   pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   taxId?: number;
   currency?: string; // Currency code (USD, VND)

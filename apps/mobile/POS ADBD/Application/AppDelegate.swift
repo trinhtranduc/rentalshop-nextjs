@@ -159,9 +159,30 @@ extension AppDelegate {
         self.loadLogin()
     }
     
-    func loadMainUserView() {
-        window?.rootViewController = TabbarViewController()
-        window?.makeKeyAndVisible()
+    func loadMainUserView(forceMain: Bool = false) {
+        if !forceMain && !Utils.hasCompletedOnboarding() {
+            window?.rootViewController = OnboardingViewController()
+            window?.makeKeyAndVisible()
+            return
+        }
+        
+        let tabBar = TabbarViewController()
+        guard let window else { return }
+        
+        // Cross-dissolve when leaving onboarding so the heavy first tab load
+        // doesn't feel like a freeze on the tab bar buttons.
+        if forceMain, window.rootViewController is OnboardingViewController {
+            UIView.transition(
+                with: window,
+                duration: 0.25,
+                options: [.transitionCrossDissolve, .allowAnimatedContent]
+            ) {
+                window.rootViewController = tabBar
+            }
+        } else {
+            window.rootViewController = tabBar
+        }
+        window.makeKeyAndVisible()
     }
     
     
