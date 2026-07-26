@@ -5,8 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button, Card, CardContent, Badge, LanguageSwitcher } from '@rentalshop/ui'
-import { LandingBrandLogo } from '../components/LandingBrandLogo'
+import { Button, Card, CardContent, Badge, Logo, LanguageSwitcher } from '@rentalshop/ui'
 import { useAuth } from '@rentalshop/hooks'
 import { User } from 'lucide-react'
 import {
@@ -37,7 +36,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 
-const FeaturesPage = () => {
+const FeaturesClient = () => {
   const t = useTranslations('features')
   const router = useRouter()
   const { user } = useAuth()
@@ -97,7 +96,14 @@ const FeaturesPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <LandingBrandLogo />
+              <Logo 
+                size="md" 
+                variant="custom" 
+                src="/anyrent-logo-light.svg"
+                showLabel={true}
+                labelText="AnyRent"
+                showBackground={false}
+              />
             </Link>
             <div className="hidden md:flex items-center space-x-8">
               <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
@@ -504,3 +510,5 @@ const FeaturesPage = () => {
     </div>
   )
 }
+
+export default FeaturesClient

@@ -3,19 +3,21 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
-import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
+import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
-import { User } from 'lucide-react'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 import { getAnyRentLogoUrl } from '../lib/brand'
 import { LandingBrandLogo } from './components/LandingBrandLogo'
 
-// Import Blog Section (Client Component that calls API)
-import BlogSection from './components/BlogSection'
+// Import Blog Section (Client Component that calls API) - lazy loaded
+import dynamic from 'next/dynamic'
+const BlogSection = dynamic(() => import('./components/BlogSection'), {
+  loading: () => <div className="py-24 bg-white" />,
+  ssr: false,
+})
 import { 
   Check, 
   ChevronDown, 
@@ -30,13 +32,11 @@ import {
   DollarSign,
   Star,
   Mail,
-  Phone,
   MapPin,
   ExternalLink,
   BarChart,
   AlertTriangle,
   X,
-  Store,
   Sparkles,
   ShoppingBag,
   Zap,
@@ -51,8 +51,6 @@ import {
 
 const LandingPage = () => {
   const t = useTranslations('landing')
-  const router = useRouter()
-  const { user } = useAuth()
   
   // Structured Data for SEO (JSON-LD)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -488,7 +486,7 @@ const LandingPage = () => {
                       alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
                       width={288}
                       height={576}
-                      priority
+                      loading="lazy"
                       className="rounded-3xl shadow-xl border border-gray-200"
                     />
                   </div>
@@ -898,7 +896,7 @@ const LandingPage = () => {
       <Pricing />
 
       {/* Footer - Below the fold */}
-      <Footer />
+      <PublicSiteFooter />
       
       {/* FloatingButtons */}
       <FloatingButtons />
@@ -1861,4 +1859,4 @@ const FloatingButtons = React.memo(() => {
   );
 });
 
-export default LandingPage; 
+export default LandingPage;

@@ -1943,6 +1943,7 @@
 
 "@rentalshop/auth@file:../../packages/auth":
   version "1.0.0"
+  resolved "file:packages/auth"
   dependencies:
     "@rentalshop/database" "file:../database"
     "@rentalshop/utils" "file:../utils"
@@ -2000,6 +2001,9 @@
 
 "@rentalshop/errors@file:../../packages/errors":
   version "1.0.0"
+  resolved "file:packages/env"
+  dependencies:
+    zod "^3.22.0"
 
 "@rentalshop/errors@file:/Users/trinhtran/Documents/Source-Code/rentalshop-nextjs/packages/errors":
   version "1.0.0"
@@ -2014,6 +2018,7 @@
 
 "@rentalshop/loyalty@file:packages/loyalty":
   version "1.0.0"
+  resolved "file:packages/hooks"
   dependencies:
     "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-loyalty-1.0.0-ac802dbc-5105-43a0-9741-e9d7df722323-1783776450401/node_modules/packages/constants"
     "@rentalshop/database" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/2cc68757109bf5f0696b1ae6a344fbb2/yarn/v6/npm-@rentalshop-loyalty-1.0.0-ac802dbc-5105-43a0-9741-e9d7df722323-1783776450401/node_modules/packages/database"

@@ -2,8 +2,9 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { LanguageSwitcher, CheckEmailVerification } from '@rentalshop/ui';
+import { Suspense } from 'react';
 
-export default function EmailVerificationPage() {
+function EmailVerificationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -82,3 +83,10 @@ export default function EmailVerificationPage() {
   );
 }
 
+export default function EmailVerificationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50" />}>
+      <EmailVerificationContent />
+    </Suspense>
+  );
+}
