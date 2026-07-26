@@ -57,9 +57,12 @@
 "Business field required" = "Cần chọn lĩnh vực";
 "Please select at least one rental type" = "Vui lòng chọn ít nhất một loại hình cho thuê";
 "Ao dai rental" = "Cho thuê áo dài";
+"Costume rental" = "Cho thuê trang phục";
 "Wedding dress rental" = "Cho thuê áo cưới";
+"Equipment rental" = "Cho thuê trang thiết bị";
 "Vehicle rental" = "Cho thuê xe";
-"Equipment rental" = "Cho thuê thiết bị";
+"Film equipment rental" = "Cho thuê thiết bị quay phim";
+"Other" = "Khác";
 "Other / General" = "Khác / Chung";
 "Do you have account?" = "Bạn đã có tài khoản?";
 "Login now" = "Đăng nhập ngay";
@@ -131,8 +134,11 @@
 "At least 6 characters" = "Tối thiểu 6 ký tự";
 "Re-enter your password" = "Nhập lại mật khẩu";
 "e.g. AnyRent Rental Shop" = "VD: Cửa hàng cho thuê AnyRent";
+"AnyRent Rental Shop" = "Cửa hàng cho thuê AnyRent";
 "e.g. 01 Quang Trung, District 1, HCMC" = "VD: 01 Quang Trung, Quận 1, TP.HCM";
+"01 Quang Trung, District 1, HCMC" = "01 Quang Trung, Quận 1, TP.HCM";
 "e.g. 0901234567" = "VD: 0901234567";
+"0901234567" = "0901234567";
 "Please enter a valid email address" = "Vui lòng nhập địa chỉ email hợp lệ";
 "Registration successful! Please login with your credentials." = "Đăng ký thành công! Vui lòng đăng nhập bằng thông tin đăng nhập của bạn.";
 "Input phone" = "Nhập số điện thoại";

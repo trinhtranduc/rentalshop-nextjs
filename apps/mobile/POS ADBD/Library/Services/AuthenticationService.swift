@@ -142,7 +142,9 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         let lastName = nameComponents.count > 1 ? nameComponents.dropFirst().joined(separator: " ") : ""
         
         // Niche tags — server derives businessType from these
-        let allowedTags: Set<String> = ["AO_DAI", "WEDDING_DRESS", "VEHICLE", "EQUIPMENT", "OTHER"]
+        let allowedTags: Set<String> = [
+            "AO_DAI", "COSTUME", "WEDDING_DRESS", "EQUIPMENT", "VEHICLE", "FILM_EQUIPMENT", "OTHER"
+        ]
         let resolvedTags = businessTags
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
             .filter { allowedTags.contains($0) }

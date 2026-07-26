@@ -59,9 +59,12 @@
 "Business field required" = "Business field required";
 "Please select at least one rental type" = "Please select at least one rental type";
 "Ao dai rental" = "Ao dai rental";
+"Costume rental" = "Costume rental";
 "Wedding dress rental" = "Wedding dress rental";
-"Vehicle rental" = "Vehicle rental";
 "Equipment rental" = "Equipment rental";
+"Vehicle rental" = "Vehicle rental";
+"Film equipment rental" = "Film equipment rental";
+"Other" = "Other";
 "Other / General" = "Other / General";
 "Do you have account?" = "Already have an account?";
 "Login now" = "Login now";
@@ -132,8 +135,11 @@
 "At least 6 characters" = "At least 6 characters";
 "Re-enter your password" = "Re-enter your password";
 "e.g. AnyRent Rental Shop" = "e.g. AnyRent Rental Shop";
+"AnyRent Rental Shop" = "AnyRent Rental Shop";
 "e.g. 01 Quang Trung, District 1, HCMC" = "e.g. 01 Quang Trung, District 1, HCMC";
+"01 Quang Trung, District 1, HCMC" = "01 Quang Trung, District 1, HCMC";
 "e.g. 0901234567" = "e.g. 0901234567";
+"0901234567" = "0901234567";
 "Please enter a valid email address" = "Please enter a valid email address";
 "Registration successful! Please login with your credentials." = "Registration successful! Please login with your credentials.";
 "Input phone" = "Input phone";

@@ -44,9 +44,18 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 20
+        stack.spacing = 14
         stack.distribution = .fill
         stack.backgroundColor = .clear
+        return stack
+    }()
+
+    /// Compact progress row (step text + dots) so the card doesn't waste vertical space.
+    private lazy var progressHeaderStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 4
+        stack.alignment = .center
         return stack
     }()
 
@@ -65,6 +74,10 @@ class RegisterStoreViewController: BaseViewControler {
         control.currentPageIndicatorTintColor = APP_TONE_COLOR
         control.pageIndicatorTintColor = APP_TONE_COLOR.withAlphaComponent(0.25)
         control.isUserInteractionEnabled = false
+        // Shrink default page-control padding so it doesn't inflate the card.
+        if #available(iOS 14.0, *) {
+            control.backgroundStyle = .minimal
+        }
         return control
     }()
 
@@ -93,7 +106,7 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var storeNameField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Store Name".localized(),
-            placeholder: "e.g. AnyRent Rental Shop".localized()
+            placeholder: "AnyRent Rental Shop".localized()
         )
         field.setRequired(true)
         field.textField.setLeftIcon(UIImage(systemName: "building.2.fill"))
@@ -105,7 +118,7 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var phoneField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Phone Number".localized(),
-            placeholder: "e.g. 0901234567".localized()
+            placeholder: "0901234567".localized()
         )
         field.setRequired(true)
         field.textField.keyboardType = .phonePad
@@ -116,7 +129,7 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var locationField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Location".localized(),
-            placeholder: "e.g. 01 Quang Trung, District 1, HCMC".localized()
+            placeholder: "01 Quang Trung, District 1, HCMC".localized()
         )
         field.setRequired(true)
         field.textField.setLeftIcon(UIImage(systemName: "location.fill"))
@@ -183,18 +196,19 @@ class RegisterStoreViewController: BaseViewControler {
     // MARK: - Business field chips (multi-select tags)
     private let businessOptions: [BusinessOption] = [
         BusinessOption(titleKey: "Ao dai rental", apiValue: "AO_DAI"),
+        BusinessOption(titleKey: "Costume rental", apiValue: "COSTUME"),
         BusinessOption(titleKey: "Wedding dress rental", apiValue: "WEDDING_DRESS"),
-        BusinessOption(titleKey: "Vehicle rental", apiValue: "VEHICLE"),
         BusinessOption(titleKey: "Equipment rental", apiValue: "EQUIPMENT"),
-        BusinessOption(titleKey: "Other / General", apiValue: "OTHER")
+        BusinessOption(titleKey: "Vehicle rental", apiValue: "VEHICLE"),
+        BusinessOption(titleKey: "Film equipment rental", apiValue: "FILM_EQUIPMENT"),
+        BusinessOption(titleKey: "Other", apiValue: "OTHER")
     ]
 
-    private lazy var chipsStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 10
-        stack.distribution = .fill
-        return stack
+    private lazy var chipsStackView: WrapChipContainer = {
+        let view = WrapChipContainer()
+        view.spacing = 8
+        view.rowSpacing = 8
+        return view
     }()
 
     private var chipButtons: [UIButton] = []
@@ -205,15 +219,15 @@ class RegisterStoreViewController: BaseViewControler {
     }()
 
     private lazy var privacyCheckbox: UIButton = {
-        let button = UIButton(type: .custom)
-        var config = UIButton.Configuration.plain()
-        config.imagePlacement = .all
-        config.imagePadding = 0
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        button.configuration = config
-        button.setImage(UIImage(systemName: "square"), for: .normal)
-        button.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
+        // Do NOT use UIButton.Configuration here — mixing Configuration with
+        // setImage(_:for:) breaks SF Symbol rendering (garbled checkbox icon).
+        let button = UIButton(type: .system)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        button.setImage(UIImage(systemName: "square", withConfiguration: symbolConfig), for: .normal)
+        button.setImage(UIImage(systemName: "checkmark.square.fill", withConfiguration: symbolConfig), for: .selected)
         button.tintColor = APP_TONE_COLOR
+        button.contentHorizontalAlignment = .center
+        button.contentVerticalAlignment = .center
         button.addTarget(self, action: #selector(privacyCheckboxTapped), for: .touchUpInside)
         return button
     }()
@@ -302,14 +316,23 @@ class RegisterStoreViewController: BaseViewControler {
         buildBusinessChips()
         setupPrivacyPolicyView()
 
-        stackView.addArrangedSubview(progressLabel)
-        stackView.addArrangedSubview(pageControl)
+        progressHeaderStack.addArrangedSubview(progressLabel)
+        progressHeaderStack.addArrangedSubview(pageControl)
+
+        stackView.addArrangedSubview(progressHeaderStack)
         stackView.addArrangedSubview(stepTitleLabel)
         stackView.addArrangedSubview(stepSubtitleLabel)
         stackView.addArrangedSubview(shopStepView)
         stackView.addArrangedSubview(ownerStepView)
         stackView.addArrangedSubview(businessStepView)
         stackView.addArrangedSubview(navButtonsStack)
+
+        // Tighter grouping: title sits near subtitle; fields start soon after.
+        stackView.setCustomSpacing(6, after: stepTitleLabel)
+        stackView.setCustomSpacing(16, after: stepSubtitleLabel)
+        stackView.setCustomSpacing(20, after: shopStepView)
+        stackView.setCustomSpacing(20, after: ownerStepView)
+        stackView.setCustomSpacing(20, after: businessStepView)
 
         navButtonsStack.addArrangedSubview(previousButton)
         navButtonsStack.addArrangedSubview(primaryButton)
@@ -318,19 +341,19 @@ class RegisterStoreViewController: BaseViewControler {
 
         privacyCheckbox.snp.makeConstraints { make in
             make.leading.equalToSuperview()
-            make.top.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(4)
             make.width.height.equalTo(24)
         }
 
         privacyTextView.snp.makeConstraints { make in
             make.leading.equalTo(privacyCheckbox.snp.trailing).offset(12)
-            make.top.equalToSuperview().offset(4)
+            make.top.equalToSuperview().offset(2)
             make.trailing.equalToSuperview()
-            make.bottom.equalToSuperview().offset(-4)
+            make.bottom.equalToSuperview().offset(-2)
         }
 
         privacyPolicyView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(32)
+            make.height.greaterThanOrEqualTo(28)
         }
 
         previousButton.snp.makeConstraints { make in
@@ -342,9 +365,11 @@ class RegisterStoreViewController: BaseViewControler {
 
         guard let customNavBar = customNavBar else { return }
 
+        // Card hugs content (like Login) instead of stretching to the bottom —
+        // that stretch left a large empty glass area on short wizard steps.
         cardView.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom).offset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+            make.top.equalTo(customNavBar.snp.bottom).offset(16)
+            make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-16)
             if isIPad {
                 make.centerX.equalToSuperview()
                 make.width.equalTo(400)
@@ -356,15 +381,18 @@ class RegisterStoreViewController: BaseViewControler {
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+            // Prefer content height; yield when content is taller than the screen
+            // so the card caps at safe-area and the scroll view can scroll.
+            make.height.equalTo(containerView).priority(750)
         }
 
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-            make.width.equalToSuperview()
+            make.edges.equalTo(scrollView.contentLayoutGuide)
+            make.width.equalTo(scrollView.frameLayoutGuide)
         }
 
         stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(20)
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 18, left: 18, bottom: 18, right: 18))
         }
 
         let fields = [
@@ -383,7 +411,7 @@ class RegisterStoreViewController: BaseViewControler {
     private func configureStepStacks() {
         [shopStepView, ownerStepView, businessStepView].forEach { stack in
             stack.axis = .vertical
-            stack.spacing = 20
+            stack.spacing = 14
             stack.distribution = .fill
         }
 
@@ -397,6 +425,7 @@ class RegisterStoreViewController: BaseViewControler {
 
         businessStepView.addArrangedSubview(chipsStackView)
         businessStepView.addArrangedSubview(privacyPolicyView)
+        businessStepView.setCustomSpacing(16, after: chipsStackView)
     }
 
     private func setupPrivacyPolicyView() {
@@ -406,16 +435,12 @@ class RegisterStoreViewController: BaseViewControler {
 
     private func buildBusinessChips() {
         chipButtons.removeAll()
-        chipsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         for (index, option) in businessOptions.enumerated() {
             let button = makeChipButton(title: option.titleKey.localized(), tag: index)
             chipButtons.append(button)
-            chipsStackView.addArrangedSubview(button)
-            button.snp.makeConstraints { make in
-                make.height.equalTo(46)
-            }
         }
+        chipsStackView.setChips(chipButtons)
         updateChipSelection()
     }
 
@@ -423,12 +448,16 @@ class RegisterStoreViewController: BaseViewControler {
         let button = UIButton(type: .system)
         button.tag = tag
         button.setTitle(title, for: .normal)
-        button.titleLabel?.font = Utils.mediumFont(size: 15)
+        button.titleLabel?.font = Utils.mediumFont(size: 13)
         button.titleLabel?.numberOfLines = 1
-        button.contentHorizontalAlignment = .left
-        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-        button.layer.cornerRadius = 14
+        button.titleLabel?.lineBreakMode = .byClipping
+        button.contentHorizontalAlignment = .center
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        button.layer.cornerRadius = 16
         button.layer.borderWidth = 1
+        button.clipsToBounds = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
         return button
     }
@@ -465,6 +494,12 @@ class RegisterStoreViewController: BaseViewControler {
             )
             self.updatePrimaryButtonState()
             self.scrollView.setContentOffset(.zero, animated: false)
+            if step == .business {
+                self.chipsStackView.relayout()
+            }
+            // Recalculate hug-height after showing/hiding step stacks.
+            self.view.setNeedsLayout()
+            self.view.layoutIfNeeded()
         }
 
         if animated {
@@ -520,19 +555,17 @@ class RegisterStoreViewController: BaseViewControler {
     private func updateChipSelection() {
         for (index, button) in chipButtons.enumerated() {
             guard businessOptions.indices.contains(index) else { continue }
+            let title = businessOptions[index].titleKey.localized()
             let selected = selectedBusinessTags.contains(businessOptions[index].apiValue)
+            button.setTitle(title, for: .normal)
             if selected {
                 button.backgroundColor = APP_TONE_COLOR
                 button.setTitleColor(.white, for: .normal)
                 button.layer.borderColor = APP_TONE_COLOR.cgColor
-                // Checkmark prefix for multi-select affordance
-                let title = businessOptions[index].titleKey.localized()
-                button.setTitle("✓  \(title)", for: .normal)
             } else {
-                button.backgroundColor = UIColor.white.withAlphaComponent(0.55)
+                button.backgroundColor = UIColor.white.withAlphaComponent(0.72)
                 button.setTitleColor(APP_TEXT_COLOR, for: .normal)
-                button.layer.borderColor = UIColor.white.withAlphaComponent(0.85).cgColor
-                button.setTitle(businessOptions[index].titleKey.localized(), for: .normal)
+                button.layer.borderColor = APP_TONE_COLOR.withAlphaComponent(0.28).cgColor
             }
         }
     }
@@ -857,5 +890,122 @@ extension RegisterStoreViewController: UITextViewDelegate {
         default: break
         }
         return false
+    }
+}
+
+// MARK: - Wrapping pill/tag layout
+/// Auto Layout wrapping rows so UIStackView gets a real height (manual frames
+/// collapsed the card and overlapped nav buttons).
+private final class WrapChipContainer: UIView {
+    var spacing: CGFloat = 8 {
+        didSet { rowsStack.spacing = rowSpacing }
+    }
+    var rowSpacing: CGFloat = 8 {
+        didSet { rowsStack.spacing = rowSpacing }
+    }
+
+    private let rowsStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.distribution = .fill
+        stack.spacing = 8
+        return stack
+    }()
+
+    private var chips: [UIButton] = []
+    private var lastLayoutWidth: CGFloat = 0
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        addSubview(rowsStack)
+        rowsStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        setContentHuggingPriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .vertical)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func setChips(_ views: [UIButton]) {
+        chips = views
+        lastLayoutWidth = 0
+        setNeedsLayout()
+    }
+
+    func relayout() {
+        lastLayoutWidth = 0
+        setNeedsLayout()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = bounds.width
+        guard width > 1 else { return }
+        if abs(width - lastLayoutWidth) > 0.5 || rowsStack.arrangedSubviews.isEmpty {
+            lastLayoutWidth = width
+            rebuildRows(maxWidth: width)
+        }
+    }
+
+    private func rebuildRows(maxWidth: CGFloat) {
+        rowsStack.arrangedSubviews.forEach { row in
+            rowsStack.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
+        chips.forEach { $0.removeFromSuperview() }
+
+        guard !chips.isEmpty else { return }
+
+        var currentRow = makeRow()
+        var usedWidth: CGFloat = 0
+
+        for chip in chips {
+            let chipWidth = measuredWidth(for: chip, maxWidth: maxWidth)
+            let needed = usedWidth == 0 ? chipWidth : usedWidth + spacing + chipWidth
+
+            if usedWidth > 0, needed > maxWidth {
+                finalizeRow(currentRow)
+                rowsStack.addArrangedSubview(currentRow)
+                currentRow = makeRow()
+                usedWidth = 0
+            }
+
+            currentRow.addArrangedSubview(chip)
+            usedWidth = usedWidth == 0 ? chipWidth : usedWidth + spacing + chipWidth
+        }
+
+        if !currentRow.arrangedSubviews.isEmpty {
+            finalizeRow(currentRow)
+            rowsStack.addArrangedSubview(currentRow)
+        }
+    }
+
+    private func makeRow() -> UIStackView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.alignment = .center
+        row.distribution = .fill
+        row.spacing = spacing
+        return row
+    }
+
+    private func finalizeRow(_ row: UIStackView) {
+        // Trailing spacer keeps chips left-aligned as pills (not stretched).
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        row.addArrangedSubview(spacer)
+    }
+
+    private func measuredWidth(for button: UIButton, maxWidth: CGFloat) -> CGFloat {
+        let title = button.title(for: .normal) ?? ""
+        let font = button.titleLabel?.font ?? Utils.mediumFont(size: 13)
+        let textWidth = ceil((title as NSString).size(withAttributes: [.font: font]).width)
+        let insets = button.contentEdgeInsets
+        return min(textWidth + insets.left + insets.right, maxWidth)
     }
 }

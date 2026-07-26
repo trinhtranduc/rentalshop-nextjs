@@ -8,9 +8,11 @@ import type { BusinessType } from './pricing';
 
 export const BUSINESS_TAG = {
   AO_DAI: 'AO_DAI',
+  COSTUME: 'COSTUME',
   WEDDING_DRESS: 'WEDDING_DRESS',
-  VEHICLE: 'VEHICLE',
   EQUIPMENT: 'EQUIPMENT',
+  VEHICLE: 'VEHICLE',
+  FILM_EQUIPMENT: 'FILM_EQUIPMENT',
   OTHER: 'OTHER',
 } as const;
 
@@ -18,9 +20,11 @@ export type BusinessTag = (typeof BUSINESS_TAG)[keyof typeof BUSINESS_TAG];
 
 export const BUSINESS_TAG_VALUES: BusinessTag[] = [
   BUSINESS_TAG.AO_DAI,
+  BUSINESS_TAG.COSTUME,
   BUSINESS_TAG.WEDDING_DRESS,
-  BUSINESS_TAG.VEHICLE,
   BUSINESS_TAG.EQUIPMENT,
+  BUSINESS_TAG.VEHICLE,
+  BUSINESS_TAG.FILM_EQUIPMENT,
   BUSINESS_TAG.OTHER,
 ];
 
@@ -40,14 +44,14 @@ export const BUSINESS_TAG_OPTIONS: BusinessTagOption[] = [
     businessType: 'CLOTHING',
   },
   {
-    value: BUSINESS_TAG.WEDDING_DRESS,
-    label: 'Wedding dress rental',
+    value: BUSINESS_TAG.COSTUME,
+    label: 'Costume rental',
     businessType: 'CLOTHING',
   },
   {
-    value: BUSINESS_TAG.VEHICLE,
-    label: 'Vehicle rental',
-    businessType: 'VEHICLE',
+    value: BUSINESS_TAG.WEDDING_DRESS,
+    label: 'Wedding dress rental',
+    businessType: 'CLOTHING',
   },
   {
     value: BUSINESS_TAG.EQUIPMENT,
@@ -55,8 +59,18 @@ export const BUSINESS_TAG_OPTIONS: BusinessTagOption[] = [
     businessType: 'EQUIPMENT',
   },
   {
+    value: BUSINESS_TAG.VEHICLE,
+    label: 'Vehicle rental',
+    businessType: 'VEHICLE',
+  },
+  {
+    value: BUSINESS_TAG.FILM_EQUIPMENT,
+    label: 'Film equipment rental',
+    businessType: 'EQUIPMENT',
+  },
+  {
     value: BUSINESS_TAG.OTHER,
-    label: 'Other / General',
+    label: 'Other',
     businessType: 'GENERAL',
   },
 ];
