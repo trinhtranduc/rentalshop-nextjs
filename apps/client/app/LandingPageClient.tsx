@@ -3,14 +3,16 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
-import { usePlansTranslations } from '@rentalshop/hooks'
+import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 import { getAnyRentLogoUrl } from '../lib/brand'
 import { LandingBrandLogo } from './components/LandingBrandLogo'
+import PublicSiteFooter from './components/PublicSiteFooter'
 
 // Import Blog Section (Client Component that calls API) - lazy loaded
 import dynamic from 'next/dynamic'
@@ -26,6 +28,7 @@ import {
   Globe, 
   Shield, 
   Users, 
+  User,
   BarChart3, 
   Smartphone, 
   Clock, 
@@ -51,6 +54,8 @@ import {
 
 const LandingPage = () => {
   const t = useTranslations('landing')
+  const router = useRouter()
+  const { user } = useAuth()
   
   // Structured Data for SEO (JSON-LD)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
