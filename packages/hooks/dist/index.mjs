@@ -1,3 +1,6 @@
+'use client';
+"use client";
+
 // src/hooks/useAuth.ts
 import { useState, useEffect, useCallback } from "react";
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from "@rentalshop/utils";
