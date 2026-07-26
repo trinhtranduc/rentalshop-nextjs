@@ -37,6 +37,7 @@ export default function MerchantDetailPage() {
   const [loyaltyProgramName, setLoyaltyProgramName] = useState<string | null>(null);
   const [loyaltyLoading, setLoyaltyLoading] = useState(true);
   const [loyaltySaving, setLoyaltySaving] = useState(false);
+  const [loyaltySyncing, setLoyaltySyncing] = useState(false);
 
   useEffect(() => {
     fetchMerchantDetails();
@@ -106,6 +107,24 @@ export default function MerchantDetailPage() {
       console.error('Error updating loyalty status:', error);
     } finally {
       setLoyaltySaving(false);
+    }
+  };
+
+  const handleLoyaltySyncHistory = async () => {
+    try {
+      setLoyaltySyncing(true);
+      const response = await merchantsApi.syncMerchantLoyaltyHistory(Number(merchantId));
+      if (response.success && response.data) {
+        console.log(
+          `Loyalty history imported: ${response.data.customersProcessed} customers, ${response.data.totalPointsIssued} points`
+        );
+      } else {
+        console.error('Failed to import loyalty history:', response.message);
+      }
+    } catch (error) {
+      console.error('Error importing loyalty history:', error);
+    } finally {
+      setLoyaltySyncing(false);
     }
   };
 
@@ -381,7 +400,9 @@ export default function MerchantDetailPage() {
           loyaltyProgramName={loyaltyProgramName}
           loyaltyLoading={loyaltyLoading}
           loyaltySaving={loyaltySaving}
+          loyaltySyncing={loyaltySyncing}
           onLoyaltyToggle={handleLoyaltyToggle}
+          onLoyaltySyncHistory={handleLoyaltySyncHistory}
           onMerchantAction={handleMerchantAction}
           onOutletAction={handleOutletAction}
           onUserAction={handleUserAction}

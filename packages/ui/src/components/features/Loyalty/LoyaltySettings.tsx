@@ -199,7 +199,6 @@ export const LoyaltySettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<LoyaltySection>('overview');
   const [savingProgram, setSavingProgram] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [creatingTier, setCreatingTier] = useState(false);
   const [savingTierIds, setSavingTierIds] = useState<number[]>([]);
   const [deletingTierId, setDeletingTierId] = useState<number | null>(null);
@@ -322,26 +321,6 @@ export const LoyaltySettings: React.FC = () => {
       toastError('Không lưu được cấu hình loyalty', 'Có lỗi xảy ra khi lưu cấu hình.');
     } finally {
       setSavingProgram(false);
-    }
-  };
-
-  const handleSyncHistory = async () => {
-    setSyncing(true);
-    try {
-      const response = await loyaltyApi.syncHistory();
-      if (response.success && response.data) {
-        const data = response.data;
-        toastSuccess(
-          'Import lịch sử thành công',
-          `Đã xử lý ${data.customersProcessed} khách hàng, cộng ${data.totalPointsIssued} điểm ban đầu.`
-        );
-      } else {
-        toastError('Import lịch sử thất bại', response.message || response.error || 'Có lỗi xảy ra.');
-      }
-    } catch {
-      toastError('Import lịch sử thất bại', 'Có lỗi xảy ra khi import lịch sử loyalty.');
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -554,8 +533,8 @@ export const LoyaltySettings: React.FC = () => {
                       <p className="font-medium text-text-primary">Trạng thái loyalty</p>
                       <p className="text-sm text-text-secondary">
                         {isProgramActive
-                          ? 'Chương trình đang chạy. Liên hệ Super Admin nếu cần tạm dừng.'
-                          : 'Chương trình chưa được kích hoạt. Chỉ Super Admin mới có thể bật loyalty.'}
+                          ? 'Chương trình đang chạy. Liên hệ Super Admin nếu cần tạm dừng hoặc import lịch sử điểm.'
+                          : 'Chương trình chưa được kích hoạt. Chỉ Super Admin mới có thể bật loyalty và import lịch sử.'}
                       </p>
                     </div>
                     <Badge
@@ -565,25 +544,6 @@ export const LoyaltySettings: React.FC = () => {
                       {isProgramActive ? 'Đang bật' : 'Chưa kích hoạt'}
                     </Badge>
                   </div>
-
-                  {isProgramActive && program.id && (
-                    <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
-                      <div className="min-w-0">
-                        <div className="mb-1 flex items-center gap-2">
-                          <p className="font-medium text-text-primary">Import lịch sử một lần</p>
-                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
-                            Migration
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-text-secondary">
-                          Dùng khi migrate dữ liệu ban đầu để tạo điểm mở đầu từ lịch sử đơn hàng cũ.
-                        </p>
-                      </div>
-                      <Button variant="outline" onClick={handleSyncHistory} disabled={syncing}>
-                        {syncing ? 'Đang import...' : 'Bắt đầu import'}
-                      </Button>
-                    </div>
-                  )}
 
                   <div className="border-t border-border pt-4">
                     <div className="grid gap-4 md:grid-cols-3">

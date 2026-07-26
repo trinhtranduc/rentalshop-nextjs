@@ -211,6 +211,7 @@ export interface ApiUrls {
     extendPlan: (id: number) => string;
     cancelPlan: (id: number) => string;
     loyalty: (id: number) => string;
+    loyaltySyncHistory: (id: number) => string;
     pricing: {
       get: (id: number) => string;
       update: (id: number) => string;
@@ -764,6 +765,7 @@ function createApiUrls(): ApiUrls {
       extendPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       cancelPlan: (id: number) => `${base}/api/merchants/${id}/plan`,
       loyalty: (id: number) => `${base}/api/merchants/${id}/loyalty`,
+      loyaltySyncHistory: (id: number) => `${base}/api/merchants/${id}/loyalty/sync-history`,
       pricing: {
         get: (id: number) => `${base}/api/merchants/${id}/pricing`,
         update: (id: number) => `${base}/api/merchants/${id}/pricing`,
