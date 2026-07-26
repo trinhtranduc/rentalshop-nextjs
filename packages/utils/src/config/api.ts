@@ -128,6 +128,7 @@ export interface ApiUrls {
     activateByPublicId: (id: number) => string;
     deactivateByPublicId: (id: number) => string;
     deleteByPublicId: (id: number) => string;
+    export: string;
   };
   plans: {
     list: string;
@@ -212,6 +213,7 @@ export interface ApiUrls {
     cancelPlan: (id: number) => string;
     loyalty: (id: number) => string;
     loyaltySyncHistory: (id: number) => string;
+    export: string;
     pricing: {
       get: (id: number) => string;
       update: (id: number) => string;
