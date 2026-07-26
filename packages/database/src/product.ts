@@ -1568,6 +1568,10 @@ export const simplifiedProducts = {
             include: {
               outlet: { select: { id: true, name: true, address: true } }
             }
+          },
+          pricingOptions: {
+            where: { isActive: true },
+            orderBy: { sortOrder: 'asc' }
           }
         },
         orderBy,
