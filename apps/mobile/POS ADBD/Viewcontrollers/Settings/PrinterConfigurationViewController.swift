@@ -485,29 +485,29 @@ extension PrinterConfigurationViewController: UITableViewDataSource {
         switch indexPath.row {
         case 0: // Status
             var config = cell.defaultContentConfiguration()
-            config.text = "Bluetooth Status"
+            config.text = "Bluetooth Status".localized()
             config.textProperties.font = .bodyRegular(size: 16)
             
             if let centralManager = centralManager {
                 switch centralManager.state {
                 case .poweredOn:
-                    config.secondaryText = "Ready"
+                    config.secondaryText = "Ready".localized()
                     config.secondaryTextProperties.color = .systemGreen
                 case .poweredOff:
-                    config.secondaryText = "Turned Off"
+                    config.secondaryText = "Turned Off".localized()
                     config.secondaryTextProperties.color = .systemRed
                 case .unauthorized:
-                    config.secondaryText = "Unauthorized"
+                    config.secondaryText = "Unauthorized".localized()
                     config.secondaryTextProperties.color = .systemRed
                 case .unsupported:
-                    config.secondaryText = "Unsupported"
+                    config.secondaryText = "Unsupported".localized()
                     config.secondaryTextProperties.color = .systemRed
                 default:
-                    config.secondaryText = "Unknown"
+                    config.secondaryText = "Unknown".localized()
                     config.secondaryTextProperties.color = .systemGray
                 }
             } else {
-                config.secondaryText = "Initializing..."
+                config.secondaryText = "Initializing...".localized()
                 config.secondaryTextProperties.color = .systemGray
             }
             
@@ -517,7 +517,7 @@ extension PrinterConfigurationViewController: UITableViewDataSource {
             
         case 1: // Scan
             var config = cell.defaultContentConfiguration()
-            config.text = "Scan for Bluetooth Printers"
+            config.text = "Scan for Bluetooth Printers".localized()
             config.textProperties.font = .bodyRegular(size: 16)
             config.image = UIImage(systemName: "magnifyingglass")
             config.imageProperties.tintColor = .systemBlue
@@ -539,7 +539,7 @@ extension PrinterConfigurationViewController: UITableViewDataSource {
         let peripheral = discoveredPeripherals[indexPath.row]
         
         var config = cell.defaultContentConfiguration()
-        config.text = peripheral.name ?? "Unknown Device"
+        config.text = peripheral.name ?? "Unknown Device".localized()
         config.textProperties.font = .bodyRegular(size: 16)
         
         // Show connection status
@@ -571,7 +571,7 @@ extension PrinterConfigurationViewController: UITableViewDataSource {
         
         switch indexPath.row {
         case 0: // IP Address
-            cell.textLabel?.text = "IP Address"
+            cell.textLabel?.text = "IP Address".localized()
             cell.textLabel?.font = .bodyRegular(size: 16)
             
             ipAddressField.frame = CGRect(x: 0, y: 0, width: 200, height: 30)
@@ -579,7 +579,7 @@ extension PrinterConfigurationViewController: UITableViewDataSource {
             
         case 1: // Test
             var config = cell.defaultContentConfiguration()
-            config.text = "Test Printer"
+            config.text = "Test Printer".localized()
             config.textProperties.font = .bodyRegular(size: 16)
             config.image = UIImage(systemName: "printer")
             config.imageProperties.tintColor = .systemBlue
@@ -678,11 +678,15 @@ extension PrinterConfigurationViewController: UITableViewDelegate {
         
         if isConnected {
             // Show disconnect option
-            let alert = UIAlertController(title: peripheral.name ?? "Bluetooth Device", message: "This device is currently connected.", preferredStyle: .actionSheet)
-            alert.addAction(UIAlertAction(title: "Disconnect", style: .destructive) { _ in
+            let alert = UIAlertController(
+                title: peripheral.name ?? "Bluetooth Device".localized(),
+                message: "This device is currently connected.".localized(),
+                preferredStyle: .actionSheet
+            )
+            alert.addAction(UIAlertAction(title: "Disconnect".localized(), style: .destructive) { _ in
                 self.disconnectPrinter()
             })
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
             
             if let popover = alert.popoverPresentationController {
                 popover.sourceView = printerTableView
@@ -760,11 +764,22 @@ extension PrinterConfigurationViewController: CBCentralManagerDelegate {
         
         printerTableView.reloadData()
         
-        showAlert(message: "Successfully connected to \(peripheral.name ?? "printer")".localized(), isError: false)
+        showAlert(
+            message: String(
+                format: "Successfully connected to %@".localized(),
+                peripheral.name ?? "printer".localized()
+            ),
+            isError: false
+        )
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        showAlert(message: "Failed to connect to printer: \(error?.localizedDescription ?? "Unknown error")")
+        showAlert(
+            message: String(
+                format: "Failed to connect to printer: %@".localized(),
+                error?.localizedDescription ?? "Unknown error".localized()
+            )
+        )
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -781,7 +796,12 @@ extension PrinterConfigurationViewController: CBCentralManagerDelegate {
 extension PrinterConfigurationViewController: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard error == nil else {
-            showAlert(message: "Error discovering services: \(error!.localizedDescription)")
+            showAlert(
+                message: String(
+                    format: "Error discovering services: %@".localized(),
+                    error?.localizedDescription ?? "Unknown error".localized()
+                )
+            )
             return
         }
         
@@ -809,7 +829,12 @@ extension PrinterConfigurationViewController: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         guard error == nil else {
-            showAlert(message: "Error discovering characteristics: \(error!.localizedDescription)")
+            showAlert(
+                message: String(
+                    format: "Error discovering characteristics: %@".localized(),
+                    error?.localizedDescription ?? "Unknown error".localized()
+                )
+            )
             return
         }
         

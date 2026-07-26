@@ -106,9 +106,7 @@ class CalendarViewController: BaseViewControler {
         label.textColor = .textSecondary
         label.textAlignment = .center
         label.numberOfLines = 0
-        label.text = Locale.langCode == LangCode.vi.rawValue
-            ? "Chưa có đơn thuê trong ngày này.\nChọn ngày khác trên lịch để xem đơn thuê."
-            : "No rental orders on this day.\nChoose another day on the calendar to view orders."
+        label.text = "calendar.empty.day".localized()
         return label
     }()
 
@@ -625,12 +623,8 @@ class CalendarViewController: BaseViewControler {
     }
 
     private func selectedCountText(for count: Int) -> String {
-        if Locale.langCode == LangCode.vi.rawValue {
-            return "\(count) đơn thuê"
-        }
-
-        let orderText = count == 1 ? "order".localized() : "orders".localized()
-        return "\(count) \(orderText)"
+        let key = count == 1 ? "calendar.rentalCount.one" : "calendar.rentalCount.other"
+        return String(format: key.localized(), count)
     }
 
     private func updateEmptyStateVisibility() {

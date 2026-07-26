@@ -52,19 +52,19 @@ enum CustomerLoyaltyLevel: String, CaseIterable {
     var displayName: String {
         switch self {
         case .dong:
-            return "Đồng"
+            return "Bronze".localized()
         case .bac:
-            return "Bạc"
+            return "Silver".localized()
         case .vang:
-            return "Vàng"
+            return "Gold".localized()
         case .bachKim:
-            return "Bạch Kim"
+            return "Platinum".localized()
         case .kimCuong:
-            return "Kim Cương"
+            return "Diamond".localized()
         case .vip:
             return "VIP"
         case .member:
-            return "Thành viên"
+            return "Member".localized()
         }
     }
 
@@ -323,7 +323,11 @@ struct Customer: Codable, Comparable, Copying {
         guard let points = loyaltyDisplayPoints else { return levelName }
 
         let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-        return "\(levelName) • \(pointsText) điểm"
+        return String(
+            format: "loyalty.summary.format".localized(),
+            levelName,
+            pointsText
+        )
     }
 
     var loyaltyStatusText: String? {
@@ -331,9 +335,9 @@ struct Customer: Codable, Comparable, Copying {
         case .active:
             return loyaltySummaryText
         case .inactive:
-            return "Loyalty chưa kích hoạt"
+            return "Loyalty inactive".localized()
         case .unavailable:
-            return "Loyalty không khả dụng"
+            return "Loyalty unavailable".localized()
         case .none:
             return loyaltySummaryText
         }
@@ -361,13 +365,13 @@ struct Customer: Codable, Comparable, Copying {
     var loyaltyDisplayLevelName: String? {
         switch loyaltyDisplayState {
         case .active:
-            return loyaltyLevel?.displayName ?? "Thành viên".localized()
+            return loyaltyLevel?.displayName ?? "Member".localized()
         case .legacy:
-            return loyaltyLevel?.displayName ?? "Thành viên".localized()
+            return loyaltyLevel?.displayName ?? "Member".localized()
         case .inactive:
-            return "Loyalty chưa kích hoạt"
+            return "Loyalty inactive".localized()
         case .unavailable:
-            return "Loyalty không khả dụng"
+            return "Loyalty unavailable".localized()
         case .none:
             return nil
         }

@@ -244,7 +244,7 @@ class UserCell: UITableViewCell {
         
         // Status - Always show status with badge style
         if user.isActive {
-            statusLabel.text = "  Active  ".localized() // Add spaces for padding
+            statusLabel.text = "  \("Active".localized())  " // Add spaces for padding
             statusLabel.textColor = .white
             statusLabel.backgroundColor = UIColor.systemGreen
             statusLabel.layer.cornerRadius = 4
@@ -253,7 +253,7 @@ class UserCell: UITableViewCell {
             emailLabel.alpha = 1.0
             roleLabel.alpha = 1.0
         } else {
-            statusLabel.text = "  Disabled  ".localized() // Add spaces for padding
+            statusLabel.text = "  \("Disabled".localized())  " // Add spaces for padding
             statusLabel.textColor = .white
             statusLabel.backgroundColor = UIColor.systemRed
             statusLabel.layer.cornerRadius = 4
@@ -278,4 +278,3 @@ class UserCell: UITableViewCell {
         delegate?.more(user: user, sender: self)
     }
 }
-

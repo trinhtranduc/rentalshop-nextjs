@@ -312,7 +312,7 @@ class PaymentQRCodeViewController: BaseViewControler {
             UIAlertController.alert(
                 parent: self,
                 title: "Error".localized(),
-                message: "Cannot save image: \(error.localizedDescription)".localized()
+                message: String(format: "Cannot save image: %@".localized(), error.localizedDescription)
             )
         } else {
             UIAlertController.alert(
@@ -327,4 +327,3 @@ class PaymentQRCodeViewController: BaseViewControler {
         dismiss(animated: true)
     }
 }
-

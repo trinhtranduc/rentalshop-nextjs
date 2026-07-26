@@ -307,7 +307,7 @@ extension AccountViewController: UITableViewDataSource, UITableViewDelegate {
         // Show toast or alert
         let alert = UIAlertController(
             title: nil,
-            message: "\(label) copied to clipboard".localized(),
+            message: String(format: "%@ copied to clipboard".localized(), label),
             preferredStyle: .alert
         )
         present(alert, animated: true)

@@ -32,4 +32,9 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   minify: false,
-}); 
+  // The UI package is consumed as a client component entrypoint by Next.js.
+  // Preserve the boundary in dist after tsup bundles the source files.
+  banner: {
+    js: "'use client';",
+  },
+});

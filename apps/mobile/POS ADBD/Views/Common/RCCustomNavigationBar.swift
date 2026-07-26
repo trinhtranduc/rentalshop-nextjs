@@ -92,6 +92,8 @@ class RCCustomNavigationBar: UIView {
     
     private var isTitleCentered: Bool = false
     private var isCustomTitleCentered: Bool = false
+    private var preferredBarHeight: CGFloat = 44
+    private var customTitleMaxHeight: CGFloat = 44
     
     // MARK: - Initializers
     override init(frame: CGRect) {
@@ -137,7 +139,7 @@ class RCCustomNavigationBar: UIView {
         
         // Fixed height
         snp.makeConstraints { make in
-            make.height.equalTo(44)
+            make.height.equalTo(preferredBarHeight)
         }
         
         updateStatusBarStyle()
@@ -170,7 +172,7 @@ class RCCustomNavigationBar: UIView {
 
             // Keep the title vertically centered while still preventing oversized custom views
             // from breaking the navigation bar layout.
-            let maxHeight: CGFloat = customTitleView != nil ? 44 : 32
+            let maxHeight: CGFloat = customTitleView != nil ? customTitleMaxHeight : 32
             make.height.lessThanOrEqualTo(maxHeight)
             
             let isCentered = customTitleView != nil ? isCustomTitleCentered : isTitleCentered
@@ -284,6 +286,16 @@ class RCCustomNavigationBar: UIView {
     func setCustomTitleView(_ view: UIView?, centered: Bool = false) {
         isCustomTitleCentered = centered
         customTitleView = view
+    }
+
+    func setPreferredBarHeight(_ height: CGFloat, customTitleMaxHeight: CGFloat? = nil) {
+        preferredBarHeight = height
+        self.customTitleMaxHeight = customTitleMaxHeight ?? height
+
+        snp.updateConstraints { make in
+            make.height.equalTo(height)
+        }
+        updateTitleConstraints()
     }
     
     func removeCustomTitleView() {

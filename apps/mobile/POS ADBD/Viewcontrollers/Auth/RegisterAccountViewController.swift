@@ -309,7 +309,7 @@ class RegisterAccountViewController: BaseViewControler {
     private func showAlert(message: String) {
         let alert = UIAlertController(
             title: "Error".localized(),
-            message: message,
+            message: message.localized(),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
