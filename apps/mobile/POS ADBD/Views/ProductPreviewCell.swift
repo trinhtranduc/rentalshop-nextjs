@@ -239,7 +239,7 @@ class ProductPreviewCell: UITableViewCell {
         )
         
         // Display total on the right
-        totalLabel.text = "= \(cartItem.subTotal.formatStringInCommon())"
+        totalLabel.text = "= \(cartItem.subTotal(for: orderType).formatStringInCommon())"
         
         if let note = cartItem.note, !note.isEmpty {
             noteLabel.isHidden = false

@@ -345,24 +345,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.name = tv('fields.productName.required');
     }
 
-    if (!formData.categoryId) {
-      newErrors.categoryId = tv('fields.category.required');
+    if (!formData.barcode.trim()) {
+      newErrors.barcode = 'Barcode is required';
     }
 
     if (formData.rentPrice <= 0) {
       newErrors.rentPrice = tv('fields.rentPrice.required');
     }
 
-    if (formData.salePrice <= 0) {
-      newErrors.salePrice = tv('fields.salePrice.required');
-    }
-
     if (formData.deposit < 0) {
       newErrors.deposit = tv('fields.deposit.cannotBeNegative');
     }
 
-    if (formData.totalStock <= 0) {
+    if (formData.totalStock < 0) {
       newErrors.totalStock = tv('fields.totalStock.required');
+    }
+
+    if (mode === 'create' && currentImageCount === 0) {
+      newErrors.images = 'Product image is required';
     }
 
     // Validate duration config if pricingType is HOURLY or DAILY
@@ -447,24 +447,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         newErrors.name = tv('fields.productName.required');
       }
 
-      if (!formData.categoryId) {
-        newErrors.categoryId = tv('fields.category.required');
+      if (!formData.barcode.trim()) {
+        newErrors.barcode = 'Barcode is required';
       }
 
       if (formData.rentPrice <= 0) {
         newErrors.rentPrice = tv('fields.rentPrice.required');
       }
 
-      if (formData.salePrice <= 0) {
-        newErrors.salePrice = tv('fields.salePrice.required');
-      }
-
       if (formData.deposit < 0) {
         newErrors.deposit = tv('fields.deposit.cannotBeNegative');
       }
 
-      if (formData.totalStock <= 0) {
+      if (formData.totalStock < 0) {
         newErrors.totalStock = tv('fields.totalStock.required');
+      }
+
+      if (mode === 'create' && currentImageCount === 0) {
+        newErrors.images = 'Product image is required';
       }
 
       // Validate outlet stock - ensure outlet stock is provided
@@ -840,7 +840,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Auto-save Status */}
       {!hideHeader && (
         <div className="flex items-center justify-between">
@@ -878,10 +878,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       )}
 
-      <form id={formId} onSubmit={handleSubmit} className="space-y-6">
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
         {/* Product Information */}
-        <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
                 <Input
@@ -903,15 +903,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')} *</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
                     placeholder={t('fields.barcode')}
-                    className="flex-1"
+                    className={`flex-1 ${errors.barcode ? 'border-red-500' : ''}`}
                   />
                   <Button
                     type="button"
@@ -923,10 +923,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </div>
+                {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')}</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -959,8 +960,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             {/* Rental Pricing Options (multiple options: per-rental / per-day) */}
-            <div className="pt-4 border-t border-border">
-              <div className="flex items-center justify-between mb-3">
+            <div className="pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-semibold text-muted-foreground">
                   Giá thuê
                 </label>
@@ -976,7 +977,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-3">
                 {(formData.pricingOptions || []).map((option, index) => (
-                  <div key={index} className="flex items-end gap-2 p-2 rounded-lg border border-border">
+                  <div key={index} className="flex items-end gap-2 p-1.5 rounded-lg border border-border">
                     <div className="w-32">
                       <label className="block text-[11px] text-muted-foreground mb-1">Loại</label>
                       <select
@@ -1027,12 +1028,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             {/* Other Pricing & Inventory Section */}
-            <div className="pt-4 border-t border-border">
-              <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('pricing.title')}</h3>
+            <div className="pt-3 border-t border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2">{t('pricing.title')}</h3>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Deposit, Sale Price, and Cost Price */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <NumericInput
                       label={t('fields.deposit')}
@@ -1040,7 +1041,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       onChange={(value) => handleInputChange('deposit', value)}
                   placeholder="0.00"
                       error={!!errors.deposit}
-                  required
                   allowDecimals={true}
                   maxDecimalPlaces={2}
                 />
@@ -1054,7 +1054,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   onChange={(value) => handleInputChange('salePrice', value)}
                   placeholder="0.00"
                   error={!!errors.salePrice}
-                  required
                   allowDecimals={true}
                   maxDecimalPlaces={2}
                 />
@@ -1079,7 +1078,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
                 {/* Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <NumericInput
                   label={t('fields.stock')}
@@ -1161,12 +1160,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         ) : null}
 
         {/* Enhanced Image Management */}
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
-          <div className="space-y-4">
+        <div className="border-t pt-3 mt-3">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-2">
+            {t('fields.images')}{mode === 'create' ? ' *' : ''}
+          </h3>
+          {errors.images && <p className="text-sm text-red-500 mb-2">{errors.images}</p>}
+          <div className="space-y-3">
             {/* Drag & Drop Zone */}
             <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
                 dragActive && !isMaxImagesReached
                   ? 'border-action-primary bg-action-primary/10' 
                   : isMaxImagesReached
@@ -1265,7 +1267,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
             
             {currentImageCount > 0 && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {useMultipartUpload ? (
                   // Render selected files for multipart upload
                   selectedFiles.map((file, index) => {
@@ -1275,7 +1277,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         <img
                           src={previewUrl}
                           alt={`${file.name}`}
-                          className="w-full h-24 object-cover rounded-lg border"
+                          className="w-full h-20 object-cover rounded-lg border"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate">
                           {file.name}
@@ -1335,7 +1337,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                             <img
                               src={image}
                               alt={`${t('fields.name')} ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border"
+                              className="w-full h-20 object-cover rounded-lg border"
                             />
                             <Button
                               variant="ghost"
@@ -1367,7 +1369,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isSubmitting || !validateForm()}
+              disabled={isSubmitting || loading}
               className="min-w-[120px]"
             >
               {isSubmitting ? (
@@ -1388,4 +1390,3 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     </div>
   );
 };
-

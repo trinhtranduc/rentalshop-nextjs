@@ -232,6 +232,14 @@ class NewProductViewController: BaseViewControler {
         setupData()
         loadInitialData()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // The form is presented inside a UINavigationController but owns the
+        // compact custom bar. Re-apply the hidden state after presentation
+        // transitions so the system bar cannot appear underneath it.
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
     
     // MARK: - Setup
     override func setupUI() {
