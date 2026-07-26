@@ -243,9 +243,8 @@ class NewProductViewController: BaseViewControler {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
-        // UIKit can restore the system bar while the sheet transition
-        // completes. Keep it hidden after the final layout pass as well.
+        // A modal navigation controller can restore its bar after the
+        // transition completes; hide it once more at the stable screen state.
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
@@ -613,7 +612,10 @@ class NewProductViewController: BaseViewControler {
             barcodeField.textField.text = generatedBarcode()
         }
 
-        syncExpandedSectionsWithData()
+        // Only lay out the disclosure section after the view hierarchy exists.
+        if isViewLoaded {
+            syncExpandedSectionsWithData()
+        }
     }
     
     // MARK: - Validation
@@ -744,7 +746,12 @@ class NewProductViewController: BaseViewControler {
                           }
         }
 
-        syncExpandedSectionsWithData()
+        // `loadProduct` may run before this controller is embedded in its
+        // UINavigationController. Do not force view loading/layout at that
+        // point; viewDidLoad will sync the section after setup completes.
+        if isViewLoaded {
+            syncExpandedSectionsWithData()
+        }
     }
     
     // Method to set the product image from an external source (like MainViewController)
