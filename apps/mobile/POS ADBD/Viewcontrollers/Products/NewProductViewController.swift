@@ -519,6 +519,8 @@ class NewProductViewController: BaseViewControler {
         // pinToSafeArea: false — this screen is always presented as a sheet inside
         // UINavigationController. Pinning below safe area + statusBarBackground would
         // leave a blank white strip that looks like a duplicate navigation bar.
+        // Do NOT remakeConstraints here: remake without height wipes RCCustomNavigationBar's
+        // 44pt height and collapses the scroll view to zero (blank form).
         let navBar = setupCustomNavigationBar(
             title: title,
             statusBarBackgroundColor: .white,
@@ -529,16 +531,6 @@ class NewProductViewController: BaseViewControler {
             },
             pinToSafeArea: false
         )
-
-        // Product editor is presented as a sheet. The navigation controller's
-        // safe-area top includes the hidden system bar, which otherwise leaves
-        // a second, empty navigation region above this custom bar. Pin the
-        // custom bar to the sheet itself so it occupies that region.
-        navBar.snp.remakeConstraints { make in
-            make.top.equalToSuperview()
-            make.leading.trailing.equalToSuperview()
-        }
-
         navBar.setDismissButton() // Use X button for dismiss
     }
     

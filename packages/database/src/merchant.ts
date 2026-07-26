@@ -77,6 +77,7 @@ export async function findById(id: number) {
       website: true,
       description: true,
       businessType: true,
+      businessTags: true,
       pricingType: true,
       pricingConfig: true,
       taxId: true,
@@ -155,6 +156,9 @@ export async function findById(id: number) {
 
     return {
       ...merchant,
+      businessTags: Array.isArray(merchant.businessTags)
+        ? merchant.businessTags.filter((tag): tag is string => typeof tag === 'string')
+        : [],
       _count: {
         outlets: outletsCount,
         users: usersCount,

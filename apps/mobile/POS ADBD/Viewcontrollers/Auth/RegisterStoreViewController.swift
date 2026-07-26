@@ -219,15 +219,23 @@ class RegisterStoreViewController: BaseViewControler {
     }()
 
     private lazy var privacyCheckbox: UIButton = {
-        // Do NOT use UIButton.Configuration here — mixing Configuration with
-        // setImage(_:for:) breaks SF Symbol rendering (garbled checkbox icon).
-        let button = UIButton(type: .system)
-        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
-        button.setImage(UIImage(systemName: "square", withConfiguration: symbolConfig), for: .normal)
-        button.setImage(UIImage(systemName: "checkmark.square.fill", withConfiguration: symbolConfig), for: .selected)
-        button.tintColor = APP_TONE_COLOR
+        // Classic custom button (not .system / not Configuration) so SF Symbols
+        // stay at a normal checkbox size instead of a huge filled square.
+        let button = UIButton(type: .custom)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 17, weight: .regular)
+        let unchecked = UIImage(systemName: "square", withConfiguration: symbolConfig)?
+            .withTintColor(UIColor.systemGray3, renderingMode: .alwaysOriginal)
+        let checked = UIImage(systemName: "checkmark.square.fill", withConfiguration: symbolConfig)?
+            .withTintColor(APP_TONE_COLOR, renderingMode: .alwaysOriginal)
+        button.setImage(unchecked, for: .normal)
+        button.setImage(checked, for: .selected)
+        button.setImage(checked, for: [.selected, .highlighted])
+        button.adjustsImageWhenHighlighted = false
+        button.imageView?.contentMode = .scaleAspectFit
         button.contentHorizontalAlignment = .center
         button.contentVerticalAlignment = .center
+        // Larger tap target while keeping a compact visual checkbox.
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         button.addTarget(self, action: #selector(privacyCheckboxTapped), for: .touchUpInside)
         return button
     }()
@@ -341,19 +349,21 @@ class RegisterStoreViewController: BaseViewControler {
 
         privacyCheckbox.snp.makeConstraints { make in
             make.leading.equalToSuperview()
-            make.top.equalToSuperview().offset(4)
-            make.width.height.equalTo(24)
+            // Align with the first line of consent text (not vertically centered
+            // against the whole multi-line block — that made the box look huge).
+            make.top.equalTo(privacyTextView.snp.top).offset(-2)
+            make.width.height.equalTo(32)
         }
 
         privacyTextView.snp.makeConstraints { make in
-            make.leading.equalTo(privacyCheckbox.snp.trailing).offset(12)
-            make.top.equalToSuperview().offset(2)
+            make.leading.equalTo(privacyCheckbox.snp.trailing).offset(8)
+            make.top.equalToSuperview()
             make.trailing.equalToSuperview()
-            make.bottom.equalToSuperview().offset(-2)
+            make.bottom.equalToSuperview()
         }
 
         privacyPolicyView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(28)
+            make.height.greaterThanOrEqualTo(32)
         }
 
         previousButton.snp.makeConstraints { make in
