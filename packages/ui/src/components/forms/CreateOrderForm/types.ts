@@ -30,6 +30,9 @@ export interface OrderItemFormData {
     rentPrice?: number;
     salePrice?: number; // Sale price for SALE orders
     deposit?: number;
+    // Pricing configuration (multi-option)
+    pricingType?: string | null;
+    pricingOptions?: Array<{ id?: number; type: string; price: number; isDefault?: boolean; isActive?: boolean }>;
     // Stock information - stored when product is added to cart
     outletStock?: Array<{
       id: number;
@@ -50,6 +53,9 @@ export interface OrderItemFormData {
   rentalDays?: number;
   deposit?: number;
   notes?: string;
+  // Selected pricing option (multi-option products)
+  selectedPricingOptionId?: number | null;
+  pricingType?: string | null; // resolved type of the selected option (FIXED/DAILY)
   
   // Rental-specific fields
   startDate?: string;   // ISO date string for form inputs

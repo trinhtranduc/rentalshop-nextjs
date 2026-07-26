@@ -186,7 +186,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Order processing', description: 'Create and manage rental orders', included: true },
       { name: 'Basic reporting', description: 'View sales and rental reports', included: true },
       { name: 'Public product catalog', description: 'Share product list publicly with customers', included: true },
-      { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true }
+      { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true },
+      { name: 'loyalty', description: 'Loyalty program with points earn and redeem', included: false }
     ],
     platform: 'mobile',
     publicProductCheck: true,
@@ -217,7 +218,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Basic inventory management', description: 'Track products and stock levels', included: true },
       { name: 'Customer management', description: 'Store customer information and history', included: true },
       { name: 'Order processing', description: 'Create and manage rental orders', included: true },
-      { name: 'Basic reporting', description: 'View sales and rental reports', included: true }
+      { name: 'Basic reporting', description: 'View sales and rental reports', included: true },
+      { name: 'loyalty', description: 'Loyalty program with points earn and redeem', included: false }
     ],
     platform: 'mobile',
     publicProductCheck: true,
@@ -250,7 +252,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Online payments', description: 'Accept online payments and deposits', included: true },
       { name: 'Public product catalog', description: 'Share product list publicly with customers', included: true },
       { name: 'Product public check', description: 'Send public links to customers to view products and pricing', included: true },
-      { name: 'Priority support', description: 'Fast response times for support', included: true }
+      { name: 'Priority support', description: 'Fast response times for support', included: true },
+      { name: 'loyalty', description: 'Loyalty program with points earn and redeem', included: true }
     ],
     platform: 'mobile+web',
     publicProductCheck: true,
@@ -284,7 +287,8 @@ export const SUBSCRIPTION_PLANS: Record<string, PlanConfig> = {
       { name: 'Dedicated account manager', description: 'Personal support representative', included: true },
       { name: 'Custom reporting', description: 'Tailored analytics and reporting', included: true },
       { name: 'White-label solution', description: 'Brand the platform with your company identity', included: true },
-      { name: '24/7 phone support', description: 'Round-the-clock support via phone', included: true }
+      { name: '24/7 phone support', description: 'Round-the-clock support via phone', included: true },
+      { name: 'loyalty', description: 'Loyalty program with points earn and redeem', included: true }
     ],
     platform: 'mobile+web',
     publicProductCheck: true,
@@ -354,6 +358,34 @@ export function hasMobileAccess(planId: string): boolean {
 export function hasProductPublicCheck(planId: string): boolean {
   const plan = getPlan(planId);
   return plan ? plan.publicProductCheck : false;
+}
+
+/**
+ * Check if plan includes loyalty program feature
+ */
+export function hasLoyaltyFeature(planFeatures: unknown): boolean {
+  let features: string[] = [];
+
+  if (Array.isArray(planFeatures)) {
+    features = planFeatures.map((feature) =>
+      typeof feature === 'string' ? feature : feature?.name || ''
+    );
+  } else if (typeof planFeatures === 'string') {
+    try {
+      const parsed = JSON.parse(planFeatures || '[]');
+      features = Array.isArray(parsed)
+        ? parsed.map((feature) =>
+            typeof feature === 'string' ? feature : feature?.name || ''
+          )
+        : [];
+    } catch {
+      features = [];
+    }
+  }
+
+  return features.some(
+    (feature) => feature.toLowerCase() === 'loyalty' || feature === 'loyalty'
+  );
 }
 
 /**

@@ -70,6 +70,12 @@ export interface Order extends BaseEntityWithOutlet {
   discountType?: 'amount' | 'percentage';
   discountValue?: number;
   discountAmount?: number;
+
+  // Loyalty properties
+  loyaltyPointsRedeemed?: number;
+  loyaltyDiscount?: number;
+  loyaltyPointsEarned?: number;
+  amountDue?: number;
   
   // Related entities (populated when needed)
   customer?: CustomerReference;
@@ -103,6 +109,9 @@ export interface OrderItem {
   unitPrice: number;
   totalPrice: number;
   deposit?: number;
+  rentalDays?: number;
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingOptionId?: number | null;
   product?: ProductReference;
 }
 
@@ -117,6 +126,8 @@ export interface OrderItemInput {
   totalPrice: number; // Added missing property
   deposit?: number;
   rentalDays?: number; // Added missing property
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingOptionId?: number | null;
   notes?: string; // Added missing property
 }
 
@@ -133,6 +144,8 @@ export interface OrderItemWithProduct {
   totalPrice: number;
   deposit?: number;
   rentalDays?: number;
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingOptionId?: number | null;
   notes?: string;
   product: ProductReference;
 }
@@ -203,6 +216,7 @@ export interface OrderCreateInput extends BaseFormInput {
   pickupPlanAt?: Date | string;
   returnPlanAt?: Date | string;
   orderItems: OrderItemInput[];
+  loyaltyRedeem?: { points: number };
 }
 
 /**

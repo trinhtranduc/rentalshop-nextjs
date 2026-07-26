@@ -3,6 +3,7 @@
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator
 } from '@rentalshop/ui';
 import { Customer } from '@rentalshop/types';
-import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
+import { Eye, Edit, Trash2, ShoppingBag, MoreVertical, User, Medal, Award, Crown, Gem, Diamond, Star } from 'lucide-react';
 import { useCustomerTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
 import { formatPhoneNumber } from '@rentalshop/utils';
@@ -28,6 +29,26 @@ interface CustomerTableProps {
   canManageCustomers?: boolean; // Permission to manage customers (show delete option)
   showMerchantColumn?: boolean; // Show merchant column (for admin customers page)
 }
+
+const getTierIcon = (icon?: string | null) => {
+  switch ((icon || '').toLowerCase()) {
+    case 'medal':
+      return Medal;
+    case 'award':
+      return Award;
+    case 'crown':
+      return Crown;
+    case 'gem':
+      return Gem;
+    case 'diamond':
+      return Diamond;
+    case 'star':
+      return Star;
+    case 'user':
+    default:
+      return User;
+  }
+};
 
 export function CustomerTable({ 
   customers, 
@@ -178,9 +199,42 @@ export function CustomerTable({
                 {/* Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}
+                    <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                      <span>{[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}</span>
+                      {customer.loyaltyStatus === 'active' && customer.loyalty?.tier?.name && (
+                        <span
+                          className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border"
+                          style={{
+                            borderColor: customer.loyalty.tier.color || undefined,
+                            color: customer.loyalty.tier.color || undefined,
+                            backgroundColor: customer.loyalty.tier.color ? `${customer.loyalty.tier.color}14` : undefined,
+                          }}
+                          title={`Hạng: ${customer.loyalty.tier.name}`}
+                        >
+                          {React.createElement(getTierIcon(customer.loyalty.tier.icon), { className: 'h-3.5 w-3.5' })}
+                        </span>
+                      )}
                     </div>
+                    {customer.loyaltyStatus === 'active' && customer.loyalty ? (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        {customer.loyalty.tier?.name ? (
+                          <Badge variant="secondary" className="px-2 py-0.5 text-[11px]">
+                            {customer.loyalty.tier.name}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="px-2 py-0.5 text-[11px]">
+                            Chưa có hạng
+                          </Badge>
+                        )}
+                        <span>{customer.loyalty.points.toLocaleString('vi-VN')} điểm</span>
+                      </div>
+                    ) : customer.loyaltyStatus ? (
+                      <div className="mt-1">
+                        <Badge variant="outline" className="px-2 py-0.5 text-[11px] text-gray-500">
+                          {customer.loyaltyStatus === 'unavailable' ? 'Loyalty khóa' : 'Loyalty tắt'}
+                        </Badge>
+                      </div>
+                    ) : null}
                   </div>
                 </td>
                 
@@ -249,62 +303,74 @@ export function CustomerTable({
                 
                 {/* Actions - Dropdown Menu */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setOpenDropdownId(customer.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end"
-                      open={openDropdownId === customer.id}
-                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? customer.id : null)}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 px-3"
+                      onClick={() => onCustomerAction('viewOrders', customer.id)}
                     >
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('view', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        {t('actions.view')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('edit', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        {t('actions.editCustomer')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => {
-                        onCustomerAction('viewOrders', customer.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        {t('actions.viewOrders')}
-                      </DropdownMenuItem>
-                      {/* Show delete option only if user has permission */}
-                      {canManageCustomers && (
-                        <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          onCustomerAction('delete', customer.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>{t('actions.viewOrders')}</span>
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setOpenDropdownId(customer.id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        open={openDropdownId === customer.id}
+                        onOpenChange={(open: boolean) => setOpenDropdownId(open ? customer.id : null)}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t('actions.deleteCustomer')}
-                      </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('view', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          {t('actions.view')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('edit', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          {t('actions.editCustomer')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => {
+                          onCustomerAction('viewOrders', customer.id);
+                          setOpenDropdownId(null);
+                        }}>
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          {t('actions.viewOrders')}
+                        </DropdownMenuItem>
+                        {/* Show delete option only if user has permission */}
+                        {canManageCustomers && (
+                          <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onCustomerAction('delete', customer.id);
+                            setOpenDropdownId(null);
+                          }}
+                          className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {t('actions.deleteCustomer')}
+                        </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </td>
               </tr>
             );

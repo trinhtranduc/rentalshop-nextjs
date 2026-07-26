@@ -1,0 +1,70 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :submit_to_testflight do
+    increment_build_number(xcodeproj: "POS ADBD.xcodeproj")
+    build_app(workspace: "POS ADBD.xcworkspace", scheme: "POS ADBD")
+    changes = changelog_from_git_commits(commits_count: 20, merge_commit_filtering: "only_include_merges")
+    upload_to_testflight(changelog: changes, groups: ['Internal_testers'], skip_waiting_for_build_processing: false)
+    slack_message
+  end
+
+  desc "Slack successfully"
+  private_lane :slack_message do
+    build_number = latest_testflight_build_number + 1 # Get build number
+
+    slack(                                            # Send new message to channel
+      message: "🎉 App successfully uploaded!",
+      payload: {
+        "🗓 Build Date" => Time.new.strftime("%Y/%m/%d %T"),
+        "🔔 Build Number" => build_number,
+        "💡 Version" => "v#{get_version_number}"
+      },
+      default_payloads: [:git_branch],
+      slack_url: @slack_url
+    )
+  end
+
+  def on_error(exception)
+    slack(
+        message: "Some thing goes wrong",
+        success: false,
+        slack_url: "https://hooks.slack.com/services/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",
+        default_payloads: [:git_branch, :git_author], # Optional, lets you specify default payloads to include. Pass an empty array to suppress all the default payloads.
+        payload: {  # Optional, lets you specify any number of your own Slack attachments.
+          "Build Date" => Time.new.to_s,
+          "Built by" => "Fastlane",
+      },
+        attachment_properties: {
+            fields: [
+                {
+                    title: "Build number",
+                    value: ENV["BUILD_NUMBER"],
+                },
+                {
+                    title: "Error message",
+                    value: exception.to_s,
+                    short: false
+                }
+            ]
+        }
+    )
+  end
+end
+

@@ -392,73 +392,168 @@ class PreviewViewController: BaseViewControler {
         return stack
     }()
     
-    // Footer action buttons. Visual hierarchy (all share the same frame in the
-    // fillEqually stack, so weight is conveyed by fill vs outline vs tint):
-    //   - Primary state action (save/pickup/return/update) -> solid brand fill
-    //   - Print -> secondary, outline (was a competing solid green)
-    //   - Cancel/Delete -> destructive, soft red tint (was heavy solid red next to primary)
+    // Footer action buttons — fixed-width chips with leading SF Symbols.
+    // Hierarchy: primary solid → secondary outline → destructive dark red.
+    // All styles use `.filled()` so background paint is reliable (bordered configs
+    // often drop the fill and look "empty" next to solid buttons).
+    private let footerActionButtonWidth: CGFloat = 120
+    private let footerActionButtonHeight: CGFloat = 44
+
     private lazy var saveButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .brandPrimary
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(saveOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: viewModel.saveButtonTitle,
+            symbolName: viewModel.saveButtonSymbolName,
+            style: .primary,
+            action: #selector(saveOrder)
+        )
     }()
 
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Cancel".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .statusCancelledFill
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(cancelOrder), for: .touchUpInside)
-        return button
-    }()
-
-    // Add more buttons to footer
     private lazy var printButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Print".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .clear
-        button.setTitleColor(.brandPrimary, for: .normal)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.brandPrimary.cgColor
-        button.addTarget(self, action: #selector(printOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: PreviewAction.print.title,
+            symbolName: PreviewAction.print.symbolName,
+            style: .secondaryOutline,
+            action: #selector(printOrder)
+        )
     }()
 
     private lazy var updateButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Update".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .brandPrimary
-        button.setTitleColor(.textInverted, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(updateOrder), for: .touchUpInside)
-        return button
+        makeFooterActionButton(
+            title: PreviewAction.update.title,
+            symbolName: PreviewAction.update.symbolName,
+            style: .primary,
+            action: #selector(updateOrder)
+        )
     }()
 
     private lazy var deleteButton: UIButton = {
+        makeFooterActionButton(
+            title: PreviewAction.delete.title,
+            symbolName: PreviewAction.delete.symbolName,
+            style: .destructiveOutline,
+            action: #selector(deleteOrder)
+        )
+    }()
+
+    /// Overflow control: Cancel stays behind ⋯ to avoid accidental taps.
+    private lazy var moreActionsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Delete".localized().uppercased(), for: .normal)
-        button.titleLabel?.font = .titleSmall()
-        button.backgroundColor = .statusCancelledFill
-        button.setTitleColor(.statusCancelledText, for: .normal)
-        button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(deleteOrder), for: .touchUpInside)
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .backgroundSecondary
+        config.baseForegroundColor = .textSecondary
+        config.background.strokeColor = UIColor.borderColor.withAlphaComponent(0.7)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+        config.image = UIImage(systemName: "ellipsis", withConfiguration: symbolConfig)
+        button.configuration = config
+        button.accessibilityLabel = "More".localized()
+        button.showsMenuAsPrimaryAction = true
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in
+            make.width.equalTo(44)
+            make.height.equalTo(footerActionButtonHeight)
+        }
         return button
     }()
+
+    private lazy var footerButtonStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [
+            // Primary row: Save / Print / Update / Delete — Cancel lives under ⋯
+            saveButton, printButton, updateButton, deleteButton, moreActionsButton
+        ])
+        stack.axis = .horizontal
+        stack.alignment = .fill
+        stack.distribution = .fill
+        stack.spacing = 10
+        return stack
+    }()
+
+    private enum FooterActionButtonStyle {
+        case primary
+        case secondaryOutline
+        case destructive
+        case destructiveOutline
+    }
+
+    private func makeFooterActionButton(
+        title: String,
+        symbolName: String,
+        style: FooterActionButtonStyle,
+        action: Selector
+    ) -> UIButton {
+        let button = UIButton(type: .system)
+        applyFooterActionStyle(to: button, title: title, symbolName: symbolName, style: style)
+        button.addTarget(self, action: action, for: .touchUpInside)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in
+            make.width.equalTo(footerActionButtonWidth)
+            make.height.equalTo(footerActionButtonHeight)
+        }
+        return button
+    }
+
+    private func applyFooterActionStyle(
+        to button: UIButton,
+        title: String,
+        symbolName: String,
+        style: FooterActionButtonStyle
+    ) {
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        let image = UIImage(systemName: symbolName, withConfiguration: symbolConfig)
+
+        // Always use filled — outline look is stroke + light fill, never clear.
+        var config = UIButton.Configuration.filled()
+        switch style {
+        case .primary:
+            config.baseBackgroundColor = .brandPrimary
+            config.baseForegroundColor = .textInverted
+            config.background.strokeWidth = 0
+        case .secondaryOutline:
+            config.baseBackgroundColor = .backgroundCard
+            config.baseForegroundColor = .brandPrimary
+            config.background.strokeColor = UIColor.brandPrimary.withAlphaComponent(0.55)
+            config.background.strokeWidth = 1.5
+        case .destructive:
+            config.baseBackgroundColor = .statusCancelledFill
+            config.baseForegroundColor = .textInverted
+            config.background.strokeWidth = 0
+        case .destructiveOutline:
+            config.baseBackgroundColor = UIColor.statusCancelledFill.withAlphaComponent(0.10)
+            config.baseForegroundColor = .statusCancelledFill
+            config.background.strokeColor = UIColor.statusCancelledFill.withAlphaComponent(0.45)
+            config.background.strokeWidth = 1.5
+        }
+
+        config.title = title
+        config.image = image
+        config.imagePadding = 5
+        config.imagePlacement = .leading
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        config.titleLineBreakMode = .byTruncatingTail
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.mediumFont(size: 13)
+            return outgoing
+        }
+
+        button.configuration = config
+        button.clipsToBounds = true
+        button.backgroundColor = .clear
+    }
     
     // MARK: - Initialization
     init(viewModel: PreviewViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+        self.hidesBottomBarWhenPushed = true
     }
     
     // Convenience initializers
@@ -487,9 +582,6 @@ class PreviewViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .backgroundPrimary  // Match AccountViewController
-        
-        // Ensure tabbar is hidden
-        self.hidesBottomBarWhenPushed = true
         
         // Add views to the main view first
         view.addSubview(previewTableView)
@@ -523,11 +615,14 @@ class PreviewViewController: BaseViewControler {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if let cartViewModel = viewModel as? CartViewModel {
+            cartViewModel.refreshLoyalty { [weak self] in
+                self?.updateSummaryValues()
+            }
+        }
         // Update summary with calculations
         updateSummaryValues()
         
-        // Ensure tabbar is hidden
-        self.tabBarController?.tabBar.isHidden = true
     }
     
     // MARK: - Pull to Refresh
@@ -556,12 +651,6 @@ class PreviewViewController: BaseViewControler {
                 }
             }
         }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        // Show tabbar when leaving
-        self.tabBarController?.tabBar.isHidden = false
     }
     
     // MARK: - Helper Methods
@@ -854,31 +943,102 @@ class PreviewViewController: BaseViewControler {
         
         // Reset all buttons to hidden first
         saveButton.isHidden = true
-        cancelButton.isHidden = true
         printButton.isHidden = true
         updateButton.isHidden = true
         deleteButton.isHidden = true
+        moreActionsButton.isHidden = true
+        moreActionsButton.menu = nil
         
-        // Show buttons based on available actions
+        // Show buttons based on available actions.
+        // Cancel is never on the primary row — it lives under ⋯ to avoid
+        // accidental taps and keep Save/Print/Update readable.
+        var canShowCancelInMore = false
         for action in actions {
             switch action {
             case .save:
                 saveButton.isHidden = false
-                saveButton.setTitle(viewModel.saveButtonTitle.uppercased(), for: .normal)
+                applyFooterActionStyle(
+                    to: saveButton,
+                    title: viewModel.saveButtonTitle,
+                    symbolName: viewModel.saveButtonSymbolName,
+                    style: .primary
+                )
             case .cancel:
-                cancelButton.isHidden = false
+                canShowCancelInMore = true
             case .print:
                 printButton.isHidden = false
+                applyFooterActionStyle(
+                    to: printButton,
+                    title: PreviewAction.print.title,
+                    symbolName: PreviewAction.print.symbolName,
+                    style: .secondaryOutline
+                )
             case .update:
-                // Show update button when update action is available
                 updateButton.isHidden = false
+                applyFooterActionStyle(
+                    to: updateButton,
+                    title: PreviewAction.update.title,
+                    symbolName: PreviewAction.update.symbolName,
+                    style: .primary
+                )
             case .delete:
                 deleteButton.isHidden = false
+                applyFooterActionStyle(
+                    to: deleteButton,
+                    title: PreviewAction.delete.title,
+                    symbolName: PreviewAction.delete.symbolName,
+                    style: .destructiveOutline
+                )
             }
         }
+
+        if canShowCancelInMore {
+            moreActionsButton.isHidden = false
+            let cancelAction = UIAction(
+                title: PreviewAction.cancel.title,
+                image: UIImage(systemName: PreviewAction.cancel.symbolName),
+                attributes: .destructive
+            ) { [weak self] _ in
+                self?.cancelOrder()
+            }
+            moreActionsButton.menu = UIMenu(children: [cancelAction])
+        }
+
+        refreshFooterButtonWidths()
         
         // Show deposit info based on viewModel
         // depositInfoView.isHidden = !viewModel.shouldShowDepositInfo - Disabled: Using table view sections
+    }
+
+    /// Keep every visible primary action the same width (capped).
+    /// The ⋯ overflow button stays compact (fixed 44pt).
+    private func refreshFooterButtonWidths() {
+        let primaryButtons = [saveButton, printButton, updateButton, deleteButton]
+        let visiblePrimary = primaryButtons.filter { !$0.isHidden }
+        let moreVisible = !moreActionsButton.isHidden
+        let moreWidth: CGFloat = 44
+        let horizontalInset: CGFloat = 32
+        let itemCount = visiblePrimary.count + (moreVisible ? 1 : 0)
+        let spacing = footerButtonStackView.spacing * CGFloat(max(itemCount - 1, 0))
+        let reservedForMore = moreVisible ? moreWidth : 0
+        let availableForPrimary = max(
+            UIScreen.main.bounds.width - horizontalInset - spacing - reservedForMore,
+            footerActionButtonWidth
+        )
+        let primaryCount = max(visiblePrimary.count, 1)
+        let width = min(footerActionButtonWidth, floor(availableForPrimary / CGFloat(primaryCount)))
+
+        primaryButtons.forEach { button in
+            button.snp.updateConstraints { make in
+                make.width.equalTo(width)
+                make.height.equalTo(footerActionButtonHeight)
+            }
+        }
+        moreActionsButton.snp.updateConstraints { make in
+            make.width.equalTo(moreWidth)
+            make.height.equalTo(footerActionButtonHeight)
+        }
+        footerButtonStackView.setNeedsLayout()
     }
     
     // Update input fields based on viewModel
@@ -2028,58 +2188,33 @@ class PreviewViewController: BaseViewControler {
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
 extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
-    // Helper function to map section index to PreviewSection
-    // This handles the case where depositInfo section may not be shown
-    private func previewSection(for sectionIndex: Int) -> PreviewSection? {
-        let hasDeposit = viewModel.shouldShowDepositInfo
-        
-        // Order: customerInfo → dates → products → depositInfo → notes → summary
-        switch sectionIndex {
-        case 0:
-            return .customerInfo
-        case 1:
-            return .dates
-        case 2:
-            return .products
-        case 3:
-            return hasDeposit ? .depositInfo : .notes
-        case 4:
-            return hasDeposit ? .notes : .summary
-        case 5:
-            return hasDeposit ? .summary : nil
-        default:
-            return nil
+    private func visibleSections() -> [PreviewSection] {
+        var sections: [PreviewSection] = [.customerInfo, .dates, .products]
+        if viewModel.shouldShowDepositInfo {
+            sections.append(.depositInfo)
         }
+        sections.append(.notes)
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyFeatureEnabled {
+            sections.append(.loyalty)
+        }
+        sections.append(.summary)
+        return sections
+    }
+
+    // Helper function to map section index to PreviewSection
+    private func previewSection(for sectionIndex: Int) -> PreviewSection? {
+        let sections = visibleSections()
+        guard sectionIndex >= 0, sectionIndex < sections.count else { return nil }
+        return sections[sectionIndex]
     }
     
     // Helper function to get section index from PreviewSection
-    // This handles the case where depositInfo section may not be shown
     private func sectionIndex(for previewSection: PreviewSection) -> Int? {
-        let hasDeposit = viewModel.shouldShowDepositInfo
-        
-        switch previewSection {
-        case .customerInfo:
-            return 0
-        case .dates:
-            return 1
-        case .products:
-            return 2
-        case .depositInfo:
-            return hasDeposit ? 3 : nil
-        case .notes:
-            return hasDeposit ? 4 : 3
-        case .summary:
-            return hasDeposit ? 5 : 4
-        }
+        return visibleSections().firstIndex(of: previewSection)
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        // Customer (merged with outlet), dates, products, deposit (if rent), notes, summary
-        var count = 5 // customer (merged), dates, products, notes, summary
-        if viewModel.shouldShowDepositInfo {
-            count += 1 // deposit section
-        }
-        return count
+        return visibleSections().count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -2096,9 +2231,38 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             return viewModel.shouldShowDepositInfo ? 3 : 0 // Document, Security Deposit, Damage Fee
         case .notes:
             return 1 // Notes
+        case .loyalty:
+            return 2 // Balance, redeem points
         case .summary:
-            return 3 // Subtotal, Discount, Grand Total (Deposit moved to dates section)
+            return summaryRowCount()
         }
+    }
+
+    private func summaryRowCount() -> Int {
+        var count = 3 // Subtotal, Discount, Grand Total
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyDiscount > 0 {
+            count += 2 // Loyalty discount, Amount due
+        } else if let orderViewModel = viewModel as? OrderViewModel, orderViewModel.currentOrder.loyaltyDiscount > 0 {
+            count += 2
+        }
+        return count
+    }
+
+    private func summaryRows() -> [(title: String, value: String, isHighlighted: Bool)] {
+        var rows: [(title: String, value: String, isHighlighted: Bool)] = []
+        rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
+        rows.append(("Discount".localized(), viewModel.discountText, false))
+        rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
+
+        if let cartViewModel = viewModel as? CartViewModel, cartViewModel.loyaltyDiscount > 0 {
+            rows.append(("Loyalty Discount".localized(), cartViewModel.loyaltyDiscount.formatStringInCommon(), false))
+            rows.append(("Amount Due".localized(), cartViewModel.loyaltyAmountDue.formatStringInCommon(), true))
+        } else if let orderViewModel = viewModel as? OrderViewModel, orderViewModel.currentOrder.loyaltyDiscount > 0 {
+            rows.append(("Loyalty Discount".localized(), orderViewModel.currentOrder.loyaltyDiscount.formatStringInCommon(), false))
+            rows.append(("Amount Due".localized(), orderViewModel.currentOrder.amountDue.formatStringInCommon(), true))
+        }
+
+        return rows
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -2133,7 +2297,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 0 && indexPath.row != 1 {
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14) // Value font: regular size 14 (same as AccountViewController)
                 config.secondaryTextProperties.color = .secondaryLabel // Value color: secondaryLabel (same as AccountViewController)
@@ -2207,7 +2371,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             if indexPath.row != 4 { // Don't override deposit row styling
                 config.secondaryTextProperties.font = Utils.regularFont(size: 14)
                 config.secondaryTextProperties.color = .secondaryLabel
@@ -2253,7 +2417,7 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
                 break
             }
             
-            config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular (same as AccountViewController)
+            config.textProperties.font = .bodyRegular(size: 16)
             
             // Apply highlight based on row and editability
             switch indexPath.row {
@@ -2294,6 +2458,32 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
             cell.delegate = self
             let noteText = viewModel.notes.isEmpty ? nil : viewModel.notes
             cell.bind(noteText: noteText, images: noteImages, imageURLs: noteImageURLs)
+            return cell
+
+        case .loyalty:
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: "LoyaltyCell")
+            var config = cell.defaultContentConfiguration()
+            guard let cartViewModel = viewModel as? CartViewModel else {
+                return cell
+            }
+
+            switch indexPath.row {
+            case 0:
+                config.text = "Balance".localized()
+                config.secondaryText = "\(cartViewModel.loyaltyBalance)"
+                cell.selectionStyle = .none
+            case 1:
+                config.text = "Use Points".localized()
+                config.secondaryText = cartViewModel.loyaltyUsePoints ? "\(cartViewModel.loyaltyRedeemPoints)" : "0"
+                cell.selectionStyle = .default
+                cell.accessoryType = .disclosureIndicator
+            default:
+                break
+            }
+
+            config.textProperties.font = .bodyRegular(size: 16)
+            config.secondaryTextProperties.font = Utils.boldFont(size: 16)
+            cell.contentConfiguration = config
             return cell
             
         case .products:
@@ -2343,24 +2533,14 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         case .summary:
             let cell = UITableViewCell(style: .value1, reuseIdentifier: "SummaryCell")
             var config = cell.defaultContentConfiguration()
-            
-            // Build rows array (Deposit moved to dates section)
-            var rows: [(title: String, value: String, isHighlighted: Bool)] = []
-            rows.append(("Subtotal".localized(), viewModel.subtotal.formatStringInCommon(), false))
-            rows.append(("Discount".localized(), viewModel.discountText, false))
-            rows.append(("Grand Total".localized(), viewModel.totalAmount.formatStringInCommon(), false))
-            
-            // To Collect row is hidden
-            // rows.append(("To Collect".localized(), viewModel.toCollectAmount.formatStringInCommon(), true))
-            
-            // Get row data
+            let rows = summaryRows()
             if indexPath.row < rows.count {
                 let row = rows[indexPath.row]
                 config.text = row.title
                 config.secondaryText = row.value
                 
                 // All summary values should be bold and highlighted
-                config.textProperties.font = Utils.regularFont(size: 16) // Title font: regular
+                config.textProperties.font = .bodyRegular(size: 16)
                 
                 // Check if this is deposit row and if it's editable
                 let isDepositRow = viewModel.shouldShowDepositInfo && indexPath.row == 3
@@ -2426,6 +2606,11 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         
         guard let previewSection = previewSection(for: indexPath.section) else { return }
         
+        if previewSection == .loyalty, indexPath.row == 1, let cartViewModel = viewModel as? CartViewModel {
+            showLoyaltyRedeemDialog(cartViewModel: cartViewModel)
+            return
+        }
+        
         // Handle customer info section - Phone row tap to make call
         if previewSection == .customerInfo && indexPath.row == 1 {
             // Make phone call when phone number row is tapped
@@ -2488,6 +2673,39 @@ extension PreviewViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    private func showLoyaltyRedeemDialog(cartViewModel: CartViewModel) {
+        let alert = UIAlertController(
+            title: "Use Loyalty Points".localized(),
+            message: "Available: \(cartViewModel.loyaltyBalance) points",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.keyboardType = .numberPad
+            textField.placeholder = "Points to redeem"
+            textField.text = cartViewModel.loyaltyUsePoints ? "\(cartViewModel.loyaltyRedeemPoints)" : ""
+        }
+
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "Clear".localized(), style: .destructive) { [weak self] _ in
+            cartViewModel.setLoyaltyUsePoints(false)
+            self?.updateSummaryValues()
+        })
+        alert.addAction(UIAlertAction(title: "Apply".localized(), style: .default) { [weak self] _ in
+            let raw = alert.textFields?.first?.text ?? ""
+            let points = Int(raw) ?? 0
+            cartViewModel.setLoyaltyUsePoints(points > 0)
+            cartViewModel.setLoyaltyRedeemPoints(points)
+            cartViewModel.validateLoyaltyRedeem {
+                DispatchQueue.main.async {
+                    self?.updateSummaryValues()
+                }
+            }
+        })
+
+        present(alert, animated: true)
+    }
+
     private func showDocumentInput() {
         let alert = UIAlertController(title: "Document".localized(), message: "Enter ID card, driver's license...".localized(), preferredStyle: .alert)
         
@@ -2700,14 +2918,7 @@ extension PreviewViewController{
         let separatorView = UIView()
         separatorView.backgroundColor = .backgroundTertiary
         footerView.addSubview(separatorView)
-        
-        // Create a horizontal stack view for buttons only
-        let buttonStackView = UIStackView(arrangedSubviews: [saveButton, cancelButton, printButton, updateButton, deleteButton])
-        buttonStackView.axis = .horizontal
-        buttonStackView.alignment = .fill
-        buttonStackView.distribution = .fillEqually
-        buttonStackView.spacing = 16
-        footerView.addSubview(buttonStackView)
+        footerView.addSubview(footerButtonStackView)
         
         // Layout constraints for subviews within footerView
         separatorView.snp.makeConstraints { make in
@@ -2715,11 +2926,14 @@ extension PreviewViewController{
             make.height.equalTo(1)
         }
         
-        buttonStackView.snp.makeConstraints { make in
-            make.top.equalTo(separatorView.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.height.equalTo(44)
-            make.bottom.equalToSuperview().offset(-20)
+        // Fixed-width buttons centered in the footer (do not stretch to full width).
+        footerButtonStackView.snp.makeConstraints { make in
+            make.top.equalTo(separatorView.snp.bottom).offset(14)
+            make.centerX.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().inset(16)
+            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.height.equalTo(footerActionButtonHeight)
+            make.bottom.equalToSuperview().offset(-16)
         }
     }
 }

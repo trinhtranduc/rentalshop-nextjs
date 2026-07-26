@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import LandingPageClient from './LandingPageClient';
+import { getAnyRentLogoUrl } from '../lib/brand';
 
 /**
  * Server Component wrapper for the Landing Page
@@ -59,7 +60,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'AnyRent',
   url: BASE_URL,
-  logo: `${BASE_URL}/anyrent-logo-light.svg`,
+  logo: getAnyRentLogoUrl(BASE_URL),
   description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam.',
   sameAs: [
     'https://apps.apple.com/vn/app/anyrent/id6754793592',

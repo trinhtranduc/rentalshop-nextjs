@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@rentalshop/database": "file:../database",
+    "@rentalshop/types": "file:../types",
     "@rentalshop/utils": "file:../utils",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.0",

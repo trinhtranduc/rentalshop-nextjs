@@ -24,6 +24,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/utils/package.json ./packages/utils/
 COPY packages/validation/package.json ./packages/validation/
+COPY packages/loyalty/package.json ./packages/loyalty/
 COPY apps/api/package.json ./apps/api/
 COPY apps/admin/package.json ./apps/admin/
 COPY apps/client/package.json ./apps/client/

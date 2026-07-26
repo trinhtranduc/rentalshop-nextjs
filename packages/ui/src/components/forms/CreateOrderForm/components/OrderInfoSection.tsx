@@ -153,6 +153,9 @@ interface OrderInfoSectionProps {
   onCancel?: () => void;
   // Reset key to force re-mount date pickers
   resetKey?: number;
+  // Loyalty summary (optional)
+  loyaltyDiscount?: number;
+  amountDue?: number;
 }
 
 export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
@@ -179,7 +182,9 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   isFormValid = false,
   onSubmit,
   onCancel,
-  resetKey = 0
+  resetKey = 0,
+  loyaltyDiscount = 0,
+  amountDue,
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
@@ -662,11 +667,26 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             </div>
           )}
 
+          {/* Loyalty discount */}
+          {loyaltyDiscount > 0 && (
+            <div className="flex justify-between text-sm text-action-success">
+              <span>Giảm điểm loyalty:</span>
+              <span className="font-medium">-{formatMoney(loyaltyDiscount)}</span>
+            </div>
+          )}
+
           {/* Grand Total */}
           <div className="flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border">
             <span>{t('summary.grandTotal')}:</span>
             <span>{formatMoney(formData.totalAmount)}</span>
           </div>
+
+          {loyaltyDiscount > 0 && amountDue != null && (
+            <div className="flex justify-between text-base font-bold text-action-primary">
+              <span>Số tiền cần thu:</span>
+              <span>{formatMoney(amountDue)}</span>
+            </div>
+          )}
         </div>
 
         {/* 9. Action Buttons */}

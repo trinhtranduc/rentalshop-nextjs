@@ -96,6 +96,17 @@ export interface ApiUrls {
     export: string;
     bulkImport: string;
   };
+  loyalty: {
+    program: string;
+    tiers: string;
+    tier: (id: number) => string;
+    customerSummary: (id: number) => string;
+    customerTransactions: (id: number) => string;
+    validateRedeem: string;
+    calculateEarn: string;
+    adjust: string;
+    syncHistory: string;
+  };
   outlets: {
     list: string;
     create: string;
@@ -373,33 +384,42 @@ function getEnvironment(): Environment {
  * SOLUTION 1: Ensure consistent API URL across all calls
  */
 function getApiBaseUrlInternal(): string {
+  const shouldLogApiConfig =
+    process.env.DEBUG_API_CONFIG === 'true' || process.env.NODE_ENV !== 'production';
+
   // PRIORITY 1: Always use NEXT_PUBLIC_API_URL if set (most reliable)
   if (process.env.NEXT_PUBLIC_API_URL) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL.trim();
-    console.log('✅ Using NEXT_PUBLIC_API_URL:', apiUrl);
+    if (shouldLogApiConfig) {
+      console.log('✅ Using NEXT_PUBLIC_API_URL:', apiUrl);
+    }
     return apiUrl;
   }
   
   const env = getEnvironment();
   
   // Debug logging
-  console.log('🔍 Environment Detection:', {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-    APP_ENV: process.env.APP_ENV,
-    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
-    detectedEnv: env,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET'
-  });
+  if (shouldLogApiConfig) {
+    console.log('🔍 Environment Detection:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+      APP_ENV: process.env.APP_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
+      detectedEnv: env,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET'
+    });
+  }
   
   // PRIORITY 2: Use environment-based defaults
   switch (env) {
     case 'local':
       // For local, use dev-api.anyrent.shop to avoid CORS issues
       const localUrl = 'https://dev-api.anyrent.shop';
-      console.log('✅ Local environment detected, using dev API:', localUrl);
-      console.log('💡 To use localhost:3002, set NEXT_PUBLIC_API_URL=http://localhost:3002 in .env');
+      if (shouldLogApiConfig) {
+        console.log('✅ Local environment detected, using dev API:', localUrl);
+        console.log('💡 To use localhost:3002, set NEXT_PUBLIC_API_URL=http://localhost:3002 in .env');
+      }
       return localUrl;
     
     case 'development':
@@ -627,6 +647,17 @@ function createApiUrls(): ApiUrls {
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
       bulkImport: `${base}/api/customers/bulk-import`,
+    },
+    loyalty: {
+      program: `${base}/api/loyalty/program`,
+      tiers: `${base}/api/loyalty/tiers`,
+      tier: (id: number) => `${base}/api/loyalty/tiers/${id}`,
+      customerSummary: (id: number) => `${base}/api/loyalty/customers/${id}/summary`,
+      customerTransactions: (id: number) => `${base}/api/loyalty/customers/${id}/transactions`,
+      validateRedeem: `${base}/api/loyalty/validate-redeem`,
+      calculateEarn: `${base}/api/loyalty/calculate-earn`,
+      adjust: `${base}/api/loyalty/adjust`,
+      syncHistory: `${base}/api/loyalty/sync-history`,
     },
     outlets: {
       list: `${base}/api/outlets`,
@@ -924,5 +955,4 @@ export const API_BASE_URL = getApiBaseUrl();
 export const getApiDatabaseUrl = () => apiConfig.database.url;
 export const getApiJwtSecret = () => apiConfig.auth.jwtSecret;
 export const getApiCorsOrigins = () => apiConfig.cors.origins;
-
 

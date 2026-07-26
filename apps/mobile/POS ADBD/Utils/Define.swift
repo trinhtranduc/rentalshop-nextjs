@@ -101,18 +101,20 @@ extension UIColor {
     // badge chips force white via `badgeTextColor` so we don't bleach those UIs.
     // Fills (solid / saturated)
     static let statusDraftFill     = UIColor(hexString: "6B7280") // gray-500
-    static let statusReservedFill  = UIColor(hexString: "DC2626") // red-600 (new deposit / reserved)
+    /// New deposit / reserved — bright red (distinct from darker cancelled).
+    static let statusReservedFill  = UIColor(hexString: "EF4444") // red-500 (bright)
     static let statusActiveFill    = UIColor.accentOrange // orange (renting / picked up)
     static let statusDoneFill      = UIColor(hexString: "16A34A") // green-600 (returned / completed)
-    static let statusCancelledFill = UIColor(hexString: "DC2626") // red-600 (cancelled)
+    /// Cancelled — darker red so it does not look like "Mới cọc".
+    static let statusCancelledFill = UIColor(hexString: "991B1B") // red-800 (dark)
     // On-surface / accent text (dark) — NOT for painting on solid badge fills
     static let statusDraftText     = UIColor(hexString: "374151") // gray-700
-    static let statusReservedText  = UIColor(hexString: "B91C1C") // red-700
+    static let statusReservedText  = UIColor(hexString: "DC2626") // red-600
     static let statusActiveText    = UIColor(hexString: "C2410C") // orange-700
     static let statusDoneText      = UIColor(hexString: "166534") // green-800
     /// Matched substring in product/customer search results.
     static let searchMatchHighlight = UIColor.actionPrimary
-    static let statusCancelledText = UIColor(hexString: "B91C1C") // red-700
+    static let statusCancelledText = UIColor(hexString: "7F1D1D") // red-900
     /// Label color on solid status chips only.
     static let statusBadgeLabelText = UIColor.white
 
@@ -259,9 +261,8 @@ extension UIImage {
     /// Subtle eye toggle glyph for reveal/hide affordances (e.g. masked phone numbers).
     /// Single source of truth so the icon style can be changed in one place.
     static func revealEye(revealed: Bool) -> UIImage? {
-        // Outline glyph at the same size/weight as the date-row icons so the toggle
-        // reads as a peer of them rather than a heavier filled blob.
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        // Compact outline glyph — keep peer with muted secondary text, not a heavy blob.
+        let config = UIImage.SymbolConfiguration(pointSize: 11, weight: .regular)
         return UIImage(systemName: revealed ? "eye.slash" : "eye", withConfiguration: config)
     }
 }
@@ -304,9 +305,14 @@ extension OrderStatus {
     }
 
     /// Solid badge on a container with clear label text (chart chip layout).
+    /// The container owns the fill + rounded clip; the label must NOT mask, or
+    /// short chips like "MỚI CỌC" get their corners shaved off.
     func applySolidBadge(to label: UILabel, container: UIView, isRegularWidth: Bool = false) {
         applySolidBadge(to: label, isRegularWidth: isRegularWidth)
         label.backgroundColor = .clear
+        label.layer.cornerRadius = 0
+        label.layer.masksToBounds = false
+        label.clipsToBounds = false
         container.backgroundColor = badgeColor
         container.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
         container.clipsToBounds = true

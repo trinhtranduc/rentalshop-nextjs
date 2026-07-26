@@ -129,6 +129,12 @@ struct OrdersResponse: Codable {
     let message: String
 }
 
+/// Money / count totals for a scoped order list (customer orders API).
+struct OrdersSummary: Codable {
+    let totalOrders: Int?
+    let totalAmount: Double?
+}
+
 struct OrdersData: Codable {
     let orders: [Order]
     let total: Int
@@ -137,6 +143,9 @@ struct OrdersData: Codable {
     let offset: Int
     let hasMore: Bool
     let totalPages: Int
+    /// Present on `GET /api/customers/{id}/orders` — used for loyalty tier in header.
+    let customer: Customer?
+    let summary: OrdersSummary?
 }
 
 struct Order: Codable {
@@ -196,6 +205,9 @@ struct Order: Codable {
     let itemCount: Int
     let paymentCount: Int
     let totalPaid: Double
+    let loyaltyPointsRedeemed: Int
+    let loyaltyDiscount: Double
+    let loyaltyPointsEarned: Int
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -229,7 +241,7 @@ struct Order: Codable {
         case createdAt
         case updatedAt
         
-        // Simplified customer data
+        // Flat customer fields (order detail / create response)
         case customerId
         case customerFirstName
         case customerLastName
@@ -237,13 +249,13 @@ struct Order: Codable {
         case customerPhone
         case customerEmail
         
-        // Simplified outlet data
+        // Flat outlet fields
         case outletId
         case outletName
         case merchantId
         case merchantName
         
-        // Simplified createdBy data
+        // Flat createdBy fields
         case createdById
         case createdByName
         
@@ -254,31 +266,79 @@ struct Order: Codable {
         case itemCount
         case paymentCount
         case totalPaid
+        case loyaltyPointsRedeemed
+        case loyaltyDiscount
+        case loyaltyPointsEarned
+    }
+
+    /// Nested objects from list/search payloads — separate from CodingKeys so
+    /// synthesized `encode(to:)` still matches stored properties only.
+    private enum NestedKeys: String, CodingKey {
+        case customer
+        case outlet
+        case createdBy
+        case count = "_count"
+    }
+
+    /// Nested objects returned by list/search endpoints (not flattened).
+    private struct NestedCustomer: Decodable {
+        let id: Int?
+        let firstName: String?
+        let lastName: String?
+        let phone: String?
+        let email: String?
+    }
+
+    private struct NestedMerchant: Decodable {
+        let id: Int?
+        let name: String?
+    }
+
+    private struct NestedOutlet: Decodable {
+        let id: Int?
+        let name: String?
+        let merchant: NestedMerchant?
+    }
+
+    private struct NestedCreatedBy: Decodable {
+        let id: Int?
+        let firstName: String?
+        let lastName: String?
+    }
+
+    private struct NestedCount: Decodable {
+        let orderItems: Int?
+        let payments: Int?
     }
     
     // MARK: - Custom Decoding
+    /// Supports both:
+    /// 1) Flat detail/create payloads (customerId, outletId, lateFee, orderItems, …)
+    /// 2) Slim list payloads (nested customer/outlet/createdBy/_count, many scalars omitted)
+    /// so `/api/orders` and `/api/customers/{id}/orders` both decode without breaking the app.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let nestedContainer = try decoder.container(keyedBy: NestedKeys.self)
         
-        // Decode all fields
         id = try container.decode(Int.self, forKey: .id)
         orderNumber = try container.decode(String.self, forKey: .orderNumber)
         orderType = try container.decode(OrderType.self, forKey: .orderType)
         status = try container.decode(OrderStatus.self, forKey: .status)
-        totalAmount = try container.decode(Double.self, forKey: .totalAmount)
-        depositAmount = try container.decode(Double.self, forKey: .depositAmount)
-        securityDeposit = try container.decode(Double.self, forKey: .securityDeposit)
-        damageFee = try container.decode(Double.self, forKey: .damageFee)
-        lateFee = try container.decode(Double.self, forKey: .lateFee)
+        totalAmount = try container.decodeIfPresent(Double.self, forKey: .totalAmount) ?? 0
+        depositAmount = try container.decodeIfPresent(Double.self, forKey: .depositAmount) ?? 0
+        securityDeposit = try container.decodeIfPresent(Double.self, forKey: .securityDeposit) ?? 0
+        damageFee = try container.decodeIfPresent(Double.self, forKey: .damageFee) ?? 0
+        // List search omits these — default so decoding does not fail.
+        lateFee = try container.decodeIfPresent(Double.self, forKey: .lateFee) ?? 0
         discountType = try container.decodeIfPresent(String.self, forKey: .discountType)
-        discountValue = try container.decode(Double.self, forKey: .discountValue)
-        discountAmount = try container.decode(Double.self, forKey: .discountAmount)
+        discountValue = try container.decodeIfPresent(Double.self, forKey: .discountValue) ?? 0
+        discountAmount = try container.decodeIfPresent(Double.self, forKey: .discountAmount) ?? 0
         pickupPlanAt = try container.decodeIfPresent(Date.self, forKey: .pickupPlanAt)
         returnPlanAt = try container.decodeIfPresent(Date.self, forKey: .returnPlanAt)
         pickedUpAt = try container.decodeIfPresent(Date.self, forKey: .pickedUpAt)
         returnedAt = try container.decodeIfPresent(Date.self, forKey: .returnedAt)
         rentalDuration = try container.decodeIfPresent(Int.self, forKey: .rentalDuration)
-        isReadyToDeliver = try container.decode(Bool.self, forKey: .isReadyToDeliver)
+        isReadyToDeliver = try container.decodeIfPresent(Bool.self, forKey: .isReadyToDeliver) ?? false
         collateralType = try container.decodeIfPresent(String.self, forKey: .collateralType)
         collateralDetails = try container.decodeIfPresent(String.self, forKey: .collateralDetails)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
@@ -291,11 +351,20 @@ struct Order: Codable {
         damageNotesImages = try container.decodeIfPresent([String].self, forKey: .damageNotesImages)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+
+        let nestedCustomer = try nestedContainer.decodeIfPresent(NestedCustomer.self, forKey: .customer)
+        let nestedOutlet = try nestedContainer.decodeIfPresent(NestedOutlet.self, forKey: .outlet)
+        let nestedCreatedBy = try nestedContainer.decodeIfPresent(NestedCreatedBy.self, forKey: .createdBy)
+        let nestedCount = try nestedContainer.decodeIfPresent(NestedCount.self, forKey: .count)
         
-        // Customer data
-        customerId = try container.decode(Int.self, forKey: .customerId)
+        // Customer — prefer flat fields, fall back to nested list shape
+        customerId = try container.decodeIfPresent(Int.self, forKey: .customerId)
+            ?? nestedCustomer?.id
+            ?? 0
         customerFirstName = try container.decodeIfPresent(String.self, forKey: .customerFirstName)
+            ?? nestedCustomer?.firstName
         customerLastName = try container.decodeIfPresent(String.self, forKey: .customerLastName)
+            ?? nestedCustomer?.lastName
         
         // Build customerName from firstName + lastName (prefer this over API's customerName)
         // This ensures we don't get "Trinh null" when lastName is null
@@ -314,25 +383,55 @@ struct Order: Codable {
         }
         
         customerPhone = try container.decodeIfPresent(String.self, forKey: .customerPhone)
+            ?? nestedCustomer?.phone
         customerEmail = try container.decodeIfPresent(String.self, forKey: .customerEmail)
+            ?? nestedCustomer?.email
         
-        // Outlet data
-        outletId = try container.decode(Int.self, forKey: .outletId)
-        outletName = try container.decode(String.self, forKey: .outletName)
+        // Outlet — flat or nested
+        outletId = try container.decodeIfPresent(Int.self, forKey: .outletId)
+            ?? nestedOutlet?.id
+            ?? 0
+        outletName = try container.decodeIfPresent(String.self, forKey: .outletName)
+            ?? nestedOutlet?.name
+            ?? ""
         merchantId = try container.decodeIfPresent(Int.self, forKey: .merchantId)
+            ?? nestedOutlet?.merchant?.id
         merchantName = try container.decodeIfPresent(String.self, forKey: .merchantName)
+            ?? nestedOutlet?.merchant?.name
         
-        // CreatedBy data
-        createdById = try container.decode(Int.self, forKey: .createdById)
-        createdByName = try container.decode(String.self, forKey: .createdByName)
+        // CreatedBy — flat or nested
+        createdById = try container.decodeIfPresent(Int.self, forKey: .createdById)
+            ?? nestedCreatedBy?.id
+            ?? 0
+        if let flatName = try container.decodeIfPresent(String.self, forKey: .createdByName), !flatName.isEmpty {
+            createdByName = flatName
+        } else if let nested = nestedCreatedBy {
+            let parts = [nested.firstName, nested.lastName]
+                .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            createdByName = parts.joined(separator: " ")
+        } else {
+            createdByName = ""
+        }
         
-        // Order items
-        orderItems = try container.decode([OrderItem].self, forKey: .orderItems)
+        // Order items — list endpoints often omit the array
+        orderItems = try container.decodeIfPresent([OrderItem].self, forKey: .orderItems) ?? []
         
-        // Calculated fields
-        itemCount = try container.decode(Int.self, forKey: .itemCount)
-        paymentCount = try container.decode(Int.self, forKey: .paymentCount)
-        totalPaid = try container.decode(Double.self, forKey: .totalPaid)
+        // Counts — flat fields or `_count` from search
+        itemCount = try container.decodeIfPresent(Int.self, forKey: .itemCount)
+            ?? nestedCount?.orderItems
+            ?? orderItems.count
+        paymentCount = try container.decodeIfPresent(Int.self, forKey: .paymentCount)
+            ?? nestedCount?.payments
+            ?? 0
+        totalPaid = try container.decodeIfPresent(Double.self, forKey: .totalPaid) ?? 0
+        loyaltyPointsRedeemed = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsRedeemed) ?? 0
+        loyaltyDiscount = try container.decodeIfPresent(Double.self, forKey: .loyaltyDiscount) ?? 0
+        loyaltyPointsEarned = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsEarned) ?? 0
+    }
+    
+    var amountDue: Double {
+        return max(0, totalAmount - loyaltyDiscount)
     }
     
     // MARK: - Computed Properties
@@ -416,7 +515,10 @@ struct Order: Codable {
         orderItems: [OrderItem],
         itemCount: Int,
         paymentCount: Int,
-        totalPaid: Double
+        totalPaid: Double,
+        loyaltyPointsRedeemed: Int = 0,
+        loyaltyDiscount: Double = 0,
+        loyaltyPointsEarned: Int = 0
     ) {
         self.id = id
         self.orderNumber = orderNumber
@@ -464,6 +566,9 @@ struct Order: Codable {
         self.itemCount = itemCount
         self.paymentCount = paymentCount
         self.totalPaid = totalPaid
+        self.loyaltyPointsRedeemed = loyaltyPointsRedeemed
+        self.loyaltyDiscount = loyaltyDiscount
+        self.loyaltyPointsEarned = loyaltyPointsEarned
     }
 }
 
@@ -662,6 +767,9 @@ struct OrderItem: Codable {
     let unitPrice: Double
     let totalPrice: Double
     let notes: String?
+    let rentalDays: Int?
+    let pricingType: String?
+    let pricingOptionId: Int?
     
     // Flattened product data - make some fields optional to handle API variations
     let productId: Int?
@@ -681,12 +789,15 @@ struct OrderItem: Codable {
     }
     
     // Default initializer for manual creation
-    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil) {
+    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil) {
         self.id = id
         self.quantity = quantity
         self.unitPrice = unitPrice
         self.totalPrice = totalPrice
         self.notes = notes
+        self.rentalDays = rentalDays
+        self.pricingType = pricingType
+        self.pricingOptionId = pricingOptionId
         self.productId = productId
         self.productName = productName
         self.productBarcode = productBarcode
@@ -705,6 +816,9 @@ struct OrderItem: Codable {
         unitPrice = try container.decode(Double.self, forKey: .unitPrice)
         totalPrice = try container.decode(Double.self, forKey: .totalPrice)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        rentalDays = try container.decodeIfPresent(Int.self, forKey: .rentalDays)
+        pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
+        pricingOptionId = try container.decodeIfPresent(Int.self, forKey: .pricingOptionId)
         
         let embedded = try container.decodeIfPresent(EmbeddedProduct.self, forKey: .product)
         
@@ -759,6 +873,9 @@ struct OrderItem: Codable {
         try container.encode(unitPrice, forKey: .unitPrice)
         try container.encode(totalPrice, forKey: .totalPrice)
         try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(rentalDays, forKey: .rentalDays)
+        try container.encodeIfPresent(pricingType, forKey: .pricingType)
+        try container.encodeIfPresent(pricingOptionId, forKey: .pricingOptionId)
         try container.encodeIfPresent(productId, forKey: .productId)
         try container.encode(productName, forKey: .productName)
         try container.encodeIfPresent(productBarcode, forKey: .productBarcode)
@@ -775,6 +892,7 @@ struct OrderItem: Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, quantity, unitPrice, totalPrice, notes
+        case rentalDays, pricingType, pricingOptionId
         case productId, productName, productBarcode, productImages, productRentPrice, productDeposit
         case product
         case deposit
@@ -931,6 +1049,8 @@ struct UpdateOrderItem: Codable {
     let notes: String?
     let rentalDays: Int?
     let imageUrl: String?
+    var pricingType: String? = nil
+    var pricingOptionId: Int? = nil
 }
 
 // MARK: - Update Order Request Extension

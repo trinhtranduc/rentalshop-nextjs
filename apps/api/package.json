@@ -21,6 +21,7 @@
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/database": "file:../../packages/database",
     "@rentalshop/errors": "file:../../packages/errors",
+    "@rentalshop/loyalty": "file:../../packages/loyalty",
     "@rentalshop/middleware": "file:../../packages/middleware",
     "@rentalshop/utils": "file:../../packages/utils",
     "@rentalshop/validation": "file:../../packages/validation",

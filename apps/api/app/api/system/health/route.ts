@@ -3,6 +3,8 @@ import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+
 interface HealthCheck {
   name: string;
   status: 'healthy' | 'unhealthy' | 'degraded';

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
+    "@rentalshop/constants": "file:../../packages/constants",
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/hooks": "file:../../packages/hooks",
     "@rentalshop/ui": "file:../../packages/ui",

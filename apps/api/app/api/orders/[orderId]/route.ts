@@ -15,6 +15,13 @@ import {
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION } from '@rentalshop/constants';
+import {
+  adjustRedeemOnOrderEdit,
+  calculateAmountDue,
+  getLoyaltyProgram,
+  handleLoyaltyOnCancel,
+  merchantHasLoyaltyFeature,
+} from '@rentalshop/loyalty';
 
 export const runtime = 'nodejs';
 
@@ -544,9 +551,91 @@ export const PUT = async (
       }
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
-      const { subtotal, taxAmount, id, ...validUpdateData } = body;
+      const { subtotal, taxAmount, id, loyaltyRedeem, ...validUpdateData } = body;
+
+      // Preserve each item's pricing snapshot when older clients update an order
+      // without sending the newly supported pricing fields.
+      if (Array.isArray(validUpdateData.orderItems)) {
+        validUpdateData.orderItems = validUpdateData.orderItems.map((item: any) => {
+          const existingItem = existingOrder.orderItems?.find(
+            (candidate: any) => candidate.productId === item.productId
+          );
+          const sendsPricingType = Object.prototype.hasOwnProperty.call(item, 'pricingType');
+          const sendsPricingOptionId = Object.prototype.hasOwnProperty.call(item, 'pricingOptionId');
+
+          return {
+            ...item,
+            rentalDays: item.rentalDays ?? item.rentDays ?? existingItem?.rentalDays,
+            pricingType: item.pricingType ?? existingItem?.pricingType,
+            // A new client sends pricingType whenever it intentionally chooses a
+            // mode. If that mode has no configured option, clear the old option ID.
+            pricingOptionId: sendsPricingOptionId
+              ? item.pricingOptionId
+              : sendsPricingType
+                ? null
+                : existingItem?.pricingOptionId,
+          };
+        });
+      }
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
+
+      const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+      const merchantId = existingOutlet?.merchantId;
+
+      // ---- Loyalty on edit (Req 7) ----
+      // Detect a customer change and whether this order carries any loyalty state.
+      const newCustomerId =
+        'customerId' in validUpdateData ? (validUpdateData as any).customerId : existingOrder.customerId;
+      const customerChanged = newCustomerId !== existingOrder.customerId;
+      const hasLoyaltyState =
+        (existingOrder.loyaltyDiscount ?? 0) > 0 || (existingOrder.loyaltyPointsEarned ?? 0) > 0;
+
+      // Only touch loyalty (and pay the feature query) when there is real loyalty involvement.
+      if (
+        merchantId &&
+        (loyaltyRedeem || customerChanged || hasLoyaltyState) &&
+        (await merchantHasLoyaltyFeature(merchantId))
+      ) {
+        const program = await getLoyaltyProgram(merchantId);
+
+        // Req 7.1 (DECISION: REJECT): an edit must not drive finalAmount below 0 given the
+        // effective loyalty discount. Staff must reduce redeemed points first.
+        const newTotal = Number((validUpdateData as any).totalAmount ?? existingOrder.totalAmount) || 0;
+        const newManualDiscount = Number((validUpdateData as any).discountAmount ?? existingOrder.discountAmount ?? 0);
+        let effectiveLoyaltyDiscount = existingOrder.loyaltyDiscount ?? 0;
+        if (loyaltyRedeem && program?.isActive) {
+          effectiveLoyaltyDiscount = (loyaltyRedeem.points ?? 0) * program.pointValue;
+        }
+        // A customer change reverses old loyalty, so its discount no longer applies to the guard.
+        if (customerChanged) effectiveLoyaltyDiscount = 0;
+
+        if (newTotal - newManualDiscount - effectiveLoyaltyDiscount < 0) {
+          return NextResponse.json(
+            ResponseBuilder.error('REDEEM_EXCEEDS_TOTAL'),
+            { status: 400 }
+          );
+        }
+
+        if (customerChanged && existingOrder.customerId) {
+          // Req 7.3: reverse loyalty for the OLD customer (refund redeem + reverse earn).
+          // Do NOT auto-apply for the new customer — staff re-applies redeem manually;
+          // earn for the new customer happens at the normal completion trigger.
+          await prisma.$transaction((tx) => handleLoyaltyOnCancel(tx, existingOrder, merchantId));
+        } else if (loyaltyRedeem && existingOrder.customerId && program?.isActive) {
+          // Redeem amount changed on edit — adjust to the new amount (fail-closed).
+          await prisma.$transaction((tx) =>
+            adjustRedeemOnOrderEdit(
+              tx,
+              existingOrder,
+              loyaltyRedeem.points ?? 0,
+              { id: user.id },
+              program,
+              merchantId
+            )
+          );
+        }
+      }
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
@@ -608,6 +697,10 @@ export const PUT = async (
         discountType: fullOrder.discountType,
         discountValue: fullOrder.discountValue,
         discountAmount: fullOrder.discountAmount,
+        loyaltyPointsRedeemed: fullOrder.loyaltyPointsRedeemed ?? 0,
+        loyaltyDiscount: fullOrder.loyaltyDiscount ?? 0,
+        loyaltyPointsEarned: fullOrder.loyaltyPointsEarned ?? 0,
+        amountDue: calculateAmountDue(fullOrder.totalAmount, fullOrder.loyaltyDiscount ?? 0),
         pickupPlanAt: fullOrder.pickupPlanAt,
         returnPlanAt: fullOrder.returnPlanAt,
         pickedUpAt: fullOrder.pickedUpAt,
@@ -658,6 +751,8 @@ export const PUT = async (
             deposit: item.deposit,
             notes: item.notes,
             rentalDays: item.rentalDays,
+            pricingType: item.pricingType,
+            pricingOptionId: item.pricingOptionId,
             // Include product object if available (for backward compatibility)
             product: item.product || null
           };

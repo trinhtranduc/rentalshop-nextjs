@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
+import { verifyTokenSimple } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
-import { generateCorrelationId } from '@rentalshop/utils/server';
-import { buildCorsHeaders } from '@rentalshop/utils/server';
+import { buildCorsHeaders } from './lib/cors-edge';
 
-// Protected routes that require authentication
-const protectedRoutes = [
-  '/api/users',
-  '/api/orders',
-  '/api/payments',
-  '/api/shops',
-  '/api/products',
-  '/api/customers',
-  '/api/notifications',
-  '/api/subscriptions',
-  '/api/settings',
-];
+/** Edge-compatible correlation ID generator */
+function generateCorrelationId(): string {
+  const date = new Date();
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+  const random = Math.random().toString(36).substring(2, 11);
+  return `req_${dateStr}_${random}`;
+}
 
 // Public routes that don't require authentication
 const publicRoutes = [
@@ -53,8 +47,6 @@ const adminRoutes = [
   // Removed /api/users since it now has proper role-based authorization
   // that allows ADMIN, MERCHANT, and OUTLET_ADMIN roles
 ];
-
-// CORS headers are now built using centralized utility function from @rentalshop/utils
 
 /**
  * Middleware for API authentication and authorization
@@ -178,76 +170,15 @@ export async function middleware(request: NextRequest) {
       // Exception: /api/plans/public should remain accessible to all authenticated users
       if (!pathname.startsWith('/api/plans/public')) {
         console.log('🔍 MIDDLEWARE: Admin access required for:', pathname);
-        const { ResponseBuilder } = await import('@rentalshop/utils');
-        return NextResponse.json(
-          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
-          { 
-            status: API.STATUS.FORBIDDEN,
-            headers: corsHeaders
-          }
+        return createForbiddenResponse(
+          'Insufficient permissions',
+          corsHeaders,
+          'INSUFFICIENT_PERMISSIONS'
         );
       }
     }
 
-    // ============================================================================
-    // PLATFORM ACCESS CONTROL - FETCH allowWebAccess FROM DB WHEN NEEDED
-    // ============================================================================
-    // Fetch subscription data from DB only when checking web access (keeps JWT small)
-    
-    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web' && payload.merchantId) {
-      try {
-        // Fetch subscription with plan limits from DB
-        const { getSubscriptionByMerchantId } = await import('@rentalshop/database');
-        const subscription = await getSubscriptionByMerchantId(payload.merchantId);
-        
-        if (subscription?.plan?.limits) {
-          const planLimits = subscription.plan.limits as any;
-          const allowWebAccess = planLimits?.allowWebAccess !== undefined 
-            ? planLimits.allowWebAccess 
-            : true; // Default to true if not set
-          
-          if (!allowWebAccess) {
-            const planName = subscription.plan?.name || 'Unknown';
-            console.log('❌ MIDDLEWARE: Platform access denied:', {
-              planName,
-              platform: platformInfo.platform,
-              allowWebAccess,
-              merchantId: payload.merchantId,
-              message: 'Plan does not allow web access'
-            });
-            
-            return NextResponse.json(
-              {
-                success: false,
-                code: 'PLATFORM_ACCESS_DENIED',
-                message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
-                data: {
-                  currentPlan: planName,
-                  currentPlatform: platformInfo.platform,
-                  allowedPlatforms: ['mobile'],
-                  upgradeRequired: true,
-                  upgradeUrl: '/settings/subscription'
-                }
-              },
-              {
-                status: API.STATUS.FORBIDDEN,
-                headers: {
-                  ...corsHeaders,
-                  'X-Platform-Access-Denied': 'true',
-                  'X-Upgrade-Required': 'true'
-                }
-              }
-            );
-          }
-        }
-      } catch (error) {
-        // If error fetching subscription, allow access (fail open for better UX)
-        // Log error for monitoring
-        console.error('⚠️ MIDDLEWARE: Error fetching subscription for platform access check:', error);
-      }
-    }
-    
-    console.log('✅ MIDDLEWARE: Platform access granted:', {
+    console.log('✅ MIDDLEWARE: Edge checks passed, forwarding to API auth layer:', {
       platform: platformInfo.platform,
       role: payload.role
     });
@@ -276,9 +207,9 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-app-version', platformInfo.version);
     }
 
-    // Note: Subscription validation is handled in the centralized authenticateRequest function
-    // in packages/auth/src/core.ts, which is called by each API route
-    // This ensures subscription validation happens in Node.js runtime, not Edge Runtime
+    // Subscription and platform access validation happen in the centralized
+    // server-side auth flow. Middleware stays Edge-safe and only forwards
+    // lightweight request context.
 
     console.log('🔍 MIDDLEWARE: Headers set, forwarding to API endpoint');
     console.log('🔍 MIDDLEWARE: x-user-id:', payload.userId.toString());
@@ -346,11 +277,15 @@ function createUnauthorizedResponse(message: string, corsHeaders: Record<string,
  * Create standardized forbidden response with CORS headers
  * Uses ResponseBuilder format: { success: false, code: "...", message: "..." }
  */
-function createForbiddenResponse(message: string, corsHeaders: Record<string, string>): NextResponse {
+function createForbiddenResponse(
+  message: string,
+  corsHeaders: Record<string, string>,
+  code: string = 'FORBIDDEN'
+): NextResponse {
   return NextResponse.json(
     { 
       success: false, 
-      code: 'FORBIDDEN',
+      code,
       message: message
     }, 
     { 

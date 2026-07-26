@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@rentalshop/constants": ["packages/constants/dist", "packages/constants/src"],
+      "@rentalshop/database": ["packages/database/dist", "packages/database/src"],
+      "@rentalshop/types": ["packages/types/dist", "packages/types/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}

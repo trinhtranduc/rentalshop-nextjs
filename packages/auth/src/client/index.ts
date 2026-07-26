@@ -2,6 +2,13 @@
  * Authentication utilities for client app (reusing shared package)
  */
 
+import type { LoginCredentials, User } from '@rentalshop/types';
+import { authApi, getCurrentUser, type ApiResponse, type AuthResponse } from '@rentalshop/utils';
+
+type LoginUserFn = (credentials: LoginCredentials) => Promise<ApiResponse<AuthResponse>>;
+type LogoutUserFn = () => Promise<ApiResponse<void>>;
+type VerifyTokenWithServerFn = () => Promise<ApiResponse<User>>;
+
 // Import storage utilities from utils
 export {
   getAuthToken,
@@ -15,18 +22,15 @@ export {
   type StoredUser,
 } from '@rentalshop/utils';
 
-// Import authentication functions from utils auth API
-import { authApi, getCurrentUser } from '@rentalshop/utils';
-
 // Re-export auth API functions with simpler names
-export const loginUser: typeof authApi.login = authApi.login;
-export const logoutUser: typeof authApi.logout = authApi.logout;
-export const verifyTokenWithServer: typeof authApi.verifyToken = authApi.verifyToken;
+export const loginUser: LoginUserFn = (credentials) => authApi.login(credentials);
+export const logoutUser: LogoutUserFn = () => authApi.logout();
+export const verifyTokenWithServer: VerifyTokenWithServerFn = () => authApi.verifyToken();
 
 // Client-specific aliases for compatibility
-export const loginUserClient: typeof authApi.login = authApi.login;
-export const logoutUserClient: typeof authApi.logout = authApi.logout;
-export const getCurrentUserClient: typeof getCurrentUser = getCurrentUser;
+export const loginUserClient: LoginUserFn = (credentials) => authApi.login(credentials);
+export const logoutUserClient: LogoutUserFn = () => authApi.logout();
+export const getCurrentUserClient = getCurrentUser;
 
 // Export types
 export type { AuthResponse } from '@rentalshop/utils';
@@ -41,4 +45,4 @@ export const isAuthenticatedWithVerification = async (): Promise<boolean> => {
   } catch (error) {
     return false;
   }
-};
+}; 

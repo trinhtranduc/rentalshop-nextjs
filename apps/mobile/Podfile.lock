@@ -1,0 +1,42 @@
+PODS:
+  - GestureRecognizerClosures (5.0.0)
+  - MBProgressHUD (1.2.0)
+  - PullToRefresher (3.3)
+  - QRCodeReader.swift (10.1.0)
+  - Realm (20.0.4):
+    - Realm/Headers (= 20.0.4)
+  - Realm/Headers (20.0.4)
+  - RealmSwift (20.0.4):
+    - Realm (= 20.0.4)
+  - SwiftyJSON (5.0.2)
+
+DEPENDENCIES:
+  - GestureRecognizerClosures
+  - MBProgressHUD
+  - PullToRefresher
+  - QRCodeReader.swift
+  - RealmSwift
+  - SwiftyJSON
+
+SPEC REPOS:
+  trunk:
+    - GestureRecognizerClosures
+    - MBProgressHUD
+    - PullToRefresher
+    - QRCodeReader.swift
+    - Realm
+    - RealmSwift
+    - SwiftyJSON
+
+SPEC CHECKSUMS:
+  GestureRecognizerClosures: 0dcafb45e669e7a775c840383e54b3d16983037b
+  MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
+  PullToRefresher: 6fc2ab6494caf949bcf6f0223ffd23f9d21a06f6
+  QRCodeReader.swift: 373a389fe9a22d513c879a32a6f647c58f4ef572
+  Realm: 1fca83c42ac1d5c7767974882c8de5a7abca4d89
+  RealmSwift: 84f36320f6133dea78d05c55bb46bba4387d6828
+  SwiftyJSON: f5b1bf1cd8dd53cd25887ac0eabcfd92301c6a5a
+
+PODFILE CHECKSUM: 525177a6d065d1ffd06ef81c9dd76a61f3be2e35
+
+COCOAPODS: 1.16.2

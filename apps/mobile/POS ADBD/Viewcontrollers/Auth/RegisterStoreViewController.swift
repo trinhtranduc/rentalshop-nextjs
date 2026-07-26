@@ -41,8 +41,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var nameField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Name".localized(),
-            placeholder: "Enter your name".localized()
+            placeholder: "e.g. Nguyen Van A".localized()
         )
+        field.setRequired(true)
         field.textField.autocapitalizationType = .words
         field.textField.setLeftIcon(UIImage(systemName: "person.fill"))
         return field
@@ -51,8 +52,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var emailField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Email".localized(),
-            placeholder: "Enter your email".localized()
+            placeholder: "Email for activation link".localized()
         )
+        field.setRequired(true)
         field.textField.keyboardType = .emailAddress
         field.textField.autocapitalizationType = .none
         field.textField.setLeftIcon(UIImage(systemName: "envelope.fill"))
@@ -62,8 +64,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var passwordField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Password".localized(),
-            placeholder: "Enter password".localized()
+            placeholder: "At least 6 characters".localized()
         )
+        field.setRequired(true)
         field.textField.isSecureTextEntry = true
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
         field.textField.setRightIcon(UIImage(systemName: "eye.fill"),
@@ -75,8 +78,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var retypePasswordField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Confirm Password".localized(),
-            placeholder: "Confirm password".localized()
+            placeholder: "Re-enter your password".localized()
         )
+        field.setRequired(true)
         field.textField.isSecureTextEntry = true
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
         field.textField.setRightIcon(UIImage(systemName: "eye.fill"),
@@ -89,8 +93,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var storeNameField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Store Name".localized(),
-            placeholder: "Enter store name".localized()
+            placeholder: "e.g. AnyRent Rental Shop".localized()
         )
+        field.setRequired(true)
         field.textField.setLeftIcon(UIImage(systemName: "building.2.fill"))
         // Enable auto-capitalization for store name
         field.textField.autocapitalizationType = .words
@@ -101,8 +106,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var locationField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Location".localized(),
-            placeholder: "Enter your address (street, city, state)".localized()
+            placeholder: "e.g. 01 Quang Trung, District 1, HCMC".localized()
         )
+        field.setRequired(true)
         field.textField.setLeftIcon(UIImage(systemName: "location.fill"))
         field.textField.autocapitalizationType = .words
         return field
@@ -111,8 +117,9 @@ class RegisterStoreViewController: BaseViewControler {
     private lazy var phoneField: LabeledTextField = {
         let field = LabeledTextField(
             title: "Phone Number".localized(),
-            placeholder: "Enter phone number".localized()
+            placeholder: "e.g. 0901234567".localized()
         )
+        field.setRequired(true)
         field.textField.keyboardType = .phonePad
         field.textField.setLeftIcon(UIImage(systemName: "phone.fill"))
         return field
@@ -408,11 +415,10 @@ class RegisterStoreViewController: BaseViewControler {
         let isRetypePasswordValid = !retypePassword.isEmpty && password == retypePassword
         let isStoreNameValid = !storeName.isEmpty && storeName.count >= 3
         
-        // Optional fields validation (only validate format if provided)
-        let isLocationValid = location.isEmpty || location.count >= 3
+        let isLocationValid = !location.isEmpty && location.count >= 3
         let phoneRegex = "^[0-9+]{10,13}$"
         let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
-        let isPhoneValid = phone.isEmpty || phonePredicate.evaluate(with: phone)
+        let isPhoneValid = !phone.isEmpty && phonePredicate.evaluate(with: phone)
         
         registerButton.isEnabled = isNameValid && isEmailValid && isPasswordValid && isRetypePasswordValid && isStoreNameValid && isLocationValid && isPhoneValid && isPrivacyPolicyAccepted
     }
@@ -526,14 +532,18 @@ class RegisterStoreViewController: BaseViewControler {
             isValid = false
         }
         
-        // Location is optional - only validate format if provided
-        if !location.isEmpty && location.count < 3 {
+        if location.isEmpty {
+            locationField.showError("Location is required".localized())
+            isValid = false
+        } else if location.count < 3 {
             locationField.showError("Please enter a valid location (City, Province)".localized())
             isValid = false
         }
         
-        // Phone is optional - only validate format if provided
-        if !phone.isEmpty {
+        if phone.isEmpty {
+            phoneField.showError("Phone number is required".localized())
+            isValid = false
+        } else {
             let phoneRegex = "^[0-9+]{10,13}$"
             let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
             if !phonePredicate.evaluate(with: phone) {

@@ -30,6 +30,7 @@ export * from './subscription';
 export * from './pricing';
 export * from './countries';
 export * from './currency';
+export * from './brand';
 
 // Explicit exports for status constants
 export { 
@@ -159,6 +160,7 @@ export {
 export type {
   BusinessType,
   PricingType,
+  PricingUnit,
   BusinessTypeOption,
   PricingTypeOption,
   PricingBusinessRules,

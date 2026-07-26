@@ -11,6 +11,7 @@ export * from './order';
 export * from './customer';
 export * from './category';
 export * from './post';
+export * from './loyalty';
 
 // Re-export common types for convenience
 export * from '../common/base';

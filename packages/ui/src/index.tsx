@@ -47,6 +47,7 @@ export * from './components/features/ChangeHistory';
 export * from './components/features/OrderDetail';
 export * from './components/features/Shops';
 export * from './components/features/Settings';
+export * from './components/features/Loyalty';
 
 // ============================================================================
 // LAYOUT COMPONENTS (Page Structure & Navigation)

@@ -8,7 +8,7 @@ import SnapKit
 
 class InfoMainViewController: BaseViewControler {
     /// "Select customer" bar — short; card state is slightly taller (avatar + labels).
-    private static let customerSelectRowHeight: CGFloat = 50
+    private static let customerSelectRowHeight: CGFloat = 58
     private static let customerCardRowHeight: CGFloat = 76
 
     // MARK: - Properties
@@ -48,10 +48,13 @@ class InfoMainViewController: BaseViewControler {
     
     private lazy var customerInputView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(red: 255/255, green: 236/255, blue: 204/255, alpha: 1.0)
+        view.backgroundColor = .systemBackground
         view.layer.cornerRadius = 8
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor(red: 255/255, green: 180/255, blue: 61/255, alpha: 1.0).cgColor
+        view.layer.borderWidth = 0
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.04
+        view.layer.shadowRadius = 6
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -59,19 +62,20 @@ class InfoMainViewController: BaseViewControler {
     private lazy var customerSelectButton: UIButton = {
         let button = UIButton(type: .system)
         var config = UIButton.Configuration.plain()
-        config.title = "Select customer".localized()
-        config.baseForegroundColor = .gray
-        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
-        config.image = UIImage(systemName: "person.circle.fill")
-        config.imagePadding = 10
+        config.contentInsets = NSDirectionalEdgeInsets(
+            top: 7,
+            leading: 12,
+            bottom: 7,
+            trailing: 52
+        )
         config.imagePlacement = .leading
-        config.titleAlignment = UIButton.Configuration.TitleAlignment.leading
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        config.imagePadding = 12
+        config.titleAlignment = .leading
         button.configuration = config
-        button.tintColor = UIColor(red: 255/255, green: 180/255, blue: 61/255, alpha: 1.0)
         button.contentHorizontalAlignment = .leading
-        button.titleLabel?.font = Utils.regularFont(size: 16)
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = "Select customer".localized()
         button.addTarget(self, action: #selector(customerSelectTapped), for: .touchUpInside)
         button.addTarget(self, action: #selector(customerSelectTouchDown), for: .touchDown)
         button.addTarget(self, action: #selector(customerSelectTouchUp), for: [.touchUpOutside, .touchCancel, .touchDragExit, .touchUpInside])
@@ -124,6 +128,9 @@ class InfoMainViewController: BaseViewControler {
         button.addTarget(self, action: #selector(previewTapped), for: .touchUpInside)
         button.addTarget(self, action: #selector(previewTouchDown), for: .touchDown)
         button.addTarget(self, action: #selector(previewTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel, .touchDragExit])
+        button.isAccessibilityElement = true
+        button.accessibilityLabel = "Preview".localized()
+        button.accessibilityTraits = UIAccessibilityTraitButton
         return button
     }()
     
@@ -194,7 +201,7 @@ class InfoMainViewController: BaseViewControler {
         ]
         
         let normalAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.white,
+            .foregroundColor: UIColor.secondaryLabel,
             .font: Utils.boldFont(size: UIDevice.current.userInterfaceIdiom == .pad ? 16 : 13)
         ]
         
@@ -261,9 +268,14 @@ class InfoMainViewController: BaseViewControler {
     }()
 
     // MARK: - Properties
+    /// Set to true only right before a user-driven rent/sale switch so the
+    /// fields animate. Programmatic sets (reloadOrder on appear, reset, initial
+    /// setup) leave it false so entering the cart applies state without animating.
+    private var animateNextMethodChange = false
     private var methodSelect: OrderType = .rent {
         didSet {
-            updateMethodSelection()
+            updateMethodSelection(animated: animateNextMethodChange)
+            animateNextMethodChange = false
         }
     }
     
@@ -288,6 +300,8 @@ class InfoMainViewController: BaseViewControler {
             updateCustomerViews()
         }
     }
+
+    private var customerSelectionShowsError = false
     
     // Additional Properties
     private var discountType: DiscountPadType = .percentage {
@@ -385,11 +399,6 @@ class InfoMainViewController: BaseViewControler {
             customNavBar?.isHidden = true
         }
         
-        // Hide tab bar when pushed
-        if let tabBar = self.tabBarController?.tabBar {
-            tabBar.isHidden = true
-        }
-        
         reloadOrder()
         updateSegmentedControlState() // Update segmented control state when view appears
         updateCartBadge() // Update cart badge when view appears
@@ -400,15 +409,6 @@ class InfoMainViewController: BaseViewControler {
         reloadSelectionTable()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        
-        // Show tab bar when leaving
-        if let tabBar = self.tabBarController?.tabBar {
-            tabBar.isHidden = false
-        }
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         layoutCartTableHeaderView()
@@ -466,9 +466,7 @@ class InfoMainViewController: BaseViewControler {
     private func setupConstraints() {
         // Setup constraints for customerSelectButton
         customerSelectButton.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            make.centerY.equalToSuperview()
-            make.height.equalTo(40)
+            make.edges.equalToSuperview()
         }
         
         // Setup constraints for previewStackView with 16px leading and trailing padding
@@ -513,11 +511,11 @@ class InfoMainViewController: BaseViewControler {
     }
     
     // MARK: - Helper Methods
-    private func updateMethodSelection() {
+    private func updateMethodSelection(animated: Bool = false) {
         // Store current discount values before mode change
         let currentDiscount = CartStore.shared.cart.discount
         let currentDiscountType = CartStore.shared.cart.discountType
-        
+
         let shouldShowRentalFields = methodSelect == .rent
 
         if shouldShowRentalFields {
@@ -530,12 +528,14 @@ class InfoMainViewController: BaseViewControler {
         returnDateHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
         downPaymentHeightConstraint?.update(offset: shouldShowRentalFields ? 44 : 0)
 
-        UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+        let applyLayout = {
             self.pickupDateView?.alpha = shouldShowRentalFields ? 1 : 0
             self.returnDateView?.alpha = shouldShowRentalFields ? 1 : 0
             self.downPaymentView?.alpha = shouldShowRentalFields ? 1 : 0
             self.view.layoutIfNeeded()
-        } completion: { _ in
+        }
+
+        let finalize: (Bool) -> Void = { _ in
             self.pickupDateView?.isHidden = !shouldShowRentalFields
             self.returnDateView?.isHidden = !shouldShowRentalFields
             self.downPaymentView?.isHidden = !shouldShowRentalFields
@@ -559,8 +559,17 @@ class InfoMainViewController: BaseViewControler {
             self.reloadSelectionTable()
             self.updatePreviewTotal()
         }
+
+        // Animate only on a user-driven switch; entering the cart applies the
+        // final state instantly so the UI stays put (no fade/reflow flicker).
+        if animated {
+            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState], animations: applyLayout, completion: finalize)
+        } else {
+            applyLayout()
+            finalize(true)
+        }
     }
-    
+
     /// Update prices for all cart items based on current order type (rent/sale)
     /// Uses custom price if user has manually changed it, otherwise uses original price
     private func updateCartPricesForOrderType() {
@@ -580,6 +589,9 @@ class InfoMainViewController: BaseViewControler {
     }
     
     private func updateCustomerViews() {
+        if customer != nil {
+            customerSelectionShowsError = false
+        }
         customerHeaderContainer.snp.updateConstraints { make in
             make.height.equalTo(customer != nil ? Self.customerCardRowHeight : Self.customerSelectRowHeight)
         }
@@ -625,26 +637,77 @@ class InfoMainViewController: BaseViewControler {
 
     private func updateCustomerSelectButton() {
         var config = customerSelectButton.configuration ?? UIButton.Configuration.plain()
-        config.title = "Select customer".localized()
-        config.baseForegroundColor = .gray
-        config.image = UIImage(systemName: "person.circle.fill")
+
+        var customerTitle = AttributedString("Customer".localized())
+        customerTitle.font = Utils.regularFont(size: 11)
+        customerTitle.foregroundColor = .textPrimary
+        config.attributedTitle = customerTitle
+
+        var selectCustomerTitle = AttributedString("Select customer".localized())
+        selectCustomerTitle.font = Utils.mediumFont(size: 15)
+        selectCustomerTitle.foregroundColor = .textPrimary
+        config.attributedSubtitle = selectCustomerTitle
+        let avatarConfiguration = UIImage.SymbolConfiguration(
+            pointSize: 28,
+            weight: .regular
+        ).applying(
+            UIImage.SymbolConfiguration(
+                paletteColors: [.systemGray3, .systemGray6]
+            )
+        )
+        config.image = UIImage(
+            systemName: "person.crop.circle.fill",
+            withConfiguration: avatarConfiguration
+        )
+        config.preferredSymbolConfigurationForImage = avatarConfiguration
+        config.baseForegroundColor = .textPrimary
 
         let chevronImage = UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate)
         let accessoryImageView = UIImageView(image: chevronImage)
-        accessoryImageView.tintColor = .gray
         accessoryImageView.contentMode = .scaleAspectFit
+        let accessoryView = UIView()
+        accessoryView.backgroundColor = .tertiarySystemFill
+        accessoryView.layer.cornerRadius = 14
+        accessoryView.isUserInteractionEnabled = false
+        accessoryView.addSubview(accessoryImageView)
+
         customerSelectButton.configuration = config
-        customerSelectButton.tintColor = UIColor(red: 255/255, green: 180/255, blue: 61/255, alpha: 1.0)
-        customerSelectButton.setTitleColor(.gray, for: .normal)
         customerSelectButton.subviews.filter { $0.tag == 999 }.forEach { $0.removeFromSuperview() }
-        accessoryImageView.tag = 999
-        customerSelectButton.addSubview(accessoryImageView)
-        accessoryImageView.snp.makeConstraints { make in
+        accessoryView.tag = 999
+        customerSelectButton.addSubview(accessoryView)
+        accessoryView.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.trailing.equalToSuperview().offset(-16)
-            make.width.equalTo(12)
-            make.height.equalTo(16)
+            make.trailing.equalToSuperview().offset(-12)
+            make.width.height.equalTo(28)
         }
+        accessoryImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.equalTo(7)
+            make.height.equalTo(12)
+        }
+        applyCustomerSelectionStyle(
+            accessoryView: accessoryView,
+            accessoryImageView: accessoryImageView
+        )
+    }
+
+    private func setCustomerSelectionError(_ showsError: Bool) {
+        customerSelectionShowsError = showsError
+        updateCustomerSelectButton()
+    }
+
+    private func applyCustomerSelectionStyle(
+        accessoryView: UIView,
+        accessoryImageView: UIImageView
+    ) {
+        customerInputView.backgroundColor = .systemBackground
+        customerInputView.layer.borderWidth = 0
+        customerInputView.layer.shadowOpacity = 0.04
+        accessoryView.backgroundColor = .tertiarySystemFill
+        accessoryImageView.tintColor = .secondaryLabel
+        customerSelectButton.accessibilityHint = customerSelectionShowsError
+            ? "Input customer info".localized()
+            : nil
     }
     
     private func updateDiscountLabel() {
@@ -664,8 +727,10 @@ class InfoMainViewController: BaseViewControler {
         if let date = getDate {
             // Display with date format: dd/MM/yyyy (no time)
             pickupDateLabel.text = date.dateInString()
+            pickupDateLabel.textColor = .label
         } else {
             pickupDateLabel.text = "__/__/__"
+            pickupDateLabel.textColor = .secondaryLabel
         }
     }
     
@@ -673,8 +738,10 @@ class InfoMainViewController: BaseViewControler {
         if let date = returnDate {
             // Display with date format: dd/MM/yyyy (no time)
             returnDateLabel.text = date.dateInString()
+            returnDateLabel.textColor = .label
         } else {
             returnDateLabel.text = "__/__/__"
+            returnDateLabel.textColor = .secondaryLabel
         }
     }
     
@@ -793,6 +860,8 @@ class InfoMainViewController: BaseViewControler {
             sender.selectedSegmentIndex = methodSelect == .rent ? 0 : 1
             return
         }
+        // User-initiated switch → animate the rental fields in/out.
+        animateNextMethodChange = true
         methodSelect = sender.selectedSegmentIndex == 0 ? .rent : .sale
     }
     
@@ -870,6 +939,7 @@ class InfoMainViewController: BaseViewControler {
     
     @objc private func previewTapped() {
         HapticFeedback.medium()
+        setCustomerSelectionError(customer == nil)
         
         // Update cart with current form data
         CartStore.shared.setCustomer(customer)
@@ -957,16 +1027,20 @@ class InfoMainViewController: BaseViewControler {
         previewCountLabel.text = "(\(totalItems))"
         
         // Use cart's total amount which already includes discount
-        totalLabel.text = CartStore.shared.cart.totalAmount.formatStringInCommon()
+        let total = CartStore.shared.cart.totalAmount.formatStringInCommon()
+        totalLabel.text = total
+        previewContainer.accessibilityValue = "\(totalItems), \(total)"
     }
     
     // MARK: - Clear Cart Button
     private lazy var clearCartButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
-        button.setImage(trashImage, for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        let clearImage = UIImage(systemName: "broom.fill", withConfiguration: config)
+            ?? UIImage(systemName: "paintbrush.fill", withConfiguration: config)
+        button.setImage(clearImage, for: .normal)
         button.tintColor = .black
+        button.accessibilityLabel = "Clear Cart".localized()
         button.addTarget(self, action: #selector(clearCartTapped), for: .touchUpInside)
         return button
     }()
@@ -1388,6 +1462,7 @@ extension InfoMainViewController: UITableViewDataSource {
             getDate: getDate,
             returnDate: returnDate,
             availabilityStatus: cartItem.availabilityStatus,
+            orderType: methodSelect,
             layout: .default
         )
         return cell
@@ -1460,6 +1535,31 @@ extension InfoMainViewController: ProductSelectedCellDelegate {
             updateDepositLabel()
             updateCartBadge()
         }
+    }
+
+    func didUpdateRentalDays(_ days: Int, at index: Int) {
+        CartStore.shared.updateRentalDays(at: index, days: days)
+        reloadSelectionTable()
+        updatePreviewTotal()
+        updateDepositLabel()
+        updateCartBadge()
+    }
+
+    func didSelectPricingOption(optionId: Int, at index: Int) {
+        CartStore.shared.selectPricingOption(at: index, optionId: optionId)
+        CartStore.shared.syncRentalDaysFromDates()
+        reloadSelectionTable()
+        updatePreviewTotal()
+        updateDepositLabel()
+        updateCartBadge()
+    }
+
+    func didSelectPricingType(_ type: String, at index: Int) {
+        CartStore.shared.selectPricingType(at: index, type: type)
+        reloadSelectionTable()
+        updatePreviewTotal()
+        updateDepositLabel()
+        updateCartBadge()
     }
 
     func didUpdateNote(_ note: String?, at index: Int) {

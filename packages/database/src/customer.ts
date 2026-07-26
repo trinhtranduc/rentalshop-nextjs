@@ -760,18 +760,15 @@ export const simplifiedCustomers = {
       const searchTerm = String(searchQuery).trim();
       // Only perform search if search term has at least 2 characters
       if (searchTerm && searchTerm.length >= 2) {
-        // Diacritics-insensitive search using PostgreSQL unaccent():
-        // "chon" matches "Chồn", "chu chon" matches "Chú Chồn" (word-boundary + full-name).
         const searchQueryNFC = searchTerm.normalize('NFC');
         const normalizedTerm = removeVietnameseDiacritics(searchTerm);
 
-        // Accent policy: if query has diacritics → accent-sensitive (NFC), else → unaccent()
+        // Accent policy: if query has diacritics -> accent-sensitive (NFC), else -> unaccent()
         const hasDiacritics = searchQueryNFC.toLowerCase() !== normalizedTerm.toLowerCase();
         const patternTerm = (hasDiacritics ? searchQueryNFC : normalizedTerm).toLowerCase();
         const startPattern = `${patternTerm}%`;
         const wordPattern = `% ${patternTerm}%`;
 
-        // Use raw SQL with unaccent() for true Vietnamese diacritics-insensitive search
         let matchingCustomerIds: number[] | null = null;
         try {
           const merchantFilter = whereFilters.merchantId != null
@@ -799,30 +796,26 @@ export const simplifiedCustomers = {
             AND (${nameCondition})
             LIMIT 5000
           `;
-          matchingCustomerIds = results.map(r => r.id);
+          matchingCustomerIds = results.map((result) => result.id);
         } catch {
-          // unaccent not available — fall back to Prisma contains
           matchingCustomerIds = null;
         }
 
         const searchConditions: any[] = [
           { phone: { contains: searchTerm, mode: 'insensitive' } },
           { firstName: { contains: searchTerm, mode: 'insensitive' } },
-          { lastName: { contains: searchTerm, mode: 'insensitive' } },
+          { lastName: { contains: searchTerm, mode: 'insensitive' } }
         ];
-        // unaccent() matches (name search) take priority
         if (matchingCustomerIds !== null && matchingCustomerIds.length > 0) {
           searchConditions.unshift({ id: { in: matchingCustomerIds } });
         }
-        // Normalized (diacritic-stripped) variants for the fallback path
         if (normalizedTerm !== searchTerm) {
           searchConditions.push(
             { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
             { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
           );
         }
-        // Multi-word: each word must appear in EITHER firstName or lastName
-        const words = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
+        const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
         if (words.length >= 2) {
           const wordConditions = words.map((word: string) => ({
             OR: [

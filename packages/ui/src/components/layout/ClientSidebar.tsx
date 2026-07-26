@@ -21,11 +21,13 @@ import {
   Tag,
   User,
   Store,
+  Gift,
   LogOut,
   Bell,
   ChevronDown,
   ClipboardCheck
 } from 'lucide-react';
+import { USER_ROLE } from '@rentalshop/constants';
 
 export interface ClientSidebarProps {
   user?: any;
@@ -47,6 +49,7 @@ interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
   subItems?: MenuItem[];
+  roles?: string[];
 }
 
 // Function to get menu items with translations
@@ -107,6 +110,12 @@ const getClientMenuItems = (t: any): MenuItem[] => [
     label: t('navigation.settings'),
     href: '/settings',
     icon: Settings,
+  },
+  {
+    label: 'Loyalty',
+    href: '/loyalty',
+    icon: Gift,
+    roles: [USER_ROLE.MERCHANT],
   }
 ];
 
@@ -134,19 +143,23 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   // Filter menu items based on user role
   const filterMenuItemsByRole = (items: MenuItem[], userRole?: string) => {
     if (!userRole) return items;
+
+    const normalizedUserRole = userRole.trim().toUpperCase();
     
     // Hide specific tabs based on user role
-    if (userRole === 'OUTLET_ADMIN') {
+    if (normalizedUserRole === 'OUTLET_ADMIN') {
       // OUTLET_ADMIN can see users but not outlets, subscriptions, plans, payments
-      return items.filter(item => 
+      return items.filter(item =>
+        (!item.roles || item.roles.some((role) => role.toUpperCase() === normalizedUserRole)) &&
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
         item.href !== '/plans' && 
         item.href !== '/payments'
       );
-    } else if (userRole === 'OUTLET_STAFF') {
+    } else if (normalizedUserRole === 'OUTLET_STAFF') {
       // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments (limited permissions)
-      return items.filter(item => 
+      return items.filter(item =>
+        (!item.roles || item.roles.some((role) => role.toUpperCase() === normalizedUserRole)) &&
         item.href !== '/users' && 
         item.href !== '/outlets' && 
         item.href !== '/subscriptions' && 
@@ -155,7 +168,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       );
     }
     
-    return items;
+    return items.filter((item) =>
+      !item.roles || item.roles.some((role) => role.toUpperCase() === normalizedUserRole)
+    );
   };
 
   const menuItems = filterMenuItemsByRole(getClientMenuItems(t), user?.role);
@@ -370,13 +385,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <Logo 
-              size="sm" 
-              variant="custom" 
-              src="/anyrent-logo-light.svg" 
-              showBackground={false}
-              blueStroke={true}
-            />
+            <Logo size="sm" variant="blue" />
             <div>
               <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
             </div>
@@ -384,13 +393,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
         )}
         
         {isCollapsed && (
-          <Logo 
-            size="sm" 
-            variant="custom" 
-            src="/anyrent-logo-light.svg" 
-            showBackground={false}
-            blueStroke={true}
-          />
+          <Logo size="sm" variant="blue" />
         )}
 
         <Button

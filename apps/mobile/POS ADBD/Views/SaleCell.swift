@@ -75,7 +75,7 @@ class SaleCell: UITableViewCell {
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.addTarget(self, action: #selector(toggleChartPhoneReveal), for: .touchUpInside)
         button.snp.makeConstraints { make in
-            make.width.height.equalTo(22)
+            make.width.height.equalTo(18)
         }
         return button
     }()
@@ -274,6 +274,9 @@ class SaleCell: UITableViewCell {
             statusContainer.clipsToBounds = true
             statusContainer.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
             statusLabel.backgroundColor = .clear
+            statusLabel.clipsToBounds = false
+            statusLabel.layer.masksToBounds = false
+            statusLabel.layer.cornerRadius = 0
 
             let moneyStack = UIStackView(arrangedSubviews: [statusContainer, getDateLabel])
             moneyStack.axis = .vertical
@@ -309,17 +312,21 @@ class SaleCell: UITableViewCell {
                 make.width.greaterThanOrEqualTo(isIPad ? 108 : 96)
             }
 
-            // The visible badge is `statusContainer`; enforce the standard min
-            // height on IT (not on the inset label — that double-counted the
-            // padding and made this badge ~10pt taller than badges elsewhere).
+            // Size the chip from the label text + padding. Pinning label.edges
+            // with insets alone left short titles clipped by the label mask.
             statusLabel.snp.makeConstraints { make in
                 make.edges.equalToSuperview().inset(OrderStatusBadgeMetrics.contentInsets)
             }
             statusContainer.snp.makeConstraints { make in
                 make.height.greaterThanOrEqualTo(OrderStatusBadgeMetrics.minimumHeight)
+                make.width.greaterThanOrEqualTo(isIPad ? 88 : 78)
             }
-            statusLabel.layer.cornerRadius = 0
             OrderStatusBadgeMetrics.applyBaseAppearance(to: statusLabel, isRegularWidth: isIPad)
+            statusLabel.layer.cornerRadius = 0
+            statusLabel.layer.masksToBounds = false
+            statusLabel.clipsToBounds = false
+            statusLabel.setContentHuggingPriority(.required, for: .horizontal)
+            statusLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
             let separator = UIView()
             separator.tag = 9_901
@@ -641,10 +648,15 @@ class SaleCell: UITableViewCell {
         if activeLayout == .chart {
             statusContainer.backgroundColor = fill
             statusLabel.backgroundColor = .clear
+            statusLabel.layer.cornerRadius = 0
+            statusLabel.layer.masksToBounds = false
+            statusLabel.clipsToBounds = false
             statusContainer.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
+            statusContainer.clipsToBounds = true
         } else {
             statusLabel.backgroundColor = fill
             statusLabel.layer.cornerRadius = OrderStatusBadgeMetrics.cornerRadius
+            statusLabel.layer.masksToBounds = true
             statusContainer.backgroundColor = .clear
         }
     }

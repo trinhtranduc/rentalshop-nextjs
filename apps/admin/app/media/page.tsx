@@ -44,7 +44,6 @@ export default function MediaPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [nextToken, setNextToken] = useState<string | null>(null);
-  const hasFetched = useRef(false);
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'ARTICLE';
 
@@ -70,19 +69,17 @@ export default function MediaPage() {
       }
     } catch (err) {
       console.error('Error fetching media:', err);
+      toastError('Lỗi khi tải danh sách media');
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toastError]);
 
   useEffect(() => {
-    if (canManage && !hasFetched.current) {
-      hasFetched.current = true;
+    if (canManage) {
       fetchMedia();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage]);
+  }, [canManage, fetchMedia]);
 
   // Upload files
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

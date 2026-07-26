@@ -6,9 +6,10 @@ import {
   ordersQuerySchema, 
   orderCreateSchema, 
   orderUpdateSchema, 
-  PricingResolver, 
-  calculateDurationInUnit, 
-  getDurationUnitLabel, 
+  PricingResolver,
+  resolveSelectedOption,
+  calculateDurationInUnit,
+  getDurationUnitLabel,
   ResponseBuilder, 
   handleApiError, 
   formatFullName, 
@@ -26,6 +27,11 @@ import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils';
+import {
+  calculateAmountDue,
+  handleLoyaltyOnOrderCreate,
+  merchantHasLoyaltyFeature,
+} from '@rentalshop/loyalty';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -604,39 +610,43 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // RENT orders start as RESERVED (scheduled rental)
     const initialStatus = parsed.data.orderType === ORDER_TYPE.SALE ? ORDER_STATUS.COMPLETED : ORDER_STATUS.RESERVED;
 
-    // Calculate rentalDuration from pickup and return dates
-    // Duration calculation depends on product pricing type
-    let rentalDuration: number | null = null;
-    
-    if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+    // Determine rentalDuration: prefer client-sent value, fallback to server calculation
+    // This ensures mobile manual override is respected (Req 2.4, 6.4)
+    let rentalDuration: number | null = parsed.data.rentalDuration ?? null;
+    let rentalDurationUnit: string | null = parsed.data.rentalDurationUnit ?? null;
+
+    // Get dominant pricing type from first product (for server-side fallback calculation)
+    let dominantPricingType: PricingType = 'FIXED';
+    if (parsed.data.orderItems && parsed.data.orderItems.length > 0) {
+      const firstProductId = parsed.data.orderItems[0].productId;
+      const firstProduct = await db.products.findById(firstProductId) as any;
+      if (firstProduct?.pricingType) {
+        dominantPricingType = firstProduct.pricingType as PricingType;
+      }
+    }
+
+    // If client didn't send rentalDuration, calculate from dates
+    if (rentalDuration == null && parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
       const pickup = new Date(parsed.data.pickupPlanAt);
       const returnDate = new Date(parsed.data.returnPlanAt);
-      
-      // Get pricing type from first product (all products in order should have same type)
-      // Default to FIXED if not set (uses enum)
-      let pricingType: PricingType = 'FIXED';
-      if (parsed.data.orderItems && parsed.data.orderItems.length > 0) {
-        const firstProductId = parsed.data.orderItems[0].productId;
-        const firstProduct = await db.products.findById(firstProductId) as any;
-        if (firstProduct?.pricingType) {
-          pricingType = firstProduct.pricingType as PricingType;
-        }
-      }
-      
-      // Calculate duration based on pricing type
-      if (pricingType === 'HOURLY') {
+
+      if (dominantPricingType === 'HOURLY') {
         const diffTime = returnDate.getTime() - pickup.getTime();
-        rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
+        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60)));
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
-      } else if (pricingType === 'DAILY') {
-      const diffTime = returnDate.getTime() - pickup.getTime();
-      rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
-      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+      } else if (dominantPricingType === 'DAILY') {
+        const diffTime = returnDate.getTime() - pickup.getTime();
+        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
-        // FIXED pricing: duration is 1 (per rental)
         rentalDuration = 1;
         console.log('🔍 FIXED pricing: rental duration = 1 rental');
       }
+    }
+
+    // Resolve rentalDurationUnit if not sent by client
+    if (!rentalDurationUnit) {
+      rentalDurationUnit = dominantPricingType === 'DAILY' ? 'day' : dominantPricingType === 'HOURLY' ? 'hour' : null;
     }
 
     // Process order items - use pricing from request (frontend calculated)
@@ -661,21 +671,39 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             notes: item.notes
           });
 
-          // Calculate rentalDays for this item based on pricing type
-          // For FIXED: rentalDays = 1 (per rental)
-          // For HOURLY/DAILY: use calculated duration
+          // Resolve pricing mode for this line:
+          // 1) explicit pricingOptionId → that option's type
+          // 2) client-sent pricingType (mobile may send DAILY without an option id)
+          // 3) product default option / product.pricingType
+          // IMPORTANT: resolveSelectedOption() always returns a default, so it must
+          // NOT override an explicit item.pricingType when pricingOptionId is absent.
+          const requestedOptionId = (item as any).pricingOptionId ?? null;
+          const selectedOption = resolveSelectedOption(product as Product, requestedOptionId);
+          const optionType = (
+            (requestedOptionId != null ? selectedOption?.type : null) ||
+            item.pricingType ||
+            selectedOption?.type ||
+            PricingResolver.resolvePricingType(product as Product, merchant as any)
+          ) as PricingType;
+
+          // Determine rentalDays: prefer client-sent value (item.rentDays), then calculate from dates
+          // This ensures mobile manual override of rental days is respected (Req 2.4, 6.4)
           let rentalDays: number | null = null;
-          if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+          if (optionType === 'FIXED') {
+            rentalDays = 1;
+          } else if (item.rentDays && item.rentDays >= 1) {
+            // Trust client-sent rentDays (mobile staff may have manually entered)
+            rentalDays = item.rentDays;
+          } else if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
             const pickup = new Date(parsed.data.pickupPlanAt);
             const returnDate = new Date(parsed.data.returnPlanAt);
-            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
-            const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
-            rentalDays = productPricingType === 'FIXED' ? 1 : duration;
+            const { duration } = calculateDurationInUnit(pickup, returnDate, optionType);
+            rentalDays = Math.max(1, duration);
           } else {
             rentalDays = rentalDuration || 1;
           }
 
-          // Snapshot product info to preserve it even if product is deleted later
+          // Snapshot product info + selected option to preserve them even if changed later
           return {
             productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
             // Snapshot fields
@@ -688,7 +716,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             totalPrice: finalTotalPrice,
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
-            rentalDays: rentalDays
+            rentalDays: rentalDays,
+            // Pricing option snapshot — only attach option id when client selected one
+            // or the resolved option actually matches optionType (avoid stamping FIXED
+            // default id onto a DAILY line that only sent pricingType).
+            pricingType: optionType,
+            pricingOptionId:
+              requestedOptionId ??
+              (selectedOption?.type === optionType ? selectedOption?.id ?? null : null) ??
+              null,
           };
     }) || []);
 
@@ -715,6 +751,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
       rentalDuration: rentalDuration,
+      rentalDurationUnit: rentalDurationUnit,
       isReadyToDeliver: parsed.data.isReadyToDeliver || false,
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
@@ -736,19 +773,59 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     
     // Use simplified database API
     const order = await db.orders.create(orderData);
+
+    let loyaltyOrder = order;
+    // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
+    // there is an actual loyalty intent: an explicit redeem, or a SALE order with a customer
+    // (SALE earns immediately). No customer / no intent -> zero loyalty query.
+    const wantsRedeem = Boolean(parsed.data.customerId && parsed.data.loyaltyRedeem?.points);
+    const wantsSaleEarn = Boolean(
+      parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
+    );
+    if (wantsRedeem || wantsSaleEarn) {
+      const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
+      if (hasLoyalty && wantsRedeem) {
+        // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            parsed.data.loyaltyRedeem,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyError) {
+          console.error('❌ Loyalty processing failed, rolling back order:', loyaltyError);
+          await db.orders.delete(order.id).catch(() => undefined);
+          throw loyaltyError;
+        }
+      } else if (hasLoyalty && wantsSaleEarn) {
+        // Earn is FAIL-OPEN (INV-6): order stays created even if earn fails.
+        try {
+          loyaltyOrder = await handleLoyaltyOnOrderCreate(
+            order,
+            undefined,
+            { id: user.id },
+            outlet.merchantId
+          );
+        } catch (loyaltyEarnError) {
+          console.error('⚠️ Loyalty earn failed (order still created):', loyaltyEarnError);
+        }
+      }
+    }
+
     const auditHelper = createAuditHelper(prisma);
     await auditHelper.logCreate({
       entityType: 'Order',
-      entityId: String(order.id),
-      entityName: order.orderNumber || String(order.id),
-      newValues: { orderNumber: order.orderNumber, orderType: order.orderType, status: order.status, outletId: order.outletId, customerId: order.customerId },
-      description: `Order created: ${order.orderNumber || order.id}`,
+      entityId: String(loyaltyOrder.id),
+      entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
+      newValues: { orderNumber: loyaltyOrder.orderNumber, orderType: loyaltyOrder.orderType, status: loyaltyOrder.status, outletId: loyaltyOrder.outletId, customerId: loyaltyOrder.customerId },
+      description: `Order created: ${loyaltyOrder.orderNumber || loyaltyOrder.id}`,
       context: buildAuditContext(request, user, userScope)
     }).catch((err) => console.error('Audit log create failed:', err));
-    console.log('✅ Order created successfully:', order);
+    console.log('✅ Order created successfully:', loyaltyOrder);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
-    if (order.orderItems && order.orderItems.length > 0) {
+    if (loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
       try {
         // Import the function from product module (same pattern as updateOrder in order.ts)
         // Use dynamic import - order.ts uses './product' from same package
@@ -759,17 +836,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           // For SALE orders with COMPLETED status: decrease stock permanently
           // For RENT orders with RESERVED/PICKUPED status: update renting/available
           const shouldUpdateStock = 
-            (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.COMPLETED) ||
-            (order.orderType === ORDER_TYPE.RENT && (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED));
+            (loyaltyOrder.orderType === ORDER_TYPE.SALE && loyaltyOrder.status === ORDER_STATUS.COMPLETED) ||
+            (loyaltyOrder.orderType === ORDER_TYPE.RENT && (loyaltyOrder.status === ORDER_STATUS.RESERVED || loyaltyOrder.status === ORDER_STATUS.PICKUPED));
           
           if (shouldUpdateStock) {
             await updateOutletStockForOrder(
-              order.id,
+              loyaltyOrder.id,
               null, // oldStatus (null for new orders)
-              order.status,
-              order.orderType as 'RENT' | 'SALE',
-              order.outletId,
-              order.orderItems.map(item => ({
+              loyaltyOrder.status,
+              loyaltyOrder.orderType as 'RENT' | 'SALE',
+              loyaltyOrder.outletId,
+              loyaltyOrder.orderItems.map(item => ({
                 productId: item.productId || 0,
                 quantity: item.quantity,
               })).filter(item => item.productId > 0)
@@ -788,46 +865,53 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      orderType: order.orderType,
-      status: order.status,
-      outletId: order.outletId,
-      outletName: order.outlet?.name || null,
-      customerId: order.customerId,
+      id: loyaltyOrder.id,
+      orderNumber: loyaltyOrder.orderNumber,
+      orderType: loyaltyOrder.orderType,
+      status: loyaltyOrder.status,
+      outletId: loyaltyOrder.outletId,
+      outletName: loyaltyOrder.outlet?.name || null,
+      customerId: loyaltyOrder.customerId,
       customerFirstName: order.customer?.firstName || null,
       customerLastName: order.customer?.lastName || null,
-      customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) : null,
-      customerPhone: order.customer?.phone || null,
-      customerEmail: order.customer?.email || null,
+      customerName: loyaltyOrder.customer ? formatFullName(loyaltyOrder.customer.firstName, loyaltyOrder.customer.lastName) : null,
+      customerPhone: loyaltyOrder.customer?.phone || null,
+      customerEmail: loyaltyOrder.customer?.email || null,
       merchantId: null, // Will be populated from outlet if needed
       merchantName: null, // Will be populated from outlet if needed
-      createdById: order.createdById,
-      createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
-      totalAmount: order.totalAmount,
-      depositAmount: order.depositAmount,
-      securityDeposit: order.securityDeposit,
-      damageFee: order.damageFee,
-      lateFee: order.lateFee,
-      discountType: order.discountType,
-      discountValue: order.discountValue,
-      discountAmount: order.discountAmount,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      rentalDuration: order.rentalDuration,
-      isReadyToDeliver: order.isReadyToDeliver,
-      collateralType: order.collateralType,
-      collateralDetails: order.collateralDetails,
-      notes: order.notes,
-      pickupNotes: order.pickupNotes,
-      returnNotes: order.returnNotes,
-      damageNotes: order.damageNotes,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
+      createdById: loyaltyOrder.createdById,
+      createdByName: loyaltyOrder.createdBy ? formatFullName(loyaltyOrder.createdBy.firstName, loyaltyOrder.createdBy.lastName) : null,
+      totalAmount: loyaltyOrder.totalAmount,
+      depositAmount: loyaltyOrder.depositAmount,
+      securityDeposit: loyaltyOrder.securityDeposit,
+      damageFee: loyaltyOrder.damageFee,
+      lateFee: loyaltyOrder.lateFee,
+      discountType: loyaltyOrder.discountType,
+      discountValue: loyaltyOrder.discountValue,
+      discountAmount: loyaltyOrder.discountAmount,
+      loyaltyPointsRedeemed: loyaltyOrder.loyaltyPointsRedeemed ?? 0,
+      loyaltyDiscount: loyaltyOrder.loyaltyDiscount ?? 0,
+      loyaltyPointsEarned: loyaltyOrder.loyaltyPointsEarned ?? 0,
+      amountDue: calculateAmountDue(
+        loyaltyOrder.totalAmount,
+        loyaltyOrder.loyaltyDiscount ?? 0
+      ),
+      pickupPlanAt: loyaltyOrder.pickupPlanAt,
+      returnPlanAt: loyaltyOrder.returnPlanAt,
+      pickedUpAt: loyaltyOrder.pickedUpAt,
+      returnedAt: loyaltyOrder.returnedAt,
+      rentalDuration: loyaltyOrder.rentalDuration,
+      isReadyToDeliver: loyaltyOrder.isReadyToDeliver,
+      collateralType: loyaltyOrder.collateralType,
+      collateralDetails: loyaltyOrder.collateralDetails,
+      notes: loyaltyOrder.notes,
+      pickupNotes: loyaltyOrder.pickupNotes,
+      returnNotes: loyaltyOrder.returnNotes,
+      damageNotes: loyaltyOrder.damageNotes,
+      createdAt: loyaltyOrder.createdAt,
+      updatedAt: loyaltyOrder.updatedAt,
       // Flatten order items with product info
-      orderItems: order.orderItems?.map((item: any) => {
+      orderItems: loyaltyOrder.orderItems?.map((item: any) => {
         // Priority 1: Use productImages (snapshot field saved when order was created)
         // Priority 2: Fallback to product.images (from product relation - current images)
         const snapshotImages = parseProductImages(item.productImages);
@@ -846,13 +930,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           totalPrice: item.totalPrice,
           deposit: item.deposit,
           notes: item.notes,
-          rentalDays: item.rentalDays
+          rentalDays: item.rentalDays,
+          pricingType: item.pricingType,
+          pricingOptionId: item.pricingOptionId
         };
       }) || [],
       // Calculated fields
-      itemCount: order.orderItems?.length || 0,
-      paymentCount: order.payments?.length || 0,
-      totalPaid: order.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+      itemCount: loyaltyOrder.orderItems?.length || 0,
+      paymentCount: loyaltyOrder.payments?.length || 0,
+      totalPaid: loyaltyOrder.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     };
 
     // Normalize date fields to UTC ISO strings using toISOString()

@@ -13,6 +13,7 @@ import { NotesSection } from './components/NotesSection';
 import { OrderSummaryCard } from './components/OrderSummaryCard';
 import { OrderSettingsCard } from './components/OrderSettingsCard';
 import { OrderActionsSection } from './components/OrderActionsSection';
+import { LoyaltyOrderInfo } from '../Loyalty/LoyaltyOrderInfo';
 import { calculateCollectionTotal } from './utils';
 
 // Define OrderDetailProps interface locally
@@ -576,6 +577,15 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               order={order} 
               tempSettings={tempSettings}
               calculateCollectionTotal={calculateCollectionTotal}
+            />
+
+            {/* Loyalty Order Info */}
+            <LoyaltyOrderInfo
+              loyaltyPointsRedeemed={(order as any).loyaltyPointsRedeemed}
+              loyaltyDiscount={(order as any).loyaltyDiscount}
+              loyaltyPointsEarned={(order as any).loyaltyPointsEarned}
+              orderType={order.orderType as 'RENT' | 'SALE'}
+              orderStatus={order.status}
             />
 
             {/* Order Settings Card - Using new component with translations */}

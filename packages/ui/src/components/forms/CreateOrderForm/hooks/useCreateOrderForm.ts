@@ -13,9 +13,98 @@ import type {
   CreateOrderFormProps 
 } from '../types';
 
+// ---- Pricing option helpers (multi-option products) ----
+const deriveRentalDays = (start?: string, end?: string): number => {
+  if (!start || !end) return 1;
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  if (isNaN(s) || isNaN(e)) return 1;
+  const days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 1;
+};
+
+const getItemOptions = (item: OrderItemFormData): Array<{ id?: number; type: string; price: number; isDefault?: boolean }> =>
+  (item.product?.pricingOptions as any[]) || [];
+
+const getPreferredPricingOption = <T extends { type: string; isDefault?: boolean }>(options: T[]): T | null =>
+  options.find(option => option.type === 'FIXED') ||
+  options.find(option => option.isDefault) ||
+  options[0] ||
+  null;
+
+const resolveItemOption = (item: OrderItemFormData) => {
+  const opts = getItemOptions(item);
+  if (opts.length === 0) return null;
+  if (item.selectedPricingOptionId != null) {
+    const found = opts.find(o => o.id === item.selectedPricingOptionId);
+    if (found) return found;
+  }
+  if (item.pricingType) {
+    const matchingType = opts.find(option => option.type === item.pricingType);
+    if (matchingType) return matchingType;
+  }
+  return getPreferredPricingOption(opts);
+};
+
+const resolveItemPricingType = (item: OrderItemFormData): string => {
+  const opt = resolveItemOption(item);
+  if (opt) return opt.type;
+  return (item.pricingType || item.product?.pricingType || 'FIXED') as string;
+};
+
+const computeLineTotal = (item: OrderItemFormData, orderType: 'RENT' | 'SALE', days: number): number => {
+  const qty = item.quantity || 1;
+  const unit = item.unitPrice || 0;
+  if (orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY') {
+    return unit * qty * Math.max(1, days);
+  }
+  return unit * qty;
+};
+
+/** Map API/order item → form item, preserving daily/hourly pricing snapshot. */
+const mapInitialOrderItem = (item: any): OrderItemFormData => {
+  const rentPrice = item.product?.rentPrice ?? item.unitPrice ?? 0;
+  const salePrice = item.product?.salePrice ?? rentPrice;
+  const pricingOptions = item.product?.pricingOptions ?? [];
+  const pricingType = item.pricingType ?? item.product?.pricingType ?? 'FIXED';
+
+  return {
+    id: item.id,
+    productId: item.product?.id || item.productId || 0,
+    product: {
+      id: item.product?.id || item.productId || 0,
+      name: item.product?.name || item.productName || 'Unknown Product',
+      description: item.product?.description || '',
+      images: item.product?.images || item.productImages || null,
+      barcode: item.product?.barcode || item.productBarcode || '',
+      rentPrice,
+      salePrice,
+      deposit: item.deposit ?? 0,
+      pricingType: item.product?.pricingType ?? null,
+      pricingOptions,
+      outletStock: item.product?.outletStock || [],
+      stock: item.product?.stock,
+      available: item.product?.available,
+      renting: item.product?.renting,
+    },
+    quantity: item.quantity || 1,
+    unitPrice: item.unitPrice || 0,
+    totalPrice: item.totalPrice || 0,
+    rentalDays: item.rentalDays || 1,
+    deposit: item.deposit ?? 0,
+    notes: item.notes || '',
+    selectedPricingOptionId:
+      item.pricingOptionId ??
+      pricingOptions.find((option: any) => option.type === pricingType)?.id ??
+      null,
+    pricingType,
+  };
+};
+
 export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const {
     outlets = [],
+    products = [],
     isEditMode = false,
     initialOrder,
     merchantId
@@ -71,31 +160,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const [orderItems, setOrderItems] = useState<OrderItemFormData[]>(() => {
     // Initialize with existing order items if in edit mode
     if (isEditMode && initialOrder?.orderItems) {
-      return initialOrder.orderItems.map((item: any) => ({
-        id: item.id, // Keep database CUID for existing items
-        productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
-        product: {
-          id: item.product?.id || item.productId || 0, // Frontend uses id (number)
-          // Use productName from API response (snapshot) if product object is missing
-          name: item.product?.name || (item as any).productName || 'Unknown Product',
-          description: item.product?.description || '',
-          images: item.product?.images || (item as any).productImages || null,
-          barcode: item.product?.barcode || (item as any).productBarcode || '',
-          rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
-          deposit: item.deposit ?? 0,
-          // Store outletStock if available
-          outletStock: item.product?.outletStock || [],
-          stock: item.product?.stock,
-          available: item.product?.available,
-          renting: item.product?.renting,
-        },
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice || 0,
-        totalPrice: item.totalPrice || 0,
-        rentalDays: item.rentalDays || 0,
-        deposit: item.deposit ?? 0,
-        notes: item.notes || '',
-      }));
+      return initialOrder.orderItems.map(mapInitialOrderItem);
     }
     return [];
   });
@@ -115,8 +180,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Calculate totals when order items change
   useEffect(() => {
-    const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    
+    const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+    const subtotal = orderItems.reduce((sum, item) => sum + computeLineTotal(item, formData.orderType, days), 0);
+
     // Calculate discount amount with validation
     let discountAmount = 0;
     if (formData.discountType === 'percentage') {
@@ -137,7 +203,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       discountAmount,
       totalAmount
     }));
-  }, [orderItems, formData.discountType, formData.discountValue]);
+  }, [orderItems, formData.discountType, formData.discountValue, formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
 
   // Calculate deposit amount for rent orders
   // Deposit = sum of (deposit per unit * quantity) for each item
@@ -209,39 +275,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         notes: initialOrder.notes || '',
       }));
 
-      // Update order items
+      // Update order items (must keep pricingType / pricingOptionId or daily rental resets to FIXED)
       if (initialOrder.orderItems) {
-        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => {
-          const rentPrice = item.product?.rentPrice ?? item.unitPrice ?? 0;
-          const salePrice = item.product?.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
-          
-          return {
-            id: item.id, // Keep database CUID for existing items
-            productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
-            product: {
-              id: item.product?.id || item.productId || 0, // Frontend uses id (number)
-              // Use productName from API response (snapshot) if product object is missing
-              name: item.product?.name || (item as any).productName || 'Unknown Product',
-              description: item.product?.description || '',
-              images: item.product?.images || (item as any).productImages || null,
-              barcode: item.product?.barcode || (item as any).productBarcode || '',
-              rentPrice: rentPrice,
-              salePrice: salePrice, // Store salePrice for later use
-              deposit: item.deposit ?? 0,
-              // Store outletStock if available
-              outletStock: item.product?.outletStock || [],
-              stock: item.product?.stock,
-              available: item.product?.available,
-              renting: item.product?.renting,
-            },
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || 0,
-            totalPrice: item.totalPrice || 0,
-            rentalDays: item.rentalDays || 0,
-            deposit: item.deposit ?? 0,
-            notes: item.notes || '',
-          };
-        });
+        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map(mapInitialOrderItem);
         
         setOrderItems(initialOrderItems);
         
@@ -259,6 +295,46 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       }
     }
   }, [isEditMode, initialOrder, outlets]);
+
+  // Order GET does not include product.pricingOptions — hydrate from products list so
+  // the "Cách tính giá" selector still works in edit mode.
+  useEffect(() => {
+    if (!products.length) return;
+
+    setOrderItems(prev => {
+      if (!prev.length) return prev;
+
+      let changed = false;
+      const hydrated = prev.map(item => {
+        const hasOptions = ((item.product?.pricingOptions as any[])?.length ?? 0) > 0;
+        if (hasOptions) return item;
+
+        const liveProduct = products.find(p => p.id === item.productId) as any;
+        const liveOptions = liveProduct?.pricingOptions as any[] | undefined;
+        if (!liveOptions?.length) return item;
+
+        changed = true;
+        const pricingType = item.pricingType ?? liveProduct?.pricingType ?? 'FIXED';
+        return {
+          ...item,
+          product: {
+            ...item.product,
+            pricingType: liveProduct?.pricingType ?? item.product?.pricingType ?? null,
+            pricingOptions: liveOptions,
+            salePrice: liveProduct?.salePrice ?? item.product?.salePrice,
+            rentPrice: liveProduct?.rentPrice ?? item.product?.rentPrice,
+          },
+          selectedPricingOptionId:
+            item.selectedPricingOptionId ??
+            liveOptions.find((option: any) => option.type === pricingType)?.id ??
+            null,
+          pricingType,
+        };
+      });
+
+      return changed ? hydrated : prev;
+    });
+  }, [products, orderItems.length]);
 
   // Add product to order
   const addProductToOrder = useCallback((product: any) => {
@@ -278,10 +354,18 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       const rentPrice = product.rentPrice ?? 0;
       const salePrice = product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
       const deposit = product.deposit ?? 0;
-      
-      // Use salePrice for SALE orders, rentPrice for RENT orders
-      const unitPrice = formData.orderType === 'RENT' ? rentPrice : salePrice;
-      
+
+      // Resolve default pricing option (RENT only)
+      const pricingOptions = (product.pricingOptions as any[]) || [];
+      // A rent line starts at the per-rental price when it is available. This is
+      // independent of a product-level marketing/default option so staff do not
+      // accidentally create a daily-priced order.
+      const defaultOption = getPreferredPricingOption(pricingOptions);
+      const isRent = formData.orderType === 'RENT';
+
+      // Use salePrice for SALE orders; for RENT use the default option's price (falls back to rentPrice)
+      const unitPrice = isRent ? (defaultOption ? defaultOption.price : rentPrice) : salePrice;
+
       const newItem: OrderItemFormData = {
         productId: productIdNumber,
         product: {
@@ -293,6 +377,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           rentPrice: rentPrice,
           salePrice: salePrice, // Store salePrice for later use
           deposit: deposit,
+          pricingType: product.pricingType ?? null,
+          pricingOptions: pricingOptions,
           // Store outletStock to ensure stock info is always available
           outletStock: product.outletStock || [],
           stock: product.stock,
@@ -304,6 +390,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         totalPrice: unitPrice * BUSINESS.DEFAULT_QUANTITY,
         deposit: deposit,
         notes: '',
+        selectedPricingOptionId: isRent ? (defaultOption?.id ?? null) : null,
+        pricingType: isRent ? (defaultOption?.type || (product.pricingType as string) || 'FIXED') : 'FIXED',
       };
       const newOrderItems = [...orderItems, newItem];
       setOrderItems(newOrderItems);
@@ -317,13 +405,14 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
   // Update order item
   const updateOrderItem = useCallback((productId: number, field: keyof OrderItemFormData, value: string | number) => {
+    const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
     const updatedItems = orderItems.map(item => {
       if (item.productId === productId) {
         const updatedItem = { ...item, [field]: value };
         
-        // Recalculate totalPrice when quantity or unitPrice changes
+        // Recalculate totalPrice when quantity or unitPrice changes (DAILY uses days)
         if (field === 'quantity' || field === 'unitPrice') {
-          updatedItem.totalPrice = (updatedItem.unitPrice || 0) * (updatedItem.quantity || 1);
+          updatedItem.totalPrice = computeLineTotal(updatedItem, formData.orderType, days);
         }
         
         return updatedItem;
@@ -331,7 +420,50 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       return item;
     });
     setOrderItems(updatedItems);
-  }, [orderItems]);
+  }, [orderItems, formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
+
+  // Change selected pricing option by id (when product has configured options)
+  const updateItemPricingOption = useCallback((productId: number, optionId: number) => {
+    setOrderItems(prev => prev.map(item => {
+      if (item.productId !== productId) return item;
+      const opt = ((item.product?.pricingOptions as any[]) || []).find(o => o.id === optionId);
+      if (!opt) return item;
+      const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+      const updated = { ...item, selectedPricingOptionId: optionId, pricingType: opt.type, unitPrice: opt.price };
+      updated.totalPrice = computeLineTotal(updated, formData.orderType, days);
+      return updated;
+    }));
+  }, [formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
+
+  // Switch FIXED (per rental) ↔ DAILY (per day) — same as mobile cart, even when
+  // the product only has one configured option (or none).
+  const updateItemPricingType = useCallback((productId: number, type: string) => {
+    const normalizedType = (type || 'FIXED').toUpperCase();
+    setOrderItems(prev => prev.map(item => {
+      if (item.productId !== productId) return item;
+
+      const opts = ((item.product?.pricingOptions as any[]) || []);
+      const matchedOption = opts.find(
+        (option: any) => (option.type || '').toUpperCase() === normalizedType
+      );
+      const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+      const nextUnitPrice =
+        matchedOption?.price ??
+        (normalizedType === 'FIXED'
+          ? (item.product?.rentPrice ?? item.unitPrice)
+          : item.unitPrice);
+
+      const updated: OrderItemFormData = {
+        ...item,
+        pricingType: normalizedType,
+        selectedPricingOptionId: matchedOption?.id ?? null,
+        unitPrice: nextUnitPrice,
+        rentalDays: normalizedType === 'DAILY' ? Math.max(1, days) : 1,
+      };
+      updated.totalPrice = computeLineTotal(updated, formData.orderType, days);
+      return updated;
+    }));
+  }, [formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
 
   // Calculate rental days
   const calculateRentalDays = useCallback((startDate: string, endDate: string): number => {
@@ -350,20 +482,28 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       returnPlanAt: endDate,
     }));
 
-    // Update order items with new dates and recalculate prices
+    // Update order items with new dates and recalculate prices (per pricing type)
     const days = calculateRentalDays(startDate, endDate);
-    const updatedItems = orderItems.map(item => ({
-      ...item,
-      startDate,
-      endDate,
-      daysRented: days,
-      totalPrice: item.unitPrice * days * item.quantity,
-    }));
+    const effectiveDays = days > 0 ? days : 1;
+    const updatedItems = orderItems.map(item => {
+      const isDaily = formData.orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY';
+      return {
+        ...item,
+        startDate,
+        endDate,
+        daysRented: days,
+        rentalDays: isDaily ? effectiveDays : (item.rentalDays ?? 1),
+        totalPrice: computeLineTotal(item, formData.orderType, effectiveDays),
+      };
+    });
     setOrderItems(updatedItems);
-  }, [orderItems, calculateRentalDays]);
+  }, [orderItems, calculateRentalDays, formData.orderType]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (
+    e: React.FormEvent,
+    loyaltyRedeem?: { points: number }
+  ) => {
     e.preventDefault();
     
     // Use the ref to get the latest orderItems state to avoid stale closure issues
@@ -382,6 +522,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     try {
       // Prepare API payload with proper types (send numeric IDs directly)
       // DRY: Use centralized utility function to convert local date to UTC datetime (matches mobile app format)
+      const submitDays = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
       const apiPayload = {
         orderType: formData.orderType,
         customerId: formData.customerId, // Send as number
@@ -399,13 +540,22 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         damageFee: formData.damageFee,
         totalAmount: formData.totalAmount,
         notes: formData.notes,
-        orderItems: currentOrderItems.map(item => ({
-          productId: item.productId, // Send as number
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          deposit: item.deposit ?? 0,
-          notes: item.notes || '',
-        }))
+        orderItems: currentOrderItems.map(item => {
+          const isDaily = formData.orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY';
+          const lineDays = isDaily ? Math.max(1, submitDays) : 1;
+          return {
+            productId: item.productId, // Send as number
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: computeLineTotal(item, formData.orderType, submitDays),
+            deposit: item.deposit ?? 0,
+            notes: item.notes || '',
+            rentDays: lineDays,
+            pricingType: resolveItemPricingType(item),
+            ...(item.selectedPricingOptionId != null ? { pricingOptionId: item.selectedPricingOptionId } : {}),
+          };
+        }),
+        ...(loyaltyRedeem ? { loyaltyRedeem } : {}),
       };
       
       // Add order ID for edit mode
@@ -455,69 +605,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         firstItemHasProductName: !!initialOrder.orderItems?.[0]?.productName
       });
 
-      const mappedItems = initialOrder.orderItems.map((item: any) => {
-        const productName = item.product?.name || (item as any).productName || 'Unknown Product';
-        const productBarcode = item.product?.barcode || (item as any).productBarcode || '';
-        const productImages = item.product?.images || (item as any).productImages || null;
-        
-        console.log('🔍 useCreateOrderForm: Mapping item:', {
-          itemId: item.id,
-          productId: item.productId,
-          hasProduct: !!item.product,
-          productNameFromProduct: item.product?.name,
-          productNameFromSnapshot: (item as any).productName,
-          finalProductName: productName,
-          finalProductNameType: typeof productName,
-          finalProductNameLength: productName?.length
-        });
-
-        const mappedItem = {
-        id: item.id,
-        productId: item.productId || 0,
-        product: {
-          id: item.product?.id || item.productId || 0,
-            // Use productName from API response (snapshot) if product object is missing
-            name: productName,
-          description: item.product?.description || '',
-            images: productImages,
-            barcode: productBarcode,
-          rentPrice: item.unitPrice || 0,
-          deposit: item.deposit ?? 0,
-          // Store outletStock if available
-          outletStock: item.product?.outletStock || [],
-          stock: item.product?.stock,
-          available: item.product?.available,
-          renting: item.product?.renting,
-        },
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice || 0,
-        totalPrice: item.totalPrice || 0,
-        rentalDays: item.rentalDays || 0,
-        deposit: item.deposit ?? 0,
-        notes: item.notes || '',
-      };
-      
-      console.log('🔍 useCreateOrderForm: Mapped item result:', {
-        itemId: mappedItem.id,
-        productId: mappedItem.productId,
-        productName: mappedItem.product.name,
-        productNameType: typeof mappedItem.product.name,
-        productNameLength: mappedItem.product.name?.length,
-        fullProduct: mappedItem.product
-      });
-      
-      return mappedItem;
-      });
-      
-      console.log('🔍 useCreateOrderForm: All mapped items:', {
-        count: mappedItems.length,
-        items: mappedItems.map((i: any) => ({
-          id: i.id,
-          productId: i.productId,
-          productName: i.product.name
-        }))
-      });
-      
+      const mappedItems = initialOrder.orderItems.map(mapInitialOrderItem);
       setOrderItems(mappedItems);
     } else {
       // Reset to default values for create mode
@@ -557,6 +645,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
+    updateItemPricingOption,
+    updateItemPricingType,
     updateRentalDates,
     handleSubmit,
     resetForm,

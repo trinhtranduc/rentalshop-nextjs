@@ -9,6 +9,8 @@ import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
 
+const IMAGE_UPLOAD_ERROR_PREFIX = 'IMAGE_UPLOAD_FAILED::';
+
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
     userId: String(user.id),
@@ -20,6 +22,17 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
     userAgent: request.headers.get('user-agent') || undefined,
     requestId: request.headers.get('x-request-id') || undefined
   };
+}
+
+function buildImageUploadErrorResponse(detail?: string) {
+  const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
+  return NextResponse.json(
+    {
+      ...base,
+      error: detail || base.error
+    },
+    { status: 500 }
+  );
 }
 
 /**
@@ -284,7 +297,9 @@ async function uploadProductImages(imageFiles: File[]): Promise<{ stagingKeys: s
     });
 
     if (!uploadResult.success || !uploadResult.data) {
-      throw new Error('IMAGE_UPLOAD_FAILED');
+      const uploadError = uploadResult.error || 'Unknown S3 upload error';
+      console.error('❌ uploadProductImages failed:', uploadError);
+      throw new Error(`${IMAGE_UPLOAD_ERROR_PREFIX}${uploadError}`);
     }
 
     stagingKeys.push(uploadResult.data.key);
@@ -537,6 +552,8 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       images: imagesValue,
       pricingType: parsed.data.pricingType || 'FIXED', // Default to FIXED if not provided
       durationConfig: parsed.data.durationConfig || null,
+      // Multiple pricing options (Phase 1: FIXED + DAILY) - normalized in db layer
+      ...(parsed.data.pricingOptions && parsed.data.pricingOptions.length > 0 && { pricingOptions: parsed.data.pricingOptions }),
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
         create: outletStock.map(os => ({
@@ -635,11 +652,13 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       );
     }
     
+    if (typeof error.message === 'string' && error.message.startsWith(IMAGE_UPLOAD_ERROR_PREFIX)) {
+      const detail = error.message.slice(IMAGE_UPLOAD_ERROR_PREFIX.length).trim();
+      return buildImageUploadErrorResponse(detail);
+    }
+
     if (error.message === 'IMAGE_UPLOAD_FAILED') {
-      return NextResponse.json(
-        ResponseBuilder.error(error.message),
-        { status: 500 }
-      );
+      return buildImageUploadErrorResponse();
     }
 
     if (error.message === 'OUTLET_STOCK_REQUIRED' || 
@@ -658,4 +677,3 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     return NextResponse.json(response, { status: statusCode });
   }
 });
-

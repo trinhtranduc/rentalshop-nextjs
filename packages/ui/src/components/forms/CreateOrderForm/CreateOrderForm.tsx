@@ -43,6 +43,7 @@ import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 // Import our custom hooks and components
 import { useCreateOrderForm } from './hooks/useCreateOrderForm';
+import { useLoyaltyRedeem } from './hooks/useLoyaltyRedeem';
 import { useOrderValidation } from './hooks/useOrderValidation';
 import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
@@ -50,6 +51,8 @@ import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
+import { LoyaltyRedeemSection } from './components/LoyaltyRedeemSection';
+import { LoyaltyOrderInfo } from '../../features/Loyalty/LoyaltyOrderInfo';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
 import { EditCustomerDialog } from '@rentalshop/ui';
@@ -94,11 +97,20 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
+    updateItemPricingOption,
+    updateItemPricingType,
     updateRentalDates,
     handleSubmit,
     resetForm,
     calculateRentalDays,
   } = useCreateOrderForm(props);
+
+  const loyalty = useLoyaltyRedeem({
+    customerId: formData.customerId,
+    orderType: formData.orderType,
+    orderTotalAmount: formData.totalAmount,
+    enabled: !isEditMode,
+  });
 
   const { validationErrors, validateForm, isFormValid } = useOrderValidation();
   const { isLoadingProducts, searchProductsForSelect, searchProducts } = useProductSearch(currency as any);
@@ -748,8 +760,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       return;
     }
     
-    await handleSubmit(e);
-  }, [isSubmitting, validateForm, formData, orderItems, handleSubmit]);
+    await handleSubmit(e, loyalty.usePoints && loyalty.redeemPoints > 0
+      ? { points: loyalty.redeemPoints }
+      : undefined);
+  }, [isSubmitting, validateForm, formData, orderItems, handleSubmit, loyalty.usePoints, loyalty.redeemPoints]);
 
   // Check if form is valid for UI
   const isFormValidForUI = isFormValid(formData, orderItems);
@@ -767,6 +781,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onAddProduct={addProductToOrder}
               onRemoveProduct={removeProductFromOrder}
               onUpdateOrderItem={updateOrderItem}
+              onUpdatePricingOption={updateItemPricingOption}
+              onUpdatePricingType={updateItemPricingType}
               onSearchProducts={handleProductSearch} // Use our custom search function
               isLoadingProducts={isLoadingProducts}
               orderType={formData.orderType}
@@ -788,6 +804,30 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col flex-1 overflow-visible p-6 pt-0">
+                {isEditMode && initialOrder ? (
+                  <LoyaltyOrderInfo
+                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
+                    loyaltyDiscount={initialOrder.loyaltyDiscount}
+                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
+                    orderType={formData.orderType}
+                    orderStatus={initialOrder.status || 'RESERVED'}
+                  />
+                ) : (
+                  <LoyaltyRedeemSection
+                    summary={loyalty.summary}
+                    usePoints={loyalty.usePoints}
+                    onUsePointsChange={loyalty.setUsePoints}
+                    redeemPoints={loyalty.redeemPoints}
+                    onRedeemPointsChange={loyalty.setRedeemPoints}
+                    loyaltyDiscount={loyalty.loyaltyDiscount}
+                    amountDue={loyalty.amountDue}
+                    loading={loyalty.loading}
+                    validationError={loyalty.validationError}
+                    enabled={!!formData.customerId}
+                    earnPreview={loyalty.earnPreview}
+                    orderType={formData.orderType}
+                  />
+                )}
                 {/* Order Information Content with Order Summary - Takes full height */}
             <OrderInfoSection
               formData={formData}
@@ -818,6 +858,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 onSubmit={handleSubmit}
                 onCancel={isEditMode ? onCancel : handleInternalCancel}
                 resetKey={resetKey}
+                loyaltyDiscount={loyalty.loyaltyDiscount}
+                amountDue={loyalty.amountDue}
               />
               </CardContent>
             </Card>

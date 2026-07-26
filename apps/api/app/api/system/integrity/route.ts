@@ -3,6 +3,8 @@ import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+
 interface IntegrityCheck {
   name: string;
   status: 'pass' | 'fail' | 'warning';
