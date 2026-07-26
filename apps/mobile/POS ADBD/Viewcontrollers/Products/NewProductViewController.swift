@@ -91,8 +91,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var nameField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Product name *".localized(),
-            placeholder: "Enter product name".localized()
+            title: "product.form.name.required".localized(),
+            placeholder: "product.form.name.placeholder".localized()
         )
         field.textField.setLeftIcon(UIImage(systemName: "tag.fill"))
         field.setTitleColor(APP_TEXT_COLOR)
@@ -106,8 +106,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var quantityField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Quantity *".localized(),
-            placeholder: "Enter quantity".localized()
+            title: "product.form.quantity.required".localized(),
+            placeholder: "product.form.quantity.placeholder".localized()
         )
         field.textField.keyboardType = .numberPad
         field.textField.setLeftIcon(UIImage(systemName: "number.square.fill"))
@@ -119,8 +119,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var rentField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Rent Price / rental *".localized(),
-            placeholder: "Enter price per rental".localized()
+            title: "product.form.pricePerRental.required".localized(),
+            placeholder: "product.form.pricePerRental.placeholder".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.square.fill"))
@@ -133,8 +133,8 @@ class NewProductViewController: BaseViewControler {
     // Optional per-day rental price (creates a DAILY pricing option when > 0)
     private lazy var dailyPriceField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Rent Price / day".localized(),
-            placeholder: "Enter price per day".localized()
+            title: "product.form.pricePerDay".localized(),
+            placeholder: "product.form.pricePerDay.placeholder".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "calendar"))
@@ -144,8 +144,8 @@ class NewProductViewController: BaseViewControler {
 
     private lazy var saleField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Sale Price".localized(),
-            placeholder: "Enter sale price".localized()
+            title: "product.form.salePrice".localized(),
+            placeholder: "product.form.salePrice.placeholder".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.circle.fill"))
@@ -155,8 +155,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var costPriceField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Cost Price".localized(),
-            placeholder: "Enter cost price".localized()
+            title: "product.form.costPrice".localized(),
+            placeholder: "product.form.costPrice.placeholder".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "dollarsign.square"))
@@ -166,8 +166,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var depositField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Deposit Price".localized(),
-            placeholder: "Enter deposit price".localized()
+            title: "product.form.deposit".localized(),
+            placeholder: "product.form.deposit.placeholder".localized()
         )
         field.textField.keyboardType = .decimalPad
         field.textField.setLeftIcon(UIImage(systemName: "lock.fill"))
@@ -177,8 +177,8 @@ class NewProductViewController: BaseViewControler {
     
     private lazy var barcodeField: LabeledTextField = {
         let field = LabeledTextField(
-            title: "Barcode *".localized(),
-            placeholder: "Enter barcode".localized()
+            title: "product.form.barcode.required".localized(),
+            placeholder: "product.form.barcode.placeholder".localized()
         )
         if let barcodeIcon = UIImage(systemName: "barcode") {
             field.textField.setLeftIcon(barcodeIcon)
@@ -197,17 +197,8 @@ class NewProductViewController: BaseViewControler {
         return stack
     }()
 
-    private var additionalPricingContainer: UIView?
     private var optionalDetailsContainer: UIView?
-    private var isAdditionalPricingExpanded = false
     private var isOptionalDetailsExpanded = false
-
-    private let additionalPricingChevron: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
-        imageView.tintColor = .textSecondary
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
 
     private let optionalDetailsChevron: UIImageView = {
         let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
@@ -252,46 +243,23 @@ class NewProductViewController: BaseViewControler {
         view.addSubview(saveButton)
         scrollView.addSubview(containerView)
 
-        let imageCard = makeCard(containing: makeImageRow())
-
-        let requiredFieldsCard = makeSectionCard(
-            title: "Required information".localized(),
-            subtitle: "Complete these fields to create a product".localized(),
-            content: makeFieldsStack([nameField, barcodeField, quantityField])
-        )
+        let productInfoStack = makeVerticalStack()
+        productInfoStack.addArrangedSubview(makeImageRow())
+        productInfoStack.addArrangedSubview(makeSeparator())
+        productInfoStack.addArrangedSubview(makeFieldRow(nameField))
+        productInfoStack.addArrangedSubview(makeSeparator())
+        productInfoStack.addArrangedSubview(makeFieldRow(barcodeField))
+        productInfoStack.addArrangedSubview(makeSeparator())
+        productInfoStack.addArrangedSubview(makeFieldRow(quantityField))
+        let productInfoCard = makeCard(containing: productInfoStack)
 
         let pricingStack = makeVerticalStack()
-        pricingStack.addArrangedSubview(makeSectionHeader(
-            title: "Rental pricing".localized(),
-            subtitle: "Per rental is the default required price".localized()
-        ))
-        pricingStack.addArrangedSubview(makeSeparator())
         pricingStack.addArrangedSubview(makeFieldRow(rentField))
         pricingStack.addArrangedSubview(makeSeparator())
-        pricingStack.addArrangedSubview(makeDisclosureRow(
-            title: "Additional rental prices".localized(),
-            subtitle: "Add pricing by day, hour or month".localized(),
-            chevron: additionalPricingChevron,
-            action: #selector(toggleAdditionalPricing)
-        ))
-
-        let additionalPricingContent = UIView()
-        let additionalPricingStack = makeVerticalStack()
-        additionalPricingStack.addArrangedSubview(makeSeparator())
-        appendFields(additionalPricingFields.map(\.field), to: additionalPricingStack)
-        additionalPricingContent.addSubview(additionalPricingStack)
-        additionalPricingStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        additionalPricingContent.isHidden = true
-        additionalPricingContainer = additionalPricingContent
-        pricingStack.addArrangedSubview(additionalPricingContent)
-        let pricingCard = makeCard(containing: pricingStack)
 
         let optionalStack = makeVerticalStack()
         optionalStack.addArrangedSubview(makeDisclosureRow(
-            title: "Optional details".localized(),
-            subtitle: "Sale price, cost price and deposit".localized(),
+            title: "product.section.moreOptions.title".localized(),
             chevron: optionalDetailsChevron,
             action: #selector(toggleOptionalDetails)
         ))
@@ -299,7 +267,10 @@ class NewProductViewController: BaseViewControler {
         let optionalContent = UIView()
         let optionalContentStack = makeVerticalStack()
         optionalContentStack.addArrangedSubview(makeSeparator())
-        appendFields([saleField, costPriceField, depositField], to: optionalContentStack)
+        appendFields(
+            additionalPricingFields.map(\.field) + [saleField, costPriceField, depositField],
+            to: optionalContentStack
+        )
         optionalContent.addSubview(optionalContentStack)
         optionalContentStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -307,12 +278,11 @@ class NewProductViewController: BaseViewControler {
         optionalContent.isHidden = true
         optionalDetailsContainer = optionalContent
         optionalStack.addArrangedSubview(optionalContent)
-        let optionalCard = makeCard(containing: optionalStack)
+        pricingStack.addArrangedSubview(optionalStack)
+        let pricingCard = makeCard(containing: pricingStack)
 
-        stackView.addArrangedSubview(imageCard)
-        stackView.addArrangedSubview(requiredFieldsCard)
+        stackView.addArrangedSubview(productInfoCard)
         stackView.addArrangedSubview(pricingCard)
-        stackView.addArrangedSubview(optionalCard)
         containerView.addSubview(stackView)
         
         // Save button constraints
@@ -380,43 +350,8 @@ class NewProductViewController: BaseViewControler {
         return card
     }
 
-    private func makeSectionCard(title: String, subtitle: String, content: UIView) -> UIView {
-        let sectionStack = makeVerticalStack()
-        sectionStack.addArrangedSubview(makeSectionHeader(title: title, subtitle: subtitle))
-        sectionStack.addArrangedSubview(makeSeparator())
-        sectionStack.addArrangedSubview(content)
-        return makeCard(containing: sectionStack)
-    }
-
-    private func makeSectionHeader(title: String, subtitle: String) -> UIView {
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = Utils.mediumFont(size: 16)
-        titleLabel.textColor = .textPrimary
-        titleLabel.adjustsFontForContentSizeCategory = true
-
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = subtitle
-        subtitleLabel.font = Utils.regularFont(size: 12)
-        subtitleLabel.textColor = .textSecondary
-        subtitleLabel.numberOfLines = 0
-        subtitleLabel.adjustsFontForContentSizeCategory = true
-
-        let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        labels.axis = .vertical
-        labels.spacing = 3
-
-        let wrapper = UIView()
-        wrapper.addSubview(labels)
-        labels.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 16, bottom: 12, right: 16))
-        }
-        return wrapper
-    }
-
     private func makeDisclosureRow(
         title: String,
-        subtitle: String,
         chevron: UIImageView,
         action: Selector
     ) -> UIView {
@@ -426,18 +361,7 @@ class NewProductViewController: BaseViewControler {
         titleLabel.textColor = .textPrimary
         titleLabel.adjustsFontForContentSizeCategory = true
 
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = subtitle
-        subtitleLabel.font = Utils.regularFont(size: 12)
-        subtitleLabel.textColor = .textSecondary
-        subtitleLabel.numberOfLines = 0
-        subtitleLabel.adjustsFontForContentSizeCategory = true
-
-        let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        labels.axis = .vertical
-        labels.spacing = 3
-
-        let row = UIStackView(arrangedSubviews: [labels, chevron])
+        let row = UIStackView(arrangedSubviews: [titleLabel, chevron])
         row.axis = .horizontal
         row.spacing = 12
         row.alignment = .center
@@ -456,19 +380,12 @@ class NewProductViewController: BaseViewControler {
         let button = UIButton(type: .system)
         button.addTarget(self, action: action, for: .touchUpInside)
         button.accessibilityLabel = title
-        button.accessibilityHint = subtitle
         wrapper.addSubview(button)
         button.snp.makeConstraints { make in
             make.edges.equalToSuperview()
             make.height.greaterThanOrEqualTo(56)
         }
         return wrapper
-    }
-
-    private func makeFieldsStack(_ fields: [LabeledTextField]) -> UIStackView {
-        let fieldsStack = makeVerticalStack()
-        appendFields(fields, to: fieldsStack)
-        return fieldsStack
     }
 
     private func appendFields(_ fields: [LabeledTextField], to stack: UIStackView) {
@@ -834,23 +751,8 @@ class NewProductViewController: BaseViewControler {
 
     // MARK: - Actions
 
-    @objc private func toggleAdditionalPricing() {
-        setAdditionalPricingExpanded(!isAdditionalPricingExpanded, animated: true)
-    }
-
     @objc private func toggleOptionalDetails() {
         setOptionalDetailsExpanded(!isOptionalDetailsExpanded, animated: true)
-    }
-
-    private func setAdditionalPricingExpanded(_ expanded: Bool, animated: Bool) {
-        isAdditionalPricingExpanded = expanded
-        additionalPricingContainer?.isHidden = !expanded
-        updateDisclosure(
-            chevron: additionalPricingChevron,
-            expanded: expanded,
-            accessibilityContainer: additionalPricingContainer
-        )
-        animateDisclosureChange(animated)
     }
 
     private func setOptionalDetailsExpanded(_ expanded: Bool, animated: Bool) {
@@ -892,7 +794,7 @@ class NewProductViewController: BaseViewControler {
         let hasAdditionalPricing = additionalPricingFields.contains {
             !($0.field.textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
-        let hasOptionalDetails = [
+        let hasOptionalDetails = hasAdditionalPricing || [
             saleField.textField.text,
             costPriceField.textField.text,
             depositField.textField.text
@@ -900,7 +802,6 @@ class NewProductViewController: BaseViewControler {
             !($0 ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
-        setAdditionalPricingExpanded(hasAdditionalPricing, animated: false)
         setOptionalDetailsExpanded(hasOptionalDetails, animated: false)
     }
 
@@ -1157,19 +1058,13 @@ extension NewProductViewController: UITextFieldDelegate {
         case quantityField.textField:
             rentField.textField.becomeFirstResponder()
         case rentField.textField:
-            if isAdditionalPricingExpanded {
+            if isOptionalDetailsExpanded {
                 dailyPriceField.textField.becomeFirstResponder()
-            } else if isOptionalDetailsExpanded {
-                saleField.textField.becomeFirstResponder()
             } else {
                 textField.resignFirstResponder()
             }
         case dailyPriceField.textField:
-            if isOptionalDetailsExpanded {
-                saleField.textField.becomeFirstResponder()
-            } else {
-                textField.resignFirstResponder()
-            }
+            saleField.textField.becomeFirstResponder()
         case saleField.textField:
             costPriceField.textField.becomeFirstResponder()
         case costPriceField.textField:

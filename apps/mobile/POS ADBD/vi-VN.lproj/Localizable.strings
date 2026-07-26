@@ -7,11 +7,11 @@
 */
 
 // MARK: - Navigation & Common Actions
-"Home" = "Trang Chủ";
+"Home" = "Trang chủ";
 "Sale" = "Đơn bán";
 "Calendar" = "Lịch Thuê";
 "Overview" = "Báo cáo";
-"Setting" = "Cài Đặt";
+"Setting" = "Cài đặt";
 "Cart" = "Giỏ hàng";
 "Layout" = "Giao diện";
 "Default" = "Mặc định";
@@ -64,7 +64,7 @@
 "Store Name" = "Tên cửa hàng";
 "Affiliate Link" = "Liên kết giới thiệu";
 "Public Product Link" = "Liên kết sản phẩm công khai";
-"copied to clipboard" = "đã sao chép vào clipboard";
+"copied to clipboard" = "đã sao chép";
 "Store Address" = "Địa chỉ cửa hàng";
 "City" = "Thành phố";
 "Province/State" = "Tỉnh/Thành phố";
@@ -84,9 +84,9 @@
 "Location is required" = "Vui lòng nhập địa chỉ";
 "Select Country" = "Chọn quốc gia";
 "Phone Number" = "Số điện thoại";
-"Phone Number (Optional)" = "Số điện thoại (Tùy chọn)";
+"Phone Number (Optional)" = "Số điện thoại";
 "Location" = "Địa chỉ";
-"Location (Optional)" = "Địa chỉ (Tùy chọn)";
+"Location (Optional)" = "Địa chỉ";
 "Email" = "Email";
 "Email Address" = "Địa chỉ email";
 "Enter your email" = "Nhập email của bạn";
@@ -237,7 +237,7 @@
 "Legal" = "Pháp lý";
 "View" = "Xem";
 "Rent" = "Đơn Thuê";
-"My Order" = "Đơn Hàng";
+"My Order" = "Đơn hàng";
 // MARK: - Alert Messages
 "Error" = "Lỗi";
 "Success" = "Thành công";
@@ -246,8 +246,8 @@
 "Confirm" = "Xác nhận";
 "Are you sure you want to logout?" = "Bạn có chắc chắn muốn đăng xuất?";
 "Are you sure you want to delete your account? This action cannot be undone." = "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.";
-"Are you sure you want to delete your account? This will permantly erase your account" = "Bạn có muốn xóa tài khoản? Hành động này sẽ xóa thông tin cửa hàng của bạn trong hệ thống của chúng tôi và không thể phục hồi";
-"Are you sure you want to delete your account? You can't undo this action.\n\n Deleting the account will delete all records under your Accounts(for example, product, order, and customer). Employee-accounts will be removed from the store as well." = "Bạn có muốn xóa tải khoản? Thao tác này sẽ không được làm lại.\n\n Việc xóa tài khoản sẽ xóa tất cả các thông tin bao gồm sản phẩm, đơn hàng và thông tin khách hàng. Các tài khoản nhân viên sẽ bị xóa ra khỏi cửa hàng luôn.";
+"Are you sure you want to delete your account? This will permantly erase your account" = "Bạn có muốn xóa vĩnh viễn tài khoản?";
+"Are you sure you want to delete your account? You can't undo this action.\n\n Deleting the account will delete all records under your Accounts(for example, product, order, and customer). Employee-accounts will be removed from the store as well." = "Bạn có muốn xóa tài khoản? Thao tác này không thể hoàn tác.\n\nTất cả sản phẩm, đơn hàng, khách hàng và tài khoản nhân viên thuộc cửa hàng sẽ bị xóa.";
 "Confirm Account Deletion!" = "Xác nhận xóa tài khoản!";
 "Yes, correct!" = "Đúng rồi";
 "No, wait" = "Xem lại";
@@ -255,7 +255,7 @@
 
 // MARK: Network Error Message
 "Your login account is invalid. Please check your login information" = "Tài khoản đăng nhập không đúng. Vui lòng kiểm tra lại";
-"Your account is expired. Please contact administrator" = "Tài khoản đã hết hạn. Vui lòng liên hệ admin";
+"Your account is expired. Please contact administrator" = "Tài khoản đã hết hạn. Vui lòng liên hệ quản trị viên.";
 "Your session is expired. Please login again." = "Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.";
 "You account has been login in another account. Please relogin again!" = "Tài khoản của bạn đã bị đăng nhập ở một thiết bị khác. Vui lòng đăng nhập lại";
 "Requested resource not found." = "Không tìm thấy tài nguyên yêu cầu.";
@@ -442,8 +442,8 @@
 "Collect Additional Payment" = "Thu thêm tiền";
 "Please refund the amount to the customer." = "Vui lòng trả lại số tiền cho khách hàng.";
 "Please collect additional payment for damages." = "Vui lòng thu thêm tiền bồi thường hư hỏng.";
-"Collect Collateral Documents" = "Thu giấy tờ thế chân";
-"Return Collateral Documents" = "Trả giấy tờ thế chân";
+"Collect Collateral Documents" = "Giữ giấy tờ bảo đảm";
+"Return Collateral Documents" = "Trả giấy tờ bảo đảm";
 "Collect Payment" = "Thu tiền";
 "Please collect the full payment amount from the customer." = "Vui lòng thu đầy đủ số tiền từ khách hàng.";
 "Tax" = "Thuế";
@@ -485,7 +485,6 @@
 "Are you sure you want to delete this order? This action cannot be undone." = "Bạn có chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác.";
 "Only cancelled orders can be deleted" = "Chỉ có thể xóa các đơn hàng đã hủy";
 "Only outlet admin and merchant can delete orders" = "Chỉ quản trị viên cửa hàng và thương gia mới có thể xóa đơn hàng";
-"User not found" = "Không tìm thấy người dùng";
 "Delete failed" = "Xóa thất bại";
 "No response received" = "Không nhận được phản hồi";
 "Cart cannot be deleted" = "Không thể xóa giỏ hàng";
@@ -495,15 +494,15 @@
 "Notes" = "Ghi chú";
 "Add notes here..." = "Nhấn để thêm";
 "You can make a deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash deposit." = "Quý khách có thể cọc bằng các loại giấy tờ (CMND, GPLX, BLX) hoặc cọc tiền.";
-"Retrive of customer:" = "Nhận của khách là:";
-"Return to customer:" = "Trả cọc cho khách:";
+"Retrive of customer:" = "Thu từ khách:";
+"Return to customer:" = "Hoàn tiền cho khách:";
 "You are cancel the order. Are you sure?" = "Bạn đang hủy đơn hàng này. Bạn có chắc chắn chứ?";
 "Notice!" = "Lưu ý!";
 "Yes, sure!" = "Chắc chắn!";
 
 // MARK: - Product Management
 "Product" = "Sản phẩm";
-"Product check" = "Xem danh sách đơn hàng";
+"Product check" = "Xem lịch sử đơn hàng";
 "Product name" = "Tên sản phẩm";
 "Product name *" = "Tên sản phẩm *";
 "Product name..." = "Tìm theo sản phẩm";
@@ -610,7 +609,6 @@
 "Decrease" = "Giảm";
 "Rental days" = "Số ngày thuê";
 "Double tap to edit rental days" = "Chạm hai lần để chỉnh số ngày thuê";
-"days" = "ngày";
 "%d days from order dates" = "%d ngày theo lịch đơn hàng";
 "Select order dates to calculate" = "Chọn ngày nhận và trả của đơn hàng";
 "Add note" = "Thêm ghi chú";
@@ -659,7 +657,7 @@
 "Rent Order" = "Đơn thuê";
 "Sale Order" = "Đơn bán";
 
-"You're cart is having duplicate product. Do you want to continue?" = "Giỏ hàng của bạn có sản phẩm trùng lặp. Bạn có muốn tiếp tục?";
+"You're cart is having duplicate product. Do you want to continue?" = "Sản phẩm này đã có trong giỏ hàng. Bạn vẫn muốn thêm?";
 "Reselect" = "Chọn lại";
 "Ignore" = "Bỏ qua";
 
@@ -725,7 +723,7 @@
 "Customer Signature" = "Chữ ký khách hàng";
 "Store Signature" = "Chữ ký cửa hàng";
 "Thank you for shopping" = "Cảm ơn quý khách.";
-"Download AnyRent on App Store and Google Play" = "Tải AnyRent trên App Store và Google Play";
+"Download AnyRent on App Store" = "Tải AnyRent trên App Store";
 "Download AnyRent" = "Tải AnyRent";
 "Signature Line Format" = "%@             %@";
 
@@ -783,9 +781,6 @@
 "View all" = "Xem tất cả";
 "vs previous period" = "so với kỳ trước";
 "Revenue" = "Doanh thu";
-"Real income" = "Doanh thu thực";
-"Plan income" = "Doanh thu dự kiến";
-"Order total" = "Tổng đơn";
 "No product performance for this period" = "Chưa có dữ liệu sản phẩm trong kỳ này";
 "No customer performance for this period" = "Chưa có dữ liệu khách hàng trong kỳ này";
 "Unnamed product" = "Sản phẩm chưa đặt tên";
@@ -1253,3 +1248,146 @@
 "Quality" = "Chất lượng";
 "Image quality" = "Chất lượng ảnh";
 "More" = "Thêm";
+
+// MARK: - Bổ sung bản dịch và thuật ngữ dùng chung
+" • Similarity: %d%%" = " • Độ tương đồng: %d%%";
+"#N/A" = "Không có";
+"%@ copied to clipboard" = "Đã sao chép %@";
+"Add" = "Thêm";
+"Amount Due" = "Cần thu";
+"Balance" = "Số dư";
+"Bluetooth Printer Not Configured" = "Chưa cấu hình máy in Bluetooth";
+"Bluetooth is not available" = "Bluetooth không khả dụng";
+"Bronze" = "Đồng";
+"Camera Access" = "Quyền truy cập camera";
+"Configure Now" = "Cấu hình ngay";
+"Date Field" = "Trường ngày";
+"Default Outlet" = "Chi nhánh mặc định";
+"Deleting customer..." = "Đang xóa khách hàng...";
+"Diamond" = "Kim cương";
+"Edit Store" = "Chỉnh sửa cửa hàng";
+"Enter address" = "Nhập địa chỉ";
+"Enter state or province" = "Nhập tỉnh/thành phố";
+"Enter store description" = "Nhập mô tả cửa hàng";
+"Enter street address" = "Nhập địa chỉ";
+"Enter your name" = "Nhập họ tên";
+"Failed to parse outlet data" = "Không thể đọc dữ liệu chi nhánh";
+"Failed to print order: %@" = "Không thể in đơn hàng: %@";
+"Gold" = "Vàng";
+"Input discount" = "Nhập giảm giá";
+"Input price or quantity" = "Nhập giá hoặc số lượng";
+"Invalid customer ID" = "ID khách hàng không hợp lệ";
+"Loading more..." = "Đang tải thêm...";
+"Loading orders..." = "Đang tải đơn hàng...";
+"Loyalty Discount" = "Giảm giá bằng điểm";
+"Loyalty Points" = "Điểm tích lũy";
+"Loyalty inactive" = "Chương trình tích điểm chưa kích hoạt";
+"Loyalty unavailable" = "Chương trình tích điểm không khả dụng";
+"Member" = "Thành viên";
+"Name is required" = "Vui lòng nhập tên";
+"Name must be at least 2 characters" = "Tên phải có ít nhất 2 ký tự";
+"Network Printer Not Configured" = "Chưa cấu hình máy in mạng";
+"No Bluetooth devices found. Make sure your printer is turned on and in pairing mode." = "Không tìm thấy thiết bị Bluetooth. Hãy bật máy in và đưa máy in vào chế độ ghép nối.";
+"No default bank account found for this outlet" = "Không tìm thấy tài khoản ngân hàng mặc định của chi nhánh";
+"No order detail received" = "Không có chi tiết đơn hàng";
+"Order" = "Đơn hàng";
+"Order Type" = "Loại đơn hàng";
+"Order has been sent to printer successfully" = "Đã gửi đơn hàng tới máy in";
+"Outlet ID not found" = "Không tìm thấy ID chi nhánh";
+"Personal Information" = "Thông tin cá nhân";
+"Platinum" = "Bạch kim";
+"Please collect the amount from the customer." = "Vui lòng thu tiền từ khách hàng.";
+"Please configure a Bluetooth printer in Settings > Printer Configuration" = "Vui lòng cấu hình máy in Bluetooth trong Cài đặt > Cấu hình máy in.";
+"Please configure a network printer IP address in Settings > Printer Configuration" = "Vui lòng cấu hình địa chỉ IP máy in mạng trong Cài đặt > Cấu hình máy in.";
+"Please confirm your password" = "Vui lòng xác nhận mật khẩu";
+"Please enable camera access in Settings" = "Vui lòng cho phép truy cập camera trong Cài đặt";
+"Please enter a valid location (City, Province)" = "Vui lòng nhập địa điểm hợp lệ (thành phố và tỉnh)";
+"Print" = "In";
+"Print Error" = "Lỗi in";
+"Print Method" = "Phương thức in";
+"Print Success" = "In thành công";
+"Printer characteristic not found" = "Không tìm thấy dịch vụ của máy in";
+"Products found" = "Đã tìm thấy sản phẩm";
+"Remove" = "Xóa";
+"Rent price must be greater than 0" = "Giá thuê phải lớn hơn 0";
+"Reset" = "Đặt lại";
+"Role" = "Vai trò";
+"SORT BY" = "SẮP XẾP THEO";
+"STATUS FILTER" = "LỌC TRẠNG THÁI";
+"Scan barcode" = "Quét mã vạch";
+"Scanning for Bluetooth devices..." = "Đang tìm thiết bị Bluetooth...";
+"Search country..." = "Tìm quốc gia...";
+"Settings" = "Cài đặt";
+"Silver" = "Bạc";
+"State/Province" = "Tỉnh/Thành phố";
+"Store Name *" = "Tên cửa hàng *";
+"Store name is required" = "Vui lòng nhập tên cửa hàng";
+"Test print sent to Bluetooth printer" = "Đã gửi bản in thử tới máy in Bluetooth";
+"Unknown Staff" = "Nhân viên không xác định";
+"Updating customer..." = "Đang cập nhật khách hàng...";
+"Updating store..." = "Đang cập nhật cửa hàng...";
+"Use Loyalty Points" = "Dùng điểm tích lũy";
+"Use Points" = "Dùng điểm";
+"User Name" = "Tên người dùng";
+"User not logged in" = "Người dùng chưa đăng nhập";
+"View order history" = "Xem lịch sử đơn hàng";
+"Yes" = "Có";
+"You're account has been expired. Please check a payment to extend account duration" = "Tài khoản đã hết hạn. Vui lòng gia hạn gói để tiếp tục sử dụng.";
+"order" = "đơn hàng";
+
+// MARK: - Key giao diện có ngữ nghĩa
+"common.action.cancel" = "Hủy";
+"common.action.confirm" = "Xác nhận";
+"common.action.scanBarcode" = "Quét mã vạch";
+"common.action.settings" = "Cài đặt";
+"common.permission.camera.title" = "Quyền truy cập camera";
+"common.permission.camera.settingsMessage" = "Vui lòng cho phép truy cập camera trong Cài đặt";
+"common.error.loadContent" = "Không thể tải nội dung: %@";
+"product.action.add.accessibility" = "Thêm sản phẩm";
+"product.action.delete" = "Xóa sản phẩm";
+"product.action.update" = "Cập nhật sản phẩm";
+"product.action.viewOrderHistory" = "Xem lịch sử đơn hàng";
+"product.search.found" = "Đã tìm thấy sản phẩm";
+"product.search.progress" = "AI đang tìm sản phẩm...";
+"product.form.name.required" = "Tên sản phẩm *";
+"product.form.name.placeholder" = "Nhập tên sản phẩm";
+"product.form.quantity.required" = "Số lượng *";
+"product.form.quantity.placeholder" = "Nhập số lượng";
+"product.form.pricePerRental.required" = "Giá thuê theo lần *";
+"product.form.pricePerRental.placeholder" = "Nhập giá thuê theo lần";
+"product.form.pricePerDay" = "Giá thuê theo ngày";
+"product.form.pricePerDay.placeholder" = "Nhập giá thuê theo ngày";
+"product.form.salePrice" = "Giá bán";
+"product.form.salePrice.placeholder" = "Nhập giá bán";
+"product.form.costPrice" = "Giá vốn";
+"product.form.costPrice.placeholder" = "Nhập giá vốn";
+"product.form.deposit" = "Tiền cọc";
+"product.form.deposit.placeholder" = "Nhập tiền cọc";
+"product.form.barcode.required" = "Mã vạch *";
+"product.form.barcode" = "Mã vạch";
+"product.form.barcode.placeholder" = "Nhập mã vạch";
+"product.section.info.title" = "Thông tin sản phẩm";
+"product.section.info.subtitle" = "Thêm ảnh, tên và số lượng tồn";
+"product.section.inventory.title" = "Tồn kho";
+"product.section.inventory.subtitle" = "Mã vạch không bắt buộc; số lượng là bắt buộc";
+"product.section.pricing.title" = "Giá sản phẩm";
+"product.section.pricing.subtitle" = "Thiết lập giá thuê, giá bán, giá vốn và tiền cọc";
+"product.section.rentalPricing.title" = "Giá thuê";
+"product.section.rentalPricing.subtitle" = "Thiết lập giá thuê bắt buộc";
+"product.section.dailyPricing.title" = "Giá thuê theo ngày";
+"product.section.dailyPricing.subtitle" = "Thêm giá thuê theo ngày nếu cần";
+"product.section.additionalPricing.title" = "Giá bổ sung";
+"product.section.additionalPricing.subtitle" = "Giá bán, giá vốn và tiền cọc";
+"product.section.moreOptions.title" = "Tùy chọn thêm";
+"product.section.moreOptions.subtitle" = "Mã vạch, giá bán, giá vốn và tiền cọc";
+"order.cancel.title" = "Hủy đơn hàng";
+"order.cancel.confirmation" = "Bạn có muốn hủy đơn hàng này?";
+"order.number.format" = "Mã đơn hàng: %@";
+"loyalty.redeem.availablePoints" = "Hiện có: %d điểm";
+"loyalty.redeem.pointsPlaceholder" = "Số điểm muốn sử dụng";
+"loyalty.summary.format" = "%@ • %@ điểm";
+"loyalty.points.compactFormat" = "%@ điểm";
+"loyalty.points.bulletFormat" = "• %@ điểm";
+"calendar.empty.day" = "Chưa có đơn thuê trong ngày này.\nChọn ngày khác trên lịch để xem đơn thuê.";
+"calendar.rentalCount.one" = "%d đơn thuê";
+"calendar.rentalCount.other" = "%d đơn thuê";

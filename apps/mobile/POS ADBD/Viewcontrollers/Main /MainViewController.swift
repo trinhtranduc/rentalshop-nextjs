@@ -82,7 +82,7 @@ class MainViewController: BaseViewControler {
         button.setImage(UIImage(systemName: "plus"), for: .normal)
         button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(addNewProduct), for: .touchUpInside)
-        button.accessibilityLabel = "Add product".localized()
+        button.accessibilityLabel = "product.action.add.accessibility".localized()
         return button
     }()
     
@@ -93,7 +93,7 @@ class MainViewController: BaseViewControler {
         button.setImage(UIImage(systemName: "barcode.viewfinder"), for: .normal)
         button.tintColor = .textPrimary
         button.addTarget(self, action: #selector(barcodeScanTapped), for: .touchUpInside)
-        button.accessibilityLabel = "Scan barcode".localized()
+        button.accessibilityLabel = "common.action.scanBarcode".localized()
         return button
     }()
     
@@ -315,7 +315,7 @@ class MainViewController: BaseViewControler {
     
     private func performAISearch(with image: UIImage) {
         // Show loading
-        showProgressText(text: "🤖 AI is searching for products...".localized())
+        showProgressText(text: "product.search.progress".localized())
         
         // Call image search API
         ProductService.shared.searchProductsByImage(
@@ -357,7 +357,7 @@ class MainViewController: BaseViewControler {
     
     private func showSuccessAlert(message: String) {
         let alert = UIAlertController(
-            title: "✅ Found products!".localized(),
+            title: "product.search.found".localized(),
             message: message,
             preferredStyle: .alert
         )
@@ -440,11 +440,11 @@ class MainViewController: BaseViewControler {
             return false
         case .restricted, .denied:
             let alert = UIAlertController(
-                title: "Camera Access".localized(),
-                message: "Please enable camera access in Settings".localized(),
+                title: "common.permission.camera.title".localized(),
+                message: "common.permission.camera.settingsMessage".localized(),
                 preferredStyle: .alert
             )
-            alert.addAction(UIAlertAction(title: "Settings".localized(), style: .default) { _ in
+            alert.addAction(UIAlertAction(title: "common.action.settings".localized(), style: .default) { _ in
                 if let url = URL(string: UIApplicationOpenSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
@@ -723,7 +723,7 @@ extension MainViewController: ProductCellDelegate {
         
         // Product check action
         let checkAction = UIAction(
-            title: "Product check".localized(),
+            title: "product.action.viewOrderHistory".localized(),
             image: UIImage(systemName: "list.bullet.rectangle")
         ) { [weak self] _ in
             self?.previewOrders(sender: cell, product: product)
@@ -733,7 +733,7 @@ extension MainViewController: ProductCellDelegate {
         // Update and delete actions (only if user has permission)
         if PermissionManager.shared.canManageProducts() {
             let updateAction = UIAction(
-                title: "Update product".localized(),
+                title: "product.action.update".localized(),
                 image: UIImage(systemName: "pencil")
             ) { [weak self] _ in
                 self?.presentProductView(product: product)
@@ -741,7 +741,7 @@ extension MainViewController: ProductCellDelegate {
             menuActions.append(updateAction)
             
             let deleteAction = UIAction(
-                title: "Delete product".localized(),
+                title: "product.action.delete".localized(),
                 image: UIImage(systemName: "trash"),
                 attributes: .destructive
             ) { [weak self] _ in

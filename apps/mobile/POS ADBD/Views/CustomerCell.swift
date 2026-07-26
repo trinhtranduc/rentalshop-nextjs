@@ -345,7 +345,10 @@ class CustomerCell: UITableViewCell {
         // Points badge should always render for loyalty rows so reused cells never look stale.
         let points = user.loyaltyDisplayPoints ?? 0
         let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-        pointsLabel.text = "\(pointsText) đ"
+        pointsLabel.text = String(
+            format: "loyalty.points.compactFormat".localized(),
+            pointsText
+        )
         pointsLabel.textColor = accent
         pointsIconView.tintColor = accent
         pointsBadgeView.isHidden = false

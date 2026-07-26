@@ -114,7 +114,10 @@ class QRCodeViewController: BaseViewControler {
         
         // Set order number label
         if let orderNumber = orderNumber {
-            orderNumberLabel.text = "Order Number: \(orderNumber)"
+            orderNumberLabel.text = String(
+                format: "order.number.format".localized(),
+                orderNumber
+            )
         } else {
             orderNumberLabel.text = qrData
         }
@@ -124,4 +127,3 @@ class QRCodeViewController: BaseViewControler {
         dismiss(animated: true)
     }
 }
-

@@ -144,7 +144,7 @@ class CalendarProductCell: UITableViewCell {
         self.isLastInSection = isLastInSection
         applyShape()
 
-        nameLabel.text = orderItem.productName ?? "Unknown Product"
+        nameLabel.text = orderItem.productName ?? "Unnamed product".localized()
 
         if let note = orderItem.notes, !note.isEmpty {
             noteLabel.attributedText = buildNoteText(from: note)
@@ -177,7 +177,7 @@ class CalendarProductCell: UITableViewCell {
         }
 
         let firstItem = orderItems[0]
-        nameLabel.text = firstItem.productName ?? "Unknown Product"
+        nameLabel.text = firstItem.productName ?? "Unnamed product".localized()
 
         if let note = firstItem.notes, !note.isEmpty {
             noteLabel.attributedText = buildNoteText(from: note)

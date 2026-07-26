@@ -318,8 +318,10 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             pointsBadgeView.layer.borderColor = accent.withAlphaComponent(0.18).cgColor
             pointsLabel.textColor = accent
             let pointsText = NumberFormatter.localizedString(from: NSNumber(value: points), number: .decimal)
-            // Match CustomerCell: "1,250 đ"
-            pointsLabel.text = "\(pointsText) đ"
+            pointsLabel.text = String(
+                format: "loyalty.points.compactFormat".localized(),
+                pointsText
+            )
         } else {
             pointsBadgeView.isHidden = true
         }
