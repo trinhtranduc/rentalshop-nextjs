@@ -27,7 +27,8 @@
     "browse": "파일 찾아보기",
     "saving": "저장 중...",
     "creating": "생성 중...",
-    "tryAgain": "다시 시도"
+    "tryAgain": "다시 시도",
+    "viewAll": "전체 보기"
   },
   "labels": {
     "name": "이름",

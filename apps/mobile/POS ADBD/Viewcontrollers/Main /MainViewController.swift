@@ -242,7 +242,7 @@ class MainViewController: BaseViewControler {
         view.addSubview(searchSectionView)
         searchSectionView.addSubview(searchBar)
         view.addSubview(productTableView)
-        view.addSubview(floatingAISearchButton)
+        // floatingAISearchButton disabled (image search WIP)
         
         // Adjust content inset to account for navigation bar
         productTableView.contentInsetAdjustmentBehavior = .automatic
@@ -290,12 +290,7 @@ class MainViewController: BaseViewControler {
         // Note: searchBar and productTableView constraints are set up in setupInfoViewController()
         // to handle both iPad and iPhone layouts differently
         
-        // Setup floating AI search button - bottom right corner
-        floatingAISearchButton.snp.makeConstraints { make in
-            make.width.height.equalTo(64)
-            make.trailing.equalToSuperview().offset(-20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-        }
+        // floatingAISearchButton constraints skipped — image search disabled
     }
     
     override func setupData() {

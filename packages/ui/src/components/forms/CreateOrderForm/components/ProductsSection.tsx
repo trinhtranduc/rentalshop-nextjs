@@ -2,7 +2,7 @@
  * ProductsSection - Component for product search and selected products
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -21,11 +21,9 @@ import {
   Package, 
   Trash2,
   Plus,
-  Minus,
-  Sparkles
+  Minus
 } from 'lucide-react';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
-import { ImageSearchDialog } from '../../../features/Products/components/ImageSearchDialog';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
@@ -260,26 +258,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 }) => {
   const t = useOrderTranslations();
   const tp = useProductTranslations();
-  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
-
-  const handleImageSearchResult = (searchedProducts: Product[]) => {
-    console.log('📸 Image search found products:', searchedProducts);
-    // Don't auto-add products, just show them in the dialog
-    // Users can click "Add to Cart" button on each product
-  };
-
-  const handleAddProductFromImage = (product: Product) => {
-    console.log('📸 Adding product from image search:', product);
-    // Convert Product to ProductWithStock format
-    const productWithStock: ProductWithStock = {
-      ...product,
-      stock: product.totalStock || 0,
-      renting: product.renting || 0,
-      available: product.available || product.totalStock || 0,
-      outletStock: product.outletStock || []
-    };
-    onAddProduct(productWithStock);
-  };
 
   return (
     <Card className="flex flex-col h-full w-full">
@@ -317,26 +295,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                 </div>
               )}
             </div>
-
-            {/* AI Image Search Button */}
-            <Button
-              variant="outline"
-              onClick={() => setIsImageSearchOpen(true)}
-              className="flex items-center justify-center w-10 h-10 p-0"
-              title="AI Image Search"
-            >
-              <Sparkles className="w-5 h-5 text-purple-600" />
-            </Button>
+            {/* AI Image Search temporarily disabled */}
           </div>
         </div>
-
-        {/* Image Search Dialog */}
-        <ImageSearchDialog
-          open={isImageSearchOpen}
-          onOpenChange={setIsImageSearchOpen}
-          onSearchResult={handleImageSearchResult}
-          onAddToCart={handleAddProductFromImage}
-        />
 
         {/* Selected Products Section - Takes remaining space */}
         <div className="flex-1 flex flex-col min-h-0">

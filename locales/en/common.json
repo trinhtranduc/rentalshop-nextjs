@@ -41,7 +41,8 @@
     "creating": "Creating...",
     "tryAgain": "Try Again",
     "viewMoreDetails": "View More Details",
-    "hideDetails": "Hide Details"
+    "hideDetails": "Hide Details",
+    "viewAll": "View all"
   },
   "labels": {
     "name": "Name",
