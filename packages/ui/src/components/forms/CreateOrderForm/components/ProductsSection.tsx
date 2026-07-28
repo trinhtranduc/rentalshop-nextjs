@@ -193,7 +193,10 @@ const getLineDisplay = (
   pickupDate?: string,
   returnDate?: string
 ): { isDaily: boolean; days: number; total: number } => {
-  const isDaily = orderType === 'RENT' && (item.pricingType === 'DAILY' || item.product?.pricingType === 'DAILY');
+  // Use line pricingType only — must match submit path (resolveItemPricingType).
+  // Falling back to product.pricingType made the cart look "daily" while the
+  // order was saved as FIXED (e.g. "104 x 1" on detail with no × N ngày).
+  const isDaily = orderType === 'RENT' && item.pricingType === 'DAILY';
   let days = 1;
   if (isDaily && pickupDate && returnDate) {
     const s = new Date(pickupDate).getTime();

@@ -38,9 +38,13 @@ export const OrderProductsList: React.FC<OrderProductsListProps> = ({ order }) =
             {order.orderItems.map((item, index) => {
               const productName = item.product?.name || (item as any).productName || 'Unknown Product';
               const pricingType = (item as any).pricingType as string | null | undefined;
-              const isDaily = pricingType === 'DAILY';
-              const rentalDays = Math.max(1, (item as any).rentalDays || 1);
+              const rentalDaysRaw = (item as any).rentalDays as number | null | undefined;
+              // Treat as daily when typed DAILY, or when multi-day rental was stored
+              // without pricingType (legacy / mismatched create path).
+              const rentalDays = Math.max(1, rentalDaysRaw || 1);
+              const isDaily = pricingType === 'DAILY' || (pricingType == null && rentalDays > 1);
               const durationSuffix = isDaily ? ` × ${rentalDays} ngày` : '';
+              const unitSuffix = getPricingUnit(isDaily ? 'DAILY' : pricingType);
 
               return (
                 <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -56,7 +60,7 @@ export const OrderProductsList: React.FC<OrderProductsListProps> = ({ order }) =
                         {productName}
                       </div>
                       <div className="text-xs text-gray-600">
-                        {formatMoney(item.unitPrice)}{getPricingUnit(pricingType)} x {item.quantity}{durationSuffix}
+                        {formatMoney(item.unitPrice)}{unitSuffix} x {item.quantity}{durationSuffix}
                       </div>
                       {(item as any).notes && (
                         <div className="text-xs text-gray-500 mt-1">
