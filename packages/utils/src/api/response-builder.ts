@@ -109,6 +109,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'ORDER_PAYMENT_REQUIRED': 'Order ID, amount, and method are required',
   'SUBSCRIPTION_END_DATE_REQUIRED': 'Subscription ID, end date, and amount are required',
   'DEVICE_INFO_REQUIRED': 'Missing required fields: deviceId, pushToken, platform',
+  'INVALID_PLATFORM': 'Invalid platform. Must be "ios" or "android"',
+  'DEVICE_REGISTRATION_FAILED': 'Device registration failed',
   'API_KEY_NAME_REQUIRED': 'API key name is required',
   'VALID_USER_ID_REQUIRED': 'Valid user ID is required',
   
@@ -185,6 +187,8 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'PLAN_CREATED_SUCCESS': 'Plan created successfully',
   'MERCHANT_CREATED_SUCCESS': 'Merchant created successfully with default outlet',
   'BUSINESS_TAGS_RETRIEVED': 'Business tags retrieved successfully',
+  'DEVICE_REGISTERED_SUCCESS': 'Device registered successfully',
+  'DEVICE_UNREGISTERED_SUCCESS': 'Device unregistered successfully',
   
   // Update Operations
   'USER_UPDATED_SUCCESS': 'User updated successfully',

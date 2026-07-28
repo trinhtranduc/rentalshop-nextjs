@@ -31,6 +31,8 @@
 		0403310F2EACEC92003BC33E /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0403310E2EACEC92003BC33E /* PermissionManager.swift */; };
 		040C80202D9551A000EB900C /* CustomerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040C801F2D9551A000EB900C /* CustomerCell.swift */; };
 		041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */; };
+		04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */; };
+		04F1A0032F1B0001000A0003 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 04F1A0042F1B0001000A0004 /* FirebaseMessaging */; };
 		041CBA1D2D8E706700C117DF /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 041CBA1C2D8E706700C117DF /* FirebaseCrashlytics */; };
 		041CBA1F2D8E92FB00C117DF /* PrinterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */; };
 		041CBA212D8EFC1D00C117DF /* PrinterCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA202D8EFC1800C117DF /* PrinterCommand.swift */; };
@@ -271,6 +273,8 @@
 		0403310E2EACEC92003BC33E /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		040C801F2D9551A000EB900C /* CustomerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerCell.swift; sourceTree = "<group>"; };
 		041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
+		04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "POS ADBD.entitlements"; sourceTree = "<group>"; };
 		041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterManager.swift; sourceTree = "<group>"; };
 		041CBA202D8EFC1800C117DF /* PrinterCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterCommand.swift; sourceTree = "<group>"; };
 		041CBA222D901DCF00C117DF /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
@@ -473,6 +477,7 @@
 				88B716B22A935E1100499F6C /* ObjectMapper in Frameworks */,
 				88A1410C2BEB1DEA00E4389E /* Kingfisher in Frameworks */,
 				041CBA1D2D8E706700C117DF /* FirebaseCrashlytics in Frameworks */,
+				04F1A0032F1B0001000A0003 /* FirebaseMessaging in Frameworks */,
 				88B716B02A935DE000499F6C /* FSCalendar in Frameworks */,
 				88FF33782F2DAE6600FD0A26 /* CoreMedia.framework in Frameworks */,
 				88733F3A2B50D6FB005FABB1 /* DGCharts in Frameworks */,
@@ -524,6 +529,7 @@
 				041CBA202D8EFC1800C117DF /* PrinterCommand.swift */,
 				041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */,
 				041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */,
+				04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -835,6 +841,7 @@
 				88E4148021A99B3E00BAF4A1 /* Assets.xcassets */,
 				0465CA4F2EE3478600629F03 /* anyrent.icon */,
 				88E4148521A99B3E00BAF4A1 /* Info.plist */,
+				04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */,
 				C9D2ABB424B0D53C0028EAAC /* Localizable.strings */,
 				88FF337F2F2DB19600FD0A26 /* POSADBD-Bridging-Header.h */,
 			);
@@ -1054,6 +1061,7 @@
 				88A141112BEB1EB300E4389E /* Alamofire */,
 				04D2B8A82D3544DE00C7EECA /* FirebaseAnalytics */,
 				041CBA1C2D8E706700C117DF /* FirebaseCrashlytics */,
+				04F1A0042F1B0001000A0004 /* FirebaseMessaging */,
 				047C0A5F2D9E43E200EF2C50 /* SnapKit */,
 			);
 			productName = "POS ADBD";
@@ -1266,6 +1274,7 @@
 				043F06372D85473C0047DC11 /* HapticButton.swift in Sources */,
 				88F3D8C021B06223007CC30A /* MonthAxisValueFormatter.swift in Sources */,
 				041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */,
+				04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */,
 				881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */,
 				88E4149A21A99E9100BAF4A1 /* Utils.swift in Sources */,
 				04A82A772EE7CA3900E55F9C /* OutletService.swift in Sources */,
@@ -1591,6 +1600,7 @@
 				API_BASE_URL = "https://dev-api.anyrent.shop";
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
+				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0321202601;
@@ -1669,6 +1679,7 @@
 				API_BASE_URL = "https://api.anyrent.shop";
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
+				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0321202601;
@@ -1890,6 +1901,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 04D2B8A72D3544DE00C7EECA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		04F1A0042F1B0001000A0004 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 04D2B8A72D3544DE00C7EECA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 		047C0A5F2D9E43E200EF2C50 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;

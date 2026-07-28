@@ -349,6 +349,7 @@ class LoginViewController: BaseViewControler {
                     Utils.saveLastLoginEmail(email: email)
                 }
                 User.save(user: user)
+                PushNotificationManager.shared.start()
                 appDelegate.loadMainUserView()
             }
         }
