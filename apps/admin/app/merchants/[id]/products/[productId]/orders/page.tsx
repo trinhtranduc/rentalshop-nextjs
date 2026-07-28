@@ -50,7 +50,9 @@ export default function ProductOrdersPage() {
     error: productError,
     refetch: refetchProduct
   } = useDedupedApi({
-    filters: { productId }, // Use productId as filter key for cache
+    // Namespace cache keys — product detail and product orders must not share
+    // the same global useDedupedApi key when both only pass { productId }.
+    filters: { _hook: 'productDetail', productId },
     fetchFn: async () => {
       const productResult = await productsApi.getProductById(parseInt(productId));
       
@@ -77,7 +79,7 @@ export default function ProductOrdersPage() {
     error: ordersError,
     refetch: refetchOrders
   } = useDedupedApi({
-    filters: { productId }, // Use productId as filter key for cache
+    filters: { _hook: 'productOrders', productId },
     fetchFn: async () => {
       const ordersResult = await ordersApi.searchOrders({
         productId: parseInt(productId),
