@@ -48,7 +48,8 @@ export default function ProductViewPage() {
     loading: productLoading, 
     error: productError 
   } = useDedupedApi({
-    filters: { productId },
+    // Namespace so this does not collide with product-orders fetches
+    filters: { _hook: 'productDetail', productId },
     fetchFn: async () => {
       const productResponse = await productsApi.getProductById(productId);
       if (!productResponse.success || !productResponse.data) {

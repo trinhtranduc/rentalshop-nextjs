@@ -56,7 +56,9 @@ export default function ProductOrdersPage() {
     loading, 
     error: productError 
   } = useDedupedApi({
-    filters: { productId }, // Use productId as filter key for cache
+    // Namespace cache key so it does not collide with ProductOrdersView
+    // which also keys on productId (global useDedupedApi cache).
+    filters: { _hook: 'productDetail', productId },
     fetchFn: async () => {
       const productResponse = await productsApi.getProductById(parseInt(productId));
       

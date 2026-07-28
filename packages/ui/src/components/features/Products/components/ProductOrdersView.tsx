@@ -113,7 +113,9 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     loading: ordersLoading, 
     error: ordersError 
   } = useDedupedApi({
-    filters: { productId }, // Use productId as filter key for cache
+    // _hook namespaces the cache key — must not collide with product detail
+    // fetches that also use { productId } (see products/[id]/orders page).
+    filters: { _hook: 'productOrders', productId },
     fetchFn: async () => {
       const response = await ordersApi.getOrdersByProduct(parseInt(productId));
       
@@ -140,7 +142,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
 
   // Sync orders data to local state
   useEffect(() => {
-    if (ordersData) {
+    if (ordersData && Array.isArray(ordersData.orders)) {
       setOrders(ordersData.orders as OrderWithDetails[]);
       setTotalPages(ordersData.totalPages || 1);
     } else {
