@@ -27,7 +27,8 @@
     "browse": "ファイルを参照",
     "saving": "保存中...",
     "creating": "作成中...",
-    "tryAgain": "再試行"
+    "tryAgain": "再試行",
+    "viewAll": "すべて表示"
   },
   "labels": {
     "name": "名前",

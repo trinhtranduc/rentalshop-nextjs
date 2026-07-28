@@ -27,7 +27,8 @@
     "browse": "浏览文件",
     "saving": "保存中...",
     "creating": "创建中...",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "viewAll": "查看全部"
   },
   "labels": {
     "name": "名称",

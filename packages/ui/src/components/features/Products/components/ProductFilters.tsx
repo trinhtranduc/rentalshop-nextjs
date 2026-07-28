@@ -6,8 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useMerchantsData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { Search, Sparkles } from 'lucide-react';
-import { ImageSearchDialog } from './ImageSearchDialog';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
@@ -35,9 +33,6 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
   // Get translations
   const t = useProductTranslations();
   const tc = useCommonTranslations();
-  
-  // Image search dialog state
-  const [showImageSearch, setShowImageSearch] = React.useState(false);
   
   // ✅ MODERN: Use deduplicated hooks for filter data
   const { outlets, loading: loadingOutlets } = useOutletsData();
@@ -194,34 +189,9 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
             />
           </svg>
-          {/* AI Image Search Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center p-0"
-            onClick={() => setShowImageSearch(true)}
-            title="AI Image Search"
-          >
-            <Sparkles className="w-4 h-4 text-purple-600" />
-          </Button>
+          {/* AI Image Search temporarily disabled */}
         </div>
       </div>
-
-      {/* Image Search Dialog */}
-      <ImageSearchDialog
-        open={showImageSearch}
-        onOpenChange={setShowImageSearch}
-        onSearchResult={(products) => {
-          // Call callback to update product list (but don't close dialog - keep results visible)
-          if (onImageSearchResult) {
-            onImageSearchResult(products);
-          }
-          // ✅ Keep dialog open to show results (same behavior as cart)
-          // User can close manually or search another image
-        }}
-        categoryId={filters.categoryId}
-      />
 
       {/* Merchant Filter - Only show for admin */}
       {showMerchantFilter && (

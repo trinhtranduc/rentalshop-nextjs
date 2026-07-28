@@ -20,7 +20,13 @@
     "futureRevenue": "Doanh thu tương lai",
     "realTimeData": "Dữ liệu thời gian thực",
     "bookedRevenue": "Doanh thu đã đặt",
-    "expectedRevenue": "Doanh thu dự kiến từ các đơn hàng sắp tới và đang diễn ra"
+    "expectedRevenue": "Doanh thu dự kiến từ các đơn hàng sắp tới và đang diễn ra",
+    "todayPickups": "Lấy hàng hôm nay",
+    "todayReturns": "Trả hàng hôm nay",
+    "productUtilization": "Mức sử dụng sản phẩm",
+    "revenueGrowth": "Tăng trưởng doanh thu",
+    "customerGrowth": "Tăng trưởng khách hàng",
+    "totalCollateral": "Tổng tiền thế chân"
   },
   "tooltips": {
     "todayRevenue": "Tổng doanh thu thực tế từ các đơn hàng được tạo trong ngày hôm nay. Bao gồm cả đơn thuê và đơn bán.",
@@ -48,13 +54,13 @@
     "ordersByStatus": "Đơn hàng theo trạng thái",
     "topProducts": "Sản phẩm bán chạy",
     "customerActivity": "Hoạt động khách hàng",
-    "rentalTrends": "Xu hướng cho thuê",
+    "rentalTrends": "Xu hướng thuê",
     "noData": "Không có dữ liệu cho khoảng thời gian này",
     "compareOutlets": "So sánh cửa hàng",
     "selectOutletsToCompare": "Chọn cửa hàng để so sánh",
     "allOutlets": "Tất cả cửa hàng",
-    "compareRevenue": "So sánh doanh thu hàng tháng theo cửa hàng",
-    "compareOrders": "So sánh đơn thuê hàng tháng theo cửa hàng",
+    "compareRevenue": "So sánh doanh thu theo tháng theo cửa hàng",
+    "compareOrders": "So sánh đơn hàng theo tháng theo cửa hàng",
     "actualRevenue": "Doanh thu thực tế",
     "projectedRevenue": "Doanh thu dự kiến",
     "rentalOrders": "Đơn thuê",
@@ -64,11 +70,11 @@
     "sales": "đơn bán"
   },
   "chartTitles": {
-    "dailyRevenue": "Doanh thu hàng ngày",
-    "monthlyRevenue": "Doanh thu hàng tháng", 
-    "yearlyRevenue": "Doanh thu hàng năm",
-    "monthlyRentals": "Đơn thuê hàng tháng",
-    "yearlyRentals": "Đơn thuê hàng năm"
+    "dailyRevenue": "Doanh thu theo ngày",
+    "monthlyRevenue": "Doanh thu theo tháng",
+    "yearlyRevenue": "Doanh thu theo năm",
+    "monthlyRentals": "Đơn thuê theo tháng",
+    "yearlyRentals": "Đơn thuê theo năm"
   },
   "recentActivity": {
     "title": "Hoạt động gần đây",
@@ -90,12 +96,12 @@
     "viewOrders": "Xem đơn hàng"
   },
   "upcomingReturns": {
-    "title": "Lịch trả hàng sắp tới",
-    "dueToday": "Hôm nay",
-    "dueTomorrow": "Ngày mai",
-    "dueThisWeek": "Tuần này",
+    "title": "Đơn sắp trả",
+    "dueToday": "Hết hạn hôm nay",
+    "dueTomorrow": "Hết hạn ngày mai",
+    "dueThisWeek": "Hết hạn tuần này",
     "overdue": "Quá hạn",
-    "noReturns": "Không có lịch trả hàng"
+    "noReturns": "Không có đơn sắp trả"
   },
   "orderStatuses": {
     "reserved": "Đã đặt",
@@ -104,31 +110,5 @@
     "completed": "Hoàn thành",
     "cancelled": "Đã hủy",
     "ordersCount": "đơn hàng"
-  },
-  "stats": {
-    "totalOrders": "Tổng đơn hàng",
-    "todayRentals": "Đơn thuê hôm nay",
-    "activeRentals": "Đơn đang thuê",
-    "totalRevenue": "Tổng doanh thu",
-    "totalCustomers": "Tổng khách hàng",
-    "totalProducts": "Tổng sản phẩm",
-    "availableProducts": "Sản phẩm có sẵn",
-    "pendingOrders": "Đơn hàng chờ xử lý",
-    "completedOrders": "Đơn hàng hoàn thành",
-    "overdueReturns": "Đơn trả quá hạn",
-    "todayRevenue": "Doanh thu hôm nay",
-    "thisWeekRevenue": "Doanh thu tuần này",
-    "thisMonthRevenue": "Doanh thu tháng này",
-    "futureRevenue": "Doanh thu tương lai",
-    "realTimeData": "Dữ liệu thời gian thực",
-    "bookedRevenue": "Doanh thu đã đặt",
-    "expectedRevenue": "Doanh thu dự kiến từ các đơn hàng sắp tới và đang diễn ra",
-    "todayPickups": "Lấy hàng hôm nay",
-    "todayReturns": "Trả hàng hôm nay",
-    "productUtilization": "Mức sử dụng sản phẩm",
-    "revenueGrowth": "Tăng trưởng doanh thu",
-    "customerGrowth": "Tăng trưởng khách hàng",
-    "totalCollateral": "Tổng tiền thế chân"
   }
 }
-

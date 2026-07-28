@@ -41,7 +41,8 @@
     "creating": "Đang tạo...",
     "tryAgain": "Thử lại",
     "viewMoreDetails": "Xem thêm chi tiết",
-    "hideDetails": "Ẩn chi tiết"
+    "hideDetails": "Ẩn chi tiết",
+    "viewAll": "Xem tất cả"
   },
   "labels": {
     "name": "Tên",
