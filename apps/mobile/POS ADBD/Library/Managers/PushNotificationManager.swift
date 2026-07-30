@@ -25,6 +25,8 @@ final class PushNotificationManager: NSObject {
     }
 
     /// Call after FirebaseApp.configure() and when user is logged in.
+    /// Do NOT fetch FCM token here — wait until APNs device token is set
+    /// (`AppDelegate.didRegisterForRemoteNotifications` → `didReceiveAPNsToken`).
     func start() {
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
@@ -39,16 +41,15 @@ final class PushNotificationManager: NSObject {
                 UIApplication.shared.registerForRemoteNotifications()
             }
         }
+    }
 
-        // Refresh token if already available
-        Messaging.messaging().token { [weak self] token, error in
-            if let error = error {
-                print("⚠️ FCM token fetch error: \(error.localizedDescription)")
-                return
-            }
-            guard let token = token else { return }
-            self?.registerTokenWithAPI(token)
-        }
+    /// Wire Apple's device token into Firebase. Do **not** call `Messaging.messaging().token`
+    /// here — the SDK refreshes and delivers the FCM token via `MessagingDelegate`.
+    /// Calling `.token()` before APNs is ready causes I-FCM002022 / "No APNS token specified".
+    func didReceiveAPNsToken(_ deviceToken: Data) {
+        let hex = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("📲 APNs device token received (\(deviceToken.count) bytes): \(hex.prefix(16))…")
+        Messaging.messaging().apnsToken = deviceToken
     }
 
     func registerTokenWithAPI(_ pushToken: String) {
@@ -231,7 +232,15 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
 extension PushNotificationManager: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let fcmToken = fcmToken, !fcmToken.isEmpty else { return }
-        print("📲 FCM token refreshed")
+
+        // Firebase may invoke this before APNs is set (auto-init). Skip until APNs exists;
+        // after `apnsToken` is assigned, Messaging will call this again with a usable token.
+        guard messaging.apnsToken != nil else {
+            print("📲 FCM token received but APNs not ready yet — will register after APNs")
+            return
+        }
+
+        print("📲 FCM token ready (APNs linked)")
         registerTokenWithAPI(fcmToken)
     }
 }
