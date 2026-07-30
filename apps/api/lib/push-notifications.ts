@@ -1,5 +1,6 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
+import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constants';
 import {
   createNotificationsForUsers,
   deactivateTokensByPushToken,
@@ -17,6 +18,24 @@ export interface OrderPushPayload {
   outletId: string;
   orderType?: string;
   previousStatus?: string;
+}
+
+function formatOrderRef(orderNumber: string): string {
+  const trimmed = orderNumber.trim();
+  if (!trimmed) return '—';
+  return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+}
+
+function orderStatusLabel(status?: string): string {
+  if (!status) return '—';
+  const key = status.toUpperCase() as keyof typeof ORDER_STATUS_LABELS;
+  return ORDER_STATUS_LABELS[key] ?? status;
+}
+
+function orderTypeLabel(orderType?: string): string | null {
+  if (!orderType) return null;
+  const key = orderType.toUpperCase() as keyof typeof ORDER_TYPE_LABELS;
+  return ORDER_TYPE_LABELS[key] ?? null;
 }
 
 function getFirebaseApp(): App | null {
@@ -47,18 +66,57 @@ function getFirebaseApp(): App | null {
   });
 }
 
+/**
+ * Banner + inbox copy — Vietnamese labels aligned with ORDER_STATUS_LABELS / ORDER_TYPE_LABELS.
+ * Keep title short (lock-screen friendly); put order # + status detail in body.
+ */
 function buildNotificationCopy(payload: OrderPushPayload): { title: string; body: string } {
+  const ref = formatOrderRef(payload.orderNumber);
+  const type = orderTypeLabel(payload.orderType);
+  const status = orderStatusLabel(payload.status);
+  const previous = orderStatusLabel(payload.previousStatus);
+
   if (payload.type === 'ORDER_CREATED') {
+    const title =
+      type === ORDER_TYPE_LABELS.SALE
+        ? 'Đơn bán mới'
+        : type === ORDER_TYPE_LABELS.RENT
+          ? 'Đơn thuê mới'
+          : 'Đơn hàng mới';
     return {
-      title: 'Đơn hàng mới',
-      body: `Đơn ${payload.orderNumber} vừa được tạo`,
+      title,
+      body: `${ref} · ${status}`,
     };
   }
 
-  return {
-    title: 'Cập nhật đơn hàng',
-    body: `Đơn ${payload.orderNumber}: ${payload.previousStatus ?? '?'} → ${payload.status}`,
-  };
+  // Status-specific titles so staff can act without opening the app
+  switch (payload.status.toUpperCase()) {
+    case 'PICKUPED':
+      return {
+        title: 'Đã giao hàng',
+        body: `${ref} · ${previous} → ${status}`,
+      };
+    case 'RETURNED':
+      return {
+        title: 'Đã trả hàng',
+        body: `${ref} · ${previous} → ${status}`,
+      };
+    case 'COMPLETED':
+      return {
+        title: 'Đơn hoàn thành',
+        body: `${ref} · ${status}`,
+      };
+    case 'CANCELLED':
+      return {
+        title: 'Đơn đã hủy',
+        body: `${ref} · ${previous} → ${status}`,
+      };
+    default:
+      return {
+        title: type ? `Cập nhật đơn ${type.toLowerCase()}` : 'Cập nhật đơn hàng',
+        body: `${ref} · ${previous} → ${status}`,
+      };
+  }
 }
 
 function buildNotificationData(payload: OrderPushPayload): Record<string, string> {
