@@ -75,7 +75,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Messaging.messaging().apnsToken = deviceToken
+        // Must set APNs token before any FCM token fetch, otherwise Firebase errors
+        // with "No APNS token specified before fetching FCM Token".
+        PushNotificationManager.shared.didReceiveAPNsToken(deviceToken)
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

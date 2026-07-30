@@ -133,6 +133,14 @@ export async function sendOrderPushToOutlet(
     response.responses.forEach((res, index) => {
       if (res.success) return;
       const code = res.error?.code;
+      const messageText = res.error?.message;
+      // Surface why APNs/FCM rejected — e.g. missing APNs key, bad token, wrong bundle
+      console.error('❌ FCM send failed for token:', {
+        index,
+        code,
+        message: messageText,
+        tokenSuffix: tokens[index]?.slice(-8),
+      });
       if (
         code === 'messaging/registration-token-not-registered' ||
         code === 'messaging/invalid-registration-token'
