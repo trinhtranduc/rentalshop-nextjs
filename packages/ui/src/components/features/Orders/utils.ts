@@ -136,17 +136,18 @@ export const calculateOrderStats = (orders: Order[]): OrderStats => {
   const activeOrders = orders.filter(o => o.status === ORDER_STATUS.PICKUPED).length;
   const completedOrders = orders.filter(o => o.status === ORDER_STATUS.COMPLETED || o.status === ORDER_STATUS.RETURNED).length;
   const cancelledOrders = orders.filter(o => o.status === ORDER_STATUS.CANCELLED).length;
+  const billableOrders = orders.filter(o => o.status !== ORDER_STATUS.CANCELLED);
   
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const totalDeposits = orders.reduce((sum, o) => sum + o.depositAmount, 0);
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const totalRevenue = billableOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalDeposits = billableOrders.reduce((sum, o) => sum + o.depositAmount, 0);
+  const averageOrderValue = billableOrders.length > 0 ? totalRevenue / billableOrders.length : 0;
   
   const now = new Date();
   const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const ordersThisMonth = orders.filter(o => 
     new Date(o.createdAt) >= thisMonth
   ).length;
-  const revenueThisMonth = orders.filter(o => 
+  const revenueThisMonth = billableOrders.filter(o => 
     new Date(o.createdAt) >= thisMonth
   ).reduce((sum, o) => sum + o.totalAmount, 0);
   
