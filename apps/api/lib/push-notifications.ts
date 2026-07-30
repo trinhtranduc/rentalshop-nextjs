@@ -60,20 +60,34 @@ function nonEmpty(value?: string | null): string | null {
   return trimmed ? trimmed : null;
 }
 
-/** Prefer actorName; fall back to legacy createdByName. */
-function actorOf(payload: OrderPushPayload): string | null {
-  return nonEmpty(payload.actorName) ?? nonEmpty(payload.createdByName);
-}
-
 function isEmailLike(value: string, email?: string | null): boolean {
   if (email && value.trim().toLowerCase() === email.trim().toLowerCase()) return true;
   return value.includes('@');
 }
 
+/** Never use email (or email-like strings) as staff display name in push copy. */
+function sanitizeActorName(
+  value?: string | null,
+  email?: string | null
+): string | null {
+  const name = nonEmpty(value);
+  if (!name) return null;
+  if (isEmailLike(name, email)) return null;
+  return name;
+}
+
+/** Prefer actorName; fall back to legacy createdByName — both sanitized. */
+function actorOf(payload: OrderPushPayload): string | null {
+  return (
+    sanitizeActorName(payload.actorName) ??
+    sanitizeActorName(payload.createdByName)
+  );
+}
+
 /**
  * Resolve staff display name for push copy.
  * JWT AuthUser often has empty first/last name and `name === email` — look up DB like order create does.
- * Never prefer email when a real name exists.
+ * Never returns an email address.
  */
 export async function resolveActorDisplayName(user: {
   id: number;
@@ -82,23 +96,28 @@ export async function resolveActorDisplayName(user: {
   lastName?: string | null;
   name?: string | null;
 }): Promise<string | null> {
-  const fromAuth = formatFullName(user.firstName, user.lastName);
+  const fromAuth = sanitizeActorName(
+    formatFullName(user.firstName, user.lastName),
+    user.email
+  );
   if (fromAuth) return fromAuth;
 
-  const name = nonEmpty(user.name);
-  if (name && !isEmailLike(name, user.email)) return name;
+  const name = sanitizeActorName(user.name, user.email);
+  if (name) return name;
 
   try {
     const dbUser = await db.users.findById(user.id);
     if (dbUser) {
-      const fromDb = formatFullName(dbUser.firstName, dbUser.lastName);
+      const fromDb = sanitizeActorName(
+        formatFullName(dbUser.firstName, dbUser.lastName),
+        dbUser.email ?? user.email
+      );
       if (fromDb) return fromDb;
     }
   } catch (error) {
     console.error('❌ resolveActorDisplayName failed:', error);
   }
 
-  // Last resort: omit actor (copy still works) rather than show email
   return null;
 }
 
@@ -334,11 +353,22 @@ export function notifyOutletOrderEvent(
   }
 ): void {
   void (async () => {
-    let actorName = payload.actorName ?? payload.createdByName ?? null;
+    // JWT often sets name/actor to email — always resolve from DB when actorUser is provided,
+    // and strip any email-like leftover so banners never show addresses.
+    let actorName =
+      sanitizeActorName(payload.actorName, actorUser?.email) ??
+      sanitizeActorName(payload.createdByName, actorUser?.email);
+
     if (actorUser) {
       const resolved = await resolveActorDisplayName(actorUser);
-      if (resolved) actorName = resolved;
+      if (resolved) {
+        actorName = resolved;
+      } else if (actorName && isEmailLike(actorName, actorUser.email)) {
+        actorName = null;
+      }
     }
+
+    actorName = sanitizeActorName(actorName, actorUser?.email);
 
     return sendOrderPushToOutlet(outletId, {
       ...payload,
