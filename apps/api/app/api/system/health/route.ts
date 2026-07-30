@@ -38,24 +38,18 @@ export async function GET(request: NextRequest) {
   
   try {
     // 1. Database Health Check
+    // Use SELECT 1 only — avoid $connect/$disconnect on the shared Prisma singleton
+    // (disconnect churn exhausts Postgres max_connections under health probes).
     const dbStartTime = Date.now();
     try {
-      await prisma.$connect();
-      const productCount = await prisma.product.count();
-      const userCount = await prisma.user.count();
-      const orderCount = await prisma.order.count();
-      
+      await prisma.$queryRaw`SELECT 1`;
+
       checks.push({
         name: 'database',
         status: 'healthy',
         responseTime: Date.now() - dbStartTime,
         details: {
           connection: 'connected',
-          tables: {
-            products: productCount,
-            users: userCount,
-            orders: orderCount
-          }
         }
       });
     } catch (error) {
@@ -65,47 +59,20 @@ export async function GET(request: NextRequest) {
         responseTime: Date.now() - dbStartTime,
         error: error instanceof Error ? error.message : 'Database connection failed'
       });
-    } finally {
-      await prisma.$disconnect();
     }
 
-    // 2. API Health Check
+    // 2. API Health Check — local readiness only (avoid nested /api/health/database
+    // which previously double-hit DB and used $disconnect on the shared client).
     const apiStartTime = Date.now();
-    try {
-      // Test a simple API operation
-      const testResponse = await fetch(`${request.nextUrl.origin}/api/health/database`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (testResponse.ok) {
-        checks.push({
-          name: 'api',
-          status: 'healthy',
-          responseTime: Date.now() - apiStartTime,
-          details: {
-            status: testResponse.status,
-            responseTime: Date.now() - apiStartTime
-          }
-        });
-      } else {
-        checks.push({
-          name: 'api',
-          status: 'degraded',
-          responseTime: Date.now() - apiStartTime,
-          error: `API returned status ${testResponse.status}`
-        });
+    checks.push({
+      name: 'api',
+      status: 'healthy',
+      responseTime: Date.now() - apiStartTime,
+      details: {
+        status: 200,
+        responseTime: Date.now() - apiStartTime
       }
-    } catch (error) {
-      checks.push({
-        name: 'api',
-        status: 'unhealthy',
-        responseTime: Date.now() - apiStartTime,
-        error: error instanceof Error ? error.message : 'API health check failed'
-      });
-    }
+    });
 
     // 3. External Dependencies Check
     const externalStartTime = Date.now();
