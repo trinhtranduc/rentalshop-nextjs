@@ -559,4 +559,6 @@ class BaseService {
 extension Notification.Name {
     static let userSessionExpired = Notification.Name("userSessionExpired")
     static let accessDenied = Notification.Name("accessDenied")
+    /// Posted when inbox unread count changes. userInfo["count"] = Int
+    static let inboxUnreadCountDidChange = Notification.Name("inboxUnreadCountDidChange")
 }

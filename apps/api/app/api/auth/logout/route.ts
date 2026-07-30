@@ -35,6 +35,17 @@ export async function POST(request: NextRequest) {
       await db.sessions.invalidateSession(user.sessionId);
       console.log(`Session ${user.sessionId} invalidated for user ${user.id}`);
     }
+
+    // Optional: deactivate push token for this device (mobile logout)
+    try {
+      const body = await request.clone().json().catch(() => null);
+      const deviceId = body?.deviceId;
+      if (typeof deviceId === 'string' && deviceId.length > 0 && user.id) {
+        await db.deviceTokens.deactivate(user.id, deviceId);
+      }
+    } catch {
+      // Body may be empty — ignore
+    }
     
     return NextResponse.json(
       ResponseBuilder.success('LOGOUT_SUCCESS', {

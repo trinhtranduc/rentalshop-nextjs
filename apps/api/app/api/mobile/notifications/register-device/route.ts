@@ -1,118 +1,91 @@
-import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { apiConfig } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { withAuthRoles } from '@rentalshop/auth/server';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { USER_ROLE } from '@rentalshop/constants';
+import { z } from 'zod';
+
+const MOBILE_ROLES = [
+  USER_ROLE.ADMIN,
+  USER_ROLE.MERCHANT,
+  USER_ROLE.OUTLET_ADMIN,
+  USER_ROLE.OUTLET_STAFF,
+] as const;
+
+const registerDeviceSchema = z.object({
+  deviceId: z.string().min(1).max(255),
+  pushToken: z.string().min(1).max(512),
+  platform: z.enum(['ios', 'android']),
+});
+
+const unregisterDeviceSchema = z.object({
+  deviceId: z.string().min(1).max(255),
+});
 
 /**
- * @swagger
- * /api/mobile/notifications/register-device:
- *   post:
- *     summary: Register mobile device for push notifications
- *     description: Register a mobile device to receive push notifications
- *     tags: [Mobile, Notifications]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - deviceId
- *               - pushToken
- *               - platform
- *             properties:
- *               deviceId:
- *                 type: string
- *                 description: Mobile device identifier
- *                 example: "device-123456"
- *               pushToken:
- *                 type: string
- *                 description: Push notification token
- *                 example: "fcm-token-123"
- *               platform:
- *                 type: string
- *                 enum: [ios, android]
- *                 description: Mobile platform
- *                 example: "ios"
- *               userId:
- *                 type: string
- *                 description: User ID (optional)
- *                 example: "user-123"
- *     responses:
- *       200:
- *         description: Device registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Device registered successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     deviceId:
- *                       type: string
- *                     registeredAt:
- *                       type: string
- *                       format: date-time
- *       400:
- *         description: Validation failed
- *       500:
- *         description: Internal server error
+ * POST /api/mobile/notifications/register-device
+ * Register / refresh FCM token for the authenticated user's device.
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuthRoles([...MOBILE_ROLES])(async (request: NextRequest, { user }) => {
   try {
     const body = await request.json();
-    
-    // Validate required fields
-    if (!body.deviceId || !body.pushToken || !body.platform) {
-      return NextResponse.json({
-        success: false,
-        code: 'DEVICE_INFO_REQUIRED',
-        message: 'Missing required fields: deviceId, pushToken, platform'
-      }, { status: 400 });
+    const parsed = registerDeviceSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(ResponseBuilder.error('DEVICE_INFO_REQUIRED'), { status: 400 });
     }
-    
-    // Validate platform
-    if (!['ios', 'android'].includes(body.platform)) {
-      return NextResponse.json({
-        success: false,
-        code: 'INVALID_PLATFORM',
-        message: 'Invalid platform. Must be "ios" or "android"'
-      }, { status: 400 });
-    }
-    
-    // TODO: Store device registration in database
-    // This would typically involve:
-    // 1. Storing device info in a devices table
-    // 2. Linking device to user if userId is provided
-    // 3. Storing push token securely
-    
-    return NextResponse.json({
-      success: true,
-      code: 'DEVICE_REGISTERED_SUCCESS',
-        message: 'Device registered successfully',
-      data: {
-        deviceId: body.deviceId,
-        platform: body.platform,
-        registeredAt: new Date().toISOString(),
-        userId: body.userId || null
-      }
+
+    const { deviceId, pushToken, platform } = parsed.data;
+
+    const device = await db.deviceTokens.upsert({
+      userId: user.id,
+      deviceId,
+      pushToken,
+      platform,
     });
-    
-  } catch (error: any) {
+
+    return NextResponse.json(
+      ResponseBuilder.success('DEVICE_REGISTERED_SUCCESS', {
+        deviceId: device.deviceId,
+        platform: device.platform,
+        registeredAt: device.updatedAt.toISOString(),
+        userId: device.userId,
+      })
+    );
+  } catch (error) {
     console.error('Device registration error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      code: 'DEVICE_REGISTRATION_FAILED',
-        message: 'Device registration failed',
-      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
-    }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
-} 
+});
+
+/**
+ * DELETE /api/mobile/notifications/register-device
+ * Deactivate FCM token for this device (call on logout).
+ * Body: { deviceId }
+ */
+export const DELETE = withAuthRoles([...MOBILE_ROLES], {
+  requireActiveSubscription: false,
+})(async (request: NextRequest, { user }) => {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const parsed = unregisterDeviceSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(ResponseBuilder.error('DEVICE_INFO_REQUIRED'), { status: 400 });
+    }
+
+    await db.deviceTokens.deactivate(user.id, parsed.data.deviceId);
+
+    return NextResponse.json(
+      ResponseBuilder.success('DEVICE_UNREGISTERED_SUCCESS', {
+        deviceId: parsed.data.deviceId,
+        userId: user.id,
+      })
+    );
+  } catch (error) {
+    console.error('Device unregister error:', error);
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
+});

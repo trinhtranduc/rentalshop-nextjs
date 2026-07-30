@@ -952,6 +952,22 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
     };
 
+    // Push to outlet users (fire-and-forget — do not block response)
+    if (loyaltyOrder.outletId) {
+      const { notifyOutletOrderEvent } = await import('../../../lib/push-notifications');
+      notifyOutletOrderEvent(loyaltyOrder.outletId, {
+        type: 'ORDER_CREATED',
+        orderId: String(loyaltyOrder.id),
+        orderNumber: loyaltyOrder.orderNumber,
+        status: String(loyaltyOrder.status),
+        outletId: String(loyaltyOrder.outletId),
+        orderType: String(loyaltyOrder.orderType),
+        actorName: flattenedOrder.createdByName,
+        customerName: flattenedOrder.customerName,
+        totalAmount: loyaltyOrder.totalAmount,
+      }, user);
+    }
+
     return NextResponse.json({
       success: true,
       data: normalizedOrder,
@@ -1134,6 +1150,29 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       context: buildAuditContext(request, user, userScope)
     }).catch((err) => console.error('Audit log update failed:', err));
     console.log('✅ Order updated successfully:', updatedOrder);
+
+    // Push when status changed via PUT /api/orders
+    const newStatus = updateData.status ?? updatedOrder?.status;
+    if (
+      existingOrder.status &&
+      newStatus &&
+      String(existingOrder.status) !== String(newStatus) &&
+      (updatedOrder?.outletId || existingOrder.outletId)
+    ) {
+      const outletId = updatedOrder?.outletId ?? existingOrder.outletId;
+      const { notifyOutletOrderEvent } = await import('../../../lib/push-notifications');
+      notifyOutletOrderEvent(outletId, {
+        type: 'ORDER_STATUS_CHANGED',
+        orderId: String(updatedOrder?.id ?? id),
+        orderNumber: updatedOrder?.orderNumber ?? existingOrder.orderNumber,
+        status: String(newStatus),
+        outletId: String(outletId),
+        orderType: (updatedOrder?.orderType ?? existingOrder.orderType)
+          ? String(updatedOrder?.orderType ?? existingOrder.orderType)
+          : undefined,
+        previousStatus: String(existingOrder.status),
+      }, user);
+    }
 
     return NextResponse.json({
       success: true,

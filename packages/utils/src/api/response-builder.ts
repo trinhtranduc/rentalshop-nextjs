@@ -106,9 +106,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',
   'ACCOUNT_ALREADY_DELETED': 'Account is already deleted',
+  'NOTIFICATION_NOT_FOUND': 'Notification not found',
   'ORDER_PAYMENT_REQUIRED': 'Order ID, amount, and method are required',
   'SUBSCRIPTION_END_DATE_REQUIRED': 'Subscription ID, end date, and amount are required',
   'DEVICE_INFO_REQUIRED': 'Missing required fields: deviceId, pushToken, platform',
+  'DEVICE_REGISTRATION_FAILED': 'Device registration failed',
   'API_KEY_NAME_REQUIRED': 'API key name is required',
   'VALID_USER_ID_REQUIRED': 'Valid user ID is required',
   
@@ -185,6 +187,16 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'PLAN_CREATED_SUCCESS': 'Plan created successfully',
   'MERCHANT_CREATED_SUCCESS': 'Merchant created successfully with default outlet',
   'BUSINESS_TAGS_RETRIEVED': 'Business tags retrieved successfully',
+  'DEVICE_REGISTERED_SUCCESS': 'Device registered successfully',
+  'DEVICE_UNREGISTERED_SUCCESS': 'Device unregistered successfully',
+  'NOTIFICATIONS_FOUND': 'Notifications retrieved successfully',
+  'NOTIFICATION_FOUND': 'Notification retrieved successfully',
+  'NOTIFICATION_MARKED_READ': 'Notification marked as read',
+  'NOTIFICATION_MARKED_UNREAD': 'Notification marked as unread',
+  'NOTIFICATIONS_MARKED_ALL_READ': 'All notifications marked as read',
+  'NOTIFICATION_DELETED': 'Notification deleted',
+  'NOTIFICATIONS_READ_DELETED': 'Read notifications deleted',
+  'NOTIFICATION_UNREAD_COUNT': 'Unread notification count retrieved',
   
   // Update Operations
   'USER_UPDATED_SUCCESS': 'User updated successfully',

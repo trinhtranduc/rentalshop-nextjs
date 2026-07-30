@@ -139,6 +139,15 @@ enum APIEndpoint {
         static let mobileLogin = "/api/mobile/auth/login"
         static let registerDevice = "/api/mobile/notifications/register-device"
         static let syncCheck = "/api/mobile/sync/check"
+
+        // In-app notification inbox
+        static let notifications = "/api/notifications"
+        static let notificationsUnreadCount = "/api/notifications/unread-count"
+        static let notificationsMarkAllRead = "/api/notifications/mark-all-read"
+        static let notificationsDeleteRead = "/api/notifications/delete-read"
+        static func notificationMarkRead(id: Int) -> String { "/api/notifications/\(id)/read" }
+        static func notificationMarkUnread(id: Int) -> String { "/api/notifications/\(id)/unread" }
+        static func notificationDelete(id: Int) -> String { "/api/notifications/\(id)" }
         
         // System APIs
         static let healthCheck = "/api/health"

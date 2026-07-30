@@ -774,6 +774,25 @@ export const PUT = async (
         returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
       };
 
+      // Push when status changed via full order update
+      if (
+        existingOrder.status &&
+        fullOrder.status &&
+        String(existingOrder.status) !== String(fullOrder.status) &&
+        fullOrder.outletId
+      ) {
+        const { notifyOutletOrderEvent } = await import('../../../../lib/push-notifications');
+        notifyOutletOrderEvent(fullOrder.outletId, {
+          type: 'ORDER_STATUS_CHANGED',
+          orderId: String(fullOrder.id),
+          orderNumber: fullOrder.orderNumber,
+          status: String(fullOrder.status),
+          outletId: String(fullOrder.outletId),
+          orderType: fullOrder.orderType ? String(fullOrder.orderType) : undefined,
+          previousStatus: String(existingOrder.status),
+        }, user);
+      }
+
       return NextResponse.json({
         success: true,
         data: normalizedOrder,

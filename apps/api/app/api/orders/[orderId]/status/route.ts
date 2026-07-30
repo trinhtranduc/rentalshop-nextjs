@@ -224,6 +224,23 @@ export async function PATCH(
 
     const finalOrder = (await db.orders.findById(orderPublicId)) || updatedOrder;
 
+    // Push status change to outlet users (only when status actually changed)
+    if (
+      existingOrder.status !== status &&
+      finalOrder?.outletId
+    ) {
+      const { notifyOutletOrderEvent } = await import('../../../../../lib/push-notifications');
+      notifyOutletOrderEvent(finalOrder.outletId, {
+        type: 'ORDER_STATUS_CHANGED',
+        orderId: String(finalOrder.id),
+        orderNumber: finalOrder.orderNumber,
+        status: String(status),
+        outletId: String(finalOrder.outletId),
+        orderType: finalOrder.orderType ? String(finalOrder.orderType) : undefined,
+        previousStatus: String(existingOrder.status),
+      }, user);
+    }
+
     // Enhanced response for returns
     let responseMessage = `Order status updated to ${status} successfully`;
     

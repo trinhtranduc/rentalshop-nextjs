@@ -22,6 +22,8 @@ import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
 import { refreshTokens } from './refresh-tokens';
+import { deviceTokens } from './device-tokens';
+import { notifications } from './notifications';
 import { simplifiedSync } from './sync';
 import { simplifiedPosts } from './post';
 import { simplifiedPostCategories } from './post-category';
@@ -172,6 +174,16 @@ const db = {
   refreshTokens,
 
   // ============================================================================
+  // DEVICE TOKEN (PUSH NOTIFICATIONS)
+  // ============================================================================
+  deviceTokens,
+
+  // ============================================================================
+  // IN-APP NOTIFICATION INBOX
+  // ============================================================================
+  notifications,
+
+  // ============================================================================
   // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
   // ============================================================================
   sync: simplifiedSync,
@@ -271,6 +283,31 @@ export { db, checkDatabaseConnection, generateOrderNumber };
 
 // Export refresh token functions
 export { refreshTokens, createRefreshToken, rotateRefreshToken, revokeRefreshToken, revokeAllUserTokens } from './refresh-tokens';
+
+// Export device token (push notification) functions
+export {
+  deviceTokens,
+  upsertDeviceToken,
+  deactivateDeviceToken,
+  deactivateTokensByPushToken,
+  findActivePushTokensForOutlet,
+} from './device-tokens';
+export type { DevicePlatform, UpsertDeviceTokenInput } from './device-tokens';
+
+// Export in-app notification inbox functions
+export {
+  notifications,
+  findActiveUserIdsForOutlet,
+  createNotificationsForUsers,
+  listNotificationsForUser,
+  getUnreadNotificationCount,
+  markNotificationRead,
+  markNotificationUnread,
+  markAllNotificationsRead,
+  deleteNotification,
+  deleteAllReadNotifications,
+} from './notifications';
+export type { CreateNotificationInput, NotificationListFilters } from './notifications';
 
 // Export payment functions
 export { simplifiedPayments } from './payment';

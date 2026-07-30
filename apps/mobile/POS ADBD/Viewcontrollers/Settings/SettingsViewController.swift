@@ -90,6 +90,7 @@ class SettingsViewController: BaseViewControler {
             if PermissionManager.shared.canManageUsers() {
                 items.append(.userManagement)
             }
+            items.append(.notifications)
             return items
         case .tools:
             var items: [SettingsItem] = [.printer]
@@ -126,6 +127,7 @@ class SettingsViewController: BaseViewControler {
     private enum SettingsItem {
         case account
         case userManagement
+        case notifications
         case printer
         case export
         case bankAccounts
@@ -137,6 +139,7 @@ class SettingsViewController: BaseViewControler {
             switch self {
             case .account: return "Store Information".localized()
             case .userManagement: return "User Management".localized()
+            case .notifications: return "Notifications".localized()
             case .printer: return "Printer Configuration".localized()
             case .export: return "Export Data".localized()
             case .bankAccounts: return "Bank Accounts".localized()
@@ -156,6 +159,7 @@ class SettingsViewController: BaseViewControler {
             switch self {
             case .account: return UIImage(systemName: "building.2")
             case .userManagement: return UIImage(systemName: "person.fill")
+            case .notifications: return UIImage(systemName: "bell.fill")
             case .printer: return UIImage(systemName: "printer.fill")
             case .export: return UIImage(systemName: "square.and.arrow.up")
             case .bankAccounts: return UIImage(systemName: "creditcard.fill")
@@ -167,7 +171,7 @@ class SettingsViewController: BaseViewControler {
         
         var iconColor: UIColor {
             switch self {
-            case .account, .printer, .appInfo, .export, .bankAccounts, .deleteAccount, .userManagement:
+            case .account, .printer, .appInfo, .export, .bankAccounts, .deleteAccount, .userManagement, .notifications:
                 return .neutralGray
             case .logout:
                 return .actionDanger
@@ -310,6 +314,11 @@ class SettingsViewController: BaseViewControler {
         case .userManagement:
             let userManagementVC = UserManagementViewController()
             navigationController?.pushViewController(userManagementVC, animated: true)
+
+        case .notifications:
+            let notificationsVC = NotificationsViewController()
+            notificationsVC.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(notificationsVC, animated: true)
             
         case .printer:
             let printerVC = PrinterConfigurationViewController()

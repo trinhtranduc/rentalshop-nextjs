@@ -98,27 +98,38 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
     }
     
     func logout(completion: @escaping (Bool, NSError?) -> Void) {
-        let path = APIEndpoint.Path.logout
-        let fullURL = APIEndpoint.currentBaseURL + path
-        
-        AF.request(fullURL, method: .post, parameters: nil, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
-            .responseData { response in
-                switch response.result {
-                case .success(let data):
-                    do {
-                        let apiResponse = try JSONDecoder.shared.decode(APIEmptyResponse.self, from: data)
-                        // Reset user from UserDefaults on successful logout
-                        if apiResponse.success {
-                            User.reset()
+        // Deactivate push token while auth header is still valid
+        PushNotificationManager.shared.unregister { [weak self] in
+            guard let self = self else {
+                completion(false, nil)
+                return
+            }
+
+            let path = APIEndpoint.Path.logout
+            let fullURL = APIEndpoint.currentBaseURL + path
+            let params: [String: Any] = [
+                "deviceId": PushNotificationManager.shared.deviceId
+            ]
+
+            AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+                .responseData { response in
+                    switch response.result {
+                    case .success(let data):
+                        do {
+                            let apiResponse = try JSONDecoder.shared.decode(APIEmptyResponse.self, from: data)
+                            // Reset user from UserDefaults on successful logout
+                            if apiResponse.success {
+                                User.reset()
+                            }
+                            completion(apiResponse.success, nil)
+                        } catch {
+                            completion(false, error as NSError)
                         }
-                        completion(apiResponse.success, nil)
-                    } catch {
+                    case .failure(let error):
                         completion(false, error as NSError)
                     }
-                case .failure(let error):
-                    completion(false, error as NSError)
                 }
-            }
+        }
     }
     
     func createAccount(

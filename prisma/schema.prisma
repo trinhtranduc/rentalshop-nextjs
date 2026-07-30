@@ -42,6 +42,8 @@ model User {
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
   refreshTokens          RefreshToken[]
+  deviceTokens           DeviceToken[]
+  notifications          Notification[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -50,6 +52,42 @@ model User {
   @@index([outletId])
   @@index([deletedAt])
   @@index([emailVerified])
+}
+
+/// FCM / push tokens for mobile devices (POS notifications)
+model DeviceToken {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  deviceId   String
+  pushToken  String
+  platform   String // ios | android
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([pushToken])
+  @@index([userId, isActive])
+  @@index([isActive, platform])
+}
+
+/// In-app notification inbox (read / unread). Created when order push events fire.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String // ORDER_CREATED | ORDER_STATUS_CHANGED | ...
+  title     String
+  body      String
+  data      Json? // orderId, orderNumber, status, outletId, ...
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@index([type])
 }
 
 model UserSession {
