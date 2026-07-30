@@ -79,7 +79,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("⚠️ Failed to register for remote notifications: \(error.localizedDescription)")
+        // Use Swift.print — AppDelegate defines print(data:) for the receipt printer.
+        Swift.print("⚠️ Failed to register for remote notifications: \(error.localizedDescription)")
     }
 
     func application(
