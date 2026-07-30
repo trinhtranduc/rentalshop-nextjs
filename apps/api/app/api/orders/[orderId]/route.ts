@@ -790,6 +790,7 @@ export const PUT = async (
           outletId: String(fullOrder.outletId),
           orderType: fullOrder.orderType ? String(fullOrder.orderType) : undefined,
           previousStatus: String(existingOrder.status),
+          actorName: formatFullName(user.firstName, user.lastName) || user.name || user.email,
         });
       }
 

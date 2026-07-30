@@ -962,8 +962,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         status: String(loyaltyOrder.status),
         outletId: String(loyaltyOrder.outletId),
         orderType: String(loyaltyOrder.orderType),
+        actorName: flattenedOrder.createdByName,
         customerName: flattenedOrder.customerName,
-        createdByName: flattenedOrder.createdByName,
         totalAmount: loyaltyOrder.totalAmount,
       });
     }
@@ -1171,6 +1171,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
           ? String(updatedOrder?.orderType ?? existingOrder.orderType)
           : undefined,
         previousStatus: String(existingOrder.status),
+        actorName: formatFullName(user.firstName, user.lastName) || user.name || user.email,
       });
     }
 

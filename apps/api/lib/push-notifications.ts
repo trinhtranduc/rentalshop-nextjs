@@ -18,9 +18,11 @@ export interface OrderPushPayload {
   outletId: string;
   orderType?: string;
   previousStatus?: string;
-  /** Create-only extras for richer banner body */
-  customerName?: string | null;
+  /** Who created/updated the order — shown in every message as "A" */
+  actorName?: string | null;
+  /** @deprecated use actorName */
   createdByName?: string | null;
+  customerName?: string | null;
   totalAmount?: number | null;
 }
 
@@ -56,15 +58,20 @@ function nonEmpty(value?: string | null): string | null {
   return trimmed ? trimmed : null;
 }
 
+/** Prefer actorName; fall back to legacy createdByName. */
+function actorOf(payload: OrderPushPayload): string | null {
+  return nonEmpty(payload.actorName) ?? nonEmpty(payload.createdByName);
+}
+
 /**
- * Banner + inbox copy — Vietnamese labels aligned with ORDER_STATUS_LABELS / ORDER_TYPE_LABELS.
- * Keep title short (lock-screen friendly); put order # + status detail in body.
+ * Banner + inbox copy — natural Vietnamese sentences with actor (A) on every event.
  */
 function buildNotificationCopy(payload: OrderPushPayload): { title: string; body: string } {
   const ref = formatOrderRef(payload.orderNumber);
   const type = orderTypeLabel(payload.orderType);
   const status = orderStatusLabel(payload.status);
   const previous = orderStatusLabel(payload.previousStatus);
+  const actor = actorOf(payload);
 
   if (payload.type === 'ORDER_CREATED') {
     const title =
@@ -74,46 +81,61 @@ function buildNotificationCopy(payload: OrderPushPayload): { title: string; body
           ? 'Đơn thuê mới'
           : 'Đơn hàng mới';
 
-    // #mã · khách · giá · người tạo (skip missing parts; skip status — create is almost always RESERVED)
-    const bodyParts = [
-      ref,
-      nonEmpty(payload.customerName),
-      formatPushAmount(payload.totalAmount),
-      nonEmpty(payload.createdByName),
-    ].filter((part): part is string => Boolean(part));
+    // "{A} vừa tạo đơn {B} trị giá {C} cho {khách}"
+    const customer = nonEmpty(payload.customerName);
+    const amount = formatPushAmount(payload.totalAmount);
 
-    return {
-      title,
-      body: bodyParts.join(' · '),
-    };
+    let body: string;
+    if (actor && amount && customer) {
+      body = `${actor} vừa tạo đơn ${ref} trị giá ${amount} cho ${customer}`;
+    } else if (actor && amount) {
+      body = `${actor} vừa tạo đơn ${ref} trị giá ${amount}`;
+    } else if (actor && customer) {
+      body = `${actor} vừa tạo đơn ${ref} cho ${customer}`;
+    } else if (amount && customer) {
+      body = `Đơn ${ref} trị giá ${amount} cho ${customer}`;
+    } else if (actor) {
+      body = `${actor} vừa tạo đơn ${ref}`;
+    } else if (amount) {
+      body = `Đơn ${ref} trị giá ${amount}`;
+    } else if (customer) {
+      body = `Đơn ${ref} cho ${customer}`;
+    } else {
+      body = `Đơn ${ref} vừa được tạo`;
+    }
+
+    return { title, body };
   }
 
-  // Status-specific titles so staff can act without opening the app
+  // Status updates — always lead with who did it when known
+  const withActor = (action: string, detail: string) =>
+    actor ? `${actor} ${action} ${detail}` : `${action.charAt(0).toUpperCase()}${action.slice(1)} ${detail}`;
+
   switch (payload.status.toUpperCase()) {
     case 'PICKUPED':
       return {
         title: 'Đã giao hàng',
-        body: `${ref} · ${previous} → ${status}`,
+        body: withActor('đã giao đơn', `${ref} (${previous} → ${status})`),
       };
     case 'RETURNED':
       return {
         title: 'Đã trả hàng',
-        body: `${ref} · ${previous} → ${status}`,
+        body: withActor('đã nhận trả đơn', `${ref} (${previous} → ${status})`),
       };
     case 'COMPLETED':
       return {
         title: 'Đơn hoàn thành',
-        body: `${ref} · ${status}`,
+        body: withActor('đã hoàn thành đơn', ref),
       };
     case 'CANCELLED':
       return {
         title: 'Đơn đã hủy',
-        body: `${ref} · ${previous} → ${status}`,
+        body: withActor('đã hủy đơn', `${ref} (${previous} → ${status})`),
       };
     default:
       return {
         title: type ? `Cập nhật đơn ${type.toLowerCase()}` : 'Cập nhật đơn hàng',
-        body: `${ref} · ${previous} → ${status}`,
+        body: withActor('đã cập nhật đơn', `${ref}: ${previous} → ${status}`),
       };
   }
 }
@@ -128,8 +150,9 @@ function buildNotificationData(payload: OrderPushPayload): Record<string, string
   };
   if (payload.orderType) data.orderType = payload.orderType;
   if (payload.previousStatus) data.previousStatus = payload.previousStatus;
+  const actor = actorOf(payload);
+  if (actor) data.actorName = actor;
   if (nonEmpty(payload.customerName)) data.customerName = nonEmpty(payload.customerName)!;
-  if (nonEmpty(payload.createdByName)) data.createdByName = nonEmpty(payload.createdByName)!;
   if (payload.totalAmount != null && Number.isFinite(Number(payload.totalAmount))) {
     data.totalAmount = String(payload.totalAmount);
   }
