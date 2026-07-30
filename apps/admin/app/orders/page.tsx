@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
@@ -64,6 +64,15 @@ export default function AdminOrdersPage() {
   const merchantId = searchParams.get('merchant') ? parseInt(searchParams.get('merchant')!) : undefined;
   const customerIdParam = searchParams.get('customerId');
   const customerId = customerIdParam ? parseInt(customerIdParam, 10) : undefined;
+
+  // Deep-links like /orders?customerId=101202 → dedicated customer orders page
+  // (same pattern as client /customers/[id]/orders → /api/customers/{id}/orders)
+  useEffect(() => {
+    if (Number.isFinite(customerId) && (customerId as number) > 0) {
+      router.replace(`/customers/${customerId}/orders`);
+    }
+  }, [customerId, router]);
+
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
