@@ -23,6 +23,7 @@ import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
 import { refreshTokens } from './refresh-tokens';
 import { deviceTokens } from './device-tokens';
+import { notifications } from './notifications';
 import { simplifiedSync } from './sync';
 import { simplifiedPosts } from './post';
 import { simplifiedPostCategories } from './post-category';
@@ -178,6 +179,11 @@ const db = {
   deviceTokens,
 
   // ============================================================================
+  // IN-APP NOTIFICATION INBOX
+  // ============================================================================
+  notifications,
+
+  // ============================================================================
   // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
   // ============================================================================
   sync: simplifiedSync,
@@ -287,6 +293,21 @@ export {
   findActivePushTokensForOutlet,
 } from './device-tokens';
 export type { DevicePlatform, UpsertDeviceTokenInput } from './device-tokens';
+
+// Export in-app notification inbox functions
+export {
+  notifications,
+  findActiveUserIdsForOutlet,
+  createNotificationsForUsers,
+  listNotificationsForUser,
+  getUnreadNotificationCount,
+  markNotificationRead,
+  markNotificationUnread,
+  markAllNotificationsRead,
+  deleteNotification,
+  deleteAllReadNotifications,
+} from './notifications';
+export type { CreateNotificationInput, NotificationListFilters } from './notifications';
 
 // Export payment functions
 export { simplifiedPayments } from './payment';

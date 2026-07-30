@@ -43,6 +43,7 @@ model User {
   sessions               UserSession[]
   refreshTokens          RefreshToken[]
   deviceTokens           DeviceToken[]
+  notifications          Notification[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -70,6 +71,23 @@ model DeviceToken {
   @@index([pushToken])
   @@index([userId, isActive])
   @@index([isActive, platform])
+}
+
+/// In-app notification inbox (read / unread). Created when order push events fire.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String // ORDER_CREATED | ORDER_STATUS_CHANGED | ...
+  title     String
+  body      String
+  data      Json? // orderId, orderNumber, status, outletId, ...
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@index([type])
 }
 
 model UserSession {

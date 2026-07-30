@@ -1,6 +1,11 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
-import { deactivateTokensByPushToken, findActivePushTokensForOutlet } from '@rentalshop/database';
+import {
+  createNotificationsForUsers,
+  deactivateTokensByPushToken,
+  findActivePushTokensForOutlet,
+  findActiveUserIdsForOutlet,
+} from '@rentalshop/database';
 
 export type OrderPushEventType = 'ORDER_CREATED' | 'ORDER_STATUS_CHANGED';
 
@@ -56,27 +61,7 @@ function buildNotificationCopy(payload: OrderPushPayload): { title: string; body
   };
 }
 
-/**
- * Send FCM multicast to all active devices of users assigned to the outlet.
- * Fail-open: never throws to callers (log + deactivate bad tokens).
- */
-export async function sendOrderPushToOutlet(
-  outletId: number,
-  payload: OrderPushPayload
-): Promise<{ sent: number; failed: number }> {
-  const app = getFirebaseApp();
-  if (!app) {
-    return { sent: 0, failed: 0 };
-  }
-
-  const devices = await findActivePushTokensForOutlet(outletId);
-  const tokens = [...new Set(devices.map((d) => d.pushToken).filter(Boolean))];
-
-  if (tokens.length === 0) {
-    return { sent: 0, failed: 0 };
-  }
-
-  const { title, body } = buildNotificationCopy(payload);
+function buildNotificationData(payload: OrderPushPayload): Record<string, string> {
   const data: Record<string, string> = {
     type: payload.type,
     orderId: payload.orderId,
@@ -86,6 +71,46 @@ export async function sendOrderPushToOutlet(
   };
   if (payload.orderType) data.orderType = payload.orderType;
   if (payload.previousStatus) data.previousStatus = payload.previousStatus;
+  return data;
+}
+
+/**
+ * Persist inbox rows for all active outlet users, then send FCM to devices.
+ * Fail-open: never throws to callers.
+ */
+export async function sendOrderPushToOutlet(
+  outletId: number,
+  payload: OrderPushPayload
+): Promise<{ sent: number; failed: number; inbox: number }> {
+  const { title, body } = buildNotificationCopy(payload);
+  const data = buildNotificationData(payload);
+
+  // 1) Always try to save inbox (even if FCM is not configured / no tokens)
+  let inbox = 0;
+  try {
+    const userIds = await findActiveUserIdsForOutlet(outletId);
+    inbox = await createNotificationsForUsers(userIds, {
+      type: payload.type,
+      title,
+      body,
+      data,
+    });
+  } catch (error) {
+    console.error('❌ Failed to persist order notifications:', error);
+  }
+
+  // 2) FCM push (optional)
+  const app = getFirebaseApp();
+  if (!app) {
+    return { sent: 0, failed: 0, inbox };
+  }
+
+  const devices = await findActivePushTokensForOutlet(outletId);
+  const tokens = [...new Set(devices.map((d) => d.pushToken).filter(Boolean))];
+
+  if (tokens.length === 0) {
+    return { sent: 0, failed: 0, inbox };
+  }
 
   const message: MulticastMessage = {
     tokens,
@@ -125,15 +150,16 @@ export async function sendOrderPushToOutlet(
     return {
       sent: response.successCount,
       failed: response.failureCount,
+      inbox,
     };
   } catch (error) {
     console.error('❌ FCM sendEachForMulticast failed:', error);
-    return { sent: 0, failed: tokens.length };
+    return { sent: 0, failed: tokens.length, inbox };
   }
 }
 
 /**
- * Fire-and-forget outlet order push. Does not block the HTTP response.
+ * Fire-and-forget outlet order push + inbox. Does not block the HTTP response.
  */
 export function notifyOutletOrderEvent(
   outletId: number,
@@ -141,8 +167,8 @@ export function notifyOutletOrderEvent(
 ): void {
   void sendOrderPushToOutlet(outletId, payload)
     .then((result) => {
-      if (result.sent > 0 || result.failed > 0) {
-        console.log('📲 Order push result:', {
+      if (result.sent > 0 || result.failed > 0 || result.inbox > 0) {
+        console.log('📲 Order notification result:', {
           outletId,
           type: payload.type,
           orderNumber: payload.orderNumber,

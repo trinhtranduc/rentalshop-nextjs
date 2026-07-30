@@ -189,6 +189,14 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'BUSINESS_TAGS_RETRIEVED': 'Business tags retrieved successfully',
   'DEVICE_REGISTERED_SUCCESS': 'Device registered successfully',
   'DEVICE_UNREGISTERED_SUCCESS': 'Device unregistered successfully',
+  'NOTIFICATIONS_FOUND': 'Notifications retrieved successfully',
+  'NOTIFICATION_FOUND': 'Notification retrieved successfully',
+  'NOTIFICATION_MARKED_READ': 'Notification marked as read',
+  'NOTIFICATION_MARKED_UNREAD': 'Notification marked as unread',
+  'NOTIFICATIONS_MARKED_ALL_READ': 'All notifications marked as read',
+  'NOTIFICATION_DELETED': 'Notification deleted',
+  'NOTIFICATIONS_READ_DELETED': 'Read notifications deleted',
+  'NOTIFICATION_UNREAD_COUNT': 'Unread notification count retrieved',
   
   // Update Operations
   'USER_UPDATED_SUCCESS': 'User updated successfully',
