@@ -106,6 +106,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',
   'ACCOUNT_ALREADY_DELETED': 'Account is already deleted',
+  'NOTIFICATION_NOT_FOUND': 'Notification not found',
   'ORDER_PAYMENT_REQUIRED': 'Order ID, amount, and method are required',
   'SUBSCRIPTION_END_DATE_REQUIRED': 'Subscription ID, end date, and amount are required',
   'DEVICE_INFO_REQUIRED': 'Missing required fields: deviceId, pushToken, platform',
