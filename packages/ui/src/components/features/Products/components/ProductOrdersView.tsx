@@ -43,6 +43,7 @@ import {
 } from '../../Orders/components';
 import { Pagination } from '@rentalshop/ui';
 import { ordersApi } from '@rentalshop/utils';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import type { 
   OrderWithDetails, 
   OrderFilters,
@@ -154,13 +155,17 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
   }, [ordersData, ordersLoading, ordersError]);
 
   // Calculate overview statistics with safety checks
+  // Revenue/deposit/quantity exclude CANCELLED — cancelled orders are not earned sales.
+  const billableOrders = Array.isArray(orders)
+    ? orders.filter((order) => order.status !== ORDER_STATUS.CANCELLED)
+    : [];
   const overview = {
     totalOrders: Array.isArray(orders) ? orders.length : 0,
-    totalQuantity: Array.isArray(orders) ? orders.reduce((sum, order) => 
+    totalQuantity: billableOrders.reduce((sum, order) => 
       sum + (order.orderItems?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0), 0
-    ) : 0,
-    totalSales: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0) : 0,
-    totalDeposits: Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.depositAmount || 0), 0) : 0,
+    ),
+    totalSales: billableOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0),
+    totalDeposits: billableOrders.reduce((sum, order) => sum + (order.depositAmount || 0), 0),
     activeRentals: Array.isArray(orders) ? orders.filter(order => order.status === 'PICKUPED').length : 0,
     completedOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'COMPLETED').length : 0,
     pendingOrders: Array.isArray(orders) ? orders.filter(order => order.status === 'RESERVED').length : 0
@@ -220,8 +225,10 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       activeRentals: overview.activeRentals,
       overdueRentals: 0, // Not calculated in this context
       completedOrders: overview.completedOrders,
-      cancelledOrders: 0, // Not calculated in this context
-      averageOrderValue: overview.totalOrders > 0 ? overview.totalSales / overview.totalOrders : 0
+      cancelledOrders: Array.isArray(orders)
+        ? orders.filter((order) => order.status === ORDER_STATUS.CANCELLED).length
+        : 0,
+      averageOrderValue: billableOrders.length > 0 ? overview.totalSales / billableOrders.length : 0
     } as OrderStats
   };
 
