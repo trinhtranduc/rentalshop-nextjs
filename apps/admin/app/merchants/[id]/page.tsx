@@ -149,8 +149,17 @@ export default function MerchantDetailPage() {
   };
 
   const handleProductAction = (action: string, productId: number) => {
-    console.log('Product action:', action, productId);
-    // Handle product actions
+    switch (action) {
+      case 'view':
+      case 'edit':
+        router.push(`/merchants/${merchantId}/products/${productId}`);
+        break;
+      case 'view-orders':
+        router.push(`/merchants/${merchantId}/products/${productId}/orders`);
+        break;
+      default:
+        console.log('Product action:', action, productId);
+    }
   };
 
   const handleOrderAction = (action: string, orderId: number) => {

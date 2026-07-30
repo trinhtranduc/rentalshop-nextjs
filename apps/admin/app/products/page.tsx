@@ -146,17 +146,34 @@ export default function AdminProductsPage() {
 
   const handleProductAction = useCallback(async (action: string, productId: number) => {
     const product = data?.products.find(p => p.id === productId);
-    
+    const merchantId =
+      product?.merchantId ||
+      (product as any)?.merchant?.id ||
+      undefined;
+
     switch (action) {
       case 'view':
-        // Navigate to product detail page
-        router.push(`/products/${productId}`);
+        // Admin has no /products/[id] page — open under merchant
+        if (merchantId) {
+          router.push(`/merchants/${merchantId}/products/${productId}`);
+        } else {
+          console.warn('Product action view: missing merchantId', productId);
+        }
+        break;
+
+      case 'view-orders':
+        // Same destination as merchants/[id]/products page
+        if (merchantId) {
+          router.push(`/merchants/${merchantId}/products/${productId}/orders`);
+        } else {
+          console.warn('Product action view-orders: missing merchantId', productId);
+        }
         break;
         
       case 'edit':
         // Navigate to product edit page
-        if (product?.merchantId) {
-          router.push(`/merchants/${product.merchantId}/products/${productId}`);
+        if (merchantId) {
+          router.push(`/merchants/${merchantId}/products/${productId}`);
         }
         break;
         
