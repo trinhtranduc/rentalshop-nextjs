@@ -8,6 +8,7 @@
 
 import UIKit
 import Firebase
+import FirebaseMessaging
 import IQKeyboardManagerSwift
 import AppTrackingTransparency
 
@@ -25,6 +26,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Configure Firebase
         FirebaseManager.shared.configure()
+        
+        // Push notifications (FCM) — request permission + register token when logged in
+        if User.account() != nil {
+            PushNotificationManager.shared.start()
+        }
         
         // Configure UI appearance
         let appearance = UINavigationBarAppearance()
@@ -59,8 +65,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } else {
             self.loadLogin()
         }
+
+        // Cold start from notification tap
+        if let remote = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+            PushNotificationManager.shared.handleNotificationData(remote)
+        }
         
         return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        // Use Swift.print — AppDelegate defines print(data:) for the receipt printer.
+        Swift.print("⚠️ Failed to register for remote notifications: \(error.localizedDescription)")
+    }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        // Data-only / background delivery — deep link only on user tap (UNUserNotificationCenter)
+        completionHandler(.newData)
     }
     
     func applicationWillResignActive(_ application: UIApplication) {
@@ -146,17 +175,27 @@ extension AppDelegate {
     }
     
     func logout() {
-        // Log user logout event
-        if let user = User.account() {
-            FirebaseManager.shared.logUserLogout(userId: String(user.id))
+        let finishLogout = { [weak self] in
+            guard let self = self else { return }
+            if let user = User.account() {
+                FirebaseManager.shared.logUserLogout(userId: String(user.id))
+            }
+            User.reset()
+            Utils.removePreference()
+            AppShare.shared.reset()
+            self.loadLogin()
         }
-        
-        // Reset User from UserDefaults
-        User.reset()
-        Utils.removePreference()
-        AppShare.shared.reset()
-        
-        self.loadLogin()
+
+        // Deactivate push while auth may still be valid (e.g. forced session expiry)
+        if User.account() != nil {
+            PushNotificationManager.shared.unregister {
+                DispatchQueue.main.async {
+                    finishLogout()
+                }
+            }
+        } else {
+            finishLogout()
+        }
     }
     
     func loadMainUserView(forceMain: Bool = false) {
@@ -183,6 +222,7 @@ extension AppDelegate {
             window.rootViewController = tabBar
         }
         window.makeKeyAndVisible()
+        PushNotificationManager.shared.consumePendingOrderIfNeeded()
     }
     
     
