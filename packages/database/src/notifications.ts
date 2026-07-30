@@ -107,6 +107,7 @@ export async function listNotificationsForUser(filters: NotificationListFilters)
     page,
     limit,
     totalPages: Math.ceil(total / limit) || 1,
+    hasMore: skip + rows.length < total,
     unreadCount,
   };
 }

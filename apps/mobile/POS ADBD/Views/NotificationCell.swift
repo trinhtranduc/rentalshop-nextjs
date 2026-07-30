@@ -9,19 +9,10 @@ import SnapKit
 
 final class NotificationCell: UITableViewCell {
 
-    private lazy var containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 10
-        view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
-        return view
-    }()
-
     private lazy var unreadDotView: UIView = {
         let view = UIView()
         view.backgroundColor = .brandPrimary
-        view.layer.cornerRadius = 4
+        view.layer.cornerRadius = 3.5
         return view
     }()
 
@@ -29,39 +20,42 @@ final class NotificationCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .brandPrimary
-        imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
         return imageView
     }()
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.mediumFont(size: 15)
+        label.font = Utils.mediumFont(size: 14)
         label.textColor = .textPrimary
-        label.numberOfLines = 2
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
         return label
     }()
 
     private lazy var bodyLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 13)
+        label.font = Utils.regularFont(size: 12)
         label.textColor = .textSecondary
-        label.numberOfLines = 3
+        label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
         return label
     }()
 
     private lazy var timeLabel: UILabel = {
         let label = UILabel()
-        label.font = Utils.regularFont(size: 12)
+        label.font = Utils.regularFont(size: 11)
         label.textColor = .textTertiary
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
         return label
     }()
 
     private lazy var titleRowStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [titleLabel, timeLabel])
         stack.axis = .horizontal
-        stack.alignment = .top
-        stack.spacing = 8
+        stack.alignment = .firstBaseline
+        stack.spacing = 6
         stack.distribution = .fill
         return stack
     }()
@@ -69,9 +63,15 @@ final class NotificationCell: UITableViewCell {
     private lazy var textStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [titleRowStack, bodyLabel])
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = 2
         stack.alignment = .fill
         return stack
+    }()
+
+    private lazy var separatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.separator.withAlphaComponent(0.35)
+        return view
     }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -84,38 +84,39 @@ final class NotificationCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
+        backgroundColor = .white
+        contentView.backgroundColor = .white
         selectionStyle = .default
 
-        contentView.addSubview(containerView)
-        containerView.addSubview(unreadDotView)
-        containerView.addSubview(iconImageView)
-        containerView.addSubview(textStack)
-
-        containerView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(6)
-            make.leading.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-12)
-            make.bottom.equalToSuperview().offset(-6)
-        }
+        contentView.addSubview(unreadDotView)
+        contentView.addSubview(iconImageView)
+        contentView.addSubview(textStack)
+        contentView.addSubview(separatorView)
 
         unreadDotView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalTo(iconImageView)
-            make.width.height.equalTo(8)
+            make.width.height.equalTo(7)
         }
 
         iconImageView.snp.makeConstraints { make in
-            make.leading.equalTo(unreadDotView.snp.trailing).offset(8)
-            make.top.equalToSuperview().offset(14)
-            make.width.height.equalTo(22)
+            make.leading.equalToSuperview().offset(28)
+            make.top.equalToSuperview().offset(10)
+            make.width.height.equalTo(18)
         }
 
         textStack.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(10)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(8)
             make.trailing.equalToSuperview().offset(-12)
-            make.top.equalToSuperview().offset(12)
-            make.bottom.equalToSuperview().offset(-12)
+            make.top.equalToSuperview().offset(8)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+
+        separatorView.snp.makeConstraints { make in
+            make.leading.equalTo(textStack)
+            make.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
+            make.height.equalTo(1.0 / UIScreen.main.scale)
         }
     }
 
@@ -126,9 +127,9 @@ final class NotificationCell: UITableViewCell {
 
         let isUnread = !notification.isRead
         unreadDotView.isHidden = !isUnread
-        titleLabel.font = isUnread ? Utils.boldFont(size: 15) : Utils.mediumFont(size: 15)
-        containerView.backgroundColor = isUnread
-            ? UIColor.brandPrimary.withAlphaComponent(0.06)
+        titleLabel.font = isUnread ? Utils.boldFont(size: 14) : Utils.mediumFont(size: 14)
+        contentView.backgroundColor = isUnread
+            ? UIColor.brandPrimary.withAlphaComponent(0.04)
             : .white
 
         let symbolName: String

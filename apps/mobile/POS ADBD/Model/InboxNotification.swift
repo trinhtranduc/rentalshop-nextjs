@@ -56,9 +56,12 @@ struct InboxNotificationsData: Codable {
     let limit: Int
     let totalPages: Int
     let unreadCount: Int
+    /// Preferred when API sends it; otherwise derived from page/totalPages.
+    let hasMore: Bool?
 
-    var hasMore: Bool {
-        page < totalPages
+    var canLoadMore: Bool {
+        if let hasMore { return hasMore }
+        return page < totalPages
     }
 }
 

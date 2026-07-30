@@ -28,6 +28,7 @@ export interface NotificationsResponse {
   page: number;
   limit: number;
   totalPages: number;
+  hasMore: boolean;
   unreadCount: number;
 }
 

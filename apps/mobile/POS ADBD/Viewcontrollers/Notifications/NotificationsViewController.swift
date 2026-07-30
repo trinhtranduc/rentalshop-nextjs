@@ -19,10 +19,9 @@ final class NotificationsViewController: BaseViewControler {
         table.backgroundColor = .backgroundPrimary
         table.separatorStyle = .none
         table.register(NotificationCell.self, forCellReuseIdentifier: String(describing: NotificationCell.self))
-        table.tableHeaderView = UIView()
-        table.tableFooterView = UIView()
+        table.tableHeaderView = UIView(frame: .zero)
         table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 96
+        table.estimatedRowHeight = 64
         table.keyboardDismissMode = .onDrag
         return table
     }()
@@ -41,6 +40,20 @@ final class NotificationsViewController: BaseViewControler {
         label.numberOfLines = 0
         label.isHidden = true
         return label
+    }()
+
+    private lazy var loadingFooterView: UIView = {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.tag = 1001
+        spinner.hidesWhenStopped = true
+        view.addSubview(spinner)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+        return view
     }()
 
     private lazy var markAllReadButton: UIButton = {
@@ -71,6 +84,7 @@ final class NotificationsViewController: BaseViewControler {
     private var hasMore = true
     private var isLoading = false
     private var unreadCount = 0
+    private let pageSize = 20
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -99,6 +113,7 @@ final class NotificationsViewController: BaseViewControler {
         configPullToRefresh(tableview: notificationsTableView)
         setupConstraints()
         updateMoreMenu()
+        updateLoadingFooter(isLoadingMore: false)
     }
 
     private func setupNavigationBar() {
@@ -139,40 +154,83 @@ final class NotificationsViewController: BaseViewControler {
         moreButton.menu = UIMenu(children: [deleteRead])
     }
 
+    private func updateLoadingFooter(isLoadingMore: Bool) {
+        if isLoadingMore {
+            notificationsTableView.tableFooterView = loadingFooterView
+            if let spinner = loadingFooterView.viewWithTag(1001) as? UIActivityIndicatorView {
+                spinner.startAnimating()
+            }
+        } else {
+            if let spinner = loadingFooterView.viewWithTag(1001) as? UIActivityIndicatorView {
+                spinner.stopAnimating()
+            }
+            // Keep a tiny footer so table doesn't jump; hide spinner
+            notificationsTableView.tableFooterView = hasMore
+                ? loadingFooterView
+                : UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 0.01))
+        }
+    }
+
     // MARK: - Data
     private func loadNotifications(page: Int, showProgress: Bool) {
         guard !isLoading else { return }
+        if page > 1, !hasMore { return }
+
         isLoading = true
+        if page == 1 {
+            hasMore = true
+        }
 
         if showProgress && page == 1 {
             showProgressText(text: "Loading...".localized())
         }
+        updateLoadingFooter(isLoadingMore: page > 1)
 
-        NotificationService.shared.getNotifications(page: page, limit: 20) { [weak self] data, error in
+        NotificationService.shared.getNotifications(page: page, limit: pageSize) { [weak self] data, error in
             guard let self else { return }
             self.isLoading = false
             self.hideProgress()
             self.endRefresh()
 
             if let error {
+                self.updateLoadingFooter(isLoadingMore: false)
                 UIAlertController.errorAlert(parent: self, error: error)
                 return
             }
 
-            guard let data else { return }
+            guard let data else {
+                self.updateLoadingFooter(isLoadingMore: false)
+                return
+            }
 
             if page == 1 {
                 self.notifications = data.notifications
             } else {
-                self.notifications.append(contentsOf: data.notifications)
+                let existingIds = Set(self.notifications.map(\.id))
+                let appended = data.notifications.filter { !existingIds.contains($0.id) }
+                self.notifications.append(contentsOf: appended)
             }
 
             self.currentPage = data.page
-            self.hasMore = data.hasMore
+            self.hasMore = data.canLoadMore
             self.unreadCount = data.unreadCount
             self.reloadUI()
+            self.updateLoadingFooter(isLoadingMore: false)
             self.postUnreadCount(data.unreadCount)
+
+            // If first pages don't fill the viewport, keep fetching until they do.
+            DispatchQueue.main.async {
+                self.loadMoreIfContentDoesNotFillScreen()
+            }
         }
+    }
+
+    private func loadMoreIfContentDoesNotFillScreen() {
+        guard hasMore, !isLoading, !notifications.isEmpty else { return }
+        let contentHeight = notificationsTableView.contentSize.height
+        let visibleHeight = notificationsTableView.bounds.height
+        guard contentHeight > 0, visibleHeight > 0, contentHeight <= visibleHeight + 8 else { return }
+        loadNotifications(page: currentPage + 1, showProgress: false)
     }
 
     private func reloadUI() {
@@ -344,7 +402,9 @@ extension NotificationsViewController: UITableViewDataSource, UITableViewDelegat
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row >= notifications.count - 5, hasMore, !isLoading {
+        guard hasMore, !isLoading else { return }
+        // Prefetch near end of list
+        if indexPath.row >= notifications.count - 3 {
             loadNotifications(page: currentPage + 1, showProgress: false)
         }
     }
