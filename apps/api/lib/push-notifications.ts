@@ -3,10 +3,12 @@ import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
 import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constants';
 import {
   createNotificationsForUsers,
+  db,
   deactivateTokensByPushToken,
   findActivePushTokensForOutlet,
   findActiveUserIdsForOutlet,
 } from '@rentalshop/database';
+import { formatFullName } from '@rentalshop/utils';
 
 export type OrderPushEventType = 'ORDER_CREATED' | 'ORDER_STATUS_CHANGED';
 
@@ -61,6 +63,43 @@ function nonEmpty(value?: string | null): string | null {
 /** Prefer actorName; fall back to legacy createdByName. */
 function actorOf(payload: OrderPushPayload): string | null {
   return nonEmpty(payload.actorName) ?? nonEmpty(payload.createdByName);
+}
+
+function isEmailLike(value: string, email?: string | null): boolean {
+  if (email && value.trim().toLowerCase() === email.trim().toLowerCase()) return true;
+  return value.includes('@');
+}
+
+/**
+ * Resolve staff display name for push copy.
+ * JWT AuthUser often has empty first/last name and `name === email` — look up DB like order create does.
+ * Never prefer email when a real name exists.
+ */
+export async function resolveActorDisplayName(user: {
+  id: number;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+}): Promise<string | null> {
+  const fromAuth = formatFullName(user.firstName, user.lastName);
+  if (fromAuth) return fromAuth;
+
+  const name = nonEmpty(user.name);
+  if (name && !isEmailLike(name, user.email)) return name;
+
+  try {
+    const dbUser = await db.users.findById(user.id);
+    if (dbUser) {
+      const fromDb = formatFullName(dbUser.firstName, dbUser.lastName);
+      if (fromDb) return fromDb;
+    }
+  } catch (error) {
+    console.error('❌ resolveActorDisplayName failed:', error);
+  }
+
+  // Last resort: omit actor (copy still works) rather than show email
+  return null;
 }
 
 /**
@@ -281,12 +320,31 @@ export async function sendOrderPushToOutlet(
 
 /**
  * Fire-and-forget outlet order push + inbox. Does not block the HTTP response.
+ * Pass `actorUser` to resolve employee display name from DB (JWT often only has email).
  */
 export function notifyOutletOrderEvent(
   outletId: number,
-  payload: OrderPushPayload
+  payload: OrderPushPayload,
+  actorUser?: {
+    id: number;
+    email?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    name?: string | null;
+  }
 ): void {
-  void sendOrderPushToOutlet(outletId, payload)
+  void (async () => {
+    let actorName = payload.actorName ?? payload.createdByName ?? null;
+    if (actorUser) {
+      const resolved = await resolveActorDisplayName(actorUser);
+      if (resolved) actorName = resolved;
+    }
+
+    return sendOrderPushToOutlet(outletId, {
+      ...payload,
+      actorName,
+    });
+  })()
     .then((result) => {
       if (result.sent > 0 || result.failed > 0 || result.inbox > 0) {
         console.log('📲 Order notification result:', {
