@@ -1558,6 +1558,7 @@ export const simplifiedOrders = {
   findManyLightweight: async (filters: {
     merchantId?: number;
     outletId?: number;
+    customerId?: number;
     status?: string;
     orderType?: string;
     productId?: number;
@@ -1573,6 +1574,7 @@ export const simplifiedOrders = {
     const {
       merchantId,
       outletId,
+      customerId,
       status,
       orderType,
       productId,
@@ -1594,6 +1596,9 @@ export const simplifiedOrders = {
     // Build base filters
     if (outletId) {
       where.outletId = outletId;
+    }
+    if (customerId) {
+      where.customerId = customerId;
     }
     if (status) {
       where.status = status;

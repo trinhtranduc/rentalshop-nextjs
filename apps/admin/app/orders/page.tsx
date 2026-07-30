@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
@@ -43,7 +43,8 @@ export default function AdminOrdersPage() {
   // ============================================================================
   
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | undefined>(
-    searchParams.get('quickFilter') || 'month' // ⭐ Default to Last 30 Days
+    searchParams.get('quickFilter') ||
+      (searchParams.get('customerId') ? 'all' : 'month') // Customer deep-link: all time, else last 30 days
   );
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -61,6 +62,17 @@ export default function AdminOrdersPage() {
   const status = searchParams.get('status') || '';
   const orderType = searchParams.get('type') || '';
   const merchantId = searchParams.get('merchant') ? parseInt(searchParams.get('merchant')!) : undefined;
+  const customerIdParam = searchParams.get('customerId');
+  const customerId = customerIdParam ? parseInt(customerIdParam, 10) : undefined;
+
+  // Deep-links like /orders?customerId=101202 → dedicated customer orders page
+  // (same pattern as client /customers/[id]/orders → /api/customers/{id}/orders)
+  useEffect(() => {
+    if (Number.isFinite(customerId) && (customerId as number) > 0) {
+      router.replace(`/customers/${customerId}/orders`);
+    }
+  }, [customerId, router]);
+
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -85,13 +97,14 @@ export default function AdminOrdersPage() {
     status: (status as any) || undefined,
     orderType: (orderType as any) || undefined,
     merchantId: merchantId, // ⭐ Admin can filter by merchant
+    customerId: Number.isFinite(customerId) && (customerId as number) > 0 ? customerId : undefined,
     startDate: startDateParam || undefined, // ⭐ String from URL params
     endDate: endDateParam || undefined,     // ⭐ String from URL params
     page,
     limit,
     sortBy,
     sortOrder
-  }), [search, status, orderType, merchantId, startDateParam, endDateParam, page, limit, sortBy, sortOrder]);
+  }), [search, status, orderType, merchantId, customerId, startDateParam, endDateParam, page, limit, sortBy, sortOrder]);
 
   const { data, loading, error, refetch } = useOrdersData({ filters });
   

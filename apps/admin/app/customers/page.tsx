@@ -178,8 +178,8 @@ export default function AdminCustomersPage() {
         break;
         
       case 'viewOrders':
-        // Navigate to orders page filtered by customer
-        router.push(`/orders?customerId=${customerId}`);
+        // Dedicated customer orders page (uses /api/customers/{id}/orders)
+        router.push(`/customers/${customerId}/orders`);
         break;
         
       default:
