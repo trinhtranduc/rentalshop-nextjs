@@ -77,6 +77,7 @@ export async function findById(id: number) {
       website: true,
       description: true,
       businessType: true,
+      businessTags: true,
       pricingType: true,
       pricingConfig: true,
       taxId: true,
