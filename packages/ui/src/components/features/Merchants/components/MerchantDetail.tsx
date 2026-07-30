@@ -12,6 +12,7 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle,
+  Badge,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ import {
 } from '../../../ui';
 import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown, UserCircle } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
-import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import { BUSINESS_TAG_OPTIONS, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantDetailProps {
@@ -82,6 +83,13 @@ export function MerchantDetail({
 }: MerchantDetailProps) {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const businessTags = Array.isArray(data.merchant.businessTags)
+    ? data.merchant.businessTags.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0)
+    : [];
+
+  const getBusinessTagLabel = (tag: string): string =>
+    BUSINESS_TAG_OPTIONS.find((option) => option.value === tag)?.label ?? tag;
 
   const navigateToPage = (page: string, id?: number) => {
     // Navigate within the admin app
@@ -243,6 +251,26 @@ export function MerchantDetail({
                     .filter(Boolean)
                     .join(', ') || '—'}
                 </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business Type</label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {data.merchant.businessType || '—'}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business Tags</label>
+                {businessTags.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {businessTags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="font-normal">
+                        {getBusinessTagLabel(tag)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-900 dark:text-white">—</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
