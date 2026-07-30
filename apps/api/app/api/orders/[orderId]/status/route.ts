@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, formatFullName } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -238,6 +238,7 @@ export async function PATCH(
         outletId: String(finalOrder.outletId),
         orderType: finalOrder.orderType ? String(finalOrder.orderType) : undefined,
         previousStatus: String(existingOrder.status),
+        actorName: formatFullName(user.firstName, user.lastName) || user.name || user.email,
       });
     }
 

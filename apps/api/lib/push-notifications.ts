@@ -18,6 +18,12 @@ export interface OrderPushPayload {
   outletId: string;
   orderType?: string;
   previousStatus?: string;
+  /** Who created/updated the order — shown in every message as "A" */
+  actorName?: string | null;
+  /** @deprecated use actorName */
+  createdByName?: string | null;
+  customerName?: string | null;
+  totalAmount?: number | null;
 }
 
 function formatOrderRef(orderNumber: string): string {
@@ -36,6 +42,121 @@ function orderTypeLabel(orderType?: string): string | null {
   if (!orderType) return null;
   const key = orderType.toUpperCase() as keyof typeof ORDER_TYPE_LABELS;
   return ORDER_TYPE_LABELS[key] ?? null;
+}
+
+/** Compact amount for lock-screen (vi grouping, no currency symbol — shop currency varies). */
+function formatPushAmount(amount?: number | null): string | null {
+  if (amount == null || !Number.isFinite(Number(amount))) return null;
+  const n = Number(amount);
+  return new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+  }).format(n);
+}
+
+function nonEmpty(value?: string | null): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+/** Prefer actorName; fall back to legacy createdByName. */
+function actorOf(payload: OrderPushPayload): string | null {
+  return nonEmpty(payload.actorName) ?? nonEmpty(payload.createdByName);
+}
+
+/**
+ * Banner + inbox copy — natural Vietnamese sentences with actor (A) on every event.
+ */
+function buildNotificationCopy(payload: OrderPushPayload): { title: string; body: string } {
+  const ref = formatOrderRef(payload.orderNumber);
+  const type = orderTypeLabel(payload.orderType);
+  const status = orderStatusLabel(payload.status);
+  const previous = orderStatusLabel(payload.previousStatus);
+  const actor = actorOf(payload);
+
+  if (payload.type === 'ORDER_CREATED') {
+    const title =
+      type === ORDER_TYPE_LABELS.SALE
+        ? 'Đơn bán mới'
+        : type === ORDER_TYPE_LABELS.RENT
+          ? 'Đơn thuê mới'
+          : 'Đơn hàng mới';
+
+    // "{A} vừa tạo đơn {B} trị giá {C} cho {khách}"
+    const customer = nonEmpty(payload.customerName);
+    const amount = formatPushAmount(payload.totalAmount);
+
+    let body: string;
+    if (actor && amount && customer) {
+      body = `${actor} vừa tạo đơn ${ref} trị giá ${amount} cho ${customer}`;
+    } else if (actor && amount) {
+      body = `${actor} vừa tạo đơn ${ref} trị giá ${amount}`;
+    } else if (actor && customer) {
+      body = `${actor} vừa tạo đơn ${ref} cho ${customer}`;
+    } else if (amount && customer) {
+      body = `Đơn ${ref} trị giá ${amount} cho ${customer}`;
+    } else if (actor) {
+      body = `${actor} vừa tạo đơn ${ref}`;
+    } else if (amount) {
+      body = `Đơn ${ref} trị giá ${amount}`;
+    } else if (customer) {
+      body = `Đơn ${ref} cho ${customer}`;
+    } else {
+      body = `Đơn ${ref} vừa được tạo`;
+    }
+
+    return { title, body };
+  }
+
+  // Status updates — always lead with who did it when known
+  const withActor = (action: string, detail: string) =>
+    actor ? `${actor} ${action} ${detail}` : `${action.charAt(0).toUpperCase()}${action.slice(1)} ${detail}`;
+
+  switch (payload.status.toUpperCase()) {
+    case 'PICKUPED':
+      return {
+        title: 'Đã giao hàng',
+        body: withActor('đã giao đơn', `${ref} (${previous} → ${status})`),
+      };
+    case 'RETURNED':
+      return {
+        title: 'Đã trả hàng',
+        body: withActor('đã nhận trả đơn', `${ref} (${previous} → ${status})`),
+      };
+    case 'COMPLETED':
+      return {
+        title: 'Đơn hoàn thành',
+        body: withActor('đã hoàn thành đơn', ref),
+      };
+    case 'CANCELLED':
+      return {
+        title: 'Đơn đã hủy',
+        body: withActor('đã hủy đơn', `${ref} (${previous} → ${status})`),
+      };
+    default:
+      return {
+        title: type ? `Cập nhật đơn ${type.toLowerCase()}` : 'Cập nhật đơn hàng',
+        body: withActor('đã cập nhật đơn', `${ref}: ${previous} → ${status}`),
+      };
+  }
+}
+
+function buildNotificationData(payload: OrderPushPayload): Record<string, string> {
+  const data: Record<string, string> = {
+    type: payload.type,
+    orderId: payload.orderId,
+    orderNumber: payload.orderNumber,
+    status: payload.status,
+    outletId: payload.outletId,
+  };
+  if (payload.orderType) data.orderType = payload.orderType;
+  if (payload.previousStatus) data.previousStatus = payload.previousStatus;
+  const actor = actorOf(payload);
+  if (actor) data.actorName = actor;
+  if (nonEmpty(payload.customerName)) data.customerName = nonEmpty(payload.customerName)!;
+  if (payload.totalAmount != null && Number.isFinite(Number(payload.totalAmount))) {
+    data.totalAmount = String(payload.totalAmount);
+  }
+  return data;
 }
 
 function getFirebaseApp(): App | null {
@@ -64,72 +185,6 @@ function getFirebaseApp(): App | null {
       privateKey,
     }),
   });
-}
-
-/**
- * Banner + inbox copy — Vietnamese labels aligned with ORDER_STATUS_LABELS / ORDER_TYPE_LABELS.
- * Keep title short (lock-screen friendly); put order # + status detail in body.
- */
-function buildNotificationCopy(payload: OrderPushPayload): { title: string; body: string } {
-  const ref = formatOrderRef(payload.orderNumber);
-  const type = orderTypeLabel(payload.orderType);
-  const status = orderStatusLabel(payload.status);
-  const previous = orderStatusLabel(payload.previousStatus);
-
-  if (payload.type === 'ORDER_CREATED') {
-    const title =
-      type === ORDER_TYPE_LABELS.SALE
-        ? 'Đơn bán mới'
-        : type === ORDER_TYPE_LABELS.RENT
-          ? 'Đơn thuê mới'
-          : 'Đơn hàng mới';
-    return {
-      title,
-      body: `${ref} · ${status}`,
-    };
-  }
-
-  // Status-specific titles so staff can act without opening the app
-  switch (payload.status.toUpperCase()) {
-    case 'PICKUPED':
-      return {
-        title: 'Đã giao hàng',
-        body: `${ref} · ${previous} → ${status}`,
-      };
-    case 'RETURNED':
-      return {
-        title: 'Đã trả hàng',
-        body: `${ref} · ${previous} → ${status}`,
-      };
-    case 'COMPLETED':
-      return {
-        title: 'Đơn hoàn thành',
-        body: `${ref} · ${status}`,
-      };
-    case 'CANCELLED':
-      return {
-        title: 'Đơn đã hủy',
-        body: `${ref} · ${previous} → ${status}`,
-      };
-    default:
-      return {
-        title: type ? `Cập nhật đơn ${type.toLowerCase()}` : 'Cập nhật đơn hàng',
-        body: `${ref} · ${previous} → ${status}`,
-      };
-  }
-}
-
-function buildNotificationData(payload: OrderPushPayload): Record<string, string> {
-  const data: Record<string, string> = {
-    type: payload.type,
-    orderId: payload.orderId,
-    orderNumber: payload.orderNumber,
-    status: payload.status,
-    outletId: payload.outletId,
-  };
-  if (payload.orderType) data.orderType = payload.orderType;
-  if (payload.previousStatus) data.previousStatus = payload.previousStatus;
-  return data;
 }
 
 /**
