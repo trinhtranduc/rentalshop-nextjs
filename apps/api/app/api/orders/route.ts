@@ -962,6 +962,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         status: String(loyaltyOrder.status),
         outletId: String(loyaltyOrder.outletId),
         orderType: String(loyaltyOrder.orderType),
+        customerName: flattenedOrder.customerName,
+        createdByName: flattenedOrder.createdByName,
+        totalAmount: loyaltyOrder.totalAmount,
       });
     }
 

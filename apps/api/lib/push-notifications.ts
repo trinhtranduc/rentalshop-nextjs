@@ -18,6 +18,10 @@ export interface OrderPushPayload {
   outletId: string;
   orderType?: string;
   previousStatus?: string;
+  /** Create-only extras for richer banner body */
+  customerName?: string | null;
+  createdByName?: string | null;
+  totalAmount?: number | null;
 }
 
 function formatOrderRef(orderNumber: string): string {
@@ -38,32 +42,18 @@ function orderTypeLabel(orderType?: string): string | null {
   return ORDER_TYPE_LABELS[key] ?? null;
 }
 
-function getFirebaseApp(): App | null {
-  if (getApps().length > 0) {
-    return getApps()[0]!;
-  }
+/** Compact amount for lock-screen (vi grouping, no currency symbol — shop currency varies). */
+function formatPushAmount(amount?: number | null): string | null {
+  if (amount == null || !Number.isFinite(Number(amount))) return null;
+  const n = Number(amount);
+  return new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+  }).format(n);
+}
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-  if (!projectId || !clientEmail || !privateKey) {
-    console.warn(
-      '⚠️ FCM skipped: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY'
-    );
-    return null;
-  }
-
-  // Vercel/env often stores newlines as \n
-  privateKey = privateKey.replace(/\\n/g, '\n');
-
-  return initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
+function nonEmpty(value?: string | null): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 /**
@@ -83,9 +73,18 @@ function buildNotificationCopy(payload: OrderPushPayload): { title: string; body
         : type === ORDER_TYPE_LABELS.RENT
           ? 'Đơn thuê mới'
           : 'Đơn hàng mới';
+
+    // #mã · khách · giá · người tạo (skip missing parts; skip status — create is almost always RESERVED)
+    const bodyParts = [
+      ref,
+      nonEmpty(payload.customerName),
+      formatPushAmount(payload.totalAmount),
+      nonEmpty(payload.createdByName),
+    ].filter((part): part is string => Boolean(part));
+
     return {
       title,
-      body: `${ref} · ${status}`,
+      body: bodyParts.join(' · '),
     };
   }
 
@@ -129,7 +128,40 @@ function buildNotificationData(payload: OrderPushPayload): Record<string, string
   };
   if (payload.orderType) data.orderType = payload.orderType;
   if (payload.previousStatus) data.previousStatus = payload.previousStatus;
+  if (nonEmpty(payload.customerName)) data.customerName = nonEmpty(payload.customerName)!;
+  if (nonEmpty(payload.createdByName)) data.createdByName = nonEmpty(payload.createdByName)!;
+  if (payload.totalAmount != null && Number.isFinite(Number(payload.totalAmount))) {
+    data.totalAmount = String(payload.totalAmount);
+  }
   return data;
+}
+
+function getFirebaseApp(): App | null {
+  if (getApps().length > 0) {
+    return getApps()[0]!;
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId || !clientEmail || !privateKey) {
+    console.warn(
+      '⚠️ FCM skipped: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY'
+    );
+    return null;
+  }
+
+  // Vercel/env often stores newlines as \n
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  return initializeApp({
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+  });
 }
 
 /**
