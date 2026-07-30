@@ -1424,3 +1424,13 @@
 "onboarding.customer.body" = "Save customer details once, then reuse them for every rental and sale.";
 "onboarding.order.title" = "Create your first order";
 "onboarding.order.body" = "Pick a customer, add products, set rental dates, and checkout in a few taps.";
+
+/* Notifications inbox */
+"Notifications" = "Notifications";
+"notifications.empty" = "No notifications yet";
+"notifications.markAllRead" = "Mark all as read";
+"notifications.markRead" = "Mark read";
+"notifications.markUnread" = "Mark unread";
+"notifications.deleteRead" = "Delete read";
+"notifications.deleteRead.confirm" = "Delete all read notifications?";
+"notifications.more" = "More";

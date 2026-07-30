@@ -118,6 +118,21 @@ class MainViewController: BaseViewControler {
         button.accessibilityLabel = "Cart".localized()
         return button
     }()
+
+    internal lazy var notificationButton: BadgeButton = {
+        let button = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
+        button.setImage(UIImage(systemName: "bell"), for: .normal)
+        button.tintColor = .textPrimary
+        button.badgeBackgroundColor = .brandPrimary
+        button.badgeTextColor = .white
+        button.badgeFont = Utils.mediumFont(size: 11)
+        button.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
+        button.addTarget(self, action: #selector(notificationButtonTapped), for: .touchUpInside)
+        button.accessibilityLabel = "Notifications".localized()
+        return button
+    }()
     
     private lazy var trashButton: UIButton = {
         let button = UIButton(type: .system)
@@ -196,6 +211,8 @@ class MainViewController: BaseViewControler {
         setupUI()
         setupData()
         setupViewModel()
+        observeInboxUnreadCount()
+        refreshNotificationBadge()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -204,6 +221,8 @@ class MainViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         // Set status bar style for white background
         setStatusBarStyle(.darkContent)
+
+        refreshNotificationBadge()
         
         // On iPad, reload cart in InfoMainViewController when view appears
         // This ensures cart is reloaded when switching back to home tab
@@ -275,7 +294,8 @@ class MainViewController: BaseViewControler {
         navBar.addLeftButton(barcodeScanButton, size: CGSize(width: 44, height: 44))
         // AI search button moved to floating button - removed from navigation bar
         
-        // Add right button - cart for iPhone, trash for iPad
+        // Right: notifications, then cart (iPhone) / trash (iPad)
+        navBar.addRightButton(notificationButton, size: CGSize(width: 44, height: 44))
         if UIDevice.current.userInterfaceIdiom == .pad {
             navBar.addRightButton(trashButton, size: CGSize(width: 44, height: 44))
         } else {
@@ -391,6 +411,45 @@ class MainViewController: BaseViewControler {
             }
             self.navigationController?.pushViewController(info, animated: true)
         }
+    }
+
+    @objc private func notificationButtonTapped() {
+        let inbox = NotificationsViewController()
+        inbox.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(inbox, animated: true)
+    }
+
+    private func observeInboxUnreadCount() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInboxUnreadCountDidChange(_:)),
+            name: .inboxUnreadCountDidChange,
+            object: nil
+        )
+    }
+
+    @objc private func handleInboxUnreadCountDidChange(_ notification: Notification) {
+        if let count = notification.userInfo?["count"] as? Int {
+            applyNotificationBadge(count: count)
+        } else {
+            refreshNotificationBadge()
+        }
+    }
+
+    private func refreshNotificationBadge() {
+        guard User.account() != nil else {
+            applyNotificationBadge(count: 0)
+            return
+        }
+        NotificationService.shared.getUnreadCount { [weak self] count, _ in
+            self?.applyNotificationBadge(count: count ?? 0)
+        }
+    }
+
+    private func applyNotificationBadge(count: Int) {
+        notificationButton.badge = count > 0 ? "\(min(count, 99))" : nil
+        let bellName = count > 0 ? "bell.badge" : "bell"
+        notificationButton.setImage(UIImage(systemName: bellName), for: .normal)
     }
     
     @objc private func trashButtonTapped() {

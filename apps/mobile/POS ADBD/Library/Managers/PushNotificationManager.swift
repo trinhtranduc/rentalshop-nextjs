@@ -214,6 +214,8 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         } else {
             completionHandler([.alert, .sound, .badge])
         }
+        // Refresh inbox badge (server already persisted the row)
+        NotificationCenter.default.post(name: .inboxUnreadCountDidChange, object: nil)
     }
 
     func userNotificationCenter(

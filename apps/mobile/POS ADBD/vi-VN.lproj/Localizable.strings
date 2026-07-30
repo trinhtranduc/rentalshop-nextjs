@@ -1422,3 +1422,13 @@
 "onboarding.customer.body" = "Lưu thông tin khách một lần, dùng lại cho mọi đơn thuê và đơn bán.";
 "onboarding.order.title" = "Tạo đơn hàng";
 "onboarding.order.body" = "Chọn khách, thêm sản phẩm, đặt lịch thuê và hoàn tất đơn chỉ với vài thao tác.";
+
+/* Notifications inbox */
+"Notifications" = "Thông báo";
+"notifications.empty" = "Chưa có thông báo";
+"notifications.markAllRead" = "Đánh dấu đã đọc tất cả";
+"notifications.markRead" = "Đánh dấu đã đọc";
+"notifications.markUnread" = "Đánh dấu chưa đọc";
+"notifications.deleteRead" = "Xóa đã đọc";
+"notifications.deleteRead.confirm" = "Xóa tất cả thông báo đã đọc?";
+"notifications.more" = "Thêm";

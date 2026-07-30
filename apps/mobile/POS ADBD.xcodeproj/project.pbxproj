@@ -32,6 +32,10 @@
 		040C80202D9551A000EB900C /* CustomerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040C801F2D9551A000EB900C /* CustomerCell.swift */; };
 		041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */; };
 		04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */; };
+		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
+		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
+		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
+		04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */; };
 		04F1A0032F1B0001000A0003 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 04F1A0042F1B0001000A0004 /* FirebaseMessaging */; };
 		041CBA1D2D8E706700C117DF /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 041CBA1C2D8E706700C117DF /* FirebaseCrashlytics */; };
 		041CBA1F2D8E92FB00C117DF /* PrinterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */; };
@@ -274,6 +278,10 @@
 		040C801F2D9551A000EB900C /* CustomerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerCell.swift; sourceTree = "<group>"; };
 		041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
+		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
+		04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
 		04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "POS ADBD.entitlements"; sourceTree = "<group>"; };
 		041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterManager.swift; sourceTree = "<group>"; };
 		041CBA202D8EFC1800C117DF /* PrinterCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterCommand.swift; sourceTree = "<group>"; };
@@ -552,6 +560,7 @@
 				048838D12D7727AF00069256 /* OrderService.swift */,
 				048839B02D79F11900069257 /* LoyaltyService.swift */,
 				048838D22D7727AF00069256 /* ProductService.swift */,
+				04F1B0012F1C0101000A0002 /* NotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -685,6 +694,7 @@
 				C94E9CD6233DC96E00D63CC0 /* Outlet.swift */,
 				C94E9CD8233DEB5500D63CC0 /* Merchant.swift */,
 				C9EFF5B0237BF75E00A6CB57 /* Customer.swift */,
+				04F1B0012F1C0101000A0001 /* InboxNotification.swift */,
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
 			);
 			path = Model;
@@ -861,6 +871,7 @@
 		88E4148E21A99D1500BAF4A1 /* Viewcontrollers */ = {
 			isa = PBXGroup;
 			children = (
+				04F1B0012F1C0101000A0005 /* Notifications */,
 				04F7A0012F70000100A0B3 /* Onboarding */,
 				04FBE0A72EDB2C700057EDF8 /* Payment */,
 				04E55FB22E220F77003F00D0 /* Common */,
@@ -880,6 +891,14 @@
 			path = Viewcontrollers;
 			sourceTree = "<group>";
 		};
+		04F1B0012F1C0101000A0005 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
 		04F7A0012F70000100A0B3 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -892,6 +911,7 @@
 			isa = PBXGroup;
 			children = (
 				04A82A7C2EE94E3B00E55F9C /* UserCell.swift */,
+				04F1B0012F1C0101000A0003 /* NotificationCell.swift */,
 				04FBE0C52EDBE34C0057EDF8 /* PreviewTwoColumnCells.swift */,
 				04FBE0C32EDBDF0A0057EDF8 /* PreviewCompactCells.swift */,
 				04FBE0C12EDB50F40057EDF8 /* PreviewGroupedCells.swift */,
@@ -1275,6 +1295,10 @@
 				88F3D8C021B06223007CC30A /* MonthAxisValueFormatter.swift in Sources */,
 				041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */,
 				04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */,
+				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
+				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
+				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,
+				04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */,
 				881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */,
 				88E4149A21A99E9100BAF4A1 /* Utils.swift in Sources */,
 				04A82A772EE7CA3900E55F9C /* OutletService.swift in Sources */,
