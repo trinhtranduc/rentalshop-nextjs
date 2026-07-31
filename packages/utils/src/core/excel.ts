@@ -100,7 +100,7 @@ export function createExcelWorkbook(
  */
 export function formatDateForExcel(
   date: Date | string | null | undefined,
-  format: 'date' | 'datetime' = 'date'
+  format: 'date' | 'datetime' | 'datetime-short' = 'date'
 ): string {
   if (!date) return '';
   
@@ -111,11 +111,18 @@ export function formatDateForExcel(
     const day = String(dateObj.getDate()).padStart(2, '0');
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
     const year = dateObj.getFullYear();
+    const shortYear = String(year).slice(-2);
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+
+    // Format: dd/MM/yy HH:mm:ss (order export spreadsheet parity)
+    if (format === 'datetime-short') {
+      return `${day}/${month}/${shortYear} ${hours}:${minutes}:${seconds}`;
+    }
     
     // Format: dd/MM/yyyy HH:mm
     if (format === 'datetime') {
-      const hours = String(dateObj.getHours()).padStart(2, '0');
-      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
       return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
     
