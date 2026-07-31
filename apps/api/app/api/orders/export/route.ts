@@ -1,49 +1,97 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
-import { 
-  handleApiError, 
+import {
+  handleApiError,
   ResponseBuilder,
   parseDateRangeFromQuery,
   createExcelWorkbook,
   formatDateForExcel,
-  formatNumberForExcel,
   formatFullName,
   generateExcelFilename,
-  type ExcelColumn
+  type ExcelColumn,
 } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constants';
 
 /**
  * GET /api/orders/export
  * Export orders to Excel or CSV
- * 
- * Authorization: All roles with 'orders.export' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
- * - OUTLET_STAFF cannot export (does not have 'orders.export' permission)
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
+ *
+ * Column layout matches the merchant order spreadsheet:
+ * Mã đơn hàng | NV tạo đơn | Ngày thuê | Ngày lấy | Ngày trả | Cọc | Tổng đơn |
+ * Giảm giá | Loại giảm | Số điện thoại KH | Tên khách | Tiền đền bù |
+ * Cọc giấy tờ | Trạng thái đơn | Ghi chú
+ *
+ * Authorization: roles with 'orders.export' (ADMIN, MERCHANT, OUTLET_ADMIN).
+ *
  * Query parameters:
  * - format: 'excel' (default) or 'csv'
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
- * - startDate: ISO string (required for custom period)
- * - endDate: ISO string (required for custom period)
- * - status: Order status filter (optional)
- * - orderType: Order type filter (optional)
+ * - startDate / endDate: ISO string (required for custom period)
+ * - status / orderType: optional filters
  * - dateField: 'createdAt' (default) | 'pickupPlanAt' | 'returnPlanAt'
  */
+
+const DISCOUNT_TYPE_LABELS: Record<string, string> = {
+  AMOUNT: 'Số tiền',
+  FIXED: 'Số tiền',
+  PERCENT: '%',
+  PERCENTAGE: '%',
+};
+
+function formatExportMoney(value: number | null | undefined): number {
+  if (value === null || value === undefined || Number.isNaN(value)) return 0;
+  return Number.isInteger(value) ? value : Number(Number(value).toFixed(2));
+}
+
+function formatDiscountType(raw: string | null | undefined): string {
+  if (!raw) return '';
+  return DISCOUNT_TYPE_LABELS[raw.toUpperCase()] || raw;
+}
+
+function formatOrderStatusLabel(orderType: string | null | undefined, status: string | null | undefined): string {
+  // Spreadsheet samples use type-oriented labels for sales ("Sales Order").
+  // Rental rows show Vietnamese status so staff can see lifecycle state.
+  if ((orderType || '').toUpperCase() === 'SALE') {
+    return 'Sales Order';
+  }
+  if (status && status in ORDER_STATUS_LABELS) {
+    return ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS];
+  }
+  if (orderType && orderType in ORDER_TYPE_LABELS) {
+    return ORDER_TYPE_LABELS[orderType as keyof typeof ORDER_TYPE_LABELS];
+  }
+  return status || orderType || '';
+}
+
+function formatCollateral(type: string | null | undefined, details: string | null | undefined): string {
+  const parts = [type, details]
+    .map((v) => (v || '').trim())
+    .filter(Boolean);
+  // Prefer type alone when it already encodes the value (e.g. "cccd")
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0];
+  if (parts[0].toLowerCase() === parts[1].toLowerCase()) return parts[0];
+  return parts.join(' - ');
+}
+
+function formatPhoneForExport(phone: string | null | undefined): string {
+  // Keep leading zeros as text for Excel.
+  const value = (phone || '').trim();
+  return value;
+}
+
 export const GET = withPermissions(['orders.export'])(async (request, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'excel'; // Default to Excel
+    const format = searchParams.get('format') || 'excel';
     const period = searchParams.get('period');
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
     const status = searchParams.get('status');
     const orderType = searchParams.get('orderType');
-    const dateField = searchParams.get('dateField') || 'createdAt'; // Default to createdAt
+    const dateField = searchParams.get('dateField') || 'createdAt';
 
-    // Parse and validate date range
     const dateRangeResult = parseDateRangeFromQuery(period, startDateParam, endDateParam);
     if ('error' in dateRangeResult) {
       return NextResponse.json(
@@ -54,10 +102,8 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
 
     const { startDate, endDate } = dateRangeResult;
 
-    // Build where clause for Prisma query
     const where: any = {};
 
-    // Apply scope restrictions
     if (userScope.merchantId) {
       where.outlet = { merchantId: userScope.merchantId };
     }
@@ -65,129 +111,101 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       where.outletId = userScope.outletId;
     }
 
-    // Apply additional filters
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
-    
-    // Apply date range filter
-    // Note: startDate and endDate are already normalized by parseDateRangeFromQuery
-    // startDate is set to 00:00:00.000 and endDate is set to 23:59:59.999
+
     if (dateField === 'createdAt') {
-      where.createdAt = {
-        gte: startDate,
-        lte: endDate
-      };
+      where.createdAt = { gte: startDate, lte: endDate };
     } else if (dateField === 'pickupPlanAt') {
-      where.pickupPlanAt = {
-        gte: startDate,
-        lte: endDate
-      };
+      where.pickupPlanAt = { gte: startDate, lte: endDate };
     } else if (dateField === 'returnPlanAt') {
-      where.returnPlanAt = {
-        gte: startDate,
-        lte: endDate
-      };
+      where.returnPlanAt = { gte: startDate, lte: endDate };
     }
 
-    // Get orders with all required fields
     const orders = await prisma.order.findMany({
       where,
       select: {
-        id: true,
         orderNumber: true,
         orderType: true,
         status: true,
         totalAmount: true,
         depositAmount: true,
+        damageFee: true,
         discountType: true,
-        discountValue: true,
         discountAmount: true,
         pickupPlanAt: true,
         returnPlanAt: true,
         pickedUpAt: true,
         returnedAt: true,
         createdAt: true,
-        updatedAt: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
         customer: {
           select: {
-            id: true,
             firstName: true,
             lastName: true,
             phone: true,
-            email: true,
-          }
-        },
-        outlet: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-          }
+          },
         },
         createdBy: {
           select: {
-            id: true,
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
-      take: 10000 // Large limit for export
+      take: 10000,
     });
 
-    // Prepare data for export (exclude system IDs)
-    const exportData = orders.map((order: any) => ({
-      orderNumber: order.orderNumber || '',
-      orderType: order.orderType || '',
-      status: order.status || '',
-      customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
-      customerEmail: order.customer?.email || '',
-      customerPhone: order.customer?.phone || '',
-      outletName: order.outlet?.name || '',
-      outletAddress: order.outlet?.address || '',
-      createdByName: formatFullName(order.createdBy?.firstName, order.createdBy?.lastName) || order.createdBy?.email || '',
-      createdByEmail: order.createdBy?.email || '',
-      discountType: order.discountType || '',
-      discountValue: formatNumberForExcel(order.discountValue || 0),
-      discountAmount: formatNumberForExcel(order.discountAmount || 0),
-      totalAmount: formatNumberForExcel(order.totalAmount),
-      depositAmount: formatNumberForExcel(order.depositAmount),
-      pickupPlanDate: formatDateForExcel(order.pickupPlanAt),
-      returnPlanDate: formatDateForExcel(order.returnPlanAt),
-      pickedUpDate: formatDateForExcel(order.pickedUpAt),
-      returnedDate: formatDateForExcel(order.returnedAt),
-      createdAt: formatDateForExcel(order.createdAt, 'datetime'),
-      updatedAt: formatDateForExcel(order.updatedAt, 'datetime')
-    }));
+    const exportData = orders.map((order: any) => {
+      const rentalDate = order.createdAt;
+      const pickupDate = order.pickedUpAt || order.pickupPlanAt;
+      const returnDate = order.returnedAt || order.returnPlanAt;
 
-    // Excel export
+      return {
+        orderNumber: order.orderNumber || '',
+        createdByName:
+          formatFullName(order.createdBy?.firstName, order.createdBy?.lastName) ||
+          order.createdBy?.email ||
+          '',
+        rentalDate: formatDateForExcel(rentalDate, 'datetime-short'),
+        pickupDate: formatDateForExcel(pickupDate, 'datetime-short'),
+        returnDate: formatDateForExcel(returnDate, 'datetime-short'),
+        depositAmount: formatExportMoney(order.depositAmount),
+        totalAmount: formatExportMoney(order.totalAmount),
+        discountAmount: formatExportMoney(order.discountAmount),
+        discountType: formatDiscountType(order.discountType),
+        customerPhone: formatPhoneForExport(order.customer?.phone),
+        customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
+        damageFee: formatExportMoney(order.damageFee),
+        collateral: formatCollateral(order.collateralType, order.collateralDetails),
+        orderStatus: formatOrderStatusLabel(order.orderType, order.status),
+        notes: order.notes || '',
+      };
+    });
+
+    const columns: ExcelColumn[] = [
+      { header: 'Mã đơn hàng', key: 'orderNumber', width: 16 },
+      { header: 'NV tạo đơn', key: 'createdByName', width: 22 },
+      { header: 'Ngày thuê', key: 'rentalDate', width: 20 },
+      { header: 'Ngày lấy', key: 'pickupDate', width: 20 },
+      { header: 'Ngày trả', key: 'returnDate', width: 20 },
+      { header: 'Cọc', key: 'depositAmount', width: 12 },
+      { header: 'Tổng đơn', key: 'totalAmount', width: 12 },
+      { header: 'Giảm giá', key: 'discountAmount', width: 12 },
+      { header: 'Loại giảm', key: 'discountType', width: 12 },
+      { header: 'Số điện thoại KH', key: 'customerPhone', width: 16 },
+      { header: 'Tên khách', key: 'customerName', width: 22 },
+      { header: 'Tiền đền bù', key: 'damageFee', width: 12 },
+      { header: 'Cọc giấy tờ', key: 'collateral', width: 16 },
+      { header: 'Trạng thái đơn', key: 'orderStatus', width: 16 },
+      { header: 'Ghi chú', key: 'notes', width: 30 },
+    ];
+
     if (format === 'excel') {
-      const columns: ExcelColumn[] = [
-        { header: 'Order Number', key: 'orderNumber', width: 20 },
-        { header: 'Order Type', key: 'orderType', width: 12 },
-        { header: 'Status', key: 'status', width: 12 },
-        { header: 'Customer Name', key: 'customerName', width: 25 },
-        { header: 'Customer Email', key: 'customerEmail', width: 25 },
-        { header: 'Customer Phone', key: 'customerPhone', width: 15 },
-        { header: 'Outlet Name', key: 'outletName', width: 25 },
-        { header: 'Outlet Address', key: 'outletAddress', width: 30 },
-        { header: 'Created By Name', key: 'createdByName', width: 25 },
-        { header: 'Created By Email', key: 'createdByEmail', width: 25 },
-        { header: 'Discount Type', key: 'discountType', width: 15 },
-        { header: 'Discount Value', key: 'discountValue', width: 15 },
-        { header: 'Discount Amount', key: 'discountAmount', width: 15 },
-        { header: 'Total Amount', key: 'totalAmount', width: 15 },
-        { header: 'Deposit Amount', key: 'depositAmount', width: 15 },
-        { header: 'Pickup Plan Date', key: 'pickupPlanDate', width: 20 },
-        { header: 'Return Plan Date', key: 'returnPlanDate', width: 20 },
-        { header: 'Picked Up Date', key: 'pickedUpDate', width: 20 },
-        { header: 'Returned Date', key: 'returnedDate', width: 20 },
-        { header: 'Created At', key: 'createdAt', width: 20 },
-        { header: 'Updated At', key: 'updatedAt', width: 20 }
-      ];
-
       const buffer = createExcelWorkbook(exportData, columns, 'Orders');
       const filename = generateExcelFilename('orders', startDate, endDate);
 
@@ -196,79 +214,34 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       });
     }
 
-    // CSV export (backward compatibility)
-    const csvHeaders = [
-      'Order Number',
-      'Order Type',
-      'Status',
-      'Customer Name',
-      'Customer Email',
-      'Customer Phone',
-      'Outlet Name',
-      'Outlet Address',
-      'Created By Name',
-      'Created By Email',
-      'Discount Type',
-      'Discount Value',
-      'Discount Amount',
-      'Total Amount',
-      'Deposit Amount',
-      'Pickup Plan Date',
-      'Return Plan Date',
-      'Picked Up Date',
-      'Returned Date',
-      'Created At',
-      'Updated At'
-    ];
+    // CSV (same columns / Vietnamese headers)
+    const csvHeaders = columns.map((col) => col.header);
+    const csvRows = exportData.map((order: any) =>
+      columns.map((col) => {
+        const value = order[col.key];
+        if (typeof value === 'number') return String(value);
+        const text = String(value ?? '');
+        return `"${text.replace(/"/g, '""')}"`;
+      })
+    );
 
-    const csvRows = exportData.map((order: any) => [
-      `"${order.orderNumber}"`,
-      order.orderType,
-      order.status,
-      `"${order.customerName}"`,
-      `"${order.customerEmail}"`,
-      `"${order.customerPhone}"`,
-      `"${order.outletName}"`,
-      `"${order.outletAddress}"`,
-      `"${order.createdByName}"`,
-      `"${order.createdByEmail}"`,
-      `"${order.discountType}"`,
-      order.discountValue,
-      order.discountAmount,
-      order.totalAmount,
-      order.depositAmount,
-      order.pickupPlanDate,
-      order.returnPlanDate,
-      order.pickedUpDate,
-      order.returnedDate,
-      order.createdAt,
-      order.updatedAt
-    ]);
+    const csvContent = [csvHeaders.join(','), ...csvRows.map((row: string[]) => row.join(','))].join('\n');
 
-    const csvContent = [
-      csvHeaders.join(','),
-      ...csvRows.map((row: any) => row.join(','))
-    ].join('\n');
-
-    // Return CSV file
     return new NextResponse(csvContent, {
       status: API.STATUS.OK,
       headers: {
-        'Content-Type': 'text/csv',
+        'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="orders-export-${new Date().toISOString().split('T')[0]}.csv"`,
-        'Cache-Control': 'no-cache'
-      }
+        'Cache-Control': 'no-cache',
+      },
     });
-
   } catch (error) {
     console.error('Error exporting orders:', error);
-    
-    // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
