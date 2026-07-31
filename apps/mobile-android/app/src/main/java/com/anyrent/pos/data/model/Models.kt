@@ -18,6 +18,13 @@ data class UserProfile(
             .ifBlank { name?.takeIf { it.isNotBlank() } ?: email }
 }
 
+data class PricingOption(
+    val id: Int?,
+    val type: String,
+    val price: Double,
+    val isDefault: Boolean = false,
+)
+
 data class Product(
     val id: Int,
     val name: String,
@@ -31,6 +38,9 @@ data class Product(
     val categoryName: String?,
     val imageUrl: String?,
     val deposit: Double = 0.0,
+    val pricingType: String = "FIXED",
+    val pricingOptions: List<PricingOption> = emptyList(),
+    val note: String? = null,
 )
 
 data class Customer(
@@ -59,6 +69,8 @@ data class OrderSummary(
     val createdAt: String?,
     val notes: String?,
     val isReadyToDeliver: Boolean = false,
+    val itemCount: Int = 0,
+    val createdByName: String? = null,
 )
 
 data class OrderItem(
@@ -68,6 +80,8 @@ data class OrderItem(
     val quantity: Int,
     val unitPrice: Double,
     val totalPrice: Double,
+    val imageUrl: String? = null,
+    val note: String? = null,
 )
 
 data class OrderDetail(
@@ -75,6 +89,11 @@ data class OrderDetail(
     val items: List<OrderItem>,
     val customerId: Int?,
     val payments: List<PaymentEntry>,
+    val securityDeposit: Double = 0.0,
+    val damageFee: Double = 0.0,
+    val lateFee: Double = 0.0,
+    val collateralDetails: String? = null,
+    val notesImages: List<String> = emptyList(),
 )
 
 data class PaymentEntry(
@@ -116,6 +135,10 @@ data class RankingItem(
     val name: String,
     val value: Double,
     val subtitle: String?,
+    val imageUrl: String? = null,
+    val note: String? = null,
+    val category: String? = null,
+    val rentalCount: Int? = null,
 )
 
 data class StaffUser(
@@ -135,10 +158,23 @@ data class CartLine(
     val quantity: Int,
     val rentalDays: Int = 1,
     val isSale: Boolean = false,
+    val pricingType: String = product.pricingType,
+    val unitPriceOverride: Double? = null,
 ) {
     val unitPrice: Double
-        get() = if (isSale) (product.salePrice ?: product.rentPrice) else product.rentPrice
+        get() = unitPriceOverride ?: if (isSale) {
+            product.salePrice ?: product.rentPrice
+        } else {
+            product.pricingOptions.firstOrNull {
+                it.type.equals(pricingType, ignoreCase = true)
+            }?.price ?: if (product.pricingType.equals(pricingType, ignoreCase = true)) {
+                product.rentPrice
+            } else {
+                0.0
+            }
+        }
 
     val lineTotal: Double
-        get() = if (isSale) unitPrice * quantity else unitPrice * quantity * rentalDays
+        get() = unitPrice * quantity *
+            if (!isSale && pricingType.equals("DAILY", ignoreCase = true)) rentalDays else 1
 }

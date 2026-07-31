@@ -4,16 +4,39 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -23,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,18 +56,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
+import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.SectionLabel
+import com.anyrent.pos.ui.common.SettingsCardRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,56 +88,132 @@ fun SettingsScreen(
     onOpenPrinter: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onOpenStore: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    Column(
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+
+    LazyColumn(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        Text(SessionStore.userName ?: "—", style = MaterialTheme.typography.headlineSmall)
-        Text(SessionStore.role ?: "")
-        Text(SessionStore.outletName ?: SessionStore.merchantName ?: "")
-        HorizontalDivider()
-        SettingsRow(stringResource(R.string.store_info), onOpenStore)
-        if (PermissionManager.canManageUsers()) {
-            SettingsRow(stringResource(R.string.user_management), onOpenUsers)
-        }
-        SettingsRow(stringResource(R.string.customers), onOpenCustomers)
-        SettingsRow(stringResource(R.string.printer_config), onOpenPrinter)
-        if (PermissionManager.canExport()) {
-            SettingsRow(stringResource(R.string.export_data), onOpenExport)
-        }
-        SettingsRow(stringResource(R.string.app_info), onOpenAppInfo)
-        Button(
-            onClick = {
-                scope.launch {
-                    withContext(Dispatchers.IO) {
-                        PushRegistrar.unregister()
-                        ApiClient.get().logout()
-                    }
-                    SessionStore.clearAuth()
-                    onLoggedOut()
+        item {
+            Row(
+                Modifier.padding(top = 32.dp, bottom = 22.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Icon(
+                    Icons.Default.AccountCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+                Column {
+                    Text(
+                        SessionStore.userName ?: "—",
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                    Text(
+                        roleDisplayValue(SessionStore.role),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.logout)) }
+            }
+        }
+        item {
+            SectionLabel(stringResource(R.string.account))
+            AppCard {
+                SettingsCardRow(Icons.Default.Store, stringResource(R.string.store_info), onOpenStore)
+                if (PermissionManager.canManageUsers()) {
+                    HorizontalDivider(Modifier.padding(start = 56.dp))
+                    SettingsCardRow(Icons.Default.ManageAccounts, stringResource(R.string.user_management), onOpenUsers)
+                }
+                HorizontalDivider(Modifier.padding(start = 56.dp))
+                SettingsCardRow(Icons.Default.Groups, stringResource(R.string.customers), onOpenCustomers)
+                HorizontalDivider(Modifier.padding(start = 56.dp))
+                SettingsCardRow(Icons.Default.Notifications, stringResource(R.string.notifications), onOpenNotifications)
+            }
+        }
+        item {
+            SectionLabel(stringResource(R.string.tools))
+            AppCard {
+                SettingsCardRow(Icons.Default.Print, stringResource(R.string.printer_config), onOpenPrinter)
+                if (PermissionManager.canExport()) {
+                    HorizontalDivider(Modifier.padding(start = 56.dp))
+                    SettingsCardRow(Icons.Default.Upload, stringResource(R.string.export_data), onOpenExport)
+                }
+            }
+        }
+        item {
+            SectionLabel(stringResource(R.string.about))
+            AppCard {
+                SettingsCardRow(Icons.Default.Info, stringResource(R.string.app_info), onOpenAppInfo)
+                HorizontalDivider(Modifier.padding(start = 56.dp))
+                SettingsCardRow(
+                    Icons.Outlined.DeleteOutline,
+                    stringResource(R.string.delete_account),
+                    onClick = { showDeleteConfirmation = true },
+                )
+            }
+        }
+        item {
+            AppCard {
+                SettingsCardRow(
+                    Icons.AutoMirrored.Filled.Logout,
+                    stringResource(R.string.logout),
+                    tint = Color(0xFFE83F48),
+                    onClick = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                PushRegistrar.unregister()
+                                ApiClient.get().logout()
+                            }
+                            SessionStore.clearAuth()
+                            onLoggedOut()
+                        }
+                    },
+                    trailing = {},
+                )
+            }
+        }
+        item { Box(Modifier.height(16.dp)) }
     }
-}
 
-@Composable
-private fun SettingsRow(title: String, onClick: () -> Unit = {}) {
-    Text(
-        title,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        style = MaterialTheme.typography.bodyLarge,
-    )
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { if (!isDeleting) showDeleteConfirmation = false },
+            title = { Text(stringResource(R.string.delete_account)) },
+            text = { Text(stringResource(R.string.delete_account_confirmation)) },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = {
+                        isDeleting = true
+                        scope.launch {
+                            val deleted = withContext(Dispatchers.IO) { ApiParity.deleteAccount().isSuccess }
+                            isDeleting = false
+                            if (deleted) {
+                                SessionStore.clearAuth()
+                                onLoggedOut()
+                            }
+                        }
+                    },
+                ) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = { showDeleteConfirmation = false },
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,10 +222,18 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
     var users by remember { mutableStateOf<List<StaffUser>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var refreshKey by remember { mutableStateOf(0) }
+    var passwordUser by remember { mutableStateOf<StaffUser?>(null) }
+    var deleteUser by remember { mutableStateOf<StaffUser?>(null) }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var actionLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshKey) {
         scope.launch {
+            loading = true
+            error = null
             val result = withContext(Dispatchers.IO) { ApiClient.get().listUsers() }
             loading = false
             result.onSuccess { users = it.items }.onFailure { error = it.message }
@@ -133,6 +249,11 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
+                actions = {
+                    IconButton(onClick = onCreateUser) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_user))
+                    }
+                },
             )
         }
     ) { padding ->
@@ -140,23 +261,227 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
             loading -> LoadingBox()
             error != null -> EmptyOrError(error!!)
             else -> {
-            androidx.compose.material3.FloatingActionButton(onClick = onCreateUser, modifier = Modifier.padding(padding).padding(16.dp)) {
-                Text("+")
-            }
             LazyColumn(
                 modifier = Modifier.padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(users, key = { it.id }) { user ->
-                    Column(Modifier.fillMaxWidth().padding(8.dp).clickable { onEditUser(user) }) {
-                        Text(user.displayName, style = MaterialTheme.typography.titleMedium)
-                        Text("${user.email} · ${user.role} · ${if (user.isActive) "active" else "inactive"}")
+                    var menuExpanded by remember(user.id) { mutableStateOf(false) }
+                    AppCard(
+                        Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(44.dp),
+                                tint = MaterialTheme.colorScheme.outline,
+                            )
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    user.displayName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    user.email,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    roleDisplayValue(user.role),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Text(
+                                stringResource(if (user.isActive) R.string.active else R.string.inactive),
+                                color = if (user.isActive) Color(0xFF23844A)
+                                else MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                            Box {
+                                IconButton(onClick = { menuExpanded = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
+                                }
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.edit)) },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onEditUser(user)
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.change_password)) },
+                                        leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            newPassword = ""
+                                            confirmPassword = ""
+                                            passwordUser = user
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (user.isActive) R.string.disable_user
+                                                    else R.string.enable_user,
+                                                ),
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (user.isActive) Icons.Default.PersonOff else Icons.Default.Person,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            scope.launch {
+                                                val result = withContext(Dispatchers.IO) {
+                                                    ApiParity.updateUser(
+                                                        user.id,
+                                                        user.firstName.orEmpty(),
+                                                        user.lastName.orEmpty(),
+                                                        user.role,
+                                                        !user.isActive,
+                                                        SessionStore.outletId,
+                                                    )
+                                                }
+                                                result.onSuccess { refreshKey++ }
+                                                    .onFailure { error = it.message }
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.DeleteOutline,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            deleteUser = user
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
             }
         }
     }
+
+    passwordUser?.let { user ->
+        AlertDialog(
+            onDismissRequest = { if (!actionLoading) passwordUser = null },
+            title = { Text(stringResource(R.string.change_password)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.change_password_for, user.displayName))
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        label = { Text(stringResource(R.string.new_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text(stringResource(R.string.confirm_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                    )
+                    if (newPassword.isNotEmpty() && newPassword.length < 6) {
+                        Text(stringResource(R.string.password_min_six), color = MaterialTheme.colorScheme.error)
+                    } else if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
+                        Text(stringResource(R.string.passwords_do_not_match), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !actionLoading && newPassword.length >= 6 && newPassword == confirmPassword,
+                    onClick = {
+                        actionLoading = true
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                ApiParity.changeUserPassword(user.id, newPassword)
+                            }
+                            actionLoading = false
+                            result.onSuccess { passwordUser = null }
+                                .onFailure { error = it.message }
+                        }
+                    },
+                ) { Text(stringResource(R.string.change_password)) }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !actionLoading,
+                    onClick = { passwordUser = null },
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
+    deleteUser?.let { user ->
+        AlertDialog(
+            onDismissRequest = { if (!actionLoading) deleteUser = null },
+            title = { Text(stringResource(R.string.delete_user)) },
+            text = { Text(stringResource(R.string.delete_user_confirmation, user.displayName)) },
+            confirmButton = {
+                TextButton(
+                    enabled = !actionLoading,
+                    onClick = {
+                        actionLoading = true
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                ApiParity.deleteUser(user.id)
+                            }
+                            actionLoading = false
+                            result.onSuccess {
+                                deleteUser = null
+                                refreshKey++
+                            }.onFailure { error = it.message }
+                        }
+                    },
+                ) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !actionLoading,
+                    onClick = { deleteUser = null },
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+internal fun roleDisplayValue(role: String?): String = when (role?.uppercase()) {
+    "MERCHANT", "MERCHANT_ADMIN", "OWNER" -> stringResource(R.string.role_merchant)
+    "OUTLET_ADMIN" -> stringResource(R.string.role_outlet_admin)
+    "OUTLET_STAFF", "STAFF" -> stringResource(R.string.role_outlet_staff)
+    else -> role
+        ?.lowercase()
+        ?.split("_")
+        ?.joinToString(" ") { part -> part.replaceFirstChar(Char::uppercase) }
+        .orEmpty()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +40,7 @@ import androidx.core.content.ContextCompat
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
+import com.anyrent.pos.data.model.Product
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
@@ -48,12 +50,14 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+@SuppressLint("UnsafeOptInUsageError")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraBarcodeScreen(
     mode: BarcodeMode = BarcodeMode.PRODUCT,
     onBack: () -> Unit,
     onOrderFound: ((Int) -> Unit)? = null,
+    onProductFound: ((Product) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -132,6 +136,18 @@ fun CameraBarcodeScreen(
                                                                 handled.set(false)
                                                             }
                                                         }
+                                                        BarcodeMode.AVAILABILITY -> {
+                                                            val result = withContext(Dispatchers.IO) {
+                                                                ApiClient.get().findProductByBarcode(raw)
+                                                            }
+                                                            result.onSuccess { product ->
+                                                                onProductFound?.invoke(product)
+                                                                onBack()
+                                                            }.onFailure {
+                                                                status = it.message ?: "Product not found"
+                                                                handled.set(false)
+                                                            }
+                                                        }
                                                         BarcodeMode.ORDER -> {
                                                             val result = withContext(Dispatchers.IO) {
                                                                 ApiClient.get().findOrderByNumber(raw)
@@ -181,4 +197,4 @@ fun CameraBarcodeScreen(
     }
 }
 
-enum class BarcodeMode { PRODUCT, ORDER }
+enum class BarcodeMode { PRODUCT, AVAILABILITY, ORDER }

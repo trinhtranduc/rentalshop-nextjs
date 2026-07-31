@@ -5,10 +5,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.di.AppContainer
 import com.anyrent.pos.push.PushRegistrar
 import com.google.firebase.FirebaseApp
 
 class AnyRentApp : Application() {
+    val container: AppContainer by lazy { AppContainer() }
+
     override fun onCreate() {
         super.onCreate()
         SessionStore.init(this)

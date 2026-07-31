@@ -62,7 +62,7 @@ object ThermalPrinter {
     }
 
     private fun buildOrderReceipt(config: Config, order: OrderDetail): ByteArray {
-        val money = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+        val money = NumberFormat.getNumberInstance(Locale.US)
         val store = SessionStore.outletName ?: SessionStore.merchantName ?: "AnyRent"
         return buildBytes(config.paperWidthMm) {
             init()
@@ -79,7 +79,7 @@ object ThermalPrinter {
             line()
             order.items.forEach { item ->
                 text(item.productName ?: "#${item.productId}")
-                text("  x${item.quantity}  ${money.format(item.totalPrice)}")
+                text("  x${money.format(item.quantity)}  ${money.format(item.totalPrice)}")
             }
             line()
             text("Total: ${money.format(order.summary.totalAmount)}")

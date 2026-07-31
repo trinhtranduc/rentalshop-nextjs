@@ -2,6 +2,8 @@ package com.anyrent.pos.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 
 /**
@@ -24,6 +26,8 @@ object SessionStore {
     private const val KEY_ONBOARDING = "onboardingDone"
 
     private lateinit var prefs: SharedPreferences
+    private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val sessionExpired = _sessionExpired.asSharedFlow()
 
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -118,5 +122,10 @@ object SessionStore {
             .remove(KEY_MERCHANT_NAME)
             .remove(KEY_OUTLET_NAME)
             .apply()
+    }
+
+    fun expireAuth() {
+        clearAuth()
+        _sessionExpired.tryEmit(Unit)
     }
 }

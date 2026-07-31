@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,8 +42,10 @@ fun AvailabilitySheet(
     var conflicts by remember { mutableStateOf<List<ApiParity.AvailabilityConflict>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val start = CartStore.pickupDate.value.toString()
-    val end = CartStore.returnDate.value.toString()
+    val pickupDate by CartStore.pickupDate.collectAsState()
+    val returnDate by CartStore.returnDate.collectAsState()
+    val start = pickupDate.toString()
+    val end = returnDate.toString()
 
     LaunchedEffect(product.id, start, end) {
         loading = true
@@ -82,14 +85,4 @@ fun AvailabilitySheet(
             }
         }
     }
-}
-
-suspend fun checkCartAvailability(): Map<Int, List<ApiParity.AvailabilityConflict>> {
-    val ids = CartStore.lines.value.map { it.product.id }
-    if (ids.isEmpty()) return emptyMap()
-    return ApiParity.batchAvailability(
-        ids,
-        CartStore.pickupDate.value.toString(),
-        CartStore.returnDate.value.toString(),
-    ).getOrDefault(emptyMap())
 }

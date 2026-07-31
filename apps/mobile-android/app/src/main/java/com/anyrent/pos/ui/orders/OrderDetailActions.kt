@@ -13,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,15 +24,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
+import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.nextOrderStatuses
+import com.anyrent.pos.ui.payment.PaymentQrDialog
+import com.anyrent.pos.ui.payment.PaymentViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun OrderActionPanel(
@@ -46,8 +52,24 @@ fun OrderActionPanel(
     var editReturn by remember { mutableStateOf(detail.summary.returnPlanAt?.take(10).orEmpty()) }
     var ready by remember(detail) { mutableStateOf(detail.summary.isReadyToDeliver) }
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
+    val app = context.applicationContext as AnyRentApp
+    val paymentFactory = remember {
+        PaymentViewModel.Factory(app.container.paymentRepository)
+    }
+    val paymentViewModel: PaymentViewModel = viewModel(
+        key = "payment-${detail.summary.id}",
+        factory = paymentFactory,
+    )
+    val paymentState by paymentViewModel.state.collectAsState()
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LaunchedEffect(detail) {
+        paymentViewModel.setOrder(detail)
+    }
+
+    Column(
+        Modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         Text(stringResource(R.string.change_status), style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             nextOrderStatuses(detail.summary.orderType, detail.summary.status).forEach { next ->
@@ -120,22 +142,33 @@ fun OrderActionPanel(
             modifier = Modifier.fillMaxWidth(),
         ) { Text(stringResource(R.string.edit_order)) }
 
-        Button(
-            onClick = { showPayment = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.collect_payment)) }
+        paymentState.action?.let {
+            Button(
+                onClick = {
+                    paymentViewModel.clearError()
+                    showPayment = true
+                },
+                enabled = !paymentState.submitting,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (it.kind.name == "REFUND") stringResource(R.string.refund_payment)
+                    else stringResource(R.string.collect_payment)
+                )
+            }
+        }
 
-        if (showPayment) {
+        if (showPayment && paymentState.action != null) {
             PaymentCollectionSheet(
-                totalAmount = detail.summary.totalAmount,
-                alreadyPaid = detail.summary.depositAmount,
+                action = paymentState.action!!,
+                selectedMethod = paymentState.selectedMethod,
+                submitting = paymentState.submitting,
+                error = paymentState.error,
+                onMethodSelected = paymentViewModel::selectMethod,
                 onDismiss = { showPayment = false },
-                onConfirm = { amount, method ->
-                    showPayment = false
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            com.anyrent.pos.data.ApiClient.get().recordPayment(detail.summary.id, amount, method)
-                        }
+                onConfirm = {
+                    paymentViewModel.submit {
+                        showPayment = false
                         onReload()
                     }
                 },
@@ -144,16 +177,20 @@ fun OrderActionPanel(
 
         Button(
             onClick = {
-                scope.launch {
-                    val result = withContext(Dispatchers.IO) {
-                        ApiParity.fetchOrderQrPayload(detail.summary.id)
-                    }
-                    result.onSuccess { message = it }
-                        .onFailure { message = it.message }
-                }
+                paymentViewModel.loadQr()
             },
+            enabled = !paymentState.loadingQr,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.payment_qr)) }
+        ) {
+            Text(
+                if (paymentState.loadingQr) stringResource(R.string.loading)
+                else stringResource(R.string.payment_qr)
+            )
+        }
+
+        paymentState.qr?.let { qr ->
+            PaymentQrDialog(qr = qr, onDismiss = paymentViewModel::clearQr)
+        }
 
         Button(
             onClick = {
@@ -193,6 +230,15 @@ fun OrderActionPanel(
             modifier = Modifier.fillMaxWidth(),
         ) { Text(stringResource(R.string.delete_order)) }
 
-        message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        (message ?: paymentState.error)?.let {
+            Text(
+                it,
+                color = if (paymentState.error != null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
+        }
     }
 }

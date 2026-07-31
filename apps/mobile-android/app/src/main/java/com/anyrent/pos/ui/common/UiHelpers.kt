@@ -35,8 +35,20 @@ fun EmptyOrError(message: String) {
     }
 }
 
-fun formatMoney(amount: Double): String =
-    NumberFormat.getNumberInstance(Locale("vi", "VN")).format(amount)
+private val commaNumberFormatter: NumberFormat =
+    NumberFormat.getNumberInstance(Locale.US).apply {
+        isGroupingUsed = true
+        maximumFractionDigits = 2
+        minimumFractionDigits = 0
+    }
+
+fun formatMoney(amount: Double): String = synchronized(commaNumberFormatter) {
+    commaNumberFormatter.format(amount)
+}
+
+fun formatQuantity(value: Number): String = synchronized(commaNumberFormatter) {
+    commaNumberFormatter.format(value)
+}
 
 fun nextOrderStatuses(orderType: String, status: String): List<String> {
     val type = runCatching { SharedOrderType.valueOf(orderType.uppercase()) }.getOrDefault(SharedOrderType.RENT)

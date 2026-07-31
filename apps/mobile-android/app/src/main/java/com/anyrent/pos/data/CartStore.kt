@@ -53,13 +53,7 @@ object CartStore {
     val itemCount: Int get() = _lines.value.sumOf { it.quantity }
 
     val subtotal: Double
-        get() {
-            val days = rentalDaysInclusive()
-            return _lines.value.sumOf { line ->
-                if (_orderType.value == "SALE") line.unitPrice * line.quantity
-                else line.unitPrice * line.quantity * days
-            }
-        }
+        get() = _lines.value.sumOf { it.lineTotal }
 
     val discountAmount: Double
         get() = when (_discountType.value) {
@@ -100,7 +94,13 @@ object CartStore {
 
     private fun syncRentalDays() {
         val days = rentalDaysInclusive()
-        _lines.update { it.map { line -> line.copy(rentalDays = days) } }
+        _lines.update {
+            it.map { line ->
+                if (line.pricingType.equals("DAILY", ignoreCase = true)) {
+                    line.copy(rentalDays = days)
+                } else line
+            }
+        }
     }
 
     fun addProduct(product: Product, quantity: Int = 1) {
@@ -134,10 +134,29 @@ object CartStore {
         }
     }
 
+    fun updateUnitPrice(productId: Int, price: Double) {
+        _lines.update { list ->
+            list.map {
+                if (it.product.id == productId) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
+            }
+        }
+    }
+
     fun updateRentalDays(productId: Int, days: Int) {
         val safe = days.coerceAtLeast(1)
         _lines.update { list ->
             list.map { if (it.product.id == productId) it.copy(rentalDays = safe) else it }
+        }
+    }
+
+    fun setPricingType(productId: Int, type: String) {
+        val normalized = if (type.equals("DAILY", ignoreCase = true)) "DAILY" else "FIXED"
+        _lines.update { list ->
+            list.map {
+                if (it.product.id == productId) {
+                    it.copy(pricingType = normalized, rentalDays = rentalDaysInclusive())
+                } else it
+            }
         }
     }
 

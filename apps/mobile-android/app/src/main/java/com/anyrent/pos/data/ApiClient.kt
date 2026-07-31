@@ -9,10 +9,12 @@ import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.PaymentEntry
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.RankingItem
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.data.model.TodayMetrics
 import com.anyrent.pos.data.model.UserProfile
+import com.anyrent.pos.domain.error.AppError
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -20,6 +22,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import org.json.JSONException
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -29,13 +33,10 @@ import java.util.concurrent.TimeUnit
 class ApiClient(
     private val baseUrl: String = BuildConfig.API_BASE_URL.trimEnd('/'),
     private val tokenProvider: () -> String? = { SessionStore.accessToken },
+    private val onUnauthorized: () -> Unit = { SessionStore.expireAuth() },
+    private val client: OkHttpClient = defaultHttpClient(),
 ) {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(45, TimeUnit.SECONDS)
-        .build()
-
     data class PageResult<T>(
         val items: List<T>,
         val hasMore: Boolean,
@@ -173,6 +174,8 @@ class ApiClient(
         q: String? = null,
         status: String? = null,
         orderType: String? = null,
+        customerId: Int? = null,
+        productId: Int? = null,
         startDate: String? = null,
         endDate: String? = null,
     ): Result<PageResult<OrderSummary>> = runCatching {
@@ -183,6 +186,8 @@ class ApiClient(
                 if (!q.isNullOrBlank()) addQueryParameter("q", q)
                 if (!status.isNullOrBlank()) addQueryParameter("status", status)
                 if (!orderType.isNullOrBlank()) addQueryParameter("orderType", orderType)
+                customerId?.let { addQueryParameter("customerId", it.toString()) }
+                productId?.let { addQueryParameter("productId", it.toString()) }
                 if (!startDate.isNullOrBlank()) addQueryParameter("startDate", startDate)
                 if (!endDate.isNullOrBlank()) addQueryParameter("endDate", endDate)
             }
@@ -228,17 +233,6 @@ class ApiClient(
         Unit
     }
 
-    fun recordPayment(orderId: Int, amount: Double, method: String = "CASH"): Result<Unit> = runCatching {
-        // iOS records paid amount via depositAmount on update
-        val body = JSONObject()
-            .put("depositAmount", amount)
-            .put("paymentMethod", method)
-            .toString()
-            .toRequestBody(jsonMedia)
-        execute(put("$baseUrl/api/orders/$orderId", body))
-        Unit
-    }
-
     fun createOrder(
         orderType: String,
         customerId: Int?,
@@ -254,10 +248,15 @@ class ApiClient(
         discountValue: Double? = null,
         discountAmount: Double? = null,
         depositsByProduct: Map<Int, Double> = emptyMap(),
+        pricingTypesByProduct: Map<Int, String> = emptyMap(),
+        rentalDaysByProduct: Map<Int, Int> = emptyMap(),
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
-            val lineTotal = unitPrice * qty * if (orderType == "SALE") 1 else rentalDays
+            val pricingType = pricingTypesByProduct[productId] ?: "FIXED"
+            val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
+            val lineTotal = unitPrice * qty *
+                if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
             items.put(
                 JSONObject()
                     .put("productId", productId)
@@ -267,8 +266,8 @@ class ApiClient(
                     .apply {
                         depositsByProduct[productId]?.let { put("deposit", it) }
                         if (orderType == "RENT") {
-                            put("rentDays", rentalDays)
-                            put("pricingType", "DAILY")
+                            put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
+                            put("pricingType", pricingType)
                         }
                     }
             )
@@ -315,8 +314,11 @@ class ApiClient(
     fun authedPut(path: String, body: okhttp3.RequestBody): JSONObject =
         execute(put(if (path.startsWith("http")) path else "$baseUrl$path", body)).also { requireSuccess(it) }
 
-    fun authedPatch(path: String): JSONObject =
-        execute(patch(if (path.startsWith("http")) path else "$baseUrl$path", "{}".toRequestBody(jsonMedia)))
+    fun authedPatch(
+        path: String,
+        body: okhttp3.RequestBody = "{}".toRequestBody(jsonMedia),
+    ): JSONObject =
+        execute(patch(if (path.startsWith("http")) path else "$baseUrl$path", body))
             .also { requireSuccess(it) }
 
     fun authedDelete(path: String): JSONObject {
@@ -326,7 +328,7 @@ class ApiClient(
             .applyAuth(true)
             .header("Accept", "application/json")
             .build()
-        return execute(request)
+        return execute(request).also { requireSuccess(it) }
     }
 
     fun authedMultipartPut(path: String, body: okhttp3.RequestBody): JSONObject {
@@ -651,24 +653,62 @@ class ApiClient(
     // -------------------------------------------------------------------------
 
     private fun execute(request: Request): JSONObject {
-        client.newCall(request).execute().use { response ->
-            val raw = response.body?.string().orEmpty()
-            val json = JSONObject(if (raw.isBlank()) "{}" else raw)
-            if (!response.isSuccessful && !json.has("success")) {
-                error(json.optString("message").ifBlank { "HTTP ${response.code}" })
+        try {
+            client.newCall(request).execute().use { response ->
+                val raw = response.body?.string().orEmpty()
+                val json = try {
+                    JSONObject(if (raw.isBlank()) "{}" else raw)
+                } catch (error: JSONException) {
+                    throw AppError.InvalidResponse(
+                        "Server returned an invalid response (${response.code})",
+                        error,
+                    )
+                }
+                if (response.code == 401) {
+                    onUnauthorized()
+                    throw AppError.Unauthorized(
+                        json.errorMessage().ifBlank { "Your session has expired" },
+                    )
+                }
+                if (!response.isSuccessful) {
+                    throw AppError.Http(
+                        response.code,
+                        json.errorMessage().ifBlank { "HTTP ${response.code}" },
+                    )
+                }
+                requireSuccess(json)
+                return json
             }
-            return json
+        } catch (error: AppError) {
+            throw error
+        } catch (error: IOException) {
+            throw AppError.Network(error.message ?: "Network request failed", error)
         }
     }
 
     private fun requireSuccess(json: JSONObject) {
         if (json.has("success") && !json.optBoolean("success")) {
-            error(
-                json.optString("message")
-                    .ifBlank { json.optString("error") }
-                    .ifBlank { "Request failed" }
-            )
+            throw AppError.InvalidResponse(json.errorMessage().ifBlank { "Request failed" })
         }
+    }
+
+    private fun JSONObject.errorMessage(): String {
+        val message = optString("message")
+        val errorText = optString("error")
+        val nestedMessage = optJSONObject("error")?.optString("message").orEmpty()
+
+        // Validation responses contain a generic translated `message` and the
+        // actionable field-level errors in `error`. Prefer those details so the
+        // UI can tell the user what actually needs fixing.
+        if (optString("code").equals("VALIDATION_ERROR", ignoreCase = true)) {
+            return errorText
+                .ifBlank { nestedMessage }
+                .ifBlank { message }
+        }
+
+        return message
+            .ifBlank { errorText }
+            .ifBlank { nestedMessage }
     }
 
     private fun get(url: String, authed: Boolean = true): Request =
@@ -749,8 +789,23 @@ class ApiClient(
         categoryId = o.optInt("categoryId").takeIf { o.has("categoryId") && it > 0 },
         categoryName = o.optJSONObject("category")?.optString("name")
             ?: o.optString("categoryName").takeIf { it.isNotBlank() },
-        imageUrl = o.optString("imageUrl").ifBlank { o.optString("image") }.takeIf { it.isNotBlank() },
+        imageUrl = o.optString("imageUrl").ifBlank { o.optString("image") }.takeIf { it.isNotBlank() }
+            ?: o.optJSONArray("images")?.optJSONObject(0)?.optString("url")?.takeIf { it.isNotBlank() },
         deposit = o.optDouble("deposit", 0.0),
+        pricingType = o.optString("pricingType", "FIXED").uppercase(),
+        pricingOptions = o.optJSONArray("pricingOptions")?.let { options ->
+            (0 until options.length()).mapNotNull { index ->
+                options.optJSONObject(index)?.let { option ->
+                    PricingOption(
+                        id = option.optInt("id").takeIf { option.has("id") },
+                        type = option.optString("type", "FIXED").uppercase(),
+                        price = option.optDouble("price"),
+                        isDefault = option.optBoolean("isDefault"),
+                    )
+                }
+            }
+        } ?: emptyList(),
+        note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
     )
 
     private fun parseCustomer(o: JSONObject): Customer = Customer(
@@ -764,6 +819,9 @@ class ApiClient(
 
     private fun parseOrderSummary(o: JSONObject): OrderSummary {
         val customer = o.optJSONObject("customer")
+        val createdBy = o.optJSONObject("createdBy")
+            ?: o.optJSONObject("creator")
+            ?: o.optJSONObject("user")
         return OrderSummary(
             id = o.optInt("id"),
             orderNumber = o.optString("orderNumber"),
@@ -771,19 +829,34 @@ class ApiClient(
             status = o.optString("status"),
             totalAmount = o.optDouble("totalAmount"),
             depositAmount = o.optDouble("depositAmount"),
-            customerName = o.optString("customerName").ifBlank {
+            customerName = o.nullableString("customerName") ?: run {
                 listOfNotNull(
-                    customer?.optString("firstName")?.takeIf { it.isNotBlank() },
-                    customer?.optString("lastName")?.takeIf { it.isNotBlank() },
-                ).joinToString(" ").ifBlank { null }
-            }.takeIf { !it.isNullOrBlank() },
-            customerPhone = o.optString("customerPhone").ifBlank { customer?.optString("phone") }
-                .takeIf { !it.isNullOrBlank() },
-            pickupPlanAt = o.optString("pickupPlanAt").takeIf { it.isNotBlank() },
-            returnPlanAt = o.optString("returnPlanAt").takeIf { it.isNotBlank() },
-            createdAt = o.optString("createdAt").takeIf { it.isNotBlank() },
-            notes = o.optString("notes").takeIf { it.isNotBlank() },
+                    customer?.nullableString("firstName"),
+                    customer?.nullableString("lastName"),
+                ).joinToString(" ").takeIf { it.isNotBlank() }
+            },
+            customerPhone = o.nullableString("customerPhone")
+                ?: customer?.nullableString("phone"),
+            pickupPlanAt = o.nullableString("pickupPlanAt"),
+            returnPlanAt = o.nullableString("returnPlanAt"),
+            createdAt = o.nullableString("createdAt"),
+            notes = o.nullableString("notes"),
             isReadyToDeliver = o.optBoolean("isReadyToDeliver", false),
+            itemCount = o.optInt(
+                "itemCount",
+                o.optInt(
+                    "orderItemCount",
+                    o.optJSONObject("_count")?.optInt("orderItems") ?: 0,
+                ),
+            ),
+            createdByName = o.nullableString("createdByName") ?: run {
+                listOfNotNull(
+                    createdBy?.nullableString("firstName"),
+                    createdBy?.nullableString("lastName"),
+                ).joinToString(" ").takeIf { it.isNotBlank() }
+                    ?: createdBy?.nullableString("name")
+                    ?: createdBy?.nullableString("email")
+            },
         )
     }
 
@@ -798,11 +871,15 @@ class ApiClient(
                 OrderItem(
                     id = item.optInt("id").takeIf { item.has("id") },
                     productId = item.optInt("productId", product?.optInt("id") ?: 0),
-                    productName = item.optString("productName").ifBlank { product?.optString("name") }
-                        .takeIf { !it.isNullOrBlank() },
+                    productName = item.nullableString("productName")
+                        ?: product?.nullableString("name")
+                        ?: item.nullableString("name"),
                     quantity = item.optInt("quantity", 1),
                     unitPrice = item.optDouble("unitPrice"),
                     totalPrice = item.optDouble("totalPrice"),
+                    imageUrl = product?.nullableString("imageUrl")
+                        ?: product?.optJSONArray("images")?.optJSONObject(0)?.nullableString("url"),
+                    note = item.nullableString("notes") ?: product?.nullableString("note"),
                 )
             },
             customerId = o.optInt("customerId").takeIf { o.has("customerId") && it > 0 }
@@ -818,7 +895,21 @@ class ApiClient(
                     notes = p.optString("notes").takeIf { it.isNotBlank() },
                 )
             },
+            securityDeposit = o.optDouble("securityDeposit"),
+            damageFee = o.optDouble("damageFee"),
+            lateFee = o.optDouble("lateFee"),
+            collateralDetails = o.nullableString("collateralDetails"),
+            notesImages = o.optJSONArray("notesImages")?.let { images ->
+                (0 until images.length()).mapNotNull { images.optString(it).takeIf(String::isNotBlank) }
+            }.orEmpty(),
         )
+    }
+
+    private fun JSONObject.nullableString(key: String): String? {
+        if (!has(key) || isNull(key)) return null
+        return optString(key)
+            .trim()
+            .takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
     }
 
     private fun parseStaff(o: JSONObject): StaffUser = StaffUser(
@@ -834,15 +925,40 @@ class ApiClient(
         (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
             RankingItem(
-                id = o.optInt("id").takeIf { o.has("id") },
+                id = when {
+                    o.has("id") -> o.optInt("id")
+                    o.has("productId") -> o.optInt("productId")
+                    o.has("customerId") -> o.optInt("customerId")
+                    else -> 0
+                }.takeIf { it > 0 },
                 name = o.optString("name").ifBlank { o.optString("productName") }
                     .ifBlank { o.optString("customerName") },
-                value = o.optDouble("totalAmount", o.optDouble("revenue", o.optDouble("count", 0.0))),
+                value = o.optDouble(
+                    "totalAmount",
+                    o.optDouble(
+                        "totalRevenue",
+                        o.optDouble("totalSpent", o.optDouble("revenue", o.optDouble("count", 0.0))),
+                    ),
+                ),
                 subtitle = o.optString("subtitle").takeIf { it.isNotBlank() },
+                imageUrl = o.optString("imageUrl")
+                    .ifBlank { o.optString("image") }
+                    .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
+                note = o.optString("note")
+                    .ifBlank { o.optString("description") }
+                    .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
+                category = o.optString("category")
+                    .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
+                rentalCount = o.optInt("rentalCount").takeIf { o.has("rentalCount") },
             )
         }
 
     companion object {
+        private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
+            .build()
+
         @Volatile
         private var instance: ApiClient? = null
 

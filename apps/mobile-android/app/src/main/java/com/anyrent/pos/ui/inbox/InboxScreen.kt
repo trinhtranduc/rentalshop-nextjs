@@ -10,18 +10,26 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +41,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,10 +51,13 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.model.InboxNotification
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
+import com.anyrent.pos.ui.common.AppCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -105,18 +118,36 @@ fun InboxScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) { ApiClient.get().markAllNotificationsRead() }
-                            load(reset = true)
-                        }
-                    }) { Text(stringResource(R.string.mark_all_read)) }
-                    TextButton(onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) { com.anyrent.pos.data.ApiParity.deleteAllReadNotifications() }
-                            load(reset = true)
-                        }
-                    }) { Text("Clear read") }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                withContext(Dispatchers.IO) { ApiClient.get().markAllNotificationsRead() }
+                                load(reset = true)
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.DoneAll,
+                            contentDescription = stringResource(R.string.mark_all_read),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    com.anyrent.pos.data.ApiParity.deleteAllReadNotifications()
+                                }
+                                load(reset = true)
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.DeleteSweep,
+                            contentDescription = stringResource(R.string.clear_read),
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 },
             )
         }
@@ -132,7 +163,7 @@ fun InboxScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(items, key = { it.id }) { item ->
-                    Column(
+                    AppCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .combinedClickable(
@@ -152,22 +183,59 @@ fun InboxScreen(
                                         load(reset = true)
                                     }
                                 },
-                            )
-                            .padding(8.dp)
+                            ),
                     ) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(
-                                item.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (item.isRead) FontWeight.Normal else FontWeight.Bold,
-                            )
-                            if (!item.isRead) {
-                                Text("•", color = MaterialTheme.colorScheme.primary)
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                Modifier
+                                    .size(44.dp)
+                                    .background(
+                                        notificationAccent(item.type).copy(alpha = 0.12f),
+                                        CircleShape,
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    notificationIcon(item.type),
+                                    contentDescription = null,
+                                    tint = notificationAccent(item.type),
+                                )
                             }
-                        }
-                        Text(item.body, style = MaterialTheme.typography.bodyMedium)
-                        item.createdAt?.let {
-                            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Column(
+                                Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Text(
+                                    item.title,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (item.isRead) FontWeight.Normal else FontWeight.SemiBold,
+                                )
+                                Text(
+                                    item.body,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 3,
+                                )
+                                item.createdAt?.let {
+                                    Text(
+                                        formatNotificationTime(it),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline,
+                                    )
+                                }
+                            }
+                            if (!item.isRead) {
+                                androidx.compose.foundation.layout.Box(
+                                    Modifier
+                                        .padding(top = 5.dp)
+                                        .size(9.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                )
+                            }
                         }
                     }
                 }
@@ -175,3 +243,24 @@ fun InboxScreen(
         }
     }
 }
+
+private fun notificationIcon(type: String) = when {
+    type.contains("ORDER", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
+    type.contains("PAYMENT", ignoreCase = true) -> Icons.Default.Payments
+    type.contains("PRODUCT", ignoreCase = true) ||
+        type.contains("STOCK", ignoreCase = true) -> Icons.Default.Inventory2
+    else -> Icons.Default.Notifications
+}
+
+private fun notificationAccent(type: String): Color = when {
+    type.contains("PAYMENT", ignoreCase = true) -> Color(0xFF23844A)
+    type.contains("PRODUCT", ignoreCase = true) ||
+        type.contains("STOCK", ignoreCase = true) -> Color(0xFFE88A19)
+    else -> Color(0xFF2454F4)
+}
+
+private val notificationTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+
+private fun formatNotificationTime(value: String): String = runCatching {
+    OffsetDateTime.parse(value).format(notificationTimeFormatter)
+}.getOrDefault(value.replace("T", " ").take(16))

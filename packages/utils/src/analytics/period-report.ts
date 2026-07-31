@@ -424,6 +424,7 @@ export async function buildAnalyticsPeriodReport(
         name: product?.name || 'Unknown Product',
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
+        note: product?.description || null,
         rentalCount: (item._count as any).productId,
         totalRevenue: item._sum?.totalPrice || 0,
         image: images.length > 0 ? images[0] : null

@@ -19,6 +19,7 @@ import java.io.File
  */
 object ApiParity {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+    private val imageMedia = "image/jpeg".toMediaType()
 
     fun registerMerchant(
         email: String,
@@ -141,7 +142,7 @@ object ApiParity {
             .put("confirmPassword", newPassword)
             .toString()
             .toRequestBody(jsonMedia)
-        ApiClient.get().authedPost("/api/users/$id/change-password", body)
+        ApiClient.get().authedPatch("/api/users/$id/change-password", body)
         Unit
     }
 
@@ -185,15 +186,37 @@ object ApiParity {
         )
     }
 
-    fun orderQrCodeUrl(orderId: Int): String =
-        "${com.anyrent.pos.BuildConfig.API_BASE_URL.trimEnd('/')}/api/orders/$orderId/qr-code"
-
-    fun fetchOrderQrPayload(orderId: Int): Result<String> = runCatching {
-        val json = ApiClient.get().authedGet("/api/orders/$orderId/qr-code")
-        val data = json.optJSONObject("data") ?: json
-        data.optString("qrCode").ifBlank {
-            data.optString("qr").ifBlank { data.optString("url") }
-        }.ifBlank { error("No QR payload") }
+    fun updateOrderDetails(
+        id: Int,
+        collateralDetails: String? = null,
+        securityDeposit: Double? = null,
+        notes: String? = null,
+        noteImages: List<ByteArray> = emptyList(),
+    ): Result<Unit> = runCatching {
+        val data = JSONObject().apply {
+            collateralDetails?.let { put("collateralDetails", it) }
+            securityDeposit?.let { put("securityDeposit", it) }
+            notes?.let { put("notes", it) }
+        }
+        if (noteImages.isEmpty()) {
+            ApiClient.get().authedPut(
+                "/api/orders/$id",
+                data.toString().toRequestBody(jsonMedia),
+            )
+        } else {
+            val multipart = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("data", data.toString())
+            noteImages.forEachIndexed { index, bytes ->
+                multipart.addFormDataPart(
+                    "notesImages",
+                    "order-note-${System.currentTimeMillis()}-$index.jpg",
+                    bytes.toRequestBody(imageMedia),
+                )
+            }
+            ApiClient.get().authedMultipartPut("/api/orders/$id", multipart.build())
+        }
+        Unit
     }
 
     fun productAvailability(productId: Int, startDate: String, endDate: String): Result<String> =
@@ -321,7 +344,7 @@ object ApiParity {
         }.getOrElse {
             // Fallback: call per product
             return@runCatching productIds.associateWith { id ->
-                productAvailabilityParsed(id, startDate, endDate).getOrDefault(emptyList())
+                productAvailabilityParsed(id, startDate, endDate).getOrThrow()
             }
         }
         val data = json.optJSONObject("data") ?: json
@@ -342,7 +365,7 @@ object ApiParity {
                     )
                 }
             } else {
-                map[id] = productAvailabilityParsed(id, startDate, endDate).getOrDefault(emptyList())
+                map[id] = productAvailabilityParsed(id, startDate, endDate).getOrThrow()
             }
         }
         map

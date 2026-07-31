@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.core.content.FileProvider
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
@@ -67,7 +69,7 @@ fun StoreInfoScreen(onBack: () -> Unit) {
         }
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("${SessionStore.userName} · ${SessionStore.role}")
+            Text("${SessionStore.userName} · ${roleDisplayValue(SessionStore.role)}")
             Text("Merchant: ${SessionStore.merchantName ?: SessionStore.merchantId}")
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.store_name)) }, enabled = canEdit, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text(stringResource(R.string.address)) }, enabled = canEdit, modifier = Modifier.fillMaxWidth())
@@ -217,6 +219,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
     var lastName by remember { mutableStateOf(initial?.lastName.orEmpty()) }
     var email by remember { mutableStateOf(initial?.email.orEmpty()) }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var role by remember { mutableStateOf(initial?.role ?: "OUTLET_STAFF") }
     var active by remember { mutableStateOf(initial?.isActive ?: true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -225,7 +228,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (initial == null) stringResource(R.string.new_user) else stringResource(R.string.user_management)) },
+                title = { Text(if (initial == null) stringResource(R.string.new_user) else stringResource(R.string.edit_user)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -239,16 +242,53 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
             OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text(stringResource(R.string.last_name)) }, modifier = Modifier.fillMaxWidth())
             if (initial == null) {
                 OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text(stringResource(R.string.email)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text(stringResource(R.string.password)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text(stringResource(R.string.confirm_password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
             }
-            OutlinedTextField(value = role, onValueChange = { role = it }, label = { Text("Role") }, modifier = Modifier.fillMaxWidth())
+            Text("Role", style = MaterialTheme.typography.titleMedium)
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf("OUTLET_ADMIN", "OUTLET_STAFF").forEach { roleKey ->
+                    FilterChip(
+                        selected = role == roleKey,
+                        onClick = { role = roleKey },
+                        label = { Text(roleDisplayValue(roleKey)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
             androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Active")
+                Text(stringResource(R.string.active))
                 Switch(checked = active, onCheckedChange = { active = it })
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
+                    if (firstName.isBlank() || email.isBlank() && initial == null) {
+                        error = "Name and email are required"
+                        return@Button
+                    }
+                    if (initial == null && (password.length < 6 || password != confirmPassword)) {
+                        error = if (password.length < 6) "Password must contain at least 6 characters"
+                        else "Passwords do not match"
+                        return@Button
+                    }
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
                             if (initial == null) {
@@ -262,30 +302,6 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.save)) }
-            if (initial != null) {
-                Button(
-                    onClick = {
-                        if (password.length < 6) { error = "Password min 6"; return@Button }
-                        scope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                ApiParity.changeUserPassword(initial.id, password)
-                            }
-                            result.onSuccess { error = null }.onFailure { error = it.message }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.change_password)) }
-                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text(stringResource(R.string.password)) }, modifier = Modifier.fillMaxWidth())
-                Button(
-                    onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) { ApiParity.deleteUser(initial.id) }
-                            onSaved()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.delete)) }
-            }
         }
     }
 }
