@@ -530,14 +530,11 @@ class NewProductViewController: BaseViewControler {
             pinToSafeArea: false
         )
 
-        // Product editor is presented as a sheet. The navigation controller's
-        // safe-area top includes the hidden system bar, which otherwise leaves
-        // a second, empty navigation region above this custom bar. Pin the
-        // custom bar to the sheet itself so it occupies that region.
-        navBar.snp.remakeConstraints { make in
-            make.top.equalToSuperview()
-            make.leading.trailing.equalToSuperview()
-        }
+        // Do NOT remakeConstraints on the nav bar here.
+        // RCCustomNavigationBar installs its own height via SnapKit; remakeConstraints
+        // would wipe that height. The title/buttons are centerY-aligned, so a
+        // heightless bar expands, centers the header mid-screen, and collapses the
+        // form scrollView to zero height. pinToSafeArea: false already pins to top.
 
         navBar.setDismissButton() // Use X button for dismiss
     }
