@@ -41,6 +41,9 @@ fun OrderActionPanel(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var message by remember { mutableStateOf<String?>(null) }
+    var showPayment by remember { mutableStateOf(false) }
+    var editPickup by remember { mutableStateOf(detail.summary.pickupPlanAt?.take(10).orEmpty()) }
+    var editReturn by remember { mutableStateOf(detail.summary.returnPlanAt?.take(10).orEmpty()) }
     var ready by remember(detail) { mutableStateOf(detail.summary.isReadyToDeliver) }
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
 
@@ -85,6 +88,58 @@ fun OrderActionPanel(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.call_customer)) }
+        }
+
+        androidx.compose.material3.OutlinedTextField(
+            value = editPickup,
+            onValueChange = { editPickup = it },
+            label = { Text(stringResource(R.string.pickup_date)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        androidx.compose.material3.OutlinedTextField(
+            value = editReturn,
+            onValueChange = { editReturn = it },
+            label = { Text(stringResource(R.string.return_date)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Button(
+            onClick = {
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        ApiParity.updateOrderFull(
+                            id = detail.summary.id,
+                            notes = detail.summary.notes,
+                            depositAmount = null,
+                            pickupPlanAt = editPickup.takeIf { it.length >= 10 }?.let { "${it}T00:00:00Z" },
+                            returnPlanAt = editReturn.takeIf { it.length >= 10 }?.let { "${it}T23:59:00Z" },
+                        )
+                    }
+                    onReload()
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(stringResource(R.string.edit_order)) }
+
+        Button(
+            onClick = { showPayment = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(stringResource(R.string.collect_payment)) }
+
+        if (showPayment) {
+            PaymentCollectionSheet(
+                totalAmount = detail.summary.totalAmount,
+                alreadyPaid = detail.summary.depositAmount,
+                onDismiss = { showPayment = false },
+                onConfirm = { amount, method ->
+                    showPayment = false
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            com.anyrent.pos.data.ApiClient.get().recordPayment(detail.summary.id, amount, method)
+                        }
+                        onReload()
+                    }
+                },
+            )
         }
 
         Button(

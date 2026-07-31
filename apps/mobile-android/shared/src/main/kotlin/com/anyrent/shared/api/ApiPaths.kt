@@ -17,6 +17,8 @@ object ApiPaths {
     const val CUSTOMERS = "/api/customers"
     const val USERS = "/api/users"
     const val CALENDAR_ORDERS = "/api/calendar/orders"
+    const val CALENDAR_ORDERS_COUNT = "/api/calendar/orders/count"
+    const val CALENDAR_ORDERS_BY_DATE = "/api/calendar/orders/by-date"
     const val ANALYTICS_TODAY = "/api/analytics/today-metrics"
     const val ANALYTICS_OVERVIEW = "/api/analytics/overview"
     const val HEALTH = "/api/health"

@@ -13,7 +13,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -42,6 +46,9 @@ import com.anyrent.pos.ui.calendar.CalendarScreen
 import com.anyrent.pos.ui.customers.CustomersScreen
 import com.anyrent.pos.ui.home.HomeScreen
 import com.anyrent.pos.ui.home.ProductManageScreen
+import com.anyrent.pos.ui.home.ProductFormScreen
+import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.orders.OrderCheckScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
@@ -50,6 +57,8 @@ import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.SettingsScreen
 import com.anyrent.pos.ui.settings.UserManagementScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object Routes {
     const val Login = "login"
@@ -67,6 +76,8 @@ object Routes {
     const val Cart = "cart"
     const val Barcode = "barcode"
     const val ProductNew = "product-new"
+    const val ProductEdit = "product-edit/{productId}"
+    const val UserEdit = "user-edit/{userId}"
     const val PickCustomer = "pick-customer"
     const val Customers = "customers"
     const val Users = "users"
@@ -199,7 +210,30 @@ fun AnyRentNavHost(
             StoreInfoScreen(onBack = { rootNavController.popBackStack() })
         }
         composable(Routes.ProductNew) {
-            ProductManageScreen(onBack = { rootNavController.popBackStack() })
+            ProductFormScreen(
+                initial = null,
+                onBack = { rootNavController.popBackStack() },
+                onSaved = { rootNavController.popBackStack() },
+            )
+        }
+        composable(
+            Routes.ProductEdit,
+            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
+        ) { entry ->
+            val id = entry.arguments?.getInt("productId") ?: return@composable
+            var product by remember { mutableStateOf<Product?>(null) }
+            LaunchedEffect(id) {
+                product = withContext(Dispatchers.IO) {
+                    com.anyrent.pos.data.ApiClient.get().getProduct(id).getOrNull()
+                }
+            }
+            product?.let {
+                ProductFormScreen(
+                    initial = it,
+                    onBack = { rootNavController.popBackStack() },
+                    onSaved = { rootNavController.popBackStack() },
+                )
+            }
         }
         composable(Routes.PickCustomer) {
             CustomersScreen(
@@ -212,10 +246,20 @@ fun AnyRentNavHost(
             CustomersScreen(onBack = { rootNavController.popBackStack() })
         }
         composable(Routes.Users) {
-            UserManagementScreen(
-                onBack = { rootNavController.popBackStack() },
-                onCreateUser = { rootNavController.navigate(Routes.UserForm) },
-            )
+            var editing by remember { mutableStateOf<StaffUser?>(null) }
+            if (editing != null) {
+                UserFormScreen(
+                    initial = editing,
+                    onBack = { editing = null },
+                    onSaved = { editing = null },
+                )
+            } else {
+                UserManagementScreen(
+                    onBack = { rootNavController.popBackStack() },
+                    onCreateUser = { rootNavController.navigate(Routes.UserForm) },
+                    onEditUser = { editing = it },
+                )
+            }
         }
         composable(Routes.UserForm) {
             UserFormScreen(
@@ -289,6 +333,7 @@ private fun MainTabs(
                     onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                     onOpenBarcode = { rootNavController.navigate(Routes.Barcode) },
                     onManageProducts = { rootNavController.navigate(Routes.ProductNew) },
+                    onEditProduct = { id -> rootNavController.navigate("product-edit/$id") },
                 )
             }
             composable(MainTab.Orders.route) {

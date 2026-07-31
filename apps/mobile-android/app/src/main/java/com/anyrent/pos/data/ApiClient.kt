@@ -329,6 +329,16 @@ class ApiClient(
         return execute(request)
     }
 
+    fun authedMultipartPut(path: String, body: okhttp3.RequestBody): JSONObject {
+        val request = Request.Builder()
+            .url(if (path.startsWith("http")) path else "$baseUrl$path")
+            .put(body)
+            .applyAuth(true)
+            .header("Accept", "application/json")
+            .build()
+        return execute(request).also { requireSuccess(it) }
+    }
+
     fun authedMultipart(path: String, body: okhttp3.RequestBody): JSONObject {
         val request = Request.Builder()
             .url(if (path.startsWith("http")) path else "$baseUrl$path")
@@ -508,6 +518,52 @@ class ApiClient(
     // -------------------------------------------------------------------------
     // Calendar / Analytics
     // -------------------------------------------------------------------------
+
+
+    fun calendarOrdersCount(month: Int, year: Int): Result<Map<String, Int>> = runCatching {
+        val url = "$baseUrl/api/calendar/orders/count".toHttpUrl().newBuilder()
+            .addQueryParameter("month", month.toString())
+            .addQueryParameter("year", year.toString())
+            .addQueryParameter("status", "RESERVED")
+            .build()
+        val json = execute(get(url.toString()))
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val counts = data.optJSONObject("countByDate")
+            ?: data.optJSONObject("counts")
+            ?: data.optJSONObject("orderCounts")
+            ?: JSONObject()
+        val map = mutableMapOf<String, Int>()
+        if (counts.length() > 0) {
+            counts.keys().forEach { key -> map[key] = counts.optInt(key) }
+        } else {
+            val array = data.optJSONArray("calendar") ?: data.optJSONArray("days") ?: JSONArray()
+            for (i in 0 until array.length()) {
+                val day = array.getJSONObject(i)
+                val date = day.optString("date")
+                val count = day.optInt("count", day.optJSONObject("summary")?.optInt("total") ?: 0)
+                if (date.isNotBlank()) map[date] = count
+            }
+        }
+        map
+    }
+
+    fun calendarOrdersByDate(date: String, status: String = "RESERVED"): Result<List<OrderSummary>> = runCatching {
+        val url = "$baseUrl/api/calendar/orders/by-date".toHttpUrl().newBuilder()
+            .addQueryParameter("date", date)
+            .addQueryParameter("status", status)
+            .addQueryParameter("limit", "100")
+            .build()
+        val json = execute(get(url.toString()))
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val array = when {
+            data.optJSONArray("orders") != null -> data.getJSONArray("orders")
+            json.optJSONArray("data") != null -> json.getJSONArray("data")
+            else -> JSONArray()
+        }
+        (0 until array.length()).map { parseOrderSummary(array.getJSONObject(it)) }
+    }
 
     fun calendarOrders(month: Int, year: Int): Result<List<CalendarDay>> = runCatching {
         val url = "$baseUrl/api/calendar/orders".toHttpUrl().newBuilder()

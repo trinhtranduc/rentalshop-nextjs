@@ -1,6 +1,8 @@
 package com.anyrent.pos.ui.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,20 +59,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
     onOpenBarcode: () -> Unit,
     onManageProducts: () -> Unit,
+    onEditProduct: (Int) -> Unit = {},
 ) {
     var query by remember { mutableStateOf("") }
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var loadingMore by remember { mutableStateOf(false) }
+    var page by remember { mutableIntStateOf(1) }
+    var hasMore by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var unread by remember { mutableIntStateOf(0) }
     var offline by remember { mutableStateOf(false) }
+    var availabilityProduct by remember { mutableStateOf<Product?>(null) }
     val cartCount = CartStore.lines.collectAsState().value.sumOf { it.quantity }
     val orderType by CartStore.orderType.collectAsState()
     val scope = rememberCoroutineScope()
@@ -81,8 +88,9 @@ fun HomeScreen(
             loading = true
             error = null
             offline = false
+            page = 1
             val result = withContext(Dispatchers.IO) {
-                ApiClient.get().searchProducts(q = query.ifBlank { null })
+                ApiClient.get().searchProducts(page = 1, q = query.ifBlank { null })
             }
             val count = withContext(Dispatchers.IO) {
                 ApiClient.get().getUnreadCount().getOrDefault(0)
@@ -91,13 +99,32 @@ fun HomeScreen(
             loading = false
             result.onSuccess {
                 products = it.items
+                hasMore = it.hasMore
                 OfflineCache.get(context).saveProducts(it.items)
             }.onFailure {
+                hasMore = false
                 val cached = OfflineCache.get(context).loadProducts()
                 if (cached.isNotEmpty()) {
                     products = cached
                     offline = true
                 } else error = it.message
+            }
+        }
+    }
+
+    fun loadMore() {
+        if (!hasMore || loadingMore) return
+        scope.launch {
+            loadingMore = true
+            val next = page + 1
+            val result = withContext(Dispatchers.IO) {
+                ApiClient.get().searchProducts(page = next, q = query.ifBlank { null })
+            }
+            loadingMore = false
+            result.onSuccess {
+                products = products + it.items
+                page = next
+                hasMore = it.hasMore
             }
         }
     }
@@ -173,7 +200,16 @@ fun HomeScreen(
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .clickable { CartStore.addProduct(product) }
+                                .combinedClickable(
+                                    onClick = {
+                                        if (orderType == "RENT") {
+                                            availabilityProduct = product
+                                        } else {
+                                            CartStore.addProduct(product)
+                                        }
+                                    },
+                                    onLongClick = { onEditProduct(product.id) },
+                                )
                                 .padding(12.dp)
                         ) {
                             Text(product.name, style = MaterialTheme.typography.titleMedium)
@@ -184,8 +220,24 @@ fun HomeScreen(
                             product.barcode?.let { Text("Barcode: $it", style = MaterialTheme.typography.labelSmall) }
                         }
                     }
+                    if (hasMore) {
+                        item {
+                            Button(
+                                onClick = { loadMore() },
+                                enabled = !loadingMore,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(R.string.load_more)) }
+                        }
+                    }
                 }
             }
+        }
+        availabilityProduct?.let { p ->
+            AvailabilitySheet(
+                product = p,
+                onDismiss = { availabilityProduct = null },
+                onAddAnyway = {},
+            )
         }
     }
 }

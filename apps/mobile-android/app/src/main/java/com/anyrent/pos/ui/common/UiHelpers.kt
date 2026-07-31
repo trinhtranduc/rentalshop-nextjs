@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,4 +43,13 @@ fun nextOrderStatuses(orderType: String, status: String): List<String> {
     val current = runCatching { SharedOrderStatus.valueOf(status.uppercase()) }
         .getOrDefault(SharedOrderStatus.RESERVED)
     return OrderStatusFlow.next(type, current).map { it.name }
+}
+
+
+fun orderStatusColor(status: String): Color = when (status.uppercase()) {
+    "RESERVED" -> Color(0xFF2563EB)
+    "PICKUPED" -> Color(0xFFD97706)
+    "RETURNED", "COMPLETED" -> Color(0xFF16A34A)
+    "CANCELLED" -> Color(0xFFDC2626)
+    else -> Color(0xFF6B7280)
 }

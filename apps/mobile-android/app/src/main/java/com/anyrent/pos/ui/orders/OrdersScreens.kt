@@ -31,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +65,9 @@ fun OrdersScreen(
     var orderType by remember { mutableStateOf<String?>(null) }
     var orders by remember { mutableStateOf<List<OrderSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var loadingMore by remember { mutableStateOf(false) }
+    var page by remember { mutableIntStateOf(1) }
+    var hasMore by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var offline by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -74,14 +78,17 @@ fun OrdersScreen(
             loading = true
             error = null
             offline = false
+            page = 1
             val result = withContext(Dispatchers.IO) {
                 ApiClient.get().searchOrders(page = 1, q = query.ifBlank { null }, status = status, orderType = orderType)
             }
             loading = false
             result.onSuccess {
                 orders = it.items
+                hasMore = it.hasMore
                 OfflineCache.get(context).saveOrders(it.items)
             }.onFailure {
+                hasMore = false
                 val cached = OfflineCache.get(context).loadOrders()
                 if (cached.isNotEmpty()) {
                     orders = cached
@@ -89,6 +96,23 @@ fun OrdersScreen(
                 } else {
                     error = it.message
                 }
+            }
+        }
+    }
+
+    fun loadMore() {
+        if (!hasMore || loadingMore) return
+        scope.launch {
+            loadingMore = true
+            val next = page + 1
+            val result = withContext(Dispatchers.IO) {
+                ApiClient.get().searchOrders(page = next, q = query.ifBlank { null }, status = status, orderType = orderType)
+            }
+            loadingMore = false
+            result.onSuccess {
+                orders = orders + it.items
+                page = next
+                hasMore = it.hasMore
             }
         }
     }
@@ -148,6 +172,15 @@ fun OrdersScreen(
                         Text("${order.orderType} · ${order.status}")
                         Text(order.customerName ?: "—")
                         Text(formatMoney(order.totalAmount), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                if (hasMore) {
+                    item {
+                        Button(
+                            onClick = { loadMore() },
+                            enabled = !loadingMore,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(stringResource(R.string.load_more)) }
                     }
                 }
             }

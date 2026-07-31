@@ -203,13 +203,35 @@ object ApiParity {
             json.optJSONObject("data")?.toString() ?: json.toString()
         }
 
-    fun createProductFull(
+    data class Category(val id: Int, val name: String)
+
+    data class AvailabilityConflict(
+        val orderId: Int?,
+        val orderNumber: String?,
+        val from: String?,
+        val to: String?,
+        val message: String,
+    )
+
+    fun listCategories(): Result<List<Category>> = runCatching {
+        val json = ApiClient.get().authedGet("/api/categories?page=1&limit=100")
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val arr = data.optJSONArray("categories") ?: JSONArray()
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            Category(id = o.optInt("id"), name = o.optString("name"))
+        }
+    }
+
+    fun updateProductFull(
+        id: Int,
         name: String,
         rentPrice: Double,
         salePrice: Double?,
         stock: Int,
         barcode: String?,
         deposit: Double,
+        categoryId: Int?,
         imageFile: File?,
     ): Result<Product> = runCatching {
         val outletId = SessionStore.outletId
@@ -221,6 +243,131 @@ object ApiParity {
             .apply {
                 if (salePrice != null) put("salePrice", salePrice)
                 if (!barcode.isNullOrBlank()) put("barcode", barcode)
+                if (categoryId != null) put("categoryId", categoryId)
+                if (outletId != null) {
+                    put("outletId", outletId)
+                    put(
+                        "outletStock",
+                        JSONArray().put(JSONObject().put("outletId", outletId).put("stock", stock)),
+                    )
+                }
+            }
+        if (imageFile == null) {
+            val body = data.toString().toRequestBody(jsonMedia)
+            ApiClient.get().authedPut("/api/products/$id", body)
+            return@runCatching ApiClient.get().getProduct(id).getOrThrow()
+        }
+        val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("data", data.toString())
+            .addFormDataPart(
+                "images",
+                imageFile.name,
+                imageFile.asRequestBody("image/*".toMediaType()),
+            )
+            .build()
+        ApiClient.get().authedMultipartPut("/api/products/$id", multipart)
+        ApiClient.get().getProduct(id).getOrThrow()
+    }
+
+    fun deleteProduct(id: Int): Result<Unit> = runCatching {
+        ApiClient.get().authedDelete("/api/products/$id")
+        Unit
+    }
+
+    fun productAvailabilityParsed(
+        productId: Int,
+        startDate: String,
+        endDate: String,
+    ): Result<List<AvailabilityConflict>> = runCatching {
+        val path = "/api/products/$productId/availability?startDate=$startDate&endDate=$endDate"
+        val json = ApiClient.get().authedGet(path)
+        val data = json.optJSONObject("data") ?: json
+        val conflicts = data.optJSONArray("conflicts")
+            ?: data.optJSONArray("overlappingOrders")
+            ?: data.optJSONArray("orders")
+            ?: JSONArray()
+        if (conflicts.length() == 0 && data.optBoolean("available", true)) {
+            emptyList()
+        } else {
+            (0 until conflicts.length()).map { i ->
+                val o = conflicts.getJSONObject(i)
+                AvailabilityConflict(
+                    orderId = o.optInt("id").takeIf { o.has("id") && it > 0 }
+                        ?: o.optInt("orderId").takeIf { it > 0 },
+                    orderNumber = o.optString("orderNumber").takeIf { it.isNotBlank() },
+                    from = o.optString("pickupPlanAt").ifBlank { o.optString("startDate") }.takeIf { it.isNotBlank() },
+                    to = o.optString("returnPlanAt").ifBlank { o.optString("endDate") }.takeIf { it.isNotBlank() },
+                    message = o.optString("message").ifBlank {
+                        "${o.optString("orderNumber")} ${o.optString("status")}"
+                    },
+                )
+            }
+        }
+    }
+
+    fun batchAvailability(
+        productIds: List<Int>,
+        startDate: String,
+        endDate: String,
+    ): Result<Map<Int, List<AvailabilityConflict>>> = runCatching {
+        val body = JSONObject()
+            .put("productIds", JSONArray(productIds))
+            .put("startDate", startDate)
+            .put("endDate", endDate)
+            .toString()
+            .toRequestBody(jsonMedia)
+        val json = runCatching {
+            ApiClient.get().authedPost("/api/products/batch-availability", body)
+        }.getOrElse {
+            // Fallback: call per product
+            return@runCatching productIds.associateWith { id ->
+                productAvailabilityParsed(id, startDate, endDate).getOrDefault(emptyList())
+            }
+        }
+        val data = json.optJSONObject("data") ?: json
+        val map = mutableMapOf<Int, List<AvailabilityConflict>>()
+        productIds.forEach { id ->
+            val key = id.toString()
+            val arr = data.optJSONObject(key)?.optJSONArray("conflicts")
+                ?: data.optJSONArray(key)
+            if (arr != null) {
+                map[id] = (0 until arr.length()).map { i ->
+                    val o = arr.getJSONObject(i)
+                    AvailabilityConflict(
+                        orderId = o.optInt("orderId").takeIf { it > 0 } ?: o.optInt("id").takeIf { it > 0 },
+                        orderNumber = o.optString("orderNumber").takeIf { it.isNotBlank() },
+                        from = o.optString("pickupPlanAt").takeIf { it.isNotBlank() },
+                        to = o.optString("returnPlanAt").takeIf { it.isNotBlank() },
+                        message = o.optString("message").ifBlank { o.optString("orderNumber") },
+                    )
+                }
+            } else {
+                map[id] = productAvailabilityParsed(id, startDate, endDate).getOrDefault(emptyList())
+            }
+        }
+        map
+    }
+
+    fun createProductFull(
+        name: String,
+        rentPrice: Double,
+        salePrice: Double?,
+        stock: Int,
+        barcode: String?,
+        deposit: Double,
+        categoryId: Int? = null,
+        imageFile: File?,
+    ): Result<Product> = runCatching {
+        val outletId = SessionStore.outletId
+        val data = JSONObject()
+            .put("name", name)
+            .put("rentPrice", rentPrice)
+            .put("totalStock", stock)
+            .put("deposit", deposit)
+            .apply {
+                if (salePrice != null) put("salePrice", salePrice)
+                if (!barcode.isNullOrBlank()) put("barcode", barcode)
+                if (categoryId != null) put("categoryId", categoryId)
                 if (outletId != null) {
                     put("outletId", outletId)
                     put(

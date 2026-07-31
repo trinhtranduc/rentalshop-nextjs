@@ -25,6 +25,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,6 +51,9 @@ fun CustomersScreen(
     onBack: (() -> Unit)? = null,
 ) {
     var query by remember { mutableStateOf("") }
+    var page by remember { mutableIntStateOf(1) }
+    var hasMore by remember { mutableStateOf(false) }
+    var loadingMore by remember { mutableStateOf(false) }
     var customers by remember { mutableStateOf<List<Customer>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -61,10 +65,30 @@ fun CustomersScreen(
         scope.launch {
             loading = true
             val result = withContext(Dispatchers.IO) {
-                ApiClient.get().searchCustomers(q = query.ifBlank { null })
+                ApiClient.get().searchCustomers(page = 1, q = query.ifBlank { null })
             }
             loading = false
-            result.onSuccess { customers = it.items }.onFailure { error = it.message }
+            result.onSuccess { customers = it.items
+                hasMore = it.hasMore
+                page = 1 }.onFailure { error = it.message }
+        }
+    }
+
+
+    fun loadMore() {
+        if (!hasMore || loadingMore) return
+        scope.launch {
+            loadingMore = true
+            val next = page + 1
+            val result = withContext(Dispatchers.IO) {
+                ApiClient.get().searchCustomers(page = next, q = query.ifBlank { null })
+            }
+            loadingMore = false
+            result.onSuccess {
+                customers = customers + it.items
+                page = next
+                hasMore = it.hasMore
+            }
         }
     }
 
@@ -138,6 +162,15 @@ fun CustomersScreen(
                         ) {
                             Text(customer.displayName, style = MaterialTheme.typography.titleMedium)
                             Text(customer.phone ?: customer.email ?: "—")
+                        }
+                    }
+                    if (hasMore) {
+                        item {
+                            Button(
+                                onClick = { loadMore() },
+                                enabled = !loadingMore,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(R.string.load_more)) }
                         }
                     }
                 }

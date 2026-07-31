@@ -176,6 +176,15 @@ fun CartCheckoutScreen(onBack: () -> Unit, onPickCustomer: () -> Unit, onCreated
                     loading = true
                     error = null
                     scope.launch {
+                        if (orderType == "RENT") {
+                            val conflicts = withContext(Dispatchers.IO) { checkCartAvailability() }
+                            val blocked = conflicts.filter { it.value.isNotEmpty() }
+                            if (blocked.isNotEmpty()) {
+                                loading = false
+                                error = "Availability conflicts: " + blocked.keys.joinToString()
+                                return@launch
+                            }
+                        }
                         val days = CartStore.rentalDaysInclusive()
                         val result = withContext(Dispatchers.IO) {
                             ApiClient.get().createOrder(
