@@ -514,6 +514,35 @@ export async function PUT(
         }
       }
 
+      // Field-level pricing: OUTLET_STAFF has products.update (name/stock/images) but NOT
+      // products.manage. Without this strip, staff could change rent/sale/cost via API
+      // even when the web form later disables those inputs.
+      const canManagePricing = await hasPermission(user, 'products.manage');
+      if (!canManagePricing) {
+        const protectedPricingFields = [
+          'rentPrice',
+          'salePrice',
+          'costPrice',
+          'pricingOptions',
+          'pricingType',
+          'durationConfig',
+        ] as const;
+        const attempted = protectedPricingFields.filter(
+          (field) => (productUpdateData as any)[field] !== undefined
+        );
+        if (attempted.length > 0) {
+          console.log('🔒 Stripping product pricing fields for non-manage user:', {
+            userId: user.id,
+            role: user.role,
+            productId,
+            fields: attempted,
+          });
+          for (const field of attempted) {
+            delete (productUpdateData as any)[field];
+          }
+        }
+      }
+
       // Prepare outletStock nested write if provided
       let finalUpdateData: any = { ...productUpdateData };
       

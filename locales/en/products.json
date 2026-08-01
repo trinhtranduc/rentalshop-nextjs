@@ -103,7 +103,8 @@
     "durationUnitHours": "hours",
     "durationUnitDays": "days",
     "exampleHourly": "Example: Min 1 hour, Max 168 hours (1 week), Default 4 hours",
-    "exampleDaily": "Example: Min 1 day, Max 30 days, Default 3 days"
+    "exampleDaily": "Example: Min 1 day, Max 30 days, Default 3 days",
+    "readOnlyHint": "Only managers can change rental and sale prices."
   },
   "actions": {
     "viewDetails": "View Details",

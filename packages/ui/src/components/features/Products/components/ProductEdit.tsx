@@ -36,7 +36,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const { hasPermission } = usePermissions();
-  const canManageProducts = hasPermission('products.manage'); // Only users with manage permission can view/edit cost price
+  const canManageProducts = hasPermission('products.manage'); // Cost + rent/sale on edit require products.manage
 
   // Debug: Log product data structure and props
   useEffect(() => {

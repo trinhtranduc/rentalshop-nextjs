@@ -102,7 +102,8 @@
     "durationUnitHours": "giờ",
     "durationUnitDays": "ngày",
     "exampleHourly": "Ví dụ: Tối thiểu 1 giờ, Tối đa 168 giờ (1 tuần), Mặc định 4 giờ",
-    "exampleDaily": "Ví dụ: Tối thiểu 1 ngày, Tối đa 30 ngày, Mặc định 3 ngày"
+    "exampleDaily": "Ví dụ: Tối thiểu 1 ngày, Tối đa 30 ngày, Mặc định 3 ngày",
+    "readOnlyHint": "Chỉ quản lý mới được sửa giá thuê và giá bán."
   },
   "actions": {
     "viewDetails": "Xem chi tiết",
