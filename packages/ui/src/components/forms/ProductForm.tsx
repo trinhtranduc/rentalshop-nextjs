@@ -122,7 +122,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
   const { hasPermission } = usePermissions();
-  const canManageProducts = hasPermission('products.manage'); // Only users with manage permission can view/edit cost price
+  // products.manage (ADMIN/MERCHANT/OUTLET_ADMIN): full pricing including cost.
+  // OUTLET_STAFF has products.update only — may set prices on create, not change them on edit.
+  const canManageProducts = hasPermission('products.manage');
+  const canEditPricing = canManageProducts || mode === 'create';
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -350,11 +353,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.categoryId = tv('fields.category.required');
     }
 
-    if (formData.rentPrice <= 0) {
+    if (canEditPricing && formData.rentPrice <= 0) {
       newErrors.rentPrice = tv('fields.rentPrice.required');
     }
 
-    if (formData.salePrice <= 0) {
+    if (canEditPricing && formData.salePrice <= 0) {
       newErrors.salePrice = tv('fields.salePrice.required');
     }
 
@@ -452,11 +455,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         newErrors.categoryId = tv('fields.category.required');
       }
 
-      if (formData.rentPrice <= 0) {
+      if (canEditPricing && formData.rentPrice <= 0) {
         newErrors.rentPrice = tv('fields.rentPrice.required');
       }
 
-      if (formData.salePrice <= 0) {
+      if (canEditPricing && formData.salePrice <= 0) {
         newErrors.salePrice = tv('fields.salePrice.required');
       }
 
@@ -505,19 +508,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       description: formData.description,
       barcode: formData.barcode,
       totalStock: formData.totalStock,
-      // Sync rentPrice to the default option's price when options are used (backward compat)
-      rentPrice: hasOptions ? defaultOption.price : formData.rentPrice,
-      salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
+      // Pricing: staff can set on create; on edit only products.manage may change prices.
+      ...(canEditPricing
+        ? {
+            rentPrice: hasOptions ? defaultOption.price : formData.rentPrice,
+            salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
+            pricingType: hasOptions ? defaultOption.type : (formData.pricingType || null),
+            durationConfig: null,
+            ...(hasOptions ? { pricingOptions: validOptions } : {}),
+          }
+        : {}),
       // Only include costPrice if user has products.manage permission
       ...(canManageProducts && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
-      // Derive pricingType from the default option (backward compat); durationConfig no longer required for options
-      pricingType: hasOptions ? defaultOption.type : (formData.pricingType || null),
-      durationConfig: null,
-      // Multiple pricing options (Phase 1: FIXED + DAILY)
-      ...(hasOptions ? { pricingOptions: validOptions } : {}),
     };
 
     // Pass files when using multipart upload
@@ -959,6 +964,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Compact pricing — no dynamic "add price" rows */}
             <div className="pt-3 border-t border-border space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground">{t('pricing.title')}</h3>
+              {!canEditPricing && (
+                <p className="text-[11px] text-muted-foreground">
+                  {t('pricing.readOnlyHint')}
+                </p>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -971,6 +981,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     required
                     allowDecimals={true}
                     maxDecimalPlaces={2}
+                    disabled={!canEditPricing}
                   />
                   {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
                 </div>
@@ -983,6 +994,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     placeholder="0.00"
                     allowDecimals={true}
                     maxDecimalPlaces={2}
+                    disabled={!canEditPricing}
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
                     {t('pricing.dailyDescription')}
@@ -1013,6 +1025,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     error={!!errors.salePrice}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
+                    disabled={!canEditPricing}
                   />
                   {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
                 </div>
