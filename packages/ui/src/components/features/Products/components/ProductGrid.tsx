@@ -32,8 +32,8 @@ export function ProductGrid({
   onError,
   showAddButton = false
 }: ProductGridProps) {
-  // ✅ Use permissions hook to check if user can manage products
-  const { canAddOrEditProducts } = usePermissions();
+  // Create vs update are separate: staff may create but must not see Edit.
+  const { canCreateProducts, canUpdateProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleAddProduct = () => {
@@ -67,7 +67,7 @@ export function ProductGrid({
             Try adjusting your filters or add some products to get started.
           </p>
           {/* ✅ Only show Add Product button if user can manage products */}
-          {showAddButton && canAddOrEditProducts && categories.length > 0 && outlets.length > 0 && merchantId && (
+          {showAddButton && canCreateProducts && categories.length > 0 && outlets.length > 0 && merchantId && (
             <Button
               onClick={handleAddProduct}
               className="px-4 py-2"
@@ -99,7 +99,11 @@ export function ProductGrid({
             outlet={{ name: product.outletName }}
             pricingType={(product as any).pricingType}
             onView={(productId) => onProductAction('view', productId)}
-            onEdit={(productId) => onProductAction('edit', productId)}
+            onEdit={
+              canUpdateProducts
+                ? (productId) => onProductAction('edit', productId)
+                : undefined
+            }
             onDelete={(productId) => onProductAction('delete', productId)}
             variant="admin"
             // Enhanced props for edit functionality

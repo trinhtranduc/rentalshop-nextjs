@@ -46,7 +46,7 @@ export function ProductTable({
   scopedOutletId
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
-  const { canManageProducts, canAddOrEditProducts, canViewProducts, canDeleteOrders } = usePermissions();
+  const { canManageProducts, canUpdateProducts, canViewProducts, canDeleteOrders } = usePermissions();
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
@@ -387,8 +387,8 @@ export function ProductTable({
                       </DropdownMenuItem>
                       )}
                       
-                      {/* ✅ Edit - manage, or staff with products.create/update */}
-                      {canAddOrEditProducts && (
+                      {/* ✅ Edit - products.manage or products.update (not OUTLET_STAFF) */}
+                      {canUpdateProducts && (
                       <DropdownMenuItem onClick={() => {
                         onProductAction('edit', product.id);
                         setOpenDropdownId(null);
