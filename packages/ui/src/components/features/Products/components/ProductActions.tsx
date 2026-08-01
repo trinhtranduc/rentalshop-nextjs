@@ -28,7 +28,7 @@ export function ProductActions({
   onError
 }: ProductActionsProps) {
   // ✅ Use permissions hook for UI control
-  const { canManageProducts, canAddOrEditProducts, canExportProducts } = usePermissions();
+  const { canManageProducts, canCreateProducts, canExportProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
@@ -70,7 +70,7 @@ export function ProductActions({
       icon: '➕',
       variant: 'default' as const,
       onClick: handleAddProduct,
-      roles: canAddOrEditProducts ? ['ALL'] : []
+      roles: canCreateProducts ? ['ALL'] : []
     },
     {
       id: 'import-products',

@@ -229,7 +229,7 @@ export async function GET(
  * - Product data: JSON string in 'data' field
  * - Files (optional): File objects in 'images' field
  * 
- * Authorization: `products.manage` OR `products.update` (e.g. OUTLET_STAFF may update only)
+ * Authorization: `products.manage` OR `products.update` (OUTLET_STAFF has neither — cannot update)
  */
 export async function PUT(
   request: NextRequest,
@@ -514,9 +514,8 @@ export async function PUT(
         }
       }
 
-      // Field-level pricing: OUTLET_STAFF has products.update (name/stock/images) but NOT
-      // products.manage. Without this strip, staff could change rent/sale/cost via API
-      // even when the web form later disables those inputs.
+      // Defense in depth: users with products.update but not products.manage must not
+      // change pricing fields (rent/sale/cost/options). Default OUTLET_STAFF has no update.
       const canManagePricing = await hasPermission(user, 'products.manage');
       if (!canManagePricing) {
         const protectedPricingFields = [

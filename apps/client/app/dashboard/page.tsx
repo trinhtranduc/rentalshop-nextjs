@@ -271,7 +271,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // ✅ Use permissions hook to check permissions
-  const { canAddOrEditProducts, hasPermission, canViewRevenue, canViewOrderAnalytics, canViewCustomerAnalytics, canViewProductAnalytics } = usePermissions();
+  const { canCreateProducts, hasPermission, canViewRevenue, canViewOrderAnalytics, canViewCustomerAnalytics, canViewProductAnalytics } = usePermissions();
   const locale = useNextIntlLocale() as 'en' | 'vi';
   
   // Check if user has full analytics access (not just dashboard)
@@ -1885,7 +1885,7 @@ export default function DashboardPage() {
               <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addCustomer')}</p>
             </Button>
             
-            {canAddOrEditProducts && (
+            {canCreateProducts && (
               <Button
                 variant="ghost"
                 className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"

@@ -14,7 +14,7 @@ import {
 import { ProductEdit } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth, useDedupedApi } from '@rentalshop/hooks';
+import { useAuth, useDedupedApi, usePermissions } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi, 
@@ -27,6 +27,7 @@ export default function ProductEditPage() {
   const router = useRouter();
   const params = useParams();
   const { user, loading: authLoading } = useAuth();
+  const { canUpdateProducts } = usePermissions();
   
   const [merchantIdForOutlets, setMerchantIdForOutlets] = useState<number | null>(null);
 
@@ -179,6 +180,31 @@ export default function ProductEditPage() {
         </PageHeader>
         <PageContent>
           <ProductsLoading />
+        </PageContent>
+      </PageWrapper>
+    );
+  }
+
+  // Staff (and anyone without products.update/manage) cannot edit existing products
+  if (!authLoading && user && !canUpdateProducts) {
+    return (
+      <PageWrapper>
+        <PageContent>
+          <Card>
+            <div className="p-6 text-center">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+              <p className="text-muted-foreground mb-4">
+                You do not have permission to edit products.
+              </p>
+              <div className="flex justify-center space-x-2">
+                <Button variant="outline" onClick={handleBack}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Products
+                </Button>
+              </div>
+            </div>
+          </Card>
         </PageContent>
       </PageWrapper>
     );

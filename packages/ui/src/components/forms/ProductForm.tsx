@@ -122,8 +122,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
   const { hasPermission } = usePermissions();
-  // products.manage (ADMIN/MERCHANT/OUTLET_ADMIN): full pricing including cost.
-  // OUTLET_STAFF has products.update only — may set prices on create, not change them on edit.
+  // products.manage: full pricing including cost on edit.
+  // Create mode: anyone who can open the form may set prices (staff has products.create).
+  // Edit mode: only products.manage (staff cannot update products at all).
   const canManageProducts = hasPermission('products.manage');
   const canEditPricing = canManageProducts || mode === 'create';
   

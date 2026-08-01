@@ -75,7 +75,7 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
       {
         key: 'products.update',
         label: 'Update Products',
-        description: 'Allow editing existing products (without full manage)',
+        description: 'Allow editing existing products (without full manage). Not granted to OUTLET_STAFF by default.',
       },
       {
         key: 'products.manage',
