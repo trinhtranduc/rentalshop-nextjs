@@ -173,13 +173,20 @@ export function usePermissions() {
    * Convenience methods for common permission checks
    */
   const canManageProducts = useMemo(() => hasPermission('products.manage'), [hasPermission]);
-  /** Create or edit catalog items (includes OUTLET_STAFF with create/update only; excludes delete/import unless manage) */
-  const canAddOrEditProducts = useMemo(
-    () =>
-      hasPermission('products.manage') ||
-      hasPermission('products.create') ||
-      hasPermission('products.update'),
+  /** Create catalog items (manage OR create). OUTLET_STAFF may create but not update. */
+  const canCreateProducts = useMemo(
+    () => hasPermission('products.manage') || hasPermission('products.create'),
     [hasPermission]
+  );
+  /** Edit existing products (manage OR update). OUTLET_STAFF has neither update nor manage. */
+  const canUpdateProducts = useMemo(
+    () => hasPermission('products.manage') || hasPermission('products.update'),
+    [hasPermission]
+  );
+  /** Add or edit — prefer canCreateProducts / canUpdateProducts for precise gates. */
+  const canAddOrEditProducts = useMemo(
+    () => canCreateProducts || canUpdateProducts,
+    [canCreateProducts, canUpdateProducts]
   );
   const canViewProducts = useMemo(() => hasPermission('products.view'), [hasPermission]);
   const canExportProducts = useMemo(() => hasPermission('products.export'), [hasPermission]);
@@ -230,6 +237,8 @@ export function usePermissions() {
     
     // Convenience methods for products
     canManageProducts,
+    canCreateProducts,
+    canUpdateProducts,
     canAddOrEditProducts,
     canViewProducts,
     canExportProducts,

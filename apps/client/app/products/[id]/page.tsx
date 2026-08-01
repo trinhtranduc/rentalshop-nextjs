@@ -30,7 +30,7 @@ export default function ProductViewPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { canManageProducts, canAddOrEditProducts } = usePermissions();
+  const { canManageProducts, canUpdateProducts } = usePermissions();
   const { toastSuccess, removeToast } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -210,7 +210,7 @@ export default function ProductViewPage() {
               <BarChart3 className="h-4 w-4 mr-2" />
               {t('actions.viewOrders')}
             </Button>
-            {canAddOrEditProducts && (
+            {canUpdateProducts && (
             <Button onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
               {t('editProduct')}

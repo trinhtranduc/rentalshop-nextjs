@@ -93,7 +93,7 @@ export function Products({
   className = ""
 }: ProductsProps) {
   
-  const { canAddOrEditProducts } = usePermissions();
+  const { canCreateProducts } = usePermissions();
   
   // Get translations
   const t = useProductTranslations();
@@ -140,7 +140,7 @@ export function Products({
           title={title}
           subtitle={subtitle}
         >
-          {showAddButton && canAddOrEditProducts && (
+          {showAddButton && canCreateProducts && (
             <Button
               onClick={handleAddProduct}
               className="flex items-center space-x-2"
