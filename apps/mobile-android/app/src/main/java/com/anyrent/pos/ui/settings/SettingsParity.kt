@@ -2,14 +2,21 @@ package com.anyrent.pos.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +29,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,8 +37,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
@@ -39,58 +48,193 @@ import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.print.ThermalPrinter
+import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppFilterChip
+import com.anyrent.pos.ui.common.AppInputField
+import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppSecondaryButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.TextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoreInfoScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     val canEdit = PermissionManager.canManageStore()
     var name by remember { mutableStateOf(SessionStore.outletName ?: SessionStore.merchantName.orEmpty()) }
     var address by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var loadingInitial by remember { mutableStateOf(true) }
+    var submitted by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        val outletId = SessionStore.outletId
+        if (outletId == null) {
+            loadingInitial = false
+            return@LaunchedEffect
+        }
+        val result = withContext(Dispatchers.IO) { ApiParity.getOutlet(outletId) }
+        result.onSuccess { outlet ->
+            name = outlet.name
+            address = outlet.address.orEmpty()
+            phone = outlet.phone.orEmpty()
+            SessionStore.outletName = outlet.name
+        }
+        loadingInitial = false
+    }
+
+    fun saveStore() {
+        submitted = true
+        message = null
+        if (name.isBlank()) {
+            error = context.getString(R.string.invalid_store_input)
+            return
+        }
+        val outletId = SessionStore.outletId
+        if (outletId == null) {
+            error = context.getString(R.string.no_outlet_assigned)
+            return
+        }
+        loading = true
+        error = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ApiParity.updateOutlet(outletId, name, address, phone)
+            }
+            loading = false
+            result.onSuccess {
+                SessionStore.outletName = name
+                message = context.getString(R.string.saved)
+            }.onFailure { error = it.message }
+        }
+    }
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.store_info)) },
+                title = {
+                    Text(
+                        stringResource(R.string.store_info),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                     }
                 },
             )
-        }
-    ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("${SessionStore.userName} · ${roleDisplayValue(SessionStore.role)}")
-            Text("Merchant: ${SessionStore.merchantName ?: SessionStore.merchantId}")
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.store_name)) }, enabled = canEdit, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text(stringResource(R.string.address)) }, enabled = canEdit, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text(stringResource(R.string.phone)) }, enabled = canEdit, modifier = Modifier.fillMaxWidth())
+        },
+        bottomBar = {
             if (canEdit) {
-                Button(
-                    onClick = {
-                        val outletId = SessionStore.outletId
-                        if (outletId == null) { error = "No outlet"; return@Button }
-                        scope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                ApiParity.updateOutlet(outletId, name, address, phone)
-                            }
-                            result.onSuccess {
-                                SessionStore.outletName = name
-                                message = "Saved"
-                            }.onFailure { error = it.message }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.save)) }
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    AppPrimaryButton(
+                        text = if (loading) stringResource(R.string.loading)
+                        else stringResource(R.string.save),
+                        onClick = ::saveStore,
+                        enabled = !loading && !loadingInitial,
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        SessionStore.userName ?: "—",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        roleDisplayValue(SessionStore.role),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        stringResource(
+                            R.string.merchant_label,
+                            SessionStore.merchantName ?: SessionStore.merchantId?.toString() ?: "—",
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (loadingInitial) {
+                        Text(
+                            stringResource(R.string.loading),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        AppInputField(
+                            value = name,
+                            onValueChange = { if (canEdit) name = it },
+                            label = stringResource(R.string.store_name_required),
+                            isError = submitted && name.isBlank(),
+                        )
+                        AppInputField(
+                            value = address,
+                            onValueChange = { if (canEdit) address = it },
+                            label = stringResource(R.string.address),
+                            singleLine = false,
+                            minLines = 2,
+                        )
+                        AppInputField(
+                            value = phone,
+                            onValueChange = { if (canEdit) phone = it },
+                            label = stringResource(R.string.phone),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        )
+                    }
+                }
+            }
+
+            if (!canEdit) {
+                Text(
+                    stringResource(R.string.no_permission_manage_store),
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -122,13 +266,36 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.printer_hint))
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.printer_name)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = ip, onValueChange = { ip = it }, label = { Text(stringResource(R.string.printer_ip)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = port, onValueChange = { port = it }, label = { Text(stringResource(R.string.printer_port)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = paper, onValueChange = { paper = it }, label = { Text(stringResource(R.string.paper_width)) }, modifier = Modifier.fillMaxWidth())
-            Button(
+        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(
+                stringResource(R.string.printer_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            AppInputField(
+                value = name,
+                onValueChange = { name = it },
+                label = stringResource(R.string.printer_name),
+            )
+            AppInputField(
+                value = ip,
+                onValueChange = { ip = it },
+                label = stringResource(R.string.printer_ip),
+            )
+            AppInputField(
+                value = port,
+                onValueChange = { port = it.filter(Char::isDigit) },
+                label = stringResource(R.string.printer_port),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            )
+            AppInputField(
+                value = paper,
+                onValueChange = { paper = it.filter(Char::isDigit) },
+                label = stringResource(R.string.paper_width),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            )
+            AppPrimaryButton(
+                text = stringResource(R.string.save),
                 onClick = {
                     prefs.edit()
                         .putString("printerName", name)
@@ -138,9 +305,9 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                         .apply()
                     message = "Saved"
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.save)) }
-            Button(
+            )
+            AppSecondaryButton(
+                text = stringResource(R.string.test_print),
                 onClick = {
                     val config = ThermalPrinter.Config(
                         ip = ip,
@@ -156,8 +323,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.test_print)) }
+            )
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
     }
@@ -237,57 +403,77 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
             )
         }
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedTextField(value = firstName, onValueChange = { firstName = it }, label = { Text(stringResource(R.string.first_name)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text(stringResource(R.string.last_name)) }, modifier = Modifier.fillMaxWidth())
+        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppInputField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = stringResource(R.string.first_name),
+            )
+            AppInputField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = stringResource(R.string.last_name),
+            )
             if (initial == null) {
-                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text(stringResource(R.string.email)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(
+                AppInputField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = stringResource(R.string.email),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                )
+                AppInputField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text(stringResource(R.string.password)) },
+                    label = stringResource(R.string.password),
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
                 )
-                OutlinedTextField(
+                AppInputField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { Text(stringResource(R.string.confirm_password)) },
+                    label = stringResource(R.string.confirm_password),
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
                 )
             }
-            Text("Role", style = MaterialTheme.typography.titleMedium)
-            androidx.compose.foundation.layout.Row(
+            Text(
+                "Role",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            )
+            Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 listOf("OUTLET_ADMIN", "OUTLET_STAFF").forEach { roleKey ->
-                    FilterChip(
+                    AppFilterChip(
+                        label = roleDisplayValue(roleKey),
                         selected = role == roleKey,
                         onClick = { role = roleKey },
-                        label = { Text(roleDisplayValue(roleKey)) },
                         modifier = Modifier.weight(1f),
                     )
                 }
             }
-            androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.active))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.active),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
                 Switch(checked = active, onCheckedChange = { active = it })
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(
+            AppPrimaryButton(
+                text = stringResource(R.string.save),
                 onClick = {
                     if (firstName.isBlank() || email.isBlank() && initial == null) {
                         error = "Name and email are required"
-                        return@Button
+                        return@AppPrimaryButton
                     }
                     if (initial == null && (password.length < 6 || password != confirmPassword)) {
                         error = if (password.length < 6) "Password must contain at least 6 characters"
                         else "Passwords do not match"
-                        return@Button
+                        return@AppPrimaryButton
                     }
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
@@ -300,8 +486,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
                         result.onSuccess { onSaved() }.onFailure { error = it.message }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.save)) }
+            )
         }
     }
 }

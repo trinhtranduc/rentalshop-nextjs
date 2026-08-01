@@ -53,6 +53,7 @@
     <string name="empty_customers">No customers</string>
     <string name="new_customer">New customer</string>
     <string name="edit_customer">Edit customer</string>
+    <string name="add_customer">Add Customer</string>
     <string name="add_new_customer">Add new customer</string>
     <string name="search_customers_hint">Search by customer name, phone</string>
     <string name="view_orders">View orders</string>
@@ -61,14 +62,20 @@
     <string name="delete_customer_confirm">Delete %1$s? This action cannot be undone.</string>
     <string name="customer_actions">Customer actions</string>
     <string name="first_name">First name</string>
+    <string name="first_name_required">First name *</string>
     <string name="last_name">Last name</string>
     <string name="phone">Phone</string>
     <string name="address">Address</string>
+    <string name="invalid_customer_input">Enter the customer first name.</string>
     <string name="delete">Delete</string>
     <string name="empty_calendar">No orders this month</string>
     <string name="top_products">Top products</string>
     <string name="top_customers">Top customers</string>
     <string name="store_info">Store information</string>
+    <string name="merchant_label">Merchant: %1$s</string>
+    <string name="invalid_store_input">Enter the store name.</string>
+    <string name="no_outlet_assigned">No outlet assigned to this account.</string>
+    <string name="no_permission_manage_store">No permission to manage store information.</string>
     <string name="user_management">User management</string>
     <string name="printer_config">Printer configuration</string>
     <string name="export_data">Export data</string>
@@ -333,6 +340,7 @@
     <string name="completed">Completed</string>
     <string name="cancelled">Cancelled</string>
     <string name="ok">OK</string>
+    <string name="error">Error</string>
     <string name="could_not_create_order">Could not create order</string>
     <string name="cart_empty_error">Add at least one product before previewing the order.</string>
     <string name="customer_required_error">Select a customer before previewing the order.</string>

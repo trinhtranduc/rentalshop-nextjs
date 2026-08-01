@@ -53,6 +53,7 @@
     <string name="empty_customers">Không có khách hàng</string>
     <string name="new_customer">Khách mới</string>
     <string name="edit_customer">Sửa khách</string>
+    <string name="add_customer">Thêm khách hàng</string>
     <string name="add_new_customer">Thêm khách hàng mới</string>
     <string name="search_customers_hint">Tìm theo tên hoặc số điện thoại</string>
     <string name="view_orders">Xem đơn hàng</string>
@@ -61,14 +62,20 @@
     <string name="delete_customer_confirm">Xóa %1$s? Thao tác này không thể hoàn tác.</string>
     <string name="customer_actions">Thao tác khách hàng</string>
     <string name="first_name">Họ</string>
+    <string name="first_name_required">Họ *</string>
     <string name="last_name">Tên</string>
     <string name="phone">Số điện thoại</string>
     <string name="address">Địa chỉ</string>
+    <string name="invalid_customer_input">Nhập họ của khách hàng.</string>
     <string name="delete">Xóa</string>
     <string name="empty_calendar">Tháng này không có đơn</string>
     <string name="top_products">Sản phẩm top</string>
     <string name="top_customers">Khách hàng top</string>
     <string name="store_info">Thông tin cửa hàng</string>
+    <string name="merchant_label">Merchant: %1$s</string>
+    <string name="invalid_store_input">Nhập tên cửa hàng.</string>
+    <string name="no_outlet_assigned">Tài khoản chưa được gán cửa hàng.</string>
+    <string name="no_permission_manage_store">Không có quyền chỉnh sửa thông tin cửa hàng.</string>
     <string name="user_management">Quản lý nhân viên</string>
     <string name="printer_config">Cấu hình máy in</string>
     <string name="export_data">Xuất dữ liệu</string>
@@ -333,6 +340,7 @@
     <string name="completed">Hoàn tất</string>
     <string name="cancelled">Đã hủy</string>
     <string name="ok">Đồng ý</string>
+    <string name="error">Lỗi</string>
     <string name="could_not_create_order">Không thể tạo đơn hàng</string>
     <string name="cart_empty_error">Vui lòng thêm ít nhất một sản phẩm trước khi xem trước đơn hàng.</string>
     <string name="customer_required_error">Vui lòng chọn khách hàng trước khi xem trước đơn hàng.</string>

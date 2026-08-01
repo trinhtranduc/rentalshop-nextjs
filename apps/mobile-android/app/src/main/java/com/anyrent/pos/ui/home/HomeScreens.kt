@@ -23,19 +23,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,21 +66,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.ui.common.AppAlertConfirm
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppMenuAction
+import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.AppSearchField
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -93,11 +94,10 @@ fun HomeScreen(
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
     onOpenBarcode: () -> Unit,
-    onManageProducts: () -> Unit,
-    onEditProduct: (Int) -> Unit = {},
     onCheckProductAvailability: (Int) -> Unit = {},
 ) {
-    var query by remember { mutableStateOf("") }
+    var draftQuery by remember { mutableStateOf("") }
+    var appliedQuery by remember { mutableStateOf("") }
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
@@ -110,13 +110,18 @@ fun HomeScreen(
     var availabilityProduct by remember { mutableStateOf<Product?>(null) }
     var deleteProduct by remember { mutableStateOf<Product?>(null) }
     var deleting by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf<String?>(null) }
+    // null = closed; Product? null inside a wrapper: use Pair or sealed
+    // showNewProduct + editingProduct: editingProduct non-null = edit, showNewProduct = new
+    var productEditor by remember { mutableStateOf<Product?>(null) }
+    var showNewProduct by remember { mutableStateOf(false) }
     val cartCount = CartStore.lines.collectAsState().value.sumOf { it.quantity }
     val scope = rememberCoroutineScope()
     val productListState = rememberLazyListState()
     val context = LocalContext.current
 
     fun refresh(fromPull: Boolean = false) {
-        val requestedQuery = query.trim()
+        val requestedQuery = appliedQuery.trim()
         scope.launch {
             if (fromPull) refreshing = true else loading = true
             error = null
@@ -129,7 +134,7 @@ fun HomeScreen(
                 ApiClient.get().getUnreadCount().getOrDefault(0)
             }
             unread = count
-            if (query.trim() != requestedQuery) return@launch
+            if (appliedQuery.trim() != requestedQuery) return@launch
             loading = false
             refreshing = false
             result.onSuccess {
@@ -149,7 +154,7 @@ fun HomeScreen(
 
     fun loadMore() {
         if (!hasMore || loadingMore) return
-        val requestedQuery = query.trim()
+        val requestedQuery = appliedQuery.trim()
         scope.launch {
             loadingMore = true
             val next = page + 1
@@ -157,7 +162,7 @@ fun HomeScreen(
                 ApiClient.get().searchProducts(page = next, q = requestedQuery.ifBlank { null })
             }
             loadingMore = false
-            if (query.trim() != requestedQuery) return@launch
+            if (appliedQuery.trim() != requestedQuery) return@launch
             result.onSuccess {
                 products = products + it.items
                 page = next
@@ -176,8 +181,8 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(query) {
-        delay(300)
+    // Initial load only — search runs when the user presses the keyboard Search key.
+    LaunchedEffect(Unit) {
         refresh()
     }
 
@@ -189,13 +194,17 @@ fun HomeScreen(
                 title = {
                     Text(
                         stringResource(R.string.home),
-                        style = MaterialTheme.typography.headlineMedium,
+                        // iOS MainViewController: setupCustomNavigationBar Bold 20
+                        style = MaterialTheme.typography.titleLarge,
                     )
                 },
                 navigationIcon = {
                     Row {
                         if (PermissionManager.canManageProducts()) {
-                            IconButton(onClick = onManageProducts) {
+                            IconButton(onClick = {
+                                productEditor = null
+                                showNewProduct = true
+                            }) {
                                 Icon(
                                     Icons.Default.Add,
                                     contentDescription = stringResource(R.string.new_product),
@@ -252,9 +261,18 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     AppSearchField(
-                        value = query,
-                        onValueChange = { query = it },
+                        value = draftQuery,
+                        onValueChange = { draftQuery = it },
                         placeholder = stringResource(R.string.search_products),
+                        onSearch = {
+                            appliedQuery = draftQuery.trim()
+                            refresh()
+                        },
+                        onClear = {
+                            draftQuery = ""
+                            appliedQuery = ""
+                            refresh()
+                        },
                     )
                 }
                 if (offline) {
@@ -277,7 +295,10 @@ fun HomeScreen(
                             ProductCard(
                                 product = product,
                                 onClick = { CartStore.addProduct(product) },
-                                onEdit = { onEditProduct(product.id) },
+                                onEdit = {
+                                    productEditor = product
+                                    showNewProduct = false
+                                },
                                 onDelete = { deleteProduct = product },
                                 onCheckAvailability = { onCheckProductAvailability(product.id) },
                             )
@@ -303,37 +324,55 @@ fun HomeScreen(
                 onAddAnyway = {},
             )
         }
+        if (showNewProduct || productEditor != null) {
+            AppFormSheet(
+                onDismiss = {
+                    showNewProduct = false
+                    productEditor = null
+                },
+            ) {
+                ProductFormScreen(
+                    initial = productEditor,
+                    onBack = {
+                        showNewProduct = false
+                        productEditor = null
+                    },
+                    onSaved = {
+                        showNewProduct = false
+                        productEditor = null
+                        refresh()
+                    },
+                )
+            }
+        }
         deleteProduct?.let { product ->
-            AlertDialog(
-                onDismissRequest = { if (!deleting) deleteProduct = null },
-                title = { Text(stringResource(R.string.delete_product)) },
-                text = { Text(stringResource(R.string.delete_product_confirmation, product.name)) },
-                confirmButton = {
-                    TextButton(
-                        enabled = !deleting,
-                        onClick = {
-                            deleting = true
-                            scope.launch {
-                                val result = withContext(Dispatchers.IO) {
-                                    ApiClient.get().deleteProduct(product.id)
-                                }
-                                deleting = false
-                                result.onSuccess {
-                                    deleteProduct = null
-                                    refresh()
-                                }.onFailure { error = it.message }
-                            }
-                        },
-                    ) {
-                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+            AppAlertConfirm(
+                title = stringResource(R.string.delete_product),
+                message = stringResource(R.string.delete_product_confirmation, product.name),
+                confirmLabel = stringResource(R.string.delete),
+                destructive = true,
+                confirmLoading = deleting,
+                dismissEnabled = !deleting,
+                onDismiss = { deleteProduct = null },
+                onConfirm = {
+                    deleting = true
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            ApiClient.get().deleteProduct(product.id)
+                        }
+                        deleting = false
+                        result.onSuccess {
+                            deleteProduct = null
+                            refresh()
+                        }.onFailure { actionError = it.message }
                     }
                 },
-                dismissButton = {
-                    TextButton(
-                        enabled = !deleting,
-                        onClick = { deleteProduct = null },
-                    ) { Text(stringResource(R.string.cancel)) }
-                },
+            )
+        }
+        actionError?.let { message ->
+            AppAlertError(
+                message = message,
+                onDismiss = { actionError = null },
             )
         }
     }
@@ -376,11 +415,8 @@ private fun ProductCard(
             ) {
                 Text(
                     product.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 18.sp,
-                        lineHeight = 23.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
+                    // iOS ProductCell: Regular 16
+                    style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
                 )
                 Row(
@@ -398,7 +434,9 @@ private fun ProductCard(
                 ) {
                     Text(
                         "${stringResource(R.string.stock)}: ${formatQuantity(product.stock)}",
-                        fontWeight = FontWeight.SemiBold,
+                        // iOS ProductCell stock: Regular 14 (value emphasized Bold 14)
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
                     )
                     Surface(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
@@ -407,42 +445,50 @@ private fun ProductCard(
                         Text(
                             "${stringResource(R.string.available_short)}: ${formatQuantity(product.available)}",
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
                         )
                     }
                 }
             }
             Box {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.product_actions),
+                val checkAvailabilityLabel = stringResource(R.string.check_availability)
+                val updateLabel = stringResource(R.string.update_product)
+                val deleteLabel = stringResource(R.string.delete_product)
+                val canManage = PermissionManager.canManageProducts()
+                // iOS UIMenu order: view history → update → delete (destructive)
+                val actions = buildList {
+                    add(
+                        AppMenuAction(
+                            label = checkAvailabilityLabel,
+                            icon = Icons.Default.CalendarMonth,
+                            onClick = onCheckAvailability,
+                        ),
                     )
+                    if (canManage) {
+                        add(
+                            AppMenuAction(
+                                label = updateLabel,
+                                icon = Icons.Outlined.Edit,
+                                onClick = onEdit,
+                            ),
+                        )
+                        add(
+                            AppMenuAction(
+                                label = deleteLabel,
+                                icon = Icons.Outlined.DeleteOutline,
+                                onClick = onDelete,
+                                destructive = true,
+                            ),
+                        )
+                    }
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.update_product)) },
-                        onClick = {
-                            expanded = false
-                            onEdit()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete_product)) },
-                        onClick = {
-                            expanded = false
-                            onDelete()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.check_availability)) },
-                        onClick = {
-                            expanded = false
-                            onCheckAvailability()
-                        },
-                    )
-                }
+                AppOverflowMenuAnchor(
+                    contentDescription = stringResource(R.string.product_actions),
+                    actions = actions,
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                )
             }
         }
     }
@@ -453,10 +499,15 @@ private fun PriceBlock(label: String, value: Double) {
     Column {
         Text(
             label,
+            // iOS rentPriceTitleLabel: Regular 14
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(formatMoney(value), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            formatMoney(value),
+            // iOS rent price value: Medium 15
+            style = MaterialTheme.typography.titleSmall,
+        )
     }
 }
 

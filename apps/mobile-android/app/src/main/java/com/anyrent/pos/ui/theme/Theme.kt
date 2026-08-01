@@ -48,29 +48,84 @@ private val DarkColors = darkColorScheme(
     error = Color(0xFFFFB3B6),
 )
 
+/**
+ * Typography aligned to iOS POS (`Utils.*Font` / `setupCustomNavigationBar`).
+ *
+ * | Role            | iOS                         | Token          |
+ * |-----------------|-----------------------------|----------------|
+ * | Nav / sheet     | Bold 20                     | titleLarge     |
+ * | Section title   | Medium 16                   | titleMedium    |
+ * | Body / field    | Regular 16                  | bodyLarge      |
+ * | Field label     | Medium 14                   | bodyMedium     |
+ * | Meta / phone    | Regular 13–14               | bodySmall / bodyMedium |
+ * | Hint / error    | Regular 12                  | labelSmall     |
+ * | Primary CTA     | Bold 18                     | labelLarge     |
+ */
 private val AppTypography = Typography(
     headlineMedium = Typography().headlineMedium.copy(
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
         fontWeight = FontWeight.Bold,
     ),
     headlineSmall = Typography().headlineSmall.copy(
-        fontSize = 24.sp,
-        lineHeight = 30.sp,
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
         fontWeight = FontWeight.Bold,
     ),
+    // iOS setupCustomNavigationBar title — Bold 20
     titleLarge = Typography().titleLarge.copy(
         fontSize = 20.sp,
         lineHeight = 26.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
     ),
+    // iOS section titles (e.g. NewProduct) — Medium 16
     titleMedium = Typography().titleMedium.copy(
         fontSize = 16.sp,
         lineHeight = 22.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
     ),
-    bodyLarge = Typography().bodyLarge.copy(fontSize = 16.sp, lineHeight = 23.sp),
-    bodyMedium = Typography().bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
+    // iOS customer cell name — Medium 15
+    titleSmall = Typography().titleSmall.copy(
+        fontSize = 15.sp,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.Medium,
+    ),
+    // iOS RCPrimaryButton — Bold 18
+    labelLarge = Typography().labelLarge.copy(
+        fontSize = 18.sp,
+        lineHeight = 22.sp,
+        fontWeight = FontWeight.Bold,
+    ),
+    // Chips / compact emphasis — Medium 14
+    labelMedium = Typography().labelMedium.copy(
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
+        fontWeight = FontWeight.Medium,
+    ),
+    // iOS hint / error / available badge — Regular/Medium 12
+    labelSmall = Typography().labelSmall.copy(
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        fontWeight = FontWeight.Medium,
+    ),
+    // iOS field value / list primary — Regular 16
+    bodyLarge = Typography().bodyLarge.copy(
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
+        fontWeight = FontWeight.Normal,
+    ),
+    // iOS field label / rent price title — Medium/Regular 14
+    bodyMedium = Typography().bodyMedium.copy(
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.Normal,
+    ),
+    // iOS customer phone / secondary meta — Regular 13
+    bodySmall = Typography().bodySmall.copy(
+        fontSize = 13.sp,
+        lineHeight = 18.sp,
+        fontWeight = FontWeight.Normal,
+    ),
 )
 
 private val AppShapes = Shapes(

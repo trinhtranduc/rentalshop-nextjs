@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -75,6 +74,8 @@ import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.domain.availability.RentalCartLine
 import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.ui.common.AppAlertConfirm
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.AppCard
@@ -236,7 +237,8 @@ fun CartCheckoutScreen(
                     if (previewMode) {
                         Text(
                             stringResource(R.string.order_preview),
-                            fontWeight = FontWeight.Bold,
+                            // iOS nav title: Bold 20
+                            style = MaterialTheme.typography.titleLarge,
                         )
                     } else {
                         Surface(
@@ -314,34 +316,36 @@ fun CartCheckoutScreen(
                     Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (orderType == "RENT") {
+                    // Order preview already shows dates/deposit/discount in the scroll body.
+                    // Keep the bottom card as CTA-only so the rental-period summary is not duplicated.
+                    if (!previewMode) {
+                        if (orderType == "RENT") {
+                            SummaryLine(
+                                stringResource(R.string.rental_period),
+                                "${pickup.format(displayDateFormatter)}  →  ${ret.format(displayDateFormatter)}",
+                                highlighted = true,
+                                onClick = { showDateSelection = true },
+                            )
+                            SummaryLine(
+                                stringResource(R.string.deposit),
+                                formatMoney(deposit),
+                                highlighted = true,
+                                onClick = {
+                                    numericText = deposit.toLong().toString()
+                                    numericEditor = "DEPOSIT"
+                                },
+                            )
+                        }
                         SummaryLine(
-                            stringResource(R.string.rental_period),
-                            "${pickup.format(displayDateFormatter)}  →  ${ret.format(displayDateFormatter)}",
+                            discountSummaryLabel,
+                            formatMoney(CartStore.discountAmount),
                             highlighted = true,
-                            onClick = if (previewMode) null else {
-                                { showDateSelection = true }
+                            onClick = {
+                                numericText = discount.toLong().toString()
+                                numericEditor = "DISCOUNT"
                             },
                         )
-                        SummaryLine(
-                            stringResource(R.string.deposit),
-                            formatMoney(deposit),
-                            highlighted = true,
-                            onClick = if (previewMode) null else {{
-                                numericText = deposit.toLong().toString()
-                                numericEditor = "DEPOSIT"
-                            }},
-                        )
                     }
-                    SummaryLine(
-                        discountSummaryLabel,
-                        formatMoney(CartStore.discountAmount),
-                        highlighted = true,
-                        onClick = if (previewMode) null else {{
-                            numericText = discount.toLong().toString()
-                            numericEditor = "DISCOUNT"
-                        }},
-                    )
                     Surface(
                         color = MaterialTheme.colorScheme.primary,
                         shape = MaterialTheme.shapes.small,
@@ -363,11 +367,13 @@ fun CartCheckoutScreen(
                                 ),
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
                             )
                             Text(
                                 "(${formatQuantity(CartStore.itemCount)})  ${formatMoney(CartStore.totalAmount)}",
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
                             )
                         }
                     }
@@ -619,40 +625,23 @@ fun CartCheckoutScreen(
     }
 
     error?.let { message ->
-        AlertDialog(
-            onDismissRequest = { error = null },
-            title = { Text(stringResource(R.string.could_not_create_order)) },
-            text = { Text(message) },
-            confirmButton = {
-                TextButton(onClick = { error = null }) {
-                    Text(stringResource(R.string.ok))
-                }
-            },
+        AppAlertError(
+            title = stringResource(R.string.could_not_create_order),
+            message = message,
+            onDismiss = { error = null },
         )
     }
 
     if (showClearConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showClearConfirmation = false },
-            title = { Text(stringResource(R.string.clear_cart)) },
-            text = { Text(stringResource(R.string.clear_cart_confirmation)) },
-            dismissButton = {
-                TextButton(onClick = { showClearConfirmation = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        CartStore.clear()
-                        showClearConfirmation = false
-                    },
-                ) {
-                    Text(
-                        stringResource(R.string.clear),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+        AppAlertConfirm(
+            title = stringResource(R.string.clear_cart),
+            message = stringResource(R.string.clear_cart_confirmation),
+            confirmLabel = stringResource(R.string.clear),
+            destructive = true,
+            onDismiss = { showClearConfirmation = false },
+            onConfirm = {
+                CartStore.clear()
+                showClearConfirmation = false
             },
         )
     }

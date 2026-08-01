@@ -120,6 +120,12 @@ fun AvailabilityScreen(
                     onValueChange = viewModel::updateQuery,
                     label = { Text(stringResource(R.string.search_product)) },
                     singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Search,
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onSearch = { viewModel.search() },
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

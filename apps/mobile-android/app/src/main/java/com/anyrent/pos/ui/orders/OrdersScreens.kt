@@ -88,6 +88,9 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppCloseIconButton
+import com.anyrent.pos.ui.common.AppFilterChip
+import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSearchField
 import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.SectionLabel
@@ -98,7 +101,6 @@ import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.print.ThermalPrinter
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -108,6 +110,52 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
+
+/**
+ * Routes entity-scoped order lists to the correct API so we never accidentally
+ * request the unfiltered `/api/orders` feed.
+ *
+ * - Customer → `GET /api/customers/{id}/orders` (dedicated, role-scoped)
+ * - Product  → `GET /api/orders?productId=` (same as web `getOrdersByProduct`)
+ * - Text search on a customer list falls back to `/api/orders?customerId=&q=`
+ *   because the dedicated endpoint does not accept `q`.
+ */
+private fun fetchScopedOrders(
+    page: Int,
+    q: String?,
+    status: String?,
+    orderType: String?,
+    productId: Int?,
+    customerId: Int?,
+): Result<ApiClient.PageResult<OrderSummary>> {
+    val api = ApiClient.get()
+    return when {
+        customerId != null && customerId > 0 && q.isNullOrBlank() && status.isNullOrBlank() ->
+            api.searchCustomerOrders(customerId = customerId, page = page)
+        customerId != null && customerId > 0 ->
+            api.searchOrders(
+                page = page,
+                q = q,
+                status = status,
+                orderType = null,
+                customerId = customerId,
+            )
+        productId != null && productId > 0 ->
+            api.searchProductOrders(
+                productId = productId,
+                page = page,
+                q = q,
+                status = status,
+            )
+        else ->
+            api.searchOrders(
+                page = page,
+                q = q,
+                status = status,
+                orderType = orderType,
+            )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,7 +168,8 @@ fun OrdersScreen(
     filteredTitle: String? = null,
     onBack: (() -> Unit)? = null,
 ) {
-    var query by remember { mutableStateOf("") }
+    var draftQuery by remember { mutableStateOf("") }
+    var appliedQuery by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     val filteredMode = productId != null || customerId != null
     var orderType by remember { mutableStateOf<String?>(if (filteredMode) null else "RENT") }
@@ -139,14 +188,14 @@ fun OrdersScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
 
     fun refresh(fromPull: Boolean = false) {
-        val requestedQuery = query.trim()
+        val requestedQuery = appliedQuery.trim()
         scope.launch {
             if (fromPull) refreshing = true else loading = true
             error = null
             offline = false
             page = 1
             val result = withContext(Dispatchers.IO) {
-                ApiClient.get().searchOrders(
+                fetchScopedOrders(
                     page = 1,
                     q = requestedQuery.ifBlank { null },
                     status = status,
@@ -155,15 +204,23 @@ fun OrdersScreen(
                     customerId = customerId,
                 )
             }
-            if (query.trim() != requestedQuery) return@launch
+            if (appliedQuery.trim() != requestedQuery) return@launch
             loading = false
             refreshing = false
             result.onSuccess {
                 orders = it.items
                 hasMore = it.hasMore
-                OfflineCache.get(context).saveOrders(it.items)
+                // Only cache the main (unfiltered) order feed — filtered feeds must not
+                // overwrite / be restored as the global list.
+                if (!filteredMode) {
+                    OfflineCache.get(context).saveOrders(it.items)
+                }
             }.onFailure {
                 hasMore = false
+                if (filteredMode) {
+                    error = it.message
+                    return@onFailure
+                }
                 val cached = OfflineCache.get(context).loadOrders()
                 if (cached.isNotEmpty()) {
                     orders = cached
@@ -177,12 +234,12 @@ fun OrdersScreen(
 
     fun loadMore() {
         if (!hasMore || loadingMore) return
-        val requestedQuery = query.trim()
+        val requestedQuery = appliedQuery.trim()
         scope.launch {
             loadingMore = true
             val next = page + 1
             val result = withContext(Dispatchers.IO) {
-                ApiClient.get().searchOrders(
+                fetchScopedOrders(
                     page = next,
                     q = requestedQuery.ifBlank { null },
                     status = status,
@@ -192,7 +249,7 @@ fun OrdersScreen(
                 )
             }
             loadingMore = false
-            if (query.trim() != requestedQuery) return@launch
+            if (appliedQuery.trim() != requestedQuery) return@launch
             result.onSuccess {
                 orders = orders + it.items
                 page = next
@@ -211,8 +268,8 @@ fun OrdersScreen(
         }
     }
 
-    LaunchedEffect(status, orderType, query) {
-        delay(300)
+    // Filter/type changes reload immediately; text search waits for keyboard Search.
+    LaunchedEffect(status, orderType, appliedQuery) {
         refresh()
     }
 
@@ -299,9 +356,16 @@ fun OrdersScreen(
                 }
             }
             AppSearchField(
-                value = query,
-                onValueChange = { query = it },
+                value = draftQuery,
+                onValueChange = { draftQuery = it },
                 placeholder = stringResource(R.string.order_search_hint),
+                onSearch = {
+                    appliedQuery = draftQuery.trim()
+                },
+                onClear = {
+                    draftQuery = ""
+                    appliedQuery = ""
+                },
             )
         }
         PullToRefreshBox(
@@ -377,96 +441,117 @@ private fun OrderFilterSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var draftStatus by remember(currentStatus) { mutableStateOf(currentStatus) }
     var draftSortByPickup by remember(currentSortByPickup) { mutableStateOf(currentSortByPickup) }
-    val statuses = listOf(
-        null to R.string.all,
-        "RESERVED" to R.string.status_reserved,
-        "PICKUPED" to R.string.status_pickuped,
-        "RETURNED" to R.string.status_returned,
-        "CANCELLED" to R.string.status_cancelled,
-    )
+    // iOS OrderFilterViewController.availableStatuses — rent vs sale status sets differ
+    val statuses = if (orderType == "SALE") {
+        listOf(
+            null to R.string.all,
+            "COMPLETED" to R.string.status_completed,
+            "CANCELLED" to R.string.status_cancelled,
+        )
+    } else {
+        listOf(
+            null to R.string.all,
+            "RESERVED" to R.string.status_reserved,
+            "PICKUPED" to R.string.status_pickuped,
+            "RETURNED" to R.string.status_returned,
+            "CANCELLED" to R.string.status_cancelled,
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.32f),
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column {
+                Column(
+                    Modifier.weight(1f).padding(end = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
                         stringResource(R.string.order_filter),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     )
                     Text(
                         "${if (orderType == "RENT") stringResource(R.string.rent) else stringResource(R.string.sale)} · " +
                             stringResource(if (draftSortByPickup) R.string.pickup_date else R.string.book_date),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
-                }
+                AppCloseIconButton(
+                    onClick = onDismiss,
+                    contentDescription = stringResource(R.string.close),
+                )
             }
 
             Text(
                 stringResource(R.string.sort_by).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.6.sp,
             )
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 listOf(false to R.string.book_date, true to R.string.pickup_date).forEach { (value, label) ->
-                    val selected = draftSortByPickup == value
-                    if (selected) {
-                        Button(
-                            onClick = { draftSortByPickup = value },
-                            modifier = Modifier.weight(1f).height(56.dp),
-                        ) { Text(stringResource(label)) }
-                    } else {
-                        OutlinedButton(
-                            onClick = { draftSortByPickup = value },
-                            modifier = Modifier.weight(1f).height(56.dp),
-                        ) { Text(stringResource(label)) }
-                    }
+                    AppFilterChip(
+                        label = stringResource(label),
+                        selected = draftSortByPickup == value,
+                        onClick = { draftSortByPickup = value },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
 
             Text(
                 stringResource(R.string.status_filter).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.6.sp,
             )
+            // Flow-style rows: wrap chips like iOS statusFlowContainer
             statuses.chunked(3).forEach { rowStatuses ->
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     rowStatuses.forEach { (value, label) ->
-                        FilterChip(
+                        AppFilterChip(
+                            label = stringResource(label),
                             selected = draftStatus == value,
                             onClick = { draftStatus = value },
-                            label = { Text(stringResource(label)) },
-                            modifier = Modifier.weight(1f).height(52.dp),
+                            modifier = Modifier.weight(1f),
                         )
                     }
-                    repeat(3 - rowStatuses.size) { Spacer(Modifier.weight(1f)) }
+                    repeat(3 - rowStatuses.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
                 }
             }
 
-            Spacer(Modifier.height(42.dp))
+            Spacer(Modifier.height(8.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -476,15 +561,21 @@ private fun OrderFilterSheet(
                     onClick = {
                         draftStatus = null
                         draftSortByPickup = true
+                        onApply(null, true)
                     },
-                    modifier = Modifier.height(56.dp),
-                ) { Text(stringResource(R.string.reset)) }
-                Button(
-                    onClick = { onApply(draftStatus, draftSortByPickup) },
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.height(50.dp),
                 ) {
-                    Text(stringResource(R.string.apply), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.reset),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+                AppPrimaryButton(
+                    text = stringResource(R.string.apply),
+                    onClick = { onApply(draftStatus, draftSortByPickup) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -511,11 +602,7 @@ private fun OrderListCard(
             ) {
                 Text(
                     "#${order.orderNumber.trim().removePrefix("#")}",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 18.sp,
-                        lineHeight = 22.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 StatusBadge(order.status)

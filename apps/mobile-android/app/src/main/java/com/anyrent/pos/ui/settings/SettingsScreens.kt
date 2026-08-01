@@ -28,15 +28,11 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -46,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,9 +66,13 @@ import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.push.PushRegistrar
+import com.anyrent.pos.ui.common.AppAlertConfirm
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppMenuAction
+import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.SectionLabel
 import com.anyrent.pos.ui.common.SettingsCardRow
 import kotlinx.coroutines.Dispatchers
@@ -186,31 +185,24 @@ fun SettingsScreen(
     }
 
     if (showDeleteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { if (!isDeleting) showDeleteConfirmation = false },
-            title = { Text(stringResource(R.string.delete_account)) },
-            text = { Text(stringResource(R.string.delete_account_confirmation)) },
-            confirmButton = {
-                TextButton(
-                    enabled = !isDeleting,
-                    onClick = {
-                        isDeleting = true
-                        scope.launch {
-                            val deleted = withContext(Dispatchers.IO) { ApiParity.deleteAccount().isSuccess }
-                            isDeleting = false
-                            if (deleted) {
-                                SessionStore.clearAuth()
-                                onLoggedOut()
-                            }
-                        }
-                    },
-                ) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !isDeleting,
-                    onClick = { showDeleteConfirmation = false },
-                ) { Text(stringResource(R.string.cancel)) }
+        AppAlertConfirm(
+            title = stringResource(R.string.delete_account),
+            message = stringResource(R.string.delete_account_confirmation),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            confirmLoading = isDeleting,
+            dismissEnabled = !isDeleting,
+            onDismiss = { showDeleteConfirmation = false },
+            onConfirm = {
+                isDeleting = true
+                scope.launch {
+                    val deleted = withContext(Dispatchers.IO) { ApiParity.deleteAccount().isSuccess }
+                    isDeleting = false
+                    if (deleted) {
+                        SessionStore.clearAuth()
+                        onLoggedOut()
+                    }
+                }
             },
         )
     }
@@ -228,6 +220,7 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var actionLoading by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(refreshKey) {
@@ -304,79 +297,64 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                                 style = MaterialTheme.typography.labelMedium,
                             )
                             Box {
-                                IconButton(onClick = { menuExpanded = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
-                                }
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false },
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.edit)) },
-                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            onEditUser(user)
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.change_password)) },
-                                        leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            newPassword = ""
-                                            confirmPassword = ""
-                                            passwordUser = user
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(
-                                                    if (user.isActive) R.string.disable_user
-                                                    else R.string.enable_user,
-                                                ),
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                if (user.isActive) Icons.Default.PersonOff else Icons.Default.Person,
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        onClick = {
-                                            menuExpanded = false
-                                            scope.launch {
-                                                val result = withContext(Dispatchers.IO) {
-                                                    ApiParity.updateUser(
-                                                        user.id,
-                                                        user.firstName.orEmpty(),
-                                                        user.lastName.orEmpty(),
-                                                        user.role,
-                                                        !user.isActive,
-                                                        SessionStore.outletId,
-                                                    )
+                                val editLabel = stringResource(R.string.edit)
+                                val changePasswordLabel = stringResource(R.string.change_password)
+                                val toggleLabel = stringResource(
+                                    if (user.isActive) R.string.disable_user
+                                    else R.string.enable_user,
+                                )
+                                val deleteLabel = stringResource(R.string.delete)
+                                AppOverflowMenuAnchor(
+                                    contentDescription = stringResource(R.string.more_options),
+                                    actions = listOf(
+                                        AppMenuAction(
+                                            label = editLabel,
+                                            icon = Icons.Outlined.Edit,
+                                            onClick = { onEditUser(user) },
+                                        ),
+                                        AppMenuAction(
+                                            label = changePasswordLabel,
+                                            icon = Icons.Default.Key,
+                                            onClick = {
+                                                newPassword = ""
+                                                confirmPassword = ""
+                                                passwordUser = user
+                                            },
+                                        ),
+                                        AppMenuAction(
+                                            label = toggleLabel,
+                                            icon = if (user.isActive) {
+                                                Icons.Default.PersonOff
+                                            } else {
+                                                Icons.Default.Person
+                                            },
+                                            onClick = {
+                                                scope.launch {
+                                                    val result = withContext(Dispatchers.IO) {
+                                                        ApiParity.updateUser(
+                                                            user.id,
+                                                            user.firstName.orEmpty(),
+                                                            user.lastName.orEmpty(),
+                                                            user.role,
+                                                            !user.isActive,
+                                                            SessionStore.outletId,
+                                                        )
+                                                    }
+                                                    result.onSuccess { refreshKey++ }
+                                                        .onFailure { error = it.message }
                                                 }
-                                                result.onSuccess { refreshKey++ }
-                                                    .onFailure { error = it.message }
-                                            }
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.DeleteOutline,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error,
-                                            )
-                                        },
-                                        onClick = {
-                                            menuExpanded = false
-                                            deleteUser = user
-                                        },
-                                    )
-                                }
+                                            },
+                                        ),
+                                        AppMenuAction(
+                                            label = deleteLabel,
+                                            icon = Icons.Outlined.DeleteOutline,
+                                            onClick = { deleteUser = user },
+                                            destructive = true,
+                                        ),
+                                    ),
+                                    expanded = menuExpanded,
+                                    onExpandedChange = { menuExpanded = it },
+                                )
                             }
                         }
                     }
@@ -387,87 +365,86 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
     }
 
     passwordUser?.let { user ->
-        AlertDialog(
-            onDismissRequest = { if (!actionLoading) passwordUser = null },
-            title = { Text(stringResource(R.string.change_password)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.change_password_for, user.displayName))
-                    OutlinedTextField(
-                        value = newPassword,
-                        onValueChange = { newPassword = it },
-                        label = { Text(stringResource(R.string.new_password)) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                    )
-                    OutlinedTextField(
-                        value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
-                        label = { Text(stringResource(R.string.confirm_password)) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                    )
-                    if (newPassword.isNotEmpty() && newPassword.length < 6) {
-                        Text(stringResource(R.string.password_min_six), color = MaterialTheme.colorScheme.error)
-                    } else if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
-                        Text(stringResource(R.string.passwords_do_not_match), color = MaterialTheme.colorScheme.error)
+        AppAlertConfirm(
+            title = stringResource(R.string.change_password),
+            message = stringResource(R.string.change_password_for, user.displayName),
+            confirmLabel = stringResource(R.string.change_password),
+            confirmEnabled = !actionLoading && newPassword.length >= 6 && newPassword == confirmPassword,
+            confirmLoading = actionLoading,
+            dismissEnabled = !actionLoading,
+            onDismiss = {
+                passwordUser = null
+                newPassword = ""
+                confirmPassword = ""
+            },
+            onConfirm = {
+                actionLoading = true
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        ApiParity.changeUserPassword(user.id, newPassword)
                     }
+                    actionLoading = false
+                    result.onSuccess {
+                        passwordUser = null
+                        newPassword = ""
+                        confirmPassword = ""
+                    }.onFailure { actionError = it.message }
                 }
             },
-            confirmButton = {
-                TextButton(
-                    enabled = !actionLoading && newPassword.length >= 6 && newPassword == confirmPassword,
-                    onClick = {
-                        actionLoading = true
-                        scope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                ApiParity.changeUserPassword(user.id, newPassword)
-                            }
-                            actionLoading = false
-                            result.onSuccess { passwordUser = null }
-                                .onFailure { error = it.message }
-                        }
-                    },
-                ) { Text(stringResource(R.string.change_password)) }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !actionLoading,
-                    onClick = { passwordUser = null },
-                ) { Text(stringResource(R.string.cancel)) }
+        ) {
+            OutlinedTextField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                label = { Text(stringResource(R.string.new_password)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text(stringResource(R.string.confirm_password)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (newPassword.isNotEmpty() && newPassword.length < 6) {
+                Text(stringResource(R.string.password_min_six), color = MaterialTheme.colorScheme.error)
+            } else if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
+                Text(stringResource(R.string.passwords_do_not_match), color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+
+    deleteUser?.let { user ->
+        AppAlertConfirm(
+            title = stringResource(R.string.delete_user),
+            message = stringResource(R.string.delete_user_confirmation, user.displayName),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            confirmLoading = actionLoading,
+            dismissEnabled = !actionLoading,
+            onDismiss = { deleteUser = null },
+            onConfirm = {
+                actionLoading = true
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        ApiParity.deleteUser(user.id)
+                    }
+                    actionLoading = false
+                    result.onSuccess {
+                        deleteUser = null
+                        refreshKey++
+                    }.onFailure { actionError = it.message }
+                }
             },
         )
     }
 
-    deleteUser?.let { user ->
-        AlertDialog(
-            onDismissRequest = { if (!actionLoading) deleteUser = null },
-            title = { Text(stringResource(R.string.delete_user)) },
-            text = { Text(stringResource(R.string.delete_user_confirmation, user.displayName)) },
-            confirmButton = {
-                TextButton(
-                    enabled = !actionLoading,
-                    onClick = {
-                        actionLoading = true
-                        scope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                ApiParity.deleteUser(user.id)
-                            }
-                            actionLoading = false
-                            result.onSuccess {
-                                deleteUser = null
-                                refreshKey++
-                            }.onFailure { error = it.message }
-                        }
-                    },
-                ) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !actionLoading,
-                    onClick = { deleteUser = null },
-                ) { Text(stringResource(R.string.cancel)) }
-            },
+    actionError?.let { message ->
+        AppAlertError(
+            message = message,
+            onDismiss = { actionError = null },
         )
     }
 }

@@ -5,9 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -15,6 +14,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
@@ -22,6 +22,8 @@ import com.anyrent.pos.domain.payment.PaymentAction
 import com.anyrent.pos.domain.payment.PaymentKind
 import com.anyrent.pos.domain.payment.PaymentMethod
 import com.anyrent.pos.domain.payment.PaymentPurpose
+import com.anyrent.pos.ui.common.AppFilterChip
+import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.formatMoney
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,15 +48,19 @@ fun PaymentCollectionSheet(
     ModalBottomSheet(
         onDismissRequest = { if (!submitting) onDismiss() },
         sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.32f),
     ) {
         Column(
-            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.padding(horizontal = 20.dp, vertical = 8.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(title, style = MaterialTheme.typography.titleLarge)
             Text(
                 formatMoney(action.amount),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
@@ -63,33 +69,39 @@ fun PaymentCollectionSheet(
                 } else {
                     stringResource(R.string.collect_payment_description)
                 },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             action.collateralDetails?.takeIf { it.isNotBlank() }?.let {
                 Text(stringResource(R.string.collateral), style = MaterialTheme.typography.titleMedium)
-                Text(it)
+                Text(it, style = MaterialTheme.typography.bodyLarge)
             }
-            Text(stringResource(R.string.payment_method), style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.payment_method),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                ),
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 PaymentMethod.entries.forEach { method ->
-                    FilterChip(
+                    AppFilterChip(
+                        label = method.name,
                         selected = selectedMethod == method,
-                        onClick = { onMethodSelected(method) },
-                        enabled = !submitting,
-                        label = { Text(method.name) },
+                        onClick = { if (!submitting) onMethodSelected(method) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(
+            AppPrimaryButton(
+                text = if (submitting) stringResource(R.string.loading)
+                else stringResource(R.string.confirm),
                 onClick = onConfirm,
                 enabled = !submitting,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    if (submitting) stringResource(R.string.loading)
-                    else stringResource(R.string.confirm)
-                )
-            }
+            )
             TextButton(
                 onClick = onDismiss,
                 enabled = !submitting,

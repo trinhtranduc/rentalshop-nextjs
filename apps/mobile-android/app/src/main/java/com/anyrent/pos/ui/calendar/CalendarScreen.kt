@@ -150,7 +150,7 @@ fun CalendarScreen(onOpenOrder: (Int) -> Unit) {
             Spacer(Modifier.size(width = 96.dp, height = 48.dp))
             Text(
                 stringResource(R.string.calendar),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )

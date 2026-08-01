@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,21 +25,15 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,15 +41,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppInputField
+import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppSecondaryButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,14 +71,14 @@ fun ProductFormScreen(
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
-    var barcode by remember { mutableStateOf(initial?.barcode.orEmpty()) }
+    // iOS NewProductViewController.generatedBarcode — empty → random 6 digits
+    var barcode by remember { mutableStateOf(generatedBarcode(initial?.barcode)) }
     var rentPrice by remember { mutableStateOf(initial?.rentPrice?.toString().orEmpty()) }
     var salePrice by remember { mutableStateOf(initial?.salePrice?.toString().orEmpty()) }
     var deposit by remember { mutableStateOf(initial?.deposit?.toString() ?: "0") }
     var stock by remember { mutableStateOf((initial?.stock ?: 1).toString()) }
-    var categories by remember { mutableStateOf<List<ApiParity.Category>>(emptyList()) }
-    var categoryId by remember { mutableStateOf(initial?.categoryId) }
-    var showCategorySheet by remember { mutableStateOf(false) }
+    // Category UI hidden — keep existing id on edit so update does not clear it.
+    val categoryId = initial?.categoryId
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
@@ -86,16 +86,12 @@ fun ProductFormScreen(
     var submitted by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val canManage = PermissionManager.canManageProducts()
-    val categoryName = categories.firstOrNull { it.id == categoryId }?.name
+
+    // Prefer newly picked local URI; fall back to existing product image on edit.
+    val previewModel: Any? = imageUri ?: initial?.imageUrl?.takeIf { it.isNotBlank() }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        imageUri = uri
-    }
-
-    LaunchedEffect(Unit) {
-        val result = withContext(Dispatchers.IO) { ApiParity.listCategories() }
-        result.onSuccess { categories = it }
-            .onFailure { /* category optional — keep form usable */ }
+        if (uri != null) imageUri = uri
     }
 
     fun uriToFile(uri: Uri): File? = runCatching {
@@ -136,9 +132,12 @@ fun ProductFormScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                // Sheet is not under the status bar — default TopAppBar insets push the title down.
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 title = {
                     Text(
                         if (initial == null) stringResource(R.string.new_product)
@@ -151,6 +150,9 @@ fun ProductFormScreen(
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                     }
                 },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         },
         bottomBar = {
@@ -160,18 +162,13 @@ fun ProductFormScreen(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                Button(
+                AppPrimaryButton(
+                    text = if (loading) stringResource(R.string.loading)
+                    else if (initial == null) stringResource(R.string.add_product)
+                    else stringResource(R.string.save),
                     onClick = ::saveProduct,
                     enabled = !loading && canManage,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text(
-                        if (loading) stringResource(R.string.loading)
-                        else if (initial == null) stringResource(R.string.add_product)
-                        else stringResource(R.string.save),
-                    )
-                }
+                )
             }
         },
     ) { padding ->
@@ -181,6 +178,7 @@ fun ProductFormScreen(
                 .padding(padding)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -200,20 +198,48 @@ fun ProductFormScreen(
                         Modifier
                             .align(Alignment.CenterHorizontally)
                             .size(132.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-                                RoundedCornerShape(12.dp),
                             )
                             .clickable { picker.launch("image/*") },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = stringResource(R.string.pick_image),
-                            modifier = Modifier.size(42.dp),
-                            tint = if (imageUri == null) MaterialTheme.colorScheme.outline
-                            else MaterialTheme.colorScheme.primary,
-                        )
+                        if (previewModel != null) {
+                            AsyncImage(
+                                model = previewModel,
+                                contentDescription = stringResource(R.string.product_image),
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                            )
+                            // Dim + camera hint so user knows tap still changes the photo.
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.18f)),
+                            )
+                            Icon(
+                                Icons.Default.CameraAlt,
+                                contentDescription = stringResource(R.string.pick_image),
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(10.dp)
+                                    .size(28.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                                        RoundedCornerShape(8.dp),
+                                    )
+                                    .padding(5.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.CameraAlt,
+                                contentDescription = stringResource(R.string.pick_image),
+                                modifier = Modifier.size(42.dp),
+                                tint = MaterialTheme.colorScheme.outline,
+                            )
+                        }
                     }
                     ProductField(
                         name,
@@ -289,43 +315,6 @@ fun ProductFormScreen(
                             stringResource(R.string.security_deposit),
                             KeyboardType.Decimal,
                         )
-                        Surface(
-                            onClick = { showCategorySheet = true },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant,
-                            ),
-                        ) {
-                            Row(
-                                Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    stringResource(R.string.category),
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                                Text(
-                                    categoryName ?: "—",
-                                    color = if (categoryName == null) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.primary
-                                    },
-                                )
-                                Icon(
-                                    Icons.Default.ExpandMore,
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(start = 6.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -339,7 +328,8 @@ fun ProductFormScreen(
             }
 
             if (initial != null && canManage) {
-                OutlinedButton(
+                AppSecondaryButton(
+                    text = stringResource(R.string.delete),
                     onClick = {
                         scope.launch {
                             loading = true
@@ -349,49 +339,7 @@ fun ProductFormScreen(
                         }
                     },
                     enabled = !loading,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.delete)) }
-            }
-        }
-    }
-
-    if (showCategorySheet) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showCategorySheet = false },
-            sheetState = sheetState,
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(stringResource(R.string.category), style = MaterialTheme.typography.titleMedium)
-                TextButton(
-                    onClick = {
-                        categoryId = null
-                        showCategorySheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("—") }
-                if (categories.isEmpty()) {
-                    Text(
-                        stringResource(R.string.loading),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    categories.forEach { cat ->
-                        TextButton(
-                            onClick = {
-                                categoryId = cat.id
-                                showCategorySheet = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(cat.name) }
-                    }
-                }
+                )
             }
         }
     }
@@ -412,4 +360,13 @@ private fun ProductField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         isError = isError,
     )
+}
+
+/** Matches iOS `Utils.randomString(length: 6)` — digits only. */
+private fun generatedBarcode(existing: String? = null): String {
+    val trimmed = existing?.trim().orEmpty()
+    if (trimmed.isNotEmpty()) return trimmed
+    return buildString(6) {
+        repeat(6) { append(('0'..'9').random()) }
+    }
 }

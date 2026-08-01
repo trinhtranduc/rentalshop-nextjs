@@ -530,11 +530,14 @@ class NewProductViewController: BaseViewControler {
             pinToSafeArea: false
         )
 
-        // Do NOT remakeConstraints on the nav bar here.
-        // RCCustomNavigationBar installs its own height via SnapKit; remakeConstraints
-        // would wipe that height. The title/buttons are centerY-aligned, so a
-        // heightless bar expands, centers the header mid-screen, and collapses the
-        // form scrollView to zero height. pinToSafeArea: false already pins to top.
+        // Keep a fixed bar height. remakeConstraints without height used to wipe
+        // RCCustomNavigationBar's SnapKit height → bar expanded, title centered
+        // mid-screen, and scrollView collapsed to zero.
+        navBar.snp.remakeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(44)
+        }
 
         navBar.setDismissButton() // Use X button for dismiss
     }

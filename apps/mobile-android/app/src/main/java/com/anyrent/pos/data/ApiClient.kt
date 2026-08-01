@@ -192,11 +192,60 @@ class ApiClient(
                 if (!endDate.isNullOrBlank()) addQueryParameter("endDate", endDate)
             }
             .build()
-        val json = execute(get(url.toString()))
+        parseOrdersPage(execute(get(url.toString())))
+    }
+
+    /**
+     * Customer-scoped orders via dedicated endpoint (iOS parity).
+     * Why not `/api/orders?customerId=`: that path is easy to call without the filter and
+     * returns a merchant-wide page; this endpoint always scopes to one customer + role.
+     */
+    fun searchCustomerOrders(
+        customerId: Int,
+        page: Int = 1,
+        limit: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
+    ): Result<PageResult<OrderSummary>> = runCatching {
+        require(customerId > 0) { "customerId is required" }
+        val url = "$baseUrl/api/customers/$customerId/orders".toHttpUrl().newBuilder()
+            .addQueryParameter("page", page.toString())
+            .addQueryParameter("limit", limit.toString())
+            .apply {
+                if (!startDate.isNullOrBlank()) addQueryParameter("startDate", startDate)
+                if (!endDate.isNullOrBlank()) addQueryParameter("endDate", endDate)
+            }
+            .build()
+        parseOrdersPage(execute(get(url.toString())))
+    }
+
+    /**
+     * Product-scoped orders. Always requires productId so callers cannot accidentally
+     * request the unfiltered merchant order list.
+     */
+    fun searchProductOrders(
+        productId: Int,
+        page: Int = 1,
+        limit: Int = 20,
+        q: String? = null,
+        status: String? = null,
+    ): Result<PageResult<OrderSummary>> {
+        require(productId > 0) { "productId is required" }
+        return searchOrders(
+            page = page,
+            limit = limit,
+            q = q,
+            status = status,
+            orderType = null,
+            productId = productId,
+        )
+    }
+
+    private fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("orders") ?: JSONArray()
-        PageResult(
+        return PageResult(
             items = (0 until array.length()).map { parseOrderSummary(array.getJSONObject(it)) },
             hasMore = data.optBoolean("hasMore", false),
             total = data.optInt("total").takeIf { data.has("total") },

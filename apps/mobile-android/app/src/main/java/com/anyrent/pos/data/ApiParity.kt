@@ -80,8 +80,32 @@ object ApiParity {
             }
             .toString()
             .toRequestBody(jsonMedia)
-        ApiClient.get().authedPut("/api/outlets/$outletId", body)
+        // API expects id in query: PUT /api/outlets?id={id} (same as iOS OutletService)
+        ApiClient.get().authedPut("/api/outlets?id=$outletId", body)
         Unit
+    }
+
+    data class OutletInfo(
+        val id: Int,
+        val name: String,
+        val address: String?,
+        val phone: String?,
+    )
+
+    fun getOutlet(outletId: Int): Result<OutletInfo> = runCatching {
+        val json = ApiClient.get().authedGet("/api/outlets?page=1&limit=50")
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val array = data.optJSONArray("outlets") ?: org.json.JSONArray()
+        val match = (0 until array.length())
+            .map { array.getJSONObject(it) }
+            .firstOrNull { it.optInt("id") == outletId }
+            ?: error("Outlet not found")
+        OutletInfo(
+            id = match.optInt("id"),
+            name = match.optString("name"),
+            address = match.optString("address").takeIf { it.isNotBlank() },
+            phone = match.optString("phone").takeIf { it.isNotBlank() },
+        )
     }
 
     fun createUser(
@@ -424,22 +448,9 @@ object ApiParity {
     }
 
     fun customerOrders(customerId: Int): Result<List<OrderSummary>> = runCatching {
-        ApiClient.get().searchOrders(page = 1, limit = 50, q = null).getOrThrow().items
-            // Prefer dedicated endpoint when available
-            .ifEmpty { emptyList() }
-            .let { list ->
-                val dedicated = runCatching {
-                    val json = ApiClient.get().authedGet("/api/customers/$customerId/orders?page=1&limit=50")
-                    val data = json.optJSONObject("data") ?: JSONObject()
-                    val arr = data.optJSONArray("orders") ?: org.json.JSONArray()
-                    (0 until arr.length()).map {
-                        // reuse search parser via getOrder summary
-                        val id = arr.getJSONObject(it).optInt("id")
-                        ApiClient.get().getOrder(id).getOrThrow().summary
-                    }
-                }.getOrNull()
-                dedicated ?: list.filter { true }
-            }
+        ApiClient.get().searchCustomerOrders(customerId = customerId, page = 1, limit = 50)
+            .getOrThrow()
+            .items
     }
 
     fun markNotificationUnread(id: Int): Result<Unit> = runCatching {

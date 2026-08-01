@@ -118,12 +118,28 @@ private fun AuthField(
 ) {
     var visible by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text(label, fontWeight = FontWeight.Medium)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder) },
-            leadingIcon = { Icon(icon, contentDescription = null) },
+            placeholder = {
+                Text(
+                    placeholder,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
             trailingIcon = if (password) {
                 {
                     IconButton(onClick = { visible = !visible }) {
@@ -138,12 +154,16 @@ private fun AuthField(
             else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = true,
-            shape = RoundedCornerShape(14.dp),
+            textStyle = MaterialTheme.typography.bodyLarge,
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
+                focusedBorderColor = AuthBlue,
+                unfocusedBorderColor = Color(0xFFD9DCE2),
+                cursorColor = AuthBlue,
             ),
-            modifier = Modifier.fillMaxWidth().height(60.dp),
+            modifier = Modifier.fillMaxWidth().height(50.dp),
         )
     }
 }

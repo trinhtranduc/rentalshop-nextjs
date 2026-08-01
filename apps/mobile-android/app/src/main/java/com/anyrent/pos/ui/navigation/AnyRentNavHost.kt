@@ -53,9 +53,6 @@ import com.anyrent.pos.ui.calendar.CalendarScreen
 import com.anyrent.pos.ui.availability.AvailabilityScreen
 import com.anyrent.pos.ui.customers.CustomersScreen
 import com.anyrent.pos.ui.home.HomeScreen
-import com.anyrent.pos.ui.home.ProductManageScreen
-import com.anyrent.pos.ui.home.ProductFormScreen
-import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.orders.FindOrderScreen
@@ -87,8 +84,6 @@ object Routes {
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
     const val Barcode = "barcode"
-    const val ProductNew = "product-new"
-    const val ProductEdit = "product-edit/{productId}"
     const val ProductAvailability = "product-availability/{productId}"
     const val UserEdit = "user-edit/{userId}"
     const val PickCustomer = "pick-customer"
@@ -299,32 +294,6 @@ fun AnyRentNavHost(
         composable(Routes.StoreInfo) {
             StoreInfoScreen(onBack = { rootNavController.popBackStack() })
         }
-        composable(Routes.ProductNew) {
-            ProductFormScreen(
-                initial = null,
-                onBack = { rootNavController.popBackStack() },
-                onSaved = { rootNavController.popBackStack() },
-            )
-        }
-        composable(
-            Routes.ProductEdit,
-            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
-        ) { entry ->
-            val id = entry.arguments?.getInt("productId") ?: return@composable
-            var product by remember { mutableStateOf<Product?>(null) }
-            LaunchedEffect(id) {
-                product = withContext(Dispatchers.IO) {
-                    com.anyrent.pos.data.ApiClient.get().getProduct(id).getOrNull()
-                }
-            }
-            product?.let {
-                ProductFormScreen(
-                    initial = it,
-                    onBack = { rootNavController.popBackStack() },
-                    onSaved = { rootNavController.popBackStack() },
-                )
-            }
-        }
         composable(Routes.PickCustomer) {
             CustomersScreen(
                 pickMode = true,
@@ -448,8 +417,6 @@ private fun MainTabs(
                     onOpenCart = { rootNavController.navigate(Routes.Cart) },
                     onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                     onOpenBarcode = { rootNavController.navigate(Routes.Barcode) },
-                    onManageProducts = { rootNavController.navigate(Routes.ProductNew) },
-                    onEditProduct = { id -> rootNavController.navigate("product-edit/$id") },
                     onCheckProductAvailability = { id ->
                         rootNavController.navigate(Routes.productAvailability(id))
                     },
