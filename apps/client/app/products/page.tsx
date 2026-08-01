@@ -69,7 +69,7 @@ export default function ProductsPage() {
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
   // ✅ Use permissions hook to check if user can manage products
-  const { canManageProducts, canCreateProducts } = usePermissions();
+  const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
   
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
@@ -243,6 +243,8 @@ export default function ProductsPage() {
         break;
         
       case 'edit':
+        // Staff (no products.update / manage) must not open edit.
+        if (!canUpdateProducts) break;
         // Fetch full product details before showing edit dialog
         try {
           const response = await productsApi.getProduct(productId);
@@ -293,7 +295,7 @@ export default function ProductsPage() {
       default:
         break;
     }
-  }, [data?.products, router, toastSuccess, refetch, t]);
+  }, [data?.products, router, toastSuccess, refetch, t, canUpdateProducts]);
   
   // Handle product update from edit dialog
   const handleProductUpdate = useCallback(async (productData: ProductUpdateInput, files?: File[]) => {
@@ -538,10 +540,14 @@ export default function ProductsPage() {
             <div className="px-6 py-4 overflow-y-auto">
             <ProductDetail
               product={selectedProduct}
-              onEdit={() => {
-                setShowDetailDialog(false);
-                setShowEditDialog(true);
-              }}
+              onEdit={
+                canUpdateProducts
+                  ? () => {
+                      setShowDetailDialog(false);
+                      setShowEditDialog(true);
+                    }
+                  : undefined
+              }
               showActions={true}
               isMerchantAccount={true}
             />

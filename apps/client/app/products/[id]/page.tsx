@@ -241,7 +241,7 @@ export default function ProductViewPage() {
       <PageContent>
         <ProductDetail
           product={product}
-          onEdit={handleEdit}
+          onEdit={canUpdateProducts ? handleEdit : undefined}
           showActions={true} // Show actions to display create/update times and total stock
           isMerchantAccount={true} // Show merchant features
           className="max-w-7xl mx-auto"
