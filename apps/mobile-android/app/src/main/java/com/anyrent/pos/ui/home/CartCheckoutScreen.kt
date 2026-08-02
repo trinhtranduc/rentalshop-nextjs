@@ -2,6 +2,7 @@ package com.anyrent.pos.ui.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -76,6 +78,9 @@ import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
+import com.anyrent.pos.ui.common.DisplayDateFormatter
+import com.anyrent.pos.ui.common.formatDisplayDate
+import com.anyrent.pos.ui.common.formatDisplayDateTime
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.AppCard
@@ -87,7 +92,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,7 +145,7 @@ fun CartCheckoutScreen(
             formatMoney(discount),
         )
     }
-    val displayDateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val displayDateFormatter = remember { DisplayDateFormatter }
 
     fun submitOrder() {
         if (lines.isEmpty()) {
@@ -696,8 +700,7 @@ fun CartCheckoutScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
-                                    "${pickup.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}  →  " +
-                                        ret.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                    "${formatDisplayDate(pickup)}  →  ${formatDisplayDate(ret)}",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                 )
@@ -777,96 +780,119 @@ fun CartCheckoutScreen(
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+                Modifier.fillMaxWidth().padding(bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    when {
-                        editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
-                        editor.startsWith("PRICE:") -> stringResource(R.string.unit_price)
-                        else -> stringResource(R.string.enter_discount)
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    numericText.ifBlank { "0" },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                listOf(
-                    listOf("1", "2", "3"),
-                    listOf("4", "5", "6"),
-                    listOf("7", "8", "9"),
-                    listOf("0", "000", "⌫"),
-                ).forEach { keys ->
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        keys.forEach { key ->
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(58.dp)
-                                    .clickable {
-                                        numericText = when (key) {
-                                            "⌫" -> numericText.dropLast(1).ifBlank { "0" }
-                                            else -> if (numericText == "0") key else numericText + key
-                                        }.take(12)
-                                    },
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                            ) {
-                                androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
-                                    Text(key, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        when {
+                            editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
+                            editor.startsWith("PRICE:") -> stringResource(R.string.unit_price)
+                            else -> stringResource(R.string.enter_discount)
+                        },
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // Thousands separator while typing (raw digits stay in numericText)
+                    Text(
+                        formatMoney(numericText.toDoubleOrNull() ?: 0.0),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                // Full-bleed keypad — no gaps between keys
+                Column(Modifier.fillMaxWidth()) {
+                    listOf(
+                        listOf("1", "2", "3"),
+                        listOf("4", "5", "6"),
+                        listOf("7", "8", "9"),
+                        listOf("0", "000", "⌫"),
+                    ).forEach { keys ->
+                        Row(Modifier.fillMaxWidth()) {
+                            keys.forEach { key ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(58.dp)
+                                        .clickable {
+                                            numericText = when (key) {
+                                                "⌫" -> numericText.dropLast(1).ifBlank { "0" }
+                                                else -> if (numericText == "0") key else numericText + key
+                                            }.take(12)
+                                        },
+                                    shape = RectangleShape,
+                                    color = Color.White,
+                                    border = BorderStroke(
+                                        0.5.dp,
+                                        MaterialTheme.colorScheme.outlineVariant,
+                                    ),
+                                ) {
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            key,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                if (editor == "DISCOUNT") {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (editor == "DISCOUNT") {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            FilterChip(
+                                selected = discountType == CartStore.DiscountType.PERCENT,
+                                onClick = { CartStore.setDiscountType(CartStore.DiscountType.PERCENT) },
+                                label = { Text("%") },
+                                modifier = Modifier.weight(1f),
+                            )
+                            FilterChip(
+                                selected = discountType == CartStore.DiscountType.AMOUNT,
+                                onClick = { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) },
+                                label = { Text("đ") },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        FilterChip(
-                            selected = discountType == CartStore.DiscountType.PERCENT,
-                            onClick = { CartStore.setDiscountType(CartStore.DiscountType.PERCENT) },
-                            label = { Text("%") },
-                            modifier = Modifier.weight(1f),
-                        )
-                        FilterChip(
-                            selected = discountType == CartStore.DiscountType.AMOUNT,
-                            onClick = { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) },
-                            label = { Text("đ") },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TextButton(
-                        onClick = { numericEditor = null },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) { Text(stringResource(R.string.cancel)) }
-                    Button(
-                        onClick = {
-                            val value = numericText.toDoubleOrNull() ?: 0.0
-                            when {
-                                editor == "DEPOSIT" -> CartStore.setDeposit(value)
-                                editor.startsWith("PRICE:") -> editor.substringAfter(':').toIntOrNull()
-                                    ?.let { CartStore.updateUnitPrice(it, value) }
-                                else -> CartStore.setDiscount(value)
-                            }
-                            numericEditor = null
-                        },
-                        modifier = Modifier.weight(2f).height(52.dp),
-                    ) {
-                        Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
+                        TextButton(
+                            onClick = { numericEditor = null },
+                            modifier = Modifier.weight(1f).height(52.dp),
+                        ) { Text(stringResource(R.string.cancel)) }
+                        Button(
+                            onClick = {
+                                val value = numericText.toDoubleOrNull() ?: 0.0
+                                when {
+                                    editor == "DEPOSIT" -> CartStore.setDeposit(value)
+                                    editor.startsWith("PRICE:") -> editor.substringAfter(':').toIntOrNull()
+                                        ?.let { CartStore.updateUnitPrice(it, value) }
+                                    else -> CartStore.setDiscount(value)
+                                }
+                                numericEditor = null
+                            },
+                            modifier = Modifier.weight(2f).height(52.dp),
+                        ) {
+                            Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -890,7 +916,7 @@ fun CartCheckoutScreen(
             sheetState = dateSheetState,
             containerColor = Color.White,
         ) {
-            val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+            val dateFormatter = remember { DisplayDateFormatter }
             fun formattedDate(millis: Long?): String = millis?.let {
                 Instant.ofEpochMilli(it)
                     .atZone(ZoneOffset.UTC)
@@ -1038,7 +1064,7 @@ private fun CartPreviewDetailContent(
     discount: Double,
     total: Double,
 ) {
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val dateFormatter = remember { DisplayDateFormatter }
     Column(
         modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -1059,7 +1085,7 @@ private fun CartPreviewDetailContent(
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     PreviewValueRow(
                         stringResource(R.string.book_date),
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                        formatDisplayDateTime(LocalDateTime.now()),
                     )
                     androidx.compose.material3.HorizontalDivider()
                     PreviewValueRow(stringResource(R.string.pickup_date), pickup.format(dateFormatter))

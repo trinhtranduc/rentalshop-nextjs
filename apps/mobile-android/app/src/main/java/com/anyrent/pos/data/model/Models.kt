@@ -11,6 +11,10 @@ data class UserProfile(
     val outletId: Int?,
     val merchantName: String?,
     val outletName: String?,
+    val merchantPhone: String? = null,
+    val merchantAddress: String? = null,
+    val outletPhone: String? = null,
+    val outletAddress: String? = null,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)
@@ -94,6 +98,12 @@ data class OrderDetail(
     val lateFee: Double = 0.0,
     val collateralDetails: String? = null,
     val notesImages: List<String> = emptyList(),
+    /** From API — used for receipt discount label (amount vs percentage). */
+    val discountType: String? = null,
+    val discountValue: Double = 0.0,
+    val discountAmount: Double = 0.0,
+    /** Store name on the order — preferred over SessionStore for receipt header. */
+    val outletName: String? = null,
 )
 
 data class PaymentEntry(

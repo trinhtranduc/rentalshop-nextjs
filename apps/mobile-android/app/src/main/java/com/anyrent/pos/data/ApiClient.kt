@@ -73,6 +73,10 @@ class ApiClient(
         SessionStore.outletId = profile.outletId
         SessionStore.merchantName = profile.merchantName
         SessionStore.outletName = profile.outletName
+        SessionStore.merchantPhone = profile.merchantPhone
+        SessionStore.merchantAddress = profile.merchantAddress
+        SessionStore.outletPhone = profile.outletPhone
+        SessionStore.outletAddress = profile.outletAddress
         profile
     }
 
@@ -407,7 +411,14 @@ class ApiClient(
             .applyAuth(true)
             .build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("Download failed (${response.code})")
+            if (!response.isSuccessful) {
+                val body = response.body?.string().orEmpty()
+                val apiMessage = runCatching {
+                    JSONObject(body).optString("message")
+                        .ifBlank { JSONObject(body).optString("error") }
+                }.getOrNull()?.takeIf { it.isNotBlank() }
+                error(apiMessage ?: "Download failed (${response.code})")
+            }
             return response.body?.bytes() ?: ByteArray(0)
         }
     }
@@ -808,6 +819,10 @@ class ApiClient(
                 ?: outlet?.optInt("id")?.takeIf { it > 0 },
             merchantName = merchant?.optString("name")?.takeIf { it.isNotBlank() },
             outletName = outlet?.optString("name")?.takeIf { it.isNotBlank() },
+            merchantPhone = merchant?.optString("phone")?.takeIf { it.isNotBlank() },
+            merchantAddress = merchant?.optString("address")?.takeIf { it.isNotBlank() },
+            outletPhone = outlet?.optString("phone")?.takeIf { it.isNotBlank() },
+            outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
         )
     }
 
@@ -951,6 +966,11 @@ class ApiClient(
             notesImages = o.optJSONArray("notesImages")?.let { images ->
                 (0 until images.length()).mapNotNull { images.optString(it).takeIf(String::isNotBlank) }
             }.orEmpty(),
+            discountType = o.nullableString("discountType"),
+            discountValue = o.optDouble("discountValue"),
+            discountAmount = o.optDouble("discountAmount"),
+            outletName = o.nullableString("outletName")
+                ?: o.optJSONObject("outlet")?.nullableString("name"),
         )
     }
 

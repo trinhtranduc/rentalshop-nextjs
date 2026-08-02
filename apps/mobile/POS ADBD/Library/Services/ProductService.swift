@@ -333,13 +333,14 @@ class ProductService: BaseService, ProductServiceProtocol {
         queryParams["period"] = period
         queryParams["format"] = format
         
-        // Add dates if period is custom
+        // Calendar date only — full ISO + server local setHours caused false
+        // "end date in the future" rejections for custom export.
         if period == "custom" {
             if let startDate = startDate {
-                queryParams["startDate"] = startDate.dateServerISOString()
+                queryParams["startDate"] = startDate.dateServerInString()
             }
             if let endDate = endDate {
-                queryParams["endDate"] = endDate.dateServerISOString()
+                queryParams["endDate"] = endDate.dateServerInString()
             }
         }
         

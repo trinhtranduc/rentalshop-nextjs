@@ -21,6 +21,10 @@ object SessionStore {
     private const val KEY_OUTLET_ID = "outletId"
     private const val KEY_MERCHANT_NAME = "merchantName"
     private const val KEY_OUTLET_NAME = "outletName"
+    private const val KEY_OUTLET_PHONE = "outletPhone"
+    private const val KEY_OUTLET_ADDRESS = "outletAddress"
+    private const val KEY_MERCHANT_PHONE = "merchantPhone"
+    private const val KEY_MERCHANT_ADDRESS = "merchantAddress"
     private const val KEY_DEVICE_ID = "deviceId"
     private const val KEY_PENDING_ORDER_ID = "pendingOrderId"
     private const val KEY_ONBOARDING = "onboardingDone"
@@ -87,6 +91,38 @@ object SessionStore {
             prefs.edit().putString(KEY_OUTLET_NAME, value).apply()
         }
 
+    var outletPhone: String?
+        get() = prefs.getString(KEY_OUTLET_PHONE, null)
+        set(value) {
+            prefs.edit().putString(KEY_OUTLET_PHONE, value).apply()
+        }
+
+    var outletAddress: String?
+        get() = prefs.getString(KEY_OUTLET_ADDRESS, null)
+        set(value) {
+            prefs.edit().putString(KEY_OUTLET_ADDRESS, value).apply()
+        }
+
+    var merchantPhone: String?
+        get() = prefs.getString(KEY_MERCHANT_PHONE, null)
+        set(value) {
+            prefs.edit().putString(KEY_MERCHANT_PHONE, value).apply()
+        }
+
+    var merchantAddress: String?
+        get() = prefs.getString(KEY_MERCHANT_ADDRESS, null)
+        set(value) {
+            prefs.edit().putString(KEY_MERCHANT_ADDRESS, value).apply()
+        }
+
+    /** Store phone for receipts — outlet first, then merchant (iOS OrderViewModel). */
+    val storePhone: String?
+        get() = outletPhone?.takeIf { it.isNotBlank() } ?: merchantPhone?.takeIf { it.isNotBlank() }
+
+    /** Store address for receipts — outlet first, then merchant (iOS OrderViewModel). */
+    val storeAddress: String?
+        get() = outletAddress?.takeIf { it.isNotBlank() } ?: merchantAddress?.takeIf { it.isNotBlank() }
+
     val isLoggedIn: Boolean
         get() = !accessToken.isNullOrBlank()
 
@@ -121,6 +157,10 @@ object SessionStore {
             .remove(KEY_OUTLET_ID)
             .remove(KEY_MERCHANT_NAME)
             .remove(KEY_OUTLET_NAME)
+            .remove(KEY_OUTLET_PHONE)
+            .remove(KEY_OUTLET_ADDRESS)
+            .remove(KEY_MERCHANT_PHONE)
+            .remove(KEY_MERCHANT_ADDRESS)
             .apply()
     }
 

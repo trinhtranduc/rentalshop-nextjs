@@ -111,10 +111,19 @@ fun AnyRentNavHost(
     startOrderId: Int? = null,
     rootNavController: NavHostController = rememberNavController(),
 ) {
+    // iOS: onboarding after first successful login (loadMainUserView), not before login.
     val start = when {
-        !SessionStore.onboardingDone && !SessionStore.isLoggedIn -> Routes.Onboarding
+        SessionStore.isLoggedIn && !SessionStore.onboardingDone -> Routes.Onboarding
         SessionStore.isLoggedIn -> Routes.Main
         else -> Routes.Login
+    }
+
+    fun navigateAfterLogin() {
+        val dest = if (SessionStore.onboardingDone) Routes.Main else Routes.Onboarding
+        rootNavController.navigate(dest) {
+            popUpTo(Routes.Login) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 
     LaunchedEffect(rootNavController) {
@@ -129,11 +138,7 @@ fun AnyRentNavHost(
     NavHost(navController = rootNavController, startDestination = start) {
         composable(Routes.Login) {
             LoginScreen(
-                onLoggedIn = {
-                    rootNavController.navigate(Routes.Main) {
-                        popUpTo(Routes.Login) { inclusive = true }
-                    }
-                },
+                onLoggedIn = { navigateAfterLogin() },
                 onForgotPassword = { rootNavController.navigate(Routes.Forgot) },
                 onRegister = { rootNavController.navigate(Routes.Register) },
             )
@@ -286,8 +291,9 @@ fun AnyRentNavHost(
         composable(Routes.Onboarding) {
             OnboardingScreen(onFinished = {
                 SessionStore.onboardingDone = true
-                rootNavController.navigate(Routes.Login) {
+                rootNavController.navigate(Routes.Main) {
                     popUpTo(Routes.Onboarding) { inclusive = true }
+                    launchSingleTop = true
                 }
             })
         }

@@ -8,5 +8,9 @@ captures/
 .cxx
 *.apk
 *.aab
+keystore/
+keystore.properties
+*.jks
+*.keystore
 # Keep committed stub; replace locally with Firebase Console file when testing FCM
 # app/google-services.json

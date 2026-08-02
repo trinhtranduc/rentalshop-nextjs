@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,9 +53,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -72,24 +76,13 @@ private val AuthBlue = Color(0xFF2454F4)
 
 @Composable
 private fun AuthBackground(content: @Composable () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF59C7F4), Color(0xFFDFF7FF), Color(0xFF0872EA)),
-                ),
-            ),
-    ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        listOf(Color.White.copy(alpha = .78f), Color.Transparent),
-                        radius = 780f,
-                    ),
-                ),
+    // Parity with iOS `installAuthEntryBackground()` → `anyrent-auth-background`
+    Box(Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.anyrent_auth_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
         )
         content()
     }
@@ -186,12 +179,12 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                Modifier.size(62.dp).background(AuthBlue, RoundedCornerShape(18.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("A", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
-            }
+            Image(
+                painter = painterResource(R.drawable.anyrent_logo),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.size(62.dp),
+                contentScale = ContentScale.Fit,
+            )
             Spacer(Modifier.height(22.dp))
             Text(stringResource(R.string.welcome_back), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(28.dp))
@@ -241,7 +234,7 @@ fun ForgotPasswordScreen(onBack: () -> Unit, onCheckEmail: (String) -> Unit) {
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     AuthBackground {
-        Column(Modifier.fillMaxSize().imePadding()) {
+        Column(Modifier.fillMaxSize().imePadding().navigationBarsPadding()) {
             AuthHeader(stringResource(R.string.forgot_password_title), onBack)
             AuthCard(Modifier.fillMaxWidth().padding(20.dp).padding(top = 20.dp)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -273,14 +266,27 @@ fun ForgotPasswordScreen(onBack: () -> Unit, onCheckEmail: (String) -> Unit) {
 
 @Composable
 private fun AuthHeader(title: String, onBack: () -> Unit) {
+    // enableEdgeToEdge(): without statusBarsPadding the back/title sit under the
+    // system status bar on Forgot Password / Create Account / Check Email.
     Row(
-        Modifier.fillMaxWidth().background(Color.White.copy(alpha = .9f)).padding(horizontal = 10.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = .9f))
+            .statusBarsPadding()
+            .padding(horizontal = 10.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
         }
-        Text(title, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            title,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        // Balance the back IconButton (48.dp) so the title stays visually centered.
         Spacer(Modifier.size(48.dp))
     }
 }
@@ -291,7 +297,7 @@ fun CheckEmailScreen(email: String, onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     AuthBackground {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().navigationBarsPadding()) {
             AuthHeader(stringResource(R.string.check_email), onBack)
             AuthCard(Modifier.fillMaxWidth().padding(20.dp).padding(top = 36.dp)) {
                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -339,7 +345,7 @@ fun RegisterStoreScreen(onBack: () -> Unit, onRegistered: () -> Unit) {
     }
 
     AuthBackground {
-        Column(Modifier.fillMaxSize().imePadding()) {
+        Column(Modifier.fillMaxSize().imePadding().navigationBarsPadding()) {
             AuthHeader(stringResource(R.string.create_account), onBack)
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -433,18 +439,128 @@ fun RegisterStoreScreen(onBack: () -> Unit, onRegistered: () -> Unit) {
 
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
+    data class OnboardingPage(
+        val imageRes: Int,
+        val titleRes: Int,
+        val bodyRes: Int,
+    )
+
+    // iOS parity: product → customer → order, each with illustration asset.
     val pages = listOf(
-        stringResource(R.string.onboarding_1),
-        stringResource(R.string.onboarding_2),
-        stringResource(R.string.onboarding_3),
+        OnboardingPage(
+            R.drawable.onboarding_product,
+            R.string.onboarding_product_title,
+            R.string.onboarding_product_body,
+        ),
+        OnboardingPage(
+            R.drawable.onboarding_customer,
+            R.string.onboarding_customer_title,
+            R.string.onboarding_customer_body,
+        ),
+        OnboardingPage(
+            R.drawable.onboarding_order,
+            R.string.onboarding_order_title,
+            R.string.onboarding_order_body,
+        ),
     )
     var index by remember { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
-        Text(pages[index], style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = { if (index < pages.lastIndex) index++ else onFinished() },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (index < pages.lastIndex) stringResource(R.string.next) else stringResource(R.string.get_started)) }
+    val isLast = index >= pages.lastIndex
+    val page = pages[index]
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        if (!isLast) {
+            TextButton(
+                onClick = onFinished,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.skip),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+        }
+
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp)
+                .padding(bottom = 24.dp, top = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painter = painterResource(page.imageRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(220.dp),
+                    contentScale = ContentScale.Fit,
+                )
+                Spacer(Modifier.height(28.dp))
+                Text(
+                    stringResource(page.titleRes),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    stringResource(page.bodyRes),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Row(
+                Modifier.padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                pages.indices.forEach { i ->
+                    Box(
+                        Modifier
+                            .size(if (i == index) 10.dp else 8.dp)
+                            .background(
+                                if (i == index) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
+                                CircleShape,
+                            ),
+                    )
+                }
+            }
+
+            Button(
+                onClick = {
+                    if (isLast) onFinished() else index++
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AuthBlue),
+            ) {
+                Text(
+                    stringResource(if (isLast) R.string.get_started else R.string.next),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
     }
 }

@@ -194,12 +194,7 @@ fun OrderActionPanel(
 
         Button(
             onClick = {
-                val config = ThermalPrinter.Config(
-                    ip = prefs.getString("printerIp", "") ?: "",
-                    port = prefs.getString("printerPort", "9100")?.toIntOrNull() ?: 9100,
-                    paperWidthMm = prefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
-                    name = prefs.getString("printerName", "") ?: "",
-                )
+                val config = ThermalPrinter.configFromPrefs(prefs)
                 scope.launch {
                     val result = withContext(Dispatchers.IO) {
                         ThermalPrinter.printOrder(config, detail)

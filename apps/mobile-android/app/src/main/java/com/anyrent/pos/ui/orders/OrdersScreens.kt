@@ -97,6 +97,8 @@ import com.anyrent.pos.ui.common.SectionLabel
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
+import com.anyrent.pos.ui.common.formatDisplayDate
+import com.anyrent.pos.ui.common.formatDisplayDateTime
 import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.print.ThermalPrinter
 
@@ -104,11 +106,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 
 /**
@@ -657,36 +654,12 @@ private fun OrderListCard(
     }
 }
 
-private val orderListDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-private val orderCreatedDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+/** Match iOS order list cell `dateInString()` → `dd/MM/yy` (book / pickup / return). */
+private fun formatOrderListDate(value: String?): String = formatDisplayDate(value)
 
-private fun formatOrderListDate(value: String?): String {
-    val date = value
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
-        ?.take(10)
-        ?: return "N/A"
-    return runCatching {
-        LocalDate.parse(date).format(orderListDateFormatter)
-    }.getOrDefault("N/A")
-}
+private fun formatOrderCreatedDate(value: String?): String = formatDisplayDate(value)
 
-private fun formatOrderCreatedDate(value: String?): String {
-    val raw = value
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
-        ?: return "N/A"
-    val normalized = raw.replace(" ", "T")
-    return runCatching {
-        OffsetDateTime.parse(normalized)
-            .atZoneSameInstant(ZoneId.systemDefault())
-            .format(orderCreatedDateFormatter)
-    }.recoverCatching {
-        LocalDateTime.parse(normalized).format(orderCreatedDateFormatter)
-    }.getOrElse {
-        formatOrderListDate(raw)
-    }
-}
+private fun formatOrderDetailCreatedDate(value: String?): String = formatDisplayDateTime(value)
 
 @Composable
 private fun OrderMetric(
@@ -841,12 +814,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     }
                     OutlinedButton(
                         onClick = {
-                            val config = ThermalPrinter.Config(
-                                ip = printerPrefs.getString("printerIp", "") ?: "",
-                                port = printerPrefs.getString("printerPort", "9100")?.toIntOrNull() ?: 9100,
-                                paperWidthMm = printerPrefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
-                                name = printerPrefs.getString("printerName", "") ?: "",
-                            )
+                            val config = ThermalPrinter.configFromPrefs(printerPrefs)
                             scope.launch {
                                 val result = withContext(Dispatchers.IO) {
                                     ThermalPrinter.printOrder(config, current)
@@ -930,8 +898,8 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     ) {
                         Column {
                             DetailRow(
-                                stringResource(R.string.book_date),
-                                formatOrderCreatedDate(order.summary.createdAt),
+                                stringResource(R.string.create_date),
+                                formatOrderDetailCreatedDate(order.summary.createdAt),
                             )
                             HorizontalDivider(Modifier.padding(start = 16.dp))
                             DetailRow(
@@ -1293,50 +1261,62 @@ private fun OrderMoneyEditorSheet(
         containerColor = Color.White,
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            Modifier.fillMaxWidth().padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(title, style = MaterialTheme.typography.titleLarge)
-            Text(
-                formatMoney(value.toDoubleOrNull() ?: 0.0),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            listOf(
-                listOf("1", "2", "3"),
-                listOf("4", "5", "6"),
-                listOf("7", "8", "9"),
-                listOf("0", "000", "⌫"),
-            ).forEach { keys ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    keys.forEach { key ->
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(58.dp)
-                                .clickable {
-                                    val next = when (key) {
-                                        "⌫" -> value.dropLast(1).ifBlank { "0" }
-                                        else -> if (value == "0") key else value + key
-                                    }
-                                    onValueChange(next.take(12))
-                                },
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(key, style = MaterialTheme.typography.titleLarge)
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(title, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    formatMoney(value.toDoubleOrNull() ?: 0.0),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Column(Modifier.fillMaxWidth()) {
+                listOf(
+                    listOf("1", "2", "3"),
+                    listOf("4", "5", "6"),
+                    listOf("7", "8", "9"),
+                    listOf("0", "000", "⌫"),
+                ).forEach { keys ->
+                    Row(Modifier.fillMaxWidth()) {
+                        keys.forEach { key ->
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(58.dp)
+                                    .clickable {
+                                        val next = when (key) {
+                                            "⌫" -> value.dropLast(1).ifBlank { "0" }
+                                            else -> if (value == "0") key else value + key
+                                        }
+                                        onValueChange(next.take(12))
+                                    },
+                                shape = androidx.compose.ui.graphics.RectangleShape,
+                                color = Color.White,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                ),
+                            ) {
+                                Box(
+                                    Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(key, style = MaterialTheme.typography.titleLarge)
+                                }
                             }
                         }
                     }
                 }
             }
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {

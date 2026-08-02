@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Key
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -461,42 +463,10 @@ internal fun roleDisplayValue(role: String?): String = when (role?.uppercase()) 
         .orEmpty()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExportScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val base = BuildConfig.API_BASE_URL.trimEnd('/')
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.export_data)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-            )
-        }
-    ) { padding ->
-        Column(
-            Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(stringResource(R.string.export_hint))
-            listOf(
-                "Orders" to "$base/api/orders/export?period=month&format=excel",
-                "Products" to "$base/api/products/export?period=month&format=excel",
-                "Customers" to "$base/api/customers/export?period=month&format=excel",
-            ).forEach { (label, url) ->
-                Button(
-                    onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(label) }
-            }
-        }
-    }
+    // Kept for navigation compatibility — UI lives in ExportAuthScreen (iOS parity).
+    ExportAuthScreen(onBack = onBack)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -555,29 +525,164 @@ fun PrinterConfigScreen(onBack: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoScreen(onBack: () -> Unit) {
+    val ctx = LocalContext.current
+    fun openUrl(url: String) {
+        runCatching {
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+    }
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_info)) },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        stringResource(R.string.app_info),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Column(
-            Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
-            Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            Text("API: ${BuildConfig.API_BASE_URL}")
-            Text("Package: ${BuildConfig.APPLICATION_ID}")
-            val ctx = LocalContext.current
-            Button(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://anyrent.shop/privacy"))) }) { Text(stringResource(R.string.privacy)) }
-            Button(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://anyrent.shop/terms"))) }) { Text(stringResource(R.string.terms)) }
+            // APP INFORMATION — Version / Build
+            Column {
+                SectionLabel(stringResource(R.string.app_info))
+                AppCard {
+                    AppInfoValueRow(
+                        title = stringResource(R.string.version),
+                        value = BuildConfig.VERSION_NAME,
+                    )
+                    HorizontalDivider(
+                        Modifier.padding(start = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    AppInfoValueRow(
+                        title = stringResource(R.string.build_number),
+                        value = BuildConfig.VERSION_CODE.toString(),
+                    )
+                }
+            }
+
+            // LEGAL — Privacy / Terms
+            Column {
+                SectionLabel(stringResource(R.string.legal))
+                AppCard {
+                    AppInfoLinkRow(
+                        title = stringResource(R.string.privacy),
+                        onClick = { openUrl("https://www.anyrent.shop/privacy") },
+                    )
+                    HorizontalDivider(
+                        Modifier.padding(start = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    AppInfoLinkRow(
+                        title = stringResource(R.string.terms),
+                        onClick = { openUrl("https://www.anyrent.shop/terms") },
+                    )
+                }
+            }
+
+            // DEVELOPER CONTACT — Email / Website
+            Column {
+                SectionLabel(stringResource(R.string.developer_contact))
+                AppCard {
+                    AppInfoLinkRow(
+                        title = stringResource(R.string.email),
+                        value = "trinhduc20@gmail.com",
+                        onClick = { openUrl("mailto:trinhduc20@gmail.com") },
+                    )
+                    HorizontalDivider(
+                        Modifier.padding(start = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    AppInfoLinkRow(
+                        title = stringResource(R.string.website),
+                        value = "www.anyrent.shop",
+                        onClick = { openUrl("https://www.anyrent.shop") },
+                    )
+                }
+            }
         }
+    }
+}
+
+/** iOS value1 cell: title left, secondary value right (non-clickable). */
+@Composable
+private fun AppInfoValueRow(title: String, value: String) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** iOS disclosure cell: title (+ optional value) + chevron. */
+@Composable
+private fun AppInfoLinkRow(
+    title: String,
+    onClick: () -> Unit,
+    value: String? = null,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (!value.isNullOrBlank()) {
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }

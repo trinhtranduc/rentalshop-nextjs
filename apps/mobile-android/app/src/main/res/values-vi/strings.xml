@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AnyRent POS</string>
+    <string name="app_name">AnyRent</string>
     <string name="notification_channel_name">Cập nhật đơn hàng</string>
     <string name="notification_channel_desc">Thông báo khi tạo đơn hoặc đổi trạng thái</string>
     <string name="login_subtitle">Đăng nhập cửa hàng của bạn</string>
@@ -88,19 +88,28 @@
     <string name="about">Thông tin</string>
     <string name="logout">Đăng xuất</string>
     <string name="export_hint">Mở trang xuất file trên trình duyệt (có thể cần đăng nhập web).</string>
-    <string name="printer_hint">Lưu cấu hình máy in nhiệt. In hardware sẽ bổ sung sau.</string>
+    <string name="printer_hint">Cấu hình máy in nhiệt mạng (ESC/POS qua TCP). Lưu IP, rồi dùng In thử hoặc In hóa đơn trên đơn hàng.</string>
     <string name="printer_name">Tên máy in</string>
     <string name="paper_width">Khổ giấy (mm)</string>
     <string name="saved">Đã lưu</string>
+    <string name="printer_note">Ghi chú hóa đơn (cuối bill thuê)</string>
+    <string name="test_print_ok">Đã gửi lệnh in thử</string>
     <string name="offline_cache">Đang xem dữ liệu đã lưu (offline)</string>
     <string name="register_store">Đăng ký cửa hàng</string>
     <string name="register">Đăng ký</string>
     <string name="store_name">Tên cửa hàng</string>
     <string name="check_email">Kiểm tra email</string>
     <string name="resend_email">Gửi lại email</string>
+    <string name="onboarding_product_title">Tạo sản phẩm</string>
+    <string name="onboarding_product_body">Thêm sản phẩm cho thuê kèm ảnh, tồn kho và giá để đội ngũ tìm nhanh khi tạo đơn.</string>
+    <string name="onboarding_customer_title">Tạo khách hàng</string>
+    <string name="onboarding_customer_body">Lưu thông tin khách một lần, dùng lại cho mọi đơn thuê và đơn bán.</string>
+    <string name="onboarding_order_title">Tạo đơn hàng</string>
+    <string name="onboarding_order_body">Chọn khách, thêm sản phẩm, đặt lịch thuê và hoàn tất đơn chỉ với vài thao tác.</string>
     <string name="onboarding_1">Tạo đơn thuê và bán tại quầy</string>
     <string name="onboarding_2">Theo dõi nhận/trả và thanh toán</string>
     <string name="onboarding_3">Nhận thông báo khi đơn thay đổi</string>
+    <string name="skip">Bỏ qua</string>
     <string name="next">Tiếp</string>
     <string name="get_started">Bắt đầu</string>
     <string name="pickup_date">Ngày nhận</string>
@@ -121,6 +130,11 @@
     <string name="period_year">Năm</string>
     <string name="privacy">Chính sách bảo mật</string>
     <string name="terms">Điều khoản</string>
+    <string name="version">Phiên bản</string>
+    <string name="build_number">Build</string>
+    <string name="legal">Pháp lý</string>
+    <string name="developer_contact">Liên hệ nhà phát triển</string>
+    <string name="website">Website</string>
     <string name="printer_ip">IP máy in</string>
     <string name="printer_port">Cổng</string>
     <string name="test_print">In thử</string>
@@ -307,6 +321,10 @@
     <string name="order_actions">Thao tác đơn hàng</string>
     <string name="share_order">Chia sẻ đơn hàng</string>
     <string name="share_receipt">Chia sẻ hóa đơn</string>
+    <string name="receipt_thanks_rent">Cảm ơn quý khách đã sử dụng dịch vụ!</string>
+    <string name="receipt_thanks_sale">Cảm ơn quý khách đã mua hàng!</string>
+    <string name="receipt_generated_on">Tạo vào %1$s</string>
+    <string name="receipt_generated_by">Hóa đơn được sinh ra từ phần mềm AnyRent</string>
     <string name="edit">Sửa</string>
     <string name="new_password">Mật khẩu mới</string>
     <string name="confirm_password">Xác nhận mật khẩu</string>
@@ -337,6 +355,8 @@
     <string name="operational_snapshot_subtitle">Trạng thái đơn trong kỳ này</string>
     <string name="reserved">Đã đặt</string>
     <string name="in_progress">Đang thực hiện</string>
+    <string name="picked_up">Đã lấy</string>
+    <string name="returned">Đã trả</string>
     <string name="completed">Hoàn tất</string>
     <string name="cancelled">Đã hủy</string>
     <string name="ok">Đồng ý</string>
@@ -352,4 +372,30 @@
     <string name="order_preview">Xem trước đơn hàng</string>
     <string name="discount_label_percent">Giảm giá (%1$s%%)</string>
     <string name="discount_label_amount">Giảm giá (%1$s)</string>
+
+    <string name="export">Xuất</string>
+    <string name="export_type">Loại xuất</string>
+    <string name="time_period">Khoảng thời gian</string>
+    <string name="file_format">Định dạng tệp</string>
+    <string name="last_1_month">1 tháng gần nhất</string>
+    <string name="last_3_months">3 tháng gần nhất</string>
+    <string name="last_6_months">6 tháng gần nhất</string>
+    <string name="last_1_year">1 năm gần nhất</string>
+    <string name="custom_range">Tùy chọn khoảng</string>
+    <string name="excel_xlsx">Excel (.xlsx)</string>
+    <string name="csv_csv">CSV (.csv)</string>
+    <string name="date_range">Khoảng ngày</string>
+    <string name="start_date">Ngày bắt đầu</string>
+    <string name="end_date">Ngày kết thúc</string>
+    <string name="select_export_type">Vui lòng chọn loại dữ liệu để xuất</string>
+    <string name="select_custom_dates">Vui lòng chọn ngày bắt đầu và kết thúc</string>
+    <string name="start_before_end">Ngày bắt đầu phải trước ngày kết thúc</string>
+    <string name="date_range_max_365">Khoảng ngày không được vượt quá 365 ngày</string>
+    <string name="preparing_export">Đang chuẩn bị xuất…</string>
+    <string name="exported_success">Đã xuất %1$s</string>
+    <string name="order_filters">Bộ lọc đơn hàng</string>
+    <string name="all_statuses">Tất cả trạng thái</string>
+    <string name="all_types">Tất cả loại</string>
+    <string name="created_date">Ngày tạo</string>
+    <string name="date_field">Trường ngày</string>
 </resources>

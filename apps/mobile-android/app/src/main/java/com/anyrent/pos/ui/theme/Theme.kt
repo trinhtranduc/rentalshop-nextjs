@@ -1,17 +1,18 @@
 package com.anyrent.pos.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.RoundedCornerShape
 
 val BrandPrimary = Color(0xFF2454F4)
 private val BrandOnPrimary = Color(0xFFFFFFFF)
@@ -48,8 +49,22 @@ private val DarkColors = darkColorScheme(
     error = Color(0xFFFFB3B6),
 )
 
+private fun TextStyle.withInter(
+    fontSize: androidx.compose.ui.unit.TextUnit? = null,
+    lineHeight: androidx.compose.ui.unit.TextUnit? = null,
+    fontWeight: FontWeight? = null,
+): TextStyle = copy(
+    fontFamily = InterFontFamily,
+    fontSize = fontSize ?: this.fontSize,
+    lineHeight = lineHeight ?: this.lineHeight,
+    fontWeight = fontWeight ?: this.fontWeight,
+)
+
 /**
- * Typography aligned to iOS POS (`Utils.*Font` / `setupCustomNavigationBar`).
+ * Typography: Inter (same as iOS POS) + size/weight roles aligned to `Utils.*Font`.
+ *
+ * Why Inter over default Roboto: brand parity with iOS, more modern geometric sans,
+ * better match for bilingual EN/VI UI.
  *
  * | Role            | iOS                         | Token          |
  * |-----------------|-----------------------------|----------------|
@@ -61,67 +76,72 @@ private val DarkColors = darkColorScheme(
  * | Hint / error    | Regular 12                  | labelSmall     |
  * | Primary CTA     | Bold 18                     | labelLarge     |
  */
+private val base = Typography()
 private val AppTypography = Typography(
-    headlineMedium = Typography().headlineMedium.copy(
+    displayLarge = base.displayLarge.withInter(),
+    displayMedium = base.displayMedium.withInter(),
+    displaySmall = base.displaySmall.withInter(),
+    headlineLarge = base.headlineLarge.withInter(
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+        fontWeight = FontWeight.ExtraBold,
+    ),
+    headlineMedium = base.headlineMedium.withInter(
         fontSize = 22.sp,
         lineHeight = 28.sp,
         fontWeight = FontWeight.Bold,
     ),
-    headlineSmall = Typography().headlineSmall.copy(
+    headlineSmall = base.headlineSmall.withInter(
         fontSize = 20.sp,
         lineHeight = 26.sp,
         fontWeight = FontWeight.Bold,
     ),
     // iOS setupCustomNavigationBar title — Bold 20
-    titleLarge = Typography().titleLarge.copy(
+    titleLarge = base.titleLarge.withInter(
         fontSize = 20.sp,
         lineHeight = 26.sp,
         fontWeight = FontWeight.Bold,
     ),
-    // iOS section titles (e.g. NewProduct) — Medium 16
-    titleMedium = Typography().titleMedium.copy(
+    // iOS section titles — Medium 16
+    titleMedium = base.titleMedium.withInter(
         fontSize = 16.sp,
         lineHeight = 22.sp,
         fontWeight = FontWeight.Medium,
     ),
     // iOS customer cell name — Medium 15
-    titleSmall = Typography().titleSmall.copy(
+    titleSmall = base.titleSmall.withInter(
         fontSize = 15.sp,
         lineHeight = 20.sp,
         fontWeight = FontWeight.Medium,
     ),
     // iOS RCPrimaryButton — Bold 18
-    labelLarge = Typography().labelLarge.copy(
+    labelLarge = base.labelLarge.withInter(
         fontSize = 18.sp,
         lineHeight = 22.sp,
         fontWeight = FontWeight.Bold,
     ),
-    // Chips / compact emphasis — Medium 14
-    labelMedium = Typography().labelMedium.copy(
+    labelMedium = base.labelMedium.withInter(
         fontSize = 14.sp,
         lineHeight = 18.sp,
         fontWeight = FontWeight.Medium,
     ),
-    // iOS hint / error / available badge — Regular/Medium 12
-    labelSmall = Typography().labelSmall.copy(
+    labelSmall = base.labelSmall.withInter(
         fontSize = 12.sp,
         lineHeight = 16.sp,
         fontWeight = FontWeight.Medium,
     ),
     // iOS field value / list primary — Regular 16
-    bodyLarge = Typography().bodyLarge.copy(
+    bodyLarge = base.bodyLarge.withInter(
         fontSize = 16.sp,
         lineHeight = 22.sp,
         fontWeight = FontWeight.Normal,
     ),
-    // iOS field label / rent price title — Medium/Regular 14
-    bodyMedium = Typography().bodyMedium.copy(
+    bodyMedium = base.bodyMedium.withInter(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         fontWeight = FontWeight.Normal,
     ),
-    // iOS customer phone / secondary meta — Regular 13
-    bodySmall = Typography().bodySmall.copy(
+    bodySmall = base.bodySmall.withInter(
         fontSize = 13.sp,
         lineHeight = 18.sp,
         fontWeight = FontWeight.Normal,

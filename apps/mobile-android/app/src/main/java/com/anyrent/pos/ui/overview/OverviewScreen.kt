@@ -62,6 +62,7 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.model.RankingItem
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.AppCard
@@ -417,10 +418,13 @@ private fun parseChartPoints(data: JSONObject): List<AnalyticsChartPoint> {
     val array = data.optJSONArray("series") ?: return emptyList()
     return (0 until array.length()).mapNotNull { index ->
         val item = array.optJSONObject(index) ?: return@mapNotNull null
+        val rawLabel = item.optString("day")
+            .ifBlank { item.optString("date") }
+            .ifBlank { item.optString("month") }
+        val formatted = formatDisplayDate(rawLabel.takeIf { it.isNotBlank() })
         AnalyticsChartPoint(
-            label = item.optString("day")
-                .ifBlank { item.optString("month") }
-                .ifBlank { item.optString("date") },
+            // Prefer dd/MM/yy when API sends a day; keep month tokens as-is
+            label = if (formatted != "N/A") formatted else rawLabel,
             revenue = item.optDouble("realIncome", 0.0) + item.optDouble("futureIncome", 0.0),
             orders = item.optDouble("orderCount", 0.0),
         )

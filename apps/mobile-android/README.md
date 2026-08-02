@@ -12,7 +12,7 @@ Native Android POS app (Kotlin + Jetpack Compose) for AnyRent, parallel to iOS `
 ## Setup
 
 1. Open `apps/mobile-android` in Android Studio.
-2. Replace `app/google-services.json` with the real Firebase Android app config for package `com.anyrent`.
+2. Replace `app/google-services.json` with the real Firebase Android app config for package `anyrent.shop`.
 3. Sync Gradle / run on emulator or device.
 
 ```bash
@@ -22,6 +22,18 @@ cd apps/mobile-android
 
 - Debug API: `https://dev-api.anyrent.shop`
 - Release API: `https://api.anyrent.shop`
+
+## Google Play release (AAB)
+
+Requires `keystore.properties` + `keystore/anyrent-upload.jks` (gitignored upload key).
+
+```bash
+cd apps/mobile-android
+./gradlew :app:bundleRelease
+```
+
+Output: `app/build/outputs/bundle/release/app-release.aab`  
+Upload that file in Play Console → Testing → Closed testing → Create release.
 
 ## Features (by plan phase)
 
@@ -43,5 +55,5 @@ cd apps/mobile-android
 ## Notes
 
 - UI permission helpers only hide controls; data scoping stays on the API.
-- Replace `app/google-services.json` with the real Firebase Android config for package `com.anyrent`.
+- Replace `app/google-services.json` with the real Firebase Android config for package `anyrent.shop`.
 - Thermal print uses network IP:port (default 9100), same model as iOS `PrinterManager`.

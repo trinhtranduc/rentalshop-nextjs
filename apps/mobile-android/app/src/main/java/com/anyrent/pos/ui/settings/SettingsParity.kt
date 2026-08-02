@@ -91,6 +91,8 @@ fun StoreInfoScreen(onBack: () -> Unit) {
             address = outlet.address.orEmpty()
             phone = outlet.phone.orEmpty()
             SessionStore.outletName = outlet.name
+            SessionStore.outletAddress = outlet.address
+            SessionStore.outletPhone = outlet.phone
         }
         loadingInitial = false
     }
@@ -116,6 +118,8 @@ fun StoreInfoScreen(onBack: () -> Unit) {
             loading = false
             result.onSuccess {
                 SessionStore.outletName = name
+                SessionStore.outletAddress = address.takeIf { it.isNotBlank() }
+                SessionStore.outletPhone = phone.takeIf { it.isNotBlank() }
                 message = context.getString(R.string.saved)
             }.onFailure { error = it.message }
         }
@@ -251,6 +255,13 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
     var ip by remember { mutableStateOf(prefs.getString("printerIp", "").orEmpty()) }
     var port by remember { mutableStateOf(prefs.getString("printerPort", "9100").orEmpty()) }
     var paper by remember { mutableStateOf(prefs.getString("paperWidth", "80").orEmpty()) }
+    var note by remember {
+        mutableStateOf(
+            prefs.getString("printerNote", ThermalPrinter.DEFAULT_PRINTER_NOTE)
+                .orEmpty()
+                .ifBlank { ThermalPrinter.DEFAULT_PRINTER_NOTE },
+        )
+    }
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -266,7 +277,13 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             Text(
                 stringResource(R.string.printer_hint),
                 style = MaterialTheme.typography.bodyMedium,
@@ -294,6 +311,11 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                 label = stringResource(R.string.paper_width),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
+            AppInputField(
+                value = note,
+                onValueChange = { note = it },
+                label = stringResource(R.string.printer_note),
+            )
             AppPrimaryButton(
                 text = stringResource(R.string.save),
                 onClick = {
@@ -302,8 +324,9 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                         .putString("printerIp", ip)
                         .putString("printerPort", port)
                         .putString("paperWidth", paper)
+                        .putString("printerNote", note)
                         .apply()
-                    message = "Saved"
+                    message = context.getString(R.string.saved)
                 },
             )
             AppSecondaryButton(
@@ -314,66 +337,18 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                         port = port.toIntOrNull() ?: 9100,
                         paperWidthMm = paper.toIntOrNull() ?: 80,
                         name = name,
+                        note = note,
                     )
                     scope.launch {
                         val result = withContext(Dispatchers.IO) { ThermalPrinter.testPrint(config) }
                         message = when (result) {
-                            is ThermalPrinter.Result.Success -> "Test OK"
+                            is ThermalPrinter.Result.Success -> context.getString(R.string.test_print_ok)
                             is ThermalPrinter.Result.Failure -> result.message
                         }
                     }
                 },
             )
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ExportAuthScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    var message by remember { mutableStateOf<String?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    val base = BuildConfig.API_BASE_URL.trimEnd('/')
-
-    fun download(label: String, path: String) {
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { ApiParity.downloadExport(path) }
-            result.onSuccess { bytes ->
-                val file = File(context.cacheDir, "$label.xls")
-                file.writeBytes(bytes)
-                val uri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/vnd.ms-excel"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(Intent.createChooser(intent, label))
-                message = "Exported $label"
-            }.onFailure { error = it.message }
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.export_data)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-            )
-        }
-    ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(onClick = { download("orders", "/api/orders/export?period=month&format=excel") }, modifier = Modifier.fillMaxWidth()) { Text("Orders") }
-            Button(onClick = { download("products", "/api/products/export?period=month&format=excel") }, modifier = Modifier.fillMaxWidth()) { Text("Products") }
-            Button(onClick = { download("customers", "/api/customers/export?period=month&format=excel") }, modifier = Modifier.fillMaxWidth()) { Text("Customers") }
-            message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
     }
 }

@@ -24,10 +24,10 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.ui.common.formatDisplayDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.format.DateTimeFormatter
 import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,8 +59,8 @@ fun AvailabilitySheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(product.name, style = MaterialTheme.typography.titleLarge)
-            Text("${stringResource(R.string.pickup_date)}: $start")
-            Text("${stringResource(R.string.return_date)}: $end")
+            Text("${stringResource(R.string.pickup_date)}: ${formatDisplayDate(pickupDate)}")
+            Text("${stringResource(R.string.return_date)}: ${formatDisplayDate(returnDate)}")
             when {
                 loading -> Text(stringResource(R.string.loading))
                 error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)

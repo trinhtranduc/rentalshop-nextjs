@@ -51,10 +51,12 @@ import com.anyrent.pos.R
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.availability.AvailabilityOrder
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -202,7 +204,7 @@ fun AvailabilityScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                Text(state.selectedDate.toString(), fontWeight = FontWeight.SemiBold)
+                                Text(formatDisplayDate(state.selectedDate), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -373,32 +375,57 @@ private fun AvailabilityMetric(
 
 @Composable
 private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit) {
+    // Typography parity with `OrderListCard` (order list)
     AppCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(order.orderNumber, style = MaterialTheme.typography.titleLarge)
-                    Text(order.customerName ?: "—", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(
+                    "#${order.orderNumber.trim().removePrefix("#")}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 StatusBadge(order.status)
             }
-            androidx.compose.material3.HorizontalDivider()
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                AvailabilityDateCell(stringResource(R.string.create_date), order.createdAt?.take(10) ?: "N/A")
-                AvailabilityDateCell(stringResource(R.string.pickup_date), order.pickupAt?.take(10) ?: "N/A")
-                AvailabilityDateCell(stringResource(R.string.return_date), order.returnAt?.take(10) ?: "N/A")
+            Text(
+                order.customerName ?: "—",
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(Modifier.fillMaxWidth()) {
                 AvailabilityDateCell(
-                    stringResource(R.string.quantity),
-                    order.quantity.toString(),
+                    label = stringResource(R.string.create_date),
+                    value = formatDisplayDate(order.createdAt),
+                    modifier = Modifier.weight(1f),
+                )
+                AvailabilityDateCell(
+                    label = stringResource(R.string.pickup_date),
+                    value = formatDisplayDate(order.pickupAt),
                     highlighted = true,
+                    modifier = Modifier.weight(1f),
+                )
+                AvailabilityDateCell(
+                    label = stringResource(R.string.return_date),
+                    value = formatDisplayDate(order.returnAt),
+                    modifier = Modifier.weight(1f),
+                )
+                AvailabilityDateCell(
+                    label = stringResource(R.string.quantity),
+                    value = formatQuantity(order.quantity),
+                    highlighted = true,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -406,18 +433,33 @@ private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit)
 }
 
 @Composable
-private fun AvailabilityDateCell(label: String, value: String, highlighted: Boolean = false) {
-    Column {
+private fun AvailabilityDateCell(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    highlighted: Boolean = false,
+) {
+    // Match `OrderMetric` fonts from order list
+    val labelColor = if (highlighted) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Column(modifier.padding(end = 5.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
-            value,
-            fontWeight = FontWeight.SemiBold,
-            color = if (highlighted) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurface,
+            value.ifBlank { "—" },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Medium,
+            color = if (highlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
