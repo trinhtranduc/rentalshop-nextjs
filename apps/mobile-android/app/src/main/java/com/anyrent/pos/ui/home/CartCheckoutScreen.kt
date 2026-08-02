@@ -682,7 +682,7 @@ fun CartCheckoutScreen(
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Row(Modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     formatMoney(optionPrice),
                                     style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
