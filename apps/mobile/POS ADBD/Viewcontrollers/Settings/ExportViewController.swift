@@ -274,58 +274,24 @@ class ExportViewController: BaseViewControler {
         return (startOfDay, endOfDay)
     }
     
-    private func showDatePicker(isStartDate: Bool) {
-        let datePicker = UIDatePicker()
-        datePicker.datePickerMode = .date
-        datePicker.preferredDatePickerStyle = .wheels
-        if #available(iOS 14.0, *) {
-            datePicker.preferredDatePickerStyle = .inline
-        }
-        
-        if isStartDate {
-            datePicker.date = customStartDate ?? Date()
-            datePicker.maximumDate = customEndDate ?? Date()
-        } else {
-            datePicker.date = customEndDate ?? Date()
-            datePicker.maximumDate = Date()
-            if let startDate = customStartDate {
-                datePicker.minimumDate = startDate
-            }
-        }
-        
-        let alert = UIAlertController(
-            title: isStartDate ? "Select Start Date".localized() : "Select End Date".localized(),
-            message: nil,
-            preferredStyle: .actionSheet
+    /// Same FSCalendar range sheet as rental period (InfoMain), not UIDatePicker alert.
+    private func showCustomDateRangePicker() {
+        let controller = DatePickerViewController.instance()
+        controller.delegate = self
+
+        let calendar = Calendar.current
+        let today = Date()
+        // Export looks at past data: allow ~5 years back through today.
+        let minimumDate = calendar.date(byAdding: .year, value: -5, to: today) ?? today
+        let maximumDate = today
+
+        controller.configureForDateRange(
+            startDate: customStartDate,
+            endDate: customEndDate,
+            minimumDate: minimumDate,
+            maximumDate: maximumDate
         )
-        
-        alert.view.addSubview(datePicker)
-        datePicker.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 60),
-            datePicker.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor),
-            datePicker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor),
-            datePicker.heightAnchor.constraint(equalToConstant: 200)
-        ])
-        
-        alert.addAction(UIAlertAction(title: "Done".localized(), style: .default) { [weak self] _ in
-            if isStartDate {
-                self?.customStartDate = datePicker.date
-            } else {
-                self?.customEndDate = datePicker.date
-            }
-            self?.exportTableView.reloadData()
-        })
-        
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        
-        // For iPad
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
-        }
-        
-        present(alert, animated: true)
+        present(controller, animated: true)
     }
     
     // MARK: - Actions
@@ -642,7 +608,8 @@ extension ExportViewController: UITableViewDelegate {
             tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
             
         case .customDates:
-            showDatePicker(isStartDate: indexPath.row == 0)
+            // Start or End row → same range calendar as rental period.
+            showCustomDateRangePicker()
             
         case .orderFilters:
             if indexPath.row == 0 {
@@ -713,5 +680,41 @@ extension ExportViewController: UITableViewDelegate {
         }
         
         present(alert, animated: true)
+    }
+}
+
+// MARK: - DatePickerViewControllerDelegate
+extension ExportViewController: DatePickerViewControllerDelegate {
+    func didSelectDate(_ date: Date, sender: DatePickerViewController) {
+        // Single-day range: use the same day for start and end.
+        let calendar = Calendar.current
+        customStartDate = calendar.startOfDay(for: date)
+        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: date) ?? date
+        exportTableView.reloadData()
+    }
+
+    func didSelectDateRange(start: Date, end: Date, sender: DatePickerViewController) {
+        let calendar = Calendar.current
+        customStartDate = calendar.startOfDay(for: start)
+        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
+        exportTableView.reloadData()
+    }
+}
+
+// MARK: - DatePickerViewControllerDelegate
+extension ExportViewController: DatePickerViewControllerDelegate {
+    func didSelectDate(_ date: Date, sender: DatePickerViewController) {
+        // Single-day range: use the same day for start and end.
+        let calendar = Calendar.current
+        customStartDate = calendar.startOfDay(for: date)
+        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: date) ?? date
+        exportTableView.reloadData()
+    }
+
+    func didSelectDateRange(start: Date, end: Date, sender: DatePickerViewController) {
+        let calendar = Calendar.current
+        customStartDate = calendar.startOfDay(for: start)
+        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
+        exportTableView.reloadData()
     }
 }

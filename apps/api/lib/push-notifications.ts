@@ -287,12 +287,23 @@ export async function sendOrderPushToOutlet(
     tokens,
     notification: { title, body },
     data,
+    // iOS (APNs via FCM)
     apns: {
       payload: {
         aps: {
           sound: 'default',
           badge: 1,
         },
+      },
+    },
+    // Android — high priority so order alerts wake doze; channel matches POS app
+    android: {
+      priority: 'high',
+      notification: {
+        sound: 'default',
+        channelId: 'order_updates',
+        defaultSound: true,
+        defaultVibrateTimings: true,
       },
     },
   };

@@ -147,18 +147,6 @@
 		04FBE0D02EDE8DF90057EDF8 /* RCSimpleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0CE2EDE8DF90057EDF8 /* RCSimpleTextField.swift */; };
 		04FBE0D22EDED09E0057EDF8 /* RCCustomNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */; };
 		881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881802AF21BE5AEF00D1E366 /* UnixTime.swift */; };
-		882028E32B06696B00640C07 /* SFUIText-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028D72B06696700640C07 /* SFUIText-Medium.ttf */; };
-		882028E42B06696B00640C07 /* SFUIText-HeavyItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028D82B06696700640C07 /* SFUIText-HeavyItalic.ttf */; };
-		882028E52B06696B00640C07 /* SFUIText-SemiboldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028D92B06696700640C07 /* SFUIText-SemiboldItalic.ttf */; };
-		882028E62B06696B00640C07 /* SFUIText-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DA2B06696800640C07 /* SFUIText-Regular.ttf */; };
-		882028E72B06696B00640C07 /* SFUIText-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DB2B06696800640C07 /* SFUIText-BoldItalic.ttf */; };
-		882028E82B06696B00640C07 /* SFUIText-RegularItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DC2B06696900640C07 /* SFUIText-RegularItalic.ttf */; };
-		882028E92B06696B00640C07 /* SFUIText-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DD2B06696900640C07 /* SFUIText-Semibold.ttf */; };
-		882028EA2B06696B00640C07 /* SFUIText-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DE2B06696900640C07 /* SFUIText-Light.ttf */; };
-		882028EB2B06696B00640C07 /* SFUIText-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028DF2B06696A00640C07 /* SFUIText-Bold.ttf */; };
-		882028EC2B06696B00640C07 /* SFUIText-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028E02B06696A00640C07 /* SFUIText-MediumItalic.ttf */; };
-		882028ED2B06696B00640C07 /* SFUIText-Heavy.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028E12B06696A00640C07 /* SFUIText-Heavy.ttf */; };
-		882028EE2B06696B00640C07 /* SFUIText-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 882028E22B06696B00640C07 /* SFUIText-LightItalic.ttf */; };
 		8841914221CA5C9E00C442C3 /* NavigationTabbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */; };
 		88420B0A21C500CC0078CD7C /* OrderCheckViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88420B0921C500CC0078CD7C /* OrderCheckViewController.swift */; };
 		884B0A3E21FAE72100DB0C52 /* BaseModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884B0A3821FAE72100DB0C52 /* BaseModel.swift */; };
@@ -392,18 +380,6 @@
 		0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBD.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBD.release.xcconfig"; path = "Target Support Files/Pods-POS ADBD/Pods-POS ADBD.release.xcconfig"; sourceTree = "<group>"; };
 		881802AF21BE5AEF00D1E366 /* UnixTime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnixTime.swift; sourceTree = "<group>"; };
-		882028D72B06696700640C07 /* SFUIText-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Medium.ttf"; sourceTree = "<group>"; };
-		882028D82B06696700640C07 /* SFUIText-HeavyItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-HeavyItalic.ttf"; sourceTree = "<group>"; };
-		882028D92B06696700640C07 /* SFUIText-SemiboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-SemiboldItalic.ttf"; sourceTree = "<group>"; };
-		882028DA2B06696800640C07 /* SFUIText-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Regular.ttf"; sourceTree = "<group>"; };
-		882028DB2B06696800640C07 /* SFUIText-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-BoldItalic.ttf"; sourceTree = "<group>"; };
-		882028DC2B06696900640C07 /* SFUIText-RegularItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-RegularItalic.ttf"; sourceTree = "<group>"; };
-		882028DD2B06696900640C07 /* SFUIText-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Semibold.ttf"; sourceTree = "<group>"; };
-		882028DE2B06696900640C07 /* SFUIText-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Light.ttf"; sourceTree = "<group>"; };
-		882028DF2B06696A00640C07 /* SFUIText-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Bold.ttf"; sourceTree = "<group>"; };
-		882028E02B06696A00640C07 /* SFUIText-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-MediumItalic.ttf"; sourceTree = "<group>"; };
-		882028E12B06696A00640C07 /* SFUIText-Heavy.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-Heavy.ttf"; sourceTree = "<group>"; };
-		882028E22B06696B00640C07 /* SFUIText-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SFUIText-LightItalic.ttf"; sourceTree = "<group>"; };
 		8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTabbarController.swift; sourceTree = "<group>"; };
 		88420B0921C500CC0078CD7C /* OrderCheckViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCheckViewController.swift; sourceTree = "<group>"; };
 		884B0A3821FAE72100DB0C52 /* BaseModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseModel.swift; sourceTree = "<group>"; };
@@ -789,18 +765,6 @@
 				048839292D79F11900069256 /* pretendard-regular.ttf */,
 				0488392A2D79F11900069256 /* pretendard-semi-bold.ttf */,
 				0488392B2D79F11900069256 /* pretendard-thin.ttf */,
-				882028DF2B06696A00640C07 /* SFUIText-Bold.ttf */,
-				882028DB2B06696800640C07 /* SFUIText-BoldItalic.ttf */,
-				882028E12B06696A00640C07 /* SFUIText-Heavy.ttf */,
-				882028D82B06696700640C07 /* SFUIText-HeavyItalic.ttf */,
-				882028DE2B06696900640C07 /* SFUIText-Light.ttf */,
-				882028E22B06696B00640C07 /* SFUIText-LightItalic.ttf */,
-				882028D72B06696700640C07 /* SFUIText-Medium.ttf */,
-				882028E02B06696A00640C07 /* SFUIText-MediumItalic.ttf */,
-				882028DA2B06696800640C07 /* SFUIText-Regular.ttf */,
-				882028DC2B06696900640C07 /* SFUIText-RegularItalic.ttf */,
-				882028DD2B06696900640C07 /* SFUIText-Semibold.ttf */,
-				882028D92B06696700640C07 /* SFUIText-SemiboldItalic.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -1161,20 +1125,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0465CA502EE3478600629F03 /* anyrent.icon in Resources */,
-				882028EB2B06696B00640C07 /* SFUIText-Bold.ttf in Resources */,
-				882028E42B06696B00640C07 /* SFUIText-HeavyItalic.ttf in Resources */,
 				88E4148421A99B3E00BAF4A1 /* LaunchScreen.storyboard in Resources */,
 				C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */,
-				882028E72B06696B00640C07 /* SFUIText-BoldItalic.ttf in Resources */,
-				882028E32B06696B00640C07 /* SFUIText-Medium.ttf in Resources */,
 				88E4148121A99B3E00BAF4A1 /* Assets.xcassets in Resources */,
-				882028ED2B06696B00640C07 /* SFUIText-Heavy.ttf in Resources */,
 				C9BB81CC22E8C80600F03F0E /* beep-07.wav in Resources */,
-				882028E62B06696B00640C07 /* SFUIText-Regular.ttf in Resources */,
-				882028EA2B06696B00640C07 /* SFUIText-Light.ttf in Resources */,
 				887244EA2BB009FA00F15EDD /* GoogleService-Info.plist in Resources */,
-				882028E52B06696B00640C07 /* SFUIText-SemiboldItalic.ttf in Resources */,
-				882028EE2B06696B00640C07 /* SFUIText-LightItalic.ttf in Resources */,
 				0488392C2D79F11900069256 /* inter-regular.ttf in Resources */,
 				0488392D2D79F11900069256 /* pretendard-extra-light.ttf in Resources */,
 				0488392E2D79F11900069256 /* inter-bold.ttf in Resources */,
@@ -1193,9 +1148,6 @@
 				0488393B2D79F11900069256 /* pretendard-black.ttf in Resources */,
 				0488393C2D79F11900069256 /* inter-extra-light.ttf in Resources */,
 				0488393D2D79F11900069256 /* pretendard-bold.ttf in Resources */,
-				882028E82B06696B00640C07 /* SFUIText-RegularItalic.ttf in Resources */,
-				882028EC2B06696B00640C07 /* SFUIText-MediumItalic.ttf in Resources */,
-				882028E92B06696B00640C07 /* SFUIText-Semibold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

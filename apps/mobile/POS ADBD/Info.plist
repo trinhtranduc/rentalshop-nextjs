@@ -47,14 +47,6 @@
 	<string>AnyRent accesses the photo library to allow staff to upload existing photos of rental items and documents.</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>SFUIText-Regular.tff</string>
-		<string>SFUIText-RegularItalic.tff</string>
-		<string>SFUIText-Light.tff</string>
-		<string>SFUIText-LightItalic.tff</string>
-		<string>SFUIText-Medium.tff</string>
-		<string>SFUIText-MediumItalic.tff</string>
-		<string>SFUIText-Semibold.tff</string>
-		<string>SFUIText-SemiboldItalic.tff</string>
 		<string>inter-black.ttf</string>
 		<string>inter-bold.ttf</string>
 		<string>inter-extra-bold.ttf</string>
@@ -64,13 +56,6 @@
 		<string>inter-regular.ttf</string>
 		<string>inter-semi-bold.ttf</string>
 		<string>inter-thin.ttf</string>
-		<string>gowun-batang-regular.ttf</string>
-		<string>nanum-myeongjo-regular.ttf</string>
-		<string>nanum-gothic-regular.ttf</string>
-		<string>open-sans-regular.ttf</string>
-		<string>dmseriftext-regular.ttf</string>
-		<string>poppins-regular.ttf</string>
-		<string>roboto-regular.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
