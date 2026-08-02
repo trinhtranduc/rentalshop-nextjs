@@ -18,8 +18,8 @@ import { API, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constan
  * Export orders to Excel or CSV
  *
  * Column layout matches the merchant order spreadsheet:
- * Mã đơn hàng | NV tạo đơn | Ngày thuê | Ngày lấy | Ngày trả | Cọc | Tổng đơn |
- * Giảm giá | Loại giảm | Số điện thoại KH | Tên khách | Tiền đền bù |
+ * Mã đơn hàng | NV tạo đơn | Ngày thuê | Ngày lấy | Ngày trả | Cọc | Tiền thế chân |
+ * Tổng đơn | Giảm giá | Loại giảm | Số điện thoại KH | Tên khách | Tiền đền bù |
  * Cọc giấy tờ | Trạng thái đơn | Ghi chú
  *
  * Authorization: roles with 'orders.export' (ADMIN, MERCHANT, OUTLET_ADMIN).
@@ -130,6 +130,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
         status: true,
         totalAmount: true,
         depositAmount: true,
+        securityDeposit: true,
         damageFee: true,
         discountType: true,
         discountAmount: true,
@@ -175,6 +176,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
         pickupDate: formatDateForExcel(pickupDate, 'datetime-short'),
         returnDate: formatDateForExcel(returnDate, 'datetime-short'),
         depositAmount: formatExportMoney(order.depositAmount),
+        securityDeposit: formatExportMoney(order.securityDeposit),
         totalAmount: formatExportMoney(order.totalAmount),
         discountAmount: formatExportMoney(order.discountAmount),
         discountType: formatDiscountType(order.discountType),
@@ -194,6 +196,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       { header: 'Ngày lấy', key: 'pickupDate', width: 20 },
       { header: 'Ngày trả', key: 'returnDate', width: 20 },
       { header: 'Cọc', key: 'depositAmount', width: 12 },
+      { header: 'Tiền thế chân', key: 'securityDeposit', width: 14 },
       { header: 'Tổng đơn', key: 'totalAmount', width: 12 },
       { header: 'Giảm giá', key: 'discountAmount', width: 12 },
       { header: 'Loại giảm', key: 'discountType', width: 12 },
