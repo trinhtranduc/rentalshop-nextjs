@@ -39,6 +39,23 @@
     "systemName": "AnyRent",
     "systemTagline": "Rental Management System"
   },
+  "subscriptionExpiryReminder": {
+    "title": "Your subscription is expiring soon",
+    "subject": "Your subscription expires in {days} {unit} - {planName}",
+    "greeting": "Hello",
+    "message": "Your subscription expires in {days} {unit}. Renew now to keep your shop running without interruption.",
+    "trialMessage": "Your free trial ends in {days} {unit}. Choose a plan now to keep your data and keep working without interruption.",
+    "planName": "Subscription Plan",
+    "expiryDate": "Expiry Date",
+    "daysRemaining": "Time Remaining",
+    "dayUnit": "day",
+    "daysUnit": "days",
+    "cta": "Renew now",
+    "alreadyRenewed": "If you have already renewed, please ignore this email.",
+    "footer": "© {year} AnyRent. All rights reserved.",
+    "systemName": "AnyRent",
+    "systemTagline": "Rental Management System"
+  },
   "subscriptionStatusChange": {
     "cancelled": {
       "title": "Subscription Cancelled",

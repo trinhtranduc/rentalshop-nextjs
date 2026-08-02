@@ -25,6 +25,23 @@
     "systemName": "AnyRent",
     "systemTagline": "レンタル管理システム"
   },
+  "subscriptionExpiryReminder": {
+    "title": "サブスクリプションの有効期限が近づいています",
+    "subject": "サブスクリプションはあと{days}{unit}で期限切れになります - {planName}",
+    "greeting": "こんにちは",
+    "message": "サブスクリプションはあと{days}{unit}で期限切れになります。店舗の運営を止めないために、今すぐ更新してください。",
+    "trialMessage": "無料トライアルはあと{days}{unit}で終了します。データを保持して引き続きご利用いただくには、プランをお選びください。",
+    "planName": "サブスクリプションプラン",
+    "expiryDate": "有効期限",
+    "daysRemaining": "残り期間",
+    "dayUnit": "日",
+    "daysUnit": "日",
+    "cta": "今すぐ更新",
+    "alreadyRenewed": "すでに更新済みの場合は、このメールを無視してください。",
+    "footer": "© {year} AnyRent. 全著作権所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "レンタル管理システム"
+  },
   "subscriptionStatusChange": {
     "cancelled": {
       "title": "サブスクリプションがキャンセルされました",

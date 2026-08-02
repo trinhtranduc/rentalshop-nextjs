@@ -78,6 +78,21 @@ export interface SubscriptionStatusChangeData {
   currency?: string; // Optional: for tracking/logging, not displayed in email
 }
 
+export interface SubscriptionExpiryReminderData {
+  merchantName: string;
+  email: string;
+  planName: string;
+  /** End of the current billing period (also the date shown in the email) */
+  periodEnd: Date;
+  /** Calendar days left until periodEnd: 3, 2 or 1 */
+  daysRemaining: number;
+  /** 'TRIAL' subscriptions get trial-specific wording */
+  status?: string;
+  /** Link to the merchant renewal page; the CTA button is hidden when omitted */
+  renewUrl?: string;
+  locale?: string; // Optional: locale for email (default: 'vi')
+}
+
 export interface PlanLimitAddonChangeData {
   merchantName: string;
   email: string;
@@ -188,6 +203,25 @@ type EmailTranslations = {
     extensionDays: string;
     method: string;
     description: string;
+    footer: string;
+    systemName: string;
+    systemTagline: string;
+  };
+  subscriptionExpiryReminder?: {
+    title: string;
+    /** Supports {days}, {unit} and {planName} placeholders */
+    subject: string;
+    greeting: string;
+    /** Supports {days} and {unit} placeholders */
+    message: string;
+    trialMessage: string;
+    planName: string;
+    expiryDate: string;
+    daysRemaining: string;
+    dayUnit: string;
+    daysUnit: string;
+    cta: string;
+    alreadyRenewed: string;
     footer: string;
     systemName: string;
     systemTagline: string;
@@ -309,6 +343,23 @@ function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
       systemName: 'AnyRent',
       systemTagline: 'Rental Management System'
     },
+    subscriptionExpiryReminder: {
+      title: 'Your subscription is expiring soon',
+      subject: 'Your subscription expires in {days} {unit} - {planName}',
+      greeting: 'Hello',
+      message: 'Your subscription expires in {days} {unit}. Renew now to keep your shop running without interruption.',
+      trialMessage: 'Your free trial ends in {days} {unit}. Choose a plan now to keep your data and keep working without interruption.',
+      planName: 'Plan',
+      expiryDate: 'Expiry Date',
+      daysRemaining: 'Time Remaining',
+      dayUnit: 'day',
+      daysUnit: 'days',
+      cta: 'Renew now',
+      alreadyRenewed: 'If you have already renewed, please ignore this email.',
+      footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    },
     addonChange: {
       created: { title: 'Addon Added', message: 'An addon has been added.', action: 'Added' },
       updated: { title: 'Addon Updated', message: 'An addon has been updated.', action: 'Updated' },
@@ -346,6 +397,45 @@ function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
       }
     }
   } as EmailTranslations;
+}
+
+/**
+ * Replace `{name}` placeholders in a translated string
+ */
+function fillPlaceholders(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.split(`{${key}}`).join(value),
+    template
+  );
+}
+
+type ExpiryReminderTranslations = NonNullable<EmailTranslations['subscriptionExpiryReminder']>;
+
+/**
+ * Expiry reminder strings, with a hardcoded fallback so the email still renders
+ * if a locale file has not been updated with this section yet.
+ */
+function getExpiryReminderTranslations(locale: string = 'vi'): ExpiryReminderTranslations {
+  return (
+    getEmailTranslations(locale).subscriptionExpiryReminder ||
+    getEmailTranslations('vi').subscriptionExpiryReminder || {
+      title: 'Your subscription is expiring soon',
+      subject: 'Your subscription expires in {days} {unit} - {planName}',
+      greeting: 'Hello',
+      message: 'Your subscription expires in {days} {unit}. Renew now to keep your shop running without interruption.',
+      trialMessage: 'Your free trial ends in {days} {unit}. Choose a plan now to keep your data and keep working without interruption.',
+      planName: 'Plan',
+      expiryDate: 'Expiry Date',
+      daysRemaining: 'Time Remaining',
+      dayUnit: 'day',
+      daysUnit: 'days',
+      cta: 'Renew now',
+      alreadyRenewed: 'If you have already renewed, please ignore this email.',
+      footer: '© {year} AnyRent. All rights reserved.',
+      systemName: 'AnyRent',
+      systemTagline: 'Rental Management System'
+    }
+  );
 }
 
 // ============================================================================
@@ -1073,6 +1163,113 @@ export async function sendSubscriptionExtensionEmail(
   return await sendEmail({
     to: data.email,
     subject: `${t.subscriptionExtension?.title || 'Subscription Extended'} - ${data.planName}`,
+    html,
+  });
+}
+
+/**
+ * Generate subscription expiry reminder email HTML (3 / 2 / 1 days before period end)
+ */
+export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiryReminderData): string {
+  const { merchantName, planName, periodEnd, daysRemaining, status, renewUrl, locale = 'vi' } = data;
+
+  const t = getExpiryReminderTranslations(locale);
+  const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat(dateLocale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date(date));
+  };
+
+  const unit = daysRemaining === 1 ? t.dayUnit : t.daysUnit;
+  const remainingText = `${daysRemaining} ${unit}`;
+  const isTrial = (status || '').toUpperCase() === 'TRIAL';
+  const message = fillPlaceholders(isTrial ? t.trialMessage : t.message, {
+    days: String(daysRemaining),
+    unit
+  });
+
+  // One day left is the last chance to renew, so switch the accent from amber to red.
+  const accentColor = daysRemaining <= 1 ? '#dc2626' : '#d97706';
+  const accentBackground = daysRemaining <= 1 ? '#fef2f2' : '#fffbeb';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${t.title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">${t.systemName}</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">${t.systemTagline}</p>
+    </div>
+
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${t.title}</h2>
+
+    <p style="color: #374151; font-size: 16px;">${t.greeting} <strong>${merchantName}</strong>,</p>
+
+    <p style="color: #374151; font-size: 16px;">${message}</p>
+
+    <div style="background-color: ${accentBackground}; border-left: 4px solid ${accentColor}; border-radius: 6px; padding: 20px; margin: 30px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.planName}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.expiryDate}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodEnd)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.daysRemaining}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 700; color: ${accentColor};">${remainingText}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${renewUrl ? `
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${renewUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;">${t.cta}</a>
+    </div>
+    ` : ''}
+
+    <p style="color: #6b7280; font-size: 14px;">${t.alreadyRenewed}</p>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      ${fillPlaceholders(t.footer, { year: String(new Date().getFullYear()) })}
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send subscription expiry reminder email
+ */
+export async function sendSubscriptionExpiryReminderEmail(
+  data: SubscriptionExpiryReminderData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const html = generateSubscriptionExpiryReminderEmail(data);
+  const t = getExpiryReminderTranslations(data.locale || 'vi');
+  const unit = data.daysRemaining === 1 ? t.dayUnit : t.daysUnit;
+
+  return await sendEmail({
+    to: data.email,
+    subject: fillPlaceholders(t.subject, {
+      days: String(data.daysRemaining),
+      unit,
+      planName: data.planName
+    }),
     html,
   });
 }

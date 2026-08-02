@@ -151,13 +151,36 @@ export const RENEWAL_DURATIONS = [
 ];
 
 // ============================================================================
+// EXPIRY REMINDER CONFIGURATION
+// ============================================================================
+
+/**
+ * Calendar days before `Subscription.currentPeriodEnd` when a reminder email is sent.
+ * One email per bucket, so a merchant receives at most 3 reminders per period.
+ */
+export const PERIOD_EXPIRY_NOTIFICATIONS = [3, 2, 1] as readonly number[];
+
+export const SUBSCRIPTION_EXPIRY_CONFIG = {
+  PERIOD_EXPIRY_NOTIFICATIONS,
+  /**
+   * Buckets are computed in this timezone so "3 days left" matches the calendar
+   * the merchant actually looks at, instead of the UTC clock of the API server.
+   */
+  REMINDER_TIMEZONE: 'Asia/Ho_Chi_Minh',
+  /** `SubscriptionActivity.type` written after a reminder is sent (idempotency marker). */
+  REMINDER_ACTIVITY_TYPE: 'subscription_expiry_reminder_sent'
+} as const;
+
+// ============================================================================
 // TRIAL CONFIGURATION
 // ============================================================================
 
 export const TRIAL_CONFIG = {
   DEFAULT_TRIAL_DAYS: 14,
   TRIAL_NOTIFICATIONS: {
-    DAYS_BEFORE_EXPIRY: [7, 3, 1] as readonly number[]
+    // Trials expire through the same `currentPeriodEnd` field and are reminded by
+    // the same cron, so both lists must stay identical.
+    DAYS_BEFORE_EXPIRY: PERIOD_EXPIRY_NOTIFICATIONS
   }
 };
 
@@ -417,6 +440,13 @@ export function getTrialNotificationDays(): readonly number[] {
  */
 export function getDefaultTrialDays(): number {
   return TRIAL_CONFIG.DEFAULT_TRIAL_DAYS;
+}
+
+/**
+ * Get the days-before-expiry buckets used by the expiry reminder cron
+ */
+export function getPeriodExpiryNotificationDays(): readonly number[] {
+  return SUBSCRIPTION_EXPIRY_CONFIG.PERIOD_EXPIRY_NOTIFICATIONS;
 }
 
 /**

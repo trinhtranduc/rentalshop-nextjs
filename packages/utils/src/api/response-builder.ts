@@ -235,6 +235,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'MERCHANT_REGISTERED_TRIAL_SUCCESS': 'Merchant registered successfully with 14-day free trial',
   'MERCHANT_ACCOUNT_CREATED_SUCCESS': 'Merchant account created successfully with default outlet and trial subscription',
   'USER_ACCOUNT_CREATED_SUCCESS': 'User account created successfully',
+  'SUBSCRIPTION_EXPIRY_REMINDERS_COMPLETED': 'Subscription expiry reminders processed successfully',
 };
 
 /**
