@@ -38,6 +38,7 @@ export interface UsersProps {
   onClearFilters?: () => void;
   onUserAction?: (action: string, userId: number) => void;
   onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
   onSort?: (column: string) => void;
   onSelectionChange?: (selectedIds: number[]) => void;
   
@@ -72,6 +73,7 @@ export const Users: React.FC<UsersProps> = ({
   onClearFilters = () => {},
   onUserAction = () => {},
   onPageChange = () => {},
+  onLimitChange,
   onSort = () => {},
   onSelectionChange,
   
@@ -200,7 +202,7 @@ export const Users: React.FC<UsersProps> = ({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {users.length > 0 && totalUsers > limit && (
+      {users.length > 0 && (totalUsers > limit || !!onLimitChange) && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}
@@ -208,6 +210,7 @@ export const Users: React.FC<UsersProps> = ({
             total={totalUsers}
             limit={limit}
             onPageChange={memoizedOnPageChange}
+            onLimitChange={onLimitChange}
             itemName="users"
           />
         </div>

@@ -143,6 +143,10 @@ export default function UsersPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleSort = useCallback((column: string) => {
     // Toggle sort order if clicking same column, otherwise default to asc
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -281,6 +285,7 @@ export default function UsersPage() {
           onSearchChange={handleSearchChange}
           onClearFilters={handleClearFilters}
           onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
           onSort={handleSort}
           onUserAction={handleUserAction}
           onSelectionChange={setSelectedUserIds}

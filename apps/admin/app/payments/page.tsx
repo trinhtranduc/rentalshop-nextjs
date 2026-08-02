@@ -115,6 +115,10 @@ export default function PaymentsPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleViewPayment = useCallback((payment: any) => {
     console.log('View payment:', payment.id);
     // Could navigate to detail page or show modal
@@ -339,7 +343,7 @@ export default function PaymentsPage() {
           </div>
 
           {/* Pagination at bottom - Standard Pattern */}
-          {data && data.total > 0 && data.total > data.limit && (
+          {data && data.total > 0 && (
             <div className="flex-shrink-0 py-4">
               <Pagination
                 currentPage={data.currentPage || data.page || 1}
@@ -347,6 +351,7 @@ export default function PaymentsPage() {
                 total={data.total}
                 limit={data.limit}
                 onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
                 itemName="payments"
               />
             </div>

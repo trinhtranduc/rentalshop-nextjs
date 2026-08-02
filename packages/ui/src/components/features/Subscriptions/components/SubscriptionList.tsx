@@ -55,6 +55,7 @@ interface SubscriptionListProps {
   limit?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
 }
 
 export function SubscriptionList({
@@ -73,7 +74,8 @@ export function SubscriptionList({
   total = 0,
   limit = 20,
   currentPage = 1,
-  onPageChange
+  onPageChange,
+  onLimitChange
 }: SubscriptionListProps) {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   
@@ -391,7 +393,7 @@ export function SubscriptionList({
       </Card>
 
       {/* Pagination Section - Client pattern */}
-      {onPageChange && total > 0 && total > limit && (
+      {onPageChange && total > 0 && (total > limit || !!onLimitChange) && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}
@@ -399,6 +401,7 @@ export function SubscriptionList({
             total={total}
             limit={limit}
             onPageChange={onPageChange}
+            onLimitChange={onLimitChange}
             itemName="subscriptions"
           />
         </div>
