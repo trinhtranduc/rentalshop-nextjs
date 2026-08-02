@@ -39,6 +39,7 @@ interface MerchantsProps {
   onClearFilters?: () => void;
   onMerchantAction: (action: string, merchantId: number) => void;
   onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
   onSort?: (column: string) => void;
   onSelectionChange?: (selectedIds: number[]) => void;
 }
@@ -60,6 +61,7 @@ export function Merchants({
   onClearFilters,
   onMerchantAction, 
   onPageChange,
+  onLimitChange,
   onSort,
   onSelectionChange
 }: MerchantsProps) {
@@ -121,32 +123,26 @@ export function Merchants({
         const total = data.total || 0;
         const limit = data.limit || 10;
         const totalPages = data.totalPages || (total > 0 ? Math.ceil(total / limit) : 1);
-        const shouldShowPagination = data.merchants.length > 0 && totalPages > 1;
-        
-        console.log('🔍 Pagination check:', {
-          merchantsCount: data.merchants.length,
-          total,
-          limit,
-          totalPages,
-          shouldShowPagination,
-          condition: `merchants.length > 0 (${data.merchants.length > 0}) && totalPages > 1 (${totalPages > 1})`
-        });
-        
+        // Show when multi-page OR when limit can be changed (same as Products/Orders)
+        const shouldShowPagination =
+          data.merchants.length > 0 && (totalPages > 1 || !!onLimitChange);
+
         if (!shouldShowPagination) {
           return null;
         }
-        
+
         return (
-        <div className="flex-shrink-0 py-4">
-          <Pagination 
-            currentPage={data.currentPage || data.page || 1}
+          <div className="flex-shrink-0 py-4">
+            <Pagination
+              currentPage={data.currentPage || data.page || 1}
               totalPages={totalPages}
               total={total}
               limit={limit}
-            onPageChange={memoizedOnPageChange}
-            itemName="merchants"
-          />
-        </div>
+              onPageChange={memoizedOnPageChange}
+              onLimitChange={onLimitChange}
+              itemName="merchants"
+            />
+          </div>
         );
       })()}
     </div>

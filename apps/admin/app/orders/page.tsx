@@ -189,6 +189,10 @@ export default function AdminOrdersPage() {
     updateURL({ page: newPage });
   }, [updateURL, page, filters]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleSort = useCallback((column: string) => {
     console.log('🔀 Page: Sort changed:', column);
     const newSortBy = column;
@@ -420,6 +424,7 @@ export default function AdminOrdersPage() {
           onClearFilters={handleClearFilters}
           onOrderAction={handleOrderAction}
           onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
           onSort={handleSort}
           onDateRangeChange={handleDateRangeChange}
           onSelectionChange={setSelectedOrderIds}

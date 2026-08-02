@@ -133,6 +133,10 @@ export default function MerchantsPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleSort = useCallback((column: string) => {
     // Toggle sort order if clicking same column, otherwise default to asc
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -246,6 +250,7 @@ export default function MerchantsPage() {
           onClearFilters={handleClearFilters}
           onMerchantAction={handleMerchantAction}
           onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
           onSort={handleSort}
           onSelectionChange={setSelectedMerchantIds}
         />

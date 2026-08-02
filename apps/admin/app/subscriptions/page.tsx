@@ -163,6 +163,10 @@ export default function SubscriptionsPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleView = useCallback((subscription: Subscription) => {
     router.push(`/subscriptions/${subscription.id}`);
   }, [router]);
@@ -563,6 +567,7 @@ export default function SubscriptionsPage() {
           limit={limitFromData}
           currentPage={currentPageFromData}
           onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
         />
       </div>
 
