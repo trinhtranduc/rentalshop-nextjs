@@ -23,15 +23,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -543,42 +544,24 @@ fun CartCheckoutScreen(
                                     },
                                 ) { Text("+", style = MaterialTheme.typography.headlineMedium) }
                                 androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                                    // iOS rateSelector → PricingMethodSheet (not DropdownMenu)
                                     Surface(
                                         color = MaterialTheme.colorScheme.surfaceVariant,
                                         shape = MaterialTheme.shapes.small,
-                                            modifier = Modifier
-                                                .align(Alignment.CenterEnd)
-                                                .clickable(enabled = !previewMode) {
-                                                    pricingMenuProductId = line.product.id
-                                                },
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .clickable(enabled = !previewMode) {
+                                                pricingMenuProductId = line.product.id
+                                            },
                                     ) {
                                         Text(
-                                            if (line.pricingType == "DAILY") {
+                                            if (line.pricingType.equals("DAILY", ignoreCase = true)) {
                                                 stringResource(R.string.per_day)
                                             } else {
                                                 stringResource(R.string.per_rental)
                                             } + "  ▾",
                                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                                             style = MaterialTheme.typography.titleMedium,
-                                        )
-                                    }
-                                    DropdownMenu(
-                                        expanded = pricingMenuProductId == line.product.id,
-                                        onDismissRequest = { pricingMenuProductId = null },
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.per_rental)) },
-                                            onClick = {
-                                                CartStore.setPricingType(line.product.id, "FIXED")
-                                                pricingMenuProductId = null
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.per_day)) },
-                                            onClick = {
-                                                CartStore.setPricingType(line.product.id, "DAILY")
-                                                pricingMenuProductId = null
-                                            },
                                         )
                                     }
                                 }
@@ -648,6 +631,115 @@ fun CartCheckoutScreen(
                 showClearConfirmation = false
             },
         )
+    }
+
+    pricingMenuProductId?.let { productId ->
+        val line = lines.firstOrNull { it.product.id == productId } ?: return@let
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { pricingMenuProductId = null },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.price_and_pricing_method),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    IconButton(onClick = { pricingMenuProductId = null }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.close),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                listOf("FIXED" to stringResource(R.string.per_rental), "DAILY" to stringResource(R.string.per_day))
+                    .forEach { (type, title) ->
+                        val selected = line.pricingType.equals(type, ignoreCase = true)
+                        val optionPrice = cartLinePriceForType(line, type)
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    CartStore.setPricingType(productId, type)
+                                    pricingMenuProductId = null
+                                }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(Modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    formatMoney(optionPrice),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                                    color = if (selected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    " / $title",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 1.dp),
+                                )
+                            }
+                            Icon(
+                                if (selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                contentDescription = null,
+                                tint = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+
+                Button(
+                    onClick = {
+                        pricingMenuProductId = null
+                        numericText = line.unitPrice.toLong().toString()
+                        numericEditor = "PRICE:$productId"
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        stringResource(R.string.edit_unit_price),
+                        modifier = Modifier.padding(start = 8.dp),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+        }
     }
 
     if (showDetails) {
@@ -1175,6 +1267,20 @@ private fun PreviewSectionLabel(text: String) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** Catalog price for FIXED/DAILY — mirrors iOS fixedRatePrice / dailyRatePrice in the sheet. */
+private fun cartLinePriceForType(line: CartLine, type: String): Double {
+    if (line.unitPriceOverride != null && line.pricingType.equals(type, ignoreCase = true)) {
+        return line.unitPriceOverride
+    }
+    return line.product.pricingOptions.firstOrNull {
+        it.type.equals(type, ignoreCase = true)
+    }?.price ?: if (line.product.pricingType.equals(type, ignoreCase = true)) {
+        line.product.rentPrice
+    } else {
+        0.0
+    }
 }
 
 @Composable

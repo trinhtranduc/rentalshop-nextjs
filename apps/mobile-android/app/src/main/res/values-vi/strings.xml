@@ -224,6 +224,8 @@
     <string name="no_products_added">Chưa thêm sản phẩm</string>
     <string name="per_rental">Theo lượt thuê</string>
     <string name="per_day">Theo ngày</string>
+    <string name="price_and_pricing_method">Giá và cách tính giá</string>
+    <string name="edit_unit_price">Sửa đơn giá</string>
     <string name="enter_deposit">Nhập tiền đặt cọc</string>
     <string name="enter_discount">Nhập giảm giá</string>
     <string name="unit_price">Đơn giá</string>

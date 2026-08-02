@@ -224,6 +224,8 @@
     <string name="no_products_added">No products added</string>
     <string name="per_rental">Per rental</string>
     <string name="per_day">Per day</string>
+    <string name="price_and_pricing_method">Price and pricing method</string>
+    <string name="edit_unit_price">Edit unit price</string>
     <string name="enter_deposit">Enter deposit</string>
     <string name="enter_discount">Enter discount</string>
     <string name="unit_price">Unit price</string>
