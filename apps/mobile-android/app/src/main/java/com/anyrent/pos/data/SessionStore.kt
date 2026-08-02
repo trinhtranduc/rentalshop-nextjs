@@ -15,6 +15,8 @@ object SessionStore {
     private const val KEY_TOKEN = "accessToken"
     private const val KEY_USER_NAME = "userName"
     private const val KEY_EMAIL = "email"
+    /** Survives logout — same as iOS `LastLoginEmail`. */
+    private const val KEY_LAST_LOGIN_EMAIL = "lastLoginEmail"
     private const val KEY_ROLE = "role"
     private const val KEY_USER_ID = "userId"
     private const val KEY_MERCHANT_ID = "merchantId"
@@ -53,6 +55,13 @@ object SessionStore {
         get() = prefs.getString(KEY_EMAIL, null)
         set(value) {
             prefs.edit().putString(KEY_EMAIL, value).apply()
+        }
+
+    /** Prefill login email after logout (not cleared by [clearAuth]). */
+    var lastLoginEmail: String?
+        get() = prefs.getString(KEY_LAST_LOGIN_EMAIL, null)
+        set(value) {
+            prefs.edit().putString(KEY_LAST_LOGIN_EMAIL, value).apply()
         }
 
     var role: String?
@@ -147,6 +156,8 @@ object SessionStore {
         set(value) { prefs.edit().putBoolean(KEY_ONBOARDING, value).apply() }
 
     fun clearAuth() {
+        // Keep lastLoginEmail so login screen can prefill like iOS.
+        val rememberedEmail = email?.takeIf { it.isNotBlank() } ?: lastLoginEmail
         prefs.edit()
             .remove(KEY_TOKEN)
             .remove(KEY_USER_NAME)
@@ -162,6 +173,9 @@ object SessionStore {
             .remove(KEY_MERCHANT_PHONE)
             .remove(KEY_MERCHANT_ADDRESS)
             .apply()
+        if (!rememberedEmail.isNullOrBlank()) {
+            lastLoginEmail = rememberedEmail
+        }
     }
 
     fun expireAuth() {

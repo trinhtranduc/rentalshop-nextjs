@@ -87,6 +87,7 @@
     <string name="tools">Công cụ</string>
     <string name="about">Thông tin</string>
     <string name="logout">Đăng xuất</string>
+    <string name="logout_confirmation">Bạn có chắc chắn muốn đăng xuất?</string>
     <string name="export_hint">Mở trang xuất file trên trình duyệt (có thể cần đăng nhập web).</string>
     <string name="printer_hint">Cấu hình máy in nhiệt mạng (ESC/POS qua TCP). Lưu IP, rồi dùng In thử hoặc In hóa đơn trên đơn hàng.</string>
     <string name="printer_name">Tên máy in</string>
@@ -182,8 +183,12 @@
     <string name="refund_payment">Hoàn tiền</string>
     <string name="collect_remaining_payment">Thu tiền còn lại</string>
     <string name="collect_deposit">Thu tiền cọc</string>
-    <string name="refund_payment_description">Xác nhận đã hoàn số tiền này cho khách.</string>
-    <string name="collect_payment_description">Xác nhận đã thu số tiền này từ khách.</string>
+    <string name="refund_payment_description">Vui lòng hoàn số tiền này cho khách.</string>
+    <string name="collect_payment_description">Vui lòng thu số tiền này từ khách.</string>
+    <string name="collect_remaining_payment_description">Vui lòng thu phần tiền còn lại từ khách.</string>
+    <string name="collect_deposit_description">Vui lòng thu tiền cọc từ khách.</string>
+    <string name="collect_collateral_documents">Thu giấy tờ thế chân</string>
+    <string name="return_collateral_documents">Trả giấy tờ thế chân</string>
     <string name="payment_method">Phương thức thanh toán</string>
     <string name="confirm">Xác nhận</string>
     <string name="scan_to_pay">Quét mã để thanh toán</string>

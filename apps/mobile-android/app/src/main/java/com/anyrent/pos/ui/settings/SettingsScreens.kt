@@ -94,7 +94,9 @@ fun SettingsScreen(
 ) {
     val scope = rememberCoroutineScope()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showLogoutConfirmation by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
+    var isLoggingOut by remember { mutableStateOf(false) }
 
     LazyColumn(
         Modifier
@@ -169,21 +171,37 @@ fun SettingsScreen(
                     Icons.AutoMirrored.Filled.Logout,
                     stringResource(R.string.logout),
                     tint = Color(0xFFE83F48),
-                    onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                PushRegistrar.unregister()
-                                ApiClient.get().logout()
-                            }
-                            SessionStore.clearAuth()
-                            onLoggedOut()
-                        }
-                    },
+                    onClick = { showLogoutConfirmation = true },
                     trailing = {},
                 )
             }
         }
         item { Box(Modifier.height(16.dp)) }
+    }
+
+    if (showLogoutConfirmation) {
+        AppAlertConfirm(
+            title = stringResource(R.string.logout),
+            message = stringResource(R.string.logout_confirmation),
+            confirmLabel = stringResource(R.string.logout),
+            destructive = true,
+            confirmLoading = isLoggingOut,
+            dismissEnabled = !isLoggingOut,
+            onDismiss = { showLogoutConfirmation = false },
+            onConfirm = {
+                isLoggingOut = true
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        PushRegistrar.unregister()
+                        ApiClient.get().logout()
+                    }
+                    SessionStore.clearAuth()
+                    isLoggingOut = false
+                    showLogoutConfirmation = false
+                    onLoggedOut()
+                }
+            },
+        )
     }
 
     if (showDeleteConfirmation) {

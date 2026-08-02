@@ -28,6 +28,7 @@ import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.print.ThermalPrinter
+import com.anyrent.pos.domain.payment.PaymentPolicy
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.ui.payment.PaymentQrDialog
@@ -48,6 +49,7 @@ fun OrderActionPanel(
     val scope = rememberCoroutineScope()
     var message by remember { mutableStateOf<String?>(null) }
     var showPayment by remember { mutableStateOf(false) }
+    var pendingStatus by remember { mutableStateOf<String?>(null) }
     var editPickup by remember { mutableStateOf(detail.summary.pickupPlanAt?.take(10).orEmpty()) }
     var editReturn by remember { mutableStateOf(detail.summary.returnPlanAt?.take(10).orEmpty()) }
     var ready by remember(detail) { mutableStateOf(detail.summary.isReadyToDeliver) }
@@ -75,11 +77,21 @@ fun OrderActionPanel(
             nextOrderStatuses(detail.summary.orderType, detail.summary.status).forEach { next ->
                 AssistChip(
                     onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                com.anyrent.pos.data.ApiClient.get().updateOrderStatus(detail.summary.id, next)
+                        paymentViewModel.clearError()
+                        paymentViewModel.setOrder(detail)
+                        val needsSheet = next == "PICKUPED" || next == "RETURNED" ||
+                            (next == "COMPLETED" && PaymentPolicy.actionFor(detail)?.amount?.let { it > 0 } == true)
+                        if (needsSheet && PaymentPolicy.actionFor(detail) != null) {
+                            pendingStatus = next
+                            showPayment = true
+                        } else {
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    com.anyrent.pos.data.ApiClient.get()
+                                        .updateOrderStatus(detail.summary.id, next)
+                                }
+                                onReload()
                             }
-                            onReload()
                         }
                     },
                     label = { Text(next) },
@@ -165,11 +177,27 @@ fun OrderActionPanel(
                 submitting = paymentState.submitting,
                 error = paymentState.error,
                 onMethodSelected = paymentViewModel::selectMethod,
-                onDismiss = { showPayment = false },
+                onDismiss = {
+                    showPayment = false
+                    pendingStatus = null
+                },
                 onConfirm = {
+                    val next = pendingStatus
                     paymentViewModel.submit {
-                        showPayment = false
-                        onReload()
+                        if (next == null) {
+                            showPayment = false
+                            onReload()
+                            return@submit
+                        }
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                com.anyrent.pos.data.ApiClient.get()
+                                    .updateOrderStatus(detail.summary.id, next)
+                            }
+                            showPayment = false
+                            pendingStatus = null
+                            onReload()
+                        }
                     }
                 },
             )

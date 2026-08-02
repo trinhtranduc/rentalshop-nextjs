@@ -87,6 +87,7 @@
     <string name="tools">Tools</string>
     <string name="about">About</string>
     <string name="logout">Log out</string>
+    <string name="logout_confirmation">Are you sure you want to logout?</string>
     <string name="export_hint">Opens export download in browser (authenticated session may be required).</string>
     <string name="printer_hint">Configure network thermal printer (ESC/POS over TCP). Save IP, then use Test print or Print receipt on an order.</string>
     <string name="printer_name">Printer name</string>
@@ -182,8 +183,12 @@
     <string name="refund_payment">Refund payment</string>
     <string name="collect_remaining_payment">Collect remaining payment</string>
     <string name="collect_deposit">Collect deposit</string>
-    <string name="refund_payment_description">Confirm that this amount is returned to the customer.</string>
-    <string name="collect_payment_description">Confirm that this amount has been collected from the customer.</string>
+    <string name="refund_payment_description">Please refund the amount to the customer.</string>
+    <string name="collect_payment_description">Please collect the amount from the customer.</string>
+    <string name="collect_remaining_payment_description">Please collect the remaining payment from the customer.</string>
+    <string name="collect_deposit_description">Please collect the deposit amount from the customer.</string>
+    <string name="collect_collateral_documents">Collect collateral documents</string>
+    <string name="return_collateral_documents">Return collateral documents</string>
     <string name="payment_method">Payment method</string>
     <string name="confirm">Confirm</string>
     <string name="scan_to_pay">Scan to pay</string>

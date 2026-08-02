@@ -64,18 +64,23 @@ interface PaymentRepository {
 }
 
 object PaymentPolicy {
+    /**
+     * Payment sheet action for the current order status (iOS `OrderViewModel.getPaymentType()`).
+     * Always returns an action for RESERVED / PICKUPED / SALE so staff see collect/refund + collateral
+     * before confirming pickup/return — even when money amount is 0.
+     */
     fun actionFor(order: OrderDetail): PaymentAction? {
         if (order.summary.status == "CANCELLED") return null
         if (order.summary.orderType == "SALE") {
             val paid = completedAmount(order, PaymentPurpose.SALE)
             val remaining = (order.summary.totalAmount - paid).coerceAtLeast(0.0)
-            return remaining.takeIf { it > 0.0 }?.let {
-                PaymentAction(PaymentKind.COLLECT, PaymentPurpose.SALE, it, null)
-            }
+            return PaymentAction(PaymentKind.COLLECT, PaymentPurpose.SALE, remaining, null)
+                .takeIf { remaining > 0.0 }
         }
 
         return when (order.summary.status) {
             "RESERVED" -> {
+                // iOS: (totalAmount - depositAmount) + securityDeposit
                 val pickupPaid = completedAmount(order, PaymentPurpose.PICKUP)
                 val amount = (
                     order.summary.totalAmount -
@@ -83,31 +88,36 @@ object PaymentPolicy {
                         order.securityDeposit -
                         pickupPaid
                     ).coerceAtLeast(0.0)
-                amount.takeIf { it > 0.0 }?.let {
-                    PaymentAction(
-                        PaymentKind.COLLECT,
-                        PaymentPurpose.PICKUP,
-                        it,
-                        order.collateralDetails,
-                    )
-                }
+                PaymentAction(
+                    PaymentKind.COLLECT,
+                    PaymentPurpose.PICKUP,
+                    amount,
+                    order.collateralDetails?.takeIf { it.isNotBlank() },
+                )
             }
             "PICKUPED" -> {
+                // iOS: damageFee - securityDeposit (negative = refund). Also include lateFee.
                 val adjustment = order.damageFee + order.lateFee - order.securityDeposit
+                val collateral = order.collateralDetails?.takeIf { it.isNotBlank() }
                 when {
                     adjustment > 0.0 -> PaymentAction(
                         PaymentKind.COLLECT,
                         PaymentPurpose.RETURN_ADJUSTMENT,
                         adjustment,
-                        order.collateralDetails,
+                        collateral,
                     )
                     adjustment < 0.0 -> PaymentAction(
                         PaymentKind.REFUND,
                         PaymentPurpose.RETURN_ADJUSTMENT,
                         -adjustment,
-                        order.collateralDetails,
+                        collateral,
                     )
-                    else -> null
+                    else -> PaymentAction(
+                        PaymentKind.COLLECT,
+                        PaymentPurpose.RETURN_ADJUSTMENT,
+                        0.0,
+                        collateral,
+                    )
                 }
             }
             else -> null

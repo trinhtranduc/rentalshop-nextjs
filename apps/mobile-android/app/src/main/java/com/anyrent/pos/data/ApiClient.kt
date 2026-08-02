@@ -67,6 +67,8 @@ class ApiClient(
         val profile = parseUserProfile(user)
         SessionStore.userName = profile.displayName
         SessionStore.email = profile.email
+        // Persist for login prefill after logout (iOS LastLoginEmail).
+        profile.email.takeIf { it.isNotBlank() }?.let { SessionStore.lastLoginEmail = it }
         SessionStore.role = profile.role
         SessionStore.userId = profile.id
         SessionStore.merchantId = profile.merchantId

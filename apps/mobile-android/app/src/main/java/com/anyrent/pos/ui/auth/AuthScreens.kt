@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.push.PushRegistrar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -167,7 +168,8 @@ fun LoginScreen(
     onForgotPassword: () -> Unit,
     onRegister: () -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
+    // Prefill like iOS loadLastLoginEmail() — lastLoginEmail survives clearAuth().
+    var email by remember { mutableStateOf(SessionStore.lastLoginEmail.orEmpty()) }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
@@ -206,6 +208,8 @@ fun LoginScreen(
                                 val result = withContext(Dispatchers.IO) { ApiClient.get().login(email, password) }
                                 loading = false
                                 result.onSuccess {
+                                    // Same as iOS Utils.saveLastLoginEmail — keep for next logout.
+                                    SessionStore.lastLoginEmail = email.trim()
                                     PushRegistrar.refreshTokenIfLoggedIn()
                                     onLoggedIn()
                                 }.onFailure { error = it.message }

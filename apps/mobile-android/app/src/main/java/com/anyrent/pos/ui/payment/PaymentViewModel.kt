@@ -58,6 +58,11 @@ class PaymentViewModel(
         val snapshot = _state.value
         val action = snapshot.action ?: return
         if (snapshot.submitting) return
+        // iOS confirms the sheet then advances status; skip API when nothing to collect/refund.
+        if (action.amount <= 0.0) {
+            onSuccess()
+            return
+        }
         val reference = pendingReference ?: referenceProvider().also { pendingReference = it }
         _state.update { it.copy(submitting = true, error = null) }
         viewModelScope.launch {

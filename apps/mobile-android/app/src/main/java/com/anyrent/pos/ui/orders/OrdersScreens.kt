@@ -76,16 +76,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
+import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.payment.PaymentPolicy
+import com.anyrent.pos.ui.payment.PaymentViewModel
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppCloseIconButton
@@ -712,10 +717,20 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
     var showSecurityEditor by remember { mutableStateOf(false) }
     var securityDraft by remember { mutableStateOf("0") }
     var showMoreActions by remember { mutableStateOf(false) }
+    var showPaymentSheet by remember { mutableStateOf(false) }
+    var pendingNextStatus by remember { mutableStateOf<String?>(null) }
+    var statusSubmitting by remember { mutableStateOf(false) }
     var actionMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val printerPrefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
+    val app = context.applicationContext as AnyRentApp
+    val paymentFactory = remember { PaymentViewModel.Factory(app.container.paymentRepository) }
+    val paymentViewModel: PaymentViewModel = viewModel(
+        key = "order-detail-payment-$orderId",
+        factory = paymentFactory,
+    )
+    val paymentState by paymentViewModel.state.collectAsState()
 
     fun load() {
         scope.launch {
@@ -727,6 +742,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                 notes = it.summary.notes.orEmpty()
                 collateralDraft = it.collateralDetails.orEmpty()
                 securityDraft = it.securityDeposit.toLong().toString()
+                paymentViewModel.setOrder(it)
             }.onFailure { error = it.message }
         }
     }
@@ -790,13 +806,27 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     nextStatus?.let { status ->
                         Button(
                             onClick = {
-                                scope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        ApiClient.get().updateOrderStatus(orderId, status)
+                                val order = current
+                                paymentViewModel.clearError()
+                                paymentViewModel.setOrder(order)
+                                val showSheet =
+                                    (status == "PICKUPED" || status == "RETURNED") &&
+                                        PaymentPolicy.actionFor(order) != null
+                                if (showSheet) {
+                                    pendingNextStatus = status
+                                    showPaymentSheet = true
+                                } else {
+                                    scope.launch {
+                                        statusSubmitting = true
+                                        withContext(Dispatchers.IO) {
+                                            ApiClient.get().updateOrderStatus(orderId, status)
+                                        }
+                                        statusSubmitting = false
+                                        load()
                                     }
-                                    load()
                                 }
                             },
+                            enabled = !statusSubmitting && !paymentState.submitting,
                             modifier = Modifier.weight(1.15f).height(56.dp),
                             shape = RoundedCornerShape(12.dp),
                         ) {
@@ -1075,6 +1105,41 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (showPaymentSheet && paymentState.action != null) {
+        PaymentCollectionSheet(
+            action = paymentState.action!!,
+            selectedMethod = paymentState.selectedMethod,
+            submitting = paymentState.submitting || statusSubmitting,
+            error = paymentState.error,
+            onMethodSelected = paymentViewModel::selectMethod,
+            onDismiss = {
+                showPaymentSheet = false
+                pendingNextStatus = null
+            },
+            onConfirm = {
+                val next = pendingNextStatus
+                paymentViewModel.submit {
+                    if (next == null) {
+                        showPaymentSheet = false
+                        return@submit
+                    }
+                    scope.launch {
+                        statusSubmitting = true
+                        runCatching {
+                            withContext(Dispatchers.IO) {
+                                ApiClient.get().updateOrderStatus(orderId, next)
+                            }
+                        }.onFailure { actionMessage = it.message }
+                        statusSubmitting = false
+                        showPaymentSheet = false
+                        pendingNextStatus = null
+                        load()
+                    }
+                }
+            },
+        )
     }
 
     if (showMoreActions && detail != null) {
