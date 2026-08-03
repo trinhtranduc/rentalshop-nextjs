@@ -1275,29 +1275,41 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
 }
 
 /**
+ * Build the subject independently from delivery so reminder/expiry wording can
+ * be covered by deterministic unit tests.
+ */
+export function getSubscriptionExpiryReminderSubject(
+  data: SubscriptionExpiryReminderData
+): string {
+  const t = getExpiryReminderTranslations(data.locale || 'vi');
+  const unit = data.daysRemaining === 1 ? t.dayUnit : t.daysUnit;
+  const isExpired = data.daysRemaining <= 0;
+  const isTrial = (data.status || '').toUpperCase() === 'TRIAL';
+
+  if (isExpired) {
+    return (data.locale || 'vi') === 'vi'
+      ? `${isTrial ? 'Bản dùng thử' : 'Gói đăng ký'} đã hết hạn - ${data.planName}`
+      : `${isTrial ? 'Your free trial' : 'Your subscription'} has expired - ${data.planName}`;
+  }
+
+  return fillPlaceholders(t.subject, {
+    days: String(data.daysRemaining),
+    unit,
+    planName: data.planName
+  });
+}
+
+/**
  * Send subscription expiry reminder email
  */
 export async function sendSubscriptionExpiryReminderEmail(
   data: SubscriptionExpiryReminderData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const html = generateSubscriptionExpiryReminderEmail(data);
-  const t = getExpiryReminderTranslations(data.locale || 'vi');
-  const unit = data.daysRemaining === 1 ? t.dayUnit : t.daysUnit;
-  const isExpired = data.daysRemaining <= 0;
-  const isTrial = (data.status || '').toUpperCase() === 'TRIAL';
-  const expiredSubject = (data.locale || 'vi') === 'vi'
-    ? `${isTrial ? 'Bản dùng thử' : 'Gói đăng ký'} đã hết hạn - ${data.planName}`
-    : `${isTrial ? 'Your free trial' : 'Your subscription'} has expired - ${data.planName}`;
 
   return await sendEmail({
     to: data.email,
-    subject: isExpired
-      ? expiredSubject
-      : fillPlaceholders(t.subject, {
-          days: String(data.daysRemaining),
-          unit,
-          planName: data.planName
-        }),
+    subject: getSubscriptionExpiryReminderSubject(data),
     html,
   });
 }
