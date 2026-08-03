@@ -84,7 +84,7 @@ export interface SubscriptionExpiryReminderData {
   planName: string;
   /** End of the current billing period (also the date shown in the email) */
   periodEnd: Date;
-  /** Calendar days left until periodEnd: 3, 2 or 1 */
+  /** Calendar days left until periodEnd: 3, or 0 on the expiry date */
   daysRemaining: number;
   /** 'TRIAL' subscriptions get trial-specific wording */
   status?: string;
@@ -1187,10 +1187,31 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
   const unit = daysRemaining === 1 ? t.dayUnit : t.daysUnit;
   const remainingText = `${daysRemaining} ${unit}`;
   const isTrial = (status || '').toUpperCase() === 'TRIAL';
-  const message = fillPlaceholders(isTrial ? t.trialMessage : t.message, {
-    days: String(daysRemaining),
-    unit
-  });
+  const isExpired = daysRemaining <= 0;
+  const expiredCopy = locale === 'vi'
+    ? {
+        title: isTrial ? 'Bản dùng thử đã hết hạn' : 'Gói đăng ký đã hết hạn',
+        message: isTrial
+          ? 'Bản dùng thử miễn phí của bạn đã kết thúc. Hãy chọn gói đăng ký để tiếp tục sử dụng và giữ cửa hàng hoạt động.'
+          : 'Gói đăng ký của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng đầy đủ các tính năng của AnyRent.',
+        statusLabel: 'Trạng thái',
+        statusValue: 'Đã hết hạn'
+      }
+    : {
+        title: isTrial ? 'Your free trial has expired' : 'Your subscription has expired',
+        message: isTrial
+          ? 'Your free trial has ended. Choose a subscription plan to continue using AnyRent and keep your shop running.'
+          : 'Your subscription has expired. Renew now to restore full access to AnyRent.',
+        statusLabel: 'Status',
+        statusValue: 'Expired'
+      };
+  const title = isExpired ? expiredCopy.title : t.title;
+  const message = isExpired
+    ? expiredCopy.message
+    : fillPlaceholders(isTrial ? t.trialMessage : t.message, {
+        days: String(daysRemaining),
+        unit
+      });
 
   // One day left is the last chance to renew, so switch the accent from amber to red.
   const accentColor = daysRemaining <= 1 ? '#dc2626' : '#d97706';
@@ -1202,7 +1223,7 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${t.title}</title>
+  <title>${title}</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
   <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -1211,7 +1232,7 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
       <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">${t.systemTagline}</p>
     </div>
 
-    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${t.title}</h2>
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${title}</h2>
 
     <p style="color: #374151; font-size: 16px;">${t.greeting} <strong>${merchantName}</strong>,</p>
 
@@ -1228,8 +1249,8 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
           <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #111827;">${formatDate(periodEnd)}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${t.daysRemaining}:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 700; color: ${accentColor};">${remainingText}</td>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${isExpired ? expiredCopy.statusLabel : t.daysRemaining}:</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 700; color: ${accentColor};">${isExpired ? expiredCopy.statusValue : remainingText}</td>
         </tr>
       </table>
     </div>
@@ -1262,14 +1283,21 @@ export async function sendSubscriptionExpiryReminderEmail(
   const html = generateSubscriptionExpiryReminderEmail(data);
   const t = getExpiryReminderTranslations(data.locale || 'vi');
   const unit = data.daysRemaining === 1 ? t.dayUnit : t.daysUnit;
+  const isExpired = data.daysRemaining <= 0;
+  const isTrial = (data.status || '').toUpperCase() === 'TRIAL';
+  const expiredSubject = (data.locale || 'vi') === 'vi'
+    ? `${isTrial ? 'Bản dùng thử' : 'Gói đăng ký'} đã hết hạn - ${data.planName}`
+    : `${isTrial ? 'Your free trial' : 'Your subscription'} has expired - ${data.planName}`;
 
   return await sendEmail({
     to: data.email,
-    subject: fillPlaceholders(t.subject, {
-      days: String(data.daysRemaining),
-      unit,
-      planName: data.planName
-    }),
+    subject: isExpired
+      ? expiredSubject
+      : fillPlaceholders(t.subject, {
+          days: String(data.daysRemaining),
+          unit,
+          planName: data.planName
+        }),
     html,
   });
 }

@@ -1,7 +1,8 @@
 // ============================================================================
 // SUBSCRIPTION EXPIRY REMINDER CRON JOB
 // ============================================================================
-// Emails merchants 3, 2 and 1 calendar days before `Subscription.currentPeriodEnd`.
+// Emails merchants 3 calendar days before and on the expiry date
+// (`Subscription.currentPeriodEnd`).
 //
 // Auth (either one):
 //   Authorization: Bearer ${CRON_SECRET}
@@ -14,22 +15,36 @@
 //                -H "Authorization: Bearer $CRON_SECRET"
 //
 // Buckets are computed in Asia/Ho_Chi_Minh (SUBSCRIPTION_EXPIRY_CONFIG.REMINDER_TIMEZONE)
-// so "3 days left" matches the merchant's own calendar. Running the job more than
+// so reminder dates match the merchant's own calendar. Running the job more than
 // once a day is safe: every send is recorded as a SubscriptionActivity keyed by
 // subscription + period end + bucket, and already-sent buckets are skipped.
 //
 // Add `?dryRun=1` to list what would be sent without sending or logging anything.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
-import type { ExpiringSubscription } from '@rentalshop/database';
+import {
+  buildExpiryReminderKey,
+  findSentExpiryReminderKeys,
+  findSubscriptionsExpiringInDays,
+  recordExpiryReminderSent,
+  type ExpiringSubscription,
+} from '../../../../../../packages/database/src/subscription-expiry-reminder';
+import { sendSubscriptionExpiryReminderEmail } from '../../../../../../packages/utils/src/services/email';
+import {
+  formatDateKeyInTimeZone,
+} from '../../../../../../packages/utils/src/core/date-range';
 import {
   ResponseBuilder,
+} from '../../../../../../packages/utils/src/api/response-builder';
+import {
   handleApiError,
-  sendSubscriptionExpiryReminderEmail,
-  formatDateKeyInTimeZone,
-} from '@rentalshop/utils';
-import { SUBSCRIPTION_EXPIRY_CONFIG, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+} from '../../../../../../packages/utils/src/core/errors';
+import {
+  SUBSCRIPTION_EXPIRY_CONFIG,
+} from '../../../../../../packages/constants/src/subscription';
+import {
+  SUBSCRIPTION_STATUS,
+} from '../../../../../../packages/constants/src/status';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,6 +53,7 @@ interface ReminderResult {
   subscriptionId: number;
   merchantId: number;
   daysBefore: number;
+  queryDaysOffset: number;
   recipients: string[];
   status: 'sent' | 'skipped_already_sent' | 'skipped_no_email' | 'failed' | 'dry_run';
   error?: string;
@@ -66,19 +82,20 @@ function resolveRecipients(subscription: ExpiringSubscription): string[] {
 }
 
 async function processDayBucket(
-  daysBefore: number,
+  queryDaysOffset: number,
   now: Date,
   renewUrl: string | undefined,
-  dryRun: boolean
+  dryRun: boolean,
+  reminderDaysBefore: number = queryDaysOffset
 ): Promise<ReminderResult[]> {
-  const { dateKey, subscriptions } = await db.subscriptionExpiryReminders.findExpiringInDays(
-    daysBefore,
+  const { dateKey, subscriptions } = await findSubscriptionsExpiringInDays(
+    queryDaysOffset,
     now
   );
 
   if (subscriptions.length === 0) return [];
 
-  const sentKeys = await db.subscriptionExpiryReminders.findSentKeys(
+  const sentKeys = await findSentExpiryReminderKeys(
     subscriptions.map((subscription) => subscription.id),
     now
   );
@@ -86,11 +103,18 @@ async function processDayBucket(
   const results: ReminderResult[] = [];
 
   for (const subscription of subscriptions) {
-    const reminderKey = db.subscriptionExpiryReminders.buildKey(subscription.id, dateKey, daysBefore);
+    // Recovery uses the same expiry-day key as the regular day-zero run, so it
+    // never creates a third successful email for the same billing period.
+    const reminderKey = buildExpiryReminderKey(
+      subscription.id,
+      dateKey,
+      reminderDaysBefore
+    );
     const base = {
       subscriptionId: subscription.id,
       merchantId: subscription.merchantId,
-      daysBefore,
+      daysBefore: reminderDaysBefore,
+      queryDaysOffset,
     };
 
     if (sentKeys.has(reminderKey)) {
@@ -124,7 +148,7 @@ async function processDayBucket(
           email,
           planName: subscription.planName,
           periodEnd: subscription.currentPeriodEnd,
-          daysRemaining: daysBefore,
+          daysRemaining: reminderDaysBefore,
           status: subscription.status,
           renewUrl,
         });
@@ -147,12 +171,12 @@ async function processDayBucket(
         }
       }
 
-      // Only recorded after a successful send, so a transient SES failure is
-      // retried by tomorrow's run (or an earlier manual re-run).
-      await db.subscriptionExpiryReminders.recordSent({
+      // Only recorded after a successful send. Manual re-runs are safe, and
+      // expiry-day failures also get the one-day recovery pass below.
+      await recordExpiryReminderSent({
         subscriptionId: subscription.id,
         reminderKey,
-        daysBefore,
+        daysBefore: reminderDaysBefore,
         periodEnd: subscription.currentPeriodEnd,
         recipients,
         planName: subscription.planName,
@@ -163,7 +187,7 @@ async function processDayBucket(
     } catch (error) {
       console.error('❌ [ExpiryReminder] Failed to process subscription', {
         subscriptionId: subscription.id,
-        daysBefore,
+        daysBefore: reminderDaysBefore,
         error,
       });
       results.push({
@@ -187,6 +211,24 @@ async function handleExpiryReminders(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const dryRun = searchParams.get('dryRun') === '1' || searchParams.get('dryRun') === 'true';
 
+    // Console mode intentionally reports success without delivering a message.
+    // Never allow production cron to record those logs as real sent emails.
+    if (
+      !dryRun &&
+      process.env.NODE_ENV === 'production' &&
+      process.env.EMAIL_PROVIDER !== 'ses'
+    ) {
+      console.error('❌ [ExpiryReminder] Production email provider is not SES');
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'EMAIL_PROVIDER_NOT_CONFIGURED',
+          message: 'EMAIL_PROVIDER must be set to ses for production expiry reminders',
+        },
+        { status: 503 }
+      );
+    }
+
     const now = new Date();
     const timeZone = SUBSCRIPTION_EXPIRY_CONFIG.REMINDER_TIMEZONE;
     const clientUrl = process.env.CLIENT_URL;
@@ -204,6 +246,11 @@ async function handleExpiryReminders(request: NextRequest) {
       results.push(...(await processDayBucket(daysBefore, now, renewUrl, dryRun)));
     }
 
+    // One-day recovery for a missed/failed expiry-day execution. It reuses the
+    // day-zero idempotency key, so merchants who already received the expiry
+    // email are skipped and successful email volume remains at most two.
+    results.push(...(await processDayBucket(-1, now, renewUrl, dryRun, 0)));
+
     const summary = {
       sent: results.filter((result) => result.status === 'sent').length,
       skippedAlreadySent: results.filter((result) => result.status === 'skipped_already_sent').length,
@@ -214,16 +261,37 @@ async function handleExpiryReminders(request: NextRequest) {
 
     console.log('✅ [ExpiryReminder] Completed', summary);
 
+    const responseData = {
+      today: formatDateKeyInTimeZone(now, timeZone),
+      timeZone,
+      statuses: [
+        SUBSCRIPTION_STATUS.TRIAL,
+        SUBSCRIPTION_STATUS.ACTIVE,
+        SUBSCRIPTION_STATUS.EXPIRED,
+      ],
+      daysBefore: SUBSCRIPTION_EXPIRY_CONFIG.PERIOD_EXPIRY_NOTIFICATIONS,
+      recoveryDaysOffset: -1,
+      dryRun,
+      ...summary,
+      results,
+    };
+
+    // Surface primary delivery failures to the scheduler. A retry is safe:
+    // successful buckets have already been recorded and will be skipped.
+    if (summary.failed > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'SUBSCRIPTION_EXPIRY_REMINDERS_PARTIAL_FAILURE',
+          message: `${summary.failed} expiry reminder email(s) failed`,
+          data: responseData,
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(
-      ResponseBuilder.success('SUBSCRIPTION_EXPIRY_REMINDERS_COMPLETED', {
-        today: formatDateKeyInTimeZone(now, timeZone),
-        timeZone,
-        statuses: [SUBSCRIPTION_STATUS.TRIAL, SUBSCRIPTION_STATUS.ACTIVE],
-        daysBefore: SUBSCRIPTION_EXPIRY_CONFIG.PERIOD_EXPIRY_NOTIFICATIONS,
-        dryRun,
-        ...summary,
-        results,
-      })
+      ResponseBuilder.success('SUBSCRIPTION_EXPIRY_REMINDERS_COMPLETED', responseData)
     );
   } catch (error) {
     console.error('❌ [ExpiryReminder] Cron job failed:', error);

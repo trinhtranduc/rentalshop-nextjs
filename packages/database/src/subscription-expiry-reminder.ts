@@ -5,8 +5,9 @@
 // (POST /api/cron/subscription-expiry-reminders).
 
 import { prisma } from './client';
-import { getCalendarDayRangeInTimeZone } from '@rentalshop/utils';
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_EXPIRY_CONFIG, USER_ROLE } from '@rentalshop/constants';
+import { getCalendarDayRangeInTimeZone } from '../../utils/src/core/date-range';
+import { SUBSCRIPTION_EXPIRY_CONFIG } from '../../constants/src/subscription';
+import { SUBSCRIPTION_STATUS, USER_ROLE } from '../../constants/src/status';
 
 /**
  * Reminders older than this are irrelevant for the idempotency check: a bucket
@@ -44,10 +45,13 @@ export function buildExpiryReminderKey(
 }
 
 /**
- * Find TRIAL/ACTIVE subscriptions whose `currentPeriodEnd` falls on the calendar
+ * Find subscriptions whose `currentPeriodEnd` falls on the calendar
  * day `daysAhead` days from `reference`, as seen in `timeZone`.
  *
- * @param daysAhead - 3, 2 or 1
+ * The expiry-day bucket also accepts EXPIRED because a separate status updater
+ * may have marked the subscription expired before this cron runs.
+ *
+ * @param daysAhead - 3 or 0
  * @param reference - "now" (injectable for tests / manual runs)
  */
 export async function findSubscriptionsExpiringInDays(
@@ -59,7 +63,11 @@ export async function findSubscriptionsExpiringInDays(
 
   const rows = await prisma.subscription.findMany({
     where: {
-      status: { in: [SUBSCRIPTION_STATUS.TRIAL, SUBSCRIPTION_STATUS.ACTIVE] },
+      status: {
+        in: daysAhead <= 0
+          ? [SUBSCRIPTION_STATUS.TRIAL, SUBSCRIPTION_STATUS.ACTIVE, SUBSCRIPTION_STATUS.EXPIRED]
+          : [SUBSCRIPTION_STATUS.TRIAL, SUBSCRIPTION_STATUS.ACTIVE]
+      },
       currentPeriodEnd: { gte: start, lte: end }
     },
     include: {

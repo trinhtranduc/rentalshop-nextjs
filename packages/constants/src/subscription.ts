@@ -155,10 +155,11 @@ export const RENEWAL_DURATIONS = [
 // ============================================================================
 
 /**
- * Calendar days before `Subscription.currentPeriodEnd` when a reminder email is sent.
- * One email per bucket, so a merchant receives at most 3 reminders per period.
+ * Calendar days before `Subscription.currentPeriodEnd` when an email is sent.
+ * `0` is the expiry-day notification. Keeping only two buckets avoids noisy
+ * reminder sequences while still giving merchants time to renew.
  */
-export const PERIOD_EXPIRY_NOTIFICATIONS = [3, 2, 1] as readonly number[];
+export const PERIOD_EXPIRY_NOTIFICATIONS = [3, 0] as readonly number[];
 
 export const SUBSCRIPTION_EXPIRY_CONFIG = {
   PERIOD_EXPIRY_NOTIFICATIONS,
