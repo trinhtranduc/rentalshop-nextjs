@@ -39,6 +39,23 @@
     "systemName": "AnyRent",
     "systemTagline": "Hệ thống quản lý cho thuê"
   },
+  "subscriptionExpiryReminder": {
+    "title": "Gói đăng ký sắp hết hạn",
+    "subject": "Gói đăng ký sắp hết hạn sau {days} {unit} - {planName}",
+    "greeting": "Xin chào",
+    "message": "Gói đăng ký của bạn sẽ hết hạn sau {days} {unit}. Vui lòng liên hệ AnyRent để gia hạn và giữ cửa hàng hoạt động liên tục.",
+    "trialMessage": "Bản dùng thử miễn phí của bạn sẽ kết thúc sau {days} {unit}. Hãy liên hệ AnyRent để chọn gói đăng ký, giữ lại dữ liệu và tiếp tục sử dụng.",
+    "planName": "Gói đăng ký",
+    "expiryDate": "Ngày hết hạn",
+    "daysRemaining": "Thời gian còn lại",
+    "dayUnit": "ngày",
+    "daysUnit": "ngày",
+    "cta": "Liên hệ để gia hạn",
+    "alreadyRenewed": "Nếu bạn đã gia hạn, vui lòng bỏ qua email này.",
+    "footer": "© {year} AnyRent. Tất cả các quyền được bảo lưu.",
+    "systemName": "AnyRent",
+    "systemTagline": "Hệ thống quản lý cho thuê"
+  },
   "subscriptionStatusChange": {
     "cancelled": {
       "title": "Gói đăng ký đã bị hủy",

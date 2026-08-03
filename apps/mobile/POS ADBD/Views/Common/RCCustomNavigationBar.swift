@@ -93,6 +93,10 @@ class RCCustomNavigationBar: UIView {
     private var isTitleCentered: Bool = false
     private var isCustomTitleCentered: Bool = false
     private var preferredBarHeight: CGFloat = 44
+    /// Height is owned by Auto Layout (not SnapKit) so callers that
+    /// `snp.remakeConstraints` the bar cannot accidentally wipe it and let
+    /// the bar expand mid-screen (title/buttons are centerY-aligned).
+    private var heightConstraint: NSLayoutConstraint?
     private var customTitleMaxHeight: CGFloat = 44
     
     // MARK: - Initializers
@@ -137,10 +141,12 @@ class RCCustomNavigationBar: UIView {
             make.width.height.equalTo(44)
         }
         
-        // Fixed height
-        snp.makeConstraints { make in
-            make.height.equalTo(preferredBarHeight)
-        }
+        // Fixed height — use NSLayoutConstraint so SnapKit remakeConstraints
+        // from parent screens cannot remove it.
+        translatesAutoresizingMaskIntoConstraints = false
+        let height = heightAnchor.constraint(equalToConstant: preferredBarHeight)
+        height.isActive = true
+        heightConstraint = height
         
         updateStatusBarStyle()
     }
@@ -291,10 +297,7 @@ class RCCustomNavigationBar: UIView {
     func setPreferredBarHeight(_ height: CGFloat, customTitleMaxHeight: CGFloat? = nil) {
         preferredBarHeight = height
         self.customTitleMaxHeight = customTitleMaxHeight ?? height
-
-        snp.updateConstraints { make in
-            make.height.equalTo(height)
-        }
+        heightConstraint?.constant = height
         updateTitleConstraints()
     }
     

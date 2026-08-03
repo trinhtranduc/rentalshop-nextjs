@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "985257689474",
+    "project_id": "anyrent-289c7",
+    "storage_bucket": "anyrent-289c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985257689474:android:59be24aa7ceed31ed30f9b",
+        "android_client_info": {
+          "package_name": "anyrent.shop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPXlTYdH7E1qDY9ujA4PqaHhCCSpDSq4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

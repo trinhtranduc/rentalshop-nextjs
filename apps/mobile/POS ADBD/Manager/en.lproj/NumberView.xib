@@ -9,10 +9,10 @@
     </dependencies>
     <customFonts key="customFonts">
         <array key="SF-UI-Text-Regular.otf">
-            <string>SFUIText-Regular</string>
+            <string>Inter-Regular</string>
         </array>
         <array key="SF-UI-Text-Semibold.otf">
-            <string>SFUIText-Semibold</string>
+            <string>Inter-SemiBold</string>
         </array>
     </customFonts>
     <objects>
@@ -146,7 +146,7 @@
                     <subviews>
                         <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hqL-bZ-2Nf">
                             <rect key="frame" x="0.0" y="9.5" width="123.5" height="51"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="1">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -157,7 +157,7 @@
                         </button>
                         <button opaque="NO" tag="2" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ba7-Cf-07h">
                             <rect key="frame" x="123.5" y="9.5" width="123" height="51"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="2">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -168,7 +168,7 @@
                         </button>
                         <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wvn-eJ-t9o">
                             <rect key="frame" x="246.5" y="9.5" width="123.5" height="51"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="3">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -187,7 +187,7 @@
                     <subviews>
                         <button opaque="NO" tag="4" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8An-ww-fPq">
                             <rect key="frame" x="0.0" y="0.0" width="123.5" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="4">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -198,7 +198,7 @@
                         </button>
                         <button opaque="NO" tag="5" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yBI-3d-6kd">
                             <rect key="frame" x="123.5" y="0.0" width="123" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="5">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -209,7 +209,7 @@
                         </button>
                         <button opaque="NO" tag="6" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h0a-P9-V8t">
                             <rect key="frame" x="246.5" y="0.0" width="123.5" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="6">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -228,7 +228,7 @@
                     <subviews>
                         <button opaque="NO" tag="7" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bxj-uj-tTS">
                             <rect key="frame" x="0.0" y="0.0" width="123.5" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="7">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -239,7 +239,7 @@
                         </button>
                         <button opaque="NO" tag="8" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8lz-wd-KVu">
                             <rect key="frame" x="123.5" y="0.0" width="123" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="8">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -250,7 +250,7 @@
                         </button>
                         <button opaque="NO" tag="9" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2hO-bV-FlM">
                             <rect key="frame" x="246.5" y="0.0" width="123.5" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="9">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -269,7 +269,7 @@
                     <subviews>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="cNB-b2-wj4">
                             <rect key="frame" x="0.0" y="0.0" width="123.5" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title="0">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -280,7 +280,7 @@
                         </button>
                         <button opaque="NO" tag="10" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FNk-9D-mwG">
                             <rect key="frame" x="123.5" y="0.0" width="123" height="70"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="32"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="32"/>
                             <state key="normal" title=",000">
                                 <color key="titleColor" red="0.33333334329999997" green="0.33333334329999997" blue="0.33333334329999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -308,7 +308,7 @@
                     <constraints>
                         <constraint firstAttribute="height" constant="65" id="LNA-6i-cFt"/>
                     </constraints>
-                    <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="48"/>
+                    <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="48"/>
                     <color key="textColor" red="0.1960784314" green="0.22352941179999999" blue="0.30588235289999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     <nil key="highlightedColor"/>
                 </label>
@@ -330,7 +330,7 @@
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SII-AD-QOy">
                             <rect key="frame" x="0.0" y="0.0" width="82" height="68"/>
                             <color key="backgroundColor" red="0.0" green="0.54117647058823526" blue="0.90980392156862744" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="18"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="18"/>
                             <state key="normal" title="UPDATE">
                                 <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -342,7 +342,7 @@
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hLb-zV-0EA">
                             <rect key="frame" x="82" y="0.0" width="82.5" height="68"/>
                             <color key="backgroundColor" red="0.0" green="0.54117647058823526" blue="0.90980392156862744" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="24"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="24"/>
                             <state key="normal" title="%">
                                 <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </state>
@@ -353,7 +353,7 @@
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ogz-rZ-tZq">
                             <rect key="frame" x="164.5" y="0.0" width="82" height="68"/>
                             <color key="backgroundColor" red="0.0" green="0.54117647058823526" blue="0.90980392156862744" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            <fontDescription key="fontDescription" name="SFUIText-Semibold" family="SF UI Text" pointSize="24"/>
+                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="24"/>
                             <state key="normal" title="đ">
                                 <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </state>
@@ -371,7 +371,7 @@
                     <constraints>
                         <constraint firstAttribute="height" constant="24" id="bZP-CG-lDO"/>
                     </constraints>
-                    <fontDescription key="fontDescription" name="SFUIText-Regular" family="SF UI Text" pointSize="18"/>
+                    <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="18"/>
                     <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <nil key="highlightedColor"/>
                 </label>

@@ -107,22 +107,36 @@ export const GET = async (
         // Calculate amount to collect
         // This matches the logic in OrderSummaryCard component
         let amountToPay = 0;
+        const completedPayments = Array.isArray(order.payments)
+          ? order.payments.filter((payment: any) => payment.status === 'COMPLETED')
+          : [];
 
         if (order.orderType === ORDER_TYPE.SALE) {
-          // SALE orders: always collect total amount
-          amountToPay = order.totalAmount || 0;
+          const salePaid = completedPayments
+            .filter((payment: any) => payment.notes === 'SALE')
+            .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+          amountToPay = Math.max(0, (order.totalAmount || 0) - salePaid);
         } else if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.RESERVED) {
           // RENT orders RESERVED: collect remaining amount + security deposit
           // Security deposit is stored in order.securityDeposit field
           const remainingAmount = (order.totalAmount || 0) - (order.depositAmount || 0);
           const securityDeposit = order.securityDeposit || 0;
-          amountToPay = remainingAmount + securityDeposit;
+          const pickupPaid = completedPayments
+            .filter((payment: any) => payment.notes === 'PICKUP')
+            .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+          amountToPay = Math.max(0, remainingAmount + securityDeposit - pickupPaid);
         } else if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.PICKUPED) {
           // RENT orders PICKUPED: may need to collect additional fees
           // (damage fee, late fee, etc.) when returning
           const damageFee = order.damageFee || 0;
           const lateFee = order.lateFee || 0;
-          amountToPay = damageFee + lateFee;
+          const adjustmentPaid = completedPayments
+            .filter((payment: any) => payment.notes === 'RETURN_ADJUSTMENT')
+            .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+          amountToPay = Math.max(
+            0,
+            damageFee + lateFee - (order.securityDeposit || 0) - adjustmentPaid
+          );
         } else {
           // Other RENT statuses: no collection needed
           amountToPay = 0;
@@ -206,4 +220,3 @@ export const GET = async (
     }
   )(request);
 };
-
