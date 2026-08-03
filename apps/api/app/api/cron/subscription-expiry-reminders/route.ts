@@ -231,8 +231,9 @@ async function handleExpiryReminders(request: NextRequest) {
 
     const now = new Date();
     const timeZone = SUBSCRIPTION_EXPIRY_CONFIG.REMINDER_TIMEZONE;
-    const clientUrl = process.env.CLIENT_URL;
-    const renewUrl = clientUrl ? `${clientUrl.replace(/\/$/, '')}/subscription` : undefined;
+    const renewUrl =
+      process.env.SUBSCRIPTION_RENEWAL_CONTACT_URL ||
+      'https://anyrent.shop/#contact';
 
     console.log('🔔 [ExpiryReminder] Starting subscription expiry reminder cron', {
       today: formatDateKeyInTimeZone(now, timeZone),

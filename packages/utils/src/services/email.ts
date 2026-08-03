@@ -88,7 +88,7 @@ export interface SubscriptionExpiryReminderData {
   daysRemaining: number;
   /** 'TRIAL' subscriptions get trial-specific wording */
   status?: string;
-  /** Link to the merchant renewal page; the CTA button is hidden when omitted */
+  /** Link to the AnyRent contact page for assisted renewal */
   renewUrl?: string;
   locale?: string; // Optional: locale for email (default: 'vi')
 }
@@ -347,14 +347,14 @@ function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
       title: 'Your subscription is expiring soon',
       subject: 'Your subscription expires in {days} {unit} - {planName}',
       greeting: 'Hello',
-      message: 'Your subscription expires in {days} {unit}. Renew now to keep your shop running without interruption.',
-      trialMessage: 'Your free trial ends in {days} {unit}. Choose a plan now to keep your data and keep working without interruption.',
+      message: 'Your subscription expires in {days} {unit}. Contact AnyRent to renew and keep your shop running without interruption.',
+      trialMessage: 'Your free trial ends in {days} {unit}. Contact AnyRent to choose a plan, keep your data, and continue working without interruption.',
       planName: 'Plan',
       expiryDate: 'Expiry Date',
       daysRemaining: 'Time Remaining',
       dayUnit: 'day',
       daysUnit: 'days',
-      cta: 'Renew now',
+      cta: 'Contact us to renew',
       alreadyRenewed: 'If you have already renewed, please ignore this email.',
       footer: `© ${new Date().getFullYear()} AnyRent. All rights reserved.`,
       systemName: 'AnyRent',
@@ -422,14 +422,14 @@ function getExpiryReminderTranslations(locale: string = 'vi'): ExpiryReminderTra
       title: 'Your subscription is expiring soon',
       subject: 'Your subscription expires in {days} {unit} - {planName}',
       greeting: 'Hello',
-      message: 'Your subscription expires in {days} {unit}. Renew now to keep your shop running without interruption.',
-      trialMessage: 'Your free trial ends in {days} {unit}. Choose a plan now to keep your data and keep working without interruption.',
+      message: 'Your subscription expires in {days} {unit}. Contact AnyRent to renew and keep your shop running without interruption.',
+      trialMessage: 'Your free trial ends in {days} {unit}. Contact AnyRent to choose a plan, keep your data, and continue working without interruption.',
       planName: 'Plan',
       expiryDate: 'Expiry Date',
       daysRemaining: 'Time Remaining',
       dayUnit: 'day',
       daysUnit: 'days',
-      cta: 'Renew now',
+      cta: 'Contact us to renew',
       alreadyRenewed: 'If you have already renewed, please ignore this email.',
       footer: '© {year} AnyRent. All rights reserved.',
       systemName: 'AnyRent',
@@ -1193,7 +1193,7 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
         title: isTrial ? 'Bản dùng thử đã hết hạn' : 'Gói đăng ký đã hết hạn',
         message: isTrial
           ? 'Bản dùng thử miễn phí của bạn đã kết thúc. Hãy chọn gói đăng ký để tiếp tục sử dụng và giữ cửa hàng hoạt động.'
-          : 'Gói đăng ký của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng đầy đủ các tính năng của AnyRent.',
+          : 'Gói đăng ký của bạn đã hết hạn. Vui lòng liên hệ AnyRent để gia hạn và tiếp tục sử dụng đầy đủ các tính năng.',
         statusLabel: 'Trạng thái',
         statusValue: 'Đã hết hạn'
       }
@@ -1201,7 +1201,7 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
         title: isTrial ? 'Your free trial has expired' : 'Your subscription has expired',
         message: isTrial
           ? 'Your free trial has ended. Choose a subscription plan to continue using AnyRent and keep your shop running.'
-          : 'Your subscription has expired. Renew now to restore full access to AnyRent.',
+          : 'Your subscription has expired. Contact AnyRent to renew and restore full access.',
         statusLabel: 'Status',
         statusValue: 'Expired'
       };
