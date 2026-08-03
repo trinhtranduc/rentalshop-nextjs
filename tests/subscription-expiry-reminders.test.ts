@@ -33,12 +33,17 @@ test('uses only the 3-day and expiry-day notification buckets', () => {
 });
 
 test('renders the 3-day reminder with advance-warning wording', () => {
-  const html = generateSubscriptionExpiryReminderEmail(baseReminder);
+  const html = generateSubscriptionExpiryReminderEmail({
+    ...baseReminder,
+    renewUrl: 'https://anyrent.shop/#contact',
+  });
   const subject = getSubscriptionExpiryReminderSubject(baseReminder);
 
   assert.match(subject, /3 ngày/);
   assert.match(html, /Gói đăng ký sắp hết hạn/);
   assert.match(html, /3 ngày/);
+  assert.match(html, /Liên hệ để gia hạn/);
+  assert.match(html, /href="https:\/\/anyrent\.shop\/#contact"/);
 });
 
 test('renders a dedicated expiry-day email without zero-day wording', () => {
