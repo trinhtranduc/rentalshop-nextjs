@@ -111,6 +111,128 @@ export function normalizeEndDate(date: Date | string | null | undefined): Date |
   return new Date(Date.UTC(parts.y, parts.m, parts.d, 23, 59, 59, 999));
 }
 
+// ============================================================================
+// TIMEZONE-AWARE CALENDAR DAYS
+// ============================================================================
+
+/**
+ * One calendar day of a specific IANA timezone, expressed as UTC instants.
+ */
+export interface ZonedCalendarDay {
+  /** `YYYY-MM-DD` as written on a calendar in that timezone */
+  dateKey: string;
+  /** Instant of local 00:00:00.000 */
+  start: Date;
+  /** Instant of local 23:59:59.999 */
+  end: Date;
+}
+
+const zonedPartsFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getZonedPartsFormatter(timeZone: string): Intl.DateTimeFormat {
+  let formatter = zonedPartsFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    zonedPartsFormatters.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
+function getZonedParts(instant: Date, timeZone: string) {
+  const values: Record<string, number> = {};
+  for (const part of getZonedPartsFormatter(timeZone).formatToParts(instant)) {
+    if (part.type !== 'literal') values[part.type] = Number(part.value);
+  }
+  return values as {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+  };
+}
+
+/**
+ * Offset of `timeZone` from UTC at a given instant, in milliseconds.
+ *
+ * Works by formatting the instant as local wall-clock time and re-reading those
+ * fields as if they were UTC — the gap between the two is the offset. This keeps
+ * DST-aware zones correct without pulling in a date library.
+ */
+export function getTimeZoneOffsetMs(instant: Date, timeZone: string): number {
+  const parts = getZonedParts(instant, timeZone);
+  const asUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+    instant.getUTCMilliseconds()
+  );
+  return asUtc - instant.getTime();
+}
+
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/**
+ * Local `YYYY-MM-DD` of an instant in a given timezone.
+ *
+ * @example
+ * // 2025-12-06T18:00:00Z is already Dec 7 in Vietnam (UTC+7)
+ * formatDateKeyInTimeZone(new Date('2025-12-06T18:00:00Z'), 'Asia/Ho_Chi_Minh') // '2025-12-07'
+ */
+export function formatDateKeyInTimeZone(instant: Date, timeZone: string): string {
+  const parts = getZonedParts(instant, timeZone);
+  return `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`;
+}
+
+/**
+ * Resolve a calendar day in `timeZone`, offset by `daysFromReference`, into the
+ * UTC instants that bound it. Use this to query UTC-stored timestamps by the day
+ * a user in that timezone would call "today", "tomorrow", "in 3 days", etc.
+ *
+ * @example
+ * // Merchants in Vietnam: subscriptions expiring 3 calendar days from now
+ * const { start, end } = getCalendarDayRangeInTimeZone(new Date(), 'Asia/Ho_Chi_Minh', 3);
+ */
+export function getCalendarDayRangeInTimeZone(
+  reference: Date,
+  timeZone: string,
+  daysFromReference: number = 0
+): ZonedCalendarDay {
+  const parts = getZonedParts(reference, timeZone);
+  const target = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + daysFromReference));
+  const y = target.getUTCFullYear();
+  const m = target.getUTCMonth();
+  const d = target.getUTCDate();
+
+  // Convert local midnight to UTC. The offset is first estimated from the
+  // reference instant, then re-read at the candidate instant so days that cross
+  // a DST boundary land on the correct hour.
+  const localMidnightAsUtc = Date.UTC(y, m, d, 0, 0, 0, 0);
+  let start = new Date(localMidnightAsUtc - getTimeZoneOffsetMs(reference, timeZone));
+  start = new Date(localMidnightAsUtc - getTimeZoneOffsetMs(start, timeZone));
+
+  const localEndAsUtc = Date.UTC(y, m, d, 23, 59, 59, 999);
+  let end = new Date(localEndAsUtc - getTimeZoneOffsetMs(start, timeZone));
+  end = new Date(localEndAsUtc - getTimeZoneOffsetMs(end, timeZone));
+
+  return { dateKey: `${y}-${pad2(m + 1)}-${pad2(d)}`, start, end };
+}
+
 /**
  * Get date range from period option
  *

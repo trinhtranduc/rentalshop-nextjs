@@ -25,6 +25,23 @@
     "systemName": "AnyRent",
     "systemTagline": "렌탈 관리 시스템"
   },
+  "subscriptionExpiryReminder": {
+    "title": "구독이 곧 만료됩니다",
+    "subject": "구독이 {days}{unit} 후 만료됩니다 - {planName}",
+    "greeting": "안녕하세요",
+    "message": "구독이 {days}{unit} 후 만료됩니다. 중단 없이 매장을 운영하시려면 지금 갱신해 주세요.",
+    "trialMessage": "무료 체험이 {days}{unit} 후 종료됩니다. 데이터를 유지하고 계속 사용하시려면 지금 플랜을 선택해 주세요.",
+    "planName": "구독 플랜",
+    "expiryDate": "만료일",
+    "daysRemaining": "남은 기간",
+    "dayUnit": "일",
+    "daysUnit": "일",
+    "cta": "지금 갱신하기",
+    "alreadyRenewed": "이미 갱신하셨다면 이 이메일은 무시하셔도 됩니다.",
+    "footer": "© {year} AnyRent. 모든 권리 보유.",
+    "systemName": "AnyRent",
+    "systemTagline": "렌탈 관리 시스템"
+  },
   "subscriptionStatusChange": {
     "cancelled": {
       "title": "구독이 취소되었습니다",

@@ -14,6 +14,7 @@ import { simplifiedOutlets } from './outlet';
 import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
 import { simplifiedSubscriptionActivities } from './subscription-activity';
+import { simplifiedSubscriptionExpiryReminders } from './subscription-expiry-reminder';
 import { simplifiedMerchants } from './merchant';
 import { simplifiedPlanLimitAddons } from './plan-limit-addon';
 import { simplifiedOrderNumbers } from './order-number-generator';
@@ -157,6 +158,11 @@ const db = {
   // SUBSCRIPTION ACTIVITY OPERATIONS
   // ============================================================================
   subscriptionActivities: simplifiedSubscriptionActivities,
+
+  // ============================================================================
+  // SUBSCRIPTION EXPIRY REMINDER OPERATIONS
+  // ============================================================================
+  subscriptionExpiryReminders: simplifiedSubscriptionExpiryReminders,
 
   // ============================================================================
   // PLAN LIMIT ADDON OPERATIONS
@@ -314,6 +320,16 @@ export { simplifiedPayments } from './payment';
 
 // Export subscription activity functions
 export { simplifiedSubscriptionActivities } from './subscription-activity';
+
+// Export subscription expiry reminder functions
+export {
+  simplifiedSubscriptionExpiryReminders,
+  findSubscriptionsExpiringInDays,
+  findSentExpiryReminderKeys,
+  recordExpiryReminderSent,
+  buildExpiryReminderKey,
+} from './subscription-expiry-reminder';
+export type { ExpiringSubscription } from './subscription-expiry-reminder';
 
 // Legacy exports for backward compatibility
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById, changePlan, renewSubscription, cancelSubscription, pauseSubscription, resumeSubscription } from './subscription';
