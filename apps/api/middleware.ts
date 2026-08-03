@@ -3,6 +3,7 @@ import { verifyTokenSimple } from './lib/jwt-edge';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
 import { buildCorsHeaders } from './lib/cors-edge';
+import { usesRouteManagedAuth } from './lib/route-auth';
 
 /** Edge-compatible correlation ID generator */
 function generateCorrelationId(): string {
@@ -101,17 +102,19 @@ export async function middleware(request: NextRequest) {
   // Special handling for /api/posts/[slug] - public endpoint for individual posts
   const isPostSlugRoute = pathname.match(/^\/api\/posts\/[^\/]+$/); // Matches /api/posts/slug but not /api/posts/123/edit
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isPostSlugRoute;
+  const isRouteManagedAuth = usesRouteManagedAuth(pathname);
   const isApiRoute = pathname.startsWith('/api/');
 
   console.log('🔍 MIDDLEWARE: Route analysis:', {
     pathname,
     isApiRoute,
     isPublicRoute,
+    isRouteManagedAuth,
     publicRoutes: publicRoutes.filter(route => pathname.startsWith(route))
   });
 
-  if (isPublicRoute || !isApiRoute) {
-    console.log('🔍 MIDDLEWARE: Route is public or not API, allowing through with CORS headers');
+  if (isPublicRoute || isRouteManagedAuth || !isApiRoute) {
+    console.log('🔍 MIDDLEWARE: Route bypasses user JWT, allowing route-level auth');
     
     // Add correlation ID to headers even for public routes
     const requestHeaders = new Headers(request.headers);
@@ -236,7 +239,7 @@ export async function middleware(request: NextRequest) {
     
     // If it's a public route, allow through with CORS headers
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-    if (isPublicRoute) {
+    if (isPublicRoute || usesRouteManagedAuth(pathname)) {
       const response = NextResponse.next({ 
         request: { headers: request.headers } 
       });
