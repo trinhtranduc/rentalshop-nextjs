@@ -26,6 +26,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Configure Firebase
         FirebaseManager.shared.configure()
+
+        // RevenueCat (MERCHANT IAP) — no-op if REVENUECAT_API_KEY empty
+        PurchasesManager.configure()
         
         // Push notifications (FCM) — request permission + register token when logged in
         if User.account() != nil {
@@ -182,6 +185,7 @@ extension AppDelegate {
             if let user = User.account() {
                 FirebaseManager.shared.logUserLogout(userId: String(user.id))
             }
+            PurchasesManager.logOut()
             User.reset()
             Utils.removePreference()
             AppShare.shared.reset()

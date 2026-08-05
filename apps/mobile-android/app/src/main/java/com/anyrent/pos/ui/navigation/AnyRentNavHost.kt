@@ -61,6 +61,7 @@ import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.SettingsScreen
+import com.anyrent.pos.ui.settings.SubscriptionScreen
 import com.anyrent.pos.ui.settings.UserManagementScreen
 import com.anyrent.pos.ui.theme.AppMuted
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +93,7 @@ object Routes {
     const val Export = "export"
     const val Printer = "printer"
     const val AppInfo = "app-info"
+    const val Subscription = "subscription"
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
@@ -300,6 +302,9 @@ fun AnyRentNavHost(
         composable(Routes.StoreInfo) {
             StoreInfoScreen(onBack = { rootNavController.popBackStack() })
         }
+        composable(Routes.Subscription) {
+            SubscriptionScreen(onBack = { rootNavController.popBackStack() })
+        }
         composable(Routes.PickCustomer) {
             CustomersScreen(
                 pickMode = true,
@@ -456,6 +461,7 @@ private fun MainTabs(
                     onOpenPrinter = { rootNavController.navigate(Routes.Printer) },
                     onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
                     onOpenStore = { rootNavController.navigate(Routes.StoreInfo) },
+                    onOpenSubscription = { rootNavController.navigate(Routes.Subscription) },
                     onOpenNotifications = { rootNavController.navigate(Routes.Inbox) },
                     onLoggedOut = {
                         rootNavController.navigate(Routes.Login) {

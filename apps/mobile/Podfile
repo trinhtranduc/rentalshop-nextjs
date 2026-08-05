@@ -17,6 +17,8 @@ target 'POS ADBD' do
   pod 'PullToRefresher'
   pod 'SwiftyJSON'
   pod 'RealmSwift', :modular_headers => true
+  # RevenueCat — App Store IAP for MERCHANT subscription renewals
+  pod 'RevenueCat'
 end
 
 post_install do |installer|

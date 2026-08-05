@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Add
@@ -89,6 +90,7 @@ fun SettingsScreen(
     onOpenPrinter: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onOpenStore: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onLoggedOut: () -> Unit,
 ) {
@@ -133,6 +135,14 @@ fun SettingsScreen(
             SectionLabel(stringResource(R.string.account))
             AppCard {
                 SettingsCardRow(Icons.Default.Store, stringResource(R.string.store_info), onOpenStore)
+                if (SessionStore.role == "MERCHANT") {
+                    HorizontalDivider(Modifier.padding(start = 56.dp))
+                    SettingsCardRow(
+                        Icons.Default.CardMembership,
+                        stringResource(R.string.subscription),
+                        onOpenSubscription,
+                    )
+                }
                 if (PermissionManager.canManageUsers()) {
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(Icons.Default.ManageAccounts, stringResource(R.string.user_management), onOpenUsers)

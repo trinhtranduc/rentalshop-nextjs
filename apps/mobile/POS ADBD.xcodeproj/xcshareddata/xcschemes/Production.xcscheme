@@ -78,6 +78,9 @@
             ReferencedContainer = "container:POS ADBD.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "POS ADBD/Configuration/AnyRentSubscriptions.storekit">
+      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

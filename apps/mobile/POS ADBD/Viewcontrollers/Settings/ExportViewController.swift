@@ -700,21 +700,3 @@ extension ExportViewController: DatePickerViewControllerDelegate {
         exportTableView.reloadData()
     }
 }
-
-// MARK: - DatePickerViewControllerDelegate
-extension ExportViewController: DatePickerViewControllerDelegate {
-    func didSelectDate(_ date: Date, sender: DatePickerViewController) {
-        // Single-day range: use the same day for start and end.
-        let calendar = Calendar.current
-        customStartDate = calendar.startOfDay(for: date)
-        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: date) ?? date
-        exportTableView.reloadData()
-    }
-
-    func didSelectDateRange(start: Date, end: Date, sender: DatePickerViewController) {
-        let calendar = Calendar.current
-        customStartDate = calendar.startOfDay(for: start)
-        customEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
-        exportTableView.reloadData()
-    }
-}

@@ -1,0 +1,104 @@
+{
+  "identifier" : "AnyRentSubscriptions",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "anyrent_basic_group",
+      "localizations" : [
+        {
+          "description" : "Gói gia hạn Basic cho cửa hàng thuê",
+          "displayName" : "AnyRent Basic",
+          "locale" : "vi_VN"
+        }
+      ],
+      "name" : "AnyRent Basic",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "999000",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "anyrent_semi_annual_local",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Gia hạn AnyRent Basic 6 tháng",
+              "displayName" : "6 tháng",
+              "locale" : "vi_VN"
+            },
+            {
+              "description" : "Renew AnyRent Basic for 6 months",
+              "displayName" : "6 months",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "anyrent_merchant_semi_annual",
+          "recurringSubscriptionPeriod" : "P6M",
+          "referenceName" : "AnyRent Basic 6 Months",
+          "subscriptionGroupID" : "anyrent_basic_group",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1799000",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "anyrent_annual_local",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Gia hạn AnyRent Basic 12 tháng",
+              "displayName" : "12 tháng",
+              "locale" : "vi_VN"
+            },
+            {
+              "description" : "Renew AnyRent Basic for 12 months",
+              "displayName" : "12 months",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "anyrent_merchant_annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "AnyRent Basic 12 Months",
+          "subscriptionGroupID" : "anyrent_basic_group",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

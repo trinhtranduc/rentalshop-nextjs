@@ -168,6 +168,24 @@
 "day" = "ngày";
 "days" = "ngày";
 "Expired" = "Hết hạn";
+"Current plan" = "Gói hiện tại";
+"Choose renewal" = "Chọn gói gia hạn";
+"6 months" = "6 tháng";
+"12 months" = "12 tháng";
+"Save %d%% vs two 6-month plans" = "Tiết kiệm %d%% so với hai kỳ 6 tháng";
+"Subscribe / Renew" = "Đăng ký / Gia hạn";
+"Restore purchases" = "Khôi phục giao dịch";
+"Payment successful. Subscription status will update shortly." = "Thanh toán thành công. Trạng thái gói sẽ cập nhật trong giây lát.";
+"Purchases restored." = "Đã khôi phục giao dịch.";
+"No active subscription found to restore." = "Không tìm thấy gói đang hoạt động để khôi phục.";
+"In-app purchases are not configured on this build." = "Thanh toán trong ứng dụng chưa được cấu hình trên bản build này.";
+"Purchases not configured" = "Purchases chưa được cấu hình";
+"Package not found — refresh offerings first" = "Không tìm thấy gói — hãy tải lại danh sách gói";
+"No plans available" = "Chưa có gói nào";
+"Plans are not available from the store yet. Complete App Store subscription setup, then try again." = "Chưa tải được gói từ cửa hàng. Hoàn tất cấu hình subscription trên App Store rồi thử lại.";
+"Days remaining" = "Số ngày còn lại";
+"Status" = "Trạng thái";
+"Success" = "Thành công";
 
 // MARK: - Settings
 "Account" = "Tài khoản";

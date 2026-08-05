@@ -32,6 +32,10 @@
 		040C80202D9551A000EB900C /* CustomerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040C801F2D9551A000EB900C /* CustomerCell.swift */; };
 		041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */; };
 		04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */; };
+		04A1B0012F7A000100000001 /* PurchasesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A1B0002F7A000100000001 /* PurchasesManager.swift */; };
+		04A1B0112F7A000100000011 /* SubscriptionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A1B0102F7A000100000010 /* SubscriptionViewController.swift */; };
+		04A1B0112F7A000100000013 /* SubscriptionAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */; };
+		04A1B0112F7A000100000015 /* SubscriptionStatusInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A1B0102F7A000100000014 /* SubscriptionStatusInfo.swift */; };
 		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
 		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
 		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
@@ -266,6 +270,10 @@
 		040C801F2D9551A000EB900C /* CustomerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerCell.swift; sourceTree = "<group>"; };
 		041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		04A1B0002F7A000100000001 /* PurchasesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesManager.swift; sourceTree = "<group>"; };
+		04A1B0102F7A000100000010 /* SubscriptionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionViewController.swift; sourceTree = "<group>"; };
+		04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
+		04A1B0102F7A000100000014 /* SubscriptionStatusInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionStatusInfo.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
@@ -514,6 +522,7 @@
 				041CBA1E2D8E92FB00C117DF /* PrinterManager.swift */,
 				041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */,
 				04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */,
+				04A1B0002F7A000100000001 /* PurchasesManager.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -537,6 +546,7 @@
 				048839B02D79F11900069257 /* LoyaltyService.swift */,
 				048838D22D7727AF00069256 /* ProductService.swift */,
 				04F1B0012F1C0101000A0002 /* NotificationService.swift */,
+				04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -595,6 +605,7 @@
 				048838F72D7832AD00069256 /* AppInformationViewController.swift */,
 				048838F82D7832AD00069256 /* PrinterConfigurationViewController.swift */,
 				048838F92D7832AD00069256 /* SettingsViewController.swift */,
+				04A1B0102F7A000100000010 /* SubscriptionViewController.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -662,6 +673,7 @@
 				040330E72EA88EF5003BC33E /* Plan.swift */,
 				048F67982ED1EE2A0053985A /* ErrorCodes.swift */,
 				040330E82EA88EF5003BC33E /* Subscription.swift */,
+				04A1B0102F7A000100000014 /* SubscriptionStatusInfo.swift */,
 				040330DC2EA747F7003BC33E /* Category.swift */,
 				048838ED2D78012F00069256 /* RegistrationData.swift */,
 				C94F0E8F24D71CF500D80343 /* User.swift */,
@@ -1247,6 +1259,10 @@
 				88F3D8C021B06223007CC30A /* MonthAxisValueFormatter.swift in Sources */,
 				041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */,
 				04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */,
+				04A1B0012F7A000100000001 /* PurchasesManager.swift in Sources */,
+				04A1B0112F7A000100000011 /* SubscriptionViewController.swift in Sources */,
+				04A1B0112F7A000100000013 /* SubscriptionAPIService.swift in Sources */,
+				04A1B0112F7A000100000015 /* SubscriptionStatusInfo.swift in Sources */,
 				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
 				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
 				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,
@@ -1574,6 +1590,7 @@
 			baseConfigurationReference = 003B93F62DB6A075AF2FB1A1 /* Pods-POS ADBD.debug.xcconfig */;
 			buildSettings = {
 				API_BASE_URL = "https://dev-api.anyrent.shop";
+				REVENUECAT_API_KEY = "appl_VomVTqbrTqtwkGzxDjfiSbQnXce";
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
 				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
@@ -1653,6 +1670,7 @@
 			baseConfigurationReference = 4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */;
 			buildSettings = {
 				API_BASE_URL = "https://api.anyrent.shop";
+				REVENUECAT_API_KEY = "appl_VomVTqbrTqtwkGzxDjfiSbQnXce";
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
 				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
