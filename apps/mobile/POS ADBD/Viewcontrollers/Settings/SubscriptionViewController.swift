@@ -160,24 +160,11 @@ final class SubscriptionViewController: BaseViewControler {
                 if self?.selectedProductId == nil || !(list ?? []).contains(where: { $0.productId == self?.selectedProductId }) {
                     self?.selectedProductId = list?.first?.productId
                 }
-                // Fallback: if offerings empty, show preview packages for screenshot
-                if (list ?? []).isEmpty {
-                    self?.packages = [
-                        RenewPackageInfo(productId: PurchasesManager.productSemiAnnual, title: "6 tháng", priceLabel: "999.000 ₫", priceAmount: 999000),
-                        RenewPackageInfo(productId: PurchasesManager.productAnnual, title: "12 tháng (giảm 10%)", priceLabel: "1.799.000 ₫", priceAmount: 1799000),
-                    ]
-                    self?.packagesError = nil
-                    self?.selectedProductId = PurchasesManager.productSemiAnnual
-                }
                 group.leave()
             }
         } else {
-            packages = [
-                RenewPackageInfo(productId: PurchasesManager.productSemiAnnual, title: "6 tháng", priceLabel: "999.000 ₫", priceAmount: 999000),
-                RenewPackageInfo(productId: PurchasesManager.productAnnual, title: "12 tháng (giảm 10%)", priceLabel: "1.799.000 ₫", priceAmount: 1799000),
-            ]
-            packagesError = nil
-            selectedProductId = PurchasesManager.productSemiAnnual
+            packages = []
+            packagesError = "In-app purchases are not configured on this build.".localized()
             group.leave()
         }
 
