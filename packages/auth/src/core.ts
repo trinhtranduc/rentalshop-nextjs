@@ -180,46 +180,59 @@ async function checkMerchantSubscriptionStatus(merchantId: number, request: Next
       };
     }
 
-    // Block if subscription is CANCELLED
+    // Block if subscription is CANCELLED AND period has ended
+    // (If cancelled but period still active → allow access until period end)
     if (subscriptionStatus === SUBSCRIPTION_STATUS.CANCELLED) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { 
-            success: false, 
-            message: 'Your subscription has been cancelled. Please contact support to reactivate.',
-            code: 'SUBSCRIPTION_CANCELLED',
-            details: {
-              status: subscriptionStatus,
-              merchantId: merchant.id,
-              merchantName: merchant.name,
-              canceledAt: subscription.canceledAt
-            }
-          },
-          { status: 403 }
-        )
-      };
+      const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+      const now = new Date();
+      if (!periodEnd || periodEnd < now) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              message: 'Your subscription has been cancelled. Please contact support to reactivate.',
+              code: 'SUBSCRIPTION_CANCELLED',
+              details: {
+                status: subscriptionStatus,
+                merchantId: merchant.id,
+                merchantName: merchant.name,
+                canceledAt: subscription.canceledAt
+              }
+            },
+            { status: 403 }
+          )
+        };
+      }
+      // Period still active → allow access (cancelled but not yet expired)
     }
 
-    // Block if subscription is EXPIRED
-    if (subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { 
-            success: false, 
-            message: 'Your subscription has expired. Please renew to continue using the service.',
-            code: 'SUBSCRIPTION_EXPIRED',
-            details: {
-              status: subscriptionStatus,
-              expiredAt: subscription.currentPeriodEnd,
-              merchantId: merchant.id,
-              merchantName: merchant.name
-            }
-          },
-          { status: 403 }
-        )
-      };
+    // DO NOT block based on DB "EXPIRED" status field.
+    // The EXPIRED status can be stale (set by webhook event order issues in sandbox).
+    // Instead, rely on currentPeriodEnd date check below.
+    // Access is determined by: currentPeriodEnd > now (single source of truth)
+    {
+      const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+      const now = new Date();
+      if (periodEnd && periodEnd < now) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              message: 'Your subscription has expired. Please renew to continue using the service.',
+              code: 'SUBSCRIPTION_EXPIRED',
+              details: {
+                status: 'EXPIRED',
+                expiredAt: subscription.currentPeriodEnd,
+                merchantId: merchant.id,
+                merchantName: merchant.name
+              }
+            },
+            { status: 403 }
+          )
+        };
+      }
     }
 
     // Block if subscription is PAST_DUE
