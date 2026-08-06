@@ -319,7 +319,22 @@ class SettingsViewController: BaseViewControler {
                     }
                     self.planLabel.isHidden = false
                     self.durationLabel.isHidden = false
-                    self.planLabel.text = "\("Plan".localized()): \(info.displayPlanName)"
+                    
+                    // Show plan name with status badge
+                    let statusText = info.displayStatus ?? "—"
+                    self.planLabel.text = "\(info.displayPlanName) • \(statusText)"
+                    
+                    // Color based on status
+                    let status = (info.displayStatus ?? "").uppercased()
+                    if status.contains("ACTIVE") || status.contains("TRIAL") {
+                        self.planLabel.textColor = .systemGreen
+                    } else if status.contains("EXPIRED") || status.contains("CANCELLED") {
+                        self.planLabel.textColor = .systemRed
+                    } else if status.contains("PAST_DUE") {
+                        self.planLabel.textColor = .systemOrange
+                    } else {
+                        self.planLabel.textColor = .brandPrimary
+                    }
                     
                     // Format expiry as dd/MM/yyyy
                     if let isoEnd = info.currentPeriodEnd, !isoEnd.isEmpty {
