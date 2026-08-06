@@ -211,7 +211,7 @@ class SettingsViewController: BaseViewControler {
         super.viewWillAppear(animated)
         // Ensure navigation bar is hidden when returning to this screen
         navigationController?.setNavigationBarHidden(true, animated: false)
-        updateUserInfo() // Refresh user info when view appears
+        updateUserInfo() // Refresh user info + subscription status when view appears
         settingTableView.reloadData() // Reload to update export visibility based on role
     }
     
@@ -312,13 +312,20 @@ class SettingsViewController: BaseViewControler {
         
         // Load subscription info for merchants
         if User.account()?.role == .merchant {
-            SubscriptionAPIService.shared.getStatus { [weak self] info, _ in
+            NSLog("[Settings] Loading subscription info for merchant...")
+            SubscriptionAPIService.shared.getStatus { [weak self] info, error in
                 DispatchQueue.main.async {
-                    guard let self, let info else {
-                        self?.planLabel.isHidden = true
-                        self?.durationLabel.isHidden = true
+                    guard let self else { return }
+                    if let error {
+                        NSLog("[Settings] Subscription status error: \(error.localizedDescription)")
+                    }
+                    guard let info else {
+                        NSLog("[Settings] No subscription info returned")
+                        self.planLabel.isHidden = true
+                        self.durationLabel.isHidden = true
                         return
                     }
+                    NSLog("[Settings] Subscription loaded: plan=\(info.displayPlanName) status=\(info.displayStatus ?? "nil")")
                     self.planLabel.isHidden = false
                     self.durationLabel.isHidden = false
                     
