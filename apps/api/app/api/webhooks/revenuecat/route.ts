@@ -142,16 +142,16 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
 
   const now = new Date();
   const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : now;
-  let expiresAt = event.expiration_at_ms
-    ? new Date(event.expiration_at_ms)
-    : addMonths(purchasedAt, productConfig.months);
-
-  // CRITICAL: In sandbox, expiration can be very short (5 min renewal).
-  // If expiration is less than 1 day from purchase, use the real duration instead.
-  const diffMs = expiresAt.getTime() - purchasedAt.getTime();
-  const oneDayMs = 24 * 60 * 60 * 1000;
-  if (diffMs < oneDayMs) {
-    console.log(`[RevenueCat Webhook] Sandbox detected: expiration too short (${Math.round(diffMs / 1000)}s). Using ${productConfig.months} months instead.`);
+  let expiresAt: Date;
+  if (event.environment === 'SANDBOX') {
+    // SANDBOX: Always use real duration (sandbox expiration is accelerated: 6mo = 30min)
+    expiresAt = addMonths(purchasedAt, productConfig.months);
+    console.log(`[RevenueCat Webhook] SANDBOX: Using real duration ${productConfig.months} months (ignoring sandbox expiration)`);
+  } else if (event.expiration_at_ms) {
+    // PRODUCTION: Use actual expiration from Apple/Google
+    expiresAt = new Date(event.expiration_at_ms);
+  } else {
+    // Fallback: calculate from purchase date
     expiresAt = addMonths(purchasedAt, productConfig.months);
   }
 
