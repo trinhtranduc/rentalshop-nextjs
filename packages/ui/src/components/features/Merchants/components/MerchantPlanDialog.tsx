@@ -188,7 +188,7 @@ export function MerchantPlanDialog({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
-                    Current Plan
+                    Plan
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
                     {merchant.subscription?.plan ? (
@@ -207,6 +207,7 @@ export function MerchantPlanDialog({
                 </div>
                 <StatusBadge 
                   status={merchant.subscription?.status} 
+                  type="subscription"
                   size="sm"
                 />
               </div>

@@ -51,7 +51,7 @@ type BillingCycleConfig = {
   discount: number;
   description: string;
 };
-import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus, getStatusLabel } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantPlanManagementProps {
@@ -376,7 +376,7 @@ export function MerchantPlanManagement({
                     subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED ? 'bg-gray-100 text-gray-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {subscriptionStatus || 'Unknown'}
+                    {getStatusLabel(subscriptionStatus || 'UNKNOWN', 'subscription')}
                   </div>
                 </div>
               </div>

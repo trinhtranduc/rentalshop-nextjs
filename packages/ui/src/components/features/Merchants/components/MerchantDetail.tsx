@@ -21,7 +21,7 @@ import {
 } from '../../../ui';
 import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown, UserCircle } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
-import { BUSINESS_TAG_OPTIONS, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import { BUSINESS_TAG_OPTIONS, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus, getStatusLabel } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantDetailProps {
@@ -273,28 +273,31 @@ export function MerchantDetail({
                 )}
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Account status</label>
                 <p className={`text-sm ${data.merchant.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                  {data.merchant.isActive ? 'Active' : 'Inactive'}
+                  {data.merchant.isActive ? 'Enabled' : 'Disabled'}
                 </p>
               </div>
               {data.merchant.subscription && (
                 <>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Current Plan</label>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Plan</label>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {data.merchant.subscription.plan?.name || 'No plan'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Subscription Status</label>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Billing status</label>
                     <p className={`text-sm ${
                       normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.ACTIVE ? 'text-green-600' :
                       normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.TRIAL ? 'text-blue-600' :
                       normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.PAUSED ? 'text-orange-600' :
                       'text-gray-600'
                     }`}>
-                      {normalizeSubscriptionStatus(data.merchant.subscription.status) || 'Unknown'}
+                      {getStatusLabel(
+                        normalizeSubscriptionStatus(data.merchant.subscription.status) || data.merchant.subscription.status,
+                        'subscription'
+                      )}
                     </p>
                   </div>
                 </>

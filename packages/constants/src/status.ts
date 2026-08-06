@@ -258,8 +258,25 @@ export function isEntityActive(status: EntityStatus): boolean {
  */
 export function getStatusLabel(status: string, type: 'subscription' | 'order' | 'payment' | 'entity' | 'availability'): string {
   switch (type) {
-    case 'subscription':
-      return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+    case 'subscription': {
+      const normalized = status.toUpperCase();
+      switch (normalized) {
+        case SUBSCRIPTION_STATUS.TRIAL:
+          return 'On trial';
+        case SUBSCRIPTION_STATUS.ACTIVE:
+          return 'Paid / Active';
+        case SUBSCRIPTION_STATUS.PAST_DUE:
+          return 'Past due';
+        case SUBSCRIPTION_STATUS.CANCELLED:
+          return 'Cancelled';
+        case SUBSCRIPTION_STATUS.PAUSED:
+          return 'Paused';
+        case SUBSCRIPTION_STATUS.EXPIRED:
+          return 'Expired';
+        default:
+          return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, ' ');
+      }
+    }
     case 'order':
       return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     case 'payment':
