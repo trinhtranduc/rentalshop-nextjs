@@ -8,7 +8,11 @@ import { createSubscription } from './subscription';
 import { hashPassword } from '@rentalshop/auth/server';
 import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
-import { createMerchantOnboardingSampleData } from './onboarding-sample';
+import {
+  createMerchantOnboardingSampleData,
+  getLocalizedRegistrationDefaults,
+} from './onboarding-sample';
+import { resolveOnboardingLocaleFromContext } from './onboarding-seed-i18n';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 export interface RegistrationInput {
@@ -30,6 +34,8 @@ export interface RegistrationInput {
   state?: string;
   zipCode?: string;
   country?: string;
+  /** Preferred UI language for onboarding seed (en | vi) */
+  locale?: string;
   // For outlet staff/admin registration
   merchantCode?: string;
   outletCode?: string;
@@ -206,10 +212,16 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
+  const onboardingLocale = resolveOnboardingLocaleFromContext({
+    locale: data.locale,
+    country: data.country || merchant.country,
+  });
+  const localized = getLocalizedRegistrationDefaults(merchant.name, onboardingLocale);
+
   // 5. Create default outlet with merchant information FIRST
   const outlet = await tx.outlet.create({
     data: {
-      name: data.outletName || 'Main Store',
+      name: data.outletName || localized.outletName,
       // Always use merchant's information as primary source, with user input as fallback
       address: merchant.address || data.address || 'Address to be updated',
       phone: merchant.phone || data.phone,
@@ -217,7 +229,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       state: merchant.state || data.state,
       zipCode: merchant.zipCode || data.zipCode,
       country: merchant.country || data.country,
-      description: 'Default outlet created during registration',
+      description: localized.outletDescription,
       merchantId: merchant.id,
       isActive: true,
       isDefault: true
@@ -227,10 +239,11 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
   // 6. Create default category for merchant
   const defaultCategory = await tx.category.create({
     data: {
-      name: 'General',
-      description: 'Default category for general products',
+      name: localized.categoryName,
+      description: localized.categoryDescription,
       merchantId: merchant.id,
-      isActive: true
+      isActive: true,
+      isDefault: true,
     }
   });
 
@@ -258,7 +271,9 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     merchantId: merchant.id,
     outletId: outlet.id,
     categoryId: defaultCategory.id,
-    createdByUserId: user.id
+    createdByUserId: user.id,
+    locale: onboardingLocale,
+    businessType: data.businessType || merchant.businessType,
   });
   if (sampleResult.created) {
     console.log(`✅ Onboarding sample data created for merchant ${merchant.id}`);

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import { db } from '@rentalshop/database';
+import {
+  db,
+  getLocalizedRegistrationDefaults,
+  resolveOnboardingLocaleFromContext,
+} from '@rentalshop/database';
 import {
   merchantGoogleRegisterSchema,
   ResponseBuilder,
@@ -167,6 +171,13 @@ export async function POST(request: NextRequest) {
           ? deriveBusinessTypeFromTags(businessTags)
           : ((validated.businessType as BusinessType) || 'GENERAL');
 
+      const onboardingLocale = resolveOnboardingLocaleFromContext({
+        locale: (validated as { locale?: string }).locale || request.cookies.get('NEXT_LOCALE')?.value,
+        country: validated.country,
+        acceptLanguage: request.headers.get('accept-language'),
+      });
+      const localized = getLocalizedRegistrationDefaults(validated.businessName, onboardingLocale);
+
       const merchant = await tx.merchant.create({
         data: {
           name: validated.businessName,
@@ -188,14 +199,14 @@ export async function POST(request: NextRequest) {
 
       const outlet = await tx.outlet.create({
         data: {
-          name: `${merchant.name} - Main Store`,
+          name: localized.outletName,
           address: merchant.address || validated.address || 'Address to be updated',
           phone: merchant.phone || validated.phone,
           city: merchant.city,
           state: merchant.state,
           zipCode: merchant.zipCode,
           country: merchant.country,
-          description: 'Default outlet created during registration',
+          description: localized.outletDescription,
           merchantId: merchant.id,
           isDefault: true,
         },
@@ -203,8 +214,8 @@ export async function POST(request: NextRequest) {
 
       await tx.category.create({
         data: {
-          name: 'General',
-          description: 'Default category for general products',
+          name: localized.categoryName,
+          description: localized.categoryDescription,
           merchantId: merchant.id,
           isDefault: true,
         },
