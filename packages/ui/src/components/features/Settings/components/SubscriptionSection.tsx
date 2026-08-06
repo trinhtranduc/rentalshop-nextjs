@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 import { subscriptionsApi } from '@rentalshop/utils';
+import { getBillingIntervalLabel } from '@rentalshop/constants';
+import { useLocale } from 'next-intl';
 import { SubscriptionActivityTimeline } from '../../Subscriptions';
 
 // ============================================================================
@@ -56,6 +58,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   onChoosePlanClick,
 }) => {
   const t = useSettingsTranslations();
+  const locale = useLocale() as 'en' | 'vi';
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [activities, setActivities] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -172,7 +175,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     )}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {subscriptionData.subscription.interval || 'monthly'}
+                    {getBillingIntervalLabel(subscriptionData.subscription.interval, locale)}
                   </p>
                 </div>
 

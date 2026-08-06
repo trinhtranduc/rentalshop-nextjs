@@ -126,10 +126,10 @@
   },
   "common": {
     "billingIntervals": {
-      "monthly": "hàng tháng",
+      "monthly": "1 tháng",
       "quarterly": "3 tháng",
       "semi_annual": "6 tháng",
-      "annual": "hàng năm"
+      "annual": "1 năm"
     },
     "paymentMethods": {
       "STRIPE": "Thẻ tín dụng/Ghi nợ",

@@ -15,6 +15,7 @@ import {
   Separator
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency } from '@rentalshop/ui';
+import { getBillingIntervalLabel } from '@rentalshop/constants';
 import { 
   Pause, 
   Play, 
@@ -132,7 +133,9 @@ export function SubscriptionViewDialog({
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Billing Interval</label>
-                <p className="text-sm font-semibold">{subscription.billingInterval}</p>
+                <p className="text-sm font-semibold">
+                  {getBillingIntervalLabel(subscription.billingInterval || subscription.interval, 'en')}
+                </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Amount</label>

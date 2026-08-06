@@ -132,7 +132,10 @@ export {
   isPaymentFailed,
   isEntityActive,
   isValidSubscriptionStatus,
-  normalizeSubscriptionStatus
+  normalizeSubscriptionStatus,
+  normalizeBillingInterval,
+  getBillingIntervalLabel,
+  type BillingIntervalLocale,
 } from './status';
 
 // ============================================================================

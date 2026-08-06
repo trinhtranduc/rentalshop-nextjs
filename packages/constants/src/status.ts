@@ -144,6 +144,71 @@ export const BILLING_INTERVAL = {
 
 export type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
 
+export type BillingIntervalLocale = 'en' | 'vi';
+
+const BILLING_INTERVAL_LABELS: Record<BillingIntervalLocale, Record<BillingInterval, string>> = {
+  en: {
+    monthly: '1 month',
+    quarterly: '3 months',
+    semi_annual: '6 months',
+    annual: '1 year',
+  },
+  vi: {
+    monthly: '1 tháng',
+    quarterly: '3 tháng',
+    semi_annual: '6 tháng',
+    annual: '1 năm',
+  },
+};
+
+/** Normalize API/DB interval strings to canonical billing interval ids. */
+export function normalizeBillingInterval(value: string | null | undefined): BillingInterval | null {
+  if (!value) return null;
+  const v = value.toLowerCase().replace(/-/g, '_').trim();
+  switch (v) {
+    case 'month':
+    case 'monthly':
+    case '1':
+    case '1m':
+      return BILLING_INTERVAL.MONTHLY;
+    case 'quarter':
+    case 'quarterly':
+    case '3':
+    case '3m':
+      return BILLING_INTERVAL.QUARTERLY;
+    case 'semi_annual':
+    case 'semiannual':
+    case 'semiannual':
+    case 'sixmonths':
+    case 'six_months':
+    case '6':
+    case '6m':
+      return BILLING_INTERVAL.SEMI_ANNUAL;
+    case 'annual':
+    case 'yearly':
+    case 'year':
+    case '12':
+    case '12m':
+      return BILLING_INTERVAL.ANNUAL;
+    default:
+      return Object.values(BILLING_INTERVAL).includes(v as BillingInterval)
+        ? (v as BillingInterval)
+        : null;
+  }
+}
+
+/** Human-readable billing cycle label (e.g. semi_annual → "6 months" / "6 tháng"). */
+export function getBillingIntervalLabel(
+  interval: string | null | undefined,
+  locale: BillingIntervalLocale = 'en',
+): string {
+  const normalized = normalizeBillingInterval(interval);
+  if (normalized) {
+    return BILLING_INTERVAL_LABELS[locale][normalized];
+  }
+  return interval ?? '—';
+}
+
 // ============================================================================
 // AUDIT LOG ACTIONS
 // ============================================================================

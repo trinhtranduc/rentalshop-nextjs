@@ -385,10 +385,10 @@ function getEmailTranslations(locale: string = 'vi'): EmailTranslations {
     },
     common: {
       billingIntervals: {
-        monthly: 'Monthly',
-        quarterly: 'Every 3 months',
-        semi_annual: 'Every 6 months',
-        annual: 'Yearly'
+        monthly: '1 month',
+        quarterly: '3 months',
+        semi_annual: '6 months',
+        annual: '1 year'
       },
       paymentMethods: {
         STRIPE: 'Credit/Debit Card',
