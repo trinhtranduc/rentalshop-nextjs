@@ -27,6 +27,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
+import { getBillingIntervalLabel } from '@rentalshop/constants';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
 import { SubscriptionExtendDialogEnhanced } from './SubscriptionExtendDialogEnhanced';
 import { SubscriptionChangePlanDialog } from './SubscriptionChangePlanDialog';
@@ -103,10 +104,12 @@ export function SubscriptionList({
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString('vi-VN', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -284,14 +287,7 @@ export function SubscriptionList({
                       {/* Period */}
                       <td className="px-6 py-4">
                         <div className="text-sm text-text-primary">
-                          {(() => {
-                            const interval = subscription.billingInterval;
-                            if (interval === 'monthly' || interval === 'month') return 'Monthly';
-                            if (interval === 'quarterly' || interval === 'quarter') return 'Quarterly';
-                            if (interval === 'annual' || interval === 'yearly' || interval === 'year') return 'Yearly';
-                            if (interval === 'semi_annual' || interval === 'semiAnnual' || interval === 'sixMonths') return 'Semi-Annual';
-                            return 'Custom';
-                          })()}
+                          {getBillingIntervalLabel(subscription.billingInterval || subscription.interval, 'en')}
                         </div>
                       </td>
                       

@@ -304,7 +304,10 @@ final class SubscriptionViewController: BaseViewControler {
             date = formatter.date(from: iso)
         }
         if let date {
-            return date.dateInString() ?? iso
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "dd/MM/yyyy"
+            displayFormatter.locale = Locale(identifier: "en_US_POSIX")
+            return displayFormatter.string(from: date)
         }
         return iso
     }

@@ -74,13 +74,16 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   // Check if it's a special status first
   const specialConfig = specialStatusConfig[status.toLowerCase() as keyof typeof specialStatusConfig];
   
-  let config;
+  let config: { color: string; icon: string };
+  let displayLabel: string;
   if (specialConfig) {
     config = specialConfig;
+    displayLabel = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   } else {
-    // Use centralized status constants
-    const colorClass = getStatusColor(status, type);
-    const label = getStatusLabel(status, type);
+    // Use centralized status constants (normalize enum casing for lookups)
+    const normalizedStatus = type === 'subscription' ? status.toUpperCase() : status;
+    const colorClass = getStatusColor(normalizedStatus, type);
+    displayLabel = getStatusLabel(normalizedStatus, type);
     config = {
       color: colorClass,
       icon: ''
@@ -96,8 +99,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <span className={baseClasses}>
-      <span className="text-xs">{config.icon}</span>
-      <span className="capitalize">{status}</span>
+      {config.icon ? <span className="text-xs">{config.icon}</span> : null}
+      <span>{displayLabel}</span>
     </span>
   );
 };

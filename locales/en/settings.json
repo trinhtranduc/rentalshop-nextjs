@@ -182,7 +182,7 @@
     "extendOrRenew": "Extend / Bank transfer",
     "choosePlan": "Choose plan",
     "historyTitle": "Subscription History",
-    "historyDescription": "View your past subscription plans and billing history",
+    "historyDescription": "View activity and payment history for your subscription",
     "noHistory": "No subscription history found.",
     "plan": "Plan",
     "periodStart": "Period Start",
@@ -190,7 +190,30 @@
     "interval": "Interval",
     "cancelled": "Cancelled",
     "trial": "Trial",
-    "close": "Close"
+    "close": "Close",
+    "activitySubscribed6m": "Subscribed to Basic — 6 months",
+    "activitySubscribed12m": "Subscribed to Basic — 12 months",
+    "activityRenewed6m": "Renewed Basic — 6 months",
+    "activityRenewed12m": "Renewed Basic — 12 months",
+    "activityRenewed": "Subscription renewed",
+    "activitySubscribed": "Subscription started",
+    "activityCancelled": "Cancellation scheduled",
+    "activityExpired": "Subscription expired",
+    "activityPlanChanged": "Plan changed",
+    "activityPaused": "Subscription paused",
+    "activityResumed": "Subscription resumed",
+    "activityCreated": "Subscription created",
+    "activityGeneric": "Subscription update",
+    "paymentSuccess": "Payment successful",
+    "paymentFailed": "Payment failed",
+    "paymentPending": "Payment pending",
+    "methodAppStore": "App Store",
+    "methodGooglePlay": "Google Play",
+    "methodBankTransfer": "Bank transfer",
+    "methodManual": "Other",
+    "methodCard": "Card",
+    "historyEmptyFriendly": "No activity yet",
+    "historyLoadingFriendly": "Loading history..."
   },
   "currency": {
     "title": "Currency Settings",
@@ -250,7 +273,7 @@
     },
     "examples": {
       "monthly": "Monthly",
-      "quarterly": "Quarterly", 
+      "quarterly": "Quarterly",
       "yearly": "Yearly",
       "monthlyDesc": "0% discount - Standard pricing",
       "quarterlyDesc": "5% discount - Good for retention",
@@ -268,7 +291,7 @@
       "description": "Manage your personal information"
     },
     "merchant": {
-      "label": "Business", 
+      "label": "Business",
       "description": "Manage your business information, pricing, and currency"
     },
     "outlet": {
@@ -339,4 +362,3 @@
     "changing": "Changing..."
   }
 }
-

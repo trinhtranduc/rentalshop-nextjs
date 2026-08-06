@@ -143,11 +143,17 @@ async function handleExtendSubscription(
     const addons = await db.planLimitAddons.findActiveByMerchant(subscription.merchantId);
     const totalAddonLimits = await db.planLimitAddons.calculateTotal(subscription.merchantId);
     
-    // Update subscription period end
-    // Đơn giản: chỉ update currentPeriodEnd, không cần update trialEnd
-    // Bất kể merchant status là trial hay không, chỉ cần currentPeriodEnd
+    // Update subscription period end + billing interval (single source of truth)
+    const extensionMonths = Math.round(extensionDays / 30);
+    const intervalValue = extensionMonths <= 1 ? 'monthly' : extensionMonths <= 3 ? 'quarterly' : extensionMonths <= 6 ? 'semi_annual' : 'annual';
     const updateData = {
       currentPeriodEnd: endDate,
+      status: 'ACTIVE',
+      interval: intervalValue,
+      intervalCount: 1,
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
+      cancelReason: null,
       updatedAt: new Date()
     };
     

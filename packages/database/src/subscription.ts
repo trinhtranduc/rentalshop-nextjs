@@ -131,11 +131,24 @@ function transformPlanFromDb(plan: any): Plan {
  * Ensures all required fields are included
  */
 function transformSubscriptionFromDb(sub: any): Subscription {
+  // Compute status from dates (single source of truth) instead of DB status field
+  const now = new Date();
+  const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+  let computedStatus: string = sub.status;
+  if (periodEnd && periodEnd > now) {
+    // Period still active → ACTIVE (regardless of DB status which can be stale)
+    if (sub.status === 'EXPIRED' || sub.status === 'PAST_DUE') {
+      computedStatus = 'ACTIVE';
+    }
+  } else if (periodEnd && periodEnd <= now) {
+    computedStatus = 'EXPIRED';
+  }
+
   return {
     id: sub.id,
     merchantId: sub.merchantId,
     planId: sub.planId,
-    status: sub.status as SubscriptionStatus, // ✅ Type safe with Prisma enum
+    status: computedStatus as SubscriptionStatus,
     billingInterval: sub.interval as BillingInterval,
     currentPeriodStart: sub.currentPeriodStart,
     currentPeriodEnd: sub.currentPeriodEnd,
@@ -312,7 +325,7 @@ export async function searchSubscriptions(filters: {
       },
       plan: true
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { updatedAt: 'desc' },
     take: limit,
     skip
   });

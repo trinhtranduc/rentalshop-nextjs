@@ -2,7 +2,9 @@
   "title": "Subscription",
   "mySubscription": "My Subscription",
   "currentPlan": "Current Plan",
-  "planDetails": "Plan Details",
+  "planDetails": {
+    "plan": "Plan"
+  },
   "billingInformation": "Billing Information",
   "paymentHistory": "Payment History",
   "status": {
@@ -52,9 +54,6 @@
     "daysLeft": "{days} days left",
     "oneDayLeft": "1 day left",
     "expires": "Expires"
-  },
-  "planDetails": {
-    "plan": "Plan"
   },
   "common": {
     "unknown": "Unknown",
@@ -264,7 +263,7 @@
     "tableStatus": "Status",
     "tableReference": "Reference",
     "historyTitle": "Subscription History",
-    "historyDescription": "View your past subscription plans and billing history",
+    "historyDescription": "View activity and payment history for your subscription",
     "historyLoading": "Loading history...",
     "historyEmpty": "No subscription history found.",
     "historyPlan": "Plan",
@@ -314,7 +313,30 @@
     "toastRenewSuccessBody": "Your subscription has been renewed.",
     "toastRenewFailedTitle": "Renew failed",
     "toastRenewFailedBody": "Could not renew subscription",
-    "na": "N/A"
+    "na": "N/A",
+    "activitySubscribed6m": "Subscribed to Basic — 6 months",
+    "activitySubscribed12m": "Subscribed to Basic — 12 months",
+    "activityRenewed6m": "Renewed Basic — 6 months",
+    "activityRenewed12m": "Renewed Basic — 12 months",
+    "activityRenewed": "Subscription renewed",
+    "activitySubscribed": "Subscription started",
+    "activityCancelled": "Cancellation scheduled",
+    "activityExpired": "Subscription expired",
+    "activityPlanChanged": "Plan changed",
+    "activityPaused": "Subscription paused",
+    "activityResumed": "Subscription resumed",
+    "activityCreated": "Subscription created",
+    "activityGeneric": "Subscription update",
+    "paymentSuccess": "Payment successful",
+    "paymentFailed": "Payment failed",
+    "paymentPending": "Payment pending",
+    "methodAppStore": "App Store",
+    "methodGooglePlay": "Google Play",
+    "methodBankTransfer": "Bank transfer",
+    "methodManual": "Other",
+    "methodCard": "Card",
+    "historyEmptyFriendly": "No activity yet",
+    "historyLoadingFriendly": "Loading history..."
   },
   "choosePlanDialog": {
     "title": "Choose Your Plan",
@@ -361,4 +383,3 @@
     "manualTransferCta": "Contact to pay manually"
   }
 }
-

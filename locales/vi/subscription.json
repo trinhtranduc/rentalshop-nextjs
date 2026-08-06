@@ -2,7 +2,9 @@
   "title": "Đăng ký",
   "mySubscription": "Đăng ký của tôi",
   "currentPlan": "Gói hiện tại",
-  "planDetails": "Chi tiết gói",
+  "planDetails": {
+    "plan": "Gói"
+  },
   "billingInformation": "Thông tin thanh toán",
   "paymentHistory": "Lịch sử thanh toán",
   "status": {
@@ -52,9 +54,6 @@
     "daysLeft": "Còn {days} ngày",
     "oneDayLeft": "Còn 1 ngày",
     "expires": "Hết hạn"
-  },
-  "planDetails": {
-    "plan": "Gói"
   },
   "common": {
     "unknown": "Không xác định",
@@ -264,7 +263,7 @@
     "tableStatus": "Trạng thái",
     "tableReference": "Tham chiếu",
     "historyTitle": "Lịch sử đăng ký",
-    "historyDescription": "Xem các gói và lịch sử thanh toán trước đây",
+    "historyDescription": "Xem lịch sử hoạt động và thanh toán của gói dịch vụ",
     "historyLoading": "Đang tải lịch sử...",
     "historyEmpty": "Chưa có lịch sử đăng ký.",
     "historyPlan": "Gói",
@@ -314,7 +313,30 @@
     "toastRenewSuccessBody": "Gói đăng ký của bạn đã được gia hạn.",
     "toastRenewFailedTitle": "Gia hạn thất bại",
     "toastRenewFailedBody": "Không thể gia hạn đăng ký",
-    "na": "Không có"
+    "na": "Không có",
+    "activitySubscribed6m": "Đăng ký gói Basic — 6 tháng",
+    "activitySubscribed12m": "Đăng ký gói Basic — 12 tháng",
+    "activityRenewed6m": "Gia hạn gói Basic — 6 tháng",
+    "activityRenewed12m": "Gia hạn gói Basic — 12 tháng",
+    "activityRenewed": "Đã gia hạn gói dịch vụ",
+    "activitySubscribed": "Đã bắt đầu gói dịch vụ",
+    "activityCancelled": "Đã lên lịch hủy gói",
+    "activityExpired": "Gói dịch vụ đã hết hạn",
+    "activityPlanChanged": "Đã đổi gói",
+    "activityPaused": "Gói dịch vụ đã tạm dừng",
+    "activityResumed": "Gói dịch vụ đã tiếp tục",
+    "activityCreated": "Đã tạo gói dịch vụ",
+    "activityGeneric": "Cập nhật gói dịch vụ",
+    "paymentSuccess": "Thanh toán thành công",
+    "paymentFailed": "Thanh toán thất bại",
+    "paymentPending": "Đang chờ thanh toán",
+    "methodAppStore": "App Store",
+    "methodGooglePlay": "Google Play",
+    "methodBankTransfer": "Chuyển khoản",
+    "methodManual": "Khác",
+    "methodCard": "Thẻ",
+    "historyEmptyFriendly": "Chưa có hoạt động nào",
+    "historyLoadingFriendly": "Đang tải lịch sử..."
   },
   "choosePlanDialog": {
     "title": "Chọn gói của bạn",
@@ -361,4 +383,3 @@
     "manualTransferCta": "Liên hệ để thanh toán thủ công"
   }
 }
-

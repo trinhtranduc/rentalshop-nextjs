@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { Plan, Product, Merchant, PricingType, PricingDurationLimits, PricingOption } from '@rentalshop/types';
-import { BillingInterval, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
+import { BillingInterval, BUSINESS_TYPE_DEFAULTS, getBillingIntervalLabel } from '@rentalshop/constants';
 
 // ============================================================================
 // TYPES
@@ -223,14 +223,7 @@ export class PriceFormatter {
    * Format billing interval for display
    */
   static formatBillingInterval(interval: BillingInterval): string {
-    const intervalMap: Record<BillingInterval, string> = {
-      monthly: 'Monthly',
-      quarterly: 'Quarterly',
-      semi_annual: 'Semi-Annual',
-      annual: 'Annual'
-    };
-
-    return intervalMap[interval] || interval;
+    return getBillingIntervalLabel(interval, 'en');
   }
 }
 

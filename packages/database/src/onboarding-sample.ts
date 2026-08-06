@@ -1,4 +1,24 @@
-const SAMPLE_MARKER = '[DU_LIEU_MAU_HE_THONG_V1]';
+import {
+  getDefaultOutletName,
+  getOnboardingCopy,
+  getSampleCopy,
+  ONBOARDING_SAMPLE_MARKER,
+} from './onboarding-seed-i18n';
+
+export {
+  getDefaultOutletName,
+  getOnboardingCopy,
+  getSampleCopy,
+  ONBOARDING_SAMPLE_MARKER,
+  resolveOnboardingLocale,
+  resolveOnboardingLocaleFromContext,
+  DEFAULT_CATEGORY_NAMES,
+} from './onboarding-seed-i18n';
+export type {
+  OnboardingLocale,
+  OnboardingBusinessType,
+  SampleCopy,
+} from './onboarding-seed-i18n';
 
 type MinimalTx = any;
 
@@ -7,6 +27,10 @@ type OnboardingContext = {
   outletId: number;
   categoryId: number;
   createdByUserId?: number;
+  /** UI / Accept-Language / country-derived locale */
+  locale?: string | null;
+  /** Merchant business type for sample product copy */
+  businessType?: string | null;
 };
 
 function normalizeEnvValues(): string[] {
@@ -35,6 +59,10 @@ export function shouldCreateOnboardingSampleData(): boolean {
   return false;
 }
 
+/**
+ * Create localized demo product + customer + order for a new merchant.
+ * Idempotent via ONBOARDING_SAMPLE_MARKER.
+ */
 export async function createMerchantOnboardingSampleData(
   tx: MinimalTx,
   context: OnboardingContext
@@ -43,12 +71,14 @@ export async function createMerchantOnboardingSampleData(
     return { created: false, reason: 'disabled-by-environment' };
   }
 
-  const { merchantId, outletId, categoryId, createdByUserId } = context;
+  const { merchantId, outletId, categoryId, createdByUserId, locale, businessType } = context;
+  const sample = getSampleCopy(businessType, locale);
+  const marker = ONBOARDING_SAMPLE_MARKER;
 
   const existingSampleOrder = await tx.order.findFirst({
     where: {
       outlet: { merchantId },
-      notes: { contains: SAMPLE_MARKER }
+      notes: { contains: marker }
     },
     select: { id: true }
   });
@@ -56,7 +86,7 @@ export async function createMerchantOnboardingSampleData(
   const existingSampleProduct = await tx.product.findFirst({
     where: {
       merchantId,
-      description: { contains: SAMPLE_MARKER }
+      description: { contains: marker }
     },
     select: { id: true }
   });
@@ -64,7 +94,7 @@ export async function createMerchantOnboardingSampleData(
   const existingSampleCustomer = await tx.customer.findFirst({
     where: {
       merchantId,
-      notes: { contains: SAMPLE_MARKER }
+      notes: { contains: marker }
     },
     select: { id: true }
   });
@@ -77,8 +107,8 @@ export async function createMerchantOnboardingSampleData(
     data: {
       merchantId,
       categoryId,
-      name: 'Áo dài truyền thống mẫu',
-      description: `${SAMPLE_MARKER} Sản phẩm mẫu giúp người dùng mới làm quen quy trình sản phẩm và đơn hàng.`,
+      name: sample.productName,
+      description: `${marker} ${sample.productDescription}`,
       barcode: null,
       totalStock: 10,
       rentPrice: 350000,
@@ -102,11 +132,13 @@ export async function createMerchantOnboardingSampleData(
   const sampleCustomer = await tx.customer.create({
     data: {
       merchantId,
-      firstName: 'Khách',
-      lastName: 'Mẫu',
+      firstName: sample.customerFirstName,
+      lastName: sample.customerLastName,
       phone: null,
       email: null,
-      notes: `${SAMPLE_MARKER} Khách hàng mẫu giúp người dùng mới làm quen quy trình khách hàng và đơn hàng.`,
+      address: sample.customerAddress,
+      city: sample.customerCity,
+      notes: `${marker} ${sample.customerNotes}`,
       isActive: true
     }
   });
@@ -126,7 +158,7 @@ export async function createMerchantOnboardingSampleData(
       discountValue: 0,
       discountAmount: 0,
       isReadyToDeliver: false,
-      notes: `${SAMPLE_MARKER} Đơn hàng mẫu thuê áo dài để người dùng mới hiểu vòng đời đơn hàng.`,
+      notes: `${marker} ${sample.orderNotes}`,
       outletId,
       customerId: sampleCustomer.id,
       createdById: createdByUserId ?? null
@@ -142,7 +174,7 @@ export async function createMerchantOnboardingSampleData(
       totalPrice: 350000,
       deposit: 500000,
       rentalDays: 1,
-      notes: `${SAMPLE_MARKER} Chi tiết đơn hàng mẫu`,
+      notes: `${marker} ${sample.orderItemNotes}`,
       productName: sampleProduct.name,
       productBarcode: sampleProduct.barcode,
       productImages: sampleProduct.images
@@ -150,4 +182,19 @@ export async function createMerchantOnboardingSampleData(
   });
 
   return { created: true };
+}
+
+/** Localized default outlet + category strings for registration. */
+export function getLocalizedRegistrationDefaults(
+  merchantName: string | null | undefined,
+  locale?: string | null,
+) {
+  const copy = getOnboardingCopy(locale);
+  return {
+    locale: copy.locale,
+    outletName: getDefaultOutletName(merchantName, locale),
+    outletDescription: copy.outlet.description,
+    categoryName: copy.category.name,
+    categoryDescription: copy.category.description,
+  };
 }

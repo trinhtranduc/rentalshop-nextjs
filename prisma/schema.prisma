@@ -809,6 +809,8 @@ enum PaymentMethod {
   CASH
   CHECK
   PAYPAL
+  IAP_APPLE
+  IAP_GOOGLE
 }
 
 enum PaymentType {

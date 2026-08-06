@@ -104,10 +104,16 @@ enum PurchasesManager {
                 completion(nil, error)
                 return
             }
+            
+            NSLog("[PurchasesManager] 📦 Offerings loaded: current=\(offerings?.current?.identifier ?? "nil"), all=\(offerings?.all.keys.joined(separator: ",") ?? "none")")
+            
             var byId: [String: Package] = [:]
             if let current = offerings?.current {
+                NSLog("[PurchasesManager] 📦 Current offering '\(current.identifier)' packages: \(current.availablePackages.count)")
                 for pkg in current.availablePackages {
-                    byId[pkg.storeProduct.productIdentifier] = pkg
+                    let product = pkg.storeProduct
+                    NSLog("[PurchasesManager] 📦 Package: id=\(product.productIdentifier) price=\(product.price) localizedPrice=\(product.localizedPriceString) currency=\(product.currencyCode ?? "?")")
+                    byId[product.productIdentifier] = pkg
                 }
             }
             if let all = offerings?.all {
@@ -122,7 +128,10 @@ enum PurchasesManager {
             packageByProductId = byId
             let ordered = [productSemiAnnual, productAnnual]
             let renew: [RenewPackageInfo] = ordered.compactMap { id in
-                guard let pkg = byId[id] else { return nil }
+                guard let pkg = byId[id] else {
+                    NSLog("[PurchasesManager] ⚠️ Product '\(id)' not found in offerings")
+                    return nil
+                }
                 return RenewPackageInfo(
                     productId: id,
                     title: titleForProduct(id),

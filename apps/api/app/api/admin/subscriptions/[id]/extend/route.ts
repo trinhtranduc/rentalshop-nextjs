@@ -8,6 +8,11 @@ import { z } from 'zod';
 const extendSchema = z.object({
   months: z.number().int().min(1).max(24),
   reason: z.string().min(1).max(500),
+  // Optional: amount paid for this extension (0 = free/promo, positive = paid)
+  amount: z.number().min(0).optional(),
+  currency: z.string().optional().default('VND'),
+  // Optional: payment source for tracking
+  paymentSource: z.enum(['TRANSFER', 'CASH', 'PROMO', 'OTHER']).optional(),
 });
 
 /**
@@ -48,7 +53,7 @@ export async function POST(
         );
       }
 
-      const { months, reason } = parsed.data;
+      const { months, reason, amount: paidAmount, currency: paidCurrency, paymentSource } = parsed.data;
 
       // Find subscription
       const subscription = await db.prisma.subscription.findUnique({
@@ -71,7 +76,8 @@ export async function POST(
       const newPeriodEnd = new Date(currentEnd);
       newPeriodEnd.setMonth(newPeriodEnd.getMonth() + months);
 
-      // Update subscription
+      // Update subscription — update billing info to match manual extension
+      const intervalValue = months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual';
       const updated = await db.prisma.subscription.update({
         where: { id: subscriptionId },
         data: {
@@ -81,8 +87,31 @@ export async function POST(
           cancelAtPeriodEnd: false,
           canceledAt: null,
           cancelReason: null,
+          // Keep billing info consistent (single source of truth)
+          interval: intervalValue,
+          intervalCount: 1,
+          // Update amount if provided (0 = free promo, positive = paid)
+          ...(paidAmount !== undefined && { amount: paidAmount }),
+          ...(paidCurrency && { currency: paidCurrency }),
         },
       });
+
+      // Create Payment record if amount > 0
+      if (paidAmount && paidAmount > 0) {
+        await db.prisma.payment.create({
+          data: {
+            amount: paidAmount,
+            currency: paidCurrency || 'VND',
+            method: (paymentSource === 'TRANSFER' ? 'TRANSFER' : paymentSource === 'CASH' ? 'CASH' : 'MANUAL') as any,
+            type: 'SUBSCRIPTION_PAYMENT' as any,
+            status: 'COMPLETED' as any,
+            subscriptionId,
+            merchantId,
+            description: `Manual extension ${months} month(s): ${reason}`,
+            processedAt: now,
+          },
+        });
+      }
 
       // Log activity
       await db.prisma.subscriptionActivity.create({

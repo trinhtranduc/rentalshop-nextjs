@@ -51,7 +51,7 @@ type BillingCycleConfig = {
   discount: number;
   description: string;
 };
-import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus, getStatusLabel, getBillingIntervalLabel } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantPlanManagementProps {
@@ -376,7 +376,7 @@ export function MerchantPlanManagement({
                     subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED ? 'bg-gray-100 text-gray-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {subscriptionStatus || 'Unknown'}
+                    {getStatusLabel(subscriptionStatus || 'UNKNOWN', 'subscription')}
                   </div>
                 </div>
               </div>
@@ -393,8 +393,11 @@ export function MerchantPlanManagement({
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Billing Interval:</span>
-                    <span className="font-medium capitalize">
-                      {(currentSubscription as any).interval || currentSubscription.billingInterval || 'month'}
+                    <span className="font-medium">
+                      {getBillingIntervalLabel(
+                        (currentSubscription as any).interval || currentSubscription.billingInterval,
+                        'en',
+                      )}
                     </span>
                   </div>
                   

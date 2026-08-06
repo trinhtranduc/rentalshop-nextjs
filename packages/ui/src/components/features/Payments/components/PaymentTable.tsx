@@ -87,10 +87,12 @@ export function PaymentTable({
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString('vi-VN', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -110,7 +112,11 @@ export function PaymentTable({
       'credit_card': 'Credit Card',
       'bank_transfer': 'Bank Transfer',
       'paypal': 'PayPal',
-      'stripe': 'Stripe'
+      'stripe': 'Stripe',
+      'manual': 'Manual',
+      'transfer': 'Transfer',
+      'iap_apple': '🍎 App Store',
+      'iap_google': '🤖 Google Play',
     };
     
     return methodConfig[method.toLowerCase()] || method;

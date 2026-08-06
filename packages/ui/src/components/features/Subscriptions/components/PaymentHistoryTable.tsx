@@ -10,7 +10,7 @@ import {
   Badge,
   Pagination
 } from '@rentalshop/ui';
-import { formatDate, formatCurrency } from '@rentalshop/utils';
+import { formatDateTime, formatCurrency } from '@rentalshop/utils';
 import { Download, FileText, Eye, Filter } from 'lucide-react';
 
 interface Payment {
@@ -70,8 +70,29 @@ export function PaymentHistoryTable({
         return '🏦';
       case 'MANUAL':
         return '✏️';
+      case 'IAP_APPLE':
+        return '🍎';
+      case 'IAP_GOOGLE':
+        return '🤖';
       default:
         return '💰';
+    }
+  };
+
+  const getMethodLabel = (method: string) => {
+    switch (method.toUpperCase()) {
+      case 'STRIPE':
+        return 'Stripe';
+      case 'TRANSFER':
+        return 'Transfer';
+      case 'MANUAL':
+        return 'Manual';
+      case 'IAP_APPLE':
+        return 'App Store';
+      case 'IAP_GOOGLE':
+        return 'Google Play';
+      default:
+        return method.toLowerCase();
     }
   };
 
@@ -79,7 +100,7 @@ export function PaymentHistoryTable({
     const csv = [
       ['Date', 'Amount', 'Method', 'Status', 'Transaction ID'].join(','),
       ...payments.map(p => [
-        formatDate(p.createdAt, 'MMM dd, yyyy'),
+        formatDateTime(p.createdAt),
         p.amount,
         p.method,
         p.status,
@@ -145,7 +166,7 @@ export function PaymentHistoryTable({
                   {payments.map((payment) => (
                     <tr key={payment.id} className="border-b hover:bg-gray-50">
                       <td className="py-4 text-sm">
-                        {formatDate(new Date(payment.createdAt), 'MMM dd, yyyy')}
+                        {formatDateTime(new Date(payment.createdAt))}
                       </td>
                       <td className="py-4 text-sm font-semibold">
                         {formatCurrency(payment.amount, payment.currency)}
@@ -153,8 +174,8 @@ export function PaymentHistoryTable({
                       <td className="py-4 text-sm">
                         <div className="flex items-center gap-2">
                           <span>{getMethodIcon(payment.method)}</span>
-                          <span className="capitalize">
-                            {payment.method.toLowerCase()}
+                          <span>
+                            {getMethodLabel(payment.method)}
                           </span>
                         </div>
                       </td>

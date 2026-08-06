@@ -353,6 +353,25 @@ export {
 } from './loyalty-provision';
 export type { LoyaltyProvisionClient } from './loyalty-provision';
 
+// Onboarding seed localization (first registration / first login defaults)
+export {
+  createMerchantOnboardingSampleData,
+  shouldCreateOnboardingSampleData,
+  getLocalizedRegistrationDefaults,
+  getDefaultOutletName,
+  getOnboardingCopy,
+  getSampleCopy,
+  ONBOARDING_SAMPLE_MARKER,
+  resolveOnboardingLocale,
+  resolveOnboardingLocaleFromContext,
+  DEFAULT_CATEGORY_NAMES,
+} from './onboarding-sample';
+export type {
+  OnboardingLocale,
+  OnboardingBusinessType,
+  SampleCopy,
+} from './onboarding-sample';
+
 // Email verification functions
 export * from './email-verification';
 

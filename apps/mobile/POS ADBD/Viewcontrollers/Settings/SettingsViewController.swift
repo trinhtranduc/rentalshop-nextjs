@@ -57,6 +57,24 @@ class SettingsViewController: BaseViewControler {
         return label
     }()
     
+    private lazy var statusBadge: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textAlignment = .center
+        label.layer.cornerRadius = 4
+        label.layer.masksToBounds = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private lazy var planStatusRow: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        return stack
+    }()
+    
     private lazy var durationLabel: UILabel = {
         let label = UILabel()
         label.font = .captionMedium()
@@ -211,7 +229,7 @@ class SettingsViewController: BaseViewControler {
         super.viewWillAppear(animated)
         // Ensure navigation bar is hidden when returning to this screen
         navigationController?.setNavigationBarHidden(true, animated: false)
-        updateUserInfo() // Refresh user info when view appears
+        updateUserInfo() // Refresh user info + subscription status when view appears
         settingTableView.reloadData() // Reload to update export visibility based on role
     }
     
@@ -258,10 +276,14 @@ class SettingsViewController: BaseViewControler {
         headerView.addSubview(profileImageView)
         headerView.addSubview(infoStackView)
         
-        // Add labels to stack view (plan and duration are hidden)
-        [nameLabel, roleLabel].forEach {
+        // Add labels to stack view
+        planStatusRow.addArrangedSubview(planLabel)
+        planStatusRow.addArrangedSubview(statusBadge)
+        [nameLabel, roleLabel, planStatusRow, durationLabel].forEach {
             infoStackView.addArrangedSubview($0)
         }
+        planStatusRow.isHidden = true
+        durationLabel.isHidden = true
         
         // Setup header view constraints
         headerView.snp.makeConstraints { make in
@@ -308,7 +330,68 @@ class SettingsViewController: BaseViewControler {
         let roleName = user?.role.displayName ?? ""
         roleLabel.text = roleName
         
-        // Plan and duration are hidden
+        // Load subscription info for merchants
+        if User.account()?.role == .merchant {
+            NSLog("[Settings] Loading subscription info for merchant...")
+            SubscriptionAPIService.shared.getStatus { [weak self] info, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        NSLog("[Settings] Subscription status error: \(error.localizedDescription)")
+                    }
+                    guard let info else {
+                        NSLog("[Settings] No subscription info returned")
+                        self.planStatusRow.isHidden = true
+                        self.durationLabel.isHidden = true
+                        return
+                    }
+                    NSLog("[Settings] Subscription loaded: plan=\(info.displayPlanName) status=\(info.displayStatus ?? "nil")")
+                    self.planStatusRow.isHidden = false
+                    self.durationLabel.isHidden = false
+                    
+                    // Plan name
+                    self.planLabel.text = info.displayPlanName
+                    self.planLabel.textColor = .textPrimary
+                    
+                    // Status badge
+                    let statusText = info.displayStatus ?? "—"
+                    self.statusBadge.text = "  \(statusText)  "
+                    let status = statusText.uppercased()
+                    if status.contains("ACTIVE") || status.contains("TRIAL") {
+                        self.statusBadge.textColor = .systemGreen
+                        self.statusBadge.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.12)
+                    } else if status.contains("EXPIRED") || status.contains("CANCELLED") {
+                        self.statusBadge.textColor = .systemRed
+                        self.statusBadge.backgroundColor = UIColor.systemRed.withAlphaComponent(0.12)
+                    } else if status.contains("PAST_DUE") {
+                        self.statusBadge.textColor = .systemOrange
+                        self.statusBadge.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.12)
+                    } else {
+                        self.statusBadge.textColor = .brandPrimary
+                        self.statusBadge.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.12)
+                    }
+                    
+                    // Format expiry as dd/MM/yyyy
+                    if let isoEnd = info.currentPeriodEnd, !isoEnd.isEmpty {
+                        let formatter = ISO8601DateFormatter()
+                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        var date = formatter.date(from: isoEnd)
+                        if date == nil {
+                            formatter.formatOptions = [.withInternetDateTime]
+                            date = formatter.date(from: isoEnd)
+                        }
+                        if let date {
+                            let displayFormatter = DateFormatter()
+                            displayFormatter.dateFormat = "dd/MM/yyyy"
+                            self.durationLabel.text = "\("Expires on".localized()): \(displayFormatter.string(from: date))"
+                        }
+                    }
+                }
+            }
+        } else {
+            planStatusRow.isHidden = true
+            durationLabel.isHidden = true
+        }
     }
     
     // MARK: - Actions

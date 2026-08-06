@@ -25,6 +25,7 @@ import {
 import { Calendar, CreditCard, Users, Package, Building2 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
 import type { SubscriptionStatus } from '@rentalshop/constants';
+import { getBillingIntervalLabel } from '@rentalshop/constants';
 
 interface MerchantPlanDialogProps {
   isOpen: boolean;
@@ -188,7 +189,7 @@ export function MerchantPlanDialog({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
-                    Current Plan
+                    Plan
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
                     {merchant.subscription?.plan ? (
@@ -207,6 +208,7 @@ export function MerchantPlanDialog({
                 </div>
                 <StatusBadge 
                   status={merchant.subscription?.status} 
+                  type="subscription"
                   size="sm"
                 />
               </div>
@@ -262,7 +264,7 @@ export function MerchantPlanDialog({
                 <SelectContent>
                   <SelectItem value="monthly">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Monthly</span>
+                      <span className="font-medium">{getBillingIntervalLabel('monthly', 'en')}</span>
                       <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-gray-500">
                           {formatPrice(selectedPlan.pricing.monthly.price, selectedPlan.currency)}
@@ -277,7 +279,7 @@ export function MerchantPlanDialog({
                   </SelectItem>
                   <SelectItem value="quarterly">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Quarterly</span>
+                      <span className="font-medium">{getBillingIntervalLabel('quarterly', 'en')}</span>
                       <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-gray-500">
                           {formatPrice(selectedPlan.pricing.quarterly.price, selectedPlan.currency)}
@@ -297,7 +299,7 @@ export function MerchantPlanDialog({
                   </SelectItem>
                   <SelectItem value="semi_annual">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Semi-Annual</span>
+                      <span className="font-medium">{getBillingIntervalLabel('semi_annual', 'en')}</span>
                       <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-gray-500">
                           {formatPrice(selectedPlan.pricing.semi_annual.price, selectedPlan.currency)}
@@ -317,7 +319,7 @@ export function MerchantPlanDialog({
                   </SelectItem>
                   <SelectItem value="annual">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Annual</span>
+                      <span className="font-medium">{getBillingIntervalLabel('annual', 'en')}</span>
                       <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-gray-500">
                           {formatPrice(selectedPlan.pricing.annual.price, selectedPlan.currency)}
