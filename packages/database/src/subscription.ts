@@ -312,7 +312,7 @@ export async function searchSubscriptions(filters: {
       },
       plan: true
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { updatedAt: 'desc' },
     take: limit,
     skip
   });
