@@ -57,6 +57,24 @@ class SettingsViewController: BaseViewControler {
         return label
     }()
     
+    private lazy var statusBadge: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textAlignment = .center
+        label.layer.cornerRadius = 4
+        label.layer.masksToBounds = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private lazy var planStatusRow: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        return stack
+    }()
+    
     private lazy var durationLabel: UILabel = {
         let label = UILabel()
         label.font = .captionMedium()
@@ -259,10 +277,12 @@ class SettingsViewController: BaseViewControler {
         headerView.addSubview(infoStackView)
         
         // Add labels to stack view
-        [nameLabel, roleLabel, planLabel, durationLabel].forEach {
+        planStatusRow.addArrangedSubview(planLabel)
+        planStatusRow.addArrangedSubview(statusBadge)
+        [nameLabel, roleLabel, planStatusRow, durationLabel].forEach {
             infoStackView.addArrangedSubview($0)
         }
-        planLabel.isHidden = true
+        planStatusRow.isHidden = true
         durationLabel.isHidden = true
         
         // Setup header view constraints
@@ -321,28 +341,34 @@ class SettingsViewController: BaseViewControler {
                     }
                     guard let info else {
                         NSLog("[Settings] No subscription info returned")
-                        self.planLabel.isHidden = true
+                        self.planStatusRow.isHidden = true
                         self.durationLabel.isHidden = true
                         return
                     }
                     NSLog("[Settings] Subscription loaded: plan=\(info.displayPlanName) status=\(info.displayStatus ?? "nil")")
-                    self.planLabel.isHidden = false
+                    self.planStatusRow.isHidden = false
                     self.durationLabel.isHidden = false
                     
-                    // Show plan name with status badge
-                    let statusText = info.displayStatus ?? "—"
-                    self.planLabel.text = "\(info.displayPlanName) • \(statusText)"
+                    // Plan name
+                    self.planLabel.text = info.displayPlanName
+                    self.planLabel.textColor = .textPrimary
                     
-                    // Color based on status
-                    let status = (info.displayStatus ?? "").uppercased()
+                    // Status badge
+                    let statusText = info.displayStatus ?? "—"
+                    self.statusBadge.text = "  \(statusText)  "
+                    let status = statusText.uppercased()
                     if status.contains("ACTIVE") || status.contains("TRIAL") {
-                        self.planLabel.textColor = .systemGreen
+                        self.statusBadge.textColor = .systemGreen
+                        self.statusBadge.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.12)
                     } else if status.contains("EXPIRED") || status.contains("CANCELLED") {
-                        self.planLabel.textColor = .systemRed
+                        self.statusBadge.textColor = .systemRed
+                        self.statusBadge.backgroundColor = UIColor.systemRed.withAlphaComponent(0.12)
                     } else if status.contains("PAST_DUE") {
-                        self.planLabel.textColor = .systemOrange
+                        self.statusBadge.textColor = .systemOrange
+                        self.statusBadge.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.12)
                     } else {
-                        self.planLabel.textColor = .brandPrimary
+                        self.statusBadge.textColor = .brandPrimary
+                        self.statusBadge.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.12)
                     }
                     
                     // Format expiry as dd/MM/yyyy
@@ -363,7 +389,7 @@ class SettingsViewController: BaseViewControler {
                 }
             }
         } else {
-            planLabel.isHidden = true
+            planStatusRow.isHidden = true
             durationLabel.isHidden = true
         }
     }
