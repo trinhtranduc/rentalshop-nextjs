@@ -19,6 +19,34 @@ const PRODUCT_DURATION: Record<string, { months: number; planName: string }> = {
   'anyrent_merchant_annual': { months: 12, planName: 'basic' },
 };
 
+/** Plain-language activity text for merchant history (no product ids / SDK names). */
+function userFacingActivityDescription(
+  kind: 'subscribe' | 'renew' | 'expire' | 'cancel' | 'uncancel' | 'billing_issue',
+  productId: string,
+  extra?: string,
+): string {
+  const months = PRODUCT_DURATION[productId]?.months;
+  const planLabel =
+    months === 6 ? 'Basic — 6 months' : months === 12 ? 'Basic — 12 months' : 'Basic';
+
+  switch (kind) {
+    case 'subscribe':
+      return `Subscribed to ${planLabel}`;
+    case 'renew':
+      return `Renewed ${planLabel}`;
+    case 'expire':
+      return 'Subscription expired';
+    case 'cancel':
+      return extra ? `Cancellation scheduled: ${extra}` : 'Cancellation scheduled';
+    case 'uncancel':
+      return 'Cancellation withdrawn — subscription stays active';
+    case 'billing_issue':
+      return 'Payment issue detected — please update payment method';
+    default:
+      return 'Subscription updated';
+  }
+}
+
 // RevenueCat event types we handle
 type RevenueCatEventType =
   | 'INITIAL_PURCHASE'
@@ -202,7 +230,10 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
       data: {
         subscriptionId: subscription.id,
         type: event.type === 'INITIAL_PURCHASE' ? 'IAP_INITIAL_PURCHASE' : 'IAP_RENEWAL',
-        description: `${event.type} via RevenueCat (${event.product_id})`,
+        description: userFacingActivityDescription(
+          event.type === 'INITIAL_PURCHASE' ? 'subscribe' : 'renew',
+          event.product_id,
+        ),
         metadata: JSON.stringify({
           productId: event.product_id,
           store: event.store,
@@ -250,7 +281,7 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
       data: {
         subscriptionId: newSub.id,
         type: 'IAP_INITIAL_PURCHASE',
-        description: `Initial purchase via RevenueCat (${event.product_id})`,
+        description: userFacingActivityDescription('subscribe', event.product_id),
         metadata: JSON.stringify({
           productId: event.product_id,
           store: event.store,
@@ -266,7 +297,8 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   const subId = subscription?.id || (await db.prisma.subscription.findUnique({ where: { merchantId } }))?.id;
   if (subId && event.price_in_purchased_currency && event.price_in_purchased_currency > 0) {
     const paymentMethod = event.store === 'APP_STORE' ? 'IAP_APPLE' : event.store === 'PLAY_STORE' ? 'IAP_GOOGLE' : 'MANUAL';
-    const planTitle = productConfig.months === 6 ? 'Basic 6 Months' : 'Basic 12 Months';
+    const planTitle = productConfig.months === 6 ? 'Basic — 6 months' : 'Basic — 12 months';
+    const storeLabel = event.store === 'APP_STORE' ? 'App Store' : event.store === 'PLAY_STORE' ? 'Google Play' : 'in-app';
     await db.prisma.payment.create({
       data: {
         amount: event.price_in_purchased_currency,
@@ -279,7 +311,7 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
         reference: event.transaction_id || null,
         transactionId: event.transaction_id || null,
         invoiceNumber: event.transaction_id || null,
-        description: `${planTitle} - ${event.type === 'INITIAL_PURCHASE' ? 'New subscription' : 'Renewal'} via ${event.store === 'APP_STORE' ? 'App Store' : 'Google Play'}`,
+        description: `${planTitle} — ${event.type === 'INITIAL_PURCHASE' ? 'new subscription' : 'renewal'} (${storeLabel})`,
         notes: event.environment === 'SANDBOX' ? 'Sandbox test purchase' : null,
         processedAt: purchasedAt,
         metadata: JSON.stringify({
@@ -313,7 +345,7 @@ async function handleExpiration(merchantId: number, event: RevenueCatEvent) {
       data: {
         subscriptionId: subscription.id,
         type: 'IAP_EXPIRATION_IGNORED',
-        description: `Expiration event ignored - period still active until ${subscription.currentPeriodEnd.toISOString()}`,
+        description: `Period still active — expiration ignored until ${subscription.currentPeriodEnd.toISOString()}`,
         metadata: JSON.stringify({
           productId: event.product_id,
           expirationAtMs: event.expiration_at_ms,
@@ -337,7 +369,7 @@ async function handleExpiration(merchantId: number, event: RevenueCatEvent) {
     data: {
       subscriptionId: subscription.id,
       type: 'IAP_EXPIRATION',
-      description: `Subscription expired (${event.product_id})`,
+      description: userFacingActivityDescription('expire', event.product_id),
       metadata: JSON.stringify({
         productId: event.product_id,
         expirationAtMs: event.expiration_at_ms,
@@ -369,7 +401,11 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent) {
     data: {
       subscriptionId: subscription.id,
       type: 'IAP_CANCELLATION',
-      description: `Cancelled: ${event.cancel_reason || 'User cancelled'}`,
+      description: userFacingActivityDescription(
+        'cancel',
+        event.product_id,
+        event.cancel_reason || undefined,
+      ),
       metadata: JSON.stringify({
         productId: event.product_id,
         cancelReason: event.cancel_reason,
@@ -401,7 +437,7 @@ async function handleUncancellation(merchantId: number, event: RevenueCatEvent) 
     data: {
       subscriptionId: subscription.id,
       type: 'IAP_UNCANCELLATION',
-      description: `Uncancelled via App Store (${event.product_id})`,
+      description: userFacingActivityDescription('uncancel', event.product_id),
     },
   });
 
@@ -428,7 +464,7 @@ async function handleBillingIssue(merchantId: number, event: RevenueCatEvent) {
     data: {
       subscriptionId: subscription.id,
       type: 'IAP_BILLING_ISSUE',
-      description: `Billing issue detected (${event.product_id})`,
+      description: userFacingActivityDescription('billing_issue', event.product_id),
       metadata: JSON.stringify({
         productId: event.product_id,
         store: event.store,

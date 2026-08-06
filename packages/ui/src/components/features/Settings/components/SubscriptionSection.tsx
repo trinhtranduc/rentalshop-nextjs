@@ -273,6 +273,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   activities={activities}
                   payments={payments}
                   loading={historyLoading}
+                  userFacing
                 />
               </div>
               <DialogFooter>
