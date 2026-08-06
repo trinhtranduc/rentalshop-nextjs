@@ -163,6 +163,17 @@ data class StaffUser(
         get() = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { email }
 }
 
+/** GET /api/subscriptions/status — merchant billing status for renew UI. */
+data class SubscriptionStatus(
+    val planName: String,
+    val status: String,
+    val statusReason: String?,
+    val daysRemaining: Int?,
+    val isExpiringSoon: Boolean,
+    val currentPeriodEnd: String?,
+    val hasAccess: Boolean,
+)
+
 data class CartLine(
     val product: Product,
     val quantity: Int,

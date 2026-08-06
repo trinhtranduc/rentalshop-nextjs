@@ -12,6 +12,7 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.RankingItem
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.data.model.SubscriptionStatus
 import com.anyrent.pos.data.model.TodayMetrics
 import com.anyrent.pos.data.model.UserProfile
 import com.anyrent.pos.domain.error.AppError
@@ -79,6 +80,7 @@ class ApiClient(
         SessionStore.merchantAddress = profile.merchantAddress
         SessionStore.outletPhone = profile.outletPhone
         SessionStore.outletAddress = profile.outletAddress
+        com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         profile
     }
 
@@ -702,6 +704,24 @@ class ApiClient(
             items = (0 until array.length()).map { parseStaff(array.getJSONObject(it)) },
             hasMore = pagination?.optBoolean("hasMore", false) ?: false,
             total = pagination?.optInt("total"),
+        )
+    }
+
+    fun getSubscriptionStatus(): Result<SubscriptionStatus> = runCatching {
+        val json = authedGet("/api/subscriptions/status")
+        val data = json.optJSONObject("data") ?: JSONObject()
+        SubscriptionStatus(
+            planName = data.optString("planName").ifBlank { "—" },
+            status = data.optString("status").ifBlank { "UNKNOWN" },
+            statusReason = data.optString("statusReason").takeIf { it.isNotBlank() },
+            daysRemaining = if (data.has("daysRemaining") && !data.isNull("daysRemaining")) {
+                data.optInt("daysRemaining")
+            } else {
+                null
+            },
+            isExpiringSoon = data.optBoolean("isExpiringSoon", false),
+            currentPeriodEnd = data.optString("currentPeriodEnd").takeIf { it.isNotBlank() },
+            hasAccess = data.optBoolean("hasAccess", false),
         )
     }
 

@@ -169,6 +169,24 @@
 "day" = "day";
 "days" = "days";
 "Expired" = "Expired";
+"Current plan" = "Current plan";
+"Choose renewal" = "Choose renewal";
+"6 months" = "6 months";
+"12 months" = "12 months";
+"Save %d%% vs two 6-month plans" = "Save %d%% vs two 6-month plans";
+"Subscribe / Renew" = "Subscribe / Renew";
+"Restore purchases" = "Restore purchases";
+"Payment successful. Subscription status will update shortly." = "Payment successful. Subscription status will update shortly.";
+"Purchases restored." = "Purchases restored.";
+"No active subscription found to restore." = "No active subscription found to restore.";
+"In-app purchases are not configured on this build." = "In-app purchases are not configured on this build.";
+"Purchases not configured" = "Purchases not configured";
+"Package not found — refresh offerings first" = "Package not found — refresh offerings first";
+"No plans available" = "No plans available";
+"Plans are not available from the store yet. Complete App Store subscription setup, then try again." = "Plans are not available from the store yet. Complete App Store subscription setup, then try again.";
+"Days remaining" = "Days remaining";
+"Status" = "Status";
+"Success" = "Success";
 
 // MARK: - Settings
 "Account" = "Account";

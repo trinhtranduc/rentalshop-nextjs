@@ -1,0 +1,4 @@
+# Copy values into local.properties (gitignored) for Android RevenueCat.
+# Public SDK keys from RevenueCat dashboard → Project → API keys → Google Play.
+#
+# REVENUECAT_ANDROID_API_KEY=goog_xxxxxxxx

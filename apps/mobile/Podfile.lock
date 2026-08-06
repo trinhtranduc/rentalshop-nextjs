@@ -8,6 +8,7 @@ PODS:
   - Realm/Headers (20.0.4)
   - RealmSwift (20.0.4):
     - Realm (= 20.0.4)
+  - RevenueCat (5.83.0)
   - SwiftyJSON (5.0.2)
 
 DEPENDENCIES:
@@ -16,6 +17,7 @@ DEPENDENCIES:
   - PullToRefresher
   - QRCodeReader.swift
   - RealmSwift
+  - RevenueCat
   - SwiftyJSON
 
 SPEC REPOS:
@@ -26,6 +28,7 @@ SPEC REPOS:
     - QRCodeReader.swift
     - Realm
     - RealmSwift
+    - RevenueCat
     - SwiftyJSON
 
 SPEC CHECKSUMS:
@@ -35,8 +38,9 @@ SPEC CHECKSUMS:
   QRCodeReader.swift: 373a389fe9a22d513c879a32a6f647c58f4ef572
   Realm: 1fca83c42ac1d5c7767974882c8de5a7abca4d89
   RealmSwift: 84f36320f6133dea78d05c55bb46bba4387d6828
+  RevenueCat: a83de0391a1061302699cb55eb1ff0662f5768b5
   SwiftyJSON: f5b1bf1cd8dd53cd25887ac0eabcfd92301c6a5a
 
-PODFILE CHECKSUM: 525177a6d065d1ffd06ef81c9dd76a61f3be2e35
+PODFILE CHECKSUM: ec2adcd9db32b037ba7aac922b4101eec3b6e951
 
 COCOAPODS: 1.16.2

@@ -86,6 +86,10 @@ class SettingsViewController: BaseViewControler {
         switch section {
         case .account:
             var items: [SettingsItem] = [.account]
+            // MERCHANT-only: in-app subscription renew via RevenueCat
+            if User.account()?.role == .merchant {
+                items.append(.subscription)
+            }
             // Show user management if user has users.manage permission
             if PermissionManager.shared.canManageUsers() {
                 items.append(.userManagement)
@@ -126,6 +130,7 @@ class SettingsViewController: BaseViewControler {
     
     private enum SettingsItem {
         case account
+        case subscription
         case userManagement
         case notifications
         case printer
@@ -138,6 +143,7 @@ class SettingsViewController: BaseViewControler {
         var title: String {
             switch self {
             case .account: return "Store Information".localized()
+            case .subscription: return "Subscription".localized()
             case .userManagement: return "User Management".localized()
             case .notifications: return "Notifications".localized()
             case .printer: return "Printer Configuration".localized()
@@ -158,6 +164,7 @@ class SettingsViewController: BaseViewControler {
         var icon: UIImage? {
             switch self {
             case .account: return UIImage(systemName: "building.2")
+            case .subscription: return UIImage(systemName: "creditcard.fill")
             case .userManagement: return UIImage(systemName: "person.fill")
             case .notifications: return UIImage(systemName: "bell.fill")
             case .printer: return UIImage(systemName: "printer.fill")
@@ -171,7 +178,7 @@ class SettingsViewController: BaseViewControler {
         
         var iconColor: UIColor {
             switch self {
-            case .account, .printer, .appInfo, .export, .bankAccounts, .deleteAccount, .userManagement, .notifications:
+            case .account, .subscription, .printer, .appInfo, .export, .bankAccounts, .deleteAccount, .userManagement, .notifications:
                 return .neutralGray
             case .logout:
                 return .actionDanger
@@ -310,6 +317,11 @@ class SettingsViewController: BaseViewControler {
         case .account:
             let accountVC = AccountViewController()
             navigationController?.pushViewController(accountVC, animated: true)
+
+        case .subscription:
+            let subscriptionVC = SubscriptionViewController()
+            subscriptionVC.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(subscriptionVC, animated: true)
             
         case .userManagement:
             let userManagementVC = UserManagementViewController()

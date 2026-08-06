@@ -99,6 +99,9 @@ enum APIEndpoint {
         // Merchants
         static let merchants = "/api/merchants"
         static let registerMerchant = "/api/merchants/register"
+
+        // Subscriptions
+        static let subscriptionsStatus = "/api/subscriptions/status"
         
         // Outlets
         static let outlets = "/api/outlets"

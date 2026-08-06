@@ -13,6 +13,15 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
+// RevenueCat public SDK keys (safe for client). Prefer local.properties; fallback empty = SDK skipped.
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties()
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+fun revenueCatKey(name: String): String =
+    (localProperties.getProperty(name) ?: System.getenv(name) ?: "").replace("\"", "\\\"")
+
 android {
     namespace = "com.anyrent.pos"
     compileSdk = 36
@@ -25,6 +34,7 @@ android {
         versionName = "0.1.1"
 
         buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
+        buildConfigField("String", "REVENUECAT_API_KEY", "\"${revenueCatKey("REVENUECAT_ANDROID_API_KEY")}\"")
     }
 
     signingConfigs {
@@ -41,10 +51,12 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
+            buildConfigField("String", "REVENUECAT_API_KEY", "\"${revenueCatKey("REVENUECAT_ANDROID_API_KEY")}\"")
         }
         release {
             isMinifyEnabled = false
             buildConfigField("String", "API_BASE_URL", "\"https://api.anyrent.shop\"")
+            buildConfigField("String", "REVENUECAT_API_KEY", "\"${revenueCatKey("REVENUECAT_ANDROID_API_KEY")}\"")
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -103,6 +115,9 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")
+
+    // RevenueCat — StoreKit/Play Billing for MERCHANT subscription renewals
+    implementation("com.revenuecat.purchases:purchases:10.15.1")
 
     // Camera barcode (parity with iOS QRCodeReader — no AI image search)
     implementation("androidx.camera:camera-camera2:1.4.1")

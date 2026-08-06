@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import com.anyrent.pos.billing.PurchasesManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.di.AppContainer
 import com.anyrent.pos.push.PushRegistrar
@@ -18,6 +19,8 @@ class AnyRentApp : Application() {
         createOrderNotificationChannel()
         runCatching { FirebaseApp.initializeApp(this) }
             .onFailure { android.util.Log.w(TAG, "Firebase init skipped/failed: ${it.message}") }
+        runCatching { PurchasesManager.configure(this) }
+            .onFailure { android.util.Log.w(TAG, "RevenueCat init skipped/failed: ${it.message}") }
         PushRegistrar.refreshTokenIfLoggedIn()
     }
 

@@ -176,6 +176,7 @@ object SessionStore {
         if (!rememberedEmail.isNullOrBlank()) {
             lastLoginEmail = rememberedEmail
         }
+        runCatching { com.anyrent.pos.billing.PurchasesManager.logOut() }
     }
 
     fun expireAuth() {
