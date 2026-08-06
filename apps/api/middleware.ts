@@ -20,6 +20,7 @@ const publicRoutes = [
   // Payment provider webhooks (no JWT; verified via signature in route handler)
   '/api/stripe/webhook',
   '/api/lemonsqueezy/webhook',
+  '/api/webhooks', // RevenueCat and other webhook providers (verified in route handler)
   '/api/system/health',
   '/api/system/backup',
   '/api/system/integrity',
