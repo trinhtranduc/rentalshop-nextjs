@@ -265,7 +265,8 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   // Create Payment record for tracking revenue
   const subId = subscription?.id || (await db.prisma.subscription.findUnique({ where: { merchantId } }))?.id;
   if (subId && event.price_in_purchased_currency && event.price_in_purchased_currency > 0) {
-    const paymentMethod = event.store === 'APP_STORE' ? 'MANUAL' : 'MANUAL'; // Use MANUAL as closest match for IAP
+    const paymentMethod = event.store === 'APP_STORE' ? 'IAP_APPLE' : event.store === 'PLAY_STORE' ? 'IAP_GOOGLE' : 'MANUAL';
+    const planTitle = productConfig.months === 6 ? 'Basic 6 Months' : 'Basic 12 Months';
     await db.prisma.payment.create({
       data: {
         amount: event.price_in_purchased_currency,
@@ -277,7 +278,8 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
         merchantId,
         reference: event.transaction_id || null,
         transactionId: event.transaction_id || null,
-        description: `IAP ${event.type} - ${event.product_id} (${event.store})`,
+        invoiceNumber: event.transaction_id || null,
+        description: `${planTitle} - ${event.type === 'INITIAL_PURCHASE' ? 'New subscription' : 'Renewal'} via ${event.store === 'APP_STORE' ? 'App Store' : 'Google Play'}`,
         notes: event.environment === 'SANDBOX' ? 'Sandbox test purchase' : null,
         processedAt: purchasedAt,
         metadata: JSON.stringify({
@@ -289,7 +291,7 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
         }),
       },
     });
-    console.log(`[RevenueCat Webhook] 💰 Payment record created: ${event.price_in_purchased_currency} ${event.currency}`);
+    console.log(`[RevenueCat Webhook] 💰 Payment record created: ${event.price_in_purchased_currency} ${event.currency} via ${paymentMethod}`);
   }
 }
 

@@ -264,7 +264,7 @@
     "tableStatus": "Status",
     "tableReference": "Reference",
     "historyTitle": "Subscription History",
-    "historyDescription": "View your past subscription plans and billing history",
+    "historyDescription": "View activity and payment history for your subscription",
     "historyLoading": "Loading history...",
     "historyEmpty": "No subscription history found.",
     "historyPlan": "Plan",

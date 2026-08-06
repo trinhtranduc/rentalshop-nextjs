@@ -99,8 +99,10 @@ export default function PaymentsPage() {
   // HANDLERS
   // ============================================================================
   
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateURL({ q: e.target.value, page: 1 });
+  const handleSearchChange = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      updateURL({ q: (e.target as HTMLInputElement).value, page: 1 });
+    }
   }, [updateURL]);
 
   const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -285,9 +287,9 @@ export default function PaymentsPage() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary w-4 h-4" />
                   <input
                     type="text"
-                    placeholder="Search by merchant, invoice, or transaction ID..."
-                    value={search}
-                    onChange={handleSearchChange}
+                    placeholder="Search by merchant, invoice, or transaction ID... (Enter to search)"
+                    defaultValue={search}
+                    onKeyDown={handleSearchChange}
                     className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent"
                   />
                 </div>

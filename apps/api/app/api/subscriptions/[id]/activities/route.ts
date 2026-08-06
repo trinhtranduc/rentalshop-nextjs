@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/subscriptions/[id]/activities
@@ -16,7 +16,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(subscriptionId)) {
@@ -26,6 +26,11 @@ export async function GET(
       const subscription = await db.subscriptions.findById(subscriptionId);
       if (!subscription) {
         return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      }
+
+      // Merchants may only view their own subscription history
+      if (user.role === USER_ROLE.MERCHANT && userScope.merchantId && subscription.merchantId !== userScope.merchantId) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
       }
 
       // Get query parameters

@@ -264,7 +264,7 @@
     "tableStatus": "Trạng thái",
     "tableReference": "Tham chiếu",
     "historyTitle": "Lịch sử đăng ký",
-    "historyDescription": "Xem các gói và lịch sử thanh toán trước đây",
+    "historyDescription": "Xem lịch sử hoạt động và thanh toán của gói dịch vụ",
     "historyLoading": "Đang tải lịch sử...",
     "historyEmpty": "Chưa có lịch sử đăng ký.",
     "historyPlan": "Gói",
