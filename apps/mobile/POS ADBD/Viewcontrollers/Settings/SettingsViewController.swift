@@ -258,10 +258,12 @@ class SettingsViewController: BaseViewControler {
         headerView.addSubview(profileImageView)
         headerView.addSubview(infoStackView)
         
-        // Add labels to stack view (plan and duration are hidden)
-        [nameLabel, roleLabel].forEach {
+        // Add labels to stack view
+        [nameLabel, roleLabel, planLabel, durationLabel].forEach {
             infoStackView.addArrangedSubview($0)
         }
+        planLabel.isHidden = true
+        durationLabel.isHidden = true
         
         // Setup header view constraints
         headerView.snp.makeConstraints { make in
