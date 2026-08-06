@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, createEmailVerification } from '@rentalshop/database';
+import {
+  db,
+  createEmailVerification,
+  getLocalizedRegistrationDefaults,
+  getSampleCopy,
+  ONBOARDING_SAMPLE_MARKER,
+  resolveOnboardingLocaleFromContext,
+} from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '@rentalshop/utils';
 import { hashPassword } from '@rentalshop/auth/server';
@@ -102,15 +109,24 @@ function buildPricingConfig(businessType?: string, pricingType?: string): string
 }
 
 /**
- * Seed demo data for new merchant account
+ * Seed demo data for new merchant account (localized).
  * Creates: 1 product, 1 customer, 1 order (RESERVED)
  */
-async function seedDemoData(merchantId: number, outletId: number, categoryId: number, userId: number) {
+async function seedDemoData(
+  merchantId: number,
+  outletId: number,
+  categoryId: number,
+  userId: number,
+  opts: { locale?: string | null; businessType?: string | null } = {},
+) {
+  const sample = getSampleCopy(opts.businessType, opts.locale);
+  const marker = ONBOARDING_SAMPLE_MARKER;
+
   // 1. Create demo product
   const product = await prisma.product.create({
     data: {
-      name: 'Áo dài cưới đỏ (Demo)',
-      description: 'Áo dài cưới màu đỏ truyền thống, thêu hoa văn long phụng. Đây là sản phẩm mẫu để bạn làm quen với hệ thống.',
+      name: sample.productName,
+      description: `${marker} ${sample.productDescription}`,
       barcode: `DEMO-${merchantId}-001`,
       totalStock: 2,
       rentPrice: 500000,
@@ -137,22 +153,23 @@ async function seedDemoData(merchantId: number, outletId: number, categoryId: nu
   // 3. Create demo customer
   const customer = await prisma.customer.create({
     data: {
-      firstName: 'Nguyễn Thị',
-      lastName: 'Demo',
+      firstName: sample.customerFirstName,
+      lastName: sample.customerLastName,
       phone: '0901000000',
       email: 'demo@example.com',
-      address: '123 Đường Demo, Quận 1',
-      city: 'TP. Hồ Chí Minh',
+      address: sample.customerAddress,
+      city: sample.customerCity,
+      notes: `${marker} ${sample.customerNotes}`,
       merchantId,
     }
   });
 
-  // 4. Create demo order (RESERVED - đang cọc)
+  // 4. Create demo order (RESERVED)
   const orderNumber = `DEMO${String(merchantId).padStart(4, '0')}`;
   const pickupDate = new Date();
-  pickupDate.setDate(pickupDate.getDate() + 7); // 7 ngày sau
+  pickupDate.setDate(pickupDate.getDate() + 7);
   const returnDate = new Date(pickupDate);
-  returnDate.setDate(returnDate.getDate() + 3); // thuê 3 ngày
+  returnDate.setDate(returnDate.getDate() + 3);
 
   await prisma.order.create({
     data: {
@@ -164,7 +181,7 @@ async function seedDemoData(merchantId: number, outletId: number, categoryId: nu
       pickupPlanAt: pickupDate,
       returnPlanAt: returnDate,
       rentalDuration: 3,
-      notes: 'Đơn hàng mẫu - bạn có thể xóa sau khi làm quen hệ thống.',
+      notes: `${marker} ${sample.orderNotes}`,
       outletId,
       customerId: customer.id,
       createdById: userId,
@@ -176,6 +193,7 @@ async function seedDemoData(merchantId: number, outletId: number, categoryId: nu
           totalPrice: 500000,
           deposit: 200000,
           rentalDays: 3,
+          notes: `${marker} ${sample.orderItemNotes}`,
           productName: product.name,
           productBarcode: product.barcode,
         }
@@ -186,7 +204,7 @@ async function seedDemoData(merchantId: number, outletId: number, categoryId: nu
   // Update outlet stock renting count
   await prisma.outletStock.updateMany({
     where: { productId: product.id, outletId },
-    data: { available: 1, renting: 0 } // RESERVED doesn't count as renting
+    data: { available: 1, renting: 0 }
   });
 }
 
@@ -217,6 +235,12 @@ export async function POST(request: NextRequest) {
     
     if (isMerchantRegistration) {
       // MERCHANT REGISTRATION
+      const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+      const onboardingLocale = resolveOnboardingLocaleFromContext({
+        locale: (validatedData as { locale?: string }).locale || cookieLocale,
+        country: validatedData.country,
+        acceptLanguage: request.headers.get('accept-language'),
+      });
       
       // Check merchant duplicate
       const existingMerchant = await db.merchants.checkDuplicate(
@@ -285,16 +309,17 @@ export async function POST(request: NextRequest) {
         });
         
         // Create outlet
+        const localized = getLocalizedRegistrationDefaults(merchant.name, onboardingLocale);
         const outlet = await tx.outlet.create({
           data: {
-            name: `${merchant.name} - Main Store`,
+            name: localized.outletName,
             address: merchant.address || validatedData.address?.trim() || null,
             phone: merchant.phone || validatedData.phone,
             city: merchant.city || validatedData.city,
             state: merchant.state || validatedData.state,
             zipCode: merchant.zipCode || validatedData.zipCode,
             country: merchant.country || validatedData.country,
-            description: 'Default outlet created during registration',
+            description: localized.outletDescription,
             merchantId: merchant.id,
             isDefault: true
           }
@@ -303,8 +328,8 @@ export async function POST(request: NextRequest) {
         // Create category
         const category = await tx.category.create({
           data: {
-            name: 'General',
-            description: 'Default category for general products',
+            name: localized.categoryName,
+            description: localized.categoryDescription,
             merchantId: merchant.id,
             isDefault: true
           }
@@ -351,10 +376,19 @@ export async function POST(request: NextRequest) {
         return { merchant, outlet, category, user, subscription, trialPlan, trialEndDate };
       });
       
-      // Seed demo data for new merchant (non-blocking)
+      // Seed demo data for new merchant (non-blocking, localized)
       try {
-        await seedDemoData(result.merchant.id, result.outlet.id, result.category.id, result.user.id);
-        console.log('✅ Demo data seeded for new merchant:', result.merchant.id);
+        await seedDemoData(
+          result.merchant.id,
+          result.outlet.id,
+          result.category.id,
+          result.user.id,
+          {
+            locale: onboardingLocale,
+            businessType: result.merchant.businessType,
+          },
+        );
+        console.log('✅ Demo data seeded for new merchant:', result.merchant.id, `(locale=${onboardingLocale})`);
       } catch (seedError) {
         console.error('⚠️ Failed to seed demo data (non-critical):', seedError);
       }

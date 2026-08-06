@@ -151,6 +151,15 @@ export interface RegisterData {
   outletName?: string;
   merchantCode?: string;
   outletCode?: string;
+  /** Preferred UI language for localized onboarding seed */
+  locale?: 'en' | 'vi';
+  country?: string;
+  businessType?: string;
+  pricingType?: string;
+  address?: string;
+  referralCode?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 /**

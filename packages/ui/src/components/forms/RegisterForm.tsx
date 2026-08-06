@@ -27,6 +27,7 @@ import {
   useToast
 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
+import { useLocale } from "next-intl";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -74,6 +75,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [googleIdToken, setGoogleIdToken] = useState<string | null>(null);
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
+  const locale = useLocale();
+  const onboardingLocale = locale?.toLowerCase().startsWith('en') ? 'en' as const : 'vi' as const;
   
   // Get referralCode from URL query params
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -194,6 +197,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             pricingType: values.pricingType,
             address: values.address || undefined,
             referralCode: values.referralCode?.trim() || referralCode || undefined,
+            locale: onboardingLocale,
           });
           clearTimeout(timeoutId);
           if (!result.success) {
@@ -246,6 +250,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           pricingType: values.pricingType || 'FIXED',
           address: values.address || '',
           referralCode: values.referralCode?.trim() || referralCode || undefined,
+          locale: onboardingLocale,
         };
 
         const result = await authApi.register(registrationData);

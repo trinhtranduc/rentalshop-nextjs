@@ -1,5 +1,6 @@
 import { prisma } from './client';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
+import { getLocalizedRegistrationDefaults } from './onboarding-sample';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -62,7 +63,12 @@ async function main() {
     email: string;
     phone: string;
     tenantKey: string;
+    /** Seed locale — default Vietnamese (primary market) */
+    locale?: 'en' | 'vi';
   }) {
+    const locale = opts.locale ?? 'vi';
+    const localized = getLocalizedRegistrationDefaults(opts.name, locale);
+
     const merchant = await prisma.merchant.create({
       data: {
         name: opts.name,
@@ -80,12 +86,22 @@ async function main() {
 
     const outlet = await prisma.outlet.create({
       data: {
-        name: `${merchant.name} - Main Store`,
-        address: 'Default address',
+        name: localized.outletName,
+        address: locale === 'vi' ? 'Địa chỉ mặc định' : 'Default address',
         phone: merchant.phone,
-        city: 'HCM',
+        city: locale === 'vi' ? 'HCM' : 'Ho Chi Minh City',
         country: 'VN',
-        description: 'Default outlet created by seed script',
+        description: localized.outletDescription,
+        merchantId: merchant.id,
+        isActive: true,
+        isDefault: true,
+      },
+    });
+
+    await prisma.category.create({
+      data: {
+        name: localized.categoryName,
+        description: localized.categoryDescription,
         merchantId: merchant.id,
         isActive: true,
         isDefault: true,
