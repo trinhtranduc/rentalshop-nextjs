@@ -261,6 +261,36 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   }
 
   console.log(`[RevenueCat Webhook] ✅ Subscription updated for merchant ${merchantId}: ACTIVE until ${expiresAt.toISOString()}`);
+
+  // Create Payment record for tracking revenue
+  const subId = subscription?.id || (await db.prisma.subscription.findUnique({ where: { merchantId } }))?.id;
+  if (subId && event.price_in_purchased_currency && event.price_in_purchased_currency > 0) {
+    const paymentMethod = event.store === 'APP_STORE' ? 'MANUAL' : 'MANUAL'; // Use MANUAL as closest match for IAP
+    await db.prisma.payment.create({
+      data: {
+        amount: event.price_in_purchased_currency,
+        currency: event.currency || 'VND',
+        method: paymentMethod as any,
+        type: 'SUBSCRIPTION_PAYMENT' as any,
+        status: 'COMPLETED' as any,
+        subscriptionId: subId,
+        merchantId,
+        reference: event.transaction_id || null,
+        transactionId: event.transaction_id || null,
+        description: `IAP ${event.type} - ${event.product_id} (${event.store})`,
+        notes: event.environment === 'SANDBOX' ? 'Sandbox test purchase' : null,
+        processedAt: purchasedAt,
+        metadata: JSON.stringify({
+          store: event.store,
+          environment: event.environment,
+          renewal_number: event.renewal_number,
+          takehome_percentage: event.takehome_percentage,
+          product_display_name: (event as any).product_display_name,
+        }),
+      },
+    });
+    console.log(`[RevenueCat Webhook] 💰 Payment record created: ${event.price_in_purchased_currency} ${event.currency}`);
+  }
 }
 
 async function handleExpiration(merchantId: number, event: RevenueCatEvent) {
