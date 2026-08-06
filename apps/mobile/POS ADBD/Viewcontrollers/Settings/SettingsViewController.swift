@@ -308,7 +308,40 @@ class SettingsViewController: BaseViewControler {
         let roleName = user?.role.displayName ?? ""
         roleLabel.text = roleName
         
-        // Plan and duration are hidden
+        // Load subscription info for merchants
+        if User.account()?.role == .merchant {
+            SubscriptionAPIService.shared.getStatus { [weak self] info, _ in
+                DispatchQueue.main.async {
+                    guard let self, let info else {
+                        self?.planLabel.isHidden = true
+                        self?.durationLabel.isHidden = true
+                        return
+                    }
+                    self.planLabel.isHidden = false
+                    self.durationLabel.isHidden = false
+                    self.planLabel.text = "\("Plan".localized()): \(info.displayPlanName)"
+                    
+                    // Format expiry as dd/MM/yyyy
+                    if let isoEnd = info.currentPeriodEnd, !isoEnd.isEmpty {
+                        let formatter = ISO8601DateFormatter()
+                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        var date = formatter.date(from: isoEnd)
+                        if date == nil {
+                            formatter.formatOptions = [.withInternetDateTime]
+                            date = formatter.date(from: isoEnd)
+                        }
+                        if let date {
+                            let displayFormatter = DateFormatter()
+                            displayFormatter.dateFormat = "dd/MM/yyyy"
+                            self.durationLabel.text = "\("Expires on".localized()): \(displayFormatter.string(from: date))"
+                        }
+                    }
+                }
+            }
+        } else {
+            planLabel.isHidden = true
+            durationLabel.isHidden = true
+        }
     }
     
     // MARK: - Actions
