@@ -142,9 +142,28 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
 
   const now = new Date();
   const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : now;
-  const expiresAt = event.expiration_at_ms
+  let expiresAt = event.expiration_at_ms
     ? new Date(event.expiration_at_ms)
     : addMonths(purchasedAt, productConfig.months);
+
+  // CRITICAL: In sandbox, expiration can be very short (5 min renewal).
+  // If expiration is less than 1 day from purchase, use the real duration instead.
+  const diffMs = expiresAt.getTime() - purchasedAt.getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  if (diffMs < oneDayMs) {
+    console.log(`[RevenueCat Webhook] Sandbox detected: expiration too short (${Math.round(diffMs / 1000)}s). Using ${productConfig.months} months instead.`);
+    expiresAt = addMonths(purchasedAt, productConfig.months);
+  }
+
+  console.log(`[RevenueCat Webhook] Purchase/Renewal for merchant ${merchantId}:`, {
+    productId: event.product_id,
+    purchasedAt: purchasedAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    months: productConfig.months,
+    environment: event.environment,
+    purchased_at_ms: event.purchased_at_ms,
+    expiration_at_ms: event.expiration_at_ms,
+  });
 
   // Find or create subscription
   const subscription = await db.prisma.subscription.findUnique({
@@ -178,6 +197,9 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
           environment: event.environment,
           purchasedAt: purchasedAt.toISOString(),
           expiresAt: expiresAt.toISOString(),
+          raw_purchased_at_ms: event.purchased_at_ms || null,
+          raw_expiration_at_ms: event.expiration_at_ms || null,
+          period_type: event.period_type || null,
         }),
       },
     });
