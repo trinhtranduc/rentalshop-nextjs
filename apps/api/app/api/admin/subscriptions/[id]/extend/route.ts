@@ -71,7 +71,8 @@ export async function POST(
       const newPeriodEnd = new Date(currentEnd);
       newPeriodEnd.setMonth(newPeriodEnd.getMonth() + months);
 
-      // Update subscription
+      // Update subscription — update billing info to match manual extension
+      const intervalValue = months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual';
       const updated = await db.prisma.subscription.update({
         where: { id: subscriptionId },
         data: {
@@ -81,6 +82,9 @@ export async function POST(
           cancelAtPeriodEnd: false,
           canceledAt: null,
           cancelReason: null,
+          // Keep billing info consistent (single source of truth)
+          interval: intervalValue,
+          intervalCount: 1,
         },
       });
 
