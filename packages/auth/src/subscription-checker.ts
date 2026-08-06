@@ -160,12 +160,18 @@ export class SubscriptionStatusChecker {
     const subscriptionStatus = subscription.status;
 
     // Check blocked statuses using status map
-    const statusCheck = STATUS_CHECKS[subscriptionStatus];
-    if (statusCheck) {
-      return {
-        success: false,
-        response: createSubscriptionErrorResponse(statusCheck, subscription, merchant)
-      };
+    // IMPORTANT: Do NOT block based on "EXPIRED" status field here.
+    // The EXPIRED status in DB can be stale (set by webhook event order issues).
+    // Instead, we rely on currentPeriodEnd date check below (single source of truth).
+    // Only block truly administrative statuses (PAUSED, CANCELLED with no remaining period).
+    if (subscriptionStatus === SUBSCRIPTION_STATUS.PAUSED) {
+      const statusCheck = STATUS_CHECKS[subscriptionStatus];
+      if (statusCheck) {
+        return {
+          success: false,
+          response: createSubscriptionErrorResponse(statusCheck, subscription, merchant)
+        };
+      }
     }
 
     // ============================================================================

@@ -300,11 +300,34 @@ async function handleExpiration(merchantId: number, event: RevenueCatEvent) {
 
   if (!subscription) return;
 
+  // Only mark EXPIRED if currentPeriodEnd has actually passed.
+  // In sandbox, EXPIRATION events fire immediately after cancel but the period
+  // we set (6 months from purchase) hasn't ended yet.
+  const now = new Date();
+  if (subscription.currentPeriodEnd > now) {
+    console.log(`[RevenueCat Webhook] ⚠️ EXPIRATION event for merchant ${merchantId} ignored: period end ${subscription.currentPeriodEnd.toISOString()} > now. Subscription still active.`);
+    // Log activity but don't change status
+    await db.prisma.subscriptionActivity.create({
+      data: {
+        subscriptionId: subscription.id,
+        type: 'IAP_EXPIRATION_IGNORED',
+        description: `Expiration event ignored - period still active until ${subscription.currentPeriodEnd.toISOString()}`,
+        metadata: JSON.stringify({
+          productId: event.product_id,
+          expirationAtMs: event.expiration_at_ms,
+          currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+          reason: 'period_not_ended',
+        }),
+      },
+    });
+    return;
+  }
+
   await db.prisma.subscription.update({
     where: { merchantId },
     data: {
       status: 'EXPIRED',
-      updatedAt: new Date(),
+      updatedAt: now,
     },
   });
 
