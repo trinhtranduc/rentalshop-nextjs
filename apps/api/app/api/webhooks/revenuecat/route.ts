@@ -45,6 +45,13 @@ interface RevenueCatEvent {
   aliases?: string[];
   period_type?: string; // "NORMAL" | "TRIAL" | "INTRO"
   cancel_reason?: string;
+  // Payment info
+  price?: number;
+  price_in_purchased_currency?: number;
+  currency?: string;
+  renewal_number?: number;
+  transaction_id?: string;
+  takehome_percentage?: number;
 }
 
 interface RevenueCatWebhookPayload {
@@ -181,6 +188,11 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
         cancelAtPeriodEnd: false,
         canceledAt: null,
         cancelReason: null,
+        // Update billing info from IAP event
+        amount: event.price_in_purchased_currency || 0,
+        currency: event.currency || 'VND',
+        interval: productConfig.months === 6 ? 'semi_annual' : 'annual',
+        intervalCount: 1,
         updatedAt: now,
       },
     });
@@ -200,6 +212,11 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
           raw_purchased_at_ms: event.purchased_at_ms || null,
           raw_expiration_at_ms: event.expiration_at_ms || null,
           period_type: event.period_type || null,
+          price: event.price_in_purchased_currency || null,
+          currency: event.currency || null,
+          renewal_number: event.renewal_number || null,
+          transaction_id: event.transaction_id || null,
+          takehome_percentage: event.takehome_percentage || null,
         }),
       },
     });
