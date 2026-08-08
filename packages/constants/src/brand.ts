@@ -1,4 +1,4 @@
-/** AnyRent brandmark (AR monogram ribbon) — matches iOS app icon */
+/** AnyRent brandmark (stylized A ribbon) — shared by landing, splash, and app icon */
 export const ANYRENT_BRANDMARK_PATH = '/anyrent-brandmark-ribbon.png';
 
 export const ANYRENT_BRAND_NAME = 'AnyRent';
