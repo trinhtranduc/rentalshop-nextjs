@@ -57,7 +57,11 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const isBlueVariant = variant === 'blue'
   const blueBrandSrc = src ?? ANYRENT_BRANDMARK_PATH
-  const containerClass = showBackground || isBlueVariant
+  // New brandmark is full-color (blue ribbon on light ground). Do not invert to white
+  // or put it on a blue tile — that would flatten/hide the gradient.
+  const containerClass = isBlueVariant
+    ? `${sizeClasses[size]} rounded-xl flex items-center justify-center overflow-hidden`
+    : showBackground
     ? `${sizeClasses[size]} bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl flex items-center justify-center shadow-lg p-4`
     : `${sizeClasses[size]} flex items-center justify-center`
   
@@ -77,7 +81,6 @@ export const Logo: React.FC<LogoProps> = ({
             src={blueBrandSrc} 
             alt="AnyRent Logo" 
             className="w-full h-full object-contain"
-            style={{ filter: 'brightness(0) invert(1)' }}
           />
         ) : src ? (
           <img 
