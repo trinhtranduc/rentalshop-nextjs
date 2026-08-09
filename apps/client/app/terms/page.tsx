@@ -19,7 +19,7 @@ export default function TermsPage() {
           <LanguageSwitcher variant="compact" />
         </div>
         <p className="text-text-secondary mb-8">
-          {isVi ? 'Cập nhật lần cuối: 18 tháng 12, 2025' : 'Last updated: December 18, 2025'}
+          {isVi ? 'Cập nhật lần cuối: 9 tháng 8, 2026' : 'Last updated: August 9, 2026'}
         </p>
 
         <div className="bg-bg-card border border-border rounded-xl p-6 space-y-8">
@@ -66,10 +66,49 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* 3. Eligibility & Account */}
+          {/* 3. Subscription & In-App Purchases */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '3. Đối tượng sử dụng & Tài khoản' : '3. Eligibility & Account'}
+              {isVi ? '3. Đăng ký dịch vụ (Subscription)' : '3. Subscription & In-App Purchases'}
+            </h2>
+            <ul className="list-disc list-inside text-text-secondary space-y-1 ml-4">
+              <li>
+                {isVi
+                  ? 'AnyRent cung cấp gói đăng ký tự động gia hạn (auto-renewable subscription) với các chu kỳ: 6 tháng và 12 tháng.'
+                  : 'AnyRent offers auto-renewable subscriptions with the following billing cycles: 6 months and 12 months.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Thanh toán được xử lý thông qua Apple App Store (In-App Purchase). Khoản phí sẽ được tính vào tài khoản Apple ID của bạn khi xác nhận mua.'
+                  : 'Payment is processed through the Apple App Store (In-App Purchase). The fee is charged to your Apple ID account upon purchase confirmation.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Gói đăng ký tự động gia hạn trừ khi bạn hủy ít nhất 24 giờ trước khi kết thúc chu kỳ hiện tại.'
+                  : 'Subscriptions automatically renew unless you cancel at least 24 hours before the end of the current billing period.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Bạn có thể quản lý và hủy đăng ký trong phần Cài đặt > Apple ID > Subscriptions trên thiết bị iOS của bạn.'
+                  : 'You can manage and cancel subscriptions in Settings > Apple ID > Subscriptions on your iOS device.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Khoản phí cho bất kỳ phần chưa sử dụng nào của giai đoạn dùng thử miễn phí (nếu có) sẽ bị mất khi bạn mua đăng ký trả phí.'
+                  : 'Any unused portion of a free trial period (if offered) will be forfeited when you purchase a paid subscription.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Giá có thể thay đổi theo từng thời điểm. Thay đổi giá sẽ được thông báo trước khi chu kỳ gia hạn tiếp theo.'
+                  : 'Prices are subject to change. Price changes will be communicated before the next renewal cycle.'}
+              </li>
+            </ul>
+          </section>
+
+          {/* 4. Eligibility & Account */}
+          <section>
+            <h2 className="text-xl font-semibold text-text-primary mb-3">
+              {isVi ? '4. Đối tượng sử dụng & Tài khoản' : '4. Eligibility & Account'}
             </h2>
             <ul className="list-disc list-inside text-text-secondary space-y-1 ml-4">
               <li>
@@ -90,10 +129,10 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 4. User Obligations */}
+          {/* 5. User Obligations */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '4. Nghĩa vụ của người dùng' : '4. User Obligations'}
+              {isVi ? '5. Nghĩa vụ của người dùng' : '5. User Obligations'}
             </h2>
             <ul className="list-disc list-inside text-text-secondary space-y-1 ml-4">
               <li>
@@ -124,10 +163,10 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 5. Intellectual Property & License */}
+          {/* 6. Intellectual Property & License */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '5. Sở hữu trí tuệ & Giấy phép sử dụng' : '5. Intellectual Property & License'}
+              {isVi ? '6. Sở hữu trí tuệ & Giấy phép sử dụng' : '6. Intellectual Property & License'}
             </h2>
             <div className="space-y-2 text-text-secondary">
               <p>
@@ -143,10 +182,10 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* 6. Your Data */}
+          {/* 7. Your Data */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '6. Dữ liệu và nội dung của bạn' : '6. Your Data and Content'}
+              {isVi ? '7. Dữ liệu và nội dung của bạn' : '7. Your Data and Content'}
             </h2>
             <div className="space-y-2 text-text-secondary">
               <p>
@@ -167,10 +206,10 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* 7. Disclaimers & Limitation of Liability */}
+          {/* 8. Disclaimers & Limitation of Liability */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '7. Miễn trừ trách nhiệm & Giới hạn trách nhiệm' : '7. Disclaimers & Limitation of Liability'}
+              {isVi ? '8. Miễn trừ trách nhiệm & Giới hạn trách nhiệm' : '8. Disclaimers & Limitation of Liability'}
             </h2>
             <ul className="list-disc list-inside text-text-secondary space-y-1 ml-4">
               <li>
@@ -191,10 +230,10 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 8. Termination & Data Deletion */}
+          {/* 9. Termination & Data Deletion */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '8. Chấm dứt & Xóa dữ liệu' : '8. Termination & Data Deletion'}
+              {isVi ? '9. Chấm dứt & Xóa dữ liệu' : '9. Termination & Data Deletion'}
             </h2>
             <ul className="list-disc list-inside text-text-secondary space-y-1 ml-4">
               <li>
@@ -220,10 +259,10 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 9. Governing Law & Dispute Resolution */}
+          {/* 10. Governing Law & Dispute Resolution */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '9. Luật áp dụng & Giải quyết tranh chấp' : '9. Governing Law & Dispute Resolution'}
+              {isVi ? '10. Luật áp dụng & Giải quyết tranh chấp' : '10. Governing Law & Dispute Resolution'}
             </h2>
             <div className="space-y-2 text-text-secondary">
               <p>
@@ -239,10 +278,10 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* 10. Changes to Terms */}
+          {/* 11. Changes to Terms */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '10. Thay đổi Điều khoản' : '10. Changes to the Terms'}
+              {isVi ? '11. Thay đổi Điều khoản' : '11. Changes to the Terms'}
             </h2>
             <p className="text-text-secondary">
               {isVi
@@ -251,10 +290,10 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 11. Contact */}
+          {/* 12. Contact */}
           <section>
             <h2 className="text-xl font-semibold text-text-primary mb-3">
-              {isVi ? '11. Liên hệ' : '11. Contact'}
+              {isVi ? '12. Liên hệ' : '12. Contact'}
             </h2>
             <div className="bg-bg-secondary rounded-lg p-4 inline-block text-text-secondary">
               <div className="flex items-center mb-1">
