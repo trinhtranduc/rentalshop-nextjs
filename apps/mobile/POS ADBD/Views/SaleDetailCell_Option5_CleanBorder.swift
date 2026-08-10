@@ -2,7 +2,10 @@
 //  SaleDetailCell_Option5_CleanBorder.swift
 //  POS ADBD
 //
-//  Refined rental order card with clearer hierarchy and softer surfaces.
+//  Order list card — layout parity with Android `OrderListCard`:
+//  1) order # + status
+//  2) customer name + masked phone | total + item count
+//  3) date metrics only (no total column)
 //
 
 import UIKit
@@ -38,13 +41,13 @@ private final class SaleOrderMetaView: UIView {
         valueLabel.numberOfLines = 1
 
         titleRowStackView.axis = .horizontal
-        titleRowStackView.spacing = 6
+        titleRowStackView.spacing = 4
         titleRowStackView.alignment = .center
         titleRowStackView.addArrangedSubview(iconImageView)
         titleRowStackView.addArrangedSubview(titleLabel)
 
         stackView.axis = .vertical
-        stackView.spacing = 6
+        stackView.spacing = 3
         stackView.alignment = .leading
         stackView.addArrangedSubview(titleRowStackView)
         stackView.addArrangedSubview(valueLabel)
@@ -55,7 +58,7 @@ private final class SaleOrderMetaView: UIView {
         }
 
         iconImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(14)
+            make.width.height.equalTo(13)
         }
     }
 
@@ -67,10 +70,10 @@ private final class SaleOrderMetaView: UIView {
             withConfiguration: UIImage.SymbolConfiguration(pointSize: isRegularWidth ? 12 : 11, weight: .medium)
         )
 
-        titleLabel.font = Utils.regularFont(size: isRegularWidth ? 13 : 12)
+        titleLabel.font = Utils.regularFont(size: isRegularWidth ? 12 : 11)
         valueLabel.font = emphasized
-            ? Utils.boldFont(size: isRegularWidth ? 16 : 15)
-            : Utils.mediumFont(size: isRegularWidth ? 15 : 14)
+            ? Utils.boldFont(size: isRegularWidth ? 15 : 14)
+            : Utils.mediumFont(size: isRegularWidth ? 14 : 13)
 
         titleLabel.textColor = emphasized ? UIColor.brandPrimary.withAlphaComponent(0.9) : .textTertiary
         iconImageView.tintColor = emphasized ? UIColor.brandPrimary.withAlphaComponent(0.9) : .textTertiary
@@ -89,7 +92,7 @@ class SaleDetailCell_Option5: UITableViewCell {
     private lazy var containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .backgroundCard
-        view.layer.cornerRadius = 14
+        view.layer.cornerRadius = 10
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.88).cgColor
         view.layer.shadowColor = UIColor.black.cgColor
@@ -107,7 +110,17 @@ class SaleDetailCell_Option5: UITableViewCell {
         return stack
     }()
 
-    private lazy var headerRowStackView: UIStackView = {
+    /// Android row 1: order # … status
+    private lazy var identityRowStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+        return stack
+    }()
+
+    /// Android row 2: customer block | total + items
+    private lazy var customerSummaryRowStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.spacing = 12
@@ -115,18 +128,26 @@ class SaleDetailCell_Option5: UITableViewCell {
         return stack
     }()
 
-    private lazy var leftHeaderStackView: UIStackView = {
+    private lazy var customerColumnStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = 2
         stack.alignment = .leading
+        return stack
+    }()
+
+    private lazy var phoneRowStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 4
+        stack.alignment = .center
         return stack
     }()
 
     private lazy var summaryStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = 2
         stack.alignment = .trailing
         return stack
     }()
@@ -135,26 +156,36 @@ class SaleDetailCell_Option5: UITableViewCell {
         let label = UILabel()
         label.textColor = .textPrimary
         label.numberOfLines = 1
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
-    private lazy var customerInfoLabel: UILabel = {
+    private lazy var customerNameLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .textPrimary
+        label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
+
+    private lazy var customerPhoneLabel: UILabel = {
         let label = UILabel()
         label.textColor = .textSecondary
         label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
     private lazy var revealPhoneButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage.revealEye(revealed: false), for: .normal)
-        button.tintColor = .textSecondary // same grey as the phone text
+        button.tintColor = .textSecondary
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.addTarget(self, action: #selector(togglePhoneReveal), for: .touchUpInside)
         button.snp.makeConstraints { make in
-            make.width.height.equalTo(24)
+            make.width.height.equalTo(18)
         }
         return button
     }()
@@ -165,6 +196,16 @@ class SaleDetailCell_Option5: UITableViewCell {
         let label = OrderStatusPillLabel()
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         label.setContentHuggingPriority(.required, for: .horizontal)
+        return label
+    }()
+
+    private lazy var totalAmountLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .brandPrimary
+        label.textAlignment = .right
+        label.numberOfLines = 1
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
 
@@ -193,7 +234,7 @@ class SaleDetailCell_Option5: UITableViewCell {
     private lazy var datesStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 12
+        stack.spacing = 8
         stack.alignment = .top
         stack.distribution = .fillEqually
         return stack
@@ -202,7 +243,6 @@ class SaleDetailCell_Option5: UITableViewCell {
     private lazy var createdDateView = SaleOrderMetaView()
     private lazy var pickupDateView = SaleOrderMetaView()
     private lazy var returnDateView = SaleOrderMetaView()
-    private lazy var totalAmountView = SaleOrderMetaView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -223,6 +263,7 @@ class SaleDetailCell_Option5: UITableViewCell {
         currentSortType = .rentDefault
         isPhoneRevealed = false
         revealPhoneButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
+        phoneRowStackView.isHidden = false
         pickupDateView.isHidden = false
         returnDateView.isHidden = false
         containerView.transform = .identity
@@ -262,28 +303,39 @@ class SaleDetailCell_Option5: UITableViewCell {
         containerView.addSubview(rootStackView)
         metaPanelView.addSubview(datesStackView)
 
-        let customerRow = UIStackView(arrangedSubviews: [customerInfoLabel, revealPhoneButton, UIView()])
-        customerRow.axis = .horizontal
-        customerRow.spacing = 4
-        customerRow.alignment = .center
-        customerInfoLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        customerInfoLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        phoneRowStackView.addArrangedSubview(customerPhoneLabel)
+        phoneRowStackView.addArrangedSubview(revealPhoneButton)
 
-        leftHeaderStackView.addArrangedSubview(orderNumberLabel)
-        leftHeaderStackView.addArrangedSubview(customerRow)
+        // Left column: name, then phone under it (Android OrderListCard).
+        customerColumnStackView.axis = .vertical
+        customerColumnStackView.spacing = 2
+        customerColumnStackView.alignment = .fill
+        customerColumnStackView.addArrangedSubview(customerNameLabel)
+        customerColumnStackView.addArrangedSubview(phoneRowStackView)
 
-        summaryStackView.addArrangedSubview(statusBadge)
+        // Right column: total ABOVE item count (Android OrderListCard).
+        summaryStackView.axis = .vertical
+        summaryStackView.spacing = 2
+        summaryStackView.alignment = .trailing
+        summaryStackView.addArrangedSubview(totalAmountLabel)
         summaryStackView.addArrangedSubview(itemCountLabel)
 
-        headerRowStackView.addArrangedSubview(leftHeaderStackView)
-        headerRowStackView.addArrangedSubview(summaryStackView)
+        identityRowStackView.addArrangedSubview(orderNumberLabel)
+        identityRowStackView.addArrangedSubview(UIView()) // spacer
+        identityRowStackView.addArrangedSubview(statusBadge)
+
+        customerSummaryRowStackView.axis = .horizontal
+        customerSummaryRowStackView.alignment = .top
+        customerSummaryRowStackView.distribution = .fill
+        customerSummaryRowStackView.addArrangedSubview(customerColumnStackView)
+        customerSummaryRowStackView.addArrangedSubview(summaryStackView)
 
         datesStackView.addArrangedSubview(createdDateView)
         datesStackView.addArrangedSubview(pickupDateView)
         datesStackView.addArrangedSubview(returnDateView)
-        datesStackView.addArrangedSubview(totalAmountView)
 
-        rootStackView.addArrangedSubview(headerRowStackView)
+        rootStackView.addArrangedSubview(identityRowStackView)
+        rootStackView.addArrangedSubview(customerSummaryRowStackView)
         rootStackView.addArrangedSubview(dividerView)
         rootStackView.addArrangedSubview(metaPanelView)
 
@@ -317,16 +369,18 @@ class SaleDetailCell_Option5: UITableViewCell {
             make.height.greaterThanOrEqualTo(OrderStatusBadgeMetrics.minimumHeight)
         }
 
-        leftHeaderStackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        leftHeaderStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        customerColumnStackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        customerColumnStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         summaryStackView.setContentHuggingPriority(.required, for: .horizontal)
         summaryStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     private func updateFonts() {
-        orderNumberLabel.font = Utils.regularFont(size: isRegularWidth ? 15 : 14)
-        customerInfoLabel.font = Utils.regularFont(size: isRegularWidth ? 15 : 14)
-        itemCountLabel.font = Utils.regularFont(size: isRegularWidth ? 14 : 13)
+        orderNumberLabel.font = Utils.regularFont(size: isRegularWidth ? 16 : 15)
+        customerNameLabel.font = Utils.mediumFont(size: isRegularWidth ? 16 : 15)
+        customerPhoneLabel.font = Utils.regularFont(size: isRegularWidth ? 13 : 12)
+        totalAmountLabel.font = Utils.boldFont(size: isRegularWidth ? 16 : 15)
+        itemCountLabel.font = Utils.regularFont(size: isRegularWidth ? 13 : 12)
     }
 
     private func applyPressedState(isPressed: Bool, animated: Bool) {
@@ -351,42 +405,22 @@ class SaleDetailCell_Option5: UITableViewCell {
         return trimmed.hasPrefix("#") ? trimmed : "#\(trimmed)"
     }
 
-    private func customerInfoText(name: String, phone: String?, revealed: Bool = false) -> NSAttributedString {
-        let displayName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "N/A".localized() : name
-        let attributed = NSMutableAttributedString(
-            string: displayName,
-            attributes: [
-                .font: Utils.mediumFont(size: isRegularWidth ? 16 : 15),
-                .foregroundColor: UIColor.textPrimary
-            ]
-        )
-
-        let trimmedPhone = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmedPhone.isEmpty {
-            let displayPhone = revealed ? trimmedPhone : trimmedPhone.maskedPhoneNumber
-            attributed.append(
-                NSAttributedString(
-                    string: "  •  \(displayPhone)",
-                    attributes: [
-                        .font: Utils.regularFont(size: isRegularWidth ? 15 : 14),
-                        .foregroundColor: UIColor.textSecondary
-                    ]
-                )
-            )
+    private func applyCustomerPhone(phone: String?, revealed: Bool) {
+        let trimmed = phone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasPhone = !trimmed.isEmpty
+        phoneRowStackView.isHidden = !hasPhone
+        revealPhoneButton.isHidden = !hasPhone
+        guard hasPhone else {
+            customerPhoneLabel.text = nil
+            return
         }
-
-        return attributed
+        customerPhoneLabel.text = revealed ? trimmed : trimmed.maskedPhoneNumber
     }
 
     @objc private func togglePhoneReveal() {
         isPhoneRevealed.toggle()
         revealPhoneButton.setImage(UIImage.revealEye(revealed: isPhoneRevealed), for: .normal)
-        guard let order = order else { return }
-        customerInfoLabel.attributedText = customerInfoText(
-            name: order.customerName,
-            phone: order.customerPhone,
-            revealed: isPhoneRevealed
-        )
+        applyCustomerPhone(phone: order?.customerPhone, revealed: isPhoneRevealed)
     }
 
     func bind(order: Order, sortType: OrderSortType = .rentDefault) {
@@ -395,16 +429,14 @@ class SaleDetailCell_Option5: UITableViewCell {
 
         orderNumberLabel.text = formattedOrderIdentifier(order.orderNumber)
 
+        let displayName = order.customerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        customerNameLabel.text = displayName.isEmpty ? "N/A".localized() : displayName
+
         isPhoneRevealed = false
         revealPhoneButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
-        let hasPhone = !(order.customerPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "").isEmpty
-        revealPhoneButton.isHidden = !hasPhone
-        customerInfoLabel.attributedText = customerInfoText(
-            name: order.customerName,
-            phone: order.customerPhone,
-            revealed: false
-        )
+        applyCustomerPhone(phone: order.customerPhone, revealed: false)
 
+        totalAmountLabel.text = order.totalAmount.formatStringInCommon()
         let itemText = order.itemCount == 1 ? "item".localized() : "items".localized()
         itemCountLabel.text = "\(order.itemCount) \(itemText)"
 
@@ -439,15 +471,6 @@ class SaleDetailCell_Option5: UITableViewCell {
             pickupDateView.isHidden = true
             returnDateView.isHidden = true
         }
-
-        totalAmountView.isHidden = false
-        totalAmountView.apply(
-            title: "Total".localized(),
-            value: order.totalAmount.formatStringInCommon(),
-            symbolName: "banknote",
-            emphasized: true,
-            isRegularWidth: isRegularWidth
-        )
 
         setupStatusBadge(for: order)
     }

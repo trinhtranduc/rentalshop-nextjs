@@ -17,6 +17,10 @@ import java.time.temporal.ChronoUnit
 object CartStore {
     enum class DiscountType { AMOUNT, PERCENT }
 
+    /** Non-null when cart was loaded from an existing order (iOS `cart.orderId`). */
+    private val _editingOrderId = MutableStateFlow<Int?>(null)
+    val editingOrderId: StateFlow<Int?> = _editingOrderId.asStateFlow()
+
     private val _lines = MutableStateFlow<List<CartLine>>(emptyList())
     val lines: StateFlow<List<CartLine>> = _lines.asStateFlow()
 
@@ -51,6 +55,8 @@ object CartStore {
     val collateralDetails: StateFlow<String> = _collateralDetails.asStateFlow()
 
     val itemCount: Int get() = _lines.value.sumOf { it.quantity }
+
+    val isEditing: Boolean get() = _editingOrderId.value != null
 
     val subtotal: Double
         get() = _lines.value.sumOf { it.lineTotal }
@@ -152,10 +158,22 @@ object CartStore {
     fun setPricingType(productId: Int, type: String) {
         val normalized = if (type.equals("DAILY", ignoreCase = true)) "DAILY" else "FIXED"
         _lines.update { list ->
-            list.map {
-                if (it.product.id == productId) {
-                    it.copy(pricingType = normalized, rentalDays = rentalDaysInclusive())
-                } else it
+            list.map { line ->
+                if (line.product.id != productId) return@map line
+                // iOS CartItem.applyPricingOption: switching FIXED/DAILY also updates
+                // the unit price to that option's catalog price so totals refresh.
+                val catalogPrice = line.product.pricingOptions.firstOrNull {
+                    it.type.equals(normalized, ignoreCase = true)
+                }?.price ?: if (line.product.pricingType.equals(normalized, ignoreCase = true)) {
+                    line.product.rentPrice
+                } else {
+                    line.unitPrice
+                }
+                line.copy(
+                    pricingType = normalized,
+                    rentalDays = rentalDaysInclusive(),
+                    unitPriceOverride = catalogPrice,
+                )
             }
         }
     }
@@ -165,15 +183,135 @@ object CartStore {
     }
 
     fun clear() {
+        _editingOrderId.value = null
         _lines.value = emptyList()
         _customer.value = null
         _notes.value = ""
         _discount.value = 0.0
+        _discountType.value = DiscountType.AMOUNT
         _depositAmount.value = 0.0
         _securityDeposit.value = 0.0
         _collateralDetails.value = ""
         _pickupDate.value = LocalDate.now()
         _returnDate.value = LocalDate.now().plusDays(1)
+        _orderType.value = "RENT"
+    }
+
+    /**
+     * iOS `Cart.fromOrder` / `Cart.fromOrderDetail` — load an existing order for edit.
+     * Call after swipe “Update Order” on RENT+RESERVED (or SALE+COMPLETED).
+     *
+     * Why assign StateFlows only after mapping: an earlier version called `clear()` first,
+     * so any parse failure left the cart empty and looked like “edit didn’t load products”.
+     */
+    fun loadFromOrderDetail(detail: com.anyrent.pos.data.model.OrderDetail) {
+        val summary = detail.summary
+        require(summary.id > 0) { "Invalid order id" }
+        require(detail.items.isNotEmpty()) {
+            "Order #${summary.orderNumber} has no line items to edit"
+        }
+
+        val sale = summary.orderType.equals("SALE", ignoreCase = true)
+        val pickup = parseOrderDate(summary.pickupPlanAt) ?: LocalDate.now()
+        val ret = parseOrderDate(summary.returnPlanAt) ?: pickup.plusDays(1).let { candidate ->
+            if (candidate.isBefore(pickup)) pickup else candidate
+        }
+        val inclusiveDays = ChronoUnit.DAYS.between(pickup, ret).toInt().let { d ->
+            (d + 1).coerceAtLeast(1)
+        }
+
+        val customer = detail.customer?.takeIf { it.id > 0 }
+            ?: detail.customerId?.takeIf { it > 0 }?.let { customerId ->
+                val nameParts = summary.customerName.orEmpty().trim().split(Regex("\\s+"))
+                    .filter { it.isNotBlank() }
+                Customer(
+                    id = customerId,
+                    firstName = nameParts.firstOrNull().orEmpty()
+                        .ifBlank { summary.customerName.orEmpty().ifBlank { "#$customerId" } },
+                    lastName = nameParts.drop(1).joinToString(" ").takeIf { it.isNotBlank() },
+                    phone = summary.customerPhone,
+                    email = null,
+                    address = null,
+                )
+            }
+
+        val mappedLines = detail.items.map { item ->
+            require(item.productId > 0) { "Order item missing productId" }
+            val product = Product(
+                id = item.productId,
+                name = item.productName.orEmpty().ifBlank { "Product #${item.productId}" },
+                barcode = null,
+                rentPrice = item.unitPrice,
+                salePrice = item.unitPrice,
+                stock = 0,
+                available = 0,
+                renting = 0,
+                categoryId = null,
+                categoryName = null,
+                imageUrl = item.imageUrl,
+                deposit = item.deposit,
+                pricingType = item.pricingType.ifBlank { "FIXED" },
+            )
+            CartLine(
+                product = product,
+                quantity = item.quantity.coerceAtLeast(1),
+                rentalDays = item.rentalDays.coerceAtLeast(1).let { rd ->
+                    if (rd > 1) rd else inclusiveDays
+                },
+                isSale = sale,
+                pricingType = item.pricingType.ifBlank { "FIXED" },
+                unitPriceOverride = item.unitPrice,
+            )
+        }
+
+        // Assign after building so collectors never see a cleared mid-load cart.
+        _editingOrderId.value = summary.id
+        _orderType.value = if (sale) "SALE" else "RENT"
+        _pickupDate.value = pickup
+        _returnDate.value = ret
+        _notes.value = summary.notes.orEmpty()
+        _collateralDetails.value = detail.collateralDetails.orEmpty()
+        _depositAmount.value = summary.depositAmount.takeUnless { it.isNaN() } ?: 0.0
+        _securityDeposit.value = detail.securityDeposit.takeUnless { it.isNaN() } ?: 0.0
+        _discount.value = when {
+            detail.discountValue > 0 -> detail.discountValue
+            detail.discountAmount > 0 -> detail.discountAmount
+            else -> 0.0
+        }
+        val discountTypeRaw = detail.discountType.orEmpty()
+        _discountType.value = if (
+            discountTypeRaw.equals("percentage", ignoreCase = true) ||
+            discountTypeRaw.equals("percent", ignoreCase = true)
+        ) {
+            DiscountType.PERCENT
+        } else {
+            DiscountType.AMOUNT
+        }
+        _customer.value = customer
+        _lines.value = mappedLines
+
+        android.util.Log.i(
+            "AnyRentCart",
+            "Loaded order #${summary.orderNumber} id=${summary.id} " +
+                "lines=${mappedLines.size} customer=${customer?.id} " +
+                "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
+        )
+    }
+
+    private fun parseOrderDate(raw: String?): LocalDate? {
+        if (raw.isNullOrBlank()) return null
+        val trimmed = raw.trim()
+        return runCatching { LocalDate.parse(trimmed.take(10)) }.getOrNull()
+            ?: runCatching {
+                java.time.OffsetDateTime.parse(trimmed).toLocalDate()
+            }.getOrNull()
+            ?: runCatching {
+                java.time.Instant.parse(trimmed).atZone(java.time.ZoneOffset.UTC).toLocalDate()
+            }.getOrNull()
+            ?: runCatching {
+                // "2024-01-15 00:00:00" style
+                LocalDate.parse(trimmed.take(10).replace(' ', 'T').take(10))
+            }.getOrNull()
     }
 
     fun isoPickup(): String = _pickupDate.value.atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"

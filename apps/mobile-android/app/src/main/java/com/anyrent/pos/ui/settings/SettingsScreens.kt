@@ -2,6 +2,7 @@ package com.anyrent.pos.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -60,7 +62,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
@@ -74,6 +78,7 @@ import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.SectionLabel
@@ -240,11 +245,13 @@ fun SettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEditUser: (com.anyrent.pos.data.model.StaffUser) -> Unit = {}) {
+fun UserManagementScreen(onBack: () -> Unit) {
     var users by remember { mutableStateOf<List<StaffUser>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableStateOf(0) }
+    var showForm by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<StaffUser?>(null) }
     var passwordUser by remember { mutableStateOf<StaffUser?>(null) }
     var deleteUser by remember { mutableStateOf<StaffUser?>(null) }
     var newPassword by remember { mutableStateOf("") }
@@ -273,7 +280,10 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                     }
                 },
                 actions = {
-                    IconButton(onClick = onCreateUser) {
+                    IconButton(onClick = {
+                        editing = null
+                        showForm = true
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_user))
                     }
                 },
@@ -304,28 +314,41 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                                 modifier = Modifier.size(44.dp),
                                 tint = MaterialTheme.colorScheme.outline,
                             )
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    user.displayName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                )
+                            Column(
+                                Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                // iOS UserCell: status badge sits on the name row (top-right),
+                                // not as a tall sibling that squeezes email/role.
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        user.displayName,
+                                        modifier = Modifier.weight(1f),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    UserStatusBadge(isActive = user.isActive)
+                                }
                                 Text(
                                     user.email,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(
                                     roleDisplayValue(user.role),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
-                            Text(
-                                stringResource(if (user.isActive) R.string.active else R.string.inactive),
-                                color = if (user.isActive) Color(0xFF23844A)
-                                else MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
                             Box {
                                 val editLabel = stringResource(R.string.edit)
                                 val changePasswordLabel = stringResource(R.string.change_password)
@@ -340,7 +363,10 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                                         AppMenuAction(
                                             label = editLabel,
                                             icon = Icons.Outlined.Edit,
-                                            onClick = { onEditUser(user) },
+                                            onClick = {
+                                                editing = user
+                                                showForm = true
+                                            },
                                         ),
                                         AppMenuAction(
                                             label = changePasswordLabel,
@@ -391,6 +417,29 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
                 }
             }
             }
+        }
+    }
+
+    // Same page-sheet presentation as Add Product / Add Customer.
+    if (showForm) {
+        AppFormSheet(
+            onDismiss = {
+                showForm = false
+                editing = null
+            },
+        ) {
+            UserFormScreen(
+                initial = editing,
+                onBack = {
+                    showForm = false
+                    editing = null
+                },
+                onSaved = {
+                    showForm = false
+                    editing = null
+                    refreshKey++
+                },
+            )
         }
     }
 
@@ -475,6 +524,27 @@ fun UserManagementScreen(onBack: () -> Unit, onCreateUser: () -> Unit = {}, onEd
         AppAlertError(
             message = message,
             onDismiss = { actionError = null },
+        )
+    }
+}
+
+@Composable
+private fun UserStatusBadge(isActive: Boolean) {
+    val background = if (isActive) Color(0xFF23844A) else MaterialTheme.colorScheme.error
+    Box(
+        modifier = Modifier
+            .background(background, RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(if (isActive) R.string.active_badge else R.string.inactive_badge),
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

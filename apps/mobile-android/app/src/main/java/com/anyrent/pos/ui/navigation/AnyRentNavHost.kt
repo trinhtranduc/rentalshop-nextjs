@@ -1,18 +1,21 @@
 package com.anyrent.pos.ui.navigation
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,12 +24,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -36,35 +46,37 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.anyrent.pos.R
+import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.SessionStore
-import com.anyrent.pos.ui.auth.ForgotPasswordScreen
-import com.anyrent.pos.ui.settings.UserFormScreen
-import com.anyrent.pos.ui.settings.StoreInfoScreen
-import com.anyrent.pos.ui.settings.PrinterNetworkScreen
-import com.anyrent.pos.ui.settings.ExportAuthScreen
-import com.anyrent.pos.ui.home.CartCheckoutScreen
-import com.anyrent.pos.ui.home.CameraBarcodeScreen
-import com.anyrent.pos.ui.home.BarcodeMode
-import com.anyrent.pos.ui.auth.RegisterStoreScreen
-import com.anyrent.pos.ui.auth.OnboardingScreen
 import com.anyrent.pos.ui.auth.CheckEmailScreen
+import com.anyrent.pos.ui.auth.ForgotPasswordScreen
 import com.anyrent.pos.ui.auth.LoginScreen
-import com.anyrent.pos.ui.calendar.CalendarScreen
+import com.anyrent.pos.ui.auth.OnboardingScreen
+import com.anyrent.pos.ui.auth.RegisterStoreScreen
 import com.anyrent.pos.ui.availability.AvailabilityScreen
+import com.anyrent.pos.ui.calendar.CalendarScreen
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.customers.CustomersScreen
+import com.anyrent.pos.ui.home.BarcodeMode
+import com.anyrent.pos.ui.home.CameraBarcodeScreen
+import com.anyrent.pos.ui.home.CartCheckoutScreen
 import com.anyrent.pos.ui.home.HomeScreen
-import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
+import com.anyrent.pos.ui.settings.ExportAuthScreen
+import com.anyrent.pos.ui.settings.PrinterNetworkScreen
 import com.anyrent.pos.ui.settings.SettingsScreen
+import com.anyrent.pos.ui.settings.StoreInfoScreen
 import com.anyrent.pos.ui.settings.SubscriptionScreen
 import com.anyrent.pos.ui.settings.UserManagementScreen
 import com.anyrent.pos.ui.theme.AppMuted
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object Routes {
@@ -75,7 +87,6 @@ object Routes {
     const val Onboarding = "onboarding"
     const val CameraBarcode = "camera-barcode/{mode}"
     const val StoreInfo = "store-info"
-    const val UserForm = "user-form"
     const val Main = "main"
     const val Inbox = "inbox"
     const val OrderDetail = "order/{orderId}"
@@ -84,7 +95,6 @@ object Routes {
     const val AnalyticsOrders = "analytics-orders/{entityType}/{entityId}"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
-    const val Barcode = "barcode"
     const val ProductAvailability = "product-availability/{productId}"
     const val UserEdit = "user-edit/{userId}"
     const val PickCustomer = "pick-customer"
@@ -229,8 +239,15 @@ fun AnyRentNavHost(
             CartCheckoutScreen(
                 onBack = { rootNavController.popBackStack() },
                 onPickCustomer = { rootNavController.navigate(Routes.PickCustomer) },
-                onPreview = { rootNavController.navigate(Routes.CartPreview) },
-                onCreated = {},
+                onPreview = {
+                    rootNavController.navigate(Routes.CartPreview) {
+                        launchSingleTop = true
+                    }
+                },
+                onCreated = {
+                    rootNavController.popBackStack(Routes.Cart, inclusive = true)
+                    MainTabRouter.openOrdersList()
+                },
             )
         }
         composable(Routes.CartPreview) {
@@ -239,16 +256,11 @@ fun AnyRentNavHost(
                 onBack = { rootNavController.popBackStack() },
                 onPickCustomer = {},
                 onPreview = {},
-                onCreated = { id ->
+                onCreated = {
+                    // Leave cart + preview, land on Orders tab (not order detail).
                     rootNavController.popBackStack(Routes.Cart, inclusive = true)
-                    rootNavController.navigate(Routes.orderDetail(id))
+                    MainTabRouter.openOrdersList()
                 },
-            )
-        }
-        composable(Routes.Barcode) {
-            CameraBarcodeScreen(
-                mode = BarcodeMode.PRODUCT,
-                onBack = { rootNavController.popBackStack() },
             )
         }
         composable(
@@ -321,26 +333,8 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.Users) {
-            var editing by remember { mutableStateOf<StaffUser?>(null) }
-            if (editing != null) {
-                UserFormScreen(
-                    initial = editing,
-                    onBack = { editing = null },
-                    onSaved = { editing = null },
-                )
-            } else {
-                UserManagementScreen(
-                    onBack = { rootNavController.popBackStack() },
-                    onCreateUser = { rootNavController.navigate(Routes.UserForm) },
-                    onEditUser = { editing = it },
-                )
-            }
-        }
-        composable(Routes.UserForm) {
-            UserFormScreen(
-                initial = null,
+            UserManagementScreen(
                 onBack = { rootNavController.popBackStack() },
-                onSaved = { rootNavController.popBackStack() },
             )
         }
         composable(Routes.Export) {
@@ -363,13 +357,50 @@ private fun MainTabs(
     val tabNav = rememberNavController()
     val backStack by tabNav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
+    val scope = rememberCoroutineScope()
+    var editOrderError by remember { mutableStateOf<String?>(null) }
+    var editOrderLoading by remember { mutableStateOf(false) }
     val unselectedTabColor = if (isSystemInDarkTheme()) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else {
         AppMuted
     }
 
+    fun editOrderIntoCart(orderId: Int) {
+        if (editOrderLoading) return
+        scope.launch {
+            editOrderLoading = true
+            editOrderError = null
+            val result = withContext(Dispatchers.IO) { ApiClient.get().getOrder(orderId) }
+            editOrderLoading = false
+            result.fold(
+                onSuccess = { detail ->
+                    runCatching { CartStore.loadFromOrderDetail(detail) }
+                        .onSuccess {
+                            MainTabRouter.openHome()
+                            rootNavController.navigate(Routes.Cart) {
+                                launchSingleTop = true
+                            }
+                        }
+                        .onFailure { editOrderError = it.message ?: "Could not load order into cart" }
+                },
+                onFailure = { editOrderError = it.message ?: "Could not load order" },
+            )
+        }
+    }
+
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+
+    LaunchedEffect(Unit) {
+        MainTabRouter.selectTab.collect { route ->
+            tabNav.navigate(route) {
+                popUpTo(tabNav.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                // Fresh list after create — don't restore a stale Orders snapshot.
+                restoreState = false
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -400,9 +431,19 @@ private fun MainTabs(
                                 contentDescription = stringResource(tab.labelRes),
                             )
                         },
+                        // Keep tab bar height stable: never wrap labels (VI "Trang chủ"
+                        // etc. otherwise grow NavigationBar vertically with 5 items).
+                        alwaysShowLabel = true,
                         label = {
                             Text(
-                                stringResource(tab.labelRes),
+                                text = stringResource(tab.labelRes),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 11.sp,
+                                lineHeight = 12.sp,
                                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         },
@@ -427,7 +468,6 @@ private fun MainTabs(
                 HomeScreen(
                     onOpenCart = { rootNavController.navigate(Routes.Cart) },
                     onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
-                    onOpenBarcode = { rootNavController.navigate(Routes.Barcode) },
                     onCheckProductAvailability = { id ->
                         rootNavController.navigate(Routes.productAvailability(id))
                     },
@@ -438,6 +478,7 @@ private fun MainTabs(
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                     onOrderCheck = { rootNavController.navigate(Routes.OrderCheck) },
                     onCameraScan = { rootNavController.navigate("camera-barcode/order") },
+                    onEditOrder = { id -> editOrderIntoCart(id) },
                 )
             }
             composable(MainTab.Calendar.route) {
@@ -469,6 +510,31 @@ private fun MainTabs(
                         }
                     },
                 )
+            }
+        }
+    }
+
+    editOrderError?.let { message ->
+        AppAlertError(
+            title = stringResource(R.string.edit_order),
+            message = message,
+            onDismiss = { editOrderError = null },
+        )
+    }
+
+    if (editOrderLoading) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+        ) {
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
             }
         }
     }

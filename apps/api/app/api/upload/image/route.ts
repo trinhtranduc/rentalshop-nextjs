@@ -116,23 +116,53 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       allowedTypes: ALLOWED_TYPES
     });
 
+    // Mobile (OkHttp) sometimes sends empty MIME; sniff magic bytes + force JPEG name.
+    let uploadFile = file;
+    const bytesForSniff = Buffer.from(new Uint8Array(await file.arrayBuffer()));
+    const sniffed =
+      bytesForSniff.length >= 3 &&
+      bytesForSniff[0] === 0xff &&
+      bytesForSniff[1] === 0xd8 &&
+      bytesForSniff[2] === 0xff
+        ? 'image/jpeg'
+        : bytesForSniff.length >= 8 &&
+            bytesForSniff[0] === 0x89 &&
+            bytesForSniff[1] === 0x50 &&
+            bytesForSniff[2] === 0x4e &&
+            bytesForSniff[3] === 0x47
+          ? 'image/png'
+          : null;
+    const effectiveName =
+      (originalName && originalName.trim()) ||
+      (file.name && file.name !== 'blob' ? file.name : 'upload.jpg');
+    const hasImageExt = /\.(jpe?g|png|webp)$/i.test(effectiveName);
+    if (!file.type || file.type === 'application/octet-stream' || sniffed) {
+      uploadFile = {
+        name: hasImageExt ? effectiveName : `${effectiveName.replace(/\.[^/.]+$/, '') || 'upload'}.jpg`,
+        type: sniffed || file.type || 'image/jpeg',
+        size: bytesForSniff.length || file.size,
+      } as File;
+    }
+
     // Validate image
-    const validation = validateImage(file);
+    const validation = validateImage(uploadFile);
     if (!validation.isValid) {
       console.log('❌ Validation failed:', {
-        fileType: file.type,
+        fileType: uploadFile.type,
         allowedTypes: ALLOWED_TYPES,
         error: validation.error
       });
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR'),
+        {
+          ...ResponseBuilder.error('VALIDATION_ERROR'),
+          error: validation.error || 'Invalid image',
+        },
         { status: 400 }
       );
     }
 
-    // Convert file to buffer and compress
-    const bytes = await file.arrayBuffer();
-    const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+    // Convert file to buffer and compress (reuse sniffed buffer)
+    const buffer = await compressImageTo1MB(bytesForSniff);
     
     // Final check - reject if still too large after compression
     const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;

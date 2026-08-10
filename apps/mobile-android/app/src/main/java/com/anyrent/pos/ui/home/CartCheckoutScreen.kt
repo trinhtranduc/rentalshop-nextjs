@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,6 +55,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -84,6 +86,7 @@ import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatDisplayDateTime
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
+import com.anyrent.pos.ui.common.orderLinePricingText
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppInputField
 import kotlinx.coroutines.Dispatchers
@@ -115,6 +118,20 @@ fun CartCheckoutScreen(
     val deposit by CartStore.depositAmount.collectAsState()
     val security by CartStore.securityDeposit.collectAsState()
     val collateral by CartStore.collateralDetails.collectAsState()
+    val editingOrderId by CartStore.editingOrderId.collectAsState()
+
+    // Why derive here (not CartStore.totalAmount getters): those getters are plain
+    // Kotlin properties. Scaffold bottomBar / preview summary may skip redraw if Compose
+    // only sees StateFlow reads that didn't change in that slot. Totals must be
+    // computed from collected `lines` / discount so +/- quantity and price edits
+    // always refresh the Preview button and order-preview screen.
+    val itemCount = lines.sumOf { it.quantity }
+    val subtotal = lines.sumOf { it.lineTotal }
+    val discountAmount = when (discountType) {
+        CartStore.DiscountType.AMOUNT -> discount.coerceAtLeast(0.0)
+        CartStore.DiscountType.PERCENT -> subtotal * (discount.coerceIn(0.0, 100.0) / 100.0)
+    }
+    val totalAmount = (subtotal - discountAmount).coerceAtLeast(0.0)
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     var pickupText by remember(pickup) { mutableStateOf(pickup.toString()) }
@@ -191,27 +208,58 @@ fun CartCheckoutScreen(
                 }
             }
             val result = withContext(Dispatchers.IO) {
-                ApiClient.get().createOrder(
-                    orderType = orderType,
-                    customerId = customer?.id,
-                    lines = lines.map { Triple(it.product.id, it.quantity, it.unitPrice) },
-                    totalAmount = CartStore.totalAmount,
-                    depositAmount = deposit,
-                    notes = listOfNotNull(
-                        notes.takeIf { it.isNotBlank() },
-                        collateral.takeIf { it.isNotBlank() }?.let { "Collateral: $it" },
-                    ).joinToString("\n").ifBlank { null },
-                    rentalDays = CartStore.rentalDaysInclusive(),
-                    pickupPlanAt = if (orderType == "RENT") CartStore.isoPickup() else null,
-                    returnPlanAt = if (orderType == "RENT") CartStore.isoReturn() else null,
-                    securityDeposit = security.takeIf { it > 0 },
-                    discountType = if (discountType == CartStore.DiscountType.AMOUNT) "amount" else "percentage",
-                    discountValue = discount.takeIf { it > 0 },
-                    discountAmount = CartStore.discountAmount.takeIf { it > 0 },
-                    depositsByProduct = lines.associate { it.product.id to it.product.deposit },
-                    pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
-                    rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
-                )
+                val payloadLines = lines.map { Triple(it.product.id, it.quantity, it.unitPrice) }
+                val deposits = lines.associate { it.product.id to it.product.deposit }
+                val pricing = lines.associate { it.product.id to it.pricingType }
+                val daysByProduct = lines.associate { it.product.id to it.rentalDays }
+                val editId = editingOrderId
+                if (editId != null) {
+                    ApiClient.get().updateOrder(
+                        orderId = editId,
+                        orderType = orderType,
+                        customerId = customer?.id,
+                        lines = payloadLines,
+                        totalAmount = CartStore.totalAmount,
+                        depositAmount = deposit,
+                        notes = listOfNotNull(
+                            notes.takeIf { it.isNotBlank() },
+                            collateral.takeIf { it.isNotBlank() }?.let { "Collateral: $it" },
+                        ).joinToString("\n").ifBlank { null },
+                        rentalDays = CartStore.rentalDaysInclusive(),
+                        pickupPlanAt = if (orderType == "RENT") CartStore.isoPickup() else null,
+                        returnPlanAt = if (orderType == "RENT") CartStore.isoReturn() else null,
+                        securityDeposit = security,
+                        discountType = if (discountType == CartStore.DiscountType.AMOUNT) "amount" else "percentage",
+                        discountValue = discount,
+                        discountAmount = CartStore.discountAmount,
+                        collateralDetails = collateral.takeIf { it.isNotBlank() },
+                        depositsByProduct = deposits,
+                        pricingTypesByProduct = pricing,
+                        rentalDaysByProduct = daysByProduct,
+                    )
+                } else {
+                    ApiClient.get().createOrder(
+                        orderType = orderType,
+                        customerId = customer?.id,
+                        lines = payloadLines,
+                        totalAmount = CartStore.totalAmount,
+                        depositAmount = deposit,
+                        notes = listOfNotNull(
+                            notes.takeIf { it.isNotBlank() },
+                            collateral.takeIf { it.isNotBlank() }?.let { "Collateral: $it" },
+                        ).joinToString("\n").ifBlank { null },
+                        rentalDays = CartStore.rentalDaysInclusive(),
+                        pickupPlanAt = if (orderType == "RENT") CartStore.isoPickup() else null,
+                        returnPlanAt = if (orderType == "RENT") CartStore.isoReturn() else null,
+                        securityDeposit = security.takeIf { it > 0 },
+                        discountType = if (discountType == CartStore.DiscountType.AMOUNT) "amount" else "percentage",
+                        discountValue = discount.takeIf { it > 0 },
+                        discountAmount = CartStore.discountAmount.takeIf { it > 0 },
+                        depositsByProduct = deposits,
+                        pricingTypesByProduct = pricing,
+                        rentalDaysByProduct = daysByProduct,
+                    )
+                }
             }
             loading = false
             result.onSuccess {
@@ -316,7 +364,11 @@ fun CartCheckoutScreen(
             )
         },
         bottomBar = {
-            AppCard(Modifier.fillMaxWidth()) {
+            AppCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
+            ) {
                 Column(
                     Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -343,7 +395,7 @@ fun CartCheckoutScreen(
                         }
                         SummaryLine(
                             discountSummaryLabel,
-                            formatMoney(CartStore.discountAmount),
+                            formatMoney(discountAmount),
                             highlighted = true,
                             onClick = {
                                 numericText = discount.toLong().toString()
@@ -368,14 +420,18 @@ fun CartCheckoutScreen(
                         ) {
                             Text(
                                 stringResource(
-                                    if (previewMode) R.string.create_order else R.string.preview,
+                                    when {
+                                        !previewMode -> R.string.preview
+                                        editingOrderId != null -> R.string.edit_order
+                                        else -> R.string.create_order
+                                    },
                                 ),
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                             )
                             Text(
-                                "(${formatQuantity(CartStore.itemCount)})  ${formatMoney(CartStore.totalAmount)}",
+                                "(${formatQuantity(itemCount)})  ${formatMoney(totalAmount)}",
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
@@ -397,8 +453,9 @@ fun CartCheckoutScreen(
             securityDeposit = security,
             collateral = collateral,
             notes = notes,
-            discount = CartStore.discountAmount,
-            total = CartStore.totalAmount,
+            discount = discountAmount,
+            subtotal = subtotal,
+            total = totalAmount,
         ) else Column(
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -447,6 +504,7 @@ fun CartCheckoutScreen(
                 }
             } else {
                 lines.forEach { line ->
+                    key(line.product.id) {
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { target ->
                             if (target == SwipeToDismissBoxValue.EndToStart) {
@@ -605,6 +663,7 @@ fun CartCheckoutScreen(
                             }
                             }
                         }
+                    }
                     }
                 }
             }
@@ -1019,12 +1078,13 @@ fun CartCheckoutScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
                     .padding(bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -1046,7 +1106,9 @@ fun CartCheckoutScreen(
                 }
 
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                 ) {
@@ -1089,6 +1151,8 @@ fun CartCheckoutScreen(
                     }
                 }
 
+                // Full sheet width for the grid: vi week starts Mon so Sunday is the
+                // last column — extra horizontal padding clips/squeezes that column.
                 DateRangePicker(
                     state = rangeState,
                     modifier = Modifier.fillMaxWidth().height(420.dp),
@@ -1105,7 +1169,9 @@ fun CartCheckoutScreen(
                     ),
                 )
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     TextButton(
@@ -1154,6 +1220,7 @@ private fun CartPreviewDetailContent(
     collateral: String,
     notes: String,
     discount: Double,
+    subtotal: Double,
     total: Double,
 ) {
     val dateFormatter = remember { DisplayDateFormatter }
@@ -1207,7 +1274,13 @@ private fun CartPreviewDetailContent(
                         Column(Modifier.weight(1f)) {
                             Text(line.product.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "${formatQuantity(line.quantity)} × ${formatMoney(line.unitPrice)}",
+                                orderLinePricingText(
+                                    quantity = line.quantity,
+                                    unitPrice = line.unitPrice,
+                                    pricingType = line.pricingType,
+                                    rentalDays = line.rentalDays,
+                                    orderType = orderType,
+                                ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -1248,7 +1321,7 @@ private fun CartPreviewDetailContent(
         PreviewSectionLabel(stringResource(R.string.summary))
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.padding(horizontal = 16.dp)) {
-                PreviewValueRow(stringResource(R.string.subtotal), formatMoney(CartStore.subtotal), true)
+                PreviewValueRow(stringResource(R.string.subtotal), formatMoney(subtotal), true)
                 androidx.compose.material3.HorizontalDivider()
                 PreviewValueRow(stringResource(R.string.discount), formatMoney(discount), true)
                 androidx.compose.material3.HorizontalDivider()

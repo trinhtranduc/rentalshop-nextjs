@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
@@ -51,6 +53,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,11 +62,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,6 +93,43 @@ fun AppCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         content = { content() },
     )
+}
+
+/**
+ * Phone row with iOS-style mask/unmask (`09xxxx099` + eye toggle).
+ * [onToggle] should stop card navigation — nest this inside a clickable card carefully.
+ */
+@Composable
+fun MaskedPhoneRow(
+    phone: String,
+    revealed: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val trimmed = phone.trim()
+    if (trimmed.isEmpty()) return
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = if (revealed) trimmed else maskedPhoneNumber(trimmed),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Icon(
+            imageVector = if (revealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(18.dp)
+                .clickable(onClick = onToggle),
+        )
+    }
 }
 
 @Composable
@@ -194,11 +238,7 @@ fun AppInputField(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        RequiredFieldLabel(text = label)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -263,6 +303,40 @@ fun AppInputField(
             }
         }
     }
+}
+
+/**
+ * iOS NewProductViewController colors the `*` in required titles with actionDanger.
+ * Keep the rest of the label on the normal onSurface color.
+ */
+@Composable
+fun RequiredFieldLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium.copy(
+        fontWeight = FontWeight.Medium,
+    ),
+) {
+    val annotated = remember(text) {
+        buildAnnotatedString {
+            val star = text.indexOf('*')
+            if (star < 0) {
+                append(text)
+            } else {
+                append(text.substring(0, star))
+                withStyle(SpanStyle(color = Color(0xFFE83F48))) {
+                    append('*')
+                }
+                if (star + 1 < text.length) append(text.substring(star + 1))
+            }
+        }
+    }
+    Text(
+        text = annotated,
+        modifier = modifier,
+        style = style,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 }
 
 /**
@@ -350,15 +424,23 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
         "CANCELLED" -> Color(0xFF8E2930)
         else -> MaterialTheme.colorScheme.secondary
     }
+    // Match iOS OrderStatusBadgeMetrics: ~10sp bold, 9×5 insets, 12pt corner, min ~26dp.
     Box(
-        modifier = modifier.background(background, CircleShape).padding(horizontal = 12.dp, vertical = 7.dp),
+        modifier = modifier
+            .heightIn(min = 26.dp)
+            .background(background, RoundedCornerShape(12.dp))
+            .padding(horizontal = 9.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             status,
             color = Color.White,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                lineHeight = 12.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            maxLines = 1,
         )
     }
 }
@@ -408,10 +490,10 @@ fun RankingCard(
             ) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Column(Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleLarge)
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

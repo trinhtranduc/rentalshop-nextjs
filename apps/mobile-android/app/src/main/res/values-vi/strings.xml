@@ -92,6 +92,7 @@
     <string name="subscription_restore_none">Không tìm thấy gói đang hoạt động để khôi phục.</string>
     <string name="subscription_status_error">Không tải được trạng thái gói.</string>
     <string name="subscription_offerings_error">Không tải được gói từ cửa hàng.</string>
+    <string name="subscription_sdk_not_configured">Thanh toán trong ứng dụng chưa được cấu hình. Thêm khóa API RevenueCat cho Android rồi build lại.</string>
     <string name="subscription_no_plans">Chưa có gói nào</string>
     <string name="subscription_plans_store_pending">Chưa tải được gói từ cửa hàng. Hoàn tất cấu hình subscription trên App Store rồi thử lại.</string>
     <string name="merchant_label">Merchant: %1$s</string>
@@ -144,6 +145,9 @@
     <string name="payment_qr">QR thanh toán</string>
     <string name="ready_to_deliver">Sẵn sàng giao</string>
     <string name="delete_order">Xóa đơn</string>
+    <string name="delete_order_confirmation">Bạn có chắc muốn xóa đơn hàng này? Thao tác không thể hoàn tác.</string>
+    <string name="cancel_order">Hủy đơn hàng</string>
+    <string name="cancel_order_confirmation">Bạn có muốn hủy đơn hàng này?</string>
     <string name="call_customer">Gọi khách</string>
     <string name="camera_scan">Quét camera</string>
     <string name="manual_entry">Nhập tay</string>
@@ -163,6 +167,8 @@
     <string name="test_print">In thử</string>
     <string name="edit_store">Sửa cửa hàng</string>
     <string name="new_user">Nhân viên mới</string>
+    <string name="add_user">Thêm nhân viên</string>
+    <string name="role">Vai trò</string>
     <string name="change_password">Đổi mật khẩu</string>
     <string name="availability_check">Kiểm tra lịch sản phẩm</string>
     <string name="find_order">Tìm đơn</string>
@@ -187,6 +193,8 @@
     <string name="remaining">Còn lại</string>
     <string name="check_availability">Kiểm tra lịch</string>
     <string name="edit_order">Sửa đơn</string>
+    <string name="update_order">Cập nhật đơn</string>
+    <string name="swipe_update_order">Sửa đơn</string>
     <string name="empty_day_orders">Không có đơn trong ngày này</string>
     <string name="period_range">Kỳ: %1$s → %2$s</string>
     <string name="period_revenue">Doanh thu</string>
@@ -212,6 +220,9 @@
     <string name="collect_collateral_documents">Thu giấy tờ thế chân</string>
     <string name="return_collateral_documents">Trả giấy tờ thế chân</string>
     <string name="payment_method">Phương thức thanh toán</string>
+    <string name="payment_method_cash">Tiền mặt</string>
+    <string name="payment_method_transfer">Chuyển khoản</string>
+    <string name="show_payment_qr">Hiện mã QR chuyển khoản</string>
     <string name="confirm">Xác nhận</string>
     <string name="scan_to_pay">Quét mã để thanh toán</string>
     <string name="bank_name">Ngân hàng</string>
@@ -223,6 +234,10 @@
     <string name="qr_saved">Đã lưu ảnh QR vào thư mục Pictures của ứng dụng</string>
     <string name="rent">Thuê</string>
     <string name="sale">Bán</string>
+    <string name="orders_rent">Đơn Thuê</string>
+    <string name="orders_sale">Đơn bán</string>
+    <string name="sort_book_date">Ngày tạo</string>
+    <string name="sort_pickup_date">Ngày thuê</string>
     <string name="product_image">Ảnh sản phẩm</string>
     <string name="available_short">Có sẵn</string>
     <string name="product_actions">Thao tác sản phẩm</string>
@@ -310,7 +325,7 @@
     <string name="order_notes">Ghi chú đơn hàng</string>
     <string name="add_notes_hint">Nhập nội dung ghi chú…</string>
     <string name="add_photos">Thêm hình ảnh</string>
-    <string name="add_photos_limit">Chọn tối đa 6 ảnh</string>
+    <string name="add_photos_limit">Chọn tối đa 3 ảnh</string>
     <string name="existing_photos_count">%1$d ảnh hiện có</string>
     <string name="new_photo_number">Ảnh mới %1$d</string>
     <string name="tap_to_add">Nhấn để thêm</string>
@@ -332,16 +347,18 @@
     <string name="role_outlet_staff">Nhân viên chi nhánh</string>
     <string name="active">Đang hoạt động</string>
     <string name="inactive">Đã khóa</string>
+    <string name="active_badge">Hoạt động</string>
+    <string name="inactive_badge">Đã khóa</string>
     <string name="all">Tất cả</string>
-    <string name="status_reserved">Đã đặt</string>
-    <string name="status_pickuped">Đã nhận</string>
+    <string name="status_reserved">Mới cọc</string>
+    <string name="status_pickuped">Đang thuê</string>
     <string name="status_returned">Đã trả</string>
     <string name="status_completed">Hoàn thành</string>
     <string name="status_cancelled">Đã hủy</string>
     <string name="order_search_hint">Mã đơn, tên, số điện thoại…</string>
     <string name="phone_visible">Đang hiển thị số điện thoại</string>
     <string name="item_count">%1$d sản phẩm</string>
-    <string name="book_date">Ngày đặt</string>
+    <string name="book_date">Ngày tạo</string>
     <string name="information">Thông tin</string>
     <string name="created_by">Người tạo đơn</string>
     <string name="date_information">Thông tin ngày</string>
@@ -380,13 +397,16 @@
     <string name="rental_count_short">%1$d lượt thuê</string>
     <string name="revenue_growth">Tăng trưởng doanh thu</string>
     <string name="order_growth">Tăng trưởng đơn hàng</string>
-    <string name="operational_snapshot">Tình trạng vận hành</string>
-    <string name="operational_snapshot_subtitle">Trạng thái đơn trong kỳ này</string>
+    <string name="operational_snapshot">Tình hình vận hành</string>
+    <string name="operational_snapshot_subtitle">Trạng thái đơn và dòng tiền cọc trong kỳ</string>
+    <string name="snapshot_new_rentals">Đơn thuê mới</string>
+    <string name="deposit_held">Cọc đang giữ</string>
+    <string name="deposit_due">Cọc cần trả</string>
     <string name="reserved">Đã đặt</string>
-    <string name="in_progress">Đang thực hiện</string>
+    <string name="in_progress">Đang thuê</string>
     <string name="picked_up">Đã lấy</string>
     <string name="returned">Đã trả</string>
-    <string name="completed">Hoàn tất</string>
+    <string name="completed">Hoàn thành</string>
     <string name="cancelled">Đã hủy</string>
     <string name="ok">Đồng ý</string>
     <string name="error">Lỗi</string>
@@ -398,6 +418,8 @@
     <string name="order_validation_fallback">Vui lòng kiểm tra khách hàng, ngày thuê, số lượng, giá và các thông tin bắt buộc khác.</string>
     <string name="daily_price_formula">%1$s sản phẩm × %2$s ngày × %3$s</string>
     <string name="fixed_price_formula">%1$s sản phẩm × %2$s</string>
+    <!-- iOS ProductPreviewCell: "2 × 50,000 /ngày thuê × 3 ngày" -->
+    <string name="order_item_daily_calc">%1$s × %2$s /ngày thuê × %3$s ngày</string>
     <string name="order_preview">Xem trước đơn hàng</string>
     <string name="discount_label_percent">Giảm giá (%1$s%%)</string>
     <string name="discount_label_amount">Giảm giá (%1$s)</string>
