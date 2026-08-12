@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API, USER_ROLE, PAYMENT_STATUS} from '@rentalshop/constants';
+import {API, USER_ROLE, PAYMENT_STATUS, PLATFORM_OPS_ROLES} from '@rentalshop/constants';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
