@@ -135,9 +135,12 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       return { orders: ordersData, totalPages };
     },
     enabled: !!productId, // Only fetch if productId exists
-    staleTime: 30000, // 30 seconds cache
+    staleTime: 0, // Always treat as stale — nested under product detail fetch
     cacheTime: 300000, // 5 minutes
-    refetchOnMount: false, // Don't refetch on mount if cache is fresh
+    // Must refetch on mount: this view mounts only after product detail loads,
+    // and sharing useDedupedApi's global cache previously returned product data
+    // as "orders" when keys collided. Always hit the orders API here.
+    refetchOnMount: true,
     refetchOnWindowFocus: false
   });
 
