@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
-import { API, SUBSCRIPTION_STATUS, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import type { ClientPlatform } from '@rentalshop/types';
 import type { Role, Permission, Resource } from './permissions';
@@ -574,7 +574,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     // SUBSCRIPTION STATUS CHECK
     // ============================================================================
     // Check if merchant has active subscription (skip for ADMIN users)
-    if (user.role !== 'ADMIN' && user.role !== 'ARTICLE' && user.merchantId) {
+    if (!isSystemLevelUserRole(user.role) && user.merchantId) {
       const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId, request);
       if (!subscriptionCheck.success) {
         return {
@@ -658,7 +658,7 @@ export function getUserScope(user: AuthUser): UserScope {
   return {
     merchantId,
     outletId,
-    canAccessSystem: user.role === USER_ROLE.ADMIN
+    canAccessSystem: isPlatformOpsRole(user.role)
   };
 }
 
@@ -690,10 +690,10 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
     return [];
   }
 
-  // ADMIN users always use default permissions (no merchant-specific customization)
-  if (normalizedRole === 'ADMIN') {
+  // ADMIN / OPS users always use default permissions (no merchant-specific customization)
+  if (normalizedRole === 'ADMIN' || normalizedRole === 'OPS') {
     const permissions = ROLE_PERMISSIONS[normalizedRole] || [];
-    console.log('🔍 ADMIN permissions:', {
+    console.log(`🔍 ${normalizedRole} permissions:`, {
       count: permissions.length,
       permissions: permissions
     });
@@ -916,6 +916,7 @@ function normalizeRole(role: string | undefined | null): Role | null {
   if (!role) return null;
   const upper = role.toUpperCase();
   if (upper === 'ADMIN') return 'ADMIN';
+  if (upper === 'OPS') return 'OPS';
   if (upper === 'ARTICLE') return 'ARTICLE';
   if (upper === 'MERCHANT') return 'MERCHANT';
   if (upper === 'OUTLET_ADMIN') return 'OUTLET_ADMIN';
@@ -1182,7 +1183,7 @@ export function validateMerchantOutletAccess(
   }
 
   // Validate that non-admin users have merchant association
-  if (user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.ARTICLE && !userScope.merchantId) {
+  if (!isSystemLevelUserRole(user.role) && !userScope.merchantId) {
     return {
       authorized: false,
       error: NextResponse.json(
@@ -1328,7 +1329,7 @@ export async function validateMerchantAccess(
   }
 
   // Validate merchant association requirement (non-admin users must have merchantId)
-  if (user.role !== USER_ROLE.ADMIN && user.role !== USER_ROLE.ARTICLE && !userScope.merchantId) {
+  if (!isSystemLevelUserRole(user.role) && !userScope.merchantId) {
     return {
       valid: false,
       error: NextResponse.json(

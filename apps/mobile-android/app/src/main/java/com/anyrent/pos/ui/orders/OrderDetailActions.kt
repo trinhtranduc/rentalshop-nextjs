@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.domain.payment.PaymentPolicy
@@ -38,6 +39,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+/**
+ * iOS [OrderViewModel.availableActions] cancel rules:
+ * - SALE + COMPLETED + canManageOrders
+ * - RENT + RESERVED + canManageOrders
+ * Cancel is never a primary footer button — only under ⋯.
+ */
+fun canCancelOrder(orderType: String, status: String): Boolean {
+    if (!PermissionManager.canManageOrders()) return false
+    val type = orderType.uppercase()
+    val st = status.uppercase()
+    return (type == "SALE" && st == "COMPLETED") || (type == "RENT" && st == "RESERVED")
+}
+
+/** iOS: delete only for CANCELLED + merchant/outlet admin (or system admin). */
+fun canDeleteCancelledOrder(status: String): Boolean =
+    status.equals("CANCELLED", ignoreCase = true) && PermissionManager.canDeleteCancelledOrders()
 
 @Composable
 fun OrderActionPanel(
@@ -180,6 +198,7 @@ fun OrderActionPanel(
                 onDismiss = {
                     showPayment = false
                     pendingStatus = null
+                    paymentViewModel.clearQr()
                 },
                 onConfirm = {
                     val next = pendingStatus
@@ -200,6 +219,10 @@ fun OrderActionPanel(
                         }
                     }
                 },
+                qr = paymentState.qr,
+                loadingQr = paymentState.loadingQr,
+                onShowQr = paymentViewModel::loadQr,
+                onClearQr = paymentViewModel::clearQr,
             )
         }
 

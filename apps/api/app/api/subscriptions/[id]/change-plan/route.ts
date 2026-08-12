@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
-import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * Handler for changing subscription plan
@@ -142,7 +142,7 @@ async function handleChangePlan(
     }
 }
 
-const changePlanAuth = withAuthRoles(['ADMIN', 'MERCHANT'], {
+const changePlanAuth = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], {
   requireActiveSubscription: false,
 });
 

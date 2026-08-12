@@ -33,6 +33,7 @@ android {
         versionCode = 2
         versionName = "0.1.1"
 
+        // Overridden per buildType below.
         buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
         buildConfigField("String", "REVENUECAT_API_KEY", "\"${revenueCatKey("REVENUECAT_ANDROID_API_KEY")}\"")
     }
@@ -95,6 +96,7 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")

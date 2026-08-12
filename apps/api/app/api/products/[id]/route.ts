@@ -87,6 +87,29 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
   return { isValid: true };
 }
 
+function sniffProductImageMime(buffer: Buffer): string | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return 'image/png';
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  return null;
+}
+
 /**
  * GET /api/products/[id]
  * Get product by ID
@@ -309,29 +332,49 @@ export async function PUT(
       }
 
       // Upload image files
-      const imageFiles = formData.getAll('images') as File[];
+      const imageFiles = (formData.getAll('images') as unknown[]).filter(
+        (entry): entry is File =>
+          !!entry &&
+          typeof entry === 'object' &&
+          typeof (entry as File).arrayBuffer === 'function'
+      );
       let uploadedFiles: string[] = [];
       
       if (imageFiles.length > 0) {
         console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
         
-        for (const file of imageFiles) {
-          if (!file || file.size === 0) continue;
-          
-          // Validate image
-          const validation = validateImage(file);
+        for (const raw of imageFiles) {
+          const reportedSize = Number(raw.size || 0);
+          if (reportedSize > 0 && reportedSize < 100) continue;
+
+          const bytes = Buffer.from(new Uint8Array(await raw.arrayBuffer()));
+          if (bytes.length < 100) continue;
+
+          const sniffed = sniffProductImageMime(bytes);
+          const name = (raw.name || 'image_0.jpg').trim() || 'image_0.jpg';
+          const type =
+            sniffed ||
+            (raw.type === 'image/*' ? 'image/jpeg' : raw.type) ||
+            'image/jpeg';
+          const fakeFile = {
+            name: /\.(jpe?g|png|webp)$/i.test(name) ? name : `${name}.jpg`,
+            type,
+            size: bytes.length,
+          } as File;
+
+          const validation = validateImage(fakeFile);
           if (!validation.isValid) {
             return NextResponse.json(
-              ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
+              {
+                ...ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
+                error: validation.error || 'Invalid image',
+              },
               { status: 400 }
             );
           }
           
-          // Compress image
-          const bytes = await file.arrayBuffer();
-          const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+          const buffer = await compressImageTo1MB(bytes);
           
-          // Verify size after compression
           if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
             return NextResponse.json(
               ResponseBuilder.error('IMAGE_TOO_LARGE'),
@@ -339,8 +382,7 @@ export async function PUT(
             );
           }
           
-          // Upload to S3 staging
-          const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
+          const fileName = generateFileName(fakeFile.name.replace(/\.[^/.]+$/, '') || 'product-image');
           const stagingKey = generateStagingKey(fileName);
           const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
           
@@ -352,12 +394,12 @@ export async function PUT(
           });
           
           if (!uploadResult.success || !uploadResult.data) {
-            console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
+            console.error(`❌ Failed to upload ${fakeFile.name}:`, uploadResult.error);
             return buildImageUploadErrorResponse(uploadResult.error);
           }
           
           uploadedFiles.push(uploadResult.data.url);
-          console.log(`✅ Uploaded: ${file.name}`);
+          console.log(`✅ Uploaded: ${fakeFile.name}`);
         }
       }
       

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -54,12 +55,14 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppPrimaryButton
-import com.anyrent.pos.ui.common.AppSecondaryButton
+import com.anyrent.pos.ui.common.RequiredFieldLabel
+import com.anyrent.pos.ui.common.FullScreenImagePreview
+import com.anyrent.pos.ui.common.copyUriToCacheFile
+import com.anyrent.pos.ui.common.fileToProductJpegFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,26 +83,37 @@ fun ProductFormScreen(
     // Category UI hidden — keep existing id on edit so update does not clear it.
     val categoryId = initial?.categoryId
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    // Local cache copy — gallery URIs often stop loading after the picker closes.
+    var pickedImageFile by remember { mutableStateOf<File?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     var moreOptions by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
+    var previewImage by remember { mutableStateOf<Any?>(null) }
     val scope = rememberCoroutineScope()
     val canManage = PermissionManager.canManageProducts()
 
-    // Prefer newly picked local URI; fall back to existing product image on edit.
-    val previewModel: Any? = imageUri ?: initial?.imageUrl?.takeIf { it.isNotBlank() }
+    // Prefer newly picked local file; fall back to existing product image on edit.
+    val previewModel: Any? = pickedImageFile
+        ?: imageUri
+        ?: initial?.imageUrl?.takeIf { it.isNotBlank() }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) imageUri = uri
+        if (uri == null) return@rememberLauncherForActivityResult
+        imageUri = uri
+        scope.launch {
+            val copied = withContext(Dispatchers.IO) {
+                runCatching { context.copyUriToCacheFile(uri, prefix = "product_pick") }.getOrNull()
+            }
+            if (copied == null) {
+                error = "Could not read selected image"
+            } else {
+                pickedImageFile?.let { runCatching { it.delete() } }
+                pickedImageFile = copied
+                error = null
+            }
+        }
     }
-
-    fun uriToFile(uri: Uri): File? = runCatching {
-        val input = context.contentResolver.openInputStream(uri) ?: return null
-        val file = File(context.cacheDir, "product_${System.currentTimeMillis()}.jpg")
-        FileOutputStream(file).use { out -> input.copyTo(out) }
-        file
-    }.getOrNull()
 
     fun saveProduct() {
         submitted = true
@@ -112,7 +126,21 @@ fun ProductFormScreen(
         loading = true
         error = null
         scope.launch {
-            val file = imageUri?.let { uriToFile(it) }
+            val fileResult = withContext(Dispatchers.IO) {
+                runCatching {
+                    val source = pickedImageFile
+                        ?: imageUri?.let { context.copyUriToCacheFile(it, prefix = "product_pick") }
+                    source?.let { raw ->
+                        // iOS: compressToTargetSize(targetSizeKB: 100) then upload as image/jpeg.
+                        fileToProductJpegFile(raw, context.cacheDir)
+                    }
+                }
+            }
+            val file = fileResult.getOrElse {
+                loading = false
+                error = it.message ?: "Could not read selected image"
+                return@launch
+            }
             val result = withContext(Dispatchers.IO) {
                 if (initial == null) {
                     ApiParity.createProductFull(
@@ -127,7 +155,11 @@ fun ProductFormScreen(
                 }
             }
             loading = false
-            result.onSuccess { onSaved() }.onFailure { error = it.message }
+            result.onSuccess {
+                pickedImageFile?.let { runCatching { it.delete() } }
+                file?.let { runCatching { it.delete() } }
+                onSaved()
+            }.onFailure { error = it.message }
         }
     }
 
@@ -160,6 +192,7 @@ fun ProductFormScreen(
                 Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 AppPrimaryButton(
@@ -190,8 +223,8 @@ fun ProductFormScreen(
                     Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        stringResource(R.string.product_image_required),
+                    RequiredFieldLabel(
+                        text = stringResource(R.string.product_image_required),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Box(
@@ -202,7 +235,14 @@ fun ProductFormScreen(
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
                             )
-                            .clickable { picker.launch("image/*") },
+                            .clickable {
+                                if (previewModel != null) {
+                                    // Tap photo → full-screen view (like iOS product image viewer).
+                                    previewImage = previewModel
+                                } else {
+                                    picker.launch("image/*")
+                                }
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         if (previewModel != null) {
@@ -212,7 +252,7 @@ fun ProductFormScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
                             )
-                            // Dim + camera hint so user knows tap still changes the photo.
+                            // Dim + camera hint so user knows camera icon changes the photo.
                             Box(
                                 Modifier
                                     .fillMaxSize()
@@ -229,7 +269,8 @@ fun ProductFormScreen(
                                         MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                                         RoundedCornerShape(8.dp),
                                     )
-                                    .padding(5.dp),
+                                    .padding(5.dp)
+                                    .clickable { picker.launch("image/*") },
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         } else {
@@ -326,22 +367,14 @@ fun ProductFormScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-
-            if (initial != null && canManage) {
-                AppSecondaryButton(
-                    text = stringResource(R.string.delete),
-                    onClick = {
-                        scope.launch {
-                            loading = true
-                            val result = withContext(Dispatchers.IO) { ApiParity.deleteProduct(initial.id) }
-                            loading = false
-                            result.onSuccess { onSaved() }.onFailure { error = it.message }
-                        }
-                    },
-                    enabled = !loading,
-                )
-            }
         }
+    }
+
+    previewImage?.let { model ->
+        FullScreenImagePreview(
+            model = model,
+            onDismiss = { previewImage = null },
+        )
     }
 }
 

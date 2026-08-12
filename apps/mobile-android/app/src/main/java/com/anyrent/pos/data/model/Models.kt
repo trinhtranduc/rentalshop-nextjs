@@ -86,6 +86,9 @@ data class OrderItem(
     val totalPrice: Double,
     val imageUrl: String? = null,
     val note: String? = null,
+    val deposit: Double = 0.0,
+    val rentalDays: Int = 1,
+    val pricingType: String = "FIXED",
 )
 
 data class OrderDetail(
@@ -104,6 +107,8 @@ data class OrderDetail(
     val discountAmount: Double = 0.0,
     /** Store name on the order — preferred over SessionStore for receipt header. */
     val outletName: String? = null,
+    /** Nested customer from GET /api/orders/:id — preferred when editing into cart. */
+    val customer: Customer? = null,
 )
 
 data class PaymentEntry(

@@ -3,10 +3,10 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 // Force TypeScript refresh - address field added
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API, SUBSCRIPTION_STATUS, USER_ROLE, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
+import {API, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
 
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     // Parse query parameters

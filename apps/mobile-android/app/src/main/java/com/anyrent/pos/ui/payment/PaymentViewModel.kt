@@ -50,7 +50,14 @@ class PaymentViewModel(
     }
 
     fun selectMethod(method: PaymentMethod) {
-        if (!_state.value.submitting) _state.update { it.copy(selectedMethod = method) }
+        if (_state.value.submitting) return
+        _state.update {
+            it.copy(
+                selectedMethod = method,
+                // Drop QR when leaving transfer so cash confirm doesn't keep an old QR open.
+                qr = if (method == PaymentMethod.TRANSFER) it.qr else null,
+            )
+        }
     }
 
     fun submit(onSuccess: () -> Unit) {

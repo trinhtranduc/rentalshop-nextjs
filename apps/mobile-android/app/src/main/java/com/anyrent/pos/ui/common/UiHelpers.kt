@@ -10,7 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.anyrent.pos.R
 import com.anyrent.shared.model.OrderStatusFlow
 import com.anyrent.shared.model.SharedOrderStatus
 import com.anyrent.shared.model.SharedOrderType
@@ -54,6 +56,16 @@ fun formatMoney(amount: Double): String = synchronized(commaNumberFormatter) {
 
 fun formatQuantity(value: Number): String = synchronized(commaNumberFormatter) {
     commaNumberFormatter.format(value)
+}
+
+/**
+ * Match iOS `String.maskedPhoneNumber`:
+ * `"0901234099"` → `"09xxxx099"`. Short values (≤5) stay unchanged.
+ */
+fun maskedPhoneNumber(phone: String): String {
+    val trimmed = phone.trim()
+    if (trimmed.length <= 5) return trimmed
+    return trimmed.take(2) + "xxxx" + trimmed.takeLast(3)
 }
 
 /**
@@ -116,4 +128,34 @@ fun orderStatusColor(status: String): Color = when (status.uppercase()) {
     "RETURNED", "COMPLETED" -> Color(0xFF16A34A)
     "CANCELLED" -> Color(0xFFDC2626)
     else -> Color(0xFF6B7280)
+}
+
+/**
+ * iOS `ProductPreviewCell.pricingCalculationText` — order detail / cart preview lines.
+ *
+ * - SALE / FIXED rent: `2 × 50,000`
+ * - DAILY rent: `2 × 50,000 /rental day × 3 day` (VI: `/ngày thuê × 3 ngày`)
+ */
+@Composable
+fun orderLinePricingText(
+    quantity: Int,
+    unitPrice: Double,
+    pricingType: String?,
+    rentalDays: Int?,
+    orderType: String,
+): String {
+    val qty = formatQuantity(quantity)
+    val price = formatMoney(unitPrice)
+    val base = "$qty × $price"
+    if (!orderType.equals("RENT", ignoreCase = true)) return base
+    if (pricingType.equals("DAILY", ignoreCase = true)) {
+        val days = (rentalDays ?: 1).coerceAtLeast(1)
+        return stringResource(
+            R.string.order_item_daily_calc,
+            qty,
+            price,
+            formatQuantity(days),
+        )
+    }
+    return base
 }

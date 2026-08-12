@@ -1,14 +1,15 @@
 package com.anyrent.pos.ui.settings
 
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,12 +37,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import androidx.compose.foundation.background
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
@@ -56,13 +61,6 @@ import com.anyrent.pos.ui.common.AppSecondaryButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material3.TextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,6 +146,7 @@ fun StoreInfoScreen(onBack: () -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surface)
+                        .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     AppPrimaryButton(
@@ -364,104 +363,159 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
     var role by remember { mutableStateOf(initial?.role ?: "OUTLET_STAFF") }
     var active by remember { mutableStateOf(initial?.isActive ?: true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (initial == null) stringResource(R.string.new_user) else stringResource(R.string.edit_user)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-            )
+    fun saveUser() {
+        if (firstName.isBlank() || (initial == null && email.isBlank())) {
+            error = "Name and email are required"
+            return
         }
-    ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppInputField(
-                value = firstName,
-                onValueChange = { firstName = it },
-                label = stringResource(R.string.first_name),
-            )
-            AppInputField(
-                value = lastName,
-                onValueChange = { lastName = it },
-                label = stringResource(R.string.last_name),
-            )
-            if (initial == null) {
-                AppInputField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = stringResource(R.string.email),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                )
-                AppInputField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = stringResource(R.string.password),
-                    visualTransformation = PasswordVisualTransformation(),
-                )
-                AppInputField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = stringResource(R.string.confirm_password),
-                    visualTransformation = PasswordVisualTransformation(),
-                )
-            }
-            Text(
-                "Role",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            )
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                listOf("OUTLET_ADMIN", "OUTLET_STAFF").forEach { roleKey ->
-                    AppFilterChip(
-                        label = roleDisplayValue(roleKey),
-                        selected = role == roleKey,
-                        onClick = { role = roleKey },
-                        modifier = Modifier.weight(1f),
-                    )
+        if (initial == null && (password.length < 6 || password != confirmPassword)) {
+            error = if (password.length < 6) "Password must contain at least 6 characters"
+            else "Passwords do not match"
+            return
+        }
+        loading = true
+        error = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                if (initial == null) {
+                    ApiParity.createUser(firstName, lastName, email, password, role, SessionStore.outletId)
+                } else {
+                    ApiParity.updateUser(initial.id, firstName, lastName, role, active, SessionStore.outletId)
                 }
             }
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.active),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Switch(checked = active, onCheckedChange = { active = it })
-            }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            AppPrimaryButton(
-                text = stringResource(R.string.save),
-                onClick = {
-                    if (firstName.isBlank() || email.isBlank() && initial == null) {
-                        error = "Name and email are required"
-                        return@AppPrimaryButton
-                    }
-                    if (initial == null && (password.length < 6 || password != confirmPassword)) {
-                        error = if (password.length < 6) "Password must contain at least 6 characters"
-                        else "Passwords do not match"
-                        return@AppPrimaryButton
-                    }
-                    scope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            if (initial == null) {
-                                ApiParity.createUser(firstName, lastName, email, password, role, SessionStore.outletId)
-                            } else {
-                                ApiParity.updateUser(initial.id, firstName, lastName, role, active, SessionStore.outletId)
-                            }
-                        }
-                        result.onSuccess { onSaved() }.onFailure { error = it.message }
+            loading = false
+            result.onSuccess { onSaved() }.onFailure { error = it.message }
+        }
+    }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            TopAppBar(
+                // Sheet is not under the status bar — default TopAppBar insets push the title down.
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                title = {
+                    Text(
+                        if (initial == null) stringResource(R.string.new_user)
+                        else stringResource(R.string.edit_user),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                     }
                 },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
+        },
+        bottomBar = {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                AppPrimaryButton(
+                    text = if (loading) stringResource(R.string.loading)
+                    else if (initial == null) stringResource(R.string.add_user)
+                    else stringResource(R.string.save),
+                    onClick = ::saveUser,
+                    enabled = !loading,
+                )
+            }
+        },
+    ) { padding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    AppInputField(
+                        value = firstName,
+                        onValueChange = { firstName = it },
+                        label = stringResource(R.string.first_name),
+                    )
+                    AppInputField(
+                        value = lastName,
+                        onValueChange = { lastName = it },
+                        label = stringResource(R.string.last_name),
+                    )
+                    if (initial == null) {
+                        AppInputField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = stringResource(R.string.email),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        )
+                        AppInputField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = stringResource(R.string.password),
+                            visualTransformation = PasswordVisualTransformation(),
+                        )
+                        AppInputField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = stringResource(R.string.confirm_password),
+                            visualTransformation = PasswordVisualTransformation(),
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.role),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf("OUTLET_ADMIN", "OUTLET_STAFF").forEach { roleKey ->
+                            AppFilterChip(
+                                label = roleDisplayValue(roleKey),
+                                selected = role == roleKey,
+                                onClick = { role = roleKey },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    if (initial != null) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                stringResource(R.string.active),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Switch(checked = active, onCheckedChange = { active = it })
+                        }
+                    }
+                    error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
         }
     }
 }

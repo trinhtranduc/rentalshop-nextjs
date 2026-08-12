@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           <LanguageSwitcher variant="compact" />
         </div>
         <p className="text-text-secondary mb-8">
-          {isVi ? 'Cập nhật lần cuối: 29 tháng 11, 2025' : 'Last updated: November 29, 2025'}
+          {isVi ? 'Cập nhật lần cuối: 9 tháng 8, 2026' : 'Last updated: August 9, 2026'}
         </p>
 
         <div className="bg-bg-card border border-border rounded-xl p-6 space-y-8">
@@ -180,6 +180,11 @@ export default function PrivacyPage() {
                 {isVi
                   ? 'Tôi chỉ chia sẻ dữ liệu trong các trường hợp: với nhà cung cấp hạ tầng kỹ thuật (hosting, database, email) để vận hành ứng dụng; khi pháp luật Việt Nam yêu cầu; hoặc khi cần thiết để bảo vệ quyền lợi hợp pháp của tôi (ví dụ: xử lý lạm dụng, gian lận).'
                   : 'I only share data in these cases: with technical infrastructure providers (hosting, database, email) to operate the app; when required by Vietnamese law; or when necessary to protect my legitimate rights (for example, handling abuse or fraud).'}
+              </p>
+              <p className="text-text-tertiary text-sm">
+                {isVi
+                  ? 'Các bên thứ ba hiện đang được sử dụng bao gồm: Apple Inc. (xử lý thanh toán qua App Store), RevenueCat Inc. (quản lý đăng ký in-app), Railway/Vercel (hosting), Cloudflare (CDN và bảo mật).'
+                  : 'Third-party services currently in use include: Apple Inc. (payment processing via App Store), RevenueCat Inc. (in-app subscription management), Railway/Vercel (hosting), Cloudflare (CDN and security).'}
               </p>
             </div>
           </section>

@@ -14,6 +14,7 @@ import {
   calculateExtensionTotal,
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * Calculate extension price for a subscription
@@ -230,7 +231,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES])(async (request) => {
     return handleCalculateExtensionPrice(request, { params });
   })(request);
 }

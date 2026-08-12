@@ -151,6 +151,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Image search
   'NO_IMAGE_FILE': 'No image file provided',
   'IMAGE_VALIDATION_FAILED': 'Invalid or unsupported image file',
+  'IMAGE_TOO_LARGE': 'Image is too large. Please choose a smaller photo.',
+  'IMAGE_UPLOAD_FAILED': 'Image upload failed',
+  'UPLOAD_IMAGE_FAILED': 'Image upload failed',
+  'NOTES_IMAGES_UPLOAD_FAILED': 'Notes images upload failed',
+  'VALIDATION_ERROR': 'Validation failed',
   'INVALID_LIMIT': 'Invalid limit parameter',
   'INVALID_MIN_SIMILARITY': 'Invalid minimum similarity parameter',
   'SEARCH_FAILED':

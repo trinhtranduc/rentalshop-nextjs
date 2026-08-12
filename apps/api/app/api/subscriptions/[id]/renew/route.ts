@@ -3,7 +3,7 @@ import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/renew
@@ -19,7 +19,7 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT], {
+  return withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], {
     requireActiveSubscription: false,
   })(async (request, { user, userScope }) => {
     try {

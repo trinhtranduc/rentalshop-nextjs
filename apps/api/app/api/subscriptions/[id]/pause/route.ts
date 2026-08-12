@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, pauseSubscription } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/pause
@@ -16,7 +16,7 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(subscriptionId)) {

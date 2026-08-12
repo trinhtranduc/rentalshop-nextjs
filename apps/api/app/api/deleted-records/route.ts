@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 type EntityType = 'User' | 'Customer' | 'Order';
 
@@ -9,7 +10,7 @@ type EntityType = 'User' | 'Customer' | 'Order';
  * GET /api/deleted-records - List soft-deleted records by entity type
  * ADMIN only; returns deleted users, customers, orders (with deletedAt set)
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     const entityType = (searchParams.get('entityType') || 'User') as EntityType;

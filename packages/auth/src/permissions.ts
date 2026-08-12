@@ -68,8 +68,11 @@ export type Permission =
   // Billing & Plans
   | 'billing.manage'
   | 'billing.view'
+  | 'subscriptions.manage'
+  | 'subscriptions.view'
   
-  // Bank Account Management
+  // Referrals / Affiliate
+  | 'referrals.view'
   | 'bankAccounts.manage'
   | 'bankAccounts.view'
 
@@ -90,6 +93,16 @@ export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' |
  */
 export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
   'ADMIN': [], // Admin has no restrictions
+
+  'OPS': [
+    'system.view',
+    'merchant.view',
+    'billing.view',
+    'billing.manage',
+    'subscriptions.view',
+    'subscriptions.manage',
+    'referrals.view',
+  ],
 
   'ARTICLE': [
     'posts.view',
@@ -147,8 +160,31 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.view.system',
     'analytics.export',
     'billing.manage', 'billing.view',
+    'subscriptions.manage', 'subscriptions.view',
+    'referrals.view',
     'bankAccounts.manage', 'bankAccounts.view',
     'loyalty.view', 'loyalty.manage', 'loyalty.adjust'
+  ],
+  'OPS': [
+    'system.view',
+    'merchant.view',
+    'outlet.view',
+    'users.view',
+    'products.view', 'products.export',
+    'orders.view', 'orders.update', 'orders.export',
+    'customers.view', 'customers.export',
+    'analytics.view',
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.view.system',
+    'analytics.export',
+    'billing.manage', 'billing.view',
+    'subscriptions.manage', 'subscriptions.view',
+    'referrals.view',
+    'loyalty.view',
   ],
   'ARTICLE': [
     'posts.manage',

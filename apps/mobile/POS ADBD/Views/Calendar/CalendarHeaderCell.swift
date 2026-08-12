@@ -167,21 +167,14 @@ class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelega
         // medium 15 on iPad / 14 on iPhone, primary colour.
         label.font = Utils.mediumFont(size: UIDevice.current.userInterfaceIdiom == .pad ? 15 : 14)
         label.textColor = .textPrimary
+        label.numberOfLines = 2
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return label
-    }()
-
-    private lazy var dotLabel: UILabel = {
-        let label = UILabel()
-        label.text = "•"
-        label.font = .bodyRegular(size: 14)
-        label.textColor = .textSecondary
         return label
     }()
 
     private lazy var phoneLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyRegular(size: 15)
+        label.font = .bodyRegular(size: 13)
         label.textColor = .textSecondary // gray, non-tappable — same as the sale order cell
         label.numberOfLines = 1
         return label
@@ -196,10 +189,28 @@ class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelega
         button.addTarget(self, action: #selector(togglePhoneReveal), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 24),
-            button.heightAnchor.constraint(equalToConstant: 24)
+            button.widthAnchor.constraint(equalToConstant: 18),
+            button.heightAnchor.constraint(equalToConstant: 18)
         ])
         return button
+    }()
+
+    private lazy var phoneRowStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [phoneLabel, phoneRevealButton])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 4
+        return stack
+    }()
+
+    private lazy var customerColumnStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [customerNameLabel, phoneRowStackView])
+        stack.axis = .vertical
+        stack.alignment = .leading
+        stack.spacing = 2
+        stack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        stack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return stack
     }()
 
     private var isCalendarPhoneRevealed = false
@@ -283,18 +294,14 @@ class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelega
         topRowStackView.addArrangedSubview(topSpacer)
         topRowStackView.addArrangedSubview(topTrailingStackView)
 
-        // Customer name • phone on the left, the "Ready to deliver" control pinned
-        // to the right — all on the same line.
+        // Customer block: name + phone (under name) on the left; ready-to-deliver on the right.
         let customerSpacer = UIView()
         customerSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         customerSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         preparedStackView.setContentHuggingPriority(.required, for: .horizontal)
         preparedStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        customerRowStackView.addArrangedSubview(customerNameLabel)
-        customerRowStackView.addArrangedSubview(dotLabel)
-        customerRowStackView.addArrangedSubview(phoneLabel)
-        customerRowStackView.addArrangedSubview(phoneRevealButton)
+        customerRowStackView.addArrangedSubview(customerColumnStackView)
         customerRowStackView.addArrangedSubview(customerSpacer)
         customerRowStackView.addArrangedSubview(preparedStackView)
 
@@ -410,9 +417,7 @@ class CalendarHeaderCell: UITableViewHeaderFooterView, UIGestureRecognizerDelega
         isCalendarPhoneRevealed = false
         phoneRevealButton.setImage(UIImage.revealEye(revealed: false), for: .normal)
         let isEmpty = (phone ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        dotLabel.isHidden = isEmpty
-        phoneLabel.isHidden = isEmpty
-        phoneRevealButton.isHidden = isEmpty
+        phoneRowStackView.isHidden = isEmpty
         updatePhoneLabel()
     }
 

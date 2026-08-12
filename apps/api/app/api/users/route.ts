@@ -9,7 +9,7 @@ import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
-import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { API, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -83,8 +83,8 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see users from their own merchant
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their merchant
-    if (user.role === USER_ROLE.ADMIN) {
-      // Admins can see all merchants unless specifically filtering by merchant
+    if (isPlatformOpsRole(user.role)) {
+      // Platform staff can see all merchants unless specifically filtering by merchant
       searchFilters.merchantId = q.merchantId;
     } else {
       // Non-admin users restricted to their merchant
@@ -100,8 +100,8 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // Outlet users can only see users from their assigned outlet
       searchFilters.outletId = userScope.outletId;
-    } else if (user.role === USER_ROLE.ADMIN) {
-      // Admins can see all users (no outlet filtering unless specified)
+    } else if (isPlatformOpsRole(user.role)) {
+      // Platform staff can see all users (no outlet filtering unless specified)
       searchFilters.outletId = q.outletId;
     }
 
@@ -141,8 +141,8 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
         searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
         delete searchFilters.role; // Remove single role filter since we're using roles array
         console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
-      } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.MERCHANT) {
-        // Outlet admin should not see ADMIN or MERCHANT users
+      } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.OPS || q.role === USER_ROLE.MERCHANT) {
+        // Outlet admin should not see system or merchant-level users
         console.log(`🚫 OUTLET_ADMIN user: Blocked request for ${q.role} users`);
         return NextResponse.json({
           success: true,
@@ -217,12 +217,26 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
       );
     }
 
+    if (
+      (parsed.data.role === USER_ROLE.ADMIN || parsed.data.role === USER_ROLE.OPS) &&
+      user.role !== USER_ROLE.ADMIN
+    ) {
+      return NextResponse.json(
+        ResponseBuilder.error('FORBIDDEN'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     // Smart assignment of merchantId and outletId based on role and user permissions
     let merchantId: number | undefined;
     let outletId: number | undefined;
 
-    if (parsed.data.role === USER_ROLE.ADMIN || parsed.data.role === USER_ROLE.ARTICLE) {
-      // ADMIN / ARTICLE: no merchant or outlet (system-level)
+    if (
+      parsed.data.role === USER_ROLE.ADMIN ||
+      parsed.data.role === USER_ROLE.OPS ||
+      parsed.data.role === USER_ROLE.ARTICLE
+    ) {
+      // System-level roles: no merchant or outlet (ADMIN may optionally assign scope)
       merchantId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.merchantId : undefined;
       outletId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.outletId : undefined;
     } else if (parsed.data.role === USER_ROLE.MERCHANT) {
@@ -266,7 +280,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
 
     // Check plan limits before creating user (only for non-ADMIN users)
     // Note: Only check if creating non-ADMIN user and merchantId exists
-    if (parsed.data.role !== USER_ROLE.ADMIN && parsed.data.role !== USER_ROLE.ARTICLE && merchantId) {
+    if (!isSystemLevelUserRole(parsed.data.role) && merchantId) {
       const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'users');
       if (planLimitError) return planLimitError;
     }
@@ -363,7 +377,18 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
 
     const targetRole = updateData.role ?? existingUser.role;
-    if (targetRole === USER_ROLE.ARTICLE) {
+
+    if (
+      (targetRole === USER_ROLE.ADMIN || targetRole === USER_ROLE.OPS) &&
+      user.role !== USER_ROLE.ADMIN
+    ) {
+      return NextResponse.json(
+        ResponseBuilder.error('FORBIDDEN'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
+    if (targetRole === USER_ROLE.ARTICLE || targetRole === USER_ROLE.OPS) {
       updateData.merchantId = null;
       updateData.outletId = null;
     }

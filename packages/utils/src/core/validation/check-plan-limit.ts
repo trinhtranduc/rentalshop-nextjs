@@ -3,7 +3,7 @@
 // ============================================================================
 // DRY helper for checking plan limits in API routes
 
-import { USER_ROLE } from '@rentalshop/constants';
+import { isSystemLevelUserRole } from '@rentalshop/constants';
 import { assertPlanLimit } from './plan-limits';
 import { logger } from '../logger';
 
@@ -33,8 +33,8 @@ export async function checkPlanLimitIfNeeded(
     entityType
   }, 'checkPlanLimitIfNeeded called');
 
-  // ADMIN / ARTICLE users bypass plan limit checks
-  if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ARTICLE) {
+  // System-level users bypass plan limit checks
+  if (isSystemLevelUserRole(user.role)) {
     logger.debug({ userRole: user.role, entityType }, 'System user: Bypassing plan limit check');
     return null;
   }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
@@ -262,24 +263,28 @@ fun AvailabilityScreen(
             containerColor = Color.White,
         ) {
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 20.dp),
+                Modifier.fillMaxWidth().padding(bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     stringResource(R.string.select_availability_date),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
                 DatePicker(
                     state = pickerState,
-                    modifier = Modifier.fillMaxWidth().size(width = 600.dp, height = 430.dp),
+                    // Full width: forcing 600.dp clipped the Sunday (last) column on vi locale.
+                    modifier = Modifier.fillMaxWidth().height(430.dp),
                     title = null,
                     headline = null,
                     showModeToggle = false,
                     colors = DatePickerDefaults.colors(containerColor = Color.White),
                 )
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     TextButton(

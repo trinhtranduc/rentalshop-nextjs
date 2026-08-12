@@ -92,6 +92,7 @@
     <string name="subscription_restore_none">No active subscription found to restore.</string>
     <string name="subscription_status_error">Could not load subscription status.</string>
     <string name="subscription_offerings_error">Could not load plans from the store.</string>
+    <string name="subscription_sdk_not_configured">In-app purchases are not configured. Add a RevenueCat Android API key and rebuild.</string>
     <string name="subscription_no_plans">No plans available</string>
     <string name="subscription_plans_store_pending">Plans are not available from the store yet. Complete App Store subscription setup, then try again.</string>
     <string name="merchant_label">Merchant: %1$s</string>
@@ -144,6 +145,9 @@
     <string name="payment_qr">Payment QR</string>
     <string name="ready_to_deliver">Ready to deliver</string>
     <string name="delete_order">Delete order</string>
+    <string name="delete_order_confirmation">Are you sure you want to delete this order? This action cannot be undone.</string>
+    <string name="cancel_order">Cancel order</string>
+    <string name="cancel_order_confirmation">Cancel this order?</string>
     <string name="call_customer">Call customer</string>
     <string name="camera_scan">Camera scan</string>
     <string name="manual_entry">Manual entry</string>
@@ -163,6 +167,9 @@
     <string name="test_print">Test print</string>
     <string name="edit_store">Edit store</string>
     <string name="new_user">New user</string>
+    <string name="add_user">Add user</string>
+    <string name="edit_user">Edit user</string>
+    <string name="role">Role</string>
     <string name="change_password">Change password</string>
     <string name="availability_check">Product availability</string>
     <string name="find_order">Find order</string>
@@ -187,6 +194,8 @@
     <string name="remaining">Remaining</string>
     <string name="check_availability">Check availability</string>
     <string name="edit_order">Edit order</string>
+    <string name="update_order">Update order</string>
+    <string name="swipe_update_order">Update order</string>
     <string name="empty_day_orders">No orders on this day</string>
     <string name="period_range">Period: %1$s → %2$s</string>
     <string name="period_revenue">Revenue</string>
@@ -212,6 +221,9 @@
     <string name="collect_collateral_documents">Collect collateral documents</string>
     <string name="return_collateral_documents">Return collateral documents</string>
     <string name="payment_method">Payment method</string>
+    <string name="payment_method_cash">Cash</string>
+    <string name="payment_method_transfer">Bank transfer</string>
+    <string name="show_payment_qr">Show transfer QR</string>
     <string name="confirm">Confirm</string>
     <string name="scan_to_pay">Scan to pay</string>
     <string name="bank_name">Bank</string>
@@ -223,6 +235,10 @@
     <string name="qr_saved">QR image saved to the app Pictures folder</string>
     <string name="rent">Rent</string>
     <string name="sale">Sale</string>
+    <string name="orders_rent">Rent</string>
+    <string name="orders_sale">Sale</string>
+    <string name="sort_book_date">Book date</string>
+    <string name="sort_pickup_date">Pickup date</string>
     <string name="product_image">Product image</string>
     <string name="available_short">Available</string>
     <string name="product_actions">Product actions</string>
@@ -310,7 +326,7 @@
     <string name="order_notes">Order notes</string>
     <string name="add_notes_hint">Add order notes here…</string>
     <string name="add_photos">Add photos</string>
-    <string name="add_photos_limit">Choose up to 6 images</string>
+    <string name="add_photos_limit">Choose up to 3 images</string>
     <string name="existing_photos_count">%1$d existing photos</string>
     <string name="new_photo_number">New photo %1$d</string>
     <string name="tap_to_add">Tap to add</string>
@@ -332,6 +348,8 @@
     <string name="role_outlet_staff">Outlet Staff</string>
     <string name="active">Active</string>
     <string name="inactive">Inactive</string>
+    <string name="active_badge">Active</string>
+    <string name="inactive_badge">Disabled</string>
     <string name="all">All</string>
     <string name="status_reserved">Reserved</string>
     <string name="status_pickuped">Picked up</string>
@@ -364,7 +382,6 @@
     <string name="disable_user">Disable user</string>
     <string name="delete_user">Delete user</string>
     <string name="delete_user_confirmation">Delete %1$s? This action cannot be undone.</string>
-    <string name="edit_user">Edit user</string>
     <string name="product_orders">Product orders</string>
     <string name="customer_orders">Customer orders</string>
     <string name="refresh">Refresh</string>
@@ -381,7 +398,10 @@
     <string name="revenue_growth">Revenue growth</string>
     <string name="order_growth">Order growth</string>
     <string name="operational_snapshot">Operational Snapshot</string>
-    <string name="operational_snapshot_subtitle">Status flow for this period</string>
+    <string name="operational_snapshot_subtitle">Status and deposit flow for this period</string>
+    <string name="snapshot_new_rentals">New rentals</string>
+    <string name="deposit_held">Deposit held</string>
+    <string name="deposit_due">Deposit due</string>
     <string name="reserved">Reserved</string>
     <string name="in_progress">In Progress</string>
     <string name="picked_up">Picked Up</string>
@@ -398,6 +418,8 @@
     <string name="order_validation_fallback">Please check the customer, rental dates, quantities, prices, and other required order information.</string>
     <string name="daily_price_formula">%1$s items × %2$s days × %3$s</string>
     <string name="fixed_price_formula">%1$s items × %2$s</string>
+    <!-- iOS ProductPreviewCell: "2 × 50,000 /rental day × 3 day" -->
+    <string name="order_item_daily_calc">%1$s × %2$s /rental day × %3$s day</string>
     <string name="order_preview">Order preview</string>
     <string name="discount_label_percent">Discount (%1$s%%)</string>
     <string name="discount_label_amount">Discount (%1$s)</string>

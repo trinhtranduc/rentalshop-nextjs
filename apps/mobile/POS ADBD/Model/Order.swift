@@ -786,6 +786,30 @@ struct OrderItem: Codable {
         let images: [String]?
         let rentPrice: Double?
         let deposit: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case id, name, barcode, images, rentPrice, deposit
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decodeIfPresent(Int.self, forKey: .id)
+            name = try container.decodeIfPresent(String.self, forKey: .name)
+            barcode = try container.decodeIfPresent(String.self, forKey: .barcode)
+            rentPrice = try container.decodeIfPresent(Double.self, forKey: .rentPrice)
+            deposit = try container.decodeIfPresent(Double.self, forKey: .deposit)
+            // product.images is Prisma Json — may be [String], stringified JSON, object, or null.
+            // Never fail OrderItem decoding because of an unexpected images shape.
+            if let array = try? container.decode([String].self, forKey: .images) {
+                images = array
+            } else if let raw = try? container.decode(String.self, forKey: .images),
+                      let data = raw.data(using: .utf8),
+                      let parsed = try? JSONDecoder().decode([String].self, from: data) {
+                images = parsed
+            } else {
+                images = nil
+            }
+        }
     }
     
     // Default initializer for manual creation
@@ -820,7 +844,14 @@ struct OrderItem: Codable {
         pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
         pricingOptionId = try container.decodeIfPresent(Int.self, forKey: .pricingOptionId)
         
-        let embedded = try container.decodeIfPresent(EmbeddedProduct.self, forKey: .product)
+        // Why not `try? decodeIfPresent`: that yields EmbeddedProduct??, and then
+        // `embedded?.id` is parsed as SwiftUI View.id (compile errors).
+        // Malformed nested product should not fail the whole OrderItem.
+        let embedded: EmbeddedProduct? = {
+            guard container.contains(.product) else { return nil }
+            if (try? container.decodeNil(forKey: .product)) == true { return nil }
+            return try? container.decode(EmbeddedProduct.self, forKey: .product)
+        }()
         
         // Product fields - handle missing fields gracefully
         productId = try container.decodeIfPresent(Int.self, forKey: .productId) ?? embedded?.id

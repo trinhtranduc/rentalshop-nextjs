@@ -114,10 +114,11 @@ export function usePermissions() {
         return false;
       }
       
-      // ✅ FALLBACK: ADMIN role has all permissions if permissions array is empty
-      // This handles cases where permissions haven't been set up yet
-      if (user.role === 'ADMIN' && (!permissions || permissions.length === 0)) {
-        return true; // Admin has all permissions by default
+    // OPS has explicit permissions from backend; ADMIN fallback when permissions array is empty
+      if ((user.role === 'ADMIN' || user.role === 'OPS') && (!permissions || permissions.length === 0)) {
+        if (user.role === 'ADMIN') {
+          return true;
+        }
       }
       
       // If no permissions array, deny (except for ADMIN above)
