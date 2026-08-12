@@ -376,6 +376,7 @@ export type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 // User validation schemas
 const userRoleEnum = z.enum([
   USER_ROLE.ADMIN,
+  USER_ROLE.OPS,
   USER_ROLE.ARTICLE,
   USER_ROLE.MERCHANT,
   USER_ROLE.OUTLET_ADMIN,

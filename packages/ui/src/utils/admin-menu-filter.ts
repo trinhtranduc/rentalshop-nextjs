@@ -35,6 +35,27 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
       }));
   }
 
+  if (userRole === 'OPS') {
+    const hidden = new Set([
+      SYSTEM_USERS_PATH,
+      '/sync',
+      '/plans',
+      BLOG_PREFIX,
+      MEDIA_PATH,
+    ]);
+    return items
+      .filter((item) => !hidden.has(item.href) && !isBlogPath(item.href))
+      .map((item) => {
+        if (item.href !== '/settings' || !item.subItems) {
+          return item;
+        }
+        return {
+          ...item,
+          subItems: item.subItems.filter((sub) => sub.href !== '/settings/admin'),
+        };
+      });
+  }
+
   if (userRole === 'MERCHANT') {
     return items.filter((item) => !isBlogPath(item.href) && item.href !== '/request-logs' && item.href !== SYSTEM_USERS_PATH);
   }

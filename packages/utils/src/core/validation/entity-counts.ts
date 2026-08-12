@@ -5,7 +5,7 @@
 
 import { prisma } from '@rentalshop/database';
 import { ApiError, ErrorCode } from '../errors';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, isSystemLevelUserRole } from '@rentalshop/constants';
 import { logger } from '../logger';
 
 export interface EntityCounts {
@@ -25,7 +25,7 @@ export async function countMerchantUsersForPlanLimit(merchantId: number): Promis
     where: {
       merchantId,
       deletedAt: null,
-      role: { notIn: [USER_ROLE.ADMIN, USER_ROLE.ARTICLE] },
+      role: { notIn: [USER_ROLE.ADMIN, USER_ROLE.OPS, USER_ROLE.ARTICLE] },
     },
   });
 }
@@ -51,7 +51,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<Entity
         role: u.role,
         isActive: u.isActive,
         deletedAt: u.deletedAt ? 'DELETED' : 'NOT_DELETED',
-        countsTowardLimit: u.role !== USER_ROLE.ADMIN && u.role !== USER_ROLE.ARTICLE && !u.deletedAt,
+        countsTowardLimit: !isSystemLevelUserRole(u.role) && !u.deletedAt,
       })),
     }, 'getCurrentEntityCounts - Merchant user details');
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET /api/referrals
@@ -12,7 +12,7 @@ import { USER_ROLE } from '@rentalshop/constants';
  *   - page: Page number (default: 1)
  *   - limit: Items per page (default: 20)
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRequest, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     const merchantId = searchParams.get('merchantId');

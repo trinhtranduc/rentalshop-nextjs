@@ -10,7 +10,7 @@ import {
   generateExcelFilename,
   type ExcelColumn
 } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
  * - startDate / endDate: ISO strings (required for custom period)
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request) => {
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'excel';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -17,7 +17,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/merchants/[id] - Looking for merchant with ID:', id);
 

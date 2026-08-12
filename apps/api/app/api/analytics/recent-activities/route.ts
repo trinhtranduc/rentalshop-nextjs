@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
   try {
 
     // Get query parameters

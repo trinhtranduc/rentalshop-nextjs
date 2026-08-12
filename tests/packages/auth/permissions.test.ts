@@ -5,7 +5,7 @@ import { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from '../../../packages/auth/s
 import type { Permission, Role } from '../../../packages/auth/src/permissions';
 
 describe('@rentalshop/auth - Permissions', () => {
-  const ALL_ROLES: Role[] = ['ADMIN', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
+  const ALL_ROLES: Role[] = ['ADMIN', 'OPS', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
 
   describe('ROLE_PERMISSIONS', () => {
     it('should define permissions for all roles', () => {
@@ -48,11 +48,24 @@ describe('@rentalshop/auth - Permissions', () => {
       expect(ROLE_PERMISSIONS['OUTLET_STAFF']).not.toContain('analytics.view.system');
     });
 
-    it('only ADMIN should have analytics.view.system', () => {
+    it('only ADMIN and OPS should have analytics.view.system', () => {
       expect(ROLE_PERMISSIONS['ADMIN']).toContain('analytics.view.system');
+      expect(ROLE_PERMISSIONS['OPS']).toContain('analytics.view.system');
       expect(ROLE_PERMISSIONS['MERCHANT']).not.toContain('analytics.view.system');
       expect(ROLE_PERMISSIONS['OUTLET_ADMIN']).not.toContain('analytics.view.system');
       expect(ROLE_PERMISSIONS['OUTLET_STAFF']).not.toContain('analytics.view.system');
+    });
+
+    it('OPS should NOT have system.manage or users.manage', () => {
+      expect(ROLE_PERMISSIONS['OPS']).not.toContain('system.manage');
+      expect(ROLE_PERMISSIONS['OPS']).not.toContain('users.manage');
+      expect(ROLE_PERMISSIONS['OPS']).not.toContain('orders.delete');
+    });
+
+    it('OPS should have billing.manage and referrals.view', () => {
+      expect(ROLE_PERMISSIONS['OPS']).toContain('billing.manage');
+      expect(ROLE_PERMISSIONS['OPS']).toContain('referrals.view');
+      expect(ROLE_PERMISSIONS['OPS']).toContain('subscriptions.manage');
     });
 
     it('should not have duplicate permissions within a role', () => {

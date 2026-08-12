@@ -3,13 +3,13 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET: ADMIN (full catalog + inactive) | MERCHANT (active plans only, for upgrade/checkout).
  * requireActiveSubscription: false so expired merchants can still load plans to renew.
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'], { requireActiveSubscription: false })(
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], { requireActiveSubscription: false })(
   async (request: NextRequest, { user }) => {
   try {
     // Get search parameters

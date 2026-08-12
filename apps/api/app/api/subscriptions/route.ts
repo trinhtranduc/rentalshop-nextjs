@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
 // ============================================================================
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -56,7 +56,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
 // ============================================================================
 // POST /api/subscriptions - Create subscription
 // ============================================================================
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
   try {
     const body = await request.json();
     const validatedData = subscriptionCreateSchema.parse(body);

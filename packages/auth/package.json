@@ -44,6 +44,7 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
+    "@rentalshop/constants": "file:../constants",
     "@rentalshop/database": "file:../database",
     "@rentalshop/types": "file:../types",
     "@rentalshop/utils": "file:../utils",
