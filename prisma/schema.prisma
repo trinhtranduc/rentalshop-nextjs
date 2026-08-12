@@ -822,6 +822,7 @@ enum PaymentType {
 
 enum UserRole {
   ADMIN
+  OPS
   ARTICLE
   MERCHANT
   OUTLET_ADMIN

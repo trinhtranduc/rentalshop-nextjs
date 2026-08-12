@@ -27,6 +27,8 @@ import {
   User,
   Bell,
   RefreshCw,
+  UserPlus,
+  TrendingUp,
   FolderTree,
   Tag,
   UserCircle,
@@ -66,6 +68,16 @@ const adminMenuItems: MenuItem[] = [
     label: 'Merchants',
     href: '/merchants',
     icon: Building2,
+  },
+  {
+    label: 'Referrals',
+    href: '/referrals',
+    icon: UserPlus,
+  },
+  {
+    label: 'Affiliate Stats',
+    href: '/affiliate/stats',
+    icon: TrendingUp,
   },
   {
     label: 'Subscription',

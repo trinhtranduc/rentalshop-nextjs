@@ -26,10 +26,13 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,6 +79,14 @@ import androidx.compose.ui.Modifier
 import org.json.JSONObject
 import kotlin.math.max
 
+/** iOS Define.swift status / deposit tints for Operational Snapshot. */
+private val SnapshotReservedTint = Color(0xFFDC2626)
+private val SnapshotActiveTint = Color(0xFFC2410C)
+private val SnapshotCompletedTint = Color(0xFF166534)
+private val SnapshotCancelledTint = Color(0xFF7F1D1D)
+private val SnapshotDepositHeldTint = Color(0xFF1D4EFD)
+private val SnapshotDepositDueTint = Color(0xFFF19920)
+
 private data class AnalyticsChartPoint(
     val label: String,
     val revenue: Double,
@@ -94,6 +106,9 @@ fun OverviewScreen(
     var activeOrders by remember { mutableIntStateOf(0) }
     var completedOrders by remember { mutableIntStateOf(0) }
     var cancelledOrders by remember { mutableIntStateOf(0) }
+    var hasOperationalSnapshot by remember { mutableStateOf(false) }
+    var depositHeld by remember { mutableDoubleStateOf(0.0) }
+    var depositDue by remember { mutableDoubleStateOf(0.0) }
     var topProducts by remember { mutableStateOf<List<RankingItem>>(emptyList()) }
     var topCustomers by remember { mutableStateOf<List<RankingItem>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -140,13 +155,26 @@ fun OverviewScreen(
                     ?.optDouble("growth")
                     ?.takeIf { !it.isNaN() }
 
-                val orderCounts = data.optJSONObject("operational")
-                    ?.optJSONObject("orderCounts")
+                val operational = data.optJSONObject("operational")
+                val orderCounts = operational?.optJSONObject("orderCounts")
+                hasOperationalSnapshot = orderCounts != null
                 reservedOrders = orderCounts?.optInt("new") ?: 0
                 activeOrders = orderCounts?.optInt("pickup") ?: 0
                 completedOrders = orderCounts?.optInt("return") ?: 0
                 cancelledOrders = orderCounts?.optInt("cancelled") ?: 0
+                depositHeld = operational
+                    ?.optDouble("totalCollateral")
+                    ?.takeIf { !it.isNaN() }
+                    ?: 0.0
+                depositDue = operational
+                    ?.optDouble("totalCollateralPlanExpectedToRefund")
+                    ?.takeIf { !it.isNaN() }
+                    ?: operational?.optDouble("totalCollateralPlan")?.takeIf { !it.isNaN() }
+                    ?: 0.0
             }.onFailure {
+                hasOperationalSnapshot = false
+                depositHeld = 0.0
+                depositDue = 0.0
                 error = it.message
                 if (periodDays <= 1) {
                     withContext(Dispatchers.IO) { ApiClient.get().todayMetrics() }
@@ -273,48 +301,80 @@ fun OverviewScreen(
                         Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text(
-                            stringResource(R.string.operational_snapshot),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            stringResource(R.string.operational_snapshot_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        // iOS insight card: gauge icon + title / subtitle
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Icon(
+                                Icons.Default.Speed,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp).size(20.dp),
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    stringResource(R.string.operational_snapshot),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    stringResource(R.string.operational_snapshot_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                         Row(Modifier.fillMaxWidth()) {
                             SnapshotMetric(
-                                stringResource(R.string.reserved),
-                                reservedOrders,
-                                Color(0xFF5B68C8),
-                                Icons.Default.Bookmark,
-                                Modifier.weight(1f),
+                                label = stringResource(R.string.snapshot_new_rentals),
+                                value = snapshotCountText(reservedOrders, hasOperationalSnapshot),
+                                tint = SnapshotReservedTint,
+                                icon = Icons.Default.Bookmark,
+                                modifier = Modifier.weight(1f),
                             )
                             SnapshotMetric(
-                                stringResource(R.string.in_progress),
-                                activeOrders,
-                                Color(0xFFF39A1B),
-                                Icons.Default.DirectionsWalk,
-                                Modifier.weight(1f),
+                                label = stringResource(R.string.in_progress),
+                                value = snapshotCountText(activeOrders, hasOperationalSnapshot),
+                                tint = SnapshotActiveTint,
+                                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                                modifier = Modifier.weight(1f),
                             )
                         }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Row(Modifier.fillMaxWidth()) {
                             SnapshotMetric(
-                                stringResource(R.string.completed),
-                                completedOrders,
-                                Color(0xFF177A3F),
-                                Icons.Default.CheckCircle,
-                                Modifier.weight(1f),
+                                label = stringResource(R.string.completed),
+                                value = snapshotCountText(completedOrders, hasOperationalSnapshot),
+                                tint = SnapshotCompletedTint,
+                                icon = Icons.Default.CheckCircle,
+                                modifier = Modifier.weight(1f),
                             )
                             SnapshotMetric(
-                                stringResource(R.string.cancelled),
-                                cancelledOrders,
-                                Color(0xFF991B1B),
-                                Icons.Default.Cancel,
-                                Modifier.weight(1f),
+                                label = stringResource(R.string.cancelled),
+                                value = snapshotCountText(cancelledOrders, hasOperationalSnapshot),
+                                tint = SnapshotCancelledTint,
+                                icon = Icons.Default.Cancel,
+                                modifier = Modifier.weight(1f),
                             )
+                        }
+                        // iOS: deposit metrics for Today / 7d / 30d only (hidden for year)
+                        if (periodDays != 365) {
+                            Row(Modifier.fillMaxWidth()) {
+                                SnapshotMetric(
+                                    label = stringResource(R.string.deposit_held),
+                                    value = if (hasOperationalSnapshot) formatMoney(depositHeld) else "—",
+                                    tint = SnapshotDepositHeldTint,
+                                    icon = Icons.Default.Lock,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SnapshotMetric(
+                                    label = stringResource(R.string.deposit_due),
+                                    value = if (hasOperationalSnapshot) formatMoney(depositDue) else "—",
+                                    tint = SnapshotDepositDueTint,
+                                    icon = Icons.AutoMirrored.Filled.Undo,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
                 }
@@ -335,7 +395,7 @@ fun OverviewScreen(
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             Column(Modifier.weight(1f)) {
-                                Text(stringResource(R.string.charts), style = MaterialTheme.typography.titleLarge)
+                                Text(stringResource(R.string.charts), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 Text(
                                     if (chartsExpanded) stringResource(R.string.swipe_charts)
                                     else stringResource(R.string.show_charts),
@@ -343,7 +403,7 @@ fun OverviewScreen(
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            Text(if (chartsExpanded) "⌃" else "›", style = MaterialTheme.typography.headlineSmall)
+                            Text(if (chartsExpanded) "⌃" else "›", style = MaterialTheme.typography.titleMedium)
                         }
                         if (chartsExpanded) {
                             Column(
@@ -459,7 +519,7 @@ private fun PeriodControl(
 @Composable
 private fun AnalyticsLineChart(title: String, points: List<Double>, color: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         Canvas(Modifier.fillMaxWidth().height(170.dp)) {
             val values = if (points.isEmpty()) listOf(0.0, 0.0) else points
             val maximum = max(values.maxOrNull() ?: 0.0, 1.0)
@@ -488,7 +548,7 @@ private fun AnalyticsLineChart(title: String, points: List<Double>, color: Color
 private fun Metric(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -507,12 +567,12 @@ private fun HeroMetric(
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             value,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = color,
             maxLines = 1,
@@ -547,10 +607,13 @@ private fun GrowthMetric(
     }
 }
 
+private fun snapshotCountText(count: Int, hasData: Boolean): String =
+    if (hasData) formatQuantity(count) else "—"
+
 @Composable
 private fun SnapshotMetric(
     label: String,
-    count: Int,
+    value: String,
     tint: Color,
     icon: ImageVector,
     modifier: Modifier = Modifier,
@@ -561,9 +624,10 @@ private fun SnapshotMetric(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            formatQuantity(count),
-            style = MaterialTheme.typography.headlineSmall,
+            value,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -649,8 +713,8 @@ private fun RankingRow(
         Column(Modifier.weight(1f)) {
             Text(
                 item.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Normal,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
             )
             item.subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -679,7 +743,12 @@ private fun RankingRow(
                 }
             }
         }
-        Text(formatMoney(item.value), fontWeight = FontWeight.SemiBold, color = accent)
+        Text(
+            formatMoney(item.value),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = accent,
+        )
         Icon(
             Icons.Default.ListAlt,
             contentDescription = null,

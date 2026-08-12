@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, isSystemLevelUserRole } from '@rentalshop/constants';
 
 export interface SubscriptionCheckResult {
   success: boolean;
@@ -104,8 +104,8 @@ export class SubscriptionStatusChecker {
    * ADMIN users bypass this check
    */
   static async check(user: any): Promise<SubscriptionCheckResult> {
-    // ADMIN and ARTICLE users bypass subscription checks
-    if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.ARTICLE) {
+    // System-level users bypass subscription checks
+    if (isSystemLevelUserRole(user.role)) {
       return { success: true };
     }
 

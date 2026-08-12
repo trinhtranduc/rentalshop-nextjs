@@ -270,22 +270,36 @@ async function uploadProductImages(imageFiles: File[]): Promise<{ stagingKeys: s
   const stagingKeys: string[] = [];
   const urls: string[] = [];
 
-  for (const file of imageFiles) {
-    if (!file || file.size === 0) continue;
+  for (const raw of imageFiles) {
+    if (!raw || typeof (raw as File).arrayBuffer !== 'function') continue;
+    const reportedSize = Number((raw as File).size || 0);
+    if (reportedSize > 0 && reportedSize < 100) continue;
 
-    const validation = validateImage(file);
+    const bytes = Buffer.from(new Uint8Array(await (raw as File).arrayBuffer()));
+    if (bytes.length < 100) continue;
+
+    // Prefer magic bytes — Android may send empty or image/* MIME with HEIC renamed .jpg.
+    const sniffed = sniffImageMime(bytes);
+    const name = ((raw as File).name || 'image_0.jpg').trim() || 'image_0.jpg';
+    const type = sniffed || ((raw as File).type === 'image/*' ? 'image/jpeg' : (raw as File).type) || 'image/jpeg';
+    const fakeFile = {
+      name: /\.(jpe?g|png|webp)$/i.test(name) ? name : `${name}.jpg`,
+      type,
+      size: bytes.length,
+    } as File;
+
+    const validation = validateImage(fakeFile);
     if (!validation.isValid) {
       throw new Error(validation.error || 'IMAGE_VALIDATION_FAILED');
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+    const buffer = await compressImageTo1MB(bytes);
 
     if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
       throw new Error('IMAGE_TOO_LARGE');
     }
 
-    const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
+    const fileName = generateFileName(fakeFile.name.replace(/\.[^/.]+$/, '') || 'product-image');
     const stagingKey = generateStagingKey(fileName);
     const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
 
@@ -307,6 +321,29 @@ async function uploadProductImages(imageFiles: File[]): Promise<{ stagingKeys: s
   }
 
   return { stagingKeys, urls };
+}
+
+function sniffImageMime(buffer: Buffer): string | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return 'image/png';
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  return null;
 }
 
 /**

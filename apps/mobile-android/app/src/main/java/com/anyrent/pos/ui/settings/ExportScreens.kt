@@ -460,12 +460,13 @@ private fun ExportDateRangeSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
                 .padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -487,7 +488,9 @@ private fun ExportDateRangeSheet(
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
             ) {
@@ -530,6 +533,7 @@ private fun ExportDateRangeSheet(
                 }
             }
 
+            // Full sheet width so the Sunday column (last in vi Mon-start week) is not clipped.
             DateRangePicker(
                 state = rangeState,
                 modifier = Modifier.fillMaxWidth().height(420.dp),
@@ -547,7 +551,9 @@ private fun ExportDateRangeSheet(
             )
 
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 TextButton(

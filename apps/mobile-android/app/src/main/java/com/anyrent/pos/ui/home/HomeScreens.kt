@@ -66,6 +66,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
@@ -80,6 +82,7 @@ import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.AppSearchField
+import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
@@ -93,7 +96,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 fun HomeScreen(
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
-    onOpenBarcode: () -> Unit,
     onCheckProductAvailability: (Int) -> Unit = {},
 ) {
     var draftQuery by remember { mutableStateOf("") }
@@ -115,6 +117,7 @@ fun HomeScreen(
     // showNewProduct + editingProduct: editingProduct non-null = edit, showNewProduct = new
     var productEditor by remember { mutableStateOf<Product?>(null) }
     var showNewProduct by remember { mutableStateOf(false) }
+    var showBarcodeScan by remember { mutableStateOf(false) }
     val cartCount = CartStore.lines.collectAsState().value.sumOf { it.quantity }
     val scope = rememberCoroutineScope()
     val productListState = rememberLazyListState()
@@ -188,6 +191,9 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // Nested under MainTabs (which already pads for the bottom NavigationBar +
+        // system gesture bar). Default Scaffold insets would add that bottom gap again.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             CenterAlignedTopAppBar(
                 windowInsets = WindowInsets(0, 0, 0, 0),
@@ -211,7 +217,7 @@ fun HomeScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = onOpenBarcode) {
+                        IconButton(onClick = { showBarcodeScan = true }) {
                             Icon(
                                 Icons.Default.QrCodeScanner,
                                 contentDescription = stringResource(R.string.camera_scan),
@@ -345,6 +351,16 @@ fun HomeScreen(
                 )
             }
         }
+        // Same page-sheet presentation as Create Product.
+        if (showBarcodeScan) {
+            AppFormSheet(onDismiss = { showBarcodeScan = false }) {
+                CameraBarcodeScreen(
+                    mode = BarcodeMode.PRODUCT,
+                    onBack = { showBarcodeScan = false },
+                    embeddedInSheet = true,
+                )
+            }
+        }
         deleteProduct?.let { product ->
             AppAlertConfirm(
                 title = stringResource(R.string.delete_product),
@@ -387,6 +403,7 @@ private fun ProductCard(
     onCheckAvailability: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var previewImage by remember { mutableStateOf<String?>(null) }
     AppCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
@@ -403,22 +420,81 @@ private fun ProductCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    Icons.Default.Image,
-                    contentDescription = stringResource(R.string.product_image),
-                    tint = MaterialTheme.colorScheme.outline,
-                )
+                val imageUrl = product.imageUrl
+                if (!imageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = stringResource(R.string.product_image),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            // Child clickable wins over AppCard onClick → open viewer, not add-to-cart.
+                            .clickable { previewImage = imageUrl },
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Image,
+                        contentDescription = stringResource(R.string.product_image),
+                        tint = MaterialTheme.colorScheme.outline,
+                    )
+                }
             }
             Column(
                 Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    product.name,
-                    // iOS ProductCell: Regular 16
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2,
-                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        product.name,
+                        // iOS ProductCell: Regular 16
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 2,
+                    )
+                    Box {
+                        val checkAvailabilityLabel = stringResource(R.string.check_availability)
+                        val updateLabel = stringResource(R.string.update_product)
+                        val deleteLabel = stringResource(R.string.delete_product)
+                        val canManage = PermissionManager.canManageProducts()
+                        // iOS UIMenu order: view history → update → delete (destructive)
+                        val actions = buildList {
+                            add(
+                                AppMenuAction(
+                                    label = checkAvailabilityLabel,
+                                    icon = Icons.Default.CalendarMonth,
+                                    onClick = onCheckAvailability,
+                                ),
+                            )
+                            if (canManage) {
+                                add(
+                                    AppMenuAction(
+                                        label = updateLabel,
+                                        icon = Icons.Outlined.Edit,
+                                        onClick = onEdit,
+                                    ),
+                                )
+                                add(
+                                    AppMenuAction(
+                                        label = deleteLabel,
+                                        icon = Icons.Outlined.DeleteOutline,
+                                        onClick = onDelete,
+                                        destructive = true,
+                                    ),
+                                )
+                            }
+                        }
+                        AppOverflowMenuAnchor(
+                            contentDescription = stringResource(R.string.product_actions),
+                            actions = actions,
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it },
+                        )
+                    }
+                }
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -451,46 +527,13 @@ private fun ProductCard(
                     }
                 }
             }
-            Box {
-                val checkAvailabilityLabel = stringResource(R.string.check_availability)
-                val updateLabel = stringResource(R.string.update_product)
-                val deleteLabel = stringResource(R.string.delete_product)
-                val canManage = PermissionManager.canManageProducts()
-                // iOS UIMenu order: view history → update → delete (destructive)
-                val actions = buildList {
-                    add(
-                        AppMenuAction(
-                            label = checkAvailabilityLabel,
-                            icon = Icons.Default.CalendarMonth,
-                            onClick = onCheckAvailability,
-                        ),
-                    )
-                    if (canManage) {
-                        add(
-                            AppMenuAction(
-                                label = updateLabel,
-                                icon = Icons.Outlined.Edit,
-                                onClick = onEdit,
-                            ),
-                        )
-                        add(
-                            AppMenuAction(
-                                label = deleteLabel,
-                                icon = Icons.Outlined.DeleteOutline,
-                                onClick = onDelete,
-                                destructive = true,
-                            ),
-                        )
-                    }
-                }
-                AppOverflowMenuAnchor(
-                    contentDescription = stringResource(R.string.product_actions),
-                    actions = actions,
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                )
-            }
         }
+    }
+    previewImage?.let { url ->
+        FullScreenImagePreview(
+            model = url,
+            onDismiss = { previewImage = null },
+        )
     }
 }
 

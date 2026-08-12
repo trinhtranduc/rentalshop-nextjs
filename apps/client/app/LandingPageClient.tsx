@@ -362,38 +362,54 @@ const LandingPage = () => {
           </div>
         </header>
 
-        {/* Hero Banner - Clean & Modern */}
-        <section className="relative overflow-hidden pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white" aria-label="Hero section">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            {/* Badge */}
-            <Badge variant="outline" className="mb-6 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-              <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
-              Phần mềm quản lý cho thuê
-            </Badge>
+        {/* Hero — app promo video (mute loop) */}
+        <section
+          className="relative overflow-hidden min-h-[88vh] flex items-center"
+          aria-label="Hero section"
+        >
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="/videos/hero-app-promo-poster.jpg"
+            aria-hidden="true"
+          >
+            <source src="/videos/hero-app-promo.mp4" type="video/mp4" />
+          </video>
+          {/* Readability overlay — dark left / soft vignette so app UI still shows */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950/85 via-gray-950/55 to-gray-950/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-transparent to-gray-950/30" />
 
-            {/* Main Heading - Single H1 for SEO */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4 leading-tight tracking-tight">
-              {t('hero.title')}
-            </h1>
-            <p className="text-3xl md:text-4xl font-semibold text-gray-700 mb-6">
-              {t('hero.subtitle')}
-            </p>
-            
-            {/* Description */}
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed" role="text">
-              {t('hero.description')}
-            </p>
-              
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-28">
+            <div className="max-w-2xl text-left">
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+                <Sparkles className="h-3.5 w-3.5" />
+                AnyRent · iOS &amp; Web
+              </p>
+
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-4">
+                {t('hero.title')}
+              </h1>
+              <p className="text-xl sm:text-2xl font-medium text-white/85 mb-5">
+                {t('hero.subtitle')}
+              </p>
+              {/* Full SEO copy kept for crawlers / a11y, visually compact on hero */}
+              <p className="sr-only">{t('hero.description')}</p>
+              <p className="text-base sm:text-lg text-white/75 mb-10 max-w-xl leading-relaxed">
+                Quản lý đơn thuê, lịch &amp; sản phẩm trên một app — dùng thử miễn phí.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg"
                 >
-                  <a 
-                    href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
+                  <a
+                    href="https://apps.apple.com/vn/app/anyrent/id6754793592"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -405,7 +421,7 @@ const LandingPage = () => {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+                  className="border-2 border-white/40 bg-white/5 text-white hover:bg-white/15 hover:border-white/60 rounded-xl px-8 py-3 text-base font-medium backdrop-blur-sm"
                 >
                   <Link href="/login">
                     <Globe className="w-5 h-5 mr-2" />
@@ -414,19 +430,18 @@ const LandingPage = () => {
                 </Button>
               </div>
 
-              {/* Trust indicators */}
-              <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-500">
+              <div className="mt-12 flex flex-wrap items-center gap-6 text-sm text-white/70">
                 <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-4 h-4 text-emerald-400" />
                   <span>500+ Active Stores</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                  <Star className="w-4 h-4 text-amber-400 fill-current" />
                   <span>4.9/5 Rating</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-gray-700" />
-                  <span>Secure & Reliable</span>
+                  <Shield className="w-4 h-4 text-white/80" />
+                  <span>Secure &amp; Reliable</span>
                 </div>
               </div>
             </div>

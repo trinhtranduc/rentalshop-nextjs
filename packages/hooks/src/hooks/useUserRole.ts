@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from './useAuth';
+import { isPlatformOpsRole } from '@rentalshop/constants';
 
 // ============================================================================
 // USER ROLE HOOK - Simplified role checking
@@ -9,6 +10,8 @@ import { useAuth } from './useAuth';
 export interface UserRoleInfo {
   role: string | undefined;
   isAdmin: boolean;
+  isOps: boolean;
+  isPlatformStaff: boolean;
   isMerchant: boolean;
   isOutletAdmin: boolean;
   isOutletStaff: boolean;
@@ -25,10 +28,13 @@ export function useUserRole(): UserRoleInfo {
   const { user } = useAuth();
   
   const role = user?.role;
+  const isPlatformStaff = isPlatformOpsRole(role);
   
   return {
     role,
     isAdmin: role === 'ADMIN',
+    isOps: role === 'OPS',
+    isPlatformStaff,
     isMerchant: role === 'MERCHANT',
     isOutletAdmin: role === 'OUTLET_ADMIN',
     isOutletStaff: role === 'OUTLET_STAFF',
@@ -38,9 +44,9 @@ export function useUserRole(): UserRoleInfo {
     canManageProducts: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
     canManageCategories: role === 'ADMIN' || role === 'MERCHANT',
     canManageOutlets: role === 'ADMIN' || role === 'MERCHANT',
-    canManageSubscriptions: role === 'ADMIN' || role === 'MERCHANT',
-    canViewBilling: role === 'ADMIN' || role === 'MERCHANT',
-    canExportData: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
+    canManageSubscriptions: isPlatformStaff || role === 'MERCHANT',
+    canViewBilling: isPlatformStaff || role === 'MERCHANT',
+    canExportData: isPlatformStaff || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
   };
 }
 

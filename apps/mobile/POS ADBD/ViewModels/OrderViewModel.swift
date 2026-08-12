@@ -444,6 +444,60 @@ class OrderViewModel: PreviewViewModelProtocol {
             
             if let updatedOrder = updatedOrder {
                 self?.order = updatedOrder
+            } else if let self {
+                // HTTP succeeded but body decode failed — keep optimistic ready flag.
+                let current = self.order
+                self.order = Order(
+                    id: current.id,
+                    orderNumber: current.orderNumber,
+                    orderType: current.orderType,
+                    status: current.status,
+                    totalAmount: current.totalAmount,
+                    depositAmount: current.depositAmount,
+                    securityDeposit: current.securityDeposit,
+                    damageFee: current.damageFee,
+                    lateFee: current.lateFee,
+                    discountType: current.discountType,
+                    discountValue: current.discountValue,
+                    discountAmount: current.discountAmount,
+                    pickupPlanAt: current.pickupPlanAt,
+                    returnPlanAt: current.returnPlanAt,
+                    pickedUpAt: current.pickedUpAt,
+                    returnedAt: current.returnedAt,
+                    rentalDuration: current.rentalDuration,
+                    isReadyToDeliver: isReady,
+                    collateralType: current.collateralType,
+                    collateralDetails: current.collateralDetails,
+                    notes: current.notes,
+                    notesImages: current.notesImages,
+                    pickupNotes: current.pickupNotes,
+                    pickupNotesImages: current.pickupNotesImages,
+                    returnNotes: current.returnNotes,
+                    returnNotesImages: current.returnNotesImages,
+                    damageNotes: current.damageNotes,
+                    damageNotesImages: current.damageNotesImages,
+                    createdAt: current.createdAt,
+                    updatedAt: current.updatedAt,
+                    customerId: current.customerId,
+                    customerFirstName: current.customerFirstName,
+                    customerLastName: current.customerLastName,
+                    customerName: current.customerName,
+                    customerPhone: current.customerPhone,
+                    customerEmail: current.customerEmail,
+                    outletId: current.outletId,
+                    outletName: current.outletName,
+                    merchantId: current.merchantId,
+                    merchantName: current.merchantName,
+                    createdById: current.createdById,
+                    createdByName: current.createdByName,
+                    orderItems: current.orderItems,
+                    itemCount: current.itemCount,
+                    paymentCount: current.paymentCount,
+                    totalPaid: current.totalPaid,
+                    loyaltyPointsRedeemed: current.loyaltyPointsRedeemed,
+                    loyaltyDiscount: current.loyaltyDiscount,
+                    loyaltyPointsEarned: current.loyaltyPointsEarned
+                )
             }
             
             completion(.success(()))

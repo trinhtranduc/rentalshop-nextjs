@@ -91,22 +91,37 @@ async function uploadOrderNotesImages(
   const stagingKeys: string[] = [];
   const urls: string[] = [];
 
-  for (const file of imageFiles) {
-    if (!file || file.size === 0) continue;
+  for (const raw of imageFiles) {
+    if (!raw || typeof (raw as File).arrayBuffer !== 'function') continue;
+    const reportedSize = Number((raw as File).size || 0);
+    if (reportedSize > 0 && reportedSize < 100) continue;
 
-    const validation = validateImage(file);
+    const bytes = Buffer.from(new Uint8Array(await (raw as File).arrayBuffer()));
+    if (bytes.length < 100) continue;
+
+    // Prefer magic bytes over multipart MIME (Android often sends empty/octet-stream).
+    const sniffed = sniffImageMime(bytes);
+    const name = ((raw as File).name || 'order-note.jpg').trim() || 'order-note.jpg';
+    const type = sniffed || (raw as File).type || 'image/jpeg';
+    const fakeFile = {
+      name: /\.(jpe?g|png|webp)$/i.test(name) ? name : `${name}.jpg`,
+      type,
+      size: bytes.length,
+    } as File;
+
+    const validation = validateImage(fakeFile);
     if (!validation.isValid) {
       throw new Error(validation.error || 'IMAGE_VALIDATION_FAILED');
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+    const buffer = await compressImageTo1MB(bytes);
 
     if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
       throw new Error('IMAGE_TOO_LARGE');
     }
 
-    const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'order-note-image');
+    const baseName = fakeFile.name.replace(/\.[^/.]+$/, '') || 'order-note-image';
+    const fileName = generateFileName(baseName);
     const stagingKey = generateStagingKey(fileName);
     const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
 
@@ -118,7 +133,7 @@ async function uploadOrderNotesImages(
     });
 
     if (!uploadResult.success || !uploadResult.data) {
-      throw new Error('IMAGE_UPLOAD_FAILED');
+      throw new Error(uploadResult.error || 'IMAGE_UPLOAD_FAILED');
     }
 
     stagingKeys.push(uploadResult.data.key);
@@ -126,6 +141,29 @@ async function uploadOrderNotesImages(
   }
 
   return { stagingKeys, urls };
+}
+
+function sniffImageMime(buffer: Buffer): string | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return 'image/png';
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  return null;
 }
 
 /**
@@ -204,9 +242,10 @@ export const GET = async (
       const orderIdNum = parseInt(orderId);
       
       // Get user scope for merchant isolation
+      // ADMIN may have no merchantId (system-wide) — same rule as PUT on this route.
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      if (!userMerchantId && user.role !== USER_ROLE.ADMIN) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
@@ -223,24 +262,42 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
-      // Flatten order items with parsed productImages
-      // Priority 1: Use productImages (snapshot field saved when order was created)
-      // Priority 2: Fallback to product.images (from product relation - current images)
+      // Flatten order items for mobile (iOS/Android cart edit needs productName/productId
+      // on the line — not only nested `product`). Same shape as PUT response.
       const flattenedOrder = {
         ...order,
         orderItems: order.orderItems?.map((item: any) => {
-          // Parse snapshot images first
           const snapshotImages = parseProductImages(item.productImages);
-          // If snapshot is empty array, fallback to product.images
-          const productImages = snapshotImages.length > 0 
-            ? snapshotImages 
+          const productImages = snapshotImages.length > 0
+            ? snapshotImages
             : parseProductImages(item.product?.images);
-          
+
           return {
-            ...item,
-            productImages: productImages
+            id: item.id,
+            productId: item.productId ?? item.product?.id ?? null,
+            productName: item.product?.name || item.productName || null,
+            productBarcode: item.product?.barcode || item.productBarcode || null,
+            productImages,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            deposit: item.deposit ?? item.product?.deposit ?? 0,
+            notes: item.notes,
+            rentalDays: item.rentalDays,
+            pricingType: item.pricingType,
+            pricingOptionId: item.pricingOptionId,
+            product: item.product
+              ? {
+                  id: item.product.id,
+                  name: item.product.name,
+                  barcode: item.product.barcode,
+                  images: parseProductImages(item.product.images),
+                  rentPrice: item.product.rentPrice,
+                  deposit: item.product.deposit,
+                }
+              : null,
           };
-        }) || order.orderItems
+        }) || [],
       };
 
       // Normalize date fields to UTC ISO strings using toISOString()
@@ -360,10 +417,18 @@ export const PUT = async (
         };
         
         // Upload and process notesImages
-        const notesImageFiles = formData.getAll('notesImages') as File[];
+        const notesImageFiles = (formData.getAll('notesImages') as unknown[]).filter(
+          (entry): entry is File =>
+            !!entry &&
+            typeof entry === 'object' &&
+            typeof (entry as File).arrayBuffer === 'function'
+        );
         if (notesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
+            if (uploadResult.urls.length === 0) {
+              throw new Error('IMAGE_VALIDATION_FAILED');
+            }
             const productionUrls = await commitOrderNotesImages(
               uploadResult.urls,
               uploadResult.stagingKeys,
@@ -372,9 +437,19 @@ export const PUT = async (
             body.notesImages = combineImages(existingOrder.notesImages, productionUrls);
           } catch (error: any) {
             console.error('❌ Error uploading notesImages:', error);
+            const raw = String(error?.message || '');
+            const code =
+              raw === 'IMAGE_TOO_LARGE' ||
+              raw === 'IMAGE_UPLOAD_FAILED' ||
+              raw === 'IMAGE_VALIDATION_FAILED'
+                ? raw
+                : raw.includes('Invalid file type') || raw.includes('File size')
+                  ? 'IMAGE_VALIDATION_FAILED'
+                  : 'NOTES_IMAGES_UPLOAD_FAILED';
+            const base = ResponseBuilder.error(code);
             return NextResponse.json(
-              ResponseBuilder.error('NOTES_IMAGES_UPLOAD_FAILED'),
-              { status: 500 }
+              { ...base, error: raw || base.error },
+              { status: code === 'NOTES_IMAGES_UPLOAD_FAILED' || code === 'IMAGE_UPLOAD_FAILED' ? 500 : 400 }
             );
           }
         }
@@ -443,6 +518,26 @@ export const PUT = async (
       } else {
         // Parse JSON request body (backward compatibility)
         body = await request.json();
+      }
+
+      // JSON clients (Android two-step, web delete/set-list) may send staging CDN URLs
+      // from POST /api/upload/image — commit them into orders/merchant-*/notes/.
+      if (
+        !isFormData &&
+        Array.isArray(body?.notesImages) &&
+        body.notesImages.length > 0 &&
+        (userMerchantId || 0) > 0
+      ) {
+        try {
+          body.notesImages = await commitOrderNotesImages(
+            body.notesImages.filter((u: unknown) => typeof u === 'string' && u.startsWith('http')),
+            [],
+            userMerchantId || 0
+          );
+        } catch (commitError) {
+          console.error('❌ Error committing JSON notesImages:', commitError);
+          // Keep original URLs if commit fails (staging URLs still work while present)
+        }
       }
       
       console.log('🔍 PUT /api/orders/[orderId] - Update request body:', body);
@@ -753,8 +848,18 @@ export const PUT = async (
             rentalDays: item.rentalDays,
             pricingType: item.pricingType,
             pricingOptionId: item.pricingOptionId,
-            // Include product object if available (for backward compatibility)
-            product: item.product || null
+            // Sanitize nested product so Prisma Json `images` never breaks mobile decoders
+            // (iOS OrderItem used to fail PUT response parse → Ready-to-deliver appeared broken).
+            product: item.product
+              ? {
+                  id: item.product.id,
+                  name: item.product.name,
+                  barcode: item.product.barcode,
+                  images: parseProductImages(item.product.images),
+                  rentPrice: item.product.rentPrice,
+                  deposit: item.product.deposit,
+                }
+              : null,
           };
         }) || [],
         // Calculated fields

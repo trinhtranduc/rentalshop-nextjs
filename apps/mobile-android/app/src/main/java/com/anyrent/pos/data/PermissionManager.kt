@@ -37,4 +37,12 @@ object PermissionManager {
 
     fun canManageStore(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
+    /** Mirrors iOS `PermissionManager.canManageOrders()` / `orders.manage` role defaults. */
+    fun canManageOrders(): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
+    /** iOS: delete cancelled orders only for merchant / outlet admin (and system admin). */
+    fun canDeleteCancelledOrders(): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
 }

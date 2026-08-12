@@ -3,8 +3,9 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRequest) => {
   try {
 
     // Get search parameters

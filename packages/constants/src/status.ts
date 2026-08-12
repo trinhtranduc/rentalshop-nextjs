@@ -90,6 +90,7 @@ export type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 // ============================================================================
 export const USER_ROLE = {
   ADMIN: 'ADMIN',                    // System Administrator
+  OPS: 'OPS',                        // Platform operations (system-wide, below ADMIN)
   ARTICLE: 'ARTICLE',                // Blog / CMS editor only
   MERCHANT: 'MERCHANT',              // Business Owner
   OUTLET_ADMIN: 'OUTLET_ADMIN',      // Outlet Manager
@@ -97,6 +98,31 @@ export const USER_ROLE = {
 } as const;
 
 export type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE];
+
+/** System-wide roles without merchant/outlet scope */
+export const SYSTEM_LEVEL_USER_ROLES = [
+  USER_ROLE.ADMIN,
+  USER_ROLE.OPS,
+  USER_ROLE.ARTICLE,
+] as const;
+
+/** ADMIN + OPS — platform staff with cross-merchant access */
+export const PLATFORM_OPS_ROLES = [
+  USER_ROLE.ADMIN,
+  USER_ROLE.OPS,
+] as const;
+
+export function isSystemLevelUserRole(role: string | undefined | null): boolean {
+  return (
+    role === USER_ROLE.ADMIN ||
+    role === USER_ROLE.OPS ||
+    role === USER_ROLE.ARTICLE
+  );
+}
+
+export function isPlatformOpsRole(role: string | undefined | null): boolean {
+  return role === USER_ROLE.ADMIN || role === USER_ROLE.OPS;
+}
 
 // ============================================================================
 // ENTITY STATUSES (Active/Inactive)

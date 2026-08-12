@@ -434,7 +434,7 @@ export default function AdminOrdersPage() {
           filterStyle="dropdown"
           showStats={false}
           showMerchant={true}
-          userRole="ADMIN"
+          userRole={(user?.role === 'OPS' ? 'ADMIN' : user?.role) as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
         />
         )}
       </div>

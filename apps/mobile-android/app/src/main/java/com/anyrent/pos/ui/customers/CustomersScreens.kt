@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
@@ -462,11 +463,15 @@ fun CustomerFormScreen(
     onSaved: () -> Unit,
 ) {
     val context = LocalContext.current
-    var firstName by remember { mutableStateOf(initial?.firstName.orEmpty()) }
-    var lastName by remember { mutableStateOf(initial?.lastName.orEmpty()) }
-    var phone by remember { mutableStateOf(initial?.phone.orEmpty()) }
-    var email by remember { mutableStateOf(initial?.email.orEmpty()) }
-    var address by remember { mutableStateOf(initial?.address.orEmpty()) }
+    // Treat JSON/"null" placeholders as empty so edit fields stay blank.
+    fun cleanField(value: String?): String =
+        value?.trim()?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }.orEmpty()
+
+    var firstName by remember { mutableStateOf(cleanField(initial?.firstName)) }
+    var lastName by remember { mutableStateOf(cleanField(initial?.lastName)) }
+    var phone by remember { mutableStateOf(cleanField(initial?.phone)) }
+    var email by remember { mutableStateOf(cleanField(initial?.email)) }
+    var address by remember { mutableStateOf(cleanField(initial?.address)) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
@@ -522,6 +527,7 @@ fun CustomerFormScreen(
                 Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 AppPrimaryButton(

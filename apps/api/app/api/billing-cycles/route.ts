@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET /api/billing-cycles - Get billing cycles
  * REFACTORED: Now uses unified withAuthRoles pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/billing-cycles - User: ${user.email}`);
   
   try {

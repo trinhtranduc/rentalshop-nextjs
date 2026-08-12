@@ -3,6 +3,7 @@ import { withAuthRoles } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET /api/request-logs
@@ -10,7 +11,7 @@ import { API } from '@rentalshop/constants';
  * 
  * Authorization: ADMIN only (sensitive data)
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     

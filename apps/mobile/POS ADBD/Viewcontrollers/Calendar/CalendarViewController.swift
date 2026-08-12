@@ -371,13 +371,12 @@ class CalendarViewController: BaseViewControler {
                     return
                 }
 
-                if let updatedOrder = updatedOrder {
-                    let readyState = updatedOrder.isReadyToDeliver
-                    self?.invalidateOrdersCache(for: self?.selectedDate ?? Date())
-                    self?.updateReadyToDeliverLocally(orderId: orderId, isReady: readyState)
-                } else {
-                    headerView.preparedButton.isSelected = !isReady
-                }
+                // Prefer server value when decode succeeds; otherwise keep optimistic local state.
+                // (Older PUT payloads nested product.images as Json and used to fail Order decode.)
+                let readyState = updatedOrder?.isReadyToDeliver ?? isReady
+                headerView.preparedButton.isSelected = readyState
+                self?.invalidateOrdersCache(for: self?.selectedDate ?? Date())
+                self?.updateReadyToDeliverLocally(orderId: orderId, isReady: readyState)
             }
         }
     }

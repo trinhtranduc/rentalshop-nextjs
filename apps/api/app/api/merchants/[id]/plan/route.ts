@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/plan
@@ -16,7 +16,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
@@ -59,7 +59,7 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       // Validate merchant access (format, exists, association, scope)
       const validation = await validateMerchantAccess(merchantPublicId, user, userScope);

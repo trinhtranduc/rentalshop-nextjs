@@ -494,6 +494,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Column(
             Modifier
                 .fillMaxSize()
+                .navigationBarsPadding()
                 .padding(horizontal = 32.dp)
                 .padding(bottom = 24.dp, top = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

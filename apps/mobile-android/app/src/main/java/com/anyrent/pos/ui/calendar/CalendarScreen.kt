@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.ArrowCircleDown
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +60,7 @@ import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
+import com.anyrent.pos.ui.common.MaskedPhoneRow
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.orderStatusColor
@@ -196,7 +196,8 @@ fun CalendarScreen(onOpenOrder: (Int) -> Unit) {
                             }
                             Text(
                                 yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
                             )
                             IconButton(onClick = { yearMonth = yearMonth.plusMonths(1) }) {
                                 Icon(
@@ -237,10 +238,12 @@ fun CalendarScreen(onOpenOrder: (Int) -> Unit) {
                             Column {
                                 Text(
                                     selected.format(DateTimeFormatter.ofPattern("MMM d")),
-                                    style = MaterialTheme.typography.headlineSmall,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
                                 )
                                 Text(
                                     selected.format(DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy")),
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
@@ -287,7 +290,27 @@ fun CalendarScreen(onOpenOrder: (Int) -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(dayOrders, key = { it.id }) { order ->
-                            CalendarOrderCard(order = order, onClick = { onOpenOrder(order.id) })
+                            CalendarOrderCard(
+                                order = order,
+                                onClick = { onOpenOrder(order.id) },
+                                onReadyToDeliverChange = { ready ->
+                                    // Optimistic UI (iOS parity), then persist via PUT.
+                                    dayOrders = dayOrders.map {
+                                        if (it.id == order.id) it.copy(isReadyToDeliver = ready) else it
+                                    }
+                                    scope.launch {
+                                        val result = withContext(Dispatchers.IO) {
+                                            com.anyrent.pos.data.ApiParity.setReadyToDeliver(order.id, ready)
+                                        }
+                                        result.onFailure { err ->
+                                            dayOrders = dayOrders.map {
+                                                if (it.id == order.id) it.copy(isReadyToDeliver = !ready) else it
+                                            }
+                                            error = err.message
+                                        }
+                                    }
+                                },
+                            )
                         }
                     }
                 }
@@ -464,11 +487,20 @@ private fun MonthGrid(
 }
 
 @Composable
-private fun CalendarOrderCard(order: OrderSummary, onClick: () -> Unit) {
+private fun CalendarOrderCard(
+    order: OrderSummary,
+    onClick: () -> Unit,
+    onReadyToDeliverChange: (Boolean) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<OrderDetail?>(null) }
     var loadingProducts by remember { mutableStateOf(false) }
+    var phoneRevealed by remember(order.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // iOS CalendarHeaderCell: only RESERVED / PENDING / DRAFT show the checkbox.
+    val canToggleReady = order.status.equals("RESERVED", ignoreCase = true) ||
+        order.status.equals("PENDING", ignoreCase = true) ||
+        order.status.equals("DRAFT", ignoreCase = true)
     AppCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(10.dp),
@@ -485,7 +517,7 @@ private fun CalendarOrderCard(order: OrderSummary, onClick: () -> Unit) {
             Text(
                 "#${order.orderNumber.removePrefix("#")}",
                 modifier = Modifier.weight(1f).clickable(onClick = onClick),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Normal,
             )
             StatusBadge(order.status)
@@ -514,24 +546,39 @@ private fun CalendarOrderCard(order: OrderSummary, onClick: () -> Unit) {
         }
         Row(
             Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                order.customerName ?: "—",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            order.customerPhone?.takeIf { it.isNotBlank() }?.let {
-                Text(maskCalendarPhone(it), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(20.dp))
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    order.customerName ?: "—",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                order.customerPhone?.takeIf { it.isNotBlank() }?.let { phone ->
+                    MaskedPhoneRow(
+                        phone = phone,
+                        revealed = phoneRevealed,
+                        onToggle = { phoneRevealed = !phoneRevealed },
+                    )
+                }
             }
-            Checkbox(checked = order.isReadyToDeliver, onCheckedChange = null)
-            Text(
-                stringResource(R.string.ready_deliver),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            if (canToggleReady) {
+                Checkbox(
+                    checked = order.isReadyToDeliver,
+                    onCheckedChange = onReadyToDeliverChange,
+                )
+                Text(
+                    stringResource(R.string.ready_deliver),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.clickable {
+                        onReadyToDeliverChange(!order.isReadyToDeliver)
+                    },
+                )
+            }
         }
         Row(Modifier.fillMaxWidth()) {
             CalendarOrderMetric(
@@ -586,8 +633,11 @@ private fun CalendarOrderCard(order: OrderSummary, onClick: () -> Unit) {
                             )
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(item.productName?.takeIf { it.isNotBlank() }
-                                ?: stringResource(R.string.unknown_product))
+                            Text(
+                                item.productName?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.unknown_product),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                             item.note?.takeIf { it.isNotBlank() }?.let { note ->
                                 Text(
                                     note,
@@ -597,7 +647,10 @@ private fun CalendarOrderCard(order: OrderSummary, onClick: () -> Unit) {
                                 )
                             }
                         }
-                        Text("${formatQuantity(item.quantity)} × ${formatMoney(item.unitPrice)} = ${formatMoney(item.totalPrice)}")
+                        Text(
+                            "${formatQuantity(item.quantity)} × ${formatMoney(item.unitPrice)} = ${formatMoney(item.totalPrice)}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
             }
@@ -620,11 +673,6 @@ private fun CalendarOrderMetric(
         }
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
-}
-
-private fun maskCalendarPhone(phone: String): String = when {
-    phone.length <= 5 -> phone
-    else -> phone.take(2) + "xxxx" + phone.takeLast(3)
 }
 
 private fun formatCalendarOrderDate(value: String?, includeTime: Boolean = false): String {

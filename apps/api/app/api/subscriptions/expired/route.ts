@@ -3,13 +3,14 @@ import { prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * GET /api/subscriptions/expired
  * Get expired subscriptions
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
     try {
       // TODO: Implement expired subscriptions functionality
       return NextResponse.json(

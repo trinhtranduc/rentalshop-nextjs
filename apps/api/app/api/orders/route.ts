@@ -291,7 +291,8 @@ async function uploadOrderNotesImages(
   const stagingKeys: string[] = [];
   const urls: string[] = [];
 
-  for (const file of imageFiles) {
+  for (const raw of imageFiles) {
+    const file = normalizeMultipartImageFile(raw);
     if (!file || file.size === 0) continue;
 
     const validation = validateImage(file);
@@ -306,7 +307,8 @@ async function uploadOrderNotesImages(
       throw new Error('IMAGE_TOO_LARGE');
     }
 
-    const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'order-note-image');
+    const baseName = (file.name || 'order-note-image').replace(/\.[^/.]+$/, '') || 'order-note-image';
+    const fileName = generateFileName(baseName);
     const stagingKey = generateStagingKey(fileName);
     const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
 
@@ -326,6 +328,28 @@ async function uploadOrderNotesImages(
   }
 
   return { stagingKeys, urls };
+}
+
+/** OkHttp / Alamofire parts may arrive as octet-stream or with an empty type. */
+function normalizeMultipartImageFile(file: File | Blob | null | undefined): File | null {
+  if (!file || typeof (file as File).size !== 'number' || (file as File).size === 0) {
+    return null;
+  }
+  const asFile = file as File;
+  const name = (asFile.name && asFile.name !== 'blob' ? asFile.name : 'order-note.jpg').trim();
+  let type = (asFile.type || '').toLowerCase();
+  if (!type || type === 'application/octet-stream') {
+    const lower = name.toLowerCase();
+    if (lower.endsWith('.png')) type = 'image/png';
+    else if (lower.endsWith('.webp')) type = 'image/webp';
+    else if (lower.endsWith('.gif')) type = 'image/gif';
+    else type = 'image/jpeg';
+  }
+  if (asFile.type === type && asFile.name === name && typeof File !== 'undefined' && asFile instanceof File) {
+    return asFile;
+  }
+  const hasExt = /\.(jpe?g|png|webp|gif)$/i.test(name);
+  return new File([asFile], hasExt ? name : `${name}.jpg`, { type });
 }
 
 /**

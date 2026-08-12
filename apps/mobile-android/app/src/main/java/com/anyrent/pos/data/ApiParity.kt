@@ -216,31 +216,56 @@ object ApiParity {
         securityDeposit: Double? = null,
         notes: String? = null,
         noteImages: List<ByteArray> = emptyList(),
+        @Suppress("UNUSED_PARAMETER")
+        existingNoteImageUrls: List<String> = emptyList(),
     ): Result<Unit> = runCatching {
         val data = JSONObject().apply {
             collateralDetails?.let { put("collateralDetails", it) }
             securityDeposit?.let { put("securityDeposit", it) }
             notes?.let { put("notes", it) }
         }
+
+        // iOS OrderService: text-only → JSON; add photos → multipart PUT
+        // (field "data" + "notesImages"). Never /api/upload/image.
         if (noteImages.isEmpty()) {
             ApiClient.get().authedPut(
                 "/api/orders/$id",
                 data.toString().toRequestBody(jsonMedia),
             )
-        } else {
+            return@runCatching
+        }
+
+        val tempFiles = noteImages.mapIndexed { index, bytes ->
+            requireJpeg(bytes)
+            File.createTempFile("notes_image_$index", ".jpg").also { it.writeBytes(bytes) }
+        }
+        try {
             val multipart = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("data", data.toString())
-            noteImages.forEachIndexed { index, bytes ->
+            tempFiles.forEachIndexed { index, file ->
                 multipart.addFormDataPart(
                     "notesImages",
-                    "order-note-${System.currentTimeMillis()}-$index.jpg",
-                    bytes.toRequestBody(imageMedia),
+                    "notes_image_$index.jpg",
+                    file.asRequestBody(imageMedia),
                 )
             }
+            android.util.Log.i(
+                "AnyRentUpload",
+                "PUT /api/orders/$id notesImages=${tempFiles.size} sizes=${tempFiles.map { it.length() }}",
+            )
             ApiClient.get().authedMultipartPut("/api/orders/$id", multipart.build())
+        } finally {
+            tempFiles.forEach { runCatching { it.delete() } }
         }
         Unit
+    }
+
+    private fun requireJpeg(bytes: ByteArray) {
+        require(bytes.size >= 100) { "Selected image is too small or corrupted (${bytes.size} bytes)" }
+        require(bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()) {
+            "Selected image is not a valid JPEG"
+        }
     }
 
     fun productAvailability(productId: Int, startDate: String, endDate: String): Result<String> =
@@ -304,14 +329,17 @@ object ApiParity {
             ApiClient.get().authedPut("/api/products/$id", body)
             return@runCatching ApiClient.get().getProduct(id).getOrThrow()
         }
+        // iOS ProductService: field "images", fileName image_0.jpg, mime image/jpeg
+        require(imageFile.length() >= 100L) { "Product image is empty" }
         val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("data", data.toString())
             .addFormDataPart(
                 "images",
-                imageFile.name,
-                imageFile.asRequestBody("image/*".toMediaType()),
+                "image_0.jpg",
+                imageFile.asRequestBody(imageMedia),
             )
             .build()
+        android.util.Log.i("AnyRentUpload", "PUT /api/products/$id image size=${imageFile.length()}")
         ApiClient.get().authedMultipartPut("/api/products/$id", multipart)
         ApiClient.get().getProduct(id).getOrThrow()
     }
@@ -430,14 +458,17 @@ object ApiParity {
                 (json.optJSONObject("data") ?: JSONObject()).optInt("id")
             ).getOrThrow()
         }
+        require(imageFile.length() >= 100L) { "Product image is empty" }
+        // iOS ProductService: field "images", fileName image_0.jpg, mime image/jpeg
         val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("data", data.toString())
             .addFormDataPart(
                 "images",
-                imageFile.name,
-                imageFile.asRequestBody("image/*".toMediaType()),
+                "image_0.jpg",
+                imageFile.asRequestBody(imageMedia),
             )
             .build()
+        android.util.Log.i("AnyRentUpload", "POST /api/products image size=${imageFile.length()}")
         val json = ApiClient.get().authedMultipart("/api/products", multipart)
         val id = (json.optJSONObject("data") ?: JSONObject()).optInt("id")
         ApiClient.get().getProduct(id).getOrThrow()

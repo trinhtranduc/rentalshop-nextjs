@@ -14,6 +14,7 @@ import {
   calculateExtensionTotal,
 } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/extend - Extend subscription
@@ -274,7 +275,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, context) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, context) => {
     return handleExtendSubscription(request, { params }, context);
   })(request);
 }

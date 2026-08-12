@@ -55,10 +55,8 @@ interface SystemUsersDataResponse {
 
 // System-level roles (not merchant-bound)
 const SYSTEM_ROLES = [
+  { value: 'OPS', label: 'Platform Operations' },
   { value: 'ARTICLE', label: 'Blog / CMS Editor' },
-  // Future roles can be added here:
-  // { value: 'MARKETING', label: 'Marketing' },
-  // { value: 'SUPPORT', label: 'Support Staff' },
 ];
 
 // ============================================================================

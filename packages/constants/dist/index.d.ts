@@ -46,12 +46,19 @@ declare const ORDER_TYPE: {
 type OrderType$1 = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 declare const USER_ROLE: {
     readonly ADMIN: "ADMIN";
+    readonly OPS: "OPS";
     readonly ARTICLE: "ARTICLE";
     readonly MERCHANT: "MERCHANT";
     readonly OUTLET_ADMIN: "OUTLET_ADMIN";
     readonly OUTLET_STAFF: "OUTLET_STAFF";
 };
 type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE];
+/** System-wide roles without merchant/outlet scope */
+declare const SYSTEM_LEVEL_USER_ROLES: readonly ["ADMIN", "OPS", "ARTICLE"];
+/** ADMIN + OPS — platform staff with cross-merchant access */
+declare const PLATFORM_OPS_ROLES: readonly ["ADMIN", "OPS"];
+declare function isSystemLevelUserRole(role: string | undefined | null): boolean;
+declare function isPlatformOpsRole(role: string | undefined | null): boolean;
 declare const ENTITY_STATUS: {
     readonly ACTIVE: "active";
     readonly INACTIVE: "inactive";
@@ -78,6 +85,11 @@ declare const BILLING_INTERVAL: {
     readonly ANNUAL: "annual";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
+type BillingIntervalLocale = 'en' | 'vi';
+/** Normalize API/DB interval strings to canonical billing interval ids. */
+declare function normalizeBillingInterval(value: string | null | undefined): BillingInterval | null;
+/** Human-readable billing cycle label (e.g. semi_annual → "6 months" / "6 tháng"). */
+declare function getBillingIntervalLabel(interval: string | null | undefined, locale?: BillingIntervalLocale): string;
 declare const AUDIT_ACTION: {
     readonly CREATE: "CREATE";
     readonly UPDATE: "UPDATE";
@@ -173,6 +185,7 @@ type STATUS_AuditAction = AuditAction;
 type STATUS_AuditEntityType = AuditEntityType;
 declare const STATUS_BILLING_INTERVAL: typeof BILLING_INTERVAL;
 type STATUS_BillingInterval = BillingInterval;
+type STATUS_BillingIntervalLocale = BillingIntervalLocale;
 declare const STATUS_ENTITY_STATUS: typeof ENTITY_STATUS;
 type STATUS_EntityStatus = EntityStatus;
 declare const STATUS_MERCHANT_STATUS: typeof MERCHANT_STATUS;
@@ -183,15 +196,18 @@ type STATUS_OrderStatus = OrderStatus;
 declare const STATUS_PAYMENT_METHOD: typeof PAYMENT_METHOD;
 declare const STATUS_PAYMENT_STATUS: typeof PAYMENT_STATUS;
 declare const STATUS_PAYMENT_TYPE: typeof PAYMENT_TYPE;
+declare const STATUS_PLATFORM_OPS_ROLES: typeof PLATFORM_OPS_ROLES;
 declare const STATUS_PRODUCT_AVAILABILITY_STATUS: typeof PRODUCT_AVAILABILITY_STATUS;
 type STATUS_PaymentMethod = PaymentMethod;
 type STATUS_PaymentStatus = PaymentStatus;
 type STATUS_PaymentType = PaymentType;
 type STATUS_ProductAvailabilityStatus = ProductAvailabilityStatus;
 declare const STATUS_SUBSCRIPTION_STATUS: typeof SUBSCRIPTION_STATUS;
+declare const STATUS_SYSTEM_LEVEL_USER_ROLES: typeof SYSTEM_LEVEL_USER_ROLES;
 type STATUS_SubscriptionStatus = SubscriptionStatus;
 declare const STATUS_USER_ROLE: typeof USER_ROLE;
 type STATUS_UserRole = UserRole;
+declare const STATUS_getBillingIntervalLabel: typeof getBillingIntervalLabel;
 declare const STATUS_getStatusColor: typeof getStatusColor;
 declare const STATUS_getStatusLabel: typeof getStatusLabel;
 declare const STATUS_getStatusOptions: typeof getStatusOptions;
@@ -200,11 +216,14 @@ declare const STATUS_isOrderCompleted: typeof isOrderCompleted;
 declare const STATUS_isPaymentFailed: typeof isPaymentFailed;
 declare const STATUS_isPaymentPending: typeof isPaymentPending;
 declare const STATUS_isPaymentSuccessful: typeof isPaymentSuccessful;
+declare const STATUS_isPlatformOpsRole: typeof isPlatformOpsRole;
 declare const STATUS_isSubscriptionActive: typeof isSubscriptionActive;
+declare const STATUS_isSystemLevelUserRole: typeof isSystemLevelUserRole;
 declare const STATUS_isValidSubscriptionStatus: typeof isValidSubscriptionStatus;
+declare const STATUS_normalizeBillingInterval: typeof normalizeBillingInterval;
 declare const STATUS_normalizeSubscriptionStatus: typeof normalizeSubscriptionStatus;
 declare namespace STATUS {
-  export { STATUS_AUDIT_ACTION as AUDIT_ACTION, STATUS_AUDIT_ENTITY_TYPE as AUDIT_ENTITY_TYPE, type STATUS_AuditAction as AuditAction, type STATUS_AuditEntityType as AuditEntityType, STATUS_BILLING_INTERVAL as BILLING_INTERVAL, type STATUS_BillingInterval as BillingInterval, STATUS_ENTITY_STATUS as ENTITY_STATUS, type STATUS_EntityStatus as EntityStatus, STATUS_MERCHANT_STATUS as MERCHANT_STATUS, type STATUS_MerchantStatus as MerchantStatus, STATUS_ORDER_STATUS as ORDER_STATUS, STATUS_ORDER_TYPE as ORDER_TYPE, type STATUS_OrderStatus as OrderStatus, type OrderType$1 as OrderType, STATUS_PAYMENT_METHOD as PAYMENT_METHOD, STATUS_PAYMENT_STATUS as PAYMENT_STATUS, STATUS_PAYMENT_TYPE as PAYMENT_TYPE, STATUS_PRODUCT_AVAILABILITY_STATUS as PRODUCT_AVAILABILITY_STATUS, type STATUS_PaymentMethod as PaymentMethod, type STATUS_PaymentStatus as PaymentStatus, type STATUS_PaymentType as PaymentType, type STATUS_ProductAvailabilityStatus as ProductAvailabilityStatus, STATUS_SUBSCRIPTION_STATUS as SUBSCRIPTION_STATUS, type STATUS_SubscriptionStatus as SubscriptionStatus, STATUS_USER_ROLE as USER_ROLE, type STATUS_UserRole as UserRole, STATUS_getStatusColor as getStatusColor, STATUS_getStatusLabel as getStatusLabel, STATUS_getStatusOptions as getStatusOptions, STATUS_isEntityActive as isEntityActive, STATUS_isOrderCompleted as isOrderCompleted, STATUS_isPaymentFailed as isPaymentFailed, STATUS_isPaymentPending as isPaymentPending, STATUS_isPaymentSuccessful as isPaymentSuccessful, STATUS_isSubscriptionActive as isSubscriptionActive, STATUS_isValidSubscriptionStatus as isValidSubscriptionStatus, STATUS_normalizeSubscriptionStatus as normalizeSubscriptionStatus };
+  export { STATUS_AUDIT_ACTION as AUDIT_ACTION, STATUS_AUDIT_ENTITY_TYPE as AUDIT_ENTITY_TYPE, type STATUS_AuditAction as AuditAction, type STATUS_AuditEntityType as AuditEntityType, STATUS_BILLING_INTERVAL as BILLING_INTERVAL, type STATUS_BillingInterval as BillingInterval, type STATUS_BillingIntervalLocale as BillingIntervalLocale, STATUS_ENTITY_STATUS as ENTITY_STATUS, type STATUS_EntityStatus as EntityStatus, STATUS_MERCHANT_STATUS as MERCHANT_STATUS, type STATUS_MerchantStatus as MerchantStatus, STATUS_ORDER_STATUS as ORDER_STATUS, STATUS_ORDER_TYPE as ORDER_TYPE, type STATUS_OrderStatus as OrderStatus, type OrderType$1 as OrderType, STATUS_PAYMENT_METHOD as PAYMENT_METHOD, STATUS_PAYMENT_STATUS as PAYMENT_STATUS, STATUS_PAYMENT_TYPE as PAYMENT_TYPE, STATUS_PLATFORM_OPS_ROLES as PLATFORM_OPS_ROLES, STATUS_PRODUCT_AVAILABILITY_STATUS as PRODUCT_AVAILABILITY_STATUS, type STATUS_PaymentMethod as PaymentMethod, type STATUS_PaymentStatus as PaymentStatus, type STATUS_PaymentType as PaymentType, type STATUS_ProductAvailabilityStatus as ProductAvailabilityStatus, STATUS_SUBSCRIPTION_STATUS as SUBSCRIPTION_STATUS, STATUS_SYSTEM_LEVEL_USER_ROLES as SYSTEM_LEVEL_USER_ROLES, type STATUS_SubscriptionStatus as SubscriptionStatus, STATUS_USER_ROLE as USER_ROLE, type STATUS_UserRole as UserRole, STATUS_getBillingIntervalLabel as getBillingIntervalLabel, STATUS_getStatusColor as getStatusColor, STATUS_getStatusLabel as getStatusLabel, STATUS_getStatusOptions as getStatusOptions, STATUS_isEntityActive as isEntityActive, STATUS_isOrderCompleted as isOrderCompleted, STATUS_isPaymentFailed as isPaymentFailed, STATUS_isPaymentPending as isPaymentPending, STATUS_isPaymentSuccessful as isPaymentSuccessful, STATUS_isPlatformOpsRole as isPlatformOpsRole, STATUS_isSubscriptionActive as isSubscriptionActive, STATUS_isSystemLevelUserRole as isSystemLevelUserRole, STATUS_isValidSubscriptionStatus as isValidSubscriptionStatus, STATUS_normalizeBillingInterval as normalizeBillingInterval, STATUS_normalizeSubscriptionStatus as normalizeSubscriptionStatus };
 }
 
 declare const ORDER_TYPES: {
@@ -698,6 +717,22 @@ declare const RENEWAL_DURATIONS: {
     description: string;
     isPopular: boolean;
 }[];
+/**
+ * Calendar days before `Subscription.currentPeriodEnd` when an email is sent.
+ * `0` is the expiry-day notification. Keeping only two buckets avoids noisy
+ * reminder sequences while still giving merchants time to renew.
+ */
+declare const PERIOD_EXPIRY_NOTIFICATIONS: readonly number[];
+declare const SUBSCRIPTION_EXPIRY_CONFIG: {
+    readonly PERIOD_EXPIRY_NOTIFICATIONS: readonly number[];
+    /**
+     * Buckets are computed in this timezone so "3 days left" matches the calendar
+     * the merchant actually looks at, instead of the UTC clock of the API server.
+     */
+    readonly REMINDER_TIMEZONE: "Asia/Ho_Chi_Minh";
+    /** `SubscriptionActivity.type` written after a reminder is sent (idempotency marker). */
+    readonly REMINDER_ACTIVITY_TYPE: "subscription_expiry_reminder_sent";
+};
 declare const TRIAL_CONFIG: {
     DEFAULT_TRIAL_DAYS: number;
     TRIAL_NOTIFICATIONS: {
@@ -753,6 +788,10 @@ declare function getTrialNotificationDays(): readonly number[];
  * Get default trial days
  */
 declare function getDefaultTrialDays(): number;
+/**
+ * Get the days-before-expiry buckets used by the expiry reminder cron
+ */
+declare function getPeriodExpiryNotificationDays(): readonly number[];
 /**
  * Get plan comparison data for display
  */
@@ -1029,7 +1068,7 @@ declare const DEFAULT_CURRENCY_SETTINGS: {
     showCode: boolean;
 };
 
-/** AnyRent brandmark (AR monogram ribbon) — matches iOS app icon */
+/** AnyRent brandmark (stylized A ribbon) — shared by landing, splash, and app icon */
 declare const ANYRENT_BRANDMARK_PATH = "/anyrent-brandmark-ribbon.png";
 declare const ANYRENT_BRAND_NAME = "AnyRent";
 declare function getAnyRentLogoUrl(baseUrl?: string): string;
@@ -1403,9 +1442,11 @@ type ButtonVariant = keyof typeof BUTTON_COLORS;
 
 declare const BUSINESS_TAG: {
     readonly AO_DAI: "AO_DAI";
+    readonly COSTUME: "COSTUME";
     readonly WEDDING_DRESS: "WEDDING_DRESS";
-    readonly VEHICLE: "VEHICLE";
     readonly EQUIPMENT: "EQUIPMENT";
+    readonly VEHICLE: "VEHICLE";
+    readonly FILM_EQUIPMENT: "FILM_EQUIPMENT";
     readonly OTHER: "OTHER";
 };
 type BusinessTag = (typeof BUSINESS_TAG)[keyof typeof BUSINESS_TAG];
@@ -1667,4 +1708,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { ACTION_COLORS, ANYRENT_BRANDMARK_PATH, ANYRENT_BRAND_NAME, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_CYCLES_ARRAY, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TAG, BUSINESS_TAG_OPTIONS, BUSINESS_TAG_VALUES, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessTag, type BusinessTagOption, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type PricingUnit, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, deriveBusinessTypeFromTags, formatCountryDisplay, getActivePlans, getAllPlans, getAnyRentLogoUrl, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasLoyaltyFeature, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeBusinessTags, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };
+export { ACTION_COLORS, ANYRENT_BRANDMARK_PATH, ANYRENT_BRAND_NAME, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_CYCLES_ARRAY, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TAG, BUSINESS_TAG_OPTIONS, BUSINESS_TAG_VALUES, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BillingIntervalLocale, type BorderColor, type BrandColor, type BusinessTag, type BusinessTagOption, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PERIOD_EXPIRY_NOTIFICATIONS, PLATFORM_OPS_ROLES, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type PricingUnit, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_EXPIRY_CONFIG, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, SYSTEM_LEVEL_USER_ROLES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, deriveBusinessTypeFromTags, formatCountryDisplay, getActivePlans, getAllPlans, getAnyRentLogoUrl, getBillingIntervalLabel, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPeriodExpiryNotificationDays, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasLoyaltyFeature, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isPlatformOpsRole, isSubscriptionActive, isSystemLevelUserRole, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeBillingInterval, normalizeBusinessTags, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };
