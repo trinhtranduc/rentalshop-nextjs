@@ -27,8 +27,9 @@ const getItemOptions = (item: OrderItemFormData): Array<{ id?: number; type: str
   (item.product?.pricingOptions as any[]) || [];
 
 const getPreferredPricingOption = <T extends { type: string; isDefault?: boolean }>(options: T[]): T | null =>
-  options.find(option => option.type === 'FIXED') ||
+  // Respect merchant default first (may be DAILY). Fall back to FIXED, then first option.
   options.find(option => option.isDefault) ||
+  options.find(option => option.type === 'FIXED') ||
   options[0] ||
   null;
 
@@ -355,11 +356,9 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       const salePrice = product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
       const deposit = product.deposit ?? 0;
 
-      // Resolve default pricing option (RENT only)
+      // Resolve default pricing option (RENT only) — use merchant isDefault
+      // so DAILY-default products create daily lines (not forced FIXED).
       const pricingOptions = (product.pricingOptions as any[]) || [];
-      // A rent line starts at the per-rental price when it is available. This is
-      // independent of a product-level marketing/default option so staff do not
-      // accidentally create a daily-priced order.
       const defaultOption = getPreferredPricingOption(pricingOptions);
       const isRent = formData.orderType === 'RENT';
 
