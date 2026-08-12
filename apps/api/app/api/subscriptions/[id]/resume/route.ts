@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, resumeSubscription } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { API, USER_ROLE, SUBSCRIPTION_STATUS, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/resume
