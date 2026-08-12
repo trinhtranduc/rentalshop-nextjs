@@ -59,6 +59,8 @@ const SYSTEM_ROLES = [
   { value: 'ARTICLE', label: 'Blog / CMS Editor' },
 ];
 
+const SYSTEM_USER_ROLES = ['OPS', 'ARTICLE', 'ADMIN'];
+
 // ============================================================================
 // PAGE
 // ============================================================================
@@ -96,17 +98,24 @@ export default function SystemUsersPage() {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
 
-  // Filters - system-level users only (ADMIN + ARTICLE, no merchantId)
-  const filters = useMemo(() => ({
-    q: search || undefined,
-    search: search || undefined,
-    role: roleFilter || 'ARTICLE', // Default filter to ARTICLE; ADMIN can change
-    page,
-    limit,
-    sortBy: 'createdAt',
-    sortOrder: 'desc' as const,
-    _pathname: pathname,
-  }), [search, roleFilter, page, limit, pathname]);
+  // Filters - system-level users only (OPS + ARTICLE + ADMIN)
+  const filters = useMemo(() => {
+    const base = {
+      q: search || undefined,
+      search: search || undefined,
+      page,
+      limit,
+      sortBy: 'createdAt',
+      sortOrder: 'desc' as const,
+      _pathname: pathname,
+    };
+
+    if (roleFilter && roleFilter !== 'all') {
+      return { ...base, role: roleFilter };
+    }
+
+    return { ...base, roles: SYSTEM_USER_ROLES.join(',') };
+  }, [search, roleFilter, page, limit, pathname]);
 
   // Data fetching
   const { data, loading, error, refetch } = useDedupedApi<SystemUsersDataResponse>({
@@ -233,7 +242,8 @@ export default function SystemUsersPage() {
       if (response.success) {
         toastSuccess('Tạo tài khoản thành công');
         setShowAddDialog(false);
-        refetch();
+        // Switch filter to the created role so the new account is visible immediately
+        updateURL({ role: formData.role, page: 1 });
       }
     } catch (err) {
       console.error('Error creating user:', err);
@@ -336,7 +346,7 @@ export default function SystemUsersPage() {
               className="pl-10"
             />
           </div>
-          <Select value={roleFilter || 'ARTICLE'} onValueChange={handleRoleFilterChange}>
+          <Select value={roleFilter || 'all'} onValueChange={handleRoleFilterChange}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Lọc theo role" />
             </SelectTrigger>

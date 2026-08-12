@@ -70,6 +70,7 @@ export const usersApi = {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.q) params.append('q', filters.q);
+    if (filters.roles) params.append('roles', filters.roles);
     if (filters.role) params.append('role', filters.role);
 
     const resolvedIsActive =

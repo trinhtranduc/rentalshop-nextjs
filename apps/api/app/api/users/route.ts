@@ -71,6 +71,14 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
       limit: q.limit || 20
     };
 
+    if (q.roles) {
+      searchFilters.roles = String(q.roles)
+        .split(',')
+        .map((r: string) => r.trim())
+        .filter(Boolean);
+      delete searchFilters.role;
+    }
+
     const resolvedIsActive = resolveUsersIsActiveFilter({
       isActive: q.isActive,
       status: q.status,

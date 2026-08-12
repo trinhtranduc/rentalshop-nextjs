@@ -400,6 +400,8 @@ export const usersQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
   role: userRoleEnum.optional(),
+  /** Comma-separated roles, e.g. OPS,ARTICLE,ADMIN */
+  roles: z.string().optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   status: z.enum(['active', 'inactive', 'all']).optional(),
