@@ -276,7 +276,7 @@ export default function UsersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <div className="flex-1 min-h-0 overflow-auto">
         <Users
           data={userData}

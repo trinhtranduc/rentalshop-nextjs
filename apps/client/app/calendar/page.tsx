@@ -327,7 +327,7 @@ export default function CalendarPage() {
       */}
       
       {/* Calendar Component - Always Visible */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6 shadow-sm">
         <Calendars
           orders={pickupOrders}
           loading={loading}
@@ -350,10 +350,10 @@ export default function CalendarPage() {
 
       {/* 🎯 NEW: Daily Orders Modal */}
       {showDailyModal && selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 h-[85vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full h-[90vh] sm:h-[85vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900">
                   {(() => {
@@ -404,7 +404,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 p-6 overflow-y-auto flex flex-col">
+            <div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col">
               {loadingDailyOrders ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

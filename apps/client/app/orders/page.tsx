@@ -461,14 +461,14 @@ export default function OrdersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
+    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-2 sm:px-4 pt-4 pb-0 overflow-hidden">
       <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
             <PageTitle>{t('title')}</PageTitle>
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
             {/* Export button - only show when orders are selected */}
             {canExport && selectedOrderIds.length > 0 && (
               <Button
