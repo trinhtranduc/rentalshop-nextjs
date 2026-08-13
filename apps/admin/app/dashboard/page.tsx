@@ -788,21 +788,6 @@ export default function AdminDashboard() {
         </div>
 
 
-        {/* Enhanced Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          {enhancedMetrics.map((metric, index) => (
-            <MetricCard
-              key={index}
-              title={metric.title}
-              value={metric.value}
-              change={metric.change}
-              icon={metric.icon}
-              color={metric.color}
-              bgColor={metric.bgColor}
-            />
-          ))}
-        </div>
-
         {/* Subscription Health Metrics - Clickable */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
           <Card 
