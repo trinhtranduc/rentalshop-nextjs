@@ -232,8 +232,11 @@ export default function AdminDashboard() {
   const [subscriptionStats, setSubscriptionStats] = useState({
     active: 0,
     trial: 0,
+    expired: 0,
     expiring: 0,
     cancelled: 0,
+    basic: 0,
+    pro: 0,
     totalRevenue: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
@@ -613,12 +616,19 @@ export default function AdminDashboard() {
         const stats = {
           active: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'active').length,
           trial: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'trial').length,
+          expired: subscriptions.filter((s: any) => {
+            // Expired = currentPeriodEnd < now
+            if (!s.currentPeriodEnd) return false;
+            return new Date(s.currentPeriodEnd) < new Date();
+          }).length,
           expiring: subscriptions.filter((s: any) => {
             if (!s.currentPeriodEnd) return false;
             const daysUntilExpiry = Math.ceil((new Date(s.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
           }).length,
           cancelled: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'cancelled').length,
+          basic: subscriptions.filter((s: any) => String(s.plan?.name || '').toLowerCase() === 'basic').length,
+          pro: subscriptions.filter((s: any) => String(s.plan?.name || '').toLowerCase().includes('pro')).length,
           totalRevenue: subscriptions
             .filter((s: any) => {
               const createdAt = new Date(s.createdAt);
@@ -793,49 +803,89 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Subscription Health Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          <Card>
+        {/* Subscription Health Metrics - Clickable */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+            onClick={() => router.push('/merchants')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Active Subscriptions</CardTitle>
+              <CardTitle className="text-xs font-medium text-gray-600">Merchants</CardTitle>
+              <Building2 className="h-4 w-4 text-blue-700" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-blue-700">{metrics.totalMerchants}</div>
+              <p className="text-[10px] text-gray-500">Total merchants</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-sky-300 transition-all"
+            onClick={() => router.push('/subscriptions?status=TRIAL')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-gray-600">Trial</CardTitle>
+              <Clock className="h-4 w-4 text-sky-600" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-sky-600">{subscriptionStats.trial}</div>
+              <p className="text-[10px] text-gray-500">In trial period</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+            onClick={() => router.push('/subscriptions?status=ACTIVE')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-gray-600">Active</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{subscriptionStats.active}</div>
-              <p className="text-xs text-gray-500">Currently active</p>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-green-600">{subscriptionStats.active}</div>
+              <p className="text-[10px] text-gray-500">Basic: {subscriptionStats.basic} | Pro: {subscriptionStats.pro}</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-orange-300 transition-all"
+            onClick={() => router.push('/subscriptions')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Trial Subscriptions</CardTitle>
-              <Clock className="h-4 w-4 text-blue-700" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700">{subscriptionStats.trial}</div>
-              <p className="text-xs text-gray-500">In trial period</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Expiring Soon</CardTitle>
+              <CardTitle className="text-xs font-medium text-gray-600">Expiring Soon</CardTitle>
               <Bell className="h-4 w-4 text-orange-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{subscriptionStats.expiring}</div>
-              <p className="text-xs text-gray-500">Within 7 days</p>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-orange-600">{subscriptionStats.expiring}</div>
+              <p className="text-[10px] text-gray-500">Within 7 days</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-red-300 transition-all"
+            onClick={() => router.push('/subscriptions')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-gray-600">Expired</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-red-500">{subscriptionStats.expired}</div>
+              <p className="text-[10px] text-gray-500">Period ended</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-gray-400 transition-all"
+            onClick={() => router.push('/subscriptions?status=CANCELLED')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Cancelled</CardTitle>
+              <CardTitle className="text-xs font-medium text-gray-600">Cancelled</CardTitle>
               <AlertTriangle className="h-4 w-4 text-red-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{subscriptionStats.cancelled}</div>
-              <p className="text-xs text-gray-500">Churned accounts</p>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold text-red-600">{subscriptionStats.cancelled}</div>
+              <p className="text-[10px] text-gray-500">Churned</p>
             </CardContent>
           </Card>
         </div>
