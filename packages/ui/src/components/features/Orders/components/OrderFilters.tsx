@@ -285,7 +285,7 @@ export const OrderFilters = React.memo(function OrderFilters({
     <>
       {/* Compact single-line filters */}
           {/* Search Field - Larger width */}
-          <div className="flex-1 min-w-[280px]">
+          <div className="flex-1 min-w-[200px] sm:min-w-[280px]">
             <div className="relative">
               <Input
                 placeholder={t('search.placeholder')}
@@ -315,7 +315,7 @@ export const OrderFilters = React.memo(function OrderFilters({
             value={(filters.status as string) || 'all'} 
             onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
           >
-            <SelectTrigger className="w-[160px] h-10">
+            <SelectTrigger className="w-full sm:w-[160px] h-10">
               <SelectValue placeholder={t('filters.statusLabel')} />
             </SelectTrigger>
             <SelectContent>
@@ -333,7 +333,7 @@ export const OrderFilters = React.memo(function OrderFilters({
             value={filters.orderType || 'all'} 
             onValueChange={(value) => handleFilterChange('orderType', value === 'all' ? undefined : value)}
           >
-            <SelectTrigger className="w-[130px] h-10">
+            <SelectTrigger className="w-full sm:w-[130px] h-10">
               <SelectValue placeholder={t('filters.typeLabel')} />
             </SelectTrigger>
             <SelectContent>
@@ -355,7 +355,7 @@ export const OrderFilters = React.memo(function OrderFilters({
               }))}
               placeholder={loadingMerchants ? t('filters.loading') : merchantError ? t('filters.error') : 'All Merchants'}
               searchPlaceholder="Search merchants..."
-              className="w-[200px]"
+              className="w-full sm:w-[200px]"
               emptyText="No merchants found"
             />
           )}
@@ -380,7 +380,7 @@ export const OrderFilters = React.memo(function OrderFilters({
                     : t('filters.allOutlets')
             }
             searchPlaceholder="Search outlets..."
-            className="w-[200px]"
+            className="w-full sm:w-[200px]"
             emptyText="No outlets found"
             disabled={!isOutletFilterEnabled}
           />

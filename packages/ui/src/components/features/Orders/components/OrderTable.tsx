@@ -190,8 +190,8 @@ export const OrderTable = React.memo(function OrderTable({
           </Button>
         </div>
       )}
-      <div className="overflow-y-auto flex-1 h-full">
-        <table className="w-full">
+      <div className="overflow-x-auto overflow-y-auto flex-1 h-full">
+        <table className="w-full min-w-[800px]">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>

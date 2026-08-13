@@ -51,14 +51,14 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
   const t = useOrderTranslations();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mt-6">
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">{t('detail.orderActions')}</h3>
         
         {/* Actions Layout: Cancel/Delete on left, others on right */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           {/* Left side - Cancel and Delete buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {canCancel && (
               <Button
                 variant="destructive"
@@ -84,7 +84,7 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
           </div>
 
           {/* Right side - Other action buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {/* Edit Order */}
             <Button
               variant="outline"

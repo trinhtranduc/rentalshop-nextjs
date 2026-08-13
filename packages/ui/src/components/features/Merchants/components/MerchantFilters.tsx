@@ -60,7 +60,7 @@ export function MerchantFilters({
   return (
     <>
       {/* Search Field */}
-      <div className="flex-1 min-w-[280px]">
+      <div className="flex-1 min-w-[200px] sm:min-w-[280px]">
         <div className="relative">
           <Input
             type="text"
@@ -88,7 +88,7 @@ export function MerchantFilters({
 
       {/* Status Filter */}
       <Select value={filters.status} onValueChange={handleStatusChange}>
-        <SelectTrigger className="w-[150px] h-10">
+        <SelectTrigger className="w-full sm:w-[150px] h-10">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -102,7 +102,7 @@ export function MerchantFilters({
 
       {/* Plan Filter */}
       <Select value={filters.plan} onValueChange={handlePlanChange}>
-        <SelectTrigger className="w-[160px] h-10">
+        <SelectTrigger className="w-full sm:w-[160px] h-10">
           <SelectValue placeholder="Plan" />
         </SelectTrigger>
         <SelectContent>
