@@ -104,9 +104,12 @@ export function MerchantDetail({
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Clickable to navigate */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <Card 
+          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/users')}
+        >
           <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Users className="w-6 h-6 text-blue-700 mx-auto mb-2" />
@@ -116,7 +119,10 @@ export function MerchantDetail({
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <Card 
+          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/products')}
+        >
           <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Package className="w-6 h-6 text-green-600 mx-auto mb-2" />
@@ -126,7 +132,10 @@ export function MerchantDetail({
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <Card 
+          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all"
+          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/orders')}
+        >
           <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <ShoppingCart className="w-6 h-6 text-orange-600 mx-auto mb-2" />
@@ -136,7 +145,10 @@ export function MerchantDetail({
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+        <Card 
+          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all"
+          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/customers')}
+        >
           <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
