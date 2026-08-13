@@ -222,9 +222,9 @@ export default function MerchantsPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex items-center justify-between w-full gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
           <PageTitle subtitle="Manage all merchants across the platform">
             Merchant Management
           </PageTitle>

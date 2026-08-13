@@ -16,16 +16,25 @@ export interface EntityCounts {
   orders: number;
 }
 
+/** Merchant/outlet roles that count toward plan user limits (excludes system roles). */
+const PLAN_LIMIT_USER_ROLES = [
+  USER_ROLE.MERCHANT,
+  USER_ROLE.OUTLET_ADMIN,
+  USER_ROLE.OUTLET_STAFF,
+] as const;
+
 /**
  * Count merchant users toward plan limits.
- * Soft-deleted accounts (deletedAt) and system ADMIN users are excluded.
+ * Soft-deleted accounts (deletedAt) and system-level roles are excluded.
+ * Uses role `in` (not `notIn`) so new system enum values (e.g. OPS) do not break
+ * queries before the DB migration adding them is deployed.
  */
 export async function countMerchantUsersForPlanLimit(merchantId: number): Promise<number> {
   return prisma.user.count({
     where: {
       merchantId,
       deletedAt: null,
-      role: { notIn: [USER_ROLE.ADMIN, USER_ROLE.OPS, USER_ROLE.ARTICLE] },
+      role: { in: [...PLAN_LIMIT_USER_ROLES] },
     },
   });
 }
