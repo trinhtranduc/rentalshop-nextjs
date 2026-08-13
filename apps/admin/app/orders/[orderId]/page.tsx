@@ -353,7 +353,7 @@ export default function AdminOrderDetailPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={handleBackToOrders}>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -361,7 +361,7 @@ export default function AdminOrderDetailPage() {
             </Button>
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button 
               variant="outline" 
               onClick={handleEditOrder}

@@ -105,43 +105,43 @@ export function MerchantDetail({
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Users className="w-6 h-6 text-blue-700 mx-auto mb-2" />
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalUsers}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalUsers}</p>
             </div>
           </CardContent>
         </Card>
         
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Package className="w-6 h-6 text-green-600 mx-auto mb-2" />
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalProducts}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalProducts}</p>
             </div>
           </CardContent>
         </Card>
         
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <ShoppingCart className="w-6 h-6 text-orange-600 mx-auto mb-2" />
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalOrders}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalOrders}</p>
             </div>
           </CardContent>
         </Card>
         
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
               <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalCustomers || 0}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalCustomers || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -152,7 +152,7 @@ export function MerchantDetail({
         {/* Basic Info */}
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <CardTitle>Basic Information</CardTitle>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
