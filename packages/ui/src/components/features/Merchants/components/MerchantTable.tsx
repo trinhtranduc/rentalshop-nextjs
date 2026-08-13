@@ -86,12 +86,12 @@ export function MerchantTable({
     <Card className="shadow-sm border-border flex flex-col h-full">
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
-        <div className="flex-1 overflow-auto h-full">
-          <table className="w-full">
+        <div className="flex-1 overflow-x-auto overflow-y-auto h-full">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
                 {onSelectionChange && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-12">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-12">
                     <input
                       type="checkbox"
                       checked={allSelected}

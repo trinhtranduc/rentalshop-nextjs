@@ -325,7 +325,7 @@ export function SubscriptionExtendDialogEnhanced({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[calc(100vw-1rem)] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5 text-action-primary" />
@@ -366,7 +366,7 @@ export function SubscriptionExtendDialogEnhanced({
           {/* Billing Period or Custom Date */}
           {extensionMode === 'period' ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="billingPeriod" className="text-xs font-medium">
                     Billing Period *
@@ -455,7 +455,7 @@ export function SubscriptionExtendDialogEnhanced({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="newEndDate" className="text-xs font-medium">
                   New End Date *
@@ -557,7 +557,7 @@ export function SubscriptionExtendDialogEnhanced({
           )}
 
           {/* Method, Note & Send Email - Compact Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="method" className="text-xs font-medium">Method</Label>
               <select
