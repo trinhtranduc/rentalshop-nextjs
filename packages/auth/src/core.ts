@@ -645,16 +645,6 @@ export function getUserScope(user: AuthUser): UserScope {
   const merchantId = user.merchantId || user.merchant?.id;
   const outletId = user.outletId || user.outlet?.id;
   
-  console.log('🔍 getUserScope - User merchant info:', {
-    'user.merchantId': user.merchantId,
-    'user.merchant?.id': user.merchant?.id,
-    'user.outletId': user.outletId,
-    'user.outlet?.id': user.outlet?.id,
-    'resolved merchantId': merchantId,
-    'resolved outletId': outletId,
-    'user.role': user.role
-  });
-  
   return {
     merchantId,
     outletId,
@@ -670,13 +660,6 @@ export function getUserScope(user: AuthUser): UserScope {
  * @returns Array of permissions for the user's role
  */
 export async function getUserPermissions(user: AuthUser): Promise<Permission[]> {
-  console.log('🔍 getUserPermissions called with:', {
-    role: user.role,
-    merchantId: user.merchantId,
-    outletId: user.outletId,
-    roleType: typeof user.role
-  });
-
   // Normalize role to ensure it matches ROLE_PERMISSIONS keys
   const normalizedRole = (user.role?.toUpperCase() || '') as Role;
   
@@ -721,8 +704,6 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
 
         // If merchant role exists and is active, use its permissions
         if (merchantRole && merchantRole.isActive && merchantRole.permissions.length > 0) {
-          const roleType = merchantRole.isSystemRole ? 'customized system role' : 'custom role';
-          console.log(`🔍 Using ${roleType} "${merchantRole.roleName}" permissions for merchant ${user.merchantId}`);
           return merchantRole.permissions as Permission[];
         }
       }
@@ -756,21 +737,6 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
           normalizedRole
         );
         
-        // Detailed logging for debugging
-        const addedPermissions = customPermissions.filter(p => !defaultPermissions.includes(p));
-        const criticalPermissions = CRITICAL_PERMISSIONS[normalizedRole] || [];
-        
-        console.log(`🔍 Smart merge custom permissions for merchant ${user.merchantId}, system role ${normalizedRole}`, {
-          strategy: 'ADD (Safe)',
-          defaultCount: defaultPermissions.length,
-          customCount: customPermissions.length,
-          mergedCount: mergedPermissions.length,
-          criticalCount: criticalPermissions.length,
-          addedPermissions: addedPermissions.length > 0 ? addedPermissions : 'none',
-          criticalProtected: criticalPermissions,
-          result: '✅ All default permissions preserved + custom permissions added'
-        });
-        
         return mergedPermissions;
       }
     } catch (error) {
@@ -782,13 +748,6 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
 
   // Fallback to default permissions for system role
   const defaultPermissions = ROLE_PERMISSIONS[normalizedRole];
-  console.log('🔍 ROLE_PERMISSIONS lookup:', {
-    role: user.role,
-    normalizedRole,
-    found: defaultPermissions !== undefined,
-    permissionsCount: defaultPermissions?.length || 0,
-    permissions: defaultPermissions || []
-  });
   
   if (!defaultPermissions) {
     console.error('❌ ROLE_PERMISSIONS lookup failed!', {

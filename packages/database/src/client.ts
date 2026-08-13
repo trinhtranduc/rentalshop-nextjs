@@ -8,11 +8,43 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientType | undefined;
 };
 
+/**
+ * Cap Prisma's pool size so multiple API replicas / restarts don't exhaust Postgres.
+ * Railway Postgres often has ~100 max_connections; default Prisma pool is
+ * ~num_cpus*2+1 per process which adds up quickly.
+ */
+function withPoolParams(url: string | undefined): string | undefined {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (!u.searchParams.has('connection_limit')) {
+      u.searchParams.set(
+        'connection_limit',
+        process.env.PRISMA_CONNECTION_LIMIT || '5'
+      );
+    }
+    if (!u.searchParams.has('pool_timeout')) {
+      u.searchParams.set(
+        'pool_timeout',
+        process.env.PRISMA_POOL_TIMEOUT || '20'
+      );
+    }
+    if (!u.searchParams.has('connect_timeout')) {
+      u.searchParams.set('connect_timeout', '10');
+    }
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 // Create Prisma Client instance
 function createPrismaClient(): PrismaClientType {
   try {
+    const url = withPoolParams(process.env.DATABASE_URL);
     const client = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      ...(url ? { datasources: { db: { url } } } : {}),
     });
     return client;
   } catch (error: any) {
@@ -33,22 +65,20 @@ function getPrismaClient(): PrismaClientType {
   if (prismaInstance) {
     return prismaInstance;
   }
-  
-  // Check global first (for development hot reload)
+
+  // Prefer global singleton (protects against duplicate module graphs in Next.js)
   if (globalForPrisma.prisma) {
     prismaInstance = globalForPrisma.prisma;
     return prismaInstance;
   }
-  
+
   // Create new instance
   try {
     prismaInstance = createPrismaClient();
-    
-    // Store in global for development hot reload
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.prisma = prismaInstance;
-    }
-    
+    // Always pin on globalThis — production used to skip this and could leak pools
+    // when the same process loaded the module more than once.
+    globalForPrisma.prisma = prismaInstance;
+
     return prismaInstance;
   } catch (error: any) {
     // In build time, Prisma Client might not be initialized yet
