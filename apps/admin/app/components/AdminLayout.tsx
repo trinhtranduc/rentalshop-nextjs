@@ -123,9 +123,9 @@ export default function AdminLayout({
             
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">RS</span>
+                <span className="text-white font-bold text-sm">A</span>
               </div>
-              <span className="font-semibold text-text-primary">RentalShop Admin</span>
+              <span className="font-semibold text-text-primary">AnyRent Admin</span>
             </div>
 
             <div className="w-8" /> {/* Spacer for centering */}

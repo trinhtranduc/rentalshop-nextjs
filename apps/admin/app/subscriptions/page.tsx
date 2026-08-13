@@ -418,15 +418,15 @@ export default function SubscriptionsPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
             <PageTitle subtitle="Manage merchant subscriptions with modern pricing tiers (Monthly, Quarterly, Yearly)">
               Subscription Management
             </PageTitle>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline"
               onClick={() => {/* Export functionality */}}
@@ -452,7 +452,7 @@ export default function SubscriptionsPage() {
       {/* Compact Stats Section */}
       <div className="flex-shrink-0 mt-3">
         {/* Compact Stats Cards - Horizontal layout to save vertical space */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="border">
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
@@ -509,9 +509,9 @@ export default function SubscriptionsPage() {
       {/* Search and Filters - In Card */}
       <Card className="shadow-sm border-border mt-3">
         <CardContent className="pt-4 pb-4">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
             {/* Search Merchant Name */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <input
                 type="text"
                 defaultValue={search}
@@ -526,7 +526,7 @@ export default function SubscriptionsPage() {
             </div>
             
             {/* Filter by Plan */}
-            <div className="w-64">
+            <div className="w-full sm:w-64">
               <select
                 value={planId}
                 onChange={(e) => updateURL({ planId: e.target.value, page: 1 })}

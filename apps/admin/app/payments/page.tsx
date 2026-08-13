@@ -217,7 +217,7 @@ export default function PaymentsPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <PageTitle subtitle="Track platform revenue, payments, and financial metrics">
           Payment Management
@@ -227,7 +227,7 @@ export default function PaymentsPage() {
       {/* Compact Stats and Filters Section */}
       <div className="flex-shrink-0">
         {/* Compact Financial Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <Card className="border">
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
@@ -296,7 +296,7 @@ export default function PaymentsPage() {
               </div>
 
               {/* Filters */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <select
                   value={status}
                   onChange={handleStatusChange}

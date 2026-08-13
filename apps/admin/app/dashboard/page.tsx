@@ -743,26 +743,26 @@ export default function AdminDashboard() {
         <PageLoadingIndicator loading={loading} />
         
         {/* Time Period Selector */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="flex space-x-2">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={period === 'today' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('today')}
-              className="px-4 py-2 text-sm"
+              className="px-3 sm:px-4 py-2 text-sm"
             >
               Today
             </Button>
             <Button
               variant={period === 'month' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('month')}
-              className="px-4 py-2 text-sm"
+              className="px-3 sm:px-4 py-2 text-sm"
             >
               This Month
             </Button>
             <Button
               variant={period === 'year' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('year')}
-              className="px-4 py-2 text-sm"
+              className="px-3 sm:px-4 py-2 text-sm"
             >
               This Year
             </Button>
@@ -779,7 +779,7 @@ export default function AdminDashboard() {
 
 
         {/* Enhanced Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {enhancedMetrics.map((metric, index) => (
             <MetricCard
               key={index}
@@ -794,7 +794,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Subscription Health Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Active Subscriptions</CardTitle>
@@ -842,25 +842,25 @@ export default function AdminDashboard() {
 
         {/* Revenue & Orders Charts */}
         {user?.role !== 'OUTLET_STAFF' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-sm sm:text-base">
                   Subscription Revenue by Creation Date
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-x-auto">
                 <SubscriptionRevenueChart data={subscriptionRevenueData} loading={loading} />
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-sm sm:text-base">
                   Total Merchants Registered
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-x-auto">
                 <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
               </CardContent>
             </Card>
@@ -868,7 +868,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Enhanced Dashboard Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
           {/* New Merchants */}
           <div>
             <Card>
@@ -882,27 +882,27 @@ export default function AdminDashboard() {
                 {newMerchants.length > 0 ? (
                   <div className="space-y-3">
                     {newMerchants.map((merchant, index) => (
-                      <div key={merchant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => router.push(`/merchants/${merchant.id}`)}>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
+                      <div key={merchant.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer gap-2" onClick={() => router.push(`/merchants/${merchant.id}`)}>
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
                             {index + 1}
                           </div>
-                          <div>
-                            <div className="font-medium text-sm">{merchant.name}</div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{merchant.name}</div>
                             {merchant.phone && (
-                              <div className="text-xs text-gray-500">{merchant.phone}</div>
+                              <div className="text-xs text-gray-500 truncate">{merchant.phone}</div>
                             )}
                             {(() => {
                               const fullAddress = [merchant.address, merchant.city, merchant.state, merchant.zipCode, merchant.country]
                                 .filter(Boolean)
                                 .join(', ');
                               return fullAddress ? (
-                                <div className="text-xs text-gray-500">{fullAddress}</div>
+                                <div className="text-xs text-gray-500 truncate">{fullAddress}</div>
                               ) : null;
                             })()}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           <div className="text-xs text-gray-500">
                             {new Date(merchant.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </div>

@@ -290,11 +290,11 @@ export default function AdminProductsPage() {
   // ============================================================================
   
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Export — only when rows are selected (same pattern as client) */}
             {canExportProducts && selectedProductIds.length > 0 && (
               <Button
