@@ -600,6 +600,24 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const planLimitError = await checkPlanLimitIfNeeded(user, outlet.merchantId, 'orders');
     if (planLimitError) return planLimitError;
 
+    // ✅ Validate customerId exists and belongs to the same merchant
+    if (parsed.data.customerId) {
+      const customer = await db.customers.findById(parsed.data.customerId);
+      if (!customer) {
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: 404 }
+        );
+      }
+      // Non-admin: check customer belongs to same merchant
+      if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== outlet.merchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Don't reveal customer exists for another merchant
+          { status: 404 }
+        );
+      }
+    }
+
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
     // Use atomic transaction to ensure uniqueness
     const orderNumberResult = await db.prisma.$transaction(async (tx: any) => {
