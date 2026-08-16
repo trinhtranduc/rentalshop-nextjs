@@ -29,4 +29,6 @@ COPY python-embedding-service/app/ ./app/
 EXPOSE 8080
 
 # Single worker: 1 vCPU. Model is loaded once in this process.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
+# Railway private DNS is IPv6. Bind :: or Node fetch to
+# python-embedding.railway.internal gets ECONNREFUSED.
+CMD ["sh", "-c", "uvicorn app.main:app --host :: --port ${PORT:-8000} --workers 1"]
