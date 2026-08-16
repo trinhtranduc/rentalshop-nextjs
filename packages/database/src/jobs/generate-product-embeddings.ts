@@ -71,8 +71,8 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
       imagesCount: images.length
     });
 
-    const pythonApiUrl = process.env.PYTHON_EMBEDDING_API_URL;
-    console.log(`[Embedding]    PYTHON_EMBEDDING_API_URL: ${pythonApiUrl ? 'SET' : 'NOT SET'}`);
+    const pythonApiUrl = (process.env.PYTHON_EMBEDDING_API_URL || '').trim();
+    console.log(`[Embedding]    PYTHON_EMBEDDING_API_URL: ${pythonApiUrl || 'NOT SET'}`);
 
     if (!pythonApiUrl) {
       console.error(`[Embedding] ❌ PYTHON_EMBEDDING_API_URL is not set!`);
@@ -85,6 +85,17 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
       console.error(`     - PYTHON_EMBEDDING_API_URL: ${process.env.PYTHON_EMBEDDING_API_URL || 'NOT SET'}`);
       console.error(`   💡 Fix: Set PYTHON_EMBEDDING_API_URL in your environment variables`);
       throw new Error('PYTHON_EMBEDDING_API_URL must be set to generate embeddings');
+    }
+
+    try {
+      const parsedPythonUrl = new URL(pythonApiUrl.startsWith('http') ? pythonApiUrl : `https://${pythonApiUrl}`);
+      if (!parsedPythonUrl.hostname) {
+        throw new Error('empty hostname');
+      }
+    } catch {
+      throw new Error(
+        `PYTHON_EMBEDDING_API_URL is invalid ("${pythonApiUrl}"). Expected http://python-embedding.railway.internal:<PORT>`
+      );
     }
 
     console.log(`[Embedding] Step 4: Init embedding service + vector store`);
@@ -173,6 +184,10 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
           );
         }
 
+        const dim = s3Embeddings[0]?.length ?? 0;
+        console.log(
+          `[Embedding]    s3-batch OK: ${s3Embeddings.length} vector(s), dim=${dim}`
+        );
         s3Embeddings.forEach((embedding, index) => {
           embeddings.push(buildEmbeddingPayload(imagesWithS3Keys[index].imageUrl, embedding));
         });
