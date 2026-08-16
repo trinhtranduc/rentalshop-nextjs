@@ -506,6 +506,25 @@ export const productsApi = {
     }>(response);
   },
 
+  /**
+   * Force re-index one product for image search.
+   */
+  async syncProductEmbeddings(productId: number): Promise<ApiResponse<{
+    productId: number;
+    queued: number;
+    images: number;
+  }>> {
+    const response = await authenticatedFetch(`/api/products/${productId}/sync-embeddings`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return await parseApiResponse<{
+      productId: number;
+      queued: number;
+      images: number;
+    }>(response);
+  },
+
 };
 
 /**

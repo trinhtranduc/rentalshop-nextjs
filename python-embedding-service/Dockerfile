@@ -15,14 +15,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Build context is the Git repo root (Railway Dockerfile Path =
+# /python-embedding-service/Dockerfile). COPY paths are from repo root.
+COPY python-embedding-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Bake CLIP ViT-B/32 vision ONNX (fp32, 512-dim image_embeds) into the image
 # so cold start does not download ~350MB at runtime.
 RUN python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Xenova/clip-vit-base-patch32', filename='onnx/vision_model.onnx', local_dir='/models/clip-vit-base-patch32')"
 
-COPY app/ ./app/
+COPY python-embedding-service/app/ ./app/
 
 EXPOSE 8080
 
