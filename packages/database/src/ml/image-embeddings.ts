@@ -458,6 +458,11 @@ export class FashionImageEmbedding {
           throw new Error(`Invalid S3 batch response: ${JSON.stringify(data)}`);
         }
 
+        const batchDim = Array.isArray(data.embeddings?.[0]) ? data.embeddings[0].length : 0;
+        console.log(
+          `[Embedding]    Python /embed/s3-batch OK: ${data.embeddings.length} vector(s), dim=${batchDim}, url=${apiUrl}`
+        );
+
         return data.embeddings;
       } catch (error: any) {
         clearTimeout(timeoutId);
