@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@rentalshop/ui';
-import { Plus, Download, MoreVertical, Upload, Trash2 } from 'lucide-react';
+import { Plus, Download, MoreVertical, Upload, Trash2, Sparkles } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useOutletsData, useCategoriesData } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
@@ -64,7 +64,7 @@ export default function ProductsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -85,6 +85,7 @@ export default function ProductsPage() {
   const [imageSearchResults, setImageSearchResults] = useState<Product[] | null>(null);
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
   
   // ============================================================================
   // FETCH CATEGORIES & OUTLETS - Using Official Hooks
@@ -219,6 +220,40 @@ export default function ProductsPage() {
     // Clear text search when using image search
     updateURL({ q: undefined, page: 1 });
   }, [updateURL]);
+
+  const handleSyncEmbeddings = useCallback(async () => {
+    if (isSyncingEmbeddings) return;
+    setIsSyncingEmbeddings(true);
+    try {
+      const response = await productsApi.syncEmbeddings();
+      if (response.success && response.data) {
+        const queued = response.data.queued;
+        if (queued === 0) {
+          toastSuccess(
+            'Image search',
+            'All products with photos are already indexed. Change photos on edit to re-index one product.'
+          );
+        } else {
+          toastSuccess(
+            'Image search sync started',
+            `${queued} product(s) queued. Search works after embeddings finish (a few minutes).`
+          );
+        }
+      } else {
+        toastError(
+          'Could not sync image search',
+          response.message || 'Try again in a moment.'
+        );
+      }
+    } catch (error) {
+      toastError(
+        'Could not sync image search',
+        error instanceof Error ? error.message : 'Try again in a moment.'
+      );
+    } finally {
+      setIsSyncingEmbeddings(false);
+    }
+  }, [isSyncingEmbeddings, toastSuccess, toastError]);
 
   // ============================================================================
   // PRODUCT ACTION HANDLERS
@@ -488,6 +523,13 @@ export default function ProductsPage() {
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {t('importLabel') || 'Import Products'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleSyncEmbeddings}
+                    disabled={isSyncingEmbeddings}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isSyncingEmbeddings ? 'Syncing image search...' : 'Sync image search'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

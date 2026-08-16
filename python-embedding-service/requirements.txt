@@ -1,15 +1,8 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-pillow==10.1.0
-# IMPORTANT: CPU-only PyTorch.
-# The plain "torch==2.1.0" can pull CUDA/NVIDIA wheels (hundreds of MBs) and often fails on Railway builds.
-torch==2.1.0+cpu
-transformers==4.35.0
-numpy==1.24.3
-# Qdrant client for vector search
-qdrant-client==1.7.0
-# PostgreSQL client for fetching products
-asyncpg==0.29.0
-# AWS SDK for S3 access (for direct S3 image loading)
-boto3==1.34.0
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+pillow==10.4.0
+numpy==1.26.4
+onnxruntime==1.19.2
+boto3==1.35.81
+huggingface_hub==0.26.5
