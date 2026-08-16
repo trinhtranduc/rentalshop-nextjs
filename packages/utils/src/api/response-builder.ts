@@ -83,6 +83,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_NOT_FOUND': 'Merchant not found',
   'OUTLET_NOT_FOUND': 'Outlet not found',
   'PRODUCT_NOT_FOUND': 'Product not found',
+  'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
   'CUSTOMER_NOT_FOUND': 'Customer not found',
   'CATEGORY_NOT_FOUND': 'Category not found',
@@ -246,7 +247,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'NO_PRODUCTS_FOUND': 'No similar products found',
   'EMBEDDING_JOBS_PROCESSED': 'Embedding jobs processed',
   'EMBEDDING_JOBS_CRON_HEALTHY': 'Embedding jobs cron is healthy',
-  'EMBEDDING_SYNC_QUEUED': 'Products queued for image-search indexing',
+  'EMBEDDING_SYNC_QUEUED': 'Product queued for image-search indexing',
 };
 
 /**
