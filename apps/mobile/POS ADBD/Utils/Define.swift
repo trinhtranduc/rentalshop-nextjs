@@ -320,33 +320,31 @@ extension OrderStatus {
 }
 
 enum OrderFilterChipMetrics {
-    static let cornerRadius: CGFloat = 15
-    static let contentInsets = UIEdgeInsets(top: 10, left: 15, bottom: 10, right: 15)
+    static let cornerRadius: CGFloat = 10
+    static let contentInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
     static let minimumHeight: CGFloat = 44
 
     static func applyBase(to button: UIButton) {
-        button.titleLabel?.font = .bodyMedium(size: 15)
+        button.titleLabel?.font = Utils.mediumFont(size: 14)
         button.layer.cornerRadius = cornerRadius
         button.layer.masksToBounds = true
-        button.layer.borderWidth = 1
+        button.layer.borderWidth = 1.5
         button.contentEdgeInsets = contentInsets
         button.setImage(nil, for: .normal)
     }
 }
 
 enum OrderFilterChipAppearance {
-    /// Plain single-tone chips for the order filter sheet (matches period filter chips).
+    /// Same selected / unselected treatment as Overview date-range presets.
     static func applyNeutral(to button: UIButton, isSelected: Bool) {
         OrderFilterChipMetrics.applyBase(to: button)
-
+        button.setTitleColor(.textPrimary, for: .normal)
         if isSelected {
-            button.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.10)
-            button.layer.borderColor = UIColor.brandPrimary.withAlphaComponent(0.20).cgColor
-            button.setTitleColor(.brandPrimary, for: .normal)
+            button.backgroundColor = .systemBackground
+            button.layer.borderColor = UIColor.label.cgColor
         } else {
-            button.backgroundColor = .backgroundCard
-            button.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.75).cgColor
-            button.setTitleColor(.textPrimary, for: .normal)
+            button.backgroundColor = UIColor.systemGray6
+            button.layer.borderColor = UIColor.clear.cgColor
         }
     }
 

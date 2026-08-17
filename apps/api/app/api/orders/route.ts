@@ -97,6 +97,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       productId,
       startDate,
       endDate,
+      dateField,
       sortBy,
       sortOrder
     } = parsed.data;
@@ -115,6 +116,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      dateField,
       q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
       limit: limit || 50,

@@ -184,38 +184,36 @@ final class OverviewSnapshotSectionView: UIView {
 
         super.init(frame: .zero)
 
-        let firstRow = UIStackView(arrangedSubviews: [
-            OverviewUIBuilder.makeCompactSnapshotItem(
-                title: "Report_Summary_Reserved".localized(),
-                valueLabel: reservedValueLabel,
-                tintColor: .statusReservedText,
-                iconSystemName: "bookmark.circle.fill"
-            ),
-            OverviewUIBuilder.makeCompactSnapshotItem(
-                title: "In Progress".localized(),
-                valueLabel: activeValueLabel,
-                tintColor: .statusActiveText,
-                iconSystemName: "figure.walk.circle.fill"
-            )
-        ])
+        let reservedItem = OverviewUIBuilder.makeCompactSnapshotItem(
+            title: "Report_Summary_Reserved".localized(),
+            valueLabel: reservedValueLabel,
+            tintColor: .statusReservedText,
+            iconSystemName: "bookmark.circle.fill"
+        )
+        let activeItem = OverviewUIBuilder.makeCompactSnapshotItem(
+            title: "In Progress".localized(),
+            valueLabel: activeValueLabel,
+            tintColor: .statusActiveText,
+            iconSystemName: "figure.walk.circle.fill"
+        )
+        let firstRow = UIStackView(arrangedSubviews: [reservedItem, activeItem])
         firstRow.axis = .horizontal
         firstRow.spacing = 8
         firstRow.distribution = .fillEqually
 
-        let secondRow = UIStackView(arrangedSubviews: [
-            OverviewUIBuilder.makeCompactSnapshotItem(
-                title: "Completed".localized(),
-                valueLabel: completedValueLabel,
-                tintColor: .statusDoneText,
-                iconSystemName: "checkmark.circle.fill"
-            ),
-            OverviewUIBuilder.makeCompactSnapshotItem(
-                title: "Cancelled".localized(),
-                valueLabel: cancelledValueLabel,
-                tintColor: .statusCancelledText,
-                iconSystemName: "xmark.circle.fill"
-            )
-        ])
+        let completedItem = OverviewUIBuilder.makeCompactSnapshotItem(
+            title: "Completed".localized(),
+            valueLabel: completedValueLabel,
+            tintColor: .statusDoneText,
+            iconSystemName: "checkmark.circle.fill"
+        )
+        let cancelledItem = OverviewUIBuilder.makeCompactSnapshotItem(
+            title: "Cancelled".localized(),
+            valueLabel: cancelledValueLabel,
+            tintColor: .statusCancelledText,
+            iconSystemName: "xmark.circle.fill"
+        )
+        let secondRow = UIStackView(arrangedSubviews: [completedItem, cancelledItem])
         secondRow.axis = .horizontal
         secondRow.spacing = 8
         secondRow.distribution = .fillEqually

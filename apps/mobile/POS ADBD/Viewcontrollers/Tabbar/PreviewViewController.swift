@@ -1907,7 +1907,7 @@ class PreviewViewController: BaseViewControler {
         if let urls = noteImageURLs, !urls.isEmpty {
             controller.setImageURLs(urls)
         }
-        present(UINavigationController(rootViewController: controller), animated: true)
+        present(controller, animated: true)
     }
     
     @objc private func saveOrder() {

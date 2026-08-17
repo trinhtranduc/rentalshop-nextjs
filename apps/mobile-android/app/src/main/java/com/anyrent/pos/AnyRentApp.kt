@@ -15,6 +15,7 @@ class AnyRentApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         SessionStore.init(this)
         createOrderNotificationChannel()
         runCatching { FirebaseApp.initializeApp(this) }
@@ -40,5 +41,9 @@ class AnyRentApp : Application() {
     companion object {
         const val CHANNEL_ID = "order_updates"
         private const val TAG = "AnyRentApp"
+
+        @Volatile
+        var instance: AnyRentApp? = null
+            private set
     }
 }

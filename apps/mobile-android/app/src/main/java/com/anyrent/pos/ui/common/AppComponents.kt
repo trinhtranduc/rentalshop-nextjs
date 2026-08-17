@@ -51,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -504,6 +505,32 @@ fun RankingCard(
 }
 
 /**
+ * Half-sheet chrome: centered title, no hairline.
+ * Extra top padding sits the title below the grabber. Confirm stays at the bottom.
+ */
+@Composable
+fun AppSheetHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
  * Primary CTA matching iOS `RCPrimaryButton`: bold 18pt, ~50pt tall.
  * Why shared: Material Button defaults were ~14sp, so Save/Add looked smaller than iOS.
  */
@@ -513,19 +540,28 @@ fun AppPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    loading: Boolean = false,
 ) {
     Button(
         onClick = onClick,
-        enabled = enabled,
+        enabled = enabled && !loading,
         modifier = modifier.fillMaxWidth().height(50.dp),
         shape = RoundedCornerShape(12.dp),
     ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-        )
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        } else {
+            Text(
+                text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+        }
     }
 }
 
@@ -710,20 +746,39 @@ fun AppOverflowMenuAnchor(
 }
 
 /**
- * iOS-style page sheet: slides up from the bottom, ~9/10 screen tall, rounded top,
- * dimmed list behind. Height is applied to *content* (not the sheet modifier) so
- * Material still anchors/animates from the bottom like UIModalPresentationStyle.pageSheet.
+ * Form presentation used by product / customer / user screens.
  *
- * Drag handle stays compact so the form nav bar sits near the sheet top
- * (TopAppBars inside must use windowInsets = WindowInsets(0) — status-bar
- * padding would push the title down as if this were a full screen).
+ * Default is an iOS-style page sheet (~9/10 tall, rounded top, dimmed list).
+ * [fullScreen] covers the window (product + user forms) so the photo and fields
+ * have the full height. Page-sheet content keeps TopAppBar windowInsets at 0;
+ * full-screen content uses the default status-bar insets.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppFormSheet(
     onDismiss: () -> Unit,
+    fullScreen: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    if (fullScreen) {
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+            ),
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                content()
+            }
+        }
+        return
+    }
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val configuration = LocalConfiguration.current
     val pageSheetHeight = (configuration.screenHeightDp * 0.9f).dp

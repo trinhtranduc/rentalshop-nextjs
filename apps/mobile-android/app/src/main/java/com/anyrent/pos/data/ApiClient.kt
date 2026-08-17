@@ -1,5 +1,6 @@
 package com.anyrent.pos.data
 
+import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.data.model.CalendarDay
 import com.anyrent.pos.data.model.Customer
@@ -15,9 +16,11 @@ import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.data.model.SubscriptionStatus
 import com.anyrent.pos.data.model.TodayMetrics
 import com.anyrent.pos.data.model.UserProfile
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -188,6 +191,7 @@ class ApiClient(
         endDate: String? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        dateField: String? = null,
     ): Result<PageResult<OrderSummary>> = runCatching {
         val url = "$baseUrl/api/orders".toHttpUrl().newBuilder()
             .addQueryParameter("page", page.toString())
@@ -202,6 +206,7 @@ class ApiClient(
                 if (!endDate.isNullOrBlank()) addQueryParameter("endDate", endDate)
                 if (!sortBy.isNullOrBlank()) addQueryParameter("sortBy", sortBy)
                 if (!sortOrder.isNullOrBlank()) addQueryParameter("sortOrder", sortOrder)
+                if (!dateField.isNullOrBlank()) addQueryParameter("dateField", dateField)
             }
             .build()
         parseOrdersPage(execute(get(url.toString())))
@@ -250,6 +255,44 @@ class ApiClient(
             status = status,
             orderType = null,
             productId = productId,
+        )
+    }
+
+    /**
+     * Operational snapshot drill-down. Same buckets as Overview stats
+     * (`new` / `pickup` / `return` / `cancelled`) via GET /api/analytics/income/orders.
+     */
+    fun searchIncomeOrders(
+        startDate: String,
+        endDate: String,
+        status: String,
+        page: Int = 1,
+        limit: Int = 20,
+    ): Result<PageResult<OrderSummary>> = runCatching {
+        val offset = (page - 1) * limit
+        val json = authedGet(
+            "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate" +
+                "&status=$status&plan=false&limit=$limit&offset=$offset",
+        )
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val days = data.optJSONArray("days") ?: JSONArray()
+        val seen = mutableSetOf<Int>()
+        val items = buildList {
+            for (i in 0 until days.length()) {
+                val dayOrders = days.getJSONObject(i).optJSONArray("orders") ?: continue
+                for (j in 0 until dayOrders.length()) {
+                    val order = dayOrders.getJSONObject(j)
+                    val id = order.optInt("id")
+                    if (id <= 0 || !seen.add(id)) continue
+                    add(parseOrderSummary(order))
+                }
+            }
+        }
+        val pagination = data.optJSONObject("pagination")
+        PageResult(
+            items = items,
+            hasMore = pagination?.optBoolean("hasMore") == true,
+            total = pagination?.optInt("total")?.takeIf { pagination.has("total") },
         )
     }
 
@@ -583,6 +626,42 @@ class ApiClient(
         } ?: error("Product not found for barcode")
     }
 
+    /**
+     * iOS ProductService.searchProductsByImage — JPEG multipart, same CLIP/Qdrant API.
+     */
+    fun searchProductsByImage(
+        jpeg: ByteArray,
+        limit: Int = 50,
+        minSimilarity: Float = 0.6f,
+    ): Result<PageResult<Product>> = runCatching {
+        require(jpeg.size >= 100) { "Image too small" }
+        val jpegMedia = "image/jpeg".toMediaType()
+        val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("image", "search_image.jpg", jpeg.toRequestBody(jpegMedia))
+            .addFormDataPart("limit", limit.toString())
+            .addFormDataPart("minSimilarity", minSimilarity.toString())
+            .build()
+        val json = authedMultipart("/api/products/searchByImage", multipart)
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val array = data.optJSONArray("products") ?: JSONArray()
+        PageResult(
+            items = (0 until array.length()).map { parseProduct(array.getJSONObject(it)) },
+            hasMore = false,
+            total = data.optInt("total", array.length()),
+        )
+    }
+
+    /**
+     * Queue CLIP re-index for one product (does not wait for the job).
+     * POST /api/products/{id}/sync-embeddings — products.manage only.
+     */
+    fun syncProductEmbeddings(id: Int): Result<Unit> = runCatching {
+        val body = JSONObject().toString().toRequestBody(jsonMedia)
+        authedPost("/api/products/$id/sync-embeddings", body)
+        Unit
+    }
+
     // -------------------------------------------------------------------------
     // Customers
     // -------------------------------------------------------------------------
@@ -818,10 +897,7 @@ class ApiClient(
                 val json = try {
                     JSONObject(if (raw.isBlank()) "{}" else raw)
                 } catch (error: JSONException) {
-                    android.util.Log.e(
-                        "AnyRentApi",
-                        "Invalid JSON ${response.code} ${request.method} ${request.url}: ${raw.take(400)}",
-                    )
+                    logApi("Invalid JSON ${response.code} ${request.method} ${request.url}: ${raw.take(400)}")
                     throw AppError.InvalidResponse(
                         "Server returned an invalid response (${response.code})",
                         error,
@@ -831,23 +907,19 @@ class ApiClient(
                     onUnauthorized()
                     throw AppError.Unauthorized(
                         json.errorMessage().ifBlank { "Your session has expired" },
+                        json.errorCode(),
                     )
                 }
                 if (!response.isSuccessful) {
-                    android.util.Log.e(
-                        "AnyRentApi",
-                        "HTTP ${response.code} ${request.method} ${request.url}: ${raw.take(600)}",
-                    )
+                    logApi("HTTP ${response.code} ${request.method} ${request.url}: ${raw.take(600)}")
                     throw AppError.Http(
                         response.code,
                         json.errorMessage().ifBlank { "HTTP ${response.code}" },
+                        json.errorCode(),
                     )
                 }
                 if (json.has("success") && !json.optBoolean("success")) {
-                    android.util.Log.e(
-                        "AnyRentApi",
-                        "API fail ${request.method} ${request.url}: ${raw.take(600)}",
-                    )
+                    logApi("API fail ${request.method} ${request.url}: ${raw.take(600)}")
                 }
                 requireSuccess(json)
                 return json
@@ -855,18 +927,34 @@ class ApiClient(
         } catch (error: AppError) {
             throw error
         } catch (error: IOException) {
-            android.util.Log.e("AnyRentApi", "Network ${request.method} ${request.url}: ${error.message}")
+            logApi("Network ${request.method} ${request.url}: ${error.message}")
             throw AppError.Network(error.message ?: "Network request failed", error)
         }
     }
 
+    private fun logApi(message: String) {
+        runCatching { android.util.Log.e("AnyRentApi", message) }
+    }
+
     private fun requireSuccess(json: JSONObject) {
         if (json.has("success") && !json.optBoolean("success")) {
-            throw AppError.InvalidResponse(json.errorMessage().ifBlank { "Request failed" })
+            throw AppError.InvalidResponse(
+                json.errorMessage().ifBlank { "Request failed" },
+                code = json.errorCode(),
+            )
         }
     }
 
+    private fun JSONObject.errorCode(): String? =
+        optString("code").takeIf { it.isNotBlank() }
+
+    /**
+     * User-facing text only — never append the machine `code`.
+     * iOS maps `PLAN_LIMIT_EXCEEDED` through Localizable.strings; Android did not,
+     * and used to show "Plan limit exceeded (PLAN_LIMIT_EXCEEDED)".
+     */
     private fun JSONObject.errorMessage(): String {
+        val code = errorCode()
         val message = optString("message")
         val errorText = when (val err = opt("error")) {
             is String -> err
@@ -875,27 +963,20 @@ class ApiClient(
             else -> err.toString()
         }
         val nestedMessage = optJSONObject("error")?.optString("message").orEmpty()
-        val code = optString("code")
 
-        // Prefer actionable server detail over a bare code / generic message.
-        // Upload routes put the real S3/sharp reason in `error`.
-        if (code.equals("VALIDATION_ERROR", ignoreCase = true)) {
-            return errorText
+        val detail = if (code.equals("VALIDATION_ERROR", ignoreCase = true)) {
+            errorText
                 .ifBlank { nestedMessage }
                 .ifBlank { message }
-                .ifBlank { code }
-        }
-
-        val detail = sequenceOf(errorText, nestedMessage, message)
-            .map { it.trim() }
-            .firstOrNull { it.isNotEmpty() && !it.equals(code, ignoreCase = true) }
-            ?: message.ifBlank { errorText }.ifBlank { nestedMessage }.ifBlank { code }
-
-        return if (code.isNotBlank() && !detail.contains(code)) {
-            "$detail ($code)"
+                .ifBlank { "" }
         } else {
-            detail
+            sequenceOf(errorText, nestedMessage, message)
+                .map { it.trim() }
+                .firstOrNull { it.isNotEmpty() && !it.equals(code, ignoreCase = true) }
+                ?: ""
         }
+
+        return ApiErrorMessages.resolve(AnyRentApp.instance, code, detail)
     }
 
     private fun get(url: String, authed: Boolean = true): Request =
@@ -996,6 +1077,7 @@ class ApiClient(
             }
         } ?: emptyList(),
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
+        embeddingGeneratedAt = o.optString("embeddingGeneratedAt").takeIf { it.isNotBlank() && it != "null" },
     )
 
     private fun parseCustomer(o: JSONObject): Customer = Customer(

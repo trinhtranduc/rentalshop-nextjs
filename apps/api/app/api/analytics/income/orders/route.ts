@@ -5,7 +5,7 @@ import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
-const STATUS_VALUES = ['new', 'pickup', 'return', 'all'] as const;
+const STATUS_VALUES = ['new', 'pickup', 'return', 'cancelled', 'all'] as const;
 type StatusFilter = (typeof STATUS_VALUES)[number];
 
 const EVENT_TYPES_NEW = ['RENT_DEPOSIT', 'SALE'];
@@ -36,6 +36,13 @@ function buildOrdersWhereClause(
   if (status === 'pickup') {
     return { ...base, pickedUpAt: { gte: queryStart, lte: queryEnd, not: null } };
   }
+  if (status === 'cancelled') {
+    return {
+      ...base,
+      status: ORDER_STATUS.CANCELLED,
+      updatedAt: { gte: queryStart, lte: queryEnd }
+    };
+  }
   return { ...base, returnedAt: { gte: queryStart, lte: queryEnd, not: null } };
 }
 
@@ -46,9 +53,31 @@ function filterEventsByStatus<T extends { revenueType: string }>(events: T[], st
   return events.filter((e) => EVENT_TYPES_RETURN.includes(e.revenueType));
 }
 
+/** Same date used by operational snapshot counts (income-period-summary orderCounts). */
+function snapshotEventDate(
+  order: { createdAt?: Date | null; pickedUpAt?: Date | null; returnedAt?: Date | null; updatedAt?: Date | null; status: string },
+  status: Exclude<StatusFilter, 'all'>
+): Date | null {
+  if (status === 'new') return order.createdAt ? new Date(order.createdAt) : null;
+  if (status === 'pickup') return order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+  if (status === 'return') return order.returnedAt ? new Date(order.returnedAt) : null;
+  if (order.status !== ORDER_STATUS.CANCELLED || !order.updatedAt) return null;
+  return new Date(order.updatedAt);
+}
+
+function wasCancelledAtCreation(order: { status: string; createdAt?: Date | null; updatedAt?: Date | null }): boolean {
+  return (
+    order.status === ORDER_STATUS.CANCELLED &&
+    !!order.createdAt &&
+    (!order.updatedAt || new Date(order.updatedAt).getTime() === new Date(order.createdAt).getTime())
+  );
+}
+
 /**
  * GET /api/analytics/income/orders
- * List order theo kỳ (startDate–endDate), filter status (new|pickup|return|all), plan (default true), pagination (limit, offset).
+ * List orders in a period. `status`:
+ * - new | pickup | return | cancelled → same buckets as Overview snapshot counts
+ * - all → revenue events (plus expected pickup/return when plan=true)
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   try {
@@ -162,6 +191,77 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     const ordersInList = new Map<string, { index: number; revenue: number; events: Array<{ revenueType: string; description: string; revenueDate: string }> }>();
 
     for (const order of allOrders) {
+      const customer = order.customer;
+      const customerName = customer
+        ? [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || undefined
+        : undefined;
+
+      const pushEntry = (
+        eventDate: Date,
+        revenue: number,
+        revenueType: string,
+        description: string
+      ) => {
+        if (eventDate < filterStart || eventDate > filterEnd) return;
+        const dateKey = getUTCDateKey(eventDate);
+        const dateISO = normalizeDateToISO(eventDate);
+        const dateObj = new Date(dateISO);
+        if (!dailyDataMap.has(dateKey)) {
+          dailyDataMap.set(dateKey, { date: dateKey, dateISO, dateObj, orders: [] });
+        }
+        const dailyData = dailyDataMap.get(dateKey)!;
+        const orderKey = `${order.id}-${dateKey}`;
+        const existing = ordersInList.get(orderKey);
+        if (existing) {
+          const entry = dailyData.orders[existing.index];
+          existing.revenue += revenue;
+          existing.events.push({ revenueType, description, revenueDate: eventDate.toISOString() });
+          entry.revenue = existing.revenue;
+          if (existing.events.length > 1) {
+            entry.revenueType = 'MULTIPLE';
+            entry.description = [...new Set(existing.events.map((e) => e.description))].join(' + ');
+          }
+          return;
+        }
+        dailyData.orders.push({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          status: order.status,
+          revenue,
+          revenueType,
+          description,
+          revenueDate: eventDate.toISOString(),
+          customerId: order.customerId ?? undefined,
+          customerName,
+          customerPhone: customer?.phone ?? undefined,
+          outletId: order.outletId,
+          outletName: (order as { outlet?: { name: string } }).outlet?.name ?? undefined,
+          createdAt: order.createdAt?.toISOString(),
+          pickupPlanAt: order.pickupPlanAt?.toISOString() ?? null,
+          returnPlanAt: order.returnPlanAt?.toISOString() ?? null,
+          totalAmount: order.totalAmount || 0,
+          depositAmount: order.depositAmount || 0,
+          securityDeposit: order.securityDeposit || 0,
+          damageFee: order.damageFee || 0
+        });
+        ordersInList.set(orderKey, {
+          index: dailyData.orders.length - 1,
+          revenue,
+          events: [{ revenueType, description, revenueDate: eventDate.toISOString() }]
+        });
+      };
+
+      // Snapshot tiles count created / picked up / returned / cancelled in the period —
+      // not the current order status, and not only rows with a deposit/pickup revenue event.
+      if (status !== 'all') {
+        if (status === 'new' && wasCancelledAtCreation(order)) continue;
+        const eventDate = snapshotEventDate(order, status);
+        if (!eventDate) continue;
+        pushEntry(eventDate, 0, status.toUpperCase(), status);
+        continue;
+      }
+
       const orderData = {
         orderType: order.orderType,
         status: order.status,
@@ -176,66 +276,16 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         returnPlanAt: order.returnPlanAt,
         updatedAt: order.updatedAt
       };
-      let revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd);
-      revenueEvents = filterEventsByStatus(revenueEvents, status);
-
+      const revenueEvents = filterEventsByStatus(
+        getOrderRevenueEvents(orderData, filterStart, filterEnd),
+        status
+      );
       for (const event of revenueEvents) {
-        if (event.date < filterStart || event.date > filterEnd) continue;
-        const dateKey = getUTCDateKey(event.date);
-        const dateISO = normalizeDateToISO(event.date);
-        const dateObj = new Date(dateISO);
-        if (!dailyDataMap.has(dateKey)) {
-          dailyDataMap.set(dateKey, { date: dateKey, dateISO, dateObj, orders: [] });
-        }
-        const dailyData = dailyDataMap.get(dateKey)!;
-        const orderKey = `${order.id}-${dateKey}`;
-        const existing = ordersInList.get(orderKey);
-        const customer = order.customer;
-        const customerName = customer ? [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || undefined : undefined;
-
-        if (existing) {
-          const entry = dailyData.orders[existing.index];
-          existing.revenue += event.revenue;
-          existing.events.push({ revenueType: event.revenueType, description: event.description, revenueDate: event.date.toISOString() });
-          entry.revenue = existing.revenue;
-          if (existing.events.length > 1) {
-            entry.revenueType = 'MULTIPLE';
-            entry.description = [...new Set(existing.events.map((e) => e.description))].join(' + ');
-          }
-        } else {
-          const idx = dailyData.orders.length;
-          dailyData.orders.push({
-            id: order.id,
-            orderNumber: order.orderNumber,
-            orderType: order.orderType,
-            status: order.status,
-            revenue: event.revenue,
-            revenueType: event.revenueType,
-            description: event.description,
-            revenueDate: event.date.toISOString(),
-            customerId: order.customerId ?? undefined,
-            customerName,
-            customerPhone: customer?.phone ?? undefined,
-            outletId: order.outletId,
-            outletName: (order as { outlet?: { name: string } }).outlet?.name ?? undefined,
-            createdAt: order.createdAt?.toISOString(),
-            pickupPlanAt: order.pickupPlanAt?.toISOString() ?? null,
-            returnPlanAt: order.returnPlanAt?.toISOString() ?? null,
-            totalAmount: order.totalAmount || 0,
-            depositAmount: order.depositAmount || 0,
-            securityDeposit: order.securityDeposit || 0,
-            damageFee: order.damageFee || 0
-          });
-          ordersInList.set(orderKey, {
-            index: idx,
-            revenue: event.revenue,
-            events: [{ revenueType: event.revenueType, description: event.description, revenueDate: event.date.toISOString() }]
-          });
-        }
+        pushEntry(event.date, event.revenue, event.revenueType, event.description);
       }
     }
 
-    if (plan) {
+    if (plan && status === 'all') {
       const expectedPickupWhereClause: any = {
         orderType: ORDER_TYPE.RENT,
         status: ORDER_STATUS.RESERVED,

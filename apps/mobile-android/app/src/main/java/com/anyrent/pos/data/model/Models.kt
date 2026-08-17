@@ -45,6 +45,8 @@ data class Product(
     val pricingType: String = "FIXED",
     val pricingOptions: List<PricingOption> = emptyList(),
     val note: String? = null,
+    /** ISO timestamp when image search last finished; null = never indexed */
+    val embeddingGeneratedAt: String? = null,
 )
 
 data class Customer(

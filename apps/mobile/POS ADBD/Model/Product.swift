@@ -85,6 +85,9 @@ struct Product: Codable, Comparable, Copying {
     // Multiple pricing options (Phase 1: FIXED + DAILY)
     var pricingOptions: [PricingOption]?
 
+    /// ISO date when image search last finished. nil = never indexed.
+    var embeddingGeneratedAt: String?
+
     /// Whether this product uses per-day pricing
     var isDailyPricing: Bool {
         return pricingType?.uppercased() == "DAILY"
@@ -137,6 +140,7 @@ struct Product: Codable, Comparable, Copying {
         // Pricing type
         self.pricingType = original.pricingType
         self.pricingOptions = original.pricingOptions
+        self.embeddingGeneratedAt = original.embeddingGeneratedAt
     }
     
     // MARK: - Codable Implementation
@@ -181,6 +185,7 @@ struct Product: Codable, Comparable, Copying {
         // Pricing type
         case pricingType
         case pricingOptions
+        case embeddingGeneratedAt
     }
     
     init(from decoder: Decoder) throws {
@@ -268,6 +273,7 @@ struct Product: Codable, Comparable, Copying {
         // Pricing type
         self.pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
         self.pricingOptions = try container.decodeIfPresent([PricingOption].self, forKey: .pricingOptions)
+        self.embeddingGeneratedAt = try container.decodeIfPresent(String.self, forKey: .embeddingGeneratedAt)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -300,6 +306,7 @@ struct Product: Codable, Comparable, Copying {
         try container.encodeIfPresent(categoryId, forKey: .categoryId)
         try container.encodeIfPresent(pricingType, forKey: .pricingType)
         try container.encodeIfPresent(pricingOptions, forKey: .pricingOptions)
+        try container.encodeIfPresent(embeddingGeneratedAt, forKey: .embeddingGeneratedAt)
     }
     
     

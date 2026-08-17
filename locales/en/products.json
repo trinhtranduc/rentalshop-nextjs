@@ -190,7 +190,10 @@
     "errorFriendlyUnavailable": "Image search is temporarily unavailable. Please try again later.",
     "success": "Success",
     "successFound": "Found {count} similar products",
-    "similaritySearch": "Similarity Search"
+    "similaritySearch": "Similarity Search",
+    "indexed": "Ready",
+    "notIndexed": "Not yet",
+    "updating": "Updating"
   },
   "searchResults": {
     "match": "Match",

@@ -420,13 +420,13 @@ fun UserManagementScreen(onBack: () -> Unit) {
         }
     }
 
-    // Same page-sheet presentation as Add Product / Add Customer.
     if (showForm) {
         AppFormSheet(
             onDismiss = {
                 showForm = false
                 editing = null
             },
+            fullScreen = true,
         ) {
             UserFormScreen(
                 initial = editing,

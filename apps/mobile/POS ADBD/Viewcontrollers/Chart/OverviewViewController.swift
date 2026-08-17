@@ -82,11 +82,11 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     // MARK: - UI Components
+    private var customRangeStart: Date?
+    private var customRangeEnd: Date?
+
     private lazy var periodFilterView: OverviewPeriodFilterView = {
         let view = OverviewPeriodFilterView()
-        view.onPeriodSelected = { [weak self] period in
-            self?.selectedPeriod = period
-        }
         view.onDateTapped = { [weak self] in
             self?.dateButtonTapped()
         }
@@ -280,13 +280,9 @@ class OverviewViewController: DemoBaseViewController {
 
     private func refreshPeriodFilter() {
         enforceStaffReportRestrictions()
-        let periods = ReportPeriod.availablePeriods(canViewRevenueAnalytics: canViewChartAnalytics())
-        let showsDate = (selectedPeriod == .today || selectedPeriod == .thisYear) && !isOutletStaff
         periodFilterView.configure(
-            periods: periods,
-            selected: selectedPeriod,
-            dateTitle: dateFilterTitle(),
-            showsDateButton: showsDate
+            title: dateFilterTitle(),
+            enabled: !isOutletStaff
         )
         todayOrdersInlineEmptyView.viewWithTag(101)?.isHidden = isOutletStaff
         listHeaderTopToFilterConstraint?.activate()
@@ -306,10 +302,25 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func dateFilterTitle() -> String {
-        if selectedPeriod == .thisYear {
-            return years[yearSelectedIndex].inString()
+        switch selectedPeriod {
+        case .custom:
+            return selectedPeriod.periodSubtitle(
+                todayDate: todayDate,
+                year: years[yearSelectedIndex],
+                customStart: customRangeStart,
+                customEnd: customRangeEnd
+            )
+        case .today:
+            if Calendar.current.isDateInToday(todayDate) {
+                return selectedPeriod.title
+            }
+            return selectedPeriod.periodSubtitle(
+                todayDate: todayDate,
+                year: years[yearSelectedIndex]
+            )
+        default:
+            return selectedPeriod.title
         }
-        return todayDate.dateInString() ?? ""
     }
 
     private func applySummaryLayout() {
@@ -337,10 +348,19 @@ class OverviewViewController: DemoBaseViewController {
 
     private func averageIncome(total: Double, for period: ReportPeriod) -> Double {
         guard period != .today else { return total }
-        let range = period.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let range = currentDateRange(for: period)
         let calendar = Calendar.current
         let dayCount = max((calendar.dateComponents([.day], from: calendar.startOfDay(for: range.start), to: calendar.startOfDay(for: range.end)).day ?? 0) + 1, 1)
         return total / Double(dayCount)
+    }
+
+    private func currentDateRange(for period: ReportPeriod) -> (start: Date, end: Date) {
+        period.dateRange(
+            todayDate: todayDate,
+            year: years[yearSelectedIndex],
+            customStart: customRangeStart,
+            customEnd: customRangeEnd
+        )
     }
 
     private func setupHeaderView() {
@@ -440,7 +460,7 @@ class OverviewViewController: DemoBaseViewController {
     /// Year (and long day ranges) need horizontal pan so revenue points stay readable.
     /// Nested inside a vertical `UIScrollView`; DGCharts coordinates with the parent scroll view.
     private func applyChartPanMode(for period: ReportPeriod) {
-        let allowHorizontalDrag = period == .thisYear || period == .last30Days || period == .last7Days
+        let allowHorizontalDrag = period != .today
         for chart in [chartsSection.revenueChartView, chartsSection.ordersChartView] {
             chart.dragEnabled = allowHorizontalDrag
             chart.dragXEnabled = allowHorizontalDrag
@@ -454,9 +474,9 @@ class OverviewViewController: DemoBaseViewController {
     private func chartVisibleWindowSize(for period: ReportPeriod, pointCount: Int) -> Double? {
         guard pointCount > 1 else { return nil }
         switch period {
-        case .thisYear:
+        case .thisYear, .allTime:
             return min(6, Double(pointCount))
-        case .last30Days:
+        case .last30Days, .last90Days, .last180Days, .custom:
             return min(7, Double(pointCount))
         case .last7Days:
             return min(5, Double(pointCount))
@@ -554,18 +574,61 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     @objc private func emptyStateTryAnotherDateTapped() {
-        guard !isOutletStaff else { return }
-        showDatePicker()
+        dateButtonTapped()
     }
 
     @objc private func dateButtonTapped() {
-        // Outlet staff: disable date selection
         guard !isOutletStaff else { return }
-        
-        if selectedPeriod == .thisYear {
-            showYearSelection()
-        } else if selectedPeriod == .today {
-            showDatePicker()
+
+        let isPastDay = selectedPeriod == .today && !Calendar.current.isDateInToday(todayDate)
+        let sheet = OverviewDateRangeSheetViewController(
+            periods: ReportPeriod.availablePeriods(canViewRevenueAnalytics: canViewChartAnalytics()),
+            selected: isPastDay ? .custom : selectedPeriod,
+            customStart: isPastDay ? todayDate : customRangeStart,
+            customEnd: isPastDay ? todayDate : customRangeEnd
+        )
+        sheet.onConfirm = { [weak self] period, start, end in
+            self?.applyDateFilter(period: period, start: start, end: end)
+        }
+        sheet.modalPresentationStyle = .pageSheet
+        if let sheetController = sheet.sheetPresentationController {
+            sheetController.detents = [.medium()]
+            sheetController.selectedDetentIdentifier = .medium
+            sheetController.prefersGrabberVisible = true
+            sheetController.preferredCornerRadius = 16
+            sheetController.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+        present(sheet, animated: true)
+    }
+
+    /// A one-day custom range still uses daily-report mode so staff can open the order list for that day.
+    private func applyDateFilter(period: ReportPeriod, start: Date?, end: Date?) {
+        let calendar = Calendar.current
+        if period == .today {
+            todayDate = Date()
+            customRangeStart = nil
+            customRangeEnd = nil
+            setSelectedPeriodAndReload(.today)
+            return
+        }
+        if period == .custom, let start, let end, calendar.isDate(start, inSameDayAs: end) {
+            todayDate = start
+            customRangeStart = nil
+            customRangeEnd = nil
+            setSelectedPeriodAndReload(.today)
+            return
+        }
+        customRangeStart = start
+        customRangeEnd = end
+        setSelectedPeriodAndReload(period)
+    }
+
+    private func setSelectedPeriodAndReload(_ period: ReportPeriod) {
+        if selectedPeriod == period {
+            refreshPeriodFilter()
+            loadData()
+        } else {
+            selectedPeriod = period
         }
     }
     
@@ -607,7 +670,7 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     private func updateDateFilterTitle() {
-        periodFilterView.setDateTitle(dateFilterTitle())
+        refreshPeriodFilter()
     }
     
     // MARK: - Data Loading
@@ -648,15 +711,15 @@ class OverviewViewController: DemoBaseViewController {
             } else {
                 showNoPermissionMessage()
             }
-        case .last7Days, .last30Days:
-            if canViewChartAnalytics() {
-                loadRangeReport(period: selectedPeriod)
-            } else {
-                showNoPermissionMessage()
-            }
         case .thisYear:
             if canViewChartAnalytics() {
                 loadOverview(year: years[yearSelectedIndex])
+            } else {
+                showNoPermissionMessage()
+            }
+        default:
+            if canViewChartAnalytics() {
+                loadRangeReport(period: selectedPeriod)
             } else {
                 showNoPermissionMessage()
             }
@@ -740,8 +803,7 @@ class OverviewViewController: DemoBaseViewController {
             return
         }
 
-        let year = years[yearSelectedIndex]
-        let range = period.dateRange(todayDate: todayDate, year: year)
+        let range = currentDateRange(for: period)
         showProgressText(text: "Loading...".localized(), navigationController: navigationController)
 
         AnalyticsAPIService.shared.loadAnalyticsPeriod(
@@ -817,7 +879,7 @@ class OverviewViewController: DemoBaseViewController {
             return
         }
 
-        if period == .thisYear {
+        if period.usesMonthlyChart {
             processYearlyIncomeData(incomeData)
         } else {
             processDailyIncomeSeries(incomeData, period: period)
@@ -861,7 +923,7 @@ class OverviewViewController: DemoBaseViewController {
 
         totalOrder = totalOrderCount
         realIncome = totalRealIncome
-        averageDailyIncome = averageIncome(total: totalRealIncome, for: .thisYear)
+        averageDailyIncome = averageIncome(total: totalRealIncome, for: selectedPeriod)
         reloadChart()
         DispatchQueue.main.async { [weak self] in
             self?.syncSummaryLabelsForRangeMode()
@@ -936,30 +998,25 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func initializeEmptyChartData(for period: ReportPeriod) {
-        switch period {
-        case .thisYear:
+        if period.usesMonthlyChart {
             for i in 1...12 {
                 xValues.append("T\(i)")
                 yRValues.append(0)
                 yEValues.append(0)
                 yOValues.append(0)
             }
-        case .last7Days:
-            for i in 1...7 {
+        } else if period != .today {
+            let count = max(7, Calendar.current.dateComponents(
+                [.day],
+                from: currentDateRange(for: period).start,
+                to: currentDateRange(for: period).end
+            ).day ?? 7)
+            for i in 1...min(count, 31) {
                 xValues.append("D\(i)")
                 yRValues.append(0)
                 yEValues.append(0)
                 yOValues.append(0)
             }
-        case .last30Days:
-            for i in 1...30 {
-                xValues.append("D\(i)")
-                yRValues.append(0)
-                yEValues.append(0)
-                yOValues.append(0)
-            }
-        case .today:
-            break
         }
     }
     private func clearChartData() {
@@ -1159,19 +1216,14 @@ class OverviewViewController: DemoBaseViewController {
 
     /// Deposit rows in Operational Snapshot: today + rolling windows (API: income/summary).
     private var showsDepositMetricsForSelectedPeriod: Bool {
-        switch selectedPeriod {
-        case .today, .last7Days, .last30Days:
-            return true
-        case .thisYear:
-            return false
-        }
+        selectedPeriod.showsDepositMetrics
     }
 
     private func operationalSummaryForSnapshot() -> DailyIncomeSummary? {
         switch selectedPeriod {
         case .today:
             return dailyIncomeData?.summary
-        case .last7Days, .last30Days, .thisYear:
+        default:
             return rangeIncomeSummary
         }
     }
@@ -1255,12 +1307,17 @@ class OverviewViewController: DemoBaseViewController {
         guard selectedPeriod.showsChartsAndInsights else { return }
         guard let navigationController = navigationController else { return }
 
-        let range = selectedPeriod.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let range = currentDateRange(for: selectedPeriod)
         let controller = OverviewRankingListViewController(
             mode: mode,
             startDate: range.start,
             endDate: range.end,
-            periodSubtitle: selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+            periodSubtitle: selectedPeriod.periodSubtitle(
+                todayDate: todayDate,
+                year: years[yearSelectedIndex],
+                customStart: customRangeStart,
+                customEnd: customRangeEnd
+            )
         )
         controller.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(controller, animated: true)
@@ -1270,12 +1327,17 @@ class OverviewViewController: DemoBaseViewController {
         guard selectedPeriod.showsChartsAndInsights else { return }
         guard let navigationController = navigationController else { return }
 
-        let range = selectedPeriod.dateRange(todayDate: todayDate, year: years[yearSelectedIndex])
+        let range = currentDateRange(for: selectedPeriod)
         let controller = OverviewRankingOrdersViewController(
             filter: filter,
             startDate: range.start,
             endDate: range.end,
-            periodSubtitle: selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+            periodSubtitle: selectedPeriod.periodSubtitle(
+                todayDate: todayDate,
+                year: years[yearSelectedIndex],
+                customStart: customRangeStart,
+                customEnd: customRangeEnd
+            )
         )
         controller.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(controller, animated: true)
@@ -1284,12 +1346,22 @@ class OverviewViewController: DemoBaseViewController {
     private func updateOrdersSectionHeader(orderCount: Int) {
         let countText = orderCount.formatStringInCommon()
         todayOrdersCountLabel.text = "\(countText) " + "Overview_Orders_Count".localized()
-        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(
+            todayDate: todayDate,
+            year: years[yearSelectedIndex],
+            customStart: customRangeStart,
+            customEnd: customRangeEnd
+        )
     }
 
     private func setOrdersSectionPlaceholder(_ placeholder: String) {
         todayOrdersCountLabel.text = placeholder
-        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(todayDate: todayDate, year: years[yearSelectedIndex])
+        todayOrdersDateLabel.text = selectedPeriod.periodSubtitle(
+            todayDate: todayDate,
+            year: years[yearSelectedIndex],
+            customStart: customRangeStart,
+            customEnd: customRangeEnd
+        )
     }
 
     @objc private func overviewInfoButtonTapped(_ sender: UIButton) {

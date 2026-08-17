@@ -189,7 +189,10 @@
     "errorFriendlyUnavailable": "Tính năng tìm theo ảnh tạm thời không khả dụng. Vui lòng thử lại sau.",
     "success": "Thành công",
     "successFound": "Tìm thấy {count} sản phẩm tương tự",
-    "similaritySearch": "Tìm kiếm tương tự"
+    "similaritySearch": "Tìm kiếm tương tự",
+    "indexed": "Sẵn sàng",
+    "notIndexed": "Chưa có",
+    "updating": "Đang cập nhật"
   },
   "searchResults": {
     "match": "Khớp",

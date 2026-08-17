@@ -797,6 +797,13 @@
 "Report_Period_7Days" = "7 days";
 "Report_Period_30Days" = "30 days";
 "Report_Period_Year" = "Year";
+"Report_Period_90Days" = "90 days";
+"Report_Period_180Days" = "180 days";
+"Report_Period_AllTime" = "All time";
+"Report_Period_Custom" = "Custom";
+"Report_DateRange_Title" = "Filter by date range";
+"Report_DateRange_From" = "From";
+"Report_DateRange_To" = "To";
 "Report_Summary_Revenue" = "Revenue";
 "Report_Summary_Orders" = "Orders";
 "Report_Summary_DepositHeld" = "Deposit held";
@@ -1389,6 +1396,13 @@
 "product.action.add.accessibility" = "Add product";
 "product.action.delete" = "Delete product";
 "product.action.update" = "Update product";
+"product.action.updateImageSearch" = "Update image search";
+"product.imageSearch.queued" = "Queued. Try scanning this product again in 1–2 minutes.";
+"product.imageSearch.ready" = "Ready";
+"product.imageSearch.notIndexed" = "Not yet";
+"product.imageSearch.updating" = "Updating";
+"product.imageSearch.noPhotos" = "Add a product photo, then try again.";
+"product.imageSearch.failed" = "Could not update image search.";
 "product.action.viewOrderHistory" = "View order history";
 "product.search.found" = "Products found";
 "product.search.progress" = "AI is searching for products...";

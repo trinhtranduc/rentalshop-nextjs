@@ -11,6 +11,14 @@ enum ReportPeriod: Int, CaseIterable {
     case last7Days = 1
     case last30Days = 2
     case thisYear = 3
+    case last90Days = 4
+    case last180Days = 5
+    case allTime = 6
+    case custom = 7
+
+    static let filterPresets: [ReportPeriod] = [
+        .today, .last7Days, .last30Days, .last90Days, .last180Days, .custom
+    ]
 
     var title: String {
         switch self {
@@ -18,23 +26,54 @@ enum ReportPeriod: Int, CaseIterable {
         case .last7Days: return "Report_Period_7Days".localized()
         case .last30Days: return "Report_Period_30Days".localized()
         case .thisYear: return "Report_Period_Year".localized()
+        case .last90Days: return "Report_Period_90Days".localized()
+        case .last180Days: return "Report_Period_180Days".localized()
+        case .allTime: return "Report_Period_AllTime".localized()
+        case .custom: return "Report_Period_Custom".localized()
         }
     }
 
-    /// Periods visible in the filter bar for the current user.
+    /// Periods visible in the filter sheet for the current user.
     static func availablePeriods(canViewRevenueAnalytics: Bool) -> [ReportPeriod] {
-        canViewRevenueAnalytics ? ReportPeriod.allCases : [.today]
+        canViewRevenueAnalytics ? filterPresets : [.today]
     }
 
     var showsOrderList: Bool { self == .today }
 
     var showsChartsAndInsights: Bool { self != .today }
 
-    var incomeGroupBy: String { self == .thisYear ? "month" : "day" }
+    var incomeGroupBy: String {
+        switch self {
+        case .thisYear, .allTime:
+            return "month"
+        default:
+            return "day"
+        }
+    }
+
+    var usesMonthlyChart: Bool { incomeGroupBy == "month" }
+
+    var showsDepositMetrics: Bool {
+        switch self {
+        case .today, .last7Days, .last30Days:
+            return true
+        default:
+            return false
+        }
+    }
 
     /// Rolling windows end on today; single-day uses the user-selected date.
-    func dateRange(todayDate: Date, year: Int) -> (start: Date, end: Date) {
+    func dateRange(
+        todayDate: Date,
+        year: Int,
+        customStart: Date? = nil,
+        customEnd: Date? = nil
+    ) -> (start: Date, end: Date) {
         let calendar = Calendar.current
+        let endOfToday = calendar.date(
+            byAdding: DateComponents(day: 1, second: -1),
+            to: calendar.startOfDay(for: Date())
+        ) ?? Date()
 
         switch self {
         case .today:
@@ -43,37 +82,59 @@ enum ReportPeriod: Int, CaseIterable {
             return (start, end)
 
         case .last7Days:
-            let end = calendar.startOfDay(for: Date())
-            let start = calendar.date(byAdding: .day, value: -6, to: end) ?? end
-            let endOfDay = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: Date())) ?? Date()
-            return (start, endOfDay)
-
+            return rollingRange(days: 7, calendar: calendar, endOfToday: endOfToday)
         case .last30Days:
-            let end = calendar.startOfDay(for: Date())
-            let start = calendar.date(byAdding: .day, value: -29, to: end) ?? end
-            let endOfDay = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: Date())) ?? Date()
-            return (start, endOfDay)
+            return rollingRange(days: 30, calendar: calendar, endOfToday: endOfToday)
+        case .last90Days:
+            return rollingRange(days: 90, calendar: calendar, endOfToday: endOfToday)
+        case .last180Days:
+            return rollingRange(days: 180, calendar: calendar, endOfToday: endOfToday)
 
         case .thisYear:
             let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
             let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31, hour: 23, minute: 59, second: 59)) ?? Date()
             return (start, end)
+
+        case .allTime:
+            let start = calendar.date(byAdding: .year, value: -10, to: calendar.startOfDay(for: Date())) ?? Date()
+            return (start, endOfToday)
+
+        case .custom:
+            let start = calendar.startOfDay(for: customStart ?? todayDate)
+            let rawEnd = customEnd ?? Date()
+            let end = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: rawEnd)) ?? rawEnd
+            return (start, end)
         }
     }
 
-    func periodSubtitle(todayDate: Date, year: Int) -> String {
-        let range = dateRange(todayDate: todayDate, year: year)
+    func periodSubtitle(
+        todayDate: Date,
+        year: Int,
+        customStart: Date? = nil,
+        customEnd: Date? = nil
+    ) -> String {
+        let range = dateRange(todayDate: todayDate, year: year, customStart: customStart, customEnd: customEnd)
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
 
         switch self {
         case .today:
             return formatter.string(from: todayDate)
-        case .last7Days, .last30Days:
-            return "\(formatter.string(from: range.start)) – \(formatter.string(from: range.end))"
         case .thisYear:
             return String(year)
+        case .allTime:
+            return title
+        case .custom:
+            return "\(formatter.string(from: range.start)) – \(formatter.string(from: range.end))"
+        default:
+            return "\(formatter.string(from: range.start)) – \(formatter.string(from: range.end))"
         }
+    }
+
+    private func rollingRange(days: Int, calendar: Calendar, endOfToday: Date) -> (start: Date, end: Date) {
+        let end = calendar.startOfDay(for: Date())
+        let start = calendar.date(byAdding: .day, value: -(days - 1), to: end) ?? end
+        return (start, endOfToday)
     }
 }
 
