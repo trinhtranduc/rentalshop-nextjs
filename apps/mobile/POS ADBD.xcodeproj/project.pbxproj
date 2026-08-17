@@ -74,6 +74,8 @@
 		048838FE2D7832AD00069256 /* PrinterConfigurationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838F82D7832AD00069256 /* PrinterConfigurationViewController.swift */; };
 		048839112D78468C00069256 /* SuggestionTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048839102D78468C00069256 /* SuggestionTextField.swift */; };
 		048839192D79C20E00069256 /* NewProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048839182D79C20E00069256 /* NewProductViewController.swift */; };
+		04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */; };
+		04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1112F8E2001000A0011 /* CIImageValidator.swift */; };
 		0488392C2D79F11900069256 /* inter-regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 048839202D79F11900069256 /* inter-regular.ttf */; };
 		0488392D2D79F11900069256 /* pretendard-extra-light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 048839262D79F11900069256 /* pretendard-extra-light.ttf */; };
 		0488392E2D79F11900069256 /* inter-bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0488391B2D79F11900069256 /* inter-bold.ttf */; };
@@ -310,6 +312,8 @@
 		048838F92D7832AD00069256 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		048839102D78468C00069256 /* SuggestionTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTextField.swift; sourceTree = "<group>"; };
 		048839182D79C20E00069256 /* NewProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProductViewController.swift; sourceTree = "<group>"; };
+		04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSearchViewController.swift; sourceTree = "<group>"; };
+		04C8A1112F8E2001000A0011 /* CIImageValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageValidator.swift; sourceTree = "<group>"; };
 		0488391A2D79F11900069256 /* inter-black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-black.ttf"; sourceTree = "<group>"; };
 		0488391B2D79F11900069256 /* inter-bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-bold.ttf"; sourceTree = "<group>"; };
 		0488391C2D79F11900069256 /* inter-extra-bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-extra-bold.ttf"; sourceTree = "<group>"; };
@@ -737,6 +741,7 @@
 		88733B8421CDE283003BB132 /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				04C8A1102F8E2001000A0010 /* ImageValidator */,
 				040331062EA9E11D003BC33E /* Extensions */,
 				041CBA1A2D8E6FFC00C117DF /* Managers */,
 				048838D32D7727AF00069256 /* Services */,
@@ -746,6 +751,14 @@
 				048838E12D7732BC00069256 /* Service.swift */,
 			);
 			path = Library;
+			sourceTree = "<group>";
+		};
+		04C8A1102F8E2001000A0010 /* ImageValidator */ = {
+			isa = PBXGroup;
+			children = (
+				04C8A1112F8E2001000A0011 /* CIImageValidator.swift */,
+			);
+			path = ImageValidator;
 			sourceTree = "<group>";
 		};
 		88A07DD521AA8F8E00023F69 /* Tabbar */ = {
@@ -959,6 +972,7 @@
 			isa = PBXGroup;
 			children = (
 				048839182D79C20E00069256 /* NewProductViewController.swift */,
+				04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */,
 			);
 			path = Products;
 			sourceTree = "<group>";
@@ -1285,6 +1299,8 @@
 				88F3D8C421B0627E007CC30A /* BalloonMarker.swift in Sources */,
 				88AED2D8221D2B6300A0C28F /* PreviewBottomCell.swift in Sources */,
 				048839192D79C20E00069256 /* NewProductViewController.swift in Sources */,
+				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
+				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,

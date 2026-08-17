@@ -18,6 +18,7 @@ import com.anyrent.pos.data.model.UserProfile
 import com.anyrent.pos.domain.error.AppError
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -583,6 +584,32 @@ class ApiClient(
         } ?: error("Product not found for barcode")
     }
 
+    /**
+     * iOS ProductService.searchProductsByImage — JPEG multipart, same CLIP/Qdrant API.
+     */
+    fun searchProductsByImage(
+        jpeg: ByteArray,
+        limit: Int = 50,
+        minSimilarity: Float = 0.6f,
+    ): Result<PageResult<Product>> = runCatching {
+        require(jpeg.size >= 100) { "Image too small" }
+        val jpegMedia = "image/jpeg".toMediaType()
+        val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("image", "search_image.jpg", jpeg.toRequestBody(jpegMedia))
+            .addFormDataPart("limit", limit.toString())
+            .addFormDataPart("minSimilarity", minSimilarity.toString())
+            .build()
+        val json = authedMultipart("/api/products/searchByImage", multipart)
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject()
+        val array = data.optJSONArray("products") ?: JSONArray()
+        PageResult(
+            items = (0 until array.length()).map { parseProduct(array.getJSONObject(it)) },
+            hasMore = false,
+            total = data.optInt("total", array.length()),
+        )
+    }
+
     // -------------------------------------------------------------------------
     // Customers
     // -------------------------------------------------------------------------
@@ -996,6 +1023,13 @@ class ApiClient(
             }
         } ?: emptyList(),
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
+        similarityPercent = when {
+            o.has("similarityPercent") && !o.isNull("similarityPercent") ->
+                o.optInt("similarityPercent")
+            o.has("similarity") && !o.isNull("similarity") ->
+                (o.optDouble("similarity") * 100).toInt()
+            else -> null
+        },
     )
 
     private fun parseCustomer(o: JSONObject): Customer = Customer(

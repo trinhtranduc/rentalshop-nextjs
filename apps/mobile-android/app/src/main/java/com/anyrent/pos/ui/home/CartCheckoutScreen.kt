@@ -311,6 +311,8 @@ fun CartCheckoutScreen(
                                         shadowElevation = if (selected) 1.dp else 0.dp,
                                         modifier = Modifier.clickable {
                                             CartStore.setOrderType(type)
+                                            // Pricing method (per rental / per day) is rent-only.
+                                            if (type != "RENT") pricingMenuProductId = null
                                         },
                                     ) {
                                         Text(
@@ -480,7 +482,7 @@ fun CartCheckoutScreen(
                         Text(stringResource(R.string.customer), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             customer?.displayName ?: stringResource(R.string.select_customer),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
@@ -601,26 +603,28 @@ fun CartCheckoutScreen(
                                         CartStore.updateQuantity(line.product.id, line.quantity + 1)
                                     },
                                 ) { Text("+", style = MaterialTheme.typography.headlineMedium) }
-                                androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
-                                    // iOS rateSelector → PricingMethodSheet (not DropdownMenu)
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = MaterialTheme.shapes.small,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterEnd)
-                                            .clickable(enabled = !previewMode) {
-                                                pricingMenuProductId = line.product.id
-                                            },
-                                    ) {
-                                        Text(
-                                            if (line.pricingType.equals("DAILY", ignoreCase = true)) {
-                                                stringResource(R.string.per_day)
-                                            } else {
-                                                stringResource(R.string.per_rental)
-                                            } + "  ▾",
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                            style = MaterialTheme.typography.titleMedium,
-                                        )
+                                if (orderType == "RENT") {
+                                    androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                                        // iOS rateSelector → PricingMethodSheet (not DropdownMenu)
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                            shape = MaterialTheme.shapes.small,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterEnd)
+                                                .clickable(enabled = !previewMode) {
+                                                    pricingMenuProductId = line.product.id
+                                                },
+                                        ) {
+                                            Text(
+                                                if (line.pricingType.equals("DAILY", ignoreCase = true)) {
+                                                    stringResource(R.string.per_day)
+                                                } else {
+                                                    stringResource(R.string.per_rental)
+                                                } + "  ▾",
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                                style = MaterialTheme.typography.titleMedium,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -638,7 +642,9 @@ fun CartCheckoutScreen(
                                     Text(stringResource(R.string.unit_price), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(formatMoney(line.unitPrice), color = MaterialTheme.colorScheme.primary)
                                     Text(
-                                        if (line.pricingType.equals("DAILY", ignoreCase = true)) {
+                                        if (orderType == "RENT" &&
+                                            line.pricingType.equals("DAILY", ignoreCase = true)
+                                        ) {
                                             stringResource(
                                                 R.string.daily_price_formula,
                                                 formatQuantity(line.quantity),
@@ -692,7 +698,7 @@ fun CartCheckoutScreen(
         )
     }
 
-    pricingMenuProductId?.let { productId ->
+    if (orderType == "RENT") pricingMenuProductId?.let { productId ->
         val line = lines.firstOrNull { it.product.id == productId } ?: return@let
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(

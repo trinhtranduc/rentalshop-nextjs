@@ -45,6 +45,8 @@ data class Product(
     val pricingType: String = "FIXED",
     val pricingOptions: List<PricingOption> = emptyList(),
     val note: String? = null,
+    /** 0–100 when returned by POST /api/products/searchByImage */
+    val similarityPercent: Int? = null,
 )
 
 data class Customer(

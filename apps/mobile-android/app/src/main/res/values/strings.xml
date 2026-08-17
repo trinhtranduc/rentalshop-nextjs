@@ -449,4 +449,14 @@
     <string name="all_types">All Types</string>
     <string name="created_date">Created Date</string>
     <string name="date_field">Date Field</string>
+
+    <string name="image_search">Search by image</string>
+    <string name="image_search_capture">Capture</string>
+    <string name="image_quality_percent">Image quality %1$d%%</string>
+    <string name="image_search_results">Results: %1$d products</string>
+    <string name="image_search_empty">No similar products found</string>
+    <string name="photo_library">Photo library</string>
+    <string name="grant_camera_permission">Grant camera permission</string>
+    <string name="added_to_cart">Added to cart</string>
+    <string name="similarity_percent">%1$d%% match</string>
 </resources>

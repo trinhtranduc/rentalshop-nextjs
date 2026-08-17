@@ -449,4 +449,14 @@
     <string name="all_types">Tất cả loại</string>
     <string name="created_date">Ngày tạo</string>
     <string name="date_field">Trường ngày</string>
+
+    <string name="image_search">Tìm theo hình</string>
+    <string name="image_search_capture">Chụp</string>
+    <string name="image_quality_percent">Chất lượng ảnh %1$d%%</string>
+    <string name="image_search_results">Kết quả: %1$d sản phẩm</string>
+    <string name="image_search_empty">Không tìm thấy sản phẩm tương tự</string>
+    <string name="photo_library">Thư viện ảnh</string>
+    <string name="grant_camera_permission">Cho phép camera</string>
+    <string name="added_to_cart">Đã thêm vào giỏ</string>
+    <string name="similarity_percent">%1$d%% khớp</string>
 </resources>

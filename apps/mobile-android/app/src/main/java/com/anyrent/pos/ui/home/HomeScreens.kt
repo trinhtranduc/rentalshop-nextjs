@@ -26,7 +26,19 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
@@ -74,6 +86,7 @@ import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.ui.availability.AvailabilityScreen
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.EmptyOrError
@@ -86,6 +99,7 @@ import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
+import com.anyrent.pos.ui.orders.OrderDetailScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,6 +132,11 @@ fun HomeScreen(
     var productEditor by remember { mutableStateOf<Product?>(null) }
     var showNewProduct by remember { mutableStateOf(false) }
     var showBarcodeScan by remember { mutableStateOf(false) }
+    var showImageSearch by remember { mutableStateOf(false) }
+    // Calendar overlay sits ON TOP of image-search (sibling Dialog). Closing it must not
+    // tear down the camera Dialog or the match-results sheet underneath.
+    var imageSearchAvailabilityProduct by remember { mutableStateOf<Product?>(null) }
+    var imageSearchOrderId by remember { mutableStateOf<Int?>(null) }
     val cartCount = CartStore.lines.collectAsState().value.sumOf { it.quantity }
     val scope = rememberCoroutineScope()
     val productListState = rememberLazyListState()
@@ -194,6 +213,9 @@ fun HomeScreen(
         // Nested under MainTabs (which already pads for the bottom NavigationBar +
         // system gesture bar). Default Scaffold insets would add that bottom gap again.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        floatingActionButton = {
+            ImageSearchFab(onClick = { showImageSearch = true })
+        },
         topBar = {
             CenterAlignedTopAppBar(
                 windowInsets = WindowInsets(0, 0, 0, 0),
@@ -294,7 +316,7 @@ fun HomeScreen(
                     products.isEmpty() -> EmptyOrError(stringResource(R.string.empty_products))
                     else -> LazyColumn(
                         state = productListState,
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(products, key = { it.id }) { product ->
@@ -361,6 +383,54 @@ fun HomeScreen(
                 )
             }
         }
+        if (showImageSearch) {
+            Dialog(
+                onDismissRequest = {
+                    showImageSearch = false
+                    imageSearchAvailabilityProduct = null
+                    imageSearchOrderId = null
+                },
+                properties = DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    dismissOnBackPress = imageSearchAvailabilityProduct == null &&
+                        imageSearchOrderId == null,
+                    dismissOnClickOutside = false,
+                ),
+            ) {
+                ImageSearchScreen(
+                    onDismiss = {
+                        showImageSearch = false
+                        imageSearchAvailabilityProduct = null
+                        imageSearchOrderId = null
+                    },
+                    onCheckAvailability = { product ->
+                        imageSearchAvailabilityProduct = product
+                    },
+                )
+            }
+        }
+        if (showImageSearch) {
+            imageSearchAvailabilityProduct?.let { product ->
+                OverlayFullScreen(onDismiss = { imageSearchAvailabilityProduct = null }) {
+                    AvailabilityScreen(
+                        onBack = { imageSearchAvailabilityProduct = null },
+                        onFindOrder = {},
+                        onScanProduct = {},
+                        onOpenOrder = { imageSearchOrderId = it },
+                        scannedProductId = product.id,
+                        focusedProductMode = true,
+                    )
+                }
+            }
+            imageSearchOrderId?.let { orderId ->
+                OverlayFullScreen(onDismiss = { imageSearchOrderId = null }) {
+                    OrderDetailScreen(
+                        orderId = orderId,
+                        onBack = { imageSearchOrderId = null },
+                    )
+                }
+            }
+        }
         deleteProduct?.let { product ->
             AppAlertConfirm(
                 title = stringResource(R.string.delete_product),
@@ -395,138 +465,190 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ProductCard(
+private fun ImageSearchFab(onClick: () -> Unit) {
+    // Slow breathe: enough to notice a new action, not a toy bounce.
+    val pulse = rememberInfiniteTransition(label = "imageSearchFab")
+    val scale by pulse.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1150, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "fabScale",
+    )
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = Color.White,
+        shape = CircleShape,
+        modifier = Modifier
+            .size(56.dp)
+            .scale(scale),
+    ) {
+        Icon(
+            Icons.Filled.ImageSearch,
+            contentDescription = stringResource(R.string.image_search),
+        )
+    }
+}
+
+@Composable
+internal fun ProductCard(
     product: Product,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onCheckAvailability: () -> Unit,
+    showManageActions: Boolean = true,
+    onAddToCart: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<String?>(null) }
+    val checkAvailabilityLabel = stringResource(R.string.check_availability)
+    val addToCartLabel = stringResource(R.string.add_to_cart)
+    val updateLabel = stringResource(R.string.update_product)
+    val deleteLabel = stringResource(R.string.delete_product)
+    val canManage = PermissionManager.canManageProducts()
+    // Image-search: calendar + add to cart. Home: calendar → update → delete.
+    val actions = buildList {
+        add(
+            AppMenuAction(
+                label = checkAvailabilityLabel,
+                icon = Icons.Default.CalendarMonth,
+                onClick = onCheckAvailability,
+            ),
+        )
+        if (onAddToCart != null) {
+            add(
+                AppMenuAction(
+                    label = addToCartLabel,
+                    icon = Icons.Default.ShoppingCart,
+                    onClick = onAddToCart,
+                ),
+            )
+        }
+        if (canManage && showManageActions) {
+            add(
+                AppMenuAction(
+                    label = updateLabel,
+                    icon = Icons.Outlined.Edit,
+                    onClick = onEdit,
+                ),
+            )
+            add(
+                AppMenuAction(
+                    label = deleteLabel,
+                    icon = Icons.Outlined.DeleteOutline,
+                    onClick = onDelete,
+                    destructive = true,
+                ),
+            )
+        }
+    }
+
     AppCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Row(
-            Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Box(
-                Modifier
-                    .size(72.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
+        // 3-dot is overlaid top-end so price/stock rows are full content width.
+        Box {
+            Row(
+                Modifier.padding(14.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                val imageUrl = product.imageUrl
-                if (!imageUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = stringResource(R.string.product_image),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            // Child clickable wins over AppCard onClick → open viewer, not add-to-cart.
-                            .clickable { previewImage = imageUrl },
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = stringResource(R.string.product_image),
-                        tint = MaterialTheme.colorScheme.outline,
-                    )
+                Box(
+                    Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val imageUrl = product.imageUrl
+                    if (!imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = stringResource(R.string.product_image),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                // Child clickable wins over AppCard onClick → open viewer, not add-to-cart.
+                                .clickable { previewImage = imageUrl },
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = stringResource(R.string.product_image),
+                            tint = MaterialTheme.colorScheme.outline,
+                        )
+                    }
                 }
-            }
-            Column(
-                Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         product.name,
-                        // iOS ProductCell: Regular 16
-                        modifier = Modifier.weight(1f),
+                        // Keep name off the overlaid 3-dot; price/stock stay full width.
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 36.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 2,
                     )
-                    Box {
-                        val checkAvailabilityLabel = stringResource(R.string.check_availability)
-                        val updateLabel = stringResource(R.string.update_product)
-                        val deleteLabel = stringResource(R.string.delete_product)
-                        val canManage = PermissionManager.canManageProducts()
-                        // iOS UIMenu order: view history → update → delete (destructive)
-                        val actions = buildList {
-                            add(
-                                AppMenuAction(
-                                    label = checkAvailabilityLabel,
-                                    icon = Icons.Default.CalendarMonth,
-                                    onClick = onCheckAvailability,
-                                ),
-                            )
-                            if (canManage) {
-                                add(
-                                    AppMenuAction(
-                                        label = updateLabel,
-                                        icon = Icons.Outlined.Edit,
-                                        onClick = onEdit,
-                                    ),
-                                )
-                                add(
-                                    AppMenuAction(
-                                        label = deleteLabel,
-                                        icon = Icons.Outlined.DeleteOutline,
-                                        onClick = onDelete,
-                                        destructive = true,
-                                    ),
-                                )
-                            }
-                        }
-                        AppOverflowMenuAnchor(
-                            contentDescription = stringResource(R.string.product_actions),
-                            actions = actions,
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it },
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        PriceBlock(
+                            stringResource(R.string.rent_price),
+                            product.rentPrice,
+                            Modifier.weight(1f),
                         )
+                        val salePrice = product.salePrice
+                        if (salePrice != null) {
+                            PriceBlock(
+                                stringResource(R.string.sale_price),
+                                salePrice,
+                                Modifier.weight(1f),
+                            )
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                ) {
-                    PriceBlock(stringResource(R.string.rent_price), product.rentPrice)
-                    product.salePrice?.let {
-                        PriceBlock(stringResource(R.string.sale_price), it)
-                    }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        "${stringResource(R.string.stock)}: ${formatQuantity(product.stock)}",
-                        // iOS ProductCell stock: Regular 14 (value emphasized Bold 14)
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        shape = MaterialTheme.shapes.small,
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            "${stringResource(R.string.available_short)}: ${formatQuantity(product.available)}",
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            "${stringResource(R.string.stock)}: ${formatQuantity(product.stock)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
                         )
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = MaterialTheme.shapes.small,
+                        ) {
+                            Text(
+                                "${stringResource(R.string.available_short)}: ${formatQuantity(product.available)}",
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
+            AppOverflowMenuAnchor(
+                modifier = Modifier.align(Alignment.TopEnd),
+                contentDescription = stringResource(R.string.product_actions),
+                actions = actions,
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+            )
         }
     }
     previewImage?.let { url ->
@@ -538,8 +660,8 @@ private fun ProductCard(
 }
 
 @Composable
-private fun PriceBlock(label: String, value: Double) {
-    Column {
+private fun PriceBlock(label: String, value: Double, modifier: Modifier = Modifier) {
+    Column(modifier) {
         Text(
             label,
             // iOS rentPriceTitleLabel: Regular 14
@@ -756,6 +878,28 @@ fun ProductManageScreen(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.save)) }
+        }
+    }
+}
+
+@Composable
+private fun OverlayFullScreen(
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            content()
         }
     }
 }

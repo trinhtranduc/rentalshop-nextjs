@@ -28,7 +28,8 @@ class MainViewController: BaseViewControler {
         table.translatesAutoresizingMaskIntoConstraints = false
         table.rowHeight = UITableViewAutomaticDimension // Tự động điều chỉnh height
         table.estimatedRowHeight = 132
-        table.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        table.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 88, right: 0)
+        table.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 88, right: 0)
         table.allowsSelection = true
         table.selectionFollowsFocus = true
         table.isUserInteractionEnabled = true
@@ -97,10 +98,24 @@ class MainViewController: BaseViewControler {
         return button
     }()
     
-    // Floating Action Button for AI Image Search (DISABLED - feature WIP)
     private lazy var floatingAISearchButton: UIButton = {
         let button = UIButton(type: .custom)
-        button.isHidden = true // Feature disabled - python embedding service removed
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 21, weight: .semibold)
+        // Search-by-image: photo + magnifying glass. camera.fill looked like barcode/capture.
+        let icon = UIImage(systemName: "photo.badge.magnifyingglass", withConfiguration: symbolConfig)
+            ?? UIImage(systemName: "sparkle.magnifyingglass", withConfiguration: symbolConfig)
+            ?? UIImage(systemName: "camera.viewfinder", withConfiguration: symbolConfig)
+            ?? UIImage(systemName: "magnifyingglass", withConfiguration: symbolConfig)
+        button.setImage(icon, for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = .brandPrimary
+        button.layer.cornerRadius = 28
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.22
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowRadius = 8
+        button.accessibilityLabel = "AI Image Search".localized()
+        button.addTarget(self, action: #selector(aiSearchTapped), for: .touchUpInside)
         return button
     }()
     
@@ -233,14 +248,14 @@ class MainViewController: BaseViewControler {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Search debounce is now handled by ViewModel
+        stopImageSearchFabPulse()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         tableView?.reloadData()
-        // Ensure floating button is always on top after view appears
-//        view.bringSubview(toFront: floatingAISearchButton)
+        view.bringSubview(toFront: floatingAISearchButton)
+        startImageSearchFabPulse()
     }
     
     // MARK: - Setup
@@ -261,7 +276,7 @@ class MainViewController: BaseViewControler {
         view.addSubview(searchSectionView)
         searchSectionView.addSubview(searchBar)
         view.addSubview(productTableView)
-        // floatingAISearchButton disabled (image search WIP)
+        view.addSubview(floatingAISearchButton)
         
         // Adjust content inset to account for navigation bar
         productTableView.contentInsetAdjustmentBehavior = .automatic
@@ -271,9 +286,7 @@ class MainViewController: BaseViewControler {
         
         setupConstraints()
         setupInfoViewController()
-        
-        // Ensure floating button is always on top
-//        view.bringSubview(toFront: floatingAISearchButton)
+        view.bringSubview(toFront: floatingAISearchButton)
     }
     
     // MARK: - Custom Navigation Bar Setup
@@ -308,9 +321,13 @@ class MainViewController: BaseViewControler {
         productTableView.snp.removeConstraints()
         
         // Note: searchBar and productTableView constraints are set up in setupInfoViewController()
-        // to handle both iPad and iPhone layouts differently
-        
-        // floatingAISearchButton constraints skipped — image search disabled
+        // to handle both iPad and iPhone layouts differently. Pin the FAB to the product list
+        // (not the full screen) so it stays on the left pane on iPad.
+        floatingAISearchButton.snp.makeConstraints { make in
+            make.width.height.equalTo(56)
+            make.trailing.equalTo(productTableView.snp.trailing).offset(-16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-16)
+        }
     }
     
     override func setupData() {
@@ -326,68 +343,6 @@ class MainViewController: BaseViewControler {
     private func searchProducts(with text: String) {
         // Direct search when user taps button - no debounce
         viewModel.searchProducts(with: text)
-    }
-    
-    private func performAISearch(with image: UIImage) {
-        // Show loading
-        showProgressText(text: "product.search.progress".localized())
-        
-        // Call image search API
-        ProductService.shared.searchProductsByImage(
-            image: image,
-            limit: 50,
-            minSimilarity: 0.6,
-            categoryId: nil
-        ) { [weak self] products, total, message, error in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                // Hide loading
-                self.hideProgress()
-                
-                // Handle error
-                if let error = error {
-                    self.isAISearchMode = false
-                    UIAlertController.errorAlert(parent: self, error: error)
-                    return
-                }
-                
-                // Update products with AI search results
-                if let products = products, !products.isEmpty {
-                    self.products = products
-                    self.isAISearchMode = true
-                    self.tableView?.reloadData()
-                    
-                    // Show success message with count
-                    let resultMessage = message ?? String(format: "Found %d similar products".localized(), total ?? products.count)
-                    self.showSuccessAlert(message: resultMessage)
-                } else {
-                    // No results found
-                    self.isAISearchMode = false
-                    self.showNoResultsAlert()
-                }
-            }
-        }
-    }
-    
-    private func showSuccessAlert(message: String) {
-        let alert = UIAlertController(
-            title: "product.search.found".localized(),
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
-        present(alert, animated: true)
-    }
-    
-    private func showNoResultsAlert() {
-        let alert = UIAlertController(
-            title: "No results found".localized(),
-            message: "No similar products found. Try taking another photo or adjusting the angle.".localized(),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
-        present(alert, animated: true)
     }
     
     // MARK: - Actions
@@ -473,11 +428,30 @@ class MainViewController: BaseViewControler {
     }
     
     @objc private func aiSearchTapped() {
-        // Open ImageSearchViewController for AI image search
-//        let imageSearchVC = ImageSearchViewController()
-//        let navController = UINavigationController(rootViewController: imageSearchVC)
-//        navController.modalPresentationStyle = .fullScreen
-//        present(navController, animated: true)
+        HapticFeedback.medium()
+        let imageSearchVC = ImageSearchViewController()
+        let navController = UINavigationController(rootViewController: imageSearchVC)
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
+    }
+
+    /// Soft breathe so the new search-by-image action is noticeable without a label.
+    /// Layer scale (not `transform` on the view) so SnapKit layout stays stable.
+    private func startImageSearchFabPulse() {
+        guard floatingAISearchButton.layer.animation(forKey: "imageSearchPulse") == nil else { return }
+        let pulse = CABasicAnimation(keyPath: "transform.scale")
+        pulse.fromValue = 1.0
+        pulse.toValue = 1.08
+        pulse.duration = 1.15
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        pulse.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+        floatingAISearchButton.layer.add(pulse, forKey: "imageSearchPulse")
+    }
+
+    private func stopImageSearchFabPulse() {
+        floatingAISearchButton.layer.removeAnimation(forKey: "imageSearchPulse")
+        floatingAISearchButton.layer.transform = CATransform3DIdentity
     }
     
     private func checkCameraPermission() -> Bool {
@@ -970,36 +944,5 @@ extension MainViewController {
             okAction: { _ in completion() },
             cancelAction: nil
         )
-    }
-}
-
-// MARK: - UIImagePickerControllerDelegate & UINavigationControllerDelegate
-extension MainViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    func imagePickerController(
-        _ picker: UIImagePickerController,
-        didFinishPickingMediaWithInfo info: [String : Any]
-    ) {
-        picker.dismiss(animated: true)
-        
-        // Get captured image
-        let image = (info[UIImagePickerControllerEditedImage] as? UIImage) ?? (info[UIImagePickerControllerOriginalImage] as? UIImage)
-        
-        guard let capturedImage = image else {
-            let alert = UIAlertController(
-                title: "Error".localized(),
-                message: "Unable to load image. Please try again.".localized(),
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
-            present(alert, animated: true)
-            return
-        }
-        
-        // Perform AI search with captured image
-        performAISearch(with: capturedImage)
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true)
     }
 }
