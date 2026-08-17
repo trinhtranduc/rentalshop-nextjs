@@ -4,10 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -33,10 +34,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
@@ -69,12 +73,15 @@ import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
+import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.RankingCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import androidx.compose.ui.Modifier
 import org.json.JSONObject
 import kotlin.math.max
@@ -93,6 +100,41 @@ private data class AnalyticsChartPoint(
     val orders: Double,
 )
 
+private enum class OverviewPeriod {
+    TODAY, D7, D30, D90, D180, ALL, CUSTOM
+}
+
+private val OverviewDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+private fun OverviewPeriod.range(customStart: LocalDate?, customEnd: LocalDate?): Pair<LocalDate, LocalDate> {
+    val end = LocalDate.now()
+    return when (this) {
+        OverviewPeriod.TODAY -> end to end
+        OverviewPeriod.D7 -> end.minusDays(6) to end
+        OverviewPeriod.D30 -> end.minusDays(29) to end
+        OverviewPeriod.D90 -> end.minusDays(89) to end
+        OverviewPeriod.D180 -> end.minusDays(179) to end
+        OverviewPeriod.ALL -> end.minusYears(10) to end
+        OverviewPeriod.CUSTOM -> (customStart ?: end) to (customEnd ?: end)
+    }
+}
+
+@Composable
+private fun OverviewPeriod.label(customStart: LocalDate?, customEnd: LocalDate?): String = when (this) {
+    OverviewPeriod.TODAY -> stringResource(R.string.period_today)
+    OverviewPeriod.D7 -> stringResource(R.string.period_7d)
+    OverviewPeriod.D30 -> stringResource(R.string.period_30d)
+    OverviewPeriod.D90 -> stringResource(R.string.period_90d)
+    OverviewPeriod.D180 -> stringResource(R.string.period_180d)
+    OverviewPeriod.ALL -> stringResource(R.string.period_all_time)
+    OverviewPeriod.CUSTOM -> if (customStart != null && customEnd != null) {
+        "${customStart.format(OverviewDateFormatter)} – ${customEnd.format(OverviewDateFormatter)}"
+    } else {
+        stringResource(R.string.period_custom)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewScreen(
     onViewProductOrders: (RankingItem) -> Unit = {},
@@ -113,17 +155,19 @@ fun OverviewScreen(
     var topCustomers by remember { mutableStateOf<List<RankingItem>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var periodDays by remember { mutableIntStateOf(30) }
+    var period by remember { mutableStateOf(OverviewPeriod.TODAY) }
+    var customStart by remember { mutableStateOf<LocalDate?>(null) }
+    var customEnd by remember { mutableStateOf<LocalDate?>(null) }
+    var showDateSheet by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableIntStateOf(0) }
     var chartPoints by remember { mutableStateOf<List<AnalyticsChartPoint>>(emptyList()) }
     var chartsExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val end = remember(periodDays, refreshTick) { LocalDate.now() }
-    val start = remember(periodDays, refreshTick) {
-        if (periodDays <= 1) end else end.minusDays((periodDays - 1).toLong())
+    val (start, end) = remember(period, customStart, customEnd, refreshTick) {
+        period.range(customStart, customEnd)
     }
 
-    LaunchedEffect(periodDays, refreshTick) {
+    LaunchedEffect(period, customStart, customEnd, refreshTick) {
         scope.launch {
             loading = true
             error = null
@@ -135,10 +179,10 @@ fun OverviewScreen(
                 topCustomers = it.second
             }.onFailure { if (error == null) error = it.message }
 
-            val period = withContext(Dispatchers.IO) {
+            val periodResult = withContext(Dispatchers.IO) {
                 ApiParity.analyticsPeriod(start.toString(), end.toString())
             }
-            period.onSuccess { data ->
+            periodResult.onSuccess { data ->
                 chartPoints = parseChartPoints(data)
                 val revenue = data.optJSONObject("revenue")
                 periodRevenue = revenue?.optDouble("totalActualRevenue")
@@ -176,7 +220,7 @@ fun OverviewScreen(
                 depositHeld = 0.0
                 depositDue = 0.0
                 error = it.message
-                if (periodDays <= 1) {
+                if (period == OverviewPeriod.TODAY) {
                     withContext(Dispatchers.IO) { ApiClient.get().todayMetrics() }
                         .onSuccess { today ->
                             periodOrders = today.totalOrders
@@ -190,59 +234,42 @@ fun OverviewScreen(
         }
     }
 
-    when {
-        loading && periodOrders == 0 && topProducts.isEmpty() -> LoadingBox()
-        error != null && periodOrders == 0 && topProducts.isEmpty() -> EmptyOrError(error!!)
-        else -> Column(
-            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        ) {
+    Column(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
             Row(
                 Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                listOf(
-                    1 to R.string.period_today,
-                    7 to R.string.period_7d,
-                    30 to R.string.period_30d,
-                ).forEach { (days, label) ->
-                    PeriodControl(
-                        selected = periodDays == days,
-                        onClick = { periodDays = days },
-                    ) {
-                        Text(stringResource(label))
-                    }
-                }
-                PeriodControl(
-                    selected = periodDays == 365,
-                    onClick = { periodDays = 365 },
-                ) {
-                    Icon(
-                        Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Text(LocalDate.now().year.toString())
-                }
+                OverviewDatePill(
+                    title = period.label(customStart, customEnd),
+                    onClick = { showDateSheet = true },
+                )
+                Spacer(Modifier.weight(1f))
                 Surface(
                     onClick = { refreshTick++ },
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.refresh),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(12.dp).size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(10.dp).size(20.dp),
                     )
                 }
             }
-            Column(
+            when {
+                loading && periodOrders == 0 && topProducts.isEmpty() -> {
+                    Box(Modifier.weight(1f).fillMaxWidth()) { LoadingBox() }
+                }
+                error != null && periodOrders == 0 && topProducts.isEmpty() -> {
+                    Box(Modifier.weight(1f).fillMaxWidth()) { EmptyOrError(error!!) }
+                }
+                else -> Column(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -358,7 +385,7 @@ fun OverviewScreen(
                             )
                         }
                         // iOS: deposit metrics for Today / 7d / 30d only (hidden for year)
-                        if (periodDays != 365) {
+                        if (period == OverviewPeriod.TODAY || period == OverviewPeriod.D7 || period == OverviewPeriod.D30) {
                             Row(Modifier.fillMaxWidth()) {
                                 SnapshotMetric(
                                     label = stringResource(R.string.deposit_held),
@@ -470,7 +497,22 @@ fun OverviewScreen(
                     }
                 }
             }
-        }
+            }
+    }
+
+    if (showDateSheet) {
+        OverviewDateFilterSheet(
+            selected = period,
+            customStart = customStart,
+            customEnd = customEnd,
+            onDismiss = { showDateSheet = false },
+            onConfirm = { next, startDate, endDate ->
+                period = next
+                customStart = startDate
+                customEnd = endDate
+                showDateSheet = false
+            },
+        )
     }
 }
 
@@ -492,27 +534,215 @@ private fun parseChartPoints(data: JSONObject): List<AnalyticsChartPoint> {
 }
 
 @Composable
-private fun PeriodControl(
-    selected: Boolean,
+private fun OverviewDatePill(title: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.CalendarMonth,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Icon(
+                Icons.Default.ExpandMore,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OverviewDateFilterSheet(
+    selected: OverviewPeriod,
+    customStart: LocalDate?,
+    customEnd: LocalDate?,
+    onDismiss: () -> Unit,
+    onConfirm: (OverviewPeriod, LocalDate?, LocalDate?) -> Unit,
+) {
+    var draft by remember { mutableStateOf(selected) }
+    var draftStart by remember { mutableStateOf(customStart) }
+    var draftEnd by remember { mutableStateOf(customEnd) }
+    var showRangePicker by remember { mutableStateOf(false) }
+    val canConfirm = draft != OverviewPeriod.CUSTOM || (draftStart != null && draftEnd != null)
+    val presets = listOf(
+        OverviewPeriod.TODAY,
+        OverviewPeriod.D7,
+        OverviewPeriod.D30,
+        OverviewPeriod.D90,
+        OverviewPeriod.D180,
+        OverviewPeriod.CUSTOM,
+    )
+    val today = remember { LocalDate.now() }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = false,
+            confirmValueChange = { it != SheetValue.Expanded },
+        ),
+        dragHandle = {
+            Box(
+                Modifier.padding(top = 8.dp).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 5.dp)
+                        .clip(RoundedCornerShape(2.5.dp))
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f)),
+                )
+            }
+        },
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                stringResource(R.string.date_range_filter_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                presets.chunked(2).forEach { row ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        row.forEach { item ->
+                            val isSelected = draft == item
+                            Surface(
+                                onClick = {
+                                    draft = item
+                                    if (item == OverviewPeriod.CUSTOM) {
+                                        showRangePicker = true
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).height(44.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.surface
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                border = BorderStroke(
+                                    1.5.dp,
+                                    if (isSelected) MaterialTheme.colorScheme.onSurface
+                                    else Color.Transparent,
+                                ),
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        item.label(null, null),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+                            }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            if (draft == OverviewPeriod.CUSTOM) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OverviewDateField(
+                        title = stringResource(R.string.date_range_from),
+                        value = draftStart?.format(OverviewDateFormatter),
+                        active = draftStart == null,
+                        placeholder = stringResource(R.string.select_date),
+                        onClick = { showRangePicker = true },
+                        modifier = Modifier.weight(1f),
+                    )
+                    OverviewDateField(
+                        title = stringResource(R.string.date_range_to),
+                        value = draftEnd?.format(OverviewDateFormatter),
+                        active = draftStart != null && draftEnd == null,
+                        placeholder = "--",
+                        onClick = { showRangePicker = true },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            AppPrimaryButton(
+                text = stringResource(R.string.confirm),
+                onClick = { onConfirm(draft, draftStart, draftEnd) },
+                enabled = canConfirm,
+            )
+        }
+    }
+
+    if (showRangePicker) {
+        AppDateRangePickerSheet(
+            title = stringResource(R.string.date_range_filter_title),
+            subtitle = stringResource(R.string.period_custom),
+            startLabel = stringResource(R.string.date_range_from),
+            endLabel = stringResource(R.string.date_range_to),
+            initialStart = draftStart,
+            initialEnd = draftEnd,
+            minDate = today.minusYears(10),
+            maxDate = today,
+            onDismiss = { showRangePicker = false },
+            onConfirm = { start, end ->
+                draftStart = start
+                draftEnd = end
+                draft = OverviewPeriod.CUSTOM
+                showRangePicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun OverviewDateField(
+    title: String,
+    value: String?,
+    active: Boolean,
+    placeholder: String,
     onClick: () -> Unit,
-    content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = if (active) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-            else MaterialTheme.colorScheme.outlineVariant,
+            1.5.dp,
+            if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent,
         ),
     ) {
-        Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content,
-        )
+        Column(
+            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                value ?: placeholder,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

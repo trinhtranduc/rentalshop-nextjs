@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -33,8 +32,6 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -50,7 +47,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -88,14 +84,13 @@ import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.orderLinePricingText
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.AppInputField
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.Instant
-import java.time.ZoneOffset
 import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1057,159 +1052,22 @@ fun CartCheckoutScreen(
     }
 
     if (showDateSelection) {
-        val dateSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        val rangeState = rememberDateRangePickerState(
-            initialSelectedStartDateMillis = pickup
-                .atStartOfDay(ZoneOffset.UTC)
-                .toInstant()
-                .toEpochMilli(),
-            initialSelectedEndDateMillis = ret
-                .atStartOfDay(ZoneOffset.UTC)
-                .toInstant()
-                .toEpochMilli(),
+        AppDateRangePickerSheet(
+            title = stringResource(R.string.select_rental_period),
+            subtitle = stringResource(R.string.rental_period),
+            startLabel = stringResource(R.string.pickup_date),
+            endLabel = stringResource(R.string.return_date),
+            initialStart = pickup,
+            initialEnd = ret,
+            onDismiss = { showDateSelection = false },
+            onConfirm = { startDate, endDate ->
+                CartStore.setPickup(startDate)
+                CartStore.setReturn(endDate)
+                pickupText = startDate.toString()
+                returnText = endDate.toString()
+                showDateSelection = false
+            },
         )
-        ModalBottomSheet(
-            onDismissRequest = { showDateSelection = false },
-            sheetState = dateSheetState,
-            containerColor = Color.White,
-        ) {
-            val dateFormatter = remember { DisplayDateFormatter }
-            fun formattedDate(millis: Long?): String = millis?.let {
-                Instant.ofEpochMilli(it)
-                    .atZone(ZoneOffset.UTC)
-                    .toLocalDate()
-                    .format(dateFormatter)
-            } ?: "—"
-
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            stringResource(R.string.select_rental_period),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            stringResource(R.string.rental_period),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    IconButton(onClick = { showDateSelection = false }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                ) {
-                    Row(
-                        Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(
-                                stringResource(R.string.pickup_date),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                formattedDate(rangeState.selectedStartDateMillis),
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                        Icon(
-                            Icons.Default.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                            Text(
-                                stringResource(R.string.return_date),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                formattedDate(rangeState.selectedEndDateMillis),
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
-                }
-
-                // Full sheet width for the grid: vi week starts Mon so Sunday is the
-                // last column — extra horizontal padding clips/squeezes that column.
-                DateRangePicker(
-                    state = rangeState,
-                    modifier = Modifier.fillMaxWidth().height(420.dp),
-                    title = null,
-                    headline = null,
-                    showModeToggle = false,
-                    colors = DatePickerDefaults.colors(
-                        containerColor = Color.White,
-                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
-                        dayInSelectionRangeContainerColor =
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                        dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TextButton(
-                        onClick = { showDateSelection = false },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    Button(
-                        enabled = rangeState.selectedStartDateMillis != null &&
-                            rangeState.selectedEndDateMillis != null,
-                        modifier = Modifier.weight(2f).height(52.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                        onClick = {
-                            val startMillis = rangeState.selectedStartDateMillis ?: return@Button
-                            val endMillis = rangeState.selectedEndDateMillis ?: return@Button
-                            val startDate = Instant.ofEpochMilli(startMillis).atZone(ZoneOffset.UTC).toLocalDate()
-                            val endDate = Instant.ofEpochMilli(endMillis).atZone(ZoneOffset.UTC).toLocalDate()
-                            CartStore.setPickup(startDate)
-                            CartStore.setReturn(endDate)
-                            pickupText = startDate.toString()
-                            returnText = endDate.toString()
-                            showDateSelection = false
-                        },
-                    ) {
-                        Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
     }
 }
 
