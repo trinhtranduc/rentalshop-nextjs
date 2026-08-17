@@ -31,7 +31,7 @@ class OrderFilterViewController: UIViewController {
         }
     }
 
-    private let titleLabel = UILabel()
+    private let headerView = RCSheetHeaderView()
     private let sortStack = UIStackView()
     private let statusGrid = UIStackView()
     private var sortButtons: [UIButton] = []
@@ -55,10 +55,8 @@ class OrderFilterViewController: UIViewController {
     }
 
     private func buildLayout() {
-        titleLabel.text = "Order Filter".localized()
-        titleLabel.font = Utils.boldFont(size: 18)
-        titleLabel.textAlignment = .center
-        titleLabel.textColor = .textPrimary
+        headerView.title = "Order Filter".localized()
+        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
 
         sortStack.axis = .horizontal
         sortStack.spacing = 10
@@ -80,16 +78,20 @@ class OrderFilterViewController: UIViewController {
         statusGrid.spacing = 10
         buildStatusGrid()
 
-        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
-
         let spacer = UIView()
         spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
-        let stack = UIStackView(arrangedSubviews: [titleLabel, sortStack, statusGrid, spacer, confirmButton])
+        let stack = UIStackView(arrangedSubviews: [sortStack, statusGrid, spacer, confirmButton])
         stack.axis = .vertical
         stack.spacing = 16
+        view.addSubview(headerView)
         view.addSubview(stack)
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(56)
+        }
         stack.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            make.top.equalTo(headerView.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
         }

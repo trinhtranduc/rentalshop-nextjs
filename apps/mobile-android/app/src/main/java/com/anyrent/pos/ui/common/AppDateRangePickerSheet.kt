@@ -9,20 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -41,11 +36,11 @@ import java.time.format.DateTimeFormatter
 
 /**
  * Shared calendar range sheet used by cart rental dates, export, and Overview custom range.
- * Material DateRangePicker lives here so screens do not recreate the layout or fall back
- * to the system DatePickerDialog.
+ * Header matches option sheets: title + hairline, Confirm at the bottom.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun AppDateRangePickerSheet(
     title: String,
     subtitle: String,
@@ -66,131 +61,92 @@ fun AppDateRangePickerSheet(
         },
     )
     val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val canConfirm = rangeState.selectedStartDateMillis != null &&
+        rangeState.selectedEndDateMillis != null
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = Color.White,
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
+        Column(Modifier.fillMaxWidth()) {
+            AppSheetHeader(title = title)
+            Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
-                }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                 ) {
-                    Icon(
-                        Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(
-                            startLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Row(
+                        Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
                         )
-                        Text(
-                            rangeState.selectedStartDateMillis.toDisplayDate(formatter),
-                            fontWeight = FontWeight.SemiBold,
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(
+                                startLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                rangeState.selectedStartDateMillis.toDisplayDate(formatter),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
                         )
-                    }
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                        Text(
-                            endLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            rangeState.selectedEndDateMillis.toDisplayDate(formatter),
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                        Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                            Text(
+                                endLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                rangeState.selectedEndDateMillis.toDisplayDate(formatter),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
-            }
 
-            DateRangePicker(
-                state = rangeState,
-                modifier = Modifier.fillMaxWidth().height(420.dp),
-                title = null,
-                headline = null,
-                showModeToggle = false,
-                colors = DatePickerDefaults.colors(
-                    containerColor = Color.White,
-                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                    todayDateBorderColor = MaterialTheme.colorScheme.primary,
-                    dayInSelectionRangeContainerColor =
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                    dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-            )
-
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(52.dp),
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-                Button(
-                    enabled = rangeState.selectedStartDateMillis != null &&
-                        rangeState.selectedEndDateMillis != null,
-                    modifier = Modifier.weight(2f).height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
+                DateRangePicker(
+                    state = rangeState,
+                    modifier = Modifier.fillMaxWidth().height(420.dp),
+                    title = null,
+                    headline = null,
+                    showModeToggle = false,
+                    colors = DatePickerDefaults.colors(
+                        containerColor = Color.White,
+                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                        dayInSelectionRangeContainerColor =
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                        dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
+                )
+
+                AppPrimaryButton(
+                    text = stringResource(R.string.confirm),
+                    enabled = canConfirm,
                     onClick = {
-                        val startUtc = rangeState.selectedStartDateMillis ?: return@Button
-                        val endUtc = rangeState.selectedEndDateMillis ?: return@Button
+                        val startUtc = rangeState.selectedStartDateMillis ?: return@AppPrimaryButton
+                        val endUtc = rangeState.selectedEndDateMillis ?: return@AppPrimaryButton
                         onConfirm(startUtc.toLocalDateUtc(), endUtc.toLocalDateUtc())
                     },
-                ) {
-                    Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                }
+                )
             }
         }
     }

@@ -74,6 +74,7 @@ import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppSheetHeader
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.RankingCard
@@ -606,20 +607,17 @@ private fun OverviewDateFilterSheet(
             }
         },
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                stringResource(R.string.date_range_filter_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        Column(Modifier.fillMaxWidth()) {
+            AppSheetHeader(
+                title = stringResource(R.string.date_range_filter_title),
             )
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 presets.chunked(2).forEach { row ->
                     Row(
@@ -689,6 +687,7 @@ private fun OverviewDateFilterSheet(
                 onClick = { onConfirm(draft, draftStart, draftEnd) },
                 enabled = canConfirm,
             )
+            }
         }
     }
 

@@ -93,6 +93,7 @@ object Routes {
     const val OrderCheck = "order-check"
     const val FindOrder = "find-order"
     const val AnalyticsOrders = "analytics-orders/{entityType}/{entityId}"
+    const val OverviewStatusOrders = "overview-orders/{kind}/{startDate}/{endDate}"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
     const val ProductAvailability = "product-availability/{productId}"
@@ -107,6 +108,8 @@ object Routes {
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
+    fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
+        "overview-orders/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
 }
 
@@ -232,6 +235,34 @@ fun AnyRentNavHost(
                     if (entityType == "product") R.string.product_orders
                     else R.string.customer_orders,
                 ),
+                onBack = { rootNavController.popBackStack() },
+            )
+        }
+        composable(
+            Routes.OverviewStatusOrders,
+            arguments = listOf(
+                navArgument("kind") { type = NavType.StringType },
+                navArgument("startDate") { type = NavType.StringType },
+                navArgument("endDate") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val kind = entry.arguments?.getString("kind") ?: return@composable
+            val startDate = entry.arguments?.getString("startDate") ?: return@composable
+            val endDate = entry.arguments?.getString("endDate") ?: return@composable
+            val titleRes = when (kind.lowercase()) {
+                "new" -> R.string.snapshot_new_rentals
+                "pickup" -> R.string.in_progress
+                "return" -> R.string.completed
+                "cancelled" -> R.string.cancelled
+                else -> R.string.orders
+            }
+            OrdersScreen(
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onOrderCheck = {},
+                snapshotKind = kind,
+                startDate = startDate,
+                endDate = endDate,
+                filteredTitle = stringResource(titleRes),
                 onBack = { rootNavController.popBackStack() },
             )
         }
@@ -485,14 +516,14 @@ private fun MainTabs(
                 CalendarScreen(onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) })
             }
             composable(MainTab.Overview.route) {
-                OverviewScreen(
-                    onViewProductOrders = { item ->
-                        item.id?.let { rootNavController.navigate(Routes.analyticsOrders("product", it)) }
-                    },
-                    onViewCustomerOrders = { item ->
-                        item.id?.let { rootNavController.navigate(Routes.analyticsOrders("customer", it)) }
-                    },
-                )
+            OverviewScreen(
+                onViewProductOrders = { item ->
+                    item.id?.let { rootNavController.navigate(Routes.analyticsOrders("product", it)) }
+                },
+                onViewCustomerOrders = { item ->
+                    item.id?.let { rootNavController.navigate(Routes.analyticsOrders("customer", it)) }
+                },
+            )
             }
             composable(MainTab.Settings.route) {
                 SettingsScreen(

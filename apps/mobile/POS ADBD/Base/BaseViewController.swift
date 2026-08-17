@@ -272,6 +272,7 @@ class BaseViewControler : UIViewController{
     func presentWithHiddenNavigationBar(
         _ viewController: UIViewController,
         animated: Bool = true,
+        fullScreen: Bool = false,
         completion: (() -> Void)? = nil
     ) {
         let nav: UINavigationController
@@ -281,6 +282,11 @@ class BaseViewControler : UIViewController{
             nav = UINavigationController(rootViewController: viewController)
         }
         nav.setNavigationBarHidden(true, animated: false)
+        if fullScreen {
+            // Page sheet leaves a parent peek at the top. Product/user forms need
+            // the full window so the photo and fields have room.
+            nav.modalPresentationStyle = .fullScreen
+        }
         present(nav, animated: animated, completion: completion)
     }
     

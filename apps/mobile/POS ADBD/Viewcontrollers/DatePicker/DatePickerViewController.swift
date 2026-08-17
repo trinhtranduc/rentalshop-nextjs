@@ -44,6 +44,20 @@ class DatePickerViewController: UIViewController {
         return view
     }()
     
+    private lazy var headerView: RCSheetHeaderView = {
+        let header = RCSheetHeaderView()
+        header.title = "Select date".localized()
+        return header
+    }()
+
+    private lazy var confirmButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(title: "Confirm".localized(), backgroundColor: APP_TONE_COLOR)
+        button.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
+        button.isEnabled = false
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
     private lazy var calendar: FSCalendar = {
         let calendar = FSCalendar()
         calendar.delegate = self
@@ -71,35 +85,7 @@ class DatePickerViewController: UIViewController {
         calendar.translatesAutoresizingMaskIntoConstraints = false
         return calendar
     }()
-    
-    private lazy var buttonStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [cancelButton, confirmButton])
-        stack.axis = .horizontal
-        stack.spacing = 16
-        stack.distribution = .fillEqually
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-    
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Cancel".localized(), for: .normal)
-        button.setTitleColor(.gray, for: .normal)
-        button.titleLabel?.font = Utils.regularFont(size: 16)
-        button.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var confirmButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Confirm".localized(), for: .normal)
-        button.setTitleColor(APP_BUTTON_BG_COLOR, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 16)
-        button.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
-        button.isEnabled = false
-        return button
-    }()
-    
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -109,20 +95,27 @@ class DatePickerViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        
+
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(headerView)
         view.addSubview(calendar)
-        view.addSubview(buttonStackView)
-        
+        view.addSubview(confirmButton)
+
         NSLayoutConstraint.activate([
-            calendar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 56),
+
+            calendar.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
             calendar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             calendar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            calendar.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: -16),
-            
-            buttonStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            buttonStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            buttonStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            buttonStackView.heightAnchor.constraint(equalToConstant: 44)
+            calendar.bottomAnchor.constraint(equalTo: confirmButton.topAnchor, constant: -16),
+
+            confirmButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            confirmButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            confirmButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            confirmButton.heightAnchor.constraint(equalToConstant: 50),
         ])
     }
     
@@ -215,10 +208,6 @@ class DatePickerViewController: UIViewController {
     }
     
     // MARK: - Actions
-    @objc private func cancelTapped() {
-        dismiss(animated: true)
-    }
-    
     @objc private func confirmTapped() {
         switch selectionMode {
         case .single:
@@ -394,8 +383,8 @@ extension DatePickerViewController {
             // Configure sheet properties
             sheet.detents = [.medium()] // Use medium size (approximately half screen)
             sheet.prefersGrabberVisible = true // Show grabber at top
-            sheet.preferredCornerRadius = 12
-//            sheet.prefersScrollingExpandsWhenScrolled = false
+            sheet.preferredCornerRadius = 16
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
             sheet.prefersEdgeAttachedInCompactHeight = true
         }
         

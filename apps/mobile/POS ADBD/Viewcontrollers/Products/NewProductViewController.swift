@@ -223,6 +223,29 @@ class NewProductViewController: BaseViewControler {
         button.addTarget(self, action: #selector(save), for: .touchUpInside)
         return button
     }()
+
+    /// Re-queue image-search indexing for this product (edit only). Hidden on create.
+    private lazy var syncImageSearchButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(
+            title: "product.action.updateImageSearch".localized(),
+            borderStyle: true,
+            borderColor: APP_TONE_COLOR
+        )
+        button.isHidden = true
+        button.addTarget(self, action: #selector(syncImageSearch), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var imageSearchStatusBadge: OrderStatusPillLabel = {
+        let badge = OrderStatusPillLabel()
+        badge.isHidden = true
+        badge.setContentHuggingPriority(.required, for: .horizontal)
+        badge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return badge
+    }()
+
+    private var isSyncingImageSearch = false
+    private var imageSearchQueued = false
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -231,6 +254,7 @@ class NewProductViewController: BaseViewControler {
         setupUI()
         setupData()
         loadInitialData()
+        refreshImageSearchButton()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -482,22 +506,34 @@ class NewProductViewController: BaseViewControler {
         titleLabel.textColor = .textPrimary
         titleLabel.adjustsFontForContentSizeCategory = true
 
+        let imageWrap = UIView()
+        imageWrap.addSubview(img)
+        img.snp.remakeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.centerX.equalToSuperview()
+            make.width.height.equalTo(140)
+        }
+        imageWrap.addSubview(imageSearchStatusBadge)
+        imageSearchStatusBadge.snp.makeConstraints { make in
+            make.top.equalTo(img.snp.top).offset(6)
+            make.leading.equalTo(img.snp.leading).offset(6)
+        }
+
+        let contentStack = UIStackView(arrangedSubviews: [imageWrap, syncImageSearchButton, imageErrorLabel])
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+        contentStack.alignment = .fill
+
         let wrapper = UIView()
         wrapper.addSubview(titleLabel)
-        wrapper.addSubview(img)
-        wrapper.addSubview(imageErrorLabel)
+        wrapper.addSubview(contentStack)
 
         titleLabel.snp.makeConstraints { make in
             make.top.leading.equalToSuperview().inset(16)
             make.trailing.lessThanOrEqualToSuperview().offset(-16)
         }
-        img.snp.remakeConstraints { make in
+        contentStack.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-            make.width.height.equalTo(140)
-        }
-        imageErrorLabel.snp.makeConstraints { make in
-            make.top.equalTo(img.snp.bottom).offset(8)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().offset(-12)
         }
@@ -516,9 +552,7 @@ class NewProductViewController: BaseViewControler {
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let title = product == nil ? "Add product".localized() : "Update product".localized()
-        // pinToSafeArea: false — this screen is always presented as a sheet inside
-        // UINavigationController. Pinning below safe area + statusBarBackground would
-        // leave a blank white strip that looks like a duplicate navigation bar.
+        // Full-screen modal: pin below the status bar so the title is not under the notch.
         let navBar = setupCustomNavigationBar(
             title: title,
             statusBarBackgroundColor: .white,
@@ -527,14 +561,14 @@ class NewProductViewController: BaseViewControler {
             backAction: .custom { [weak self] in
                 self?.dismiss(animated: true)
             },
-            pinToSafeArea: false
+            pinToSafeArea: true
         )
 
         // Keep a fixed bar height. remakeConstraints without height used to wipe
         // RCCustomNavigationBar's SnapKit height → bar expanded, title centered
         // mid-screen, and scrollView collapsed to zero.
         navBar.snp.remakeConstraints { make in
-            make.top.equalToSuperview()
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(44)
         }
@@ -694,6 +728,67 @@ class NewProductViewController: BaseViewControler {
         img.layer.borderColor = isValid ? UIColor.clear.cgColor : UIColor.actionDanger.cgColor
         return isValid
     }
+
+    private func hasSavedProductPhoto() -> Bool {
+        !(product?.image_url ?? "").isEmpty
+    }
+
+    /// Staff and create-product must not see this. Disable if the product has no photo on the server yet.
+    private func refreshImageSearchButton() {
+        let isEdit = product != nil
+        let canManage = PermissionManager.shared.canManageProducts()
+        let show = isEdit && canManage
+        syncImageSearchButton.isHidden = !show
+        syncImageSearchButton.isEnabled = hasSavedProductPhoto() && !isSyncingImageSearch
+        refreshImageSearchStatus(visible: show)
+    }
+
+    private func refreshImageSearchStatus(visible: Bool) {
+        imageSearchStatusBadge.isHidden = !visible
+        guard visible else { return }
+
+        imageSearchStatusBadge.textColor = .white
+        if imageSearchQueued {
+            imageSearchStatusBadge.text = "product.imageSearch.updating".localized()
+            imageSearchStatusBadge.backgroundColor = APP_TONE_COLOR
+        } else if let indexedAt = product?.embeddingGeneratedAt, !indexedAt.isEmpty {
+            imageSearchStatusBadge.text = "product.imageSearch.ready".localized()
+            imageSearchStatusBadge.backgroundColor = .systemGreen
+        } else {
+            imageSearchStatusBadge.text = "product.imageSearch.notIndexed".localized()
+            imageSearchStatusBadge.backgroundColor = .systemGray
+        }
+    }
+
+    @objc private func syncImageSearch() {
+        guard let productId = product?.id, hasSavedProductPhoto(), !isSyncingImageSearch else { return }
+
+        isSyncingImageSearch = true
+        syncImageSearchButton.isEnabled = false
+        saveButton.isEnabled = false
+        saveNavButton.isEnabled = false
+        showProgressText(text: "Loading...".localized())
+
+        ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] error in
+            guard let self else { return }
+            self.isSyncingImageSearch = false
+            self.saveButton.isEnabled = true
+            self.saveNavButton.isEnabled = true
+            self.hideProgress()
+            self.refreshImageSearchButton()
+            if let error {
+                UIAlertController.errorAlert(parent: self, error: error)
+            } else {
+                self.imageSearchQueued = true
+                self.refreshImageSearchButton()
+                self.showToast(
+                    message: "product.imageSearch.queued".localized(),
+                    duration: 3.5,
+                    icon: UIImage(systemName: "checkmark.circle.fill")
+                )
+            }
+        }
+    }
     
     // MARK: - Public Methods
     func loadProduct(product: Product) {
@@ -752,6 +847,7 @@ class NewProductViewController: BaseViewControler {
         if isViewLoaded {
             syncExpandedSectionsWithData()
         }
+        refreshImageSearchButton()
     }
     
     // Method to set the product image from an external source (like MainViewController)

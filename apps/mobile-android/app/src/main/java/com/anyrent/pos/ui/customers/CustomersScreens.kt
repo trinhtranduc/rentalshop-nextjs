@@ -591,8 +591,6 @@ fun CustomerFormScreen(
                 }
             }
 
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
             if (initial != null) {
                 AppSecondaryButton(
                     text = stringResource(R.string.delete),
@@ -610,6 +608,13 @@ fun CustomerFormScreen(
                 )
             }
         }
+    }
+
+    error?.let { message ->
+        AppAlertError(
+            message = message,
+            onDismiss = { error = null },
+        )
     }
 }
 

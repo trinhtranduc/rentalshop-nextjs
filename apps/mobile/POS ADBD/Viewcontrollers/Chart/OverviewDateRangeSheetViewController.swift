@@ -16,7 +16,7 @@ final class OverviewDateRangeSheetViewController: UIViewController {
     private var draftEnd: Date?
     private var presetButtons: [UIButton] = []
 
-    private let titleLabel = UILabel()
+    private let headerView = RCSheetHeaderView()
     private let gridStack = UIStackView()
     private let fromField = OverviewDateFieldView(title: "Report_DateRange_From".localized())
     private let toField = OverviewDateFieldView(title: "Report_DateRange_To".localized())
@@ -53,10 +53,8 @@ final class OverviewDateRangeSheetViewController: UIViewController {
     }
 
     private func buildLayout() {
-        titleLabel.text = "Report_DateRange_Title".localized()
-        titleLabel.font = Utils.boldFont(size: 18)
-        titleLabel.textAlignment = .center
-        titleLabel.textColor = .textPrimary
+        headerView.title = "Report_DateRange_Title".localized()
+        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
 
         gridStack.axis = .vertical
         gridStack.spacing = 10
@@ -64,16 +62,21 @@ final class OverviewDateRangeSheetViewController: UIViewController {
 
         fromField.onTap = { [weak self] in self?.pickCustomRange() }
         toField.onTap = { [weak self] in self?.pickCustomRange() }
-        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
 
         let spacer = UIView()
         spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
-        let stack = UIStackView(arrangedSubviews: [titleLabel, gridStack, customRow, spacer, confirmButton])
+        let stack = UIStackView(arrangedSubviews: [gridStack, customRow, spacer, confirmButton])
         stack.axis = .vertical
         stack.spacing = 16
+        view.addSubview(headerView)
         view.addSubview(stack)
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(56)
+        }
         stack.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            make.top.equalTo(headerView.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
         }

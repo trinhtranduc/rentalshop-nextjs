@@ -2,7 +2,7 @@ import Alamofire
 import FirebaseAnalytics
 
 protocol OrderServiceProtocol {
-    func loadOrders(from: Date?, productIds: [Int]?, productId: Int?, customerId: Int?, startDate: Date?, endDate: Date?, keyword: String?, page: Int?, limit: Int?, orderType: OrderType?, sortBy: String?, sortOrder: String?, status: OrderStatus?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
+    func loadOrders(from: Date?, productIds: [Int]?, productId: Int?, customerId: Int?, startDate: Date?, endDate: Date?, keyword: String?, page: Int?, limit: Int?, orderType: OrderType?, sortBy: String?, sortOrder: String?, status: OrderStatus?, dateField: String?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     /// Dedicated customer-only list: `GET /api/customers/{id}/orders` (includes loyalty + summary).
     func loadCustomerOrders(customerId: Int, startDate: Date?, endDate: Date?, page: Int?, limit: Int?, sortBy: String?, sortOrder: String?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
     func forceLoadOrders(productId: Int?, keyword: String?, page: Int?, limit: Int?, completion: @escaping (_ response: OrdersResponse?, _ error: NSError?) -> Void)
@@ -188,7 +188,7 @@ class OrderService: BaseService, OrderServiceProtocol {
         }
     }
     
-    func loadOrders(from: Date? = nil, productIds: [Int]?, productId: Int? = nil, customerId: Int? = nil, startDate: Date? = nil, endDate: Date? = nil, keyword: String?, page: Int? = nil, limit: Int? = nil, orderType: OrderType? = nil, sortBy: String? = nil, sortOrder: String? = nil, status: OrderStatus? = nil, completion: @escaping (OrdersResponse?, NSError?) -> Void) {
+    func loadOrders(from: Date? = nil, productIds: [Int]?, productId: Int? = nil, customerId: Int? = nil, startDate: Date? = nil, endDate: Date? = nil, keyword: String?, page: Int? = nil, limit: Int? = nil, orderType: OrderType? = nil, sortBy: String? = nil, sortOrder: String? = nil, status: OrderStatus? = nil, dateField: String? = nil, completion: @escaping (OrdersResponse?, NSError?) -> Void) {
         let path = APIEndpoint.Path.orders
         
         // Build query parameters according to new API documentation
@@ -221,6 +221,10 @@ class OrderService: BaseService, OrderServiceProtocol {
         
         if let status = status {
             params["status"] = status.rawValue.uppercased()
+        }
+
+        if let dateField = dateField, !dateField.isEmpty {
+            params["dateField"] = dateField
         }
         
         if let productId = productId {

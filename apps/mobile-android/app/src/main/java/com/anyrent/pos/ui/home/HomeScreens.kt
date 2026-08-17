@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -34,9 +35,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -74,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -189,6 +191,28 @@ fun HomeScreen(
                 products = products + it.items
                 page = next
                 hasMore = it.hasMore
+            }
+        }
+    }
+
+    fun requestImageSearchUpdate(product: Product) {
+        if (product.imageUrl.isNullOrBlank()) {
+            Toast.makeText(context, R.string.image_search_no_photos, Toast.LENGTH_LONG).show()
+            return
+        }
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ApiClient.get().syncProductEmbeddings(product.id)
+            }
+            result.onSuccess {
+                Toast.makeText(context, R.string.image_search_queued, Toast.LENGTH_LONG).show()
+            }.onFailure { e ->
+                Toast.makeText(
+                    context,
+                    e.message?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.image_search_failed),
+                    Toast.LENGTH_LONG,
+                ).show()
             }
         }
     }
@@ -329,6 +353,7 @@ fun HomeScreen(
                                 },
                                 onDelete = { deleteProduct = product },
                                 onCheckAvailability = { onCheckProductAvailability(product.id) },
+                                onSyncImageSearch = { requestImageSearchUpdate(product) },
                             )
                         }
                         if (loadingMore) {
@@ -358,6 +383,7 @@ fun HomeScreen(
                     showNewProduct = false
                     productEditor = null
                 },
+                fullScreen = true,
             ) {
                 ProductFormScreen(
                     initial = productEditor,
@@ -373,7 +399,7 @@ fun HomeScreen(
                 )
             }
         }
-        // Same page-sheet presentation as Create Product.
+        // Barcode stays as a page sheet; product add/edit is full screen.
         if (showBarcodeScan) {
             AppFormSheet(onDismiss = { showBarcodeScan = false }) {
                 CameraBarcodeScreen(
@@ -466,29 +492,43 @@ fun HomeScreen(
 
 @Composable
 private fun ImageSearchFab(onClick: () -> Unit) {
-    // Slow breathe: enough to notice a new action, not a toy bounce.
-    val pulse = rememberInfiniteTransition(label = "imageSearchFab")
-    val scale by pulse.animateFloat(
+    val sparkle = rememberInfiniteTransition(label = "aiSparkle")
+    val scale by sparkle.animateFloat(
         initialValue = 1f,
-        targetValue = 1.08f,
+        targetValue = 1.16f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1150, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "fabScale",
+        label = "sparkleScale",
     )
+    val tilt by sparkle.animateFloat(
+        initialValue = -8f,
+        targetValue = 8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "sparkleTilt",
+    )
+
     FloatingActionButton(
         onClick = onClick,
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = Color.White,
         shape = CircleShape,
-        modifier = Modifier
-            .size(56.dp)
-            .scale(scale),
+        modifier = Modifier.size(56.dp),
     ) {
         Icon(
-            Icons.Filled.ImageSearch,
+            imageVector = Icons.Filled.AutoAwesome,
             contentDescription = stringResource(R.string.image_search),
+            modifier = Modifier
+                .size(26.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = tilt
+                },
         )
     }
 }
@@ -502,15 +542,19 @@ internal fun ProductCard(
     onCheckAvailability: () -> Unit,
     showManageActions: Boolean = true,
     onAddToCart: (() -> Unit)? = null,
+    onSyncImageSearch: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<String?>(null) }
     val checkAvailabilityLabel = stringResource(R.string.check_availability)
     val addToCartLabel = stringResource(R.string.add_to_cart)
     val updateLabel = stringResource(R.string.update_product)
+    val updateImageSearchLabel = stringResource(R.string.update_image_search)
     val deleteLabel = stringResource(R.string.delete_product)
     val canManage = PermissionManager.canManageProducts()
-    // Image-search: calendar + add to cart. Home: calendar → update → delete.
+    val hasSavedPhoto = !product.imageUrl.isNullOrBlank()
+    // Image-search results: calendar + add to cart (no sync).
+    // Home: calendar → update → update image search → delete.
     val actions = buildList {
         add(
             AppMenuAction(
@@ -536,6 +580,16 @@ internal fun ProductCard(
                     onClick = onEdit,
                 ),
             )
+            if (onSyncImageSearch != null) {
+                add(
+                    AppMenuAction(
+                        label = updateImageSearchLabel,
+                        icon = Icons.Filled.ImageSearch,
+                        onClick = onSyncImageSearch,
+                        enabled = hasSavedPhoto,
+                    ),
+                )
+            }
             add(
                 AppMenuAction(
                     label = deleteLabel,

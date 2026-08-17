@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Badge,
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
@@ -34,6 +35,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
+  const [imageSearchQueued, setImageSearchQueued] = useState(false);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -142,6 +144,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     try {
       const response = await productsApi.syncProductEmbeddings(product.id);
       if (response.success) {
+        setImageSearchQueued(true);
         toastSuccess(
           'Image search',
           'Indexing started. Search this product in a few minutes after the job finishes.'
@@ -183,25 +186,41 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center justify-end gap-3 mt-6 pt-4 border-t">
         {canManageProducts && (
-          <Button
-            type="button"
-            variant="outline"
-            className="mr-auto"
-            onClick={handleSyncEmbeddings}
-            disabled={isSubmitting || isSyncingEmbeddings}
-          >
-            {isSyncingEmbeddings ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Syncing image search...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Sync image search
-              </>
-            )}
-          </Button>
+          <div className="mr-auto flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSyncEmbeddings}
+              disabled={isSubmitting || isSyncingEmbeddings}
+            >
+              {isSyncingEmbeddings ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing image search...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Sync image search
+                </>
+              )}
+            </Button>
+            <Badge
+              className={
+                imageSearchQueued
+                  ? 'border-transparent bg-blue-600 text-white hover:bg-blue-600'
+                  : product.embeddingGeneratedAt
+                    ? 'border-transparent bg-green-700 text-white hover:bg-green-700'
+                    : 'border-transparent bg-gray-500 text-white hover:bg-gray-500'
+              }
+            >
+              {imageSearchQueued
+                ? t('imageSearch.updating')
+                : product.embeddingGeneratedAt
+                  ? t('imageSearch.indexed')
+                  : t('imageSearch.notIndexed')}
+            </Badge>
+          </div>
         )}
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting || isSyncingEmbeddings}>
           {tc('buttons.cancel')}

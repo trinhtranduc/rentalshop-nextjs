@@ -100,11 +100,11 @@ class MainViewController: BaseViewControler {
     
     private lazy var floatingAISearchButton: UIButton = {
         let button = UIButton(type: .custom)
-        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 21, weight: .semibold)
-        // Search-by-image: photo + magnifying glass. camera.fill looked like barcode/capture.
-        let icon = UIImage(systemName: "photo.badge.magnifyingglass", withConfiguration: symbolConfig)
-            ?? UIImage(systemName: "sparkle.magnifyingglass", withConfiguration: symbolConfig)
-            ?? UIImage(systemName: "camera.viewfinder", withConfiguration: symbolConfig)
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        // Sparkle + magnifier reads as AI search, not a camera/barcode capture.
+        let icon = UIImage(systemName: "sparkle.magnifyingglass", withConfiguration: symbolConfig)
+            ?? UIImage(systemName: "sparkles", withConfiguration: symbolConfig)
+            ?? UIImage(systemName: "wand.and.stars", withConfiguration: symbolConfig)
             ?? UIImage(systemName: "magnifyingglass", withConfiguration: symbolConfig)
         button.setImage(icon, for: .normal)
         button.tintColor = .white
@@ -248,14 +248,15 @@ class MainViewController: BaseViewControler {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        stopImageSearchFabPulse()
+        stopImageSearchFabSparkle()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         tableView?.reloadData()
         view.bringSubview(toFront: floatingAISearchButton)
-        startImageSearchFabPulse()
+        floatingAISearchButton.layoutIfNeeded()
+        startImageSearchFabSparkle()
     }
     
     // MARK: - Setup
@@ -350,7 +351,7 @@ class MainViewController: BaseViewControler {
         controller = NewProductViewController()
         controller?.delegate = self
         // Hide system nav BEFORE present so the sheet doesn't reserve a blank safe-area gap
-        presentWithHiddenNavigationBar(controller!)
+        presentWithHiddenNavigationBar(controller!, fullScreen: true)
     }
     
     @objc private func cartButtonTapped() {
@@ -435,23 +436,38 @@ class MainViewController: BaseViewControler {
         present(navController, animated: true)
     }
 
-    /// Soft breathe so the new search-by-image action is noticeable without a label.
-    /// Layer scale (not `transform` on the view) so SnapKit layout stays stable.
-    private func startImageSearchFabPulse() {
-        guard floatingAISearchButton.layer.animation(forKey: "imageSearchPulse") == nil else { return }
-        let pulse = CABasicAnimation(keyPath: "transform.scale")
-        pulse.fromValue = 1.0
-        pulse.toValue = 1.08
-        pulse.duration = 1.15
-        pulse.autoreverses = true
-        pulse.repeatCount = .infinity
-        pulse.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
-        floatingAISearchButton.layer.add(pulse, forKey: "imageSearchPulse")
+    /// Sparkle twinkle on the AI icon only — the FAB stays still so the tap target is stable.
+    private func startImageSearchFabSparkle() {
+        guard let iconLayer = floatingAISearchButton.imageView?.layer else { return }
+        guard iconLayer.animation(forKey: "aiSparkle") == nil else { return }
+        if UIAccessibilityIsReduceMotionEnabled() { return }
+
+        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
+        scale.values = [1.0, 1.16, 1.0]
+        scale.keyTimes = [0, 0.45, 1]
+        scale.duration = 1.5
+        scale.repeatCount = .infinity
+        scale.timingFunctions = [
+            CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut),
+            CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut),
+        ]
+
+        let tilt = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        tilt.values = [0, 0.12, -0.1, 0]
+        tilt.keyTimes = [0, 0.35, 0.7, 1]
+        tilt.duration = 1.5
+        tilt.repeatCount = .infinity
+
+        let group = CAAnimationGroup()
+        group.animations = [scale, tilt]
+        group.duration = 1.5
+        group.repeatCount = .infinity
+        iconLayer.add(group, forKey: "aiSparkle")
     }
 
-    private func stopImageSearchFabPulse() {
-        floatingAISearchButton.layer.removeAnimation(forKey: "imageSearchPulse")
-        floatingAISearchButton.layer.transform = CATransform3DIdentity
+    private func stopImageSearchFabSparkle() {
+        floatingAISearchButton.imageView?.layer.removeAnimation(forKey: "aiSparkle")
+        floatingAISearchButton.imageView?.layer.transform = CATransform3DIdentity
     }
     
     private func checkCameraPermission() -> Bool {
@@ -552,7 +568,7 @@ class MainViewController: BaseViewControler {
         controller = productController
         productController.loadProduct(product: product)
 
-        presentWithHiddenNavigationBar(productNavigationController)
+        presentWithHiddenNavigationBar(productNavigationController, fullScreen: true)
     }
     
     private func setupInfoViewController() {
@@ -798,6 +814,19 @@ extension MainViewController: ProductCellDelegate {
                 self?.presentProductView(product: product)
             }
             menuActions.append(updateAction)
+
+            var syncAttributes: UIAction.Attributes = []
+            if (product.image_url ?? "").isEmpty {
+                syncAttributes.insert(.disabled)
+            }
+            let syncImageSearchAction = UIAction(
+                title: "product.action.updateImageSearch".localized(),
+                image: UIImage(systemName: "photo.on.rectangle.angled"),
+                attributes: syncAttributes
+            ) { [weak self] _ in
+                self?.syncProductImageSearch(product)
+            }
+            menuActions.append(syncImageSearchAction)
             
             let deleteAction = UIAction(
                 title: "product.action.delete".localized(),
@@ -815,6 +844,32 @@ extension MainViewController: ProductCellDelegate {
     private func handleProductDeletion(_ product: Product) {
         showDeleteConfirmation(for: product) { [weak self] in
             self?.deleteProduct(product)
+        }
+    }
+
+    private func syncProductImageSearch(_ product: Product) {
+        guard let productId = product.id else { return }
+        if (product.image_url ?? "").isEmpty {
+            showToast(
+                message: "product.imageSearch.noPhotos".localized(),
+                duration: 3.5,
+                icon: UIImage(systemName: "exclamationmark.triangle")
+            )
+            return
+        }
+
+        showProgressText(text: "Loading...".localized())
+        ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] error in
+            self?.hideProgress()
+            if let error {
+                UIAlertController.errorAlert(parent: self, error: error)
+            } else {
+                self?.showToast(
+                    message: "product.imageSearch.queued".localized(),
+                    duration: 3.5,
+                    icon: UIImage(systemName: "checkmark.circle.fill")
+                )
+            }
         }
     }
     

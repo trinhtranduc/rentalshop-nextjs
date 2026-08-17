@@ -60,6 +60,22 @@ class ApiClientErrorTest {
         assertTrue(error.message.orEmpty().contains("Cannot delete"))
     }
 
+    @Test
+    fun `plan limit keeps user text and does not append machine code`() {
+        val api = apiReturning(
+            422,
+            """{"success":false,"code":"PLAN_LIMIT_EXCEEDED","message":"Plan limit exceeded"}""",
+        )
+
+        val error = assertThrows(AppError.Http::class.java) {
+            api.authedGet("/api/products")
+        }
+
+        assertEquals(422, error.statusCode)
+        assertEquals("PLAN_LIMIT_EXCEEDED", error.code)
+        assertEquals("Plan limit exceeded", error.message)
+    }
+
     private fun apiReturning(
         status: Int,
         body: String,

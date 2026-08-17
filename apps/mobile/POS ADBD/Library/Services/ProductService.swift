@@ -23,6 +23,7 @@ protocol ProductServiceProtocol {
     // Image search
     func searchProductsByImage(image: UIImage, limit: Int?, minSimilarity: Float?, categoryId: Int?, completion: @escaping (_ products: [Product]?, _ total: Int?, _ message: String?, _ error: NSError?) -> Void)
     func searchProductsByImage(imageData: Data, image: UIImage, limit: Int?, minSimilarity: Float?, categoryId: Int?, completion: @escaping (_ products: [Product]?, _ total: Int?, _ message: String?, _ error: NSError?) -> Void)
+    func syncProductEmbeddings(productId: Int, completion: @escaping (_ error: NSError?) -> Void)
 }
 
 class ProductService: BaseService, ProductServiceProtocol {
@@ -275,6 +276,42 @@ class ProductService: BaseService, ProductServiceProtocol {
                     defaultMessage: "Delete failed"
                 )
                 completion(nsError)
+            }
+        }
+    }
+
+    /// Queue CLIP re-index for one product. Does not wait for the job to finish.
+    func syncProductEmbeddings(productId: Int, completion: @escaping (NSError?) -> Void) {
+        let path = "\(APIEndpoint.Path.products)/\(productId)/sync-embeddings"
+        performPOST(
+            path: path,
+            parameters: [:],
+            responseType: APIEmptyResponse.self,
+            context: "ProductService.syncProductEmbeddings"
+        ) { apiResponse, error in
+            if let error = error {
+                completion(error)
+                return
+            }
+
+            guard let apiResponse = apiResponse else {
+                completion(NSError.errorWithOwnMessage(message: "No response received", domain: "RC"))
+                return
+            }
+
+            if apiResponse.success {
+                completion(nil)
+            } else {
+                completion(
+                    self.createErrorFromResponse(
+                        success: apiResponse.success,
+                        code: apiResponse.code,
+                        message: apiResponse.message,
+                        error: apiResponse.error,
+                        httpStatusCode: nil,
+                        defaultMessage: "product.imageSearch.failed".localized()
+                    )
+                )
             }
         }
     }
