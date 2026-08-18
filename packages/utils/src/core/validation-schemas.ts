@@ -307,6 +307,8 @@ export const ordersQuerySchema = z.object({
   orderType: orderTypeEnum.optional(),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
+  // Snapshot drill-down: new = createdAt, pickup = pickedUpAt, return = returnedAt, cancelled = updatedAt
+  dateField: z.enum(['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt']).optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),

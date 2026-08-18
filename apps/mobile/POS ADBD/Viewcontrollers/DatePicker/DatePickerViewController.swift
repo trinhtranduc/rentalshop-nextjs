@@ -44,62 +44,42 @@ class DatePickerViewController: UIViewController {
         return view
     }()
     
+    private lazy var headerView: RCSheetHeaderView = {
+        let header = RCSheetHeaderView()
+        header.title = "Select date".localized()
+        return header
+    }()
+
+    private lazy var confirmButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(title: "Confirm".localized(), backgroundColor: APP_TONE_COLOR)
+        button.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
+        button.isEnabled = false
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
     private lazy var calendar: FSCalendar = {
         let calendar = FSCalendar()
         calendar.delegate = self
         calendar.dataSource = self
-        calendar.appearance.titleDefaultColor = .black
-        calendar.appearance.headerTitleColor = APP_BUTTON_BG_COLOR
-        calendar.appearance.weekdayTextColor = .gray
-        calendar.appearance.todayColor = APP_BUTTON_BG_COLOR.withAlphaComponent(0.3)
-        calendar.appearance.selectionColor = APP_BUTTON_BG_COLOR
+        calendar.appearance.titleDefaultColor = .textPrimary
+        calendar.appearance.headerTitleColor = .textPrimary
+        calendar.appearance.weekdayTextColor = .textSecondary
+        calendar.appearance.todayColor = UIColor.label.withAlphaComponent(0.12)
+        calendar.appearance.selectionColor = .label
         calendar.appearance.headerTitleFont = Utils.boldFont(size: 17)
         calendar.appearance.titleFont = Utils.regularFont(size: 15)
         calendar.appearance.weekdayFont = Utils.regularFont(size: 14)
-        
-        // Configure appearance for date range
-        calendar.allowsMultipleSelection = false // Will be set based on mode
-        
-        // Set colors for date range
-        calendar.appearance.selectionColor = APP_BUTTON_BG_COLOR
+        calendar.allowsMultipleSelection = false
+        calendar.appearance.selectionColor = .label
         calendar.appearance.titleSelectionColor = .white
-        
-        // Configure range colors
         calendar.appearance.titlePlaceholderColor = UIColor.lightGray
-        calendar.appearance.titleTodayColor = APP_BUTTON_BG_COLOR
+        calendar.appearance.titleTodayColor = .textPrimary
         
         calendar.translatesAutoresizingMaskIntoConstraints = false
         return calendar
     }()
-    
-    private lazy var buttonStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [cancelButton, confirmButton])
-        stack.axis = .horizontal
-        stack.spacing = 16
-        stack.distribution = .fillEqually
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-    
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Cancel".localized(), for: .normal)
-        button.setTitleColor(.gray, for: .normal)
-        button.titleLabel?.font = Utils.regularFont(size: 16)
-        button.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var confirmButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Confirm".localized(), for: .normal)
-        button.setTitleColor(APP_BUTTON_BG_COLOR, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 16)
-        button.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
-        button.isEnabled = false
-        return button
-    }()
-    
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -109,20 +89,29 @@ class DatePickerViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        
+
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(headerView)
         view.addSubview(calendar)
-        view.addSubview(buttonStackView)
-        
+        view.addSubview(confirmButton)
+
         NSLayoutConstraint.activate([
-            calendar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            // Pin to the sheet top. RCSheetHeaderView already has 20pt for the grabber;
+            // safe-area pinning stacked extra space and sat the title too low.
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 56),
+
+            calendar.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
             calendar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             calendar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            calendar.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: -16),
-            
-            buttonStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            buttonStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            buttonStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            buttonStackView.heightAnchor.constraint(equalToConstant: 44)
+            calendar.bottomAnchor.constraint(equalTo: confirmButton.topAnchor, constant: -16),
+
+            confirmButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            confirmButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            confirmButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            confirmButton.heightAnchor.constraint(equalToConstant: 50),
         ])
     }
     
@@ -215,10 +204,6 @@ class DatePickerViewController: UIViewController {
     }
     
     // MARK: - Actions
-    @objc private func cancelTapped() {
-        dismiss(animated: true)
-    }
-    
     @objc private func confirmTapped() {
         switch selectionMode {
         case .single:
@@ -376,12 +361,20 @@ extension DatePickerViewController: FSCalendarDelegateAppearance {
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
         if selectionMode == .range {
             if date == firstDate || date == lastDate {
-                return APP_BUTTON_BG_COLOR // Full color for start/end dates
+                return .label
             } else if datesRange?.contains(date) == true {
-                return APP_BUTTON_BG_COLOR//APP_BUTTON_BG_COLOR.withAlphaComponent(0.2) // Light color for in-between dates
+                return UIColor.label.withAlphaComponent(0.12)
             }
         }
         return nil
+    }
+
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, titleSelectionColorFor date: Date) -> UIColor? {
+        if selectionMode == .range, datesRange?.contains(date) == true,
+           date != firstDate, date != lastDate {
+            return .textPrimary
+        }
+        return .white
     }
 }
 
@@ -391,12 +384,10 @@ extension DatePickerViewController {
         let controller = DatePickerViewController()
         
         if let sheet = controller.sheetPresentationController {
-            // Configure sheet properties
-            sheet.detents = [.medium()] // Use medium size (approximately half screen)
-            sheet.prefersGrabberVisible = true // Show grabber at top
-            sheet.preferredCornerRadius = 12
-//            sheet.prefersScrollingExpandsWhenScrolled = false
-            sheet.prefersEdgeAttachedInCompactHeight = true
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         }
         
         return controller

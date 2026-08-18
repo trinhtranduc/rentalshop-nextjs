@@ -480,6 +480,51 @@ export const productsApi = {
     }>(response);
   },
 
+  /**
+   * Queue CLIP embeddings for products that have images but are not in Qdrant yet.
+   */
+  async syncEmbeddings(payload?: {
+    force?: boolean;
+    merchantId?: number;
+  }): Promise<ApiResponse<{
+    merchantId: number;
+    matched: number;
+    queued: number;
+    force: boolean;
+    hasMore: boolean;
+  }>> {
+    const response = await authenticatedFetch('/api/products/sync-embeddings', {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return await parseApiResponse<{
+      merchantId: number;
+      matched: number;
+      queued: number;
+      force: boolean;
+      hasMore: boolean;
+    }>(response);
+  },
+
+  /**
+   * Force re-index one product for image search.
+   */
+  async syncProductEmbeddings(productId: number): Promise<ApiResponse<{
+    productId: number;
+    queued: number;
+    images: number;
+  }>> {
+    const response = await authenticatedFetch(`/api/products/${productId}/sync-embeddings`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return await parseApiResponse<{
+      productId: number;
+      queued: number;
+      images: number;
+    }>(response);
+  },
+
 };
 
 /**

@@ -74,6 +74,8 @@
 		048838FE2D7832AD00069256 /* PrinterConfigurationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838F82D7832AD00069256 /* PrinterConfigurationViewController.swift */; };
 		048839112D78468C00069256 /* SuggestionTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048839102D78468C00069256 /* SuggestionTextField.swift */; };
 		048839192D79C20E00069256 /* NewProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048839182D79C20E00069256 /* NewProductViewController.swift */; };
+		04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */; };
+		04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1112F8E2001000A0011 /* CIImageValidator.swift */; };
 		0488392C2D79F11900069256 /* inter-regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 048839202D79F11900069256 /* inter-regular.ttf */; };
 		0488392D2D79F11900069256 /* pretendard-extra-light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 048839262D79F11900069256 /* pretendard-extra-light.ttf */; };
 		0488392E2D79F11900069256 /* inter-bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0488391B2D79F11900069256 /* inter-bold.ttf */; };
@@ -130,6 +132,7 @@
 		04F3010B2F40000100A006 /* OverviewInsightsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */; };
 		04F3010D2F40000100A007 /* OverviewRankingOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */; };
 		04F302012F40000200B001 /* OverviewPeriodFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F302002F40000200B001 /* OverviewPeriodFilterView.swift */; };
+		04F303012F40000300C010 /* OverviewDateRangeSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F303002F40000300C010 /* OverviewDateRangeSheetViewController.swift */; };
 		04F7A0012F70000100A0B2 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F7A0012F70000100A0B1 /* OnboardingViewController.swift */; };
 		04F96B012D805CB6009A56D8 /* PreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F96B002D805CB6009A56D8 /* PreviewViewController.swift */; };
 		04FBE0A82EDB2C700057EDF8 /* PaymentCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */; };
@@ -310,6 +313,8 @@
 		048838F92D7832AD00069256 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		048839102D78468C00069256 /* SuggestionTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTextField.swift; sourceTree = "<group>"; };
 		048839182D79C20E00069256 /* NewProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProductViewController.swift; sourceTree = "<group>"; };
+		04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSearchViewController.swift; sourceTree = "<group>"; };
+		04C8A1112F8E2001000A0011 /* CIImageValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageValidator.swift; sourceTree = "<group>"; };
 		0488391A2D79F11900069256 /* inter-black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-black.ttf"; sourceTree = "<group>"; };
 		0488391B2D79F11900069256 /* inter-bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-bold.ttf"; sourceTree = "<group>"; };
 		0488391C2D79F11900069256 /* inter-extra-bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "inter-extra-bold.ttf"; sourceTree = "<group>"; };
@@ -365,6 +370,7 @@
 		04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewInsightsPanelView.swift; sourceTree = "<group>"; };
 		04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewRankingOrdersViewController.swift; sourceTree = "<group>"; };
 		04F302002F40000200B001 /* OverviewPeriodFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewPeriodFilterView.swift; sourceTree = "<group>"; };
+		04F303002F40000300C010 /* OverviewDateRangeSheetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewDateRangeSheetViewController.swift; sourceTree = "<group>"; };
 		04F7A0012F70000100A0B1 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
 		04F96B002D805CB6009A56D8 /* PreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController.swift; sourceTree = "<group>"; };
 		04FBE0A62EDB2C700057EDF8 /* PaymentCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentCollectionViewController.swift; sourceTree = "<group>"; };
@@ -723,6 +729,7 @@
 				88F3D8BD21B04F78007CC30A /* DemoBaseViewController.swift */,
 				04F301002F40000100A001 /* OverviewTypes.swift */,
 				04F302002F40000200B001 /* OverviewPeriodFilterView.swift */,
+				04F303002F40000300C010 /* OverviewDateRangeSheetViewController.swift */,
 				04F301022F40000100A002 /* OverviewUIBuilder.swift */,
 				04F301042F40000100A003 /* OverviewMetricInfoPresenter.swift */,
 				04F301062F40000100A004 /* OverviewSummaryCardView.swift */,
@@ -737,6 +744,7 @@
 		88733B8421CDE283003BB132 /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				04C8A1102F8E2001000A0010 /* ImageValidator */,
 				040331062EA9E11D003BC33E /* Extensions */,
 				041CBA1A2D8E6FFC00C117DF /* Managers */,
 				048838D32D7727AF00069256 /* Services */,
@@ -746,6 +754,14 @@
 				048838E12D7732BC00069256 /* Service.swift */,
 			);
 			path = Library;
+			sourceTree = "<group>";
+		};
+		04C8A1102F8E2001000A0010 /* ImageValidator */ = {
+			isa = PBXGroup;
+			children = (
+				04C8A1112F8E2001000A0011 /* CIImageValidator.swift */,
+			);
+			path = ImageValidator;
 			sourceTree = "<group>";
 		};
 		88A07DD521AA8F8E00023F69 /* Tabbar */ = {
@@ -959,6 +975,7 @@
 			isa = PBXGroup;
 			children = (
 				048839182D79C20E00069256 /* NewProductViewController.swift */,
+				04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */,
 			);
 			path = Products;
 			sourceTree = "<group>";
@@ -1285,6 +1302,8 @@
 				88F3D8C421B0627E007CC30A /* BalloonMarker.swift in Sources */,
 				88AED2D8221D2B6300A0C28F /* PreviewBottomCell.swift in Sources */,
 				048839192D79C20E00069256 /* NewProductViewController.swift in Sources */,
+				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
+				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
@@ -1385,6 +1404,7 @@
 				04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */,
 				04F301012F40000100A001 /* OverviewTypes.swift in Sources */,
 				04F302012F40000200B001 /* OverviewPeriodFilterView.swift in Sources */,
+				04F303012F40000300C010 /* OverviewDateRangeSheetViewController.swift in Sources */,
 				04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */,
 				04F301052F40000100A003 /* OverviewMetricInfoPresenter.swift in Sources */,
 				04F301072F40000100A004 /* OverviewSummaryCardView.swift in Sources */,

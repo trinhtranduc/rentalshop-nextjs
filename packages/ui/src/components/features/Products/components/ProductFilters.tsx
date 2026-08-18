@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useMerchantsData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { Sparkles } from 'lucide-react';
+import { ImageSearchDialog } from './ImageSearchDialog';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
@@ -33,6 +35,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
   // Get translations
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+  const [showImageSearch, setShowImageSearch] = React.useState(false);
   
   // ✅ MODERN: Use deduplicated hooks for filter data
   const { outlets, loading: loadingOutlets } = useOutletsData();
@@ -174,7 +177,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
             value={localSearch}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            className="pl-9 pr-9 h-10"
+            className="pl-9 pr-11 h-10"
           />
           <svg 
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
@@ -189,9 +192,29 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
             />
           </svg>
-          {/* AI Image Search temporarily disabled */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center p-0"
+            onClick={() => setShowImageSearch(true)}
+            title="AI Image Search"
+          >
+            <Sparkles className="w-4 h-4 text-purple-600" />
+          </Button>
         </div>
       </div>
+
+      <ImageSearchDialog
+        open={showImageSearch}
+        onOpenChange={setShowImageSearch}
+        onSearchResult={(products) => {
+          if (onImageSearchResult) {
+            onImageSearchResult(products);
+          }
+        }}
+        categoryId={filters.categoryId}
+      />
 
       {/* Merchant Filter - Only show for admin */}
       {showMerchantFilter && (

@@ -30,6 +30,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,6 +54,7 @@ import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.print.ThermalPrinter
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppInputField
@@ -396,8 +398,8 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                // Sheet is not under the status bar — default TopAppBar insets push the title down.
-                windowInsets = WindowInsets(0, 0, 0, 0),
+                // Full-screen dialog draws under the status bar — keep default insets.
+                windowInsets = TopAppBarDefaults.windowInsets,
                 title = {
                     Text(
                         if (initial == null) stringResource(R.string.new_user)
@@ -410,7 +412,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                     }
                 },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
@@ -511,11 +513,15 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit)
                             Switch(checked = active, onCheckedChange = { active = it })
                         }
                     }
-                    error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error)
-                    }
                 }
             }
         }
+    }
+
+    error?.let { message ->
+        AppAlertError(
+            message = message,
+            onDismiss = { error = null },
+        )
     }
 }

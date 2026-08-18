@@ -19,6 +19,8 @@ protocol SuggestionTextFieldDelegate: AnyObject {
 class SuggestionTextField: BaseViewControler {
     
     // MARK: - UI Components
+    private let headerView = RCSheetHeaderView()
+
     private lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.backgroundColor = .white
@@ -150,7 +152,6 @@ class SuggestionTextField: BaseViewControler {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
         setupUI()
         setupData()
         loadCustomers()
@@ -170,18 +171,21 @@ class SuggestionTextField: BaseViewControler {
     
     // MARK: - Setup
     override func setupUI() {
-        view.backgroundColor = .white
-        
-        guard let customNavBar = customNavBar else { return }
-        
-        // Add subviews
+        view.backgroundColor = .systemBackground
+        headerView.title = "Customer".localized()
+
+        view.addSubview(headerView)
         view.addSubview(searchBar)
         view.addSubview(customerTableView)
         view.addSubview(addCustomerButton)
-        
-        // Setup constraints
+
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(56)
+        }
         searchBar.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom)
+            make.top.equalTo(headerView.snp.bottom)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(56)
         }
@@ -200,34 +204,6 @@ class SuggestionTextField: BaseViewControler {
         
         // Enable pull to refresh from the start
         configPullToRefresh(tableview: customerTableView)
-    }
-    
-    override func setupData() {
-        // Load customers from API
-        loadCustomers()
-    }
-    
-    // MARK: - Custom Navigation Bar Setup
-    private func setupNavigationBar() {
-        setupCustomNavigationBar(
-            title: "Customer".localized(),
-            statusBarBackgroundColor: .white,
-            titleCentered: true,
-            hideBackButton: false,
-            backAction: .custom { [weak self] in
-                guard let self = self else { return }
-                // Support both push (iPhone) and present (iPad) navigation
-                if let navigationController = self.navigationController {
-                    // Check if we can pop (was pushed)
-                    if navigationController.viewControllers.count > 1 {
-                        navigationController.popViewController(animated: true)
-                    } else {
-                        // Was presented, so dismiss
-                        navigationController.dismiss(animated: true)
-                    }
-                }
-        }
-        )
     }
     
     // MARK: - Actions
@@ -360,12 +336,9 @@ class SuggestionTextField: BaseViewControler {
         let controller = OverviewRankingOrdersViewController(customer: customer)
         controller.hidesBottomBarWhenPushed = true
 
-        if let navigationController = navigationController {
-            navigationController.pushViewController(controller, animated: true)
-        } else {
-            let nav = UINavigationController(rootViewController: controller)
-            present(nav, animated: true)
-        }
+        // Order history is a destination (list → order detail), not a sheet.
+        // Present full screen so it isn't stacked inside the customer picker.
+        presentWithHiddenNavigationBar(controller, fullScreen: true)
     }
     
     private func processSearch(text: String) {
@@ -443,17 +416,7 @@ extension SuggestionTextField: UITableViewDelegate, UITableViewDataSource {
         guard let customer = customer(at: indexPath) else { return }
 
         delegate?.didSelectCustomer(customer: customer, sender: self)
-        
-        // Support both push (iPhone) and present (iPad) navigation
-        if let navigationController = self.navigationController {
-            // Check if we can pop (was pushed)
-            if navigationController.viewControllers.count > 1 {
-                navigationController.popViewController(animated: true)
-            } else {
-                // Was presented, so dismiss
-                navigationController.dismiss(animated: true)
-            }
-        }
+        dismiss(animated: true)
     }
     
     // MARK: - Scroll Detection for Pagination

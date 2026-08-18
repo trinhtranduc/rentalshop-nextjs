@@ -1,6 +1,7 @@
 package com.anyrent.pos.ui.home
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -34,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,19 +45,25 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.anyrent.pos.R
+import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.RequiredFieldLabel
 import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.copyUriToCacheFile
@@ -87,6 +96,8 @@ fun ProductFormScreen(
     var pickedImageFile by remember { mutableStateOf<File?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    var syncingImageSearch by remember { mutableStateOf(false) }
+    var imageSearchQueued by remember { mutableStateOf(false) }
     var moreOptions by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<Any?>(null) }
@@ -168,8 +179,8 @@ fun ProductFormScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                // Sheet is not under the status bar — default TopAppBar insets push the title down.
-                windowInsets = WindowInsets(0, 0, 0, 0),
+                // Full-screen dialog draws under the status bar — keep default insets.
+                windowInsets = TopAppBarDefaults.windowInsets,
                 title = {
                     Text(
                         if (initial == null) stringResource(R.string.new_product)
@@ -182,7 +193,7 @@ fun ProductFormScreen(
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                     }
                 },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
@@ -200,7 +211,7 @@ fun ProductFormScreen(
                     else if (initial == null) stringResource(R.string.add_product)
                     else stringResource(R.string.save),
                     onClick = ::saveProduct,
-                    enabled = !loading && canManage,
+                    enabled = !loading && !syncingImageSearch && canManage,
                 )
             }
         },
@@ -281,6 +292,59 @@ fun ProductFormScreen(
                                 tint = MaterialTheme.colorScheme.outline,
                             )
                         }
+                        if (initial != null && canManage) {
+                            ImageSearchStatusBadge(
+                                queued = imageSearchQueued,
+                                ready = !initial.embeddingGeneratedAt.isNullOrBlank(),
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(6.dp),
+                            )
+                        }
+                    }
+                    // Edit only: re-queue image search after photo changes. Staff never see this.
+                    if (initial != null && canManage) {
+                        val hasSavedPhoto = !initial.imageUrl.isNullOrBlank()
+                        AppSecondaryButton(
+                            text = if (syncingImageSearch) {
+                                stringResource(R.string.loading)
+                            } else {
+                                stringResource(R.string.update_image_search)
+                            },
+                            enabled = hasSavedPhoto && !loading && !syncingImageSearch,
+                            onClick = {
+                                if (!hasSavedPhoto) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.image_search_no_photos),
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                    return@AppSecondaryButton
+                                }
+                                syncingImageSearch = true
+                                scope.launch {
+                                    val result = withContext(Dispatchers.IO) {
+                                        ApiClient.get().syncProductEmbeddings(initial.id)
+                                    }
+                                    syncingImageSearch = false
+                                    result.onSuccess {
+                                        imageSearchQueued = true
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.image_search_queued),
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }.onFailure { e ->
+                                        Toast.makeText(
+                                            context,
+                                            e.message?.takeIf { it.isNotBlank() }
+                                                ?: context.getString(R.string.image_search_failed),
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
+                                }
+                            },
+                        )
                     }
                     ProductField(
                         name,
@@ -360,7 +424,6 @@ fun ProductFormScreen(
                 }
             }
 
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (!canManage) {
                 Text(
                     "No permission to manage products",
@@ -368,6 +431,13 @@ fun ProductFormScreen(
                 )
             }
         }
+    }
+
+    error?.let { message ->
+        AppAlertError(
+            message = message,
+            onDismiss = { error = null },
+        )
     }
 
     previewImage?.let { model ->
@@ -393,6 +463,42 @@ private fun ProductField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         isError = isError,
     )
+}
+
+@Composable
+private fun ImageSearchStatusBadge(
+    queued: Boolean,
+    ready: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val text = when {
+        queued -> stringResource(R.string.image_search_updating)
+        ready -> stringResource(R.string.image_search_ready)
+        else -> stringResource(R.string.image_search_not_indexed)
+    }
+    val background = when {
+        queued -> MaterialTheme.colorScheme.primary
+        ready -> Color(0xFF23844A)
+        else -> Color(0xFF6B7280)
+    }
+    Box(
+        modifier = modifier
+            .heightIn(min = 22.dp)
+            .background(background, RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                lineHeight = 12.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            maxLines = 1,
+        )
+    }
 }
 
 /** Matches iOS `Utils.randomString(length: 6)` — digits only. */

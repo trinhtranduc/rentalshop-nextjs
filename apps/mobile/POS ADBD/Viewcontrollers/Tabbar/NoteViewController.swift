@@ -27,24 +27,14 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
     /// URL for each selected image; nil = newly added (no server URL). Count matches selectedImages.
     private var selectedImageURLs: [String?] = []
     private var isIQKeyboardManagerEnabledBeforePresenting = true
-    private var noteTextViewBottomConstraint: Constraint?
+    private var confirmButtonBottomConstraint: Constraint?
     private var attachmentsHeightConstraint: Constraint?
     
     // MARK: - UI Components
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Cancel".localized(), for: .normal)
-        button.titleLabel?.font = Utils.regularFont(size: 17)
-        button.setTitleColor(APP_TONE_COLOR, for: .normal)
-        button.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var saveButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Save".localized(), for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 17)
-        button.setTitleColor(APP_TONE_COLOR, for: .normal)
+    private let headerView = RCSheetHeaderView()
+
+    private lazy var confirmButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(title: "Save".localized(), backgroundColor: APP_TONE_COLOR)
         button.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         return button
     }()
@@ -109,23 +99,21 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
     // MARK: - Static Instance Method
     static func instance() -> NoteViewController {
         let controller = NoteViewController()
-        controller.modalPresentationStyle = .fullScreen
+        controller.modalPresentationStyle = .pageSheet
+        if let sheet = controller.sheetPresentationController {
+            // Notes needs more height than filter sheets (text + photos + keyboard).
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
         return controller
     }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Setup navigation bar first so it's in the view hierarchy before creating constraints
-        setupNavigationBar()
         setupUI()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        // Ensure navigation bar is hidden when returning to this screen
-        navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -142,37 +130,36 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
         }
     }
     
-    // MARK: - Setup
-    // MARK: - Custom Navigation Bar Setup
-    private func setupNavigationBar() {
-        let navBar = setupCustomNavigationBar(
-            title: "Note".localized(),
-            statusBarBackgroundColor: .white,
-            titleCentered: true,
-            hideBackButton: true,
-            backAction: .pop
-        )
-        // Add buttons
-        navBar.addLeftButton(cancelButton)
-        navBar.addRightButton(saveButton)
-    }
-    
     override func setupUI() {
-        view.backgroundColor = APP_BG_COLOR
-        
-        guard let customNavBar = customNavBar else { return }
-        
+        view.backgroundColor = .systemBackground
+        headerView.title = "Note".localized()
+
+        view.addSubview(headerView)
         view.addSubview(containerView)
+        view.addSubview(confirmButton)
         containerView.addSubview(addImageButton)
         containerView.addSubview(attachmentsScrollView)
         containerView.addSubview(noteTextView)
         attachmentsScrollView.addSubview(attachmentsStackView)
-        
-        containerView.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(56)
         }
-        
+
+        confirmButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(50)
+            self.confirmButtonBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12).constraint
+        }
+
+        containerView.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(confirmButton.snp.top).offset(-16)
+        }
+
         addImageButton.snp.makeConstraints { make in
             make.top.equalTo(containerView).offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
@@ -193,7 +180,7 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
         noteTextView.snp.makeConstraints { make in
             make.top.equalTo(attachmentsScrollView.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
-            self.noteTextViewBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16).constraint
+            make.bottom.equalToSuperview()
         }
 
         configureKeyboardHandling()
@@ -203,10 +190,6 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
     // MARK: - Actions
     @objc private func dismissKeyboard() {
         view.endEditing(true)
-    }
-    
-    @objc private func cancelTapped() {
-        dismiss(animated: true)
     }
     
     @objc private func saveTapped() {
@@ -347,7 +330,7 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
 
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let overlap = max(0, view.bounds.maxY - keyboardFrameInView.minY - view.safeAreaInsets.bottom)
-        noteTextViewBottomConstraint?.update(offset: -(overlap + 16))
+        confirmButtonBottomConstraint?.update(offset: -(overlap + 12))
 
         let options = UIView.AnimationOptions(rawValue: curveValue << 16)
         UIView.animate(withDuration: duration, delay: 0, options: [options, .beginFromCurrentState]) {
@@ -362,7 +345,7 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
             let curveValue = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? UInt
         else { return }
 
-        noteTextViewBottomConstraint?.update(offset: -16)
+        confirmButtonBottomConstraint?.update(offset: -12)
         let options = UIView.AnimationOptions(rawValue: curveValue << 16)
         UIView.animate(withDuration: duration, delay: 0, options: [options, .beginFromCurrentState]) {
             self.view.layoutIfNeeded()

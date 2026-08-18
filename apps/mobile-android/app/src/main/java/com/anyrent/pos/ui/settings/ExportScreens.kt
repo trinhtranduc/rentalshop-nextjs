@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -18,30 +17,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +50,7 @@ import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.ui.common.AppAlertError
+import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.SectionLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,8 +60,6 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -406,183 +394,25 @@ fun ExportAuthScreen(onBack: () -> Unit) {
     }
 
     if (showDateRangePicker) {
-        ExportDateRangeSheet(
-            initialStartMillis = customStartMillis,
-            initialEndMillis = customEndMillis,
+        val zone = ZoneId.systemDefault()
+        AppDateRangePickerSheet(
+            title = stringResource(R.string.date_range),
+            subtitle = stringResource(R.string.custom_range),
+            startLabel = stringResource(R.string.start_date),
+            endLabel = stringResource(R.string.end_date),
+            initialStart = customStartMillis?.let {
+                Instant.ofEpochMilli(it).atZone(zone).toLocalDate()
+            } ?: LocalDate.now(zone),
+            initialEnd = customEndMillis?.let {
+                Instant.ofEpochMilli(it).atZone(zone).toLocalDate()
+            } ?: LocalDate.now(zone),
             onDismiss = { showDateRangePicker = false },
-            onConfirm = { startMillis, endMillis ->
-                customStartMillis = startMillis
-                customEndMillis = endMillis
+            onConfirm = { startDate, endDate ->
+                customStartMillis = startOfDay(startDate.atStartOfDay(zone).toInstant().toEpochMilli())
+                customEndMillis = endOfDay(endDate.atStartOfDay(zone).toInstant().toEpochMilli())
                 showDateRangePicker = false
             },
         )
-    }
-}
-
-/**
- * Cart-parity rental period sheet: DateRangePicker in a modal bottom sheet.
- * Why shared UX: Export custom range previously used separate Material dialogs;
- * users expect the same calendar range flow as checkout rental period.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExportDateRangeSheet(
-    initialStartMillis: Long?,
-    initialEndMillis: Long?,
-    onDismiss: () -> Unit,
-    onConfirm: (startMillis: Long, endMillis: Long) -> Unit,
-) {
-    val zone = remember { ZoneId.systemDefault() }
-    val displayFmt = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
-
-    fun toPickerUtcMillis(localMillis: Long?): Long {
-        val localDate = localMillis?.let {
-            Instant.ofEpochMilli(it).atZone(zone).toLocalDate()
-        } ?: LocalDate.now(zone)
-        return localDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-    }
-
-    fun formatPickerMillis(millis: Long?): String = millis?.let {
-        Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().format(displayFmt)
-    } ?: "—"
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val rangeState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = toPickerUtcMillis(initialStartMillis),
-        initialSelectedEndDateMillis = toPickerUtcMillis(initialEndMillis),
-    )
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = Color.White,
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        stringResource(R.string.date_range),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        stringResource(R.string.custom_range),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
-                }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(
-                            stringResource(R.string.start_date),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            formatPickerMillis(rangeState.selectedStartDateMillis),
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                        Text(
-                            stringResource(R.string.end_date),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            formatPickerMillis(rangeState.selectedEndDateMillis),
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                }
-            }
-
-            // Full sheet width so the Sunday column (last in vi Mon-start week) is not clipped.
-            DateRangePicker(
-                state = rangeState,
-                modifier = Modifier.fillMaxWidth().height(420.dp),
-                title = null,
-                headline = null,
-                showModeToggle = false,
-                colors = DatePickerDefaults.colors(
-                    containerColor = Color.White,
-                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                    todayDateBorderColor = MaterialTheme.colorScheme.primary,
-                    dayInSelectionRangeContainerColor =
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                    dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-            )
-
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(52.dp),
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-                Button(
-                    enabled = rangeState.selectedStartDateMillis != null &&
-                        rangeState.selectedEndDateMillis != null,
-                    modifier = Modifier.weight(2f).height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    onClick = {
-                        val startUtc = rangeState.selectedStartDateMillis ?: return@Button
-                        val endUtc = rangeState.selectedEndDateMillis ?: return@Button
-                        val startDate = Instant.ofEpochMilli(startUtc).atZone(ZoneOffset.UTC).toLocalDate()
-                        val endDate = Instant.ofEpochMilli(endUtc).atZone(ZoneOffset.UTC).toLocalDate()
-                        val startLocal = startDate.atStartOfDay(zone).toInstant().toEpochMilli()
-                        val endLocal = endDate.atStartOfDay(zone).toInstant().toEpochMilli()
-                        onConfirm(startOfDay(startLocal), endOfDay(endLocal))
-                    },
-                ) {
-                    Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                }
-            }
-        }
     }
 }
 

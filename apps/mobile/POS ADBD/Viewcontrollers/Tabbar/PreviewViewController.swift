@@ -1894,7 +1894,10 @@ class PreviewViewController: BaseViewControler {
         
         let initialValue = viewModel.depositAmount
         
-        picker.configure(initialValue: initialValue)
+        picker.configure(
+            initialValue: initialValue,
+            title: "Enter deposit price".localized()
+        )
         picker.tag = 3 // To identify deposit amount in delegate
         present(picker, animated: true)
     }
@@ -1907,7 +1910,7 @@ class PreviewViewController: BaseViewControler {
         if let urls = noteImageURLs, !urls.isEmpty {
             controller.setImageURLs(urls)
         }
-        present(UINavigationController(rootViewController: controller), animated: true)
+        present(controller, animated: true)
     }
     
     @objc private func saveOrder() {

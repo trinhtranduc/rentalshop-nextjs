@@ -272,6 +272,7 @@ class BaseViewControler : UIViewController{
     func presentWithHiddenNavigationBar(
         _ viewController: UIViewController,
         animated: Bool = true,
+        fullScreen: Bool = false,
         completion: (() -> Void)? = nil
     ) {
         let nav: UINavigationController
@@ -281,6 +282,21 @@ class BaseViewControler : UIViewController{
             nav = UINavigationController(rootViewController: viewController)
         }
         nav.setNavigationBarHidden(true, animated: false)
+        if fullScreen {
+            // Destinations: product/user forms, order history. Covers the window
+            // so photo/lists have room and swipe-dismiss cannot drop unsaved work.
+            nav.modalPresentationStyle = .fullScreen
+        } else {
+            // Short flows: customer picker, add/edit customer, barcode. Page sheet
+            // (~large detent), grabber, list peeks behind.
+            nav.modalPresentationStyle = .pageSheet
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 16
+                sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+            }
+        }
         present(nav, animated: animated, completion: completion)
     }
     

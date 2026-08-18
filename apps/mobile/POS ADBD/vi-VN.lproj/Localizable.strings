@@ -795,6 +795,13 @@
 "Report_Period_7Days" = "7 ngày";
 "Report_Period_30Days" = "30 ngày";
 "Report_Period_Year" = "Năm";
+"Report_Period_90Days" = "90 ngày";
+"Report_Period_180Days" = "180 ngày";
+"Report_Period_AllTime" = "Từ trước đến nay";
+"Report_Period_Custom" = "Tùy chỉnh";
+"Report_DateRange_Title" = "Lọc theo phạm vi ngày";
+"Report_DateRange_From" = "Từ";
+"Report_DateRange_To" = "Đến";
 "Report_Summary_Revenue" = "Doanh thu";
 "Report_Summary_Orders" = "Đơn hàng";
 "Report_Summary_DepositHeld" = "Cọc đang giữ";
@@ -1387,6 +1394,13 @@
 "product.action.add.accessibility" = "Thêm sản phẩm";
 "product.action.delete" = "Xóa sản phẩm";
 "product.action.update" = "Cập nhật sản phẩm";
+"product.action.updateImageSearch" = "Cập nhật tìm bằng ảnh";
+"product.imageSearch.queued" = "Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút.";
+"product.imageSearch.ready" = "Sẵn sàng";
+"product.imageSearch.notIndexed" = "Chưa có";
+"product.imageSearch.updating" = "Đang cập nhật";
+"product.imageSearch.noPhotos" = "Thêm ảnh sản phẩm rồi thử lại.";
+"product.imageSearch.failed" = "Không cập nhật được tìm bằng ảnh.";
 "product.action.viewOrderHistory" = "Xem lịch sử đơn hàng";
 "product.search.found" = "Đã tìm thấy sản phẩm";
 "product.search.progress" = "AI đang tìm sản phẩm...";

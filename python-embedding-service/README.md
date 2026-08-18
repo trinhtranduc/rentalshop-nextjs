@@ -1,36 +1,23 @@
-# Image Embedding API (Python FastAPI)
+# Image Embedding API (ONNX CLIP)
 
-FastAPI service for generating CLIP image embeddings.
+Server-only CLIP ViT-B/32 embeddings. This service does **not** search Qdrant or open Postgres.
 
-## Local Development
+- Model: `Xenova/clip-vit-base-patch32` `onnx/vision_model.onnx`
+- Output: 512-dim L2-normalized `image_embeds`
+- Runtime: ONNX Runtime fp32, `OMP_NUM_THREADS=1`
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+## Endpoints
 
-# Run server
-uvicorn app.main:app --reload --port 8000
-```
+- `GET /health`
+- `POST /embed`
+- `POST /embed/batch`
+- `POST /embed/s3-batch`
 
-## Deploy on Railway
+`POST /search` returns 410 — search is orchestrated by the Node API.
 
-1. Connect GitHub repo to Railway
-2. Select this directory as root
-3. Railway will auto-detect Dockerfile
-4. Set PORT environment variable (auto-set by Railway)
+## Railway
 
-## API Endpoints
-
-- `GET /health` - Health check
-- `POST /embed` - Generate embedding from image file
-
-## Usage
-
-```bash
-# Test health
-curl http://localhost:8000/health
-
-# Test embedding
-curl -X POST http://localhost:8000/embed \
-  -F "file=@test-image.jpg"
-```
+- Root directory: `python-embedding-service`
+- RAM: **1GB**
+- No public domain. Node calls it over the private network.
+- Threads: baked into the Dockerfile (`OMP_NUM_THREADS=1`).

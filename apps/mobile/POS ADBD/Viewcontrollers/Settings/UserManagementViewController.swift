@@ -208,8 +208,7 @@ class UserManagementViewController: BaseViewControler {
     @objc private func addNewUser() {
         let formVC = UserFormViewController()
         formVC.delegate = self
-        let navController = UINavigationController(rootViewController: formVC)
-        present(navController, animated: true)
+        presentWithHiddenNavigationBar(formVC, fullScreen: true)
     }
     
     private func createUserMenu(for user: User, cell: UserCell) -> UIMenu {
@@ -259,8 +258,7 @@ class UserManagementViewController: BaseViewControler {
         let formVC = UserFormViewController()
         formVC.user = user
         formVC.delegate = self
-        let navController = UINavigationController(rootViewController: formVC)
-        present(navController, animated: true)
+        presentWithHiddenNavigationBar(formVC, fullScreen: true)
     }
     
     private func changePassword(for user: User) {

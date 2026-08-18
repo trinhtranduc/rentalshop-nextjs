@@ -203,6 +203,8 @@ export async function GET(
         available: available, // Product-level available = totalStock - sum(renting from all outlets)
         images: imageUrls,
         isActive: product.isActive,
+        // Set when image search last finished. null = not searchable by photo yet.
+        embeddingGeneratedAt: product.embeddingGeneratedAt?.toISOString() || null,
         // Optional pricing configuration
         pricingType: product.pricingType ?? null,
         durationConfig: product.durationConfig ?? null,
@@ -804,6 +806,7 @@ export async function PUT(
         totalStock: updatedProduct.totalStock,
         images: parseProductImages(updatedProduct.images),
         isActive: updatedProduct.isActive,
+        embeddingGeneratedAt: updatedProduct.embeddingGeneratedAt?.toISOString() || null,
         pricingType: updatedProduct.pricingType ?? null,
         durationConfig: updatedProduct.durationConfig ?? null,
         pricingOptions: updatedProduct.pricingOptions ?? [],

@@ -321,3 +321,37 @@ extension UIColor {
         return white > 0.5
     }
 }
+
+/// Half-sheet chrome: centered title, no hairline.
+/// Extra top inset sits the title below the grabber. Confirm stays at the bottom.
+final class RCSheetHeaderView: UIView {
+
+    var title: String? {
+        didSet { titleLabel.text = title }
+    }
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.boldFont(size: 18)
+        label.textAlignment = .center
+        label.textColor = .textPrimary
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .systemBackground
+        addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(20)
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}

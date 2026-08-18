@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Badge,
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Sparkles } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
+import { productsApi } from '@rentalshop/utils';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
 
 interface ProductEditFormProps {
@@ -32,6 +34,8 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   useMultipartUpload = false
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
+  const [imageSearchQueued, setImageSearchQueued] = useState(false);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -130,8 +134,35 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   };
 
   const handleCancel = () => {
-    if (isSubmitting) return; // Prevent cancellation while submitting
+    if (isSubmitting || isSyncingEmbeddings) return;
     onCancel();
+  };
+
+  const handleSyncEmbeddings = async () => {
+    if (isSubmitting || isSyncingEmbeddings) return;
+    setIsSyncingEmbeddings(true);
+    try {
+      const response = await productsApi.syncProductEmbeddings(product.id);
+      if (response.success) {
+        setImageSearchQueued(true);
+        toastSuccess(
+          'Image search',
+          'Indexing started. Search this product in a few minutes after the job finishes.'
+        );
+      } else {
+        toastError(
+          'Could not sync image search',
+          response.message || 'Add at least one photo, then try again.'
+        );
+      }
+    } catch (err) {
+      toastError(
+        'Could not sync image search',
+        err instanceof Error ? err.message : 'Try again in a moment.'
+      );
+    } finally {
+      setIsSyncingEmbeddings(false);
+    }
   };
 
   return (
@@ -153,14 +184,51 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       />
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-        <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+      <div className="flex flex-wrap items-center justify-end gap-3 mt-6 pt-4 border-t">
+        {canManageProducts && (
+          <div className="mr-auto flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSyncEmbeddings}
+              disabled={isSubmitting || isSyncingEmbeddings}
+            >
+              {isSyncingEmbeddings ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing image search...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Sync image search
+                </>
+              )}
+            </Button>
+            <Badge
+              className={
+                imageSearchQueued
+                  ? 'border-transparent bg-blue-600 text-white hover:bg-blue-600'
+                  : product.embeddingGeneratedAt
+                    ? 'border-transparent bg-green-700 text-white hover:bg-green-700'
+                    : 'border-transparent bg-gray-500 text-white hover:bg-gray-500'
+              }
+            >
+              {imageSearchQueued
+                ? t('imageSearch.updating')
+                : product.embeddingGeneratedAt
+                  ? t('imageSearch.indexed')
+                  : t('imageSearch.notIndexed')}
+            </Badge>
+          </div>
+        )}
+        <Button variant="outline" onClick={handleCancel} disabled={isSubmitting || isSyncingEmbeddings}>
           {tc('buttons.cancel')}
         </Button>
         <Button 
           type="submit" 
           form="product-form" 
-          disabled={isSubmitting}
+          disabled={isSubmitting || isSyncingEmbeddings}
           className="min-w-[120px]"
         >
           {isSubmitting ? (

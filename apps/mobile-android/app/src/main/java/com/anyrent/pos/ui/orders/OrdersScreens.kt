@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.orders
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,6 +56,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.SwipeToDismissBox
@@ -78,6 +81,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,12 +103,13 @@ import com.anyrent.pos.ui.payment.PaymentViewModel
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppCard
-import com.anyrent.pos.ui.common.AppCloseIconButton
-import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenu
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppNumericPadSheet
 import com.anyrent.pos.ui.common.AppSearchField
+import com.anyrent.pos.ui.common.AppFilterChip
+import com.anyrent.pos.ui.common.AppSheetHeader
 import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.SectionLabel
 import com.anyrent.pos.ui.common.LoadingBox
@@ -144,9 +149,21 @@ private fun fetchScopedOrders(
     orderType: String?,
     productId: Int?,
     customerId: Int?,
+    startDate: String? = null,
+    endDate: String? = null,
     sortByPickup: Boolean = false,
+    snapshotKind: String? = null,
 ): Result<ApiClient.PageResult<OrderSummary>> {
     val api = ApiClient.get()
+    val snapshotStatus = snapshotIncomeStatus(snapshotKind)
+    if (snapshotStatus != null && !startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
+        return api.searchIncomeOrders(
+            startDate = startDate,
+            endDate = endDate,
+            status = snapshotStatus,
+            page = page,
+        )
+    }
     // iOS OrderListViewModel: SALE always sorts by createdAt; RENT uses pickup or createdAt.
     val sortBy = when {
         orderType.equals("SALE", ignoreCase = true) -> "createdAt"
@@ -163,6 +180,8 @@ private fun fetchScopedOrders(
                 status = status,
                 orderType = null,
                 customerId = customerId,
+                startDate = startDate,
+                endDate = endDate,
                 sortBy = sortBy,
                 sortOrder = "desc",
             )
@@ -179,9 +198,18 @@ private fun fetchScopedOrders(
                 q = q,
                 status = status,
                 orderType = orderType,
+                startDate = startDate,
+                endDate = endDate,
                 sortBy = sortBy,
                 sortOrder = "desc",
             )
+    }
+}
+
+private fun snapshotIncomeStatus(kind: String?): String? {
+    return when (kind?.lowercase()) {
+        "new", "pickup", "return", "cancelled" -> kind.lowercase()
+        else -> null
     }
 }
 
@@ -207,13 +235,18 @@ fun OrdersScreen(
     onEditOrder: (Int) -> Unit = {},
     productId: Int? = null,
     customerId: Int? = null,
+    initialStatus: String? = null,
+    snapshotKind: String? = null,
+    startDate: String? = null,
+    endDate: String? = null,
     filteredTitle: String? = null,
     onBack: (() -> Unit)? = null,
 ) {
     var draftQuery by remember { mutableStateOf("") }
     var appliedQuery by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
-    val filteredMode = productId != null || customerId != null
+    var status by remember { mutableStateOf(initialStatus) }
+    val isSnapshotList = remember(snapshotKind) { snapshotIncomeStatus(snapshotKind) != null }
+    val filteredMode = productId != null || customerId != null || initialStatus != null || isSnapshotList
     var orderType by remember { mutableStateOf<String?>(if (filteredMode) null else "RENT") }
     var orders by remember { mutableStateOf<List<OrderSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -225,7 +258,7 @@ fun OrdersScreen(
     var offline by remember { mutableStateOf(false) }
     var filterExpanded by remember { mutableStateOf(false) }
     // iOS rentDefault = pickup (get_date); SALE always uses createdAt.
-    var sortByPickup by remember { mutableStateOf(true) }
+    var sortByPickup by remember { mutableStateOf(!isSnapshotList) }
     val scope = rememberCoroutineScope()
     val orderListState = rememberLazyListState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -233,8 +266,8 @@ fun OrdersScreen(
 
     fun refresh(fromPull: Boolean = false) {
         val requestedQuery = appliedQuery.trim()
-        val effectiveStatus = statusForOrderType(status, orderType)
-        val effectiveSortByPickup = if (isSaleTab) false else sortByPickup
+        val effectiveStatus = if (isSnapshotList) null else statusForOrderType(status, orderType)
+        val effectiveSortByPickup = if (isSaleTab || isSnapshotList) false else sortByPickup
         scope.launch {
             if (fromPull) refreshing = true else loading = true
             error = null
@@ -248,7 +281,10 @@ fun OrdersScreen(
                     orderType = orderType,
                     productId = productId,
                     customerId = customerId,
+                    startDate = startDate,
+                    endDate = endDate,
                     sortByPickup = effectiveSortByPickup,
+                    snapshotKind = snapshotKind,
                 )
             }
             if (appliedQuery.trim() != requestedQuery) return@launch
@@ -285,8 +321,8 @@ fun OrdersScreen(
     fun loadMore() {
         if (!hasMore || loadingMore) return
         val requestedQuery = appliedQuery.trim()
-        val effectiveStatus = statusForOrderType(status, orderType)
-        val effectiveSortByPickup = if (isSaleTab) false else sortByPickup
+        val effectiveStatus = if (isSnapshotList) null else statusForOrderType(status, orderType)
+        val effectiveSortByPickup = if (isSaleTab || isSnapshotList) false else sortByPickup
         scope.launch {
             loadingMore = true
             val next = page + 1
@@ -298,7 +334,10 @@ fun OrdersScreen(
                     orderType = orderType,
                     productId = productId,
                     customerId = customerId,
+                    startDate = startDate,
+                    endDate = endDate,
                     sortByPickup = effectiveSortByPickup,
+                    snapshotKind = snapshotKind,
                 )
             }
             loadingMore = false
@@ -347,7 +386,14 @@ fun OrdersScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = { onBack?.invoke() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    if (customerId != null) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
+                    } else {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
                 }
                 Text(
                     filteredTitle ?: stringResource(R.string.orders),
@@ -518,10 +564,8 @@ private fun OrderFilterSheet(
     onDismiss: () -> Unit,
     onApply: (String?, Boolean) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var draftStatus by remember(currentStatus) { mutableStateOf(currentStatus) }
     var draftSortByPickup by remember(currentSortByPickup) { mutableStateOf(currentSortByPickup) }
-    // iOS OrderFilterViewController.availableStatuses — rent vs sale status sets differ
     val statuses = if (orderType == "SALE") {
         listOf(
             null to R.string.all,
@@ -540,64 +584,45 @@ private fun OrderFilterSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
+        sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = false,
+            confirmValueChange = { it != SheetValue.Expanded },
+        ),
+        dragHandle = {
+            Box(
+                Modifier.padding(top = 8.dp).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 5.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                            RoundedCornerShape(2.5.dp),
+                        ),
+                )
+            }
+        },
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         tonalElevation = 0.dp,
         scrimColor = Color.Black.copy(alpha = 0.32f),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.SpaceBetween,
+        Column(Modifier.fillMaxWidth()) {
+            AppSheetHeader(
+                title = stringResource(R.string.order_filter),
+            )
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Column(
-                    Modifier.weight(1f).padding(end = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.order_filter),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 18.sp,
-                            lineHeight = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    )
-                    Text(
-                        "${if (orderType == "RENT") stringResource(R.string.orders_rent) else stringResource(R.string.orders_sale)} · " +
-                            stringResource(
-                                if (orderType == "SALE" || !draftSortByPickup) R.string.sort_book_date
-                                else R.string.sort_pickup_date,
-                            ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                AppCloseIconButton(
-                    onClick = onDismiss,
-                    contentDescription = stringResource(R.string.close),
-                )
-            }
-
-            // iOS SALE has no sort UI; RENT offers book vs pickup date.
             if (orderType != "SALE") {
-                Text(
-                    stringResource(R.string.sort_by).uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.6.sp,
-                )
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     listOf(false to R.string.sort_book_date, true to R.string.sort_pickup_date).forEach { (value, label) ->
                         AppFilterChip(
@@ -609,65 +634,33 @@ private fun OrderFilterSheet(
                     }
                 }
             }
-
-            Text(
-                stringResource(R.string.status_filter).uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.6.sp,
-            )
-            // Flow-style rows: wrap chips like iOS statusFlowContainer
-            statuses.chunked(3).forEach { rowStatuses ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    rowStatuses.forEach { (value, label) ->
-                        AppFilterChip(
-                            label = stringResource(label),
-                            selected = draftStatus == value,
-                            onClick = { draftStatus = value },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    repeat(3 - rowStatuses.size) {
-                        Spacer(Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                statuses.chunked(2).forEach { row ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        row.forEach { (value, label) ->
+                            AppFilterChip(
+                                label = stringResource(label),
+                                selected = draftStatus == value,
+                                onClick = { draftStatus = value },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
             }
-
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TextButton(
-                    onClick = {
-                        draftStatus = null
-                        // RENT default = pickup; SALE default = book/createdAt.
-                        draftSortByPickup = orderType != "SALE"
-                        onApply(null, draftSortByPickup)
-                    },
-                    modifier = Modifier.height(50.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.reset),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            AppPrimaryButton(
+                text = stringResource(R.string.confirm),
+                onClick = {
+                    onApply(
+                        draftStatus,
+                        if (orderType == "SALE") false else draftSortByPickup,
                     )
-                }
-                AppPrimaryButton(
-                    text = stringResource(R.string.apply),
-                    onClick = {
-                        onApply(
-                            draftStatus,
-                            if (orderType == "SALE") false else draftSortByPickup,
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                )
+                },
+            )
             }
         }
     }
@@ -1712,83 +1705,13 @@ private fun OrderMoneyEditorSheet(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    formatMoney(value.toDoubleOrNull() ?: 0.0),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Column(Modifier.fillMaxWidth()) {
-                listOf(
-                    listOf("1", "2", "3"),
-                    listOf("4", "5", "6"),
-                    listOf("7", "8", "9"),
-                    listOf("0", "000", "⌫"),
-                ).forEach { keys ->
-                    Row(Modifier.fillMaxWidth()) {
-                        keys.forEach { key ->
-                            androidx.compose.material3.Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(58.dp)
-                                    .clickable {
-                                        val next = when (key) {
-                                            "⌫" -> value.dropLast(1).ifBlank { "0" }
-                                            else -> if (value == "0") key else value + key
-                                        }
-                                        onValueChange(next.take(12))
-                                    },
-                                shape = androidx.compose.ui.graphics.RectangleShape,
-                                color = Color.White,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    0.5.dp,
-                                    MaterialTheme.colorScheme.outlineVariant,
-                                ),
-                            ) {
-                                Box(
-                                    Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(key, style = MaterialTheme.typography.titleLarge)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.cancel))
-                }
-                Button(
-                    onClick = onConfirm,
-                    modifier = Modifier.weight(2f).height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
+    AppNumericPadSheet(
+        title = title,
+        rawValue = value,
+        onRawValueChange = onValueChange,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1813,85 +1736,73 @@ private fun OrderNotesEditorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        dragHandle = {
+            Box(
+                Modifier.padding(top = 8.dp).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    stringResource(R.string.order_notes),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 5.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                            RoundedCornerShape(2.5.dp),
+                        ),
                 )
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.close),
-                    )
-                }
             }
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(stringResource(R.string.notes)) },
-                placeholder = { Text(stringResource(R.string.add_notes_hint)) },
-                minLines = 6,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            AppCard(
-                Modifier.fillMaxWidth(),
-                onClick = { if (canAddMore) onPickImages() },
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.32f),
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            AppSheetHeader(title = stringResource(R.string.order_notes))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.notes)) },
+                    placeholder = { Text(stringResource(R.string.add_notes_hint)) },
+                    minLines = 6,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AppCard(
+                    Modifier.fillMaxWidth(),
+                    onClick = { if (canAddMore) onPickImages() },
                 ) {
-                    Icon(
-                        Icons.Default.AddPhotoAlternate,
-                        contentDescription = null,
-                        tint = if (canAddMore) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline,
-                    )
-                    Column {
-                        Text(stringResource(R.string.add_photos), fontWeight = FontWeight.SemiBold)
-                        Text(
-                            stringResource(R.string.add_photos_limit),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Row(
+                        Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            tint = if (canAddMore) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
                         )
+                        Column {
+                            Text(stringResource(R.string.add_photos), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                stringResource(R.string.add_photos_limit),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                existingImages.take(MAX_NOTE_IMAGES).forEach { url ->
-                    AsyncImage(
-                        model = url,
-                        contentDescription = stringResource(R.string.notes),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(86.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(10.dp),
-                            )
-                            .clickable { onPreviewImage(url) },
-                    )
-                }
-                selectedImages.forEach { file ->
-                    Box {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    existingImages.take(MAX_NOTE_IMAGES).forEach { url ->
                         AsyncImage(
-                            model = file,
+                            model = url,
                             contentDescription = stringResource(R.string.notes),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -1900,58 +1811,67 @@ private fun OrderNotesEditorSheet(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(10.dp),
                                 )
-                                .clickable { onPreviewImage(file) },
+                                .clickable { onPreviewImage(url) },
                         )
-                        IconButton(
-                            onClick = {
-                                runCatching { file.delete() }
-                                onSelectedImagesChange(selectedImages - file)
-                            },
-                            modifier = Modifier.align(Alignment.TopEnd).size(36.dp),
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.delete))
-                        }
                     }
-                }
-            }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(
-                enabled = !saving,
-                onClick = {
-                    saving = true
-                    error = null
-                    scope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            runCatching {
-                                val bytes = selectedImages.map { file ->
-                                    // iOS: UIImageJPEGRepresentation(img, 0.8); then budget if API 200KB.
-                                    val jpeg = fileToNotesJpegBytes(file)
-                                    android.util.Log.i(
-                                        "AnyRentUpload",
-                                        "notes jpeg file=${file.name} raw=${file.length()} jpeg=${jpeg.size}",
+                    selectedImages.forEach { file ->
+                        Box {
+                            AsyncImage(
+                                model = file,
+                                contentDescription = stringResource(R.string.notes),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(86.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(10.dp),
                                     )
-                                    jpeg
-                                }
-                                ApiParity.updateOrderDetails(
-                                    id = orderId,
-                                    notes = text.trim(),
-                                    noteImages = bytes,
-                                    existingNoteImageUrls = existingImages,
-                                ).getOrThrow()
+                                    .clickable { onPreviewImage(file) },
+                            )
+                            IconButton(
+                                onClick = {
+                                    runCatching { file.delete() }
+                                    onSelectedImagesChange(selectedImages - file)
+                                },
+                                modifier = Modifier.align(Alignment.TopEnd).size(36.dp),
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.delete))
                             }
                         }
-                        saving = false
-                        result.onSuccess { onSaved() }.onFailure { error = it.message }
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                if (saving) {
-                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.save_notes), fontWeight = FontWeight.Bold)
                 }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                AppPrimaryButton(
+                    text = stringResource(R.string.save_notes),
+                    loading = saving,
+                    onClick = {
+                        saving = true
+                        error = null
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val bytes = selectedImages.map { file ->
+                                        // iOS: UIImageJPEGRepresentation(img, 0.8); then budget if API 200KB.
+                                        val jpeg = fileToNotesJpegBytes(file)
+                                        android.util.Log.i(
+                                            "AnyRentUpload",
+                                            "notes jpeg file=${file.name} raw=${file.length()} jpeg=${jpeg.size}",
+                                        )
+                                        jpeg
+                                    }
+                                    ApiParity.updateOrderDetails(
+                                        id = orderId,
+                                        notes = text.trim(),
+                                        noteImages = bytes,
+                                        existingNoteImageUrls = existingImages,
+                                    ).getOrThrow()
+                                }
+                            }
+                            saving = false
+                            result.onSuccess { onSaved() }.onFailure { error = it.message }
+                        }
+                    },
+                )
             }
         }
     }

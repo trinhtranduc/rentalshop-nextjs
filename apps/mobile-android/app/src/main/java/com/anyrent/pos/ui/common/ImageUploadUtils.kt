@@ -135,6 +135,15 @@ fun fileToJpegBytes(
     }
 }
 
+/** iOS image search: 20KB, max 1024px, min quality 0.05. Caller owns [bitmap]. */
+fun bitmapToImageSearchJpeg(bitmap: Bitmap): ByteArray =
+    compressToTargetSize(
+        bitmap = bitmap,
+        targetSizeKB = 20,
+        maxDimension = 1024,
+        minQuality = 0.05f,
+    )
+
 /** Product path: File already picked — re-encode to ≤100KB JPEG like iOS. */
 fun fileToProductJpegFile(source: File, cacheDir: File): File {
     val bitmap = decodeBitmapFile(source, maxSide = PRODUCT_MAX_SIDE)

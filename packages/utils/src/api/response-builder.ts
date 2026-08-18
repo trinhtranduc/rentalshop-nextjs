@@ -31,6 +31,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PASSWORD_MIN_LENGTH': 'New password must be at least 6 characters',
   'PASSWORD_MISMATCH': 'Passwords do not match',
   'CROSS_MERCHANT_ACCESS_DENIED': 'Cannot access data from other merchants',
+  'UNAUTHORIZED': 'Unauthorized',
   'USER_NOT_ASSIGNED': 'User not assigned to merchant/outlet',
   'MERCHANT_ASSOCIATION_REQUIRED': 'User must be associated with a merchant',
   'NO_MERCHANT_ACCESS': 'User does not have merchant access',
@@ -82,6 +83,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_NOT_FOUND': 'Merchant not found',
   'OUTLET_NOT_FOUND': 'Outlet not found',
   'PRODUCT_NOT_FOUND': 'Product not found',
+  'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
   'CUSTOMER_NOT_FOUND': 'Customer not found',
   'CATEGORY_NOT_FOUND': 'Category not found',
@@ -241,6 +243,11 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'MERCHANT_ACCOUNT_CREATED_SUCCESS': 'Merchant account created successfully with default outlet and trial subscription',
   'USER_ACCOUNT_CREATED_SUCCESS': 'User account created successfully',
   'SUBSCRIPTION_EXPIRY_REMINDERS_COMPLETED': 'Subscription expiry reminders processed successfully',
+  'PRODUCTS_FOUND': 'Products found',
+  'NO_PRODUCTS_FOUND': 'No similar products found',
+  'EMBEDDING_JOBS_PROCESSED': 'Embedding jobs processed',
+  'EMBEDDING_JOBS_CRON_HEALTHY': 'Embedding jobs cron is healthy',
+  'EMBEDDING_SYNC_QUEUED': 'Product queued for image-search indexing',
 };
 
 /**

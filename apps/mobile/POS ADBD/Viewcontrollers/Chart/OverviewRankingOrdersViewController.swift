@@ -6,9 +6,44 @@
 import UIKit
 import SnapKit
 
+enum OverviewSnapshotKind {
+    case newOrders
+    case pickup
+    case returned
+    case cancelled
+
+    /// Snapshot tiles count events in the period, not the order's current status.
+    var dateField: String {
+        switch self {
+        case .newOrders: return "createdAt"
+        case .pickup: return "pickedUpAt"
+        case .returned: return "returnedAt"
+        case .cancelled: return "updatedAt"
+        }
+    }
+
+    var status: OrderStatus? {
+        switch self {
+        case .cancelled: return .cancelled
+        case .newOrders, .pickup, .returned: return nil
+        }
+    }
+
+    /// GET /api/analytics/income/orders — same buckets as operational snapshot counts.
+    var incomeOrdersStatus: String {
+        switch self {
+        case .newOrders: return "new"
+        case .pickup: return "pickup"
+        case .returned: return "return"
+        case .cancelled: return "cancelled"
+        }
+    }
+}
+
 enum OverviewRankingOrdersFilter {
     case customer(id: Int, name: String)
     case product(id: Int, name: String)
+    case snapshot(OverviewSnapshotKind, title: String)
 
     var navigationTitle: String {
         switch self {
@@ -16,6 +51,8 @@ enum OverviewRankingOrdersFilter {
             return "Orders by customer".localized()
         case .product:
             return "Orders by product".localized()
+        case .snapshot(_, let title):
+            return title
         }
     }
 
@@ -23,6 +60,8 @@ enum OverviewRankingOrdersFilter {
         switch self {
         case .customer(_, let name), .product(_, let name):
             return name
+        case .snapshot(_, let title):
+            return title
         }
     }
 
@@ -275,13 +314,24 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     }
 
     private func setupNavigationBar() {
-        setupCustomNavigationBar(
+        let navBar = setupCustomNavigationBar(
             title: filter.navigationTitle,
             statusBarBackgroundColor: .backgroundCard,
             titleCentered: true,
             hideBackButton: false,
-            backAction: .pop
+            backAction: .custom { [weak self] in
+                guard let self else { return }
+                if let nav = self.navigationController, nav.viewControllers.count > 1 {
+                    nav.popViewController(animated: true)
+                } else {
+                    self.dismiss(animated: true)
+                }
+            }
         )
+        // Customer history is presented (picker / Settings), not a stack page.
+        if case .customer = filter {
+            navBar.setDismissButton()
+        }
     }
 
     /// Same tier pill language as CustomerCell (Kim Cương, points, …).
@@ -378,6 +428,72 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             ) { [weak self] response, error in
                 self?.handleOrdersResponse(response, error: error, reset: reset)
             }
+        case .snapshot(let kind, _):
+            AnalyticsAPIService.shared.loadIncomeOrders(
+                startDate: startDate,
+                endDate: endDate,
+                status: kind.incomeOrdersStatus,
+                plan: false,
+                limit: 20,
+                offset: (currentPage - 1) * 20
+            ) { [weak self] data, error in
+                self?.handleIncomeOrders(data, error: error, reset: reset)
+            }
+        }
+    }
+
+    private func handleIncomeOrders(_ data: IncomeOrdersData?, error: NSError?, reset: Bool) {
+        let mapped: [Order] = {
+            var seen = Set<Int>()
+            var result: [Order] = []
+            for item in data?.days?.flatMap({ $0.orders ?? [] }) ?? [] {
+                guard let id = item.id, seen.insert(id).inserted,
+                      let order = item.toListOrder() else { continue }
+                result.append(order)
+            }
+            return result
+        }()
+        let total = data?.pagination?.total ?? mapped.count
+        let hasMore = data?.pagination?.hasMore ?? false
+        handleMappedOrders(mapped, total: total, hasMore: hasMore, error: error, reset: reset)
+    }
+
+    private func handleMappedOrders(
+        _ newOrders: [Order],
+        total: Int,
+        hasMore: Bool,
+        error: NSError?,
+        reset: Bool
+    ) {
+        DispatchQueue.main.async {
+            self.isLoading = false
+            if reset {
+                self.hideProgress(navigationController: self.navigationController)
+            }
+
+            if let error = error, newOrders.isEmpty {
+                UIAlertController.errorAlert(parent: self, error: error)
+                self.updateEmptyState()
+                return
+            }
+
+            if reset {
+                self.orders = newOrders
+                self.loadedAmountTotal = newOrders.reduce(0) { $0 + $1.totalAmount }
+            } else {
+                self.orders.append(contentsOf: newOrders)
+                self.loadedAmountTotal += newOrders.reduce(0) { $0 + $1.totalAmount }
+            }
+
+            self.totalOrderCount = total
+            self.hasMorePages = hasMore
+            if !newOrders.isEmpty {
+                self.currentPage += 1
+            }
+
+            self.updateSummaryHeader()
+            self.ordersTableView.reloadData()
+            self.updateEmptyState()
         }
     }
 
@@ -499,5 +615,64 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
         if offsetY > contentHeight - frameHeight - 120 {
             loadOrders(reset: false)
         }
+    }
+}
+
+private extension DailyIncomeOrder {
+    func toListOrder() -> Order? {
+        guard let id = id, let orderNumber = orderNumber, !orderNumber.isEmpty else { return nil }
+        let type: OrderType = (orderType ?? "").uppercased() == "SALE" ? .sale : .rent
+        let st = OrderStatus.from(apiString: status) ?? .reserved
+        let created = createdAt ?? Date()
+        let nameParts = (customerName ?? "")
+            .split(separator: " ")
+            .map(String.init)
+        return Order(
+            id: id,
+            orderNumber: orderNumber,
+            orderType: type,
+            status: st,
+            totalAmount: totalAmount ?? 0,
+            depositAmount: depositAmount ?? 0,
+            securityDeposit: securityDeposit ?? 0,
+            damageFee: damageFee ?? 0,
+            lateFee: 0,
+            discountType: nil,
+            discountValue: 0,
+            discountAmount: 0,
+            pickupPlanAt: pickupPlanAt,
+            returnPlanAt: returnPlanAt,
+            pickedUpAt: nil,
+            returnedAt: nil,
+            rentalDuration: nil,
+            isReadyToDeliver: false,
+            collateralType: nil,
+            collateralDetails: nil,
+            notes: nil,
+            pickupNotes: nil,
+            pickupNotesImages: nil,
+            returnNotes: nil,
+            returnNotesImages: nil,
+            damageNotes: nil,
+            damageNotesImages: nil,
+            createdAt: created,
+            updatedAt: created,
+            customerId: customerId ?? 0,
+            customerFirstName: nameParts.first,
+            customerLastName: nameParts.dropFirst().joined(separator: " "),
+            customerName: customerName ?? "",
+            customerPhone: customerPhone,
+            customerEmail: nil,
+            outletId: outletId ?? 0,
+            outletName: outletName ?? "",
+            merchantId: nil,
+            merchantName: nil,
+            createdById: 0,
+            createdByName: "",
+            orderItems: [],
+            itemCount: 0,
+            paymentCount: 0,
+            totalPaid: 0
+        )
     }
 }
