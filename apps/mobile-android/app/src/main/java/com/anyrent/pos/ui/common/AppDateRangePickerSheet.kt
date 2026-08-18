@@ -1,11 +1,17 @@
 package com.anyrent.pos.ui.common
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -67,9 +73,35 @@ fun AppDateRangePickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
+        dragHandle = {
+            Box(
+                Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 5.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                            RoundedCornerShape(2.5.dp),
+                        ),
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.32f),
+        // Expanded calendar would otherwise add status-bar insets and push the title down.
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
     ) {
-        Column(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+        ) {
             AppSheetHeader(title = title)
             Column(
                 Modifier
@@ -81,7 +113,7 @@ fun AppDateRangePickerSheet(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Row(
                         Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -90,7 +122,7 @@ fun AppDateRangePickerSheet(
                         Icon(
                             Icons.Default.CalendarMonth,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Column(Modifier.weight(1f).padding(start = 12.dp)) {
                             Text(
@@ -101,12 +133,13 @@ fun AppDateRangePickerSheet(
                             Text(
                                 rangeState.selectedStartDateMillis.toDisplayDate(formatter),
                                 fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         Icon(
                             Icons.Default.ArrowForward,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Column(Modifier.weight(1f).padding(start = 16.dp)) {
                             Text(
@@ -117,6 +150,7 @@ fun AppDateRangePickerSheet(
                             Text(
                                 rangeState.selectedEndDateMillis.toDisplayDate(formatter),
                                 fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -130,11 +164,21 @@ fun AppDateRangePickerSheet(
                     showModeToggle = false,
                     colors = DatePickerDefaults.colors(
                         containerColor = Color.White,
-                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedDayContainerColor = MaterialTheme.colorScheme.onSurface,
+                        selectedDayContentColor = Color.White,
+                        todayContentColor = MaterialTheme.colorScheme.onSurface,
+                        todayDateBorderColor = MaterialTheme.colorScheme.onSurface,
                         dayInSelectionRangeContainerColor =
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                         dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
+                        selectedYearContainerColor = MaterialTheme.colorScheme.onSurface,
+                        selectedYearContentColor = Color.White,
+                        currentYearContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationContentColor = MaterialTheme.colorScheme.onSurface,
+                        headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        subheadContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 )
 

@@ -24,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
@@ -38,10 +37,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -62,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -85,7 +83,13 @@ import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.orderLinePricingText
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
+import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppInputField
+import com.anyrent.pos.ui.common.AppNumericPadSheet
+import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppSheetHeader
+import com.anyrent.pos.ui.customers.CustomersScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -97,10 +101,10 @@ import androidx.compose.ui.Modifier
 @Composable
 fun CartCheckoutScreen(
     onBack: () -> Unit,
-    onPickCustomer: () -> Unit,
     onPreview: () -> Unit,
     onCreated: (Int) -> Unit,
     previewMode: Boolean = false,
+    onViewCustomerOrders: ((Customer) -> Unit)? = null,
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -136,6 +140,7 @@ fun CartCheckoutScreen(
     var numericEditor by remember { mutableStateOf<String?>(null) }
     var numericText by remember { mutableStateOf("0") }
     var showDateSelection by remember { mutableStateOf(false) }
+    var showPickCustomer by remember { mutableStateOf(false) }
     var showClearConfirmation by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val app = LocalContext.current.applicationContext as AnyRentApp
@@ -459,7 +464,7 @@ fun CartCheckoutScreen(
         ) {
             AppCard(
                 Modifier.fillMaxWidth(),
-                onClick = onPickCustomer.takeUnless { previewMode },
+                onClick = { if (!previewMode) showPickCustomer = true },
                 shape = RoundedCornerShape(10.dp),
             ) {
                 Row(
@@ -693,43 +698,64 @@ fun CartCheckoutScreen(
         )
     }
 
+    if (showPickCustomer) {
+        AppFormSheet(onDismiss = { showPickCustomer = false }) {
+            CustomersScreen(
+                pickMode = true,
+                embeddedInSheet = true,
+                onPicked = { showPickCustomer = false },
+                onBack = { showPickCustomer = false },
+                onViewOrders = { customer ->
+                    showPickCustomer = false
+                    onViewCustomerOrders?.invoke(customer)
+                },
+            )
+        }
+    }
+
     if (orderType == "RENT") pricingMenuProductId?.let { productId ->
         val line = lines.firstOrNull { it.product.id == productId } ?: return@let
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = { pricingMenuProductId = null },
-            sheetState = sheetState,
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = false,
+                confirmValueChange = { it != SheetValue.Expanded },
+            ),
+            dragHandle = {
+                Box(
+                    Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .size(width = 36.dp, height = 5.dp)
+                            .background(
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                                RoundedCornerShape(2.5.dp),
+                            ),
+                    )
+                }
+            },
             containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            tonalElevation = 0.dp,
+            scrimColor = Color.Black.copy(alpha = 0.32f),
         ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+            Column(Modifier.fillMaxWidth()) {
+                AppSheetHeader(title = stringResource(R.string.price_and_pricing_method))
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp, bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Text(
-                        stringResource(R.string.price_and_pricing_method),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    IconButton(onClick = { pricingMenuProductId = null }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                listOf("FIXED" to stringResource(R.string.per_rental), "DAILY" to stringResource(R.string.per_day))
-                    .forEach { (type, title) ->
+                    listOf(
+                        "FIXED" to stringResource(R.string.per_rental),
+                        "DAILY" to stringResource(R.string.per_day),
+                    ).forEach { (type, title) ->
                         val selected = line.pricingType.equals(type, ignoreCase = true)
                         val optionPrice = cartLinePriceForType(line, type)
                         Row(
@@ -773,30 +799,31 @@ fun CartCheckoutScreen(
                         }
                     }
 
-                Button(
-                    onClick = {
-                        pricingMenuProductId = null
-                        numericText = line.unitPrice.toLong().toString()
-                        numericEditor = "PRICE:$productId"
-                    },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        stringResource(R.string.edit_unit_price),
-                        modifier = Modifier.padding(start = 8.dp),
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Button(
+                        onClick = {
+                            pricingMenuProductId = null
+                            numericText = line.unitPrice.toLong().toString()
+                            numericEditor = "PRICE:$productId"
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            stringResource(R.string.edit_unit_price),
+                            modifier = Modifier.padding(start = 8.dp),
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
         }
@@ -925,127 +952,43 @@ fun CartCheckoutScreen(
     }
 
     numericEditor?.let { editor ->
-        val numberSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { numericEditor = null },
-            sheetState = numberSheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
+        AppNumericPadSheet(
+            title = when {
+                editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
+                editor.startsWith("PRICE:") -> stringResource(R.string.unit_price)
+                else -> stringResource(R.string.enter_discount)
+            },
+            rawValue = numericText,
+            onRawValueChange = { numericText = it },
+            onDismiss = { numericEditor = null },
+            onConfirm = {
+                val value = numericText.toDoubleOrNull() ?: 0.0
+                when {
+                    editor == "DEPOSIT" -> CartStore.setDeposit(value)
+                    editor.startsWith("PRICE:") -> editor.substringAfter(':').toIntOrNull()
+                        ?.let { CartStore.updateUnitPrice(it, value) }
+                    else -> CartStore.setDiscount(value)
+                }
+                numericEditor = null
+            },
         ) {
-            Column(
-                Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+            if (editor == "DISCOUNT") {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(
-                        when {
-                            editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
-                            editor.startsWith("PRICE:") -> stringResource(R.string.unit_price)
-                            else -> stringResource(R.string.enter_discount)
-                        },
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    AppFilterChip(
+                        label = "%",
+                        selected = discountType == CartStore.DiscountType.PERCENT,
+                        onClick = { CartStore.setDiscountType(CartStore.DiscountType.PERCENT) },
+                        modifier = Modifier.weight(1f),
                     )
-                    // Thousands separator while typing (raw digits stay in numericText)
-                    Text(
-                        formatMoney(numericText.toDoubleOrNull() ?: 0.0),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
+                    AppFilterChip(
+                        label = "đ",
+                        selected = discountType == CartStore.DiscountType.AMOUNT,
+                        onClick = { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) },
+                        modifier = Modifier.weight(1f),
                     )
-                }
-                // Full-bleed keypad — no gaps between keys
-                Column(Modifier.fillMaxWidth()) {
-                    listOf(
-                        listOf("1", "2", "3"),
-                        listOf("4", "5", "6"),
-                        listOf("7", "8", "9"),
-                        listOf("0", "000", "⌫"),
-                    ).forEach { keys ->
-                        Row(Modifier.fillMaxWidth()) {
-                            keys.forEach { key ->
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(58.dp)
-                                        .clickable {
-                                            numericText = when (key) {
-                                                "⌫" -> numericText.dropLast(1).ifBlank { "0" }
-                                                else -> if (numericText == "0") key else numericText + key
-                                            }.take(12)
-                                        },
-                                    shape = RectangleShape,
-                                    color = Color.White,
-                                    border = BorderStroke(
-                                        0.5.dp,
-                                        MaterialTheme.colorScheme.outlineVariant,
-                                    ),
-                                ) {
-                                    Box(
-                                        Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(
-                                            key,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (editor == "DISCOUNT") {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            FilterChip(
-                                selected = discountType == CartStore.DiscountType.PERCENT,
-                                onClick = { CartStore.setDiscountType(CartStore.DiscountType.PERCENT) },
-                                label = { Text("%") },
-                                modifier = Modifier.weight(1f),
-                            )
-                            FilterChip(
-                                selected = discountType == CartStore.DiscountType.AMOUNT,
-                                onClick = { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) },
-                                label = { Text("đ") },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        TextButton(
-                            onClick = { numericEditor = null },
-                            modifier = Modifier.weight(1f).height(52.dp),
-                        ) { Text(stringResource(R.string.cancel)) }
-                        Button(
-                            onClick = {
-                                val value = numericText.toDoubleOrNull() ?: 0.0
-                                when {
-                                    editor == "DEPOSIT" -> CartStore.setDeposit(value)
-                                    editor.startsWith("PRICE:") -> editor.substringAfter(':').toIntOrNull()
-                                        ?.let { CartStore.updateUnitPrice(it, value) }
-                                    else -> CartStore.setDiscount(value)
-                                }
-                                numericEditor = null
-                            },
-                            modifier = Modifier.weight(2f).height(52.dp),
-                        ) {
-                            Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                        }
-                    }
                 }
             }
         }

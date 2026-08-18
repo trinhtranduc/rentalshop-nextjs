@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import IQKeyboardManagerSwift
 import SnapKit
 
 protocol CustomerViewControllerDelegate: AnyObject {
@@ -20,16 +21,13 @@ class CustomerViewController: BaseViewControler {
     var customer: Customer?
     var customerText: String?
     weak var delegate: CustomerViewControllerDelegate?
+    private var isIQKeyboardManagerEnabledBeforePresenting = true
+    private var confirmButtonBottomConstraint: Constraint?
     
     // MARK: - UI Components
-    private lazy var saveButton: UIButton = {
-        let button = UIButton(type: .system)
-        let title = customer == nil ? "Add".localized() : "Update".localized()
-        button.setTitle(title, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 17)
-        button.setTitleColor(APP_TONE_COLOR, for: .normal)
-        button.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
-        return button
+    private let headerView = RCSheetHeaderView()
+    private lazy var confirmButton: RCPrimaryButton = {
+        RCPrimaryButton(title: "Add".localized(), backgroundColor: APP_TONE_COLOR)
     }()
     
     private lazy var scrollView: UIScrollView = {
@@ -99,8 +97,6 @@ class CustomerViewController: BaseViewControler {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        setupNavigationBar()
         setupUI()
         setupData()
         
@@ -115,14 +111,25 @@ class CustomerViewController: BaseViewControler {
         // Ensure navigation bar is hidden when returning to this screen
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        let isClosing = isBeingDismissed || isMovingFromParentViewController || navigationController?.isBeingDismissed == true
+        if isClosing {
+            unregisterKeyboardNotifications()
+            IQKeyboardManager.shared.enable = isIQKeyboardManagerEnabledBeforePresenting
+        }
+    }
     
     // MARK: - Setup
     override func setupUI() {
-        view.backgroundColor = .backgroundPrimary
-        
-        guard let customNavBar = customNavBar else { return }
-        
+        view.backgroundColor = .systemBackground
+        headerView.title = customer == nil ? "Add new customer".localized() : "Update customer".localized()
+        confirmButton.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+
+        view.addSubview(headerView)
         view.addSubview(scrollView)
+        view.addSubview(confirmButton)
         scrollView.addSubview(containerView)
         
         // Create one card container for all fields
@@ -211,10 +218,20 @@ class CustomerViewController: BaseViewControler {
         
         containerView.addSubview(fieldsCardContainer)
         
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom)
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.height.equalTo(56)
+        }
+        confirmButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(50)
+            self.confirmButtonBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12).constraint
+        }
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(confirmButton.snp.top).offset(-16)
         }
         
         containerView.snp.makeConstraints { make in
@@ -228,29 +245,13 @@ class CustomerViewController: BaseViewControler {
             make.trailing.equalToSuperview().offset(-12)
             make.bottom.equalToSuperview().offset(-16)
         }
-    }
-    
-    // MARK: - Custom Navigation Bar Setup
-    private func setupNavigationBar() {
-        let title = customer == nil ? "Add new customer".localized() : "Update customer".localized()
-        let navBar = setupCustomNavigationBar(
-            title: title,
-            statusBarBackgroundColor: .white,
-            titleCentered: true,
-            hideBackButton: false,
-            backAction: .custom { [weak self] in
-                self?.dismiss(animated: true)
-            },
-            pinToSafeArea: false
-        )
-        navBar.setDismissButton()
-        navBar.backButtonTintColor = .black
-        navBar.addRightButton(saveButton)
+
+        configureKeyboardHandling()
     }
     
     override func setupData() {
         let buttonTitle = customer == nil ? "Add".localized() : "Update".localized()
-        saveButton.setTitle(buttonTitle, for: .normal)
+        confirmButton.setButtonTitle(buttonTitle)
         
         if let customer = customer {
             // Combine firstName and lastName into single customerName field
@@ -394,5 +395,66 @@ class CustomerViewController: BaseViewControler {
         
         let customerId = customer.id ?? customer.customer_id
         updateCustomer(customerId: customerId, withParams: params)
+    }
+
+    // MARK: - Keyboard
+    // Why: IQKeyboardManager would lift the whole form and park Add/Update next
+    // to the fields. Pin the CTA to the sheet bottom (same as Notes / Overview).
+    private func configureKeyboardHandling() {
+        isIQKeyboardManagerEnabledBeforePresenting = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+        registerKeyboardNotifications()
+    }
+
+    private func registerKeyboardNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardWillChangeFrame(_:)),
+            name: NSNotification.Name.UIKeyboardWillChangeFrame,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardWillHide(_:)),
+            name: NSNotification.Name.UIKeyboardWillHide,
+            object: nil
+        )
+    }
+
+    private func unregisterKeyboardNotifications() {
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+
+    @objc private func handleKeyboardWillChangeFrame(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let keyboardFrame = (userInfo[UIKeyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
+            let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double,
+            let curveValue = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? UInt
+        else { return }
+
+        let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
+        let overlap = max(0, view.bounds.maxY - keyboardFrameInView.minY - view.safeAreaInsets.bottom)
+        confirmButtonBottomConstraint?.update(offset: -(overlap + 12))
+
+        let options = UIView.AnimationOptions(rawValue: curveValue << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: [options, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    @objc private func handleKeyboardWillHide(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double,
+            let curveValue = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? UInt
+        else { return }
+
+        confirmButtonBottomConstraint?.update(offset: -12)
+        let options = UIView.AnimationOptions(rawValue: curveValue << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: [options, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
+        }
     }
 }

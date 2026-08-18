@@ -33,12 +33,20 @@ private final class PricingMethodSheetViewController: UIViewController {
 
     private let options: [PricingMethodSheetOption]
     private let editTitle: String
+    private let headerView = RCSheetHeaderView()
 
     init(options: [PricingMethodSheetOption], editTitle: String) {
         self.options = options
         self.editTitle = editTitle
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .pageSheet
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.selectedDetentIdentifier = .medium
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -52,26 +60,7 @@ private final class PricingMethodSheetViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
-
-        let titleLabel = UILabel()
-        titleLabel.text = "Price and pricing method".localized()
-        titleLabel.font = Utils.mediumFont(size: 20)
-        titleLabel.textColor = .textPrimary
-        titleLabel.adjustsFontForContentSizeCategory = true
-
-        let closeButton = UIButton(type: .system)
-        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
-        closeButton.tintColor = .textSecondary
-        closeButton.accessibilityLabel = "Close".localized()
-        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        closeButton.snp.makeConstraints { make in
-            make.width.height.equalTo(44)
-        }
-
-        let headerSpacer = UIView()
-        let header = UIStackView(arrangedSubviews: [titleLabel, headerSpacer, closeButton])
-        header.axis = .horizontal
-        header.alignment = .center
+        headerView.title = "Price and pricing method".localized()
 
         let optionStack = UIStackView()
         optionStack.axis = .vertical
@@ -101,19 +90,23 @@ private final class PricingMethodSheetViewController: UIViewController {
             make.height.equalTo(48)
         }
 
-        let contentStack = UIStackView(arrangedSubviews: [
-            header,
-            optionStack,
-            editButton
-        ])
-        contentStack.axis = .vertical
-        contentStack.spacing = 12
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
+        let stack = UIStackView(arrangedSubviews: [optionStack, spacer, editButton])
+        stack.axis = .vertical
+        stack.spacing = 16
 
-        view.addSubview(contentStack)
-        contentStack.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(12)
+        view.addSubview(headerView)
+        view.addSubview(stack)
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(56)
+        }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
         }
     }
 
@@ -171,10 +164,6 @@ private final class PricingMethodSheetViewController: UIViewController {
 
     @objc private func editPriceTapped() {
         onEditPrice?()
-    }
-
-    @objc private func closeTapped() {
-        dismiss(animated: true)
     }
 }
 
@@ -1253,19 +1242,6 @@ class ProductSelectedCell: UITableViewCell {
             controller?.dismiss(animated: true) {
                 self?.priceTapped()
             }
-        }
-
-        if let sheet = controller.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                sheet.detents = [
-                    .custom(identifier: .init("pricing-method")) { _ in 246 }
-                ]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 16
-            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         }
         presentSheet(controller)
     }

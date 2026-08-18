@@ -62,25 +62,19 @@ class DatePickerViewController: UIViewController {
         let calendar = FSCalendar()
         calendar.delegate = self
         calendar.dataSource = self
-        calendar.appearance.titleDefaultColor = .black
-        calendar.appearance.headerTitleColor = APP_BUTTON_BG_COLOR
-        calendar.appearance.weekdayTextColor = .gray
-        calendar.appearance.todayColor = APP_BUTTON_BG_COLOR.withAlphaComponent(0.3)
-        calendar.appearance.selectionColor = APP_BUTTON_BG_COLOR
+        calendar.appearance.titleDefaultColor = .textPrimary
+        calendar.appearance.headerTitleColor = .textPrimary
+        calendar.appearance.weekdayTextColor = .textSecondary
+        calendar.appearance.todayColor = UIColor.label.withAlphaComponent(0.12)
+        calendar.appearance.selectionColor = .label
         calendar.appearance.headerTitleFont = Utils.boldFont(size: 17)
         calendar.appearance.titleFont = Utils.regularFont(size: 15)
         calendar.appearance.weekdayFont = Utils.regularFont(size: 14)
-        
-        // Configure appearance for date range
-        calendar.allowsMultipleSelection = false // Will be set based on mode
-        
-        // Set colors for date range
-        calendar.appearance.selectionColor = APP_BUTTON_BG_COLOR
+        calendar.allowsMultipleSelection = false
+        calendar.appearance.selectionColor = .label
         calendar.appearance.titleSelectionColor = .white
-        
-        // Configure range colors
         calendar.appearance.titlePlaceholderColor = UIColor.lightGray
-        calendar.appearance.titleTodayColor = APP_BUTTON_BG_COLOR
+        calendar.appearance.titleTodayColor = .textPrimary
         
         calendar.translatesAutoresizingMaskIntoConstraints = false
         return calendar
@@ -102,7 +96,9 @@ class DatePickerViewController: UIViewController {
         view.addSubview(confirmButton)
 
         NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // Pin to the sheet top. RCSheetHeaderView already has 20pt for the grabber;
+            // safe-area pinning stacked extra space and sat the title too low.
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 56),
@@ -365,12 +361,20 @@ extension DatePickerViewController: FSCalendarDelegateAppearance {
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
         if selectionMode == .range {
             if date == firstDate || date == lastDate {
-                return APP_BUTTON_BG_COLOR // Full color for start/end dates
+                return .label
             } else if datesRange?.contains(date) == true {
-                return APP_BUTTON_BG_COLOR//APP_BUTTON_BG_COLOR.withAlphaComponent(0.2) // Light color for in-between dates
+                return UIColor.label.withAlphaComponent(0.12)
             }
         }
         return nil
+    }
+
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, titleSelectionColorFor date: Date) -> UIColor? {
+        if selectionMode == .range, datesRange?.contains(date) == true,
+           date != firstDate, date != lastDate {
+            return .textPrimary
+        }
+        return .white
     }
 }
 
@@ -380,12 +384,10 @@ extension DatePickerViewController {
         let controller = DatePickerViewController()
         
         if let sheet = controller.sheetPresentationController {
-            // Configure sheet properties
-            sheet.detents = [.medium()] // Use medium size (approximately half screen)
-            sheet.prefersGrabberVisible = true // Show grabber at top
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 16
             sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-            sheet.prefersEdgeAttachedInCompactHeight = true
         }
         
         return controller
