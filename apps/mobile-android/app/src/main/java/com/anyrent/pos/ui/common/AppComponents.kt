@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.common
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -341,8 +343,8 @@ fun RequiredFieldLabel(
 }
 
 /**
- * Neutral selection chip used by Order Filter (and similar sheets).
- * Selected = primary tint 10% fill + soft primary border (iOS OrderFilterChipAppearance).
+ * Neutral choice chip matching iOS Order Filter.
+ * Selected = white fill + black 1.5pt border. Unselected = gray fill, no border.
  */
 @Composable
 fun AppFilterChip(
@@ -351,39 +353,29 @@ fun AppFilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val background = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    val border = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.75f)
-    }
-    val content = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 44.dp),
-        shape = RoundedCornerShape(15.dp),
-        color = background,
-        border = BorderStroke(1.dp, border),
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        border = BorderStroke(
+            1.5.dp,
+            if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+        ),
     ) {
         Box(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 15.dp, vertical = 10.dp),
+            Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 label,
-                style = MaterialTheme.typography.titleSmall,
-                color = content,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -500,6 +492,118 @@ fun RankingCard(
                 }
             }
             content()
+        }
+    }
+}
+
+/**
+ * Price / deposit keypad as a filter-style sheet: centered title, one blue
+ * Confirm, no Cancel. Swipe the grabber to dismiss.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppNumericPadSheet(
+    title: String,
+    rawValue: String,
+    onRawValueChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    formattedValue: String = formatMoney(rawValue.toDoubleOrNull() ?: 0.0),
+    extraContent: @Composable ColumnScope.() -> Unit = {},
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = {
+            Box(
+                Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 5.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                            RoundedCornerShape(2.5.dp),
+                        ),
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.32f),
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            AppSheetHeader(title = title)
+            Text(
+                formattedValue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Column(Modifier.fillMaxWidth()) {
+                listOf(
+                    listOf("1", "2", "3"),
+                    listOf("4", "5", "6"),
+                    listOf("7", "8", "9"),
+                    listOf("0", "000", "⌫"),
+                ).forEach { keys ->
+                    Row(Modifier.fillMaxWidth()) {
+                        keys.forEach { key ->
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(58.dp)
+                                    .clickable {
+                                        onRawValueChange(
+                                            when (key) {
+                                                "⌫" -> rawValue.dropLast(1).ifBlank { "0" }
+                                                else -> if (rawValue == "0") key else rawValue + key
+                                            }.take(12),
+                                        )
+                                    },
+                                shape = RectangleShape,
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                ),
+                            ) {
+                                Box(
+                                    Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        key,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                extraContent()
+                AppPrimaryButton(
+                    text = stringResource(R.string.confirm),
+                    onClick = onConfirm,
+                )
+            }
         }
     }
 }
@@ -746,18 +850,20 @@ fun AppOverflowMenuAnchor(
 }
 
 /**
- * Form presentation used by product / customer / user screens.
+ * Shared presentation helper.
  *
- * Default is an iOS-style page sheet (~9/10 tall, rounded top, dimmed list).
- * [fullScreen] covers the window (product + user forms) so the photo and fields
- * have the full height. Page-sheet content keeps TopAppBar windowInsets at 0;
- * full-screen content uses the default status-bar insets.
+ * - Default / [nested]: page sheet (~90%). Select customer, add/edit customer.
+ * - [fullScreen]: covers the window. Product and user forms (photo, long fields).
+ *   Order history is a NavHost destination, not this sheet.
+ * - [nested]: second 90% card as a Dialog because Compose cannot stack two
+ *   ModalBottomSheets (add/edit customer on top of the cart picker).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppFormSheet(
     onDismiss: () -> Unit,
     fullScreen: Boolean = false,
+    nested: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     if (fullScreen) {
@@ -779,30 +885,73 @@ fun AppFormSheet(
         return
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val configuration = LocalConfiguration.current
     val pageSheetHeight = (configuration.screenHeightDp * 0.9f).dp
+    val grabber: @Composable () -> Unit = {
+        Box(
+            Modifier
+                .padding(top = 6.dp, bottom = 0.dp)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .size(width = 36.dp, height = 5.dp)
+                    .background(
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                        RoundedCornerShape(2.5.dp),
+                    ),
+            )
+        }
+    }
 
+    if (nested) {
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+            ),
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.32f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = onDismiss,
+                        ),
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(pageSheetHeight),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                ) {
+                    Column(Modifier.fillMaxSize()) {
+                        grabber()
+                        Box(Modifier.fillMaxWidth().weight(1f)) {
+                            content()
+                        }
+                    }
+                }
+            }
+        }
+        return
+    }
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        dragHandle = {
-            Box(
-                Modifier
-                    .padding(top = 6.dp, bottom = 0.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    Modifier
-                        .size(width = 36.dp, height = 5.dp)
-                        .background(
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
-                            RoundedCornerShape(2.5.dp),
-                        ),
-                )
-            }
-        },
+        dragHandle = grabber,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         tonalElevation = 0.dp,

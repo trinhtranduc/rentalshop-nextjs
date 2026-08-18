@@ -314,13 +314,24 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     }
 
     private func setupNavigationBar() {
-        setupCustomNavigationBar(
+        let navBar = setupCustomNavigationBar(
             title: filter.navigationTitle,
             statusBarBackgroundColor: .backgroundCard,
             titleCentered: true,
             hideBackButton: false,
-            backAction: .pop
+            backAction: .custom { [weak self] in
+                guard let self else { return }
+                if let nav = self.navigationController, nav.viewControllers.count > 1 {
+                    nav.popViewController(animated: true)
+                } else {
+                    self.dismiss(animated: true)
+                }
+            }
         )
+        // Customer history is presented (picker / Settings), not a stack page.
+        if case .customer = filter {
+            navBar.setDismissButton()
+        }
     }
 
     /// Same tier pill language as CustomerCell (Kim Cương, points, …).

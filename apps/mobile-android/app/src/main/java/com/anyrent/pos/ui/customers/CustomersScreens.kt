@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -43,8 +42,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -80,6 +81,7 @@ import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.AppSearchField
+import com.anyrent.pos.ui.common.AppSheetHeader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -89,6 +91,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun CustomersScreen(
     pickMode: Boolean = false,
+    embeddedInSheet: Boolean = false,
     onPicked: ((Customer) -> Unit)? = null,
     onBack: (() -> Unit)? = null,
     onViewOrders: ((Customer) -> Unit)? = null,
@@ -161,27 +164,34 @@ fun CustomersScreen(
         refresh()
     }
 
+    val zeroInsets = WindowInsets(0, 0, 0, 0)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = if (embeddedInSheet) zeroInsets else ScaffoldDefaults.contentWindowInsets,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.customers),
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            if (embeddedInSheet) {
+                AppSheetHeader(title = stringResource(R.string.customers))
+            } else {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(R.string.customers),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                    navigationIcon = {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                            }
                         }
-                    }
-                },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+                    },
+                    windowInsets = TopAppBarDefaults.windowInsets,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+            }
         },
     ) { padding ->
         Column(
@@ -300,6 +310,7 @@ fun CustomersScreen(
                 showForm = false
                 editing = null
             },
+            nested = embeddedInSheet,
         ) {
             CustomerFormScreen(
                 initial = editing,
@@ -498,53 +509,22 @@ fun CustomerFormScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopAppBar(
-                // Sheet is not under the status bar — default TopAppBar insets push the title down.
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                title = {
-                    Text(
-                        if (initial == null) stringResource(R.string.new_customer)
-                        else stringResource(R.string.edit_customer),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
-                    }
-                },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
-        bottomBar = {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                AppPrimaryButton(
-                    text = if (loading) stringResource(R.string.loading)
-                    else if (initial == null) stringResource(R.string.add_customer)
-                    else stringResource(R.string.save),
-                    onClick = ::saveCustomer,
-                    enabled = !loading,
-                )
-            }
-        },
-    ) { padding ->
+    // Column + weight (not Scaffold wrap) pins Add/Update to the sheet bottom,
+    // matching Overview / order filter / calendar Confirm.
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .imePadding(),
+    ) {
+        AppSheetHeader(
+            title = if (initial == null) stringResource(R.string.new_customer)
+            else stringResource(R.string.edit_customer),
+        )
         Column(
             Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .imePadding()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
@@ -607,6 +587,21 @@ fun CustomerFormScreen(
                     enabled = !loading,
                 )
             }
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            AppPrimaryButton(
+                text = if (loading) stringResource(R.string.loading)
+                else if (initial == null) stringResource(R.string.add_customer)
+                else stringResource(R.string.save),
+                onClick = ::saveCustomer,
+                enabled = !loading,
+            )
         }
     }
 

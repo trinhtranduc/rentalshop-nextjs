@@ -283,9 +283,19 @@ class BaseViewControler : UIViewController{
         }
         nav.setNavigationBarHidden(true, animated: false)
         if fullScreen {
-            // Page sheet leaves a parent peek at the top. Product/user forms need
-            // the full window so the photo and fields have room.
+            // Destinations: product/user forms, order history. Covers the window
+            // so photo/lists have room and swipe-dismiss cannot drop unsaved work.
             nav.modalPresentationStyle = .fullScreen
+        } else {
+            // Short flows: customer picker, add/edit customer, barcode. Page sheet
+            // (~large detent), grabber, list peeks behind.
+            nav.modalPresentationStyle = .pageSheet
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 16
+                sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+            }
         }
         present(nav, animated: animated, completion: completion)
     }

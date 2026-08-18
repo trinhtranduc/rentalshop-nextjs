@@ -2105,16 +2105,8 @@ extension InfoMainViewController {
     private func showCustomerView(searchText: String) {
         let vc = SuggestionTextField()
         vc.delegate = self
-        currentSuggestionTextField = vc // Store reference
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            // iPad: present view (modal)
-            if let tabBarController = appDelegate.window?.rootViewController as? TabbarViewController,  let nav = tabBarController.viewControllers?.first{
-                nav.present(UINavigationController(rootViewController: vc), animated: true)
-            }
-        } else {
-            // iPhone: push navigation
-            navigationController?.pushViewController(vc, animated: true)
-        }
+        currentSuggestionTextField = vc
+        presentWithHiddenNavigationBar(vc)
     }
     
     // Update date view creation
@@ -2238,7 +2230,10 @@ extension InfoMainViewController {
     @objc private func downPayment(_ sender: Any) {
         let controller = NumberPickerViewController.instance()
         controller.delegate = self
-        controller.configure(initialValue: CartStore.shared.cart.depositAmount)
+        controller.configure(
+            initialValue: CartStore.shared.cart.depositAmount,
+            title: "Enter deposit price".localized()
+        )
         present(controller, animated: true)
     }
 }

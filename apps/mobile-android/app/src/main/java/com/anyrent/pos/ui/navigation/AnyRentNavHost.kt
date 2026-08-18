@@ -98,7 +98,6 @@ object Routes {
     const val CartPreview = "cart-preview"
     const val ProductAvailability = "product-availability/{productId}"
     const val UserEdit = "user-edit/{userId}"
-    const val PickCustomer = "pick-customer"
     const val Customers = "customers"
     const val Users = "users"
     const val Export = "export"
@@ -269,7 +268,6 @@ fun AnyRentNavHost(
         composable(Routes.Cart) {
             CartCheckoutScreen(
                 onBack = { rootNavController.popBackStack() },
-                onPickCustomer = { rootNavController.navigate(Routes.PickCustomer) },
                 onPreview = {
                     rootNavController.navigate(Routes.CartPreview) {
                         launchSingleTop = true
@@ -279,13 +277,15 @@ fun AnyRentNavHost(
                     rootNavController.popBackStack(Routes.Cart, inclusive = true)
                     MainTabRouter.openOrdersList()
                 },
+                onViewCustomerOrders = { customer ->
+                    rootNavController.navigate(Routes.analyticsOrders("customer", customer.id))
+                },
             )
         }
         composable(Routes.CartPreview) {
             CartCheckoutScreen(
                 previewMode = true,
                 onBack = { rootNavController.popBackStack() },
-                onPickCustomer = {},
                 onPreview = {},
                 onCreated = {
                     // Leave cart + preview, land on Orders tab (not order detail).
@@ -347,13 +347,6 @@ fun AnyRentNavHost(
         }
         composable(Routes.Subscription) {
             SubscriptionScreen(onBack = { rootNavController.popBackStack() })
-        }
-        composable(Routes.PickCustomer) {
-            CustomersScreen(
-                pickMode = true,
-                onPicked = { rootNavController.popBackStack() },
-                onBack = { rootNavController.popBackStack() },
-            )
         }
         composable(Routes.Customers) {
             CustomersScreen(

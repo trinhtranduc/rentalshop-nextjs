@@ -106,7 +106,9 @@ import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenu
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppNumericPadSheet
 import com.anyrent.pos.ui.common.AppSearchField
+import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppSheetHeader
 import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.SectionLabel
@@ -384,7 +386,14 @@ fun OrdersScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = { onBack?.invoke() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    if (customerId != null) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
+                    } else {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
                 }
                 Text(
                     filteredTitle ?: stringResource(R.string.orders),
@@ -616,7 +625,7 @@ private fun OrderFilterSheet(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     listOf(false to R.string.sort_book_date, true to R.string.sort_pickup_date).forEach { (value, label) ->
-                        FilterPresetButton(
+                        AppFilterChip(
                             label = stringResource(label),
                             selected = draftSortByPickup == value,
                             onClick = { draftSortByPickup = value },
@@ -632,7 +641,7 @@ private fun OrderFilterSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         row.forEach { (value, label) ->
-                            FilterPresetButton(
+                            AppFilterChip(
                                 label = stringResource(label),
                                 selected = draftStatus == value,
                                 onClick = { draftStatus = value },
@@ -653,38 +662,6 @@ private fun OrderFilterSheet(
                 },
             )
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FilterPresetButton(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(44.dp),
-        shape = RoundedCornerShape(10.dp),
-        color = if (selected) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant
-        },
-        border = BorderStroke(
-            1.5.dp,
-            if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-        ),
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-            )
         }
     }
 }
@@ -1728,83 +1705,13 @@ private fun OrderMoneyEditorSheet(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    formatMoney(value.toDoubleOrNull() ?: 0.0),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Column(Modifier.fillMaxWidth()) {
-                listOf(
-                    listOf("1", "2", "3"),
-                    listOf("4", "5", "6"),
-                    listOf("7", "8", "9"),
-                    listOf("0", "000", "⌫"),
-                ).forEach { keys ->
-                    Row(Modifier.fillMaxWidth()) {
-                        keys.forEach { key ->
-                            androidx.compose.material3.Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(58.dp)
-                                    .clickable {
-                                        val next = when (key) {
-                                            "⌫" -> value.dropLast(1).ifBlank { "0" }
-                                            else -> if (value == "0") key else value + key
-                                        }
-                                        onValueChange(next.take(12))
-                                    },
-                                shape = androidx.compose.ui.graphics.RectangleShape,
-                                color = Color.White,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    0.5.dp,
-                                    MaterialTheme.colorScheme.outlineVariant,
-                                ),
-                            ) {
-                                Box(
-                                    Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(key, style = MaterialTheme.typography.titleLarge)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.cancel))
-                }
-                Button(
-                    onClick = onConfirm,
-                    modifier = Modifier.weight(2f).height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
+    AppNumericPadSheet(
+        title = title,
+        rawValue = value,
+        onRawValueChange = onValueChange,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

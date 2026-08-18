@@ -81,7 +81,7 @@ fun AppDateRangePickerSheet(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Row(
                         Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -90,7 +90,7 @@ fun AppDateRangePickerSheet(
                         Icon(
                             Icons.Default.CalendarMonth,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Column(Modifier.weight(1f).padding(start = 12.dp)) {
                             Text(
@@ -101,12 +101,13 @@ fun AppDateRangePickerSheet(
                             Text(
                                 rangeState.selectedStartDateMillis.toDisplayDate(formatter),
                                 fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         Icon(
                             Icons.Default.ArrowForward,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Column(Modifier.weight(1f).padding(start = 16.dp)) {
                             Text(
@@ -117,6 +118,7 @@ fun AppDateRangePickerSheet(
                             Text(
                                 rangeState.selectedEndDateMillis.toDisplayDate(formatter),
                                 fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -130,11 +132,21 @@ fun AppDateRangePickerSheet(
                     showModeToggle = false,
                     colors = DatePickerDefaults.colors(
                         containerColor = Color.White,
-                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedDayContainerColor = MaterialTheme.colorScheme.onSurface,
+                        selectedDayContentColor = Color.White,
+                        todayContentColor = MaterialTheme.colorScheme.onSurface,
+                        todayDateBorderColor = MaterialTheme.colorScheme.onSurface,
                         dayInSelectionRangeContainerColor =
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                         dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
+                        selectedYearContainerColor = MaterialTheme.colorScheme.onSurface,
+                        selectedYearContentColor = Color.White,
+                        currentYearContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationContentColor = MaterialTheme.colorScheme.onSurface,
+                        headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        subheadContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 )
 
