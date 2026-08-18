@@ -89,6 +89,14 @@ export class ProductVectorStore {
     try {
       const collection = await this.client.getCollection(this.collectionName);
       console.log(`✅ Collection ${this.collectionName} already exists`);
+      try {
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'productId',
+          field_schema: 'keyword'
+        });
+      } catch {
+        // Index may already exist
+      }
       return;
     } catch {
       // Collection không tồn tại, tạo mới
@@ -122,6 +130,11 @@ export class ProductVectorStore {
 
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'outletId',
+          field_schema: 'keyword'
+        });
+
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'productId',
           field_schema: 'keyword'
         });
 

@@ -193,7 +193,10 @@
     "similaritySearch": "Similarity Search",
     "indexed": "Ready",
     "notIndexed": "Not yet",
-    "updating": "Updating"
+    "updating": "Updating",
+    "section": "Image search",
+    "update": "Update",
+    "syncing": "Updating…"
   },
   "searchResults": {
     "match": "Match",

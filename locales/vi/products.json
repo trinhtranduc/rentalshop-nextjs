@@ -192,7 +192,10 @@
     "similaritySearch": "Tìm kiếm tương tự",
     "indexed": "Sẵn sàng",
     "notIndexed": "Chưa có",
-    "updating": "Đang cập nhật"
+    "updating": "Đang cập nhật",
+    "section": "Tìm bằng ảnh",
+    "update": "Cập nhật",
+    "syncing": "Đang cập nhật…"
   },
   "searchResults": {
     "match": "Khớp",

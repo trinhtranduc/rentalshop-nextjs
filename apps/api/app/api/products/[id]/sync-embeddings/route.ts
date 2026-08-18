@@ -61,12 +61,11 @@ export async function POST(
       }
 
       try {
-        const { getVectorStore } = await import('@rentalshop/database/server');
-        await getVectorStore().deleteProductEmbeddings(productId);
-      } catch (error: any) {
+        await db.products.update(productId, { embeddingGeneratedAt: null });
+      } catch (clearError) {
         console.warn(
-          `[Sync embeddings] Qdrant delete failed for product ${productId}:`,
-          error?.message || error
+          `[Sync embeddings] Could not clear embeddingGeneratedAt for product ${productId}:`,
+          (clearError as Error)?.message
         );
       }
 
