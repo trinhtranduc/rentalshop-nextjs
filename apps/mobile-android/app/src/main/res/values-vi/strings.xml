@@ -248,6 +248,7 @@
     <string name="sort_pickup_date">Ngày thuê</string>
     <string name="product_image">Ảnh sản phẩm</string>
     <string name="available_short">Có sẵn</string>
+    <string name="available_count">%1$s có sẵn</string>
     <string name="product_actions">Thao tác sản phẩm</string>
     <string name="add_product">Thêm sản phẩm</string>
     <string name="product_image_required">Ảnh sản phẩm *</string>
@@ -322,6 +323,8 @@
     <string name="previous">Quay lại</string>
     <string name="update_product">Cập nhật sản phẩm</string>
     <string name="update_image_search">Cập nhật tìm bằng ảnh</string>
+    <string name="image_search_section">Tìm bằng ảnh</string>
+    <string name="update_image_search_short">Cập nhật</string>
     <string name="image_search_queued">Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút.</string>
     <string name="image_search_ready">Sẵn sàng</string>
     <string name="image_search_not_indexed">Chưa có</string>

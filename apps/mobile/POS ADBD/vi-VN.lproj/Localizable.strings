@@ -1395,6 +1395,9 @@
 "product.action.delete" = "Xóa sản phẩm";
 "product.action.update" = "Cập nhật sản phẩm";
 "product.action.updateImageSearch" = "Cập nhật tìm bằng ảnh";
+"product.imageSearch.section" = "Tìm bằng ảnh";
+"product.imageSearch.update" = "Cập nhật";
+"product.availableBadge" = "%d có sẵn";
 "product.imageSearch.queued" = "Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút.";
 "product.imageSearch.ready" = "Sẵn sàng";
 "product.imageSearch.notIndexed" = "Chưa có";

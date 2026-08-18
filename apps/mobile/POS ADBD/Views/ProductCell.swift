@@ -56,14 +56,8 @@ class ProductCell: UITableViewCell {
         return label
     }()
     
-    private lazy var availableBadgeLabel: UILabel = {
-        let label = UILabel()
-        label.font = Utils.mediumFont(size: 12)
-        label.textColor = .brandPrimary
-        label.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.10)
-        label.layer.cornerRadius = 8
-        label.layer.masksToBounds = true
-        label.textAlignment = .center
+    private lazy var availableBadgeLabel: PaddedChipLabel = {
+        let label = PaddedChipLabel()
         label.isHidden = true
         return label
     }()
@@ -261,12 +255,12 @@ class ProductCell: UITableViewCell {
             make.bottom.lessThanOrEqualToSuperview().offset(-innerPadding)
         }
         
-        // Available badge label - right of stock label
+        // Available chip — right of stock, intrinsic padded size (no space-hacked text)
         availableBadgeLabel.snp.makeConstraints { make in
             make.centerY.equalTo(stockLabel)
             make.leading.equalTo(stockLabel.snp.trailing).offset(8)
             make.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
-            make.height.equalTo(22)
+            make.height.greaterThanOrEqualTo(22)
         }
         
         // More button constraints - top-right
@@ -334,7 +328,6 @@ class ProductCell: UITableViewCell {
         
         // Format stock label: bold stock value + light blue badge for available
         let totalQuantity = product.quantity.formatStringInCommon()
-        let availableText = "\(availableValue)"
         
         // Stock part: bold
         let stockString = NSMutableAttributedString(
@@ -347,8 +340,14 @@ class ProductCell: UITableViewCell {
         ))
         stockLabel.attributedText = stockString
         
-        // Available badge (light blue background)
-        availableBadgeLabel.text = "  " + "Available".localized() + ": \(availableText)  "
+        // Number-first chip is easier to scan than "Available: 5"
+        let availableTint: UIColor = availableValue > 0
+            ? UIColor(hexString: "1B7A3D")
+            : .actionWarning
+        availableBadgeLabel.applySoft(
+            tint: availableTint,
+            text: String(format: "product.availableBadge".localized(), availableValue)
+        )
         availableBadgeLabel.isHidden = false
         
         // Rent price value + its default calculation unit.

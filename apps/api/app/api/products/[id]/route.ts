@@ -753,18 +753,21 @@ export async function PUT(
       if (imageFiles.length > 0 || imagesChanged) {
         console.log(`🔄 Triggering embedding regeneration for product ${productId}...`);
         try {
-          const { getVectorStore } = await import('@rentalshop/database/server');
+          // Mark as not searchable until the job finishes with the new photo.
+          // Do NOT delete vectors here: cooldown / in-flight jobs used to skip
+          // regeneration and leave the product with no image-search vectors.
+          try {
+            await db.products.update(productId, { embeddingGeneratedAt: null });
+            (updatedProduct as any).embeddingGeneratedAt = null;
+          } catch (clearError) {
+            console.warn(
+              `⚠️ Could not clear embeddingGeneratedAt for product ${productId}:`,
+              (clearError as Error)?.message
+            );
+          }
 
-          // Queue-based regeneration:
-          // 1) delete old vectors now
-          // 2) enqueue a fresh embedding job
-          // 3) opportunistically process one pending job in background
           (async () => {
             try {
-              const vectorStore = getVectorStore();
-              await vectorStore.deleteProductEmbeddings(productId);
-              console.log(`✅ Deleted old embeddings for product ${productId}`);
-
               await db.embeddingJobs.enqueue({
                 productId,
                 source: 'product-update',

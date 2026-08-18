@@ -682,17 +682,7 @@ internal fun ProductCard(
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                         )
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            shape = MaterialTheme.shapes.small,
-                        ) {
-                            Text(
-                                "${stringResource(R.string.available_short)}: ${formatQuantity(product.available)}",
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
+                        AvailableStockBadge(product.available)
                     }
                 }
             }
@@ -726,6 +716,25 @@ private fun PriceBlock(label: String, value: Double, modifier: Modifier = Modifi
             formatMoney(value),
             // iOS rent price value: Medium 15
             style = MaterialTheme.typography.titleSmall,
+        )
+    }
+}
+
+@Composable
+private fun AvailableStockBadge(available: Int) {
+    val inStock = available > 0
+    val tint = if (inStock) Color(0xFF1B7A3D) else Color(0xFFB45309)
+    Surface(
+        color = tint.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(percent = 50),
+    ) {
+        Text(
+            stringResource(R.string.available_count, formatQuantity(available)),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = tint,
+            maxLines = 1,
         )
     }
 }

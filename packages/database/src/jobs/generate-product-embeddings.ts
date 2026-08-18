@@ -234,10 +234,21 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
     }
     console.log(`[Embedding] Step 5 done: ${validEmbeddings.length} vector(s)`);
 
-    console.log(`[Embedding] Step 6: Upsert to Qdrant (${collectionName}), productId=${product.id}`);
+    console.log(`[Embedding] Step 6: Replace vectors in Qdrant (${collectionName}), productId=${product.id}`);
     console.log(`[Embedding]    Point IDs:`, validEmbeddings.map(e => e.imageId));
 
     try {
+      // Delete AFTER vectors are ready so a skipped/failed job cannot leave the
+      // product with no searchable image. Then insert points for the current photo(s).
+      try {
+        await vectorStore.deleteProductEmbeddings(productId);
+        console.log(`[Embedding]    Deleted previous vectors for product ${productId}`);
+      } catch (deleteError) {
+        console.warn(
+          `[Embedding]    Delete previous vectors failed (will still upsert):`,
+          (deleteError as Error)?.message
+        );
+      }
       await vectorStore.storeProductImagesEmbeddings(validEmbeddings);
       const step6Ms = Date.now() - jobStart;
       console.log(`[Embedding] Step 6 done: upserted ${validEmbeddings.length} point(s) in ${step6Ms}ms`);
@@ -272,26 +283,40 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
 /**
  * Public API with in-process dedupe.
  * If a job for the same product is already running, reuse that promise instead of starting a new one.
+ *
+ * `force` is required when the product photo changed: cooldown and in-flight
+ * reuse would otherwise keep (or skip) vectors for the previous image.
  */
-export async function generateProductEmbedding(productId: number): Promise<void> {
+export async function generateProductEmbedding(
+  productId: number,
+  options: { force?: boolean } = {}
+): Promise<void> {
+  const force = options.force === true;
+
   const existing = runningEmbeddingJobs.get(productId);
-  if (existing) {
+  if (existing && !force) {
     console.log(`[Embedding] Reusing in-flight job for product ${productId}`);
     return existing;
   }
+  if (existing && force) {
+    console.log(`[Embedding] Force regen: wait for in-flight job ${productId}, then re-run`);
+    await existing.catch(() => undefined);
+  }
 
-  const cooldownMs = getEmbeddingCooldownMs();
-  const lastCompleted = lastEmbeddingCompletedAt.get(productId);
-  if (lastCompleted) {
-    const elapsed = Date.now() - lastCompleted;
-    if (elapsed < cooldownMs) {
-      const remainingMs = cooldownMs - elapsed;
-      console.log(
-        `[Embedding] Skipping product ${productId}: cooldown active (${Math.ceil(
-          remainingMs / 1000
-        )}s remaining)`
-      );
-      return;
+  if (!force) {
+    const cooldownMs = getEmbeddingCooldownMs();
+    const lastCompleted = lastEmbeddingCompletedAt.get(productId);
+    if (lastCompleted) {
+      const elapsed = Date.now() - lastCompleted;
+      if (elapsed < cooldownMs) {
+        const remainingMs = cooldownMs - elapsed;
+        console.log(
+          `[Embedding] Skipping product ${productId}: cooldown active (${Math.ceil(
+            remainingMs / 1000
+          )}s remaining)`
+        );
+        return;
+      }
     }
   }
 

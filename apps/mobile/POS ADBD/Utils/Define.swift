@@ -247,6 +247,43 @@ final class OrderStatusPillLabel: UILabel {
     }
 }
 
+/// Soft metadata chip (stock, image-search status). Not the solid order-status pill.
+final class PaddedChipLabel: UILabel {
+    var contentInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + contentInsets.left + contentInsets.right,
+            height: max(size.height + contentInsets.top + contentInsets.bottom, 22)
+        )
+    }
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, contentInsets))
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        font = Utils.mediumFont(size: 12)
+        textAlignment = .center
+        layer.cornerRadius = 11
+        layer.masksToBounds = true
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func applySoft(tint: UIColor, text: String) {
+        self.text = text
+        textColor = tint
+        backgroundColor = tint.withAlphaComponent(0.12)
+    }
+}
+
 extension String {
     /// Masks the middle of a phone number for display, e.g. "0901234099" -> "09xxxx099".
     /// Numbers with 5 or fewer characters are returned unchanged (nothing to hide).

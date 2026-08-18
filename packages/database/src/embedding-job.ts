@@ -20,17 +20,24 @@ export const simplifiedEmbeddingJobs = {
   enqueue: async (input: EnqueueInput) => {
     const { productId, source = 'manual', priority = 0, maxAttempts = 5 } = input;
 
-    // Avoid flooding queue with duplicate pending/running jobs for same product.
-    const existing = await prismaAny.embeddingJob.findFirst({
+    // Dedupe PENDING only. A RUNNING create-job may still be embedding the
+    // previous photo — an image update must queue a second pass.
+    const existingPending = await prismaAny.embeddingJob.findFirst({
       where: {
         productId,
-        status: { in: ['PENDING', 'RUNNING'] }
+        status: 'PENDING'
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    if (existing) {
-      return existing;
+    if (existingPending) {
+      return prismaAny.embeddingJob.update({
+        where: { id: existingPending.id },
+        data: {
+          source,
+          priority: Math.max(existingPending.priority ?? 0, priority)
+        }
+      });
     }
 
     return prismaAny.embeddingJob.create({
@@ -80,7 +87,9 @@ export const simplifiedEmbeddingJobs = {
       processed += 1;
 
       try {
-        await generateProductEmbedding(job.productId);
+        await generateProductEmbedding(job.productId, {
+          force: job.source === 'product-update' || job.source === 'manual-force'
+        });
         await prismaAny.embeddingJob.update({
           where: { id: job.id },
           data: {
