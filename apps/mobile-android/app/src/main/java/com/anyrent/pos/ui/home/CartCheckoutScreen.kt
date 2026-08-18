@@ -23,9 +23,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,7 +88,6 @@ import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppNumericPadSheet
 import com.anyrent.pos.ui.common.AppPrimaryButton
-import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.AppSheetHeader
 import com.anyrent.pos.ui.customers.CustomersScreen
 import kotlinx.coroutines.Dispatchers
@@ -713,13 +715,6 @@ fun CartCheckoutScreen(
 
     if (orderType == "RENT") pricingMenuProductId?.let { productId ->
         val line = lines.firstOrNull { it.product.id == productId } ?: return@let
-        var draftType by remember(productId, line.pricingType) {
-            mutableStateOf(line.pricingType.uppercase())
-        }
-        val methods = listOf(
-            "FIXED" to stringResource(R.string.per_rental),
-            "DAILY" to stringResource(R.string.per_day),
-        )
         ModalBottomSheet(
             onDismissRequest = { pricingMenuProductId = null },
             sheetState = rememberModalBottomSheetState(
@@ -728,7 +723,9 @@ fun CartCheckoutScreen(
             ),
             dragHandle = {
                 Box(
-                    Modifier.padding(top = 8.dp).fillMaxWidth(),
+                    Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
@@ -755,63 +752,78 @@ fun CartCheckoutScreen(
                         .padding(top = 16.dp, bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        methods.forEach { (type, title) ->
-                            val selected = draftType.equals(type, ignoreCase = true)
-                            Surface(
-                                onClick = { draftType = type },
-                                modifier = Modifier.weight(1f).height(56.dp),
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.surface
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                },
-                                border = BorderStroke(
-                                    1.5.dp,
-                                    if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                ),
-                            ) {
-                                Column(
-                                    Modifier.fillMaxSize().padding(horizontal = 8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    Text(
-                                        title,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 1,
-                                    )
-                                    Text(
-                                        formatMoney(cartLinePriceForType(line, type)),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center,
-                                    )
+                    listOf(
+                        "FIXED" to stringResource(R.string.per_rental),
+                        "DAILY" to stringResource(R.string.per_day),
+                    ).forEach { (type, title) ->
+                        val selected = line.pricingType.equals(type, ignoreCase = true)
+                        val optionPrice = cartLinePriceForType(line, type)
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    CartStore.setPricingType(productId, type)
+                                    pricingMenuProductId = null
                                 }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    formatMoney(optionPrice),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                                    color = if (selected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    " / $title",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 1.dp),
+                                )
                             }
+                            Icon(
+                                if (selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                contentDescription = null,
+                                tint = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.size(24.dp),
+                            )
                         }
                     }
-                    AppSecondaryButton(
-                        text = stringResource(R.string.edit_unit_price),
+
+                    Button(
                         onClick = {
                             pricingMenuProductId = null
                             numericText = line.unitPrice.toLong().toString()
                             numericEditor = "PRICE:$productId"
                         },
-                    )
-                    AppPrimaryButton(
-                        text = stringResource(R.string.confirm),
-                        onClick = {
-                            CartStore.setPricingType(productId, draftType)
-                            pricingMenuProductId = null
-                        },
-                    )
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            stringResource(R.string.edit_unit_price),
+                            modifier = Modifier.padding(start = 8.dp),
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
         }

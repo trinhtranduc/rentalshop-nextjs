@@ -28,26 +28,16 @@ private struct PricingMethodSheetOption {
 }
 
 private final class PricingMethodSheetViewController: UIViewController {
-    var onConfirm: ((String) -> Void)?
+    var onSelect: ((String) -> Void)?
     var onEditPrice: (() -> Void)?
 
     private let options: [PricingMethodSheetOption]
     private let editTitle: String
-    private var draftType: String
-    private var optionButtons: [UIButton] = []
-
     private let headerView = RCSheetHeaderView()
-    private lazy var confirmButton: RCPrimaryButton = {
-        RCPrimaryButton(title: "Confirm".localized(), backgroundColor: APP_TONE_COLOR)
-    }()
-    private lazy var editButton: RCPrimaryButton = {
-        RCPrimaryButton(title: editTitle, borderStyle: true, borderColor: APP_TONE_COLOR)
-    }()
 
     init(options: [PricingMethodSheetOption], editTitle: String) {
         self.options = options
         self.editTitle = editTitle
-        self.draftType = options.first(where: \.isSelected)?.type ?? options.first?.type ?? "FIXED"
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .pageSheet
         if let sheet = sheetPresentationController {
@@ -66,30 +56,46 @@ private final class PricingMethodSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        refreshSelection()
     }
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
         headerView.title = "Price and pricing method".localized()
-        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
-        editButton.addTarget(self, action: #selector(editPriceTapped), for: .touchUpInside)
 
         let optionStack = UIStackView()
-        optionStack.axis = .horizontal
-        optionStack.spacing = 10
-        optionStack.distribution = .fillEqually
+        optionStack.axis = .vertical
+        optionStack.spacing = 4
+
         for (index, option) in options.enumerated() {
-            let button = makeOptionButton(option, index: index)
-            optionButtons.append(button)
-            optionStack.addArrangedSubview(button)
+            optionStack.addArrangedSubview(makeOptionButton(option, index: index))
+        }
+
+        let editButton = UIButton(type: .system)
+        var editConfiguration = UIButton.Configuration.tinted()
+        editConfiguration.title = editTitle
+        editConfiguration.image = UIImage(systemName: "square.and.pencil")
+        editConfiguration.imagePlacement = .leading
+        editConfiguration.imagePadding = 8
+        editConfiguration.cornerStyle = .medium
+        editConfiguration.baseForegroundColor = APP_TONE_COLOR
+        editConfiguration.baseBackgroundColor = APP_TONE_COLOR
+        editConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.mediumFont(size: 16)
+            return outgoing
+        }
+        editButton.configuration = editConfiguration
+        editButton.addTarget(self, action: #selector(editPriceTapped), for: .touchUpInside)
+        editButton.snp.makeConstraints { make in
+            make.height.equalTo(48)
         }
 
         let spacer = UIView()
         spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
-        let stack = UIStackView(arrangedSubviews: [optionStack, spacer, editButton, confirmButton])
+        let stack = UIStackView(arrangedSubviews: [optionStack, spacer, editButton])
         stack.axis = .vertical
         stack.spacing = 16
+
         view.addSubview(headerView)
         view.addSubview(stack)
         headerView.snp.makeConstraints { make in
@@ -102,15 +108,6 @@ private final class PricingMethodSheetViewController: UIViewController {
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
         }
-        optionStack.snp.makeConstraints { make in
-            make.height.equalTo(56)
-        }
-        editButton.snp.makeConstraints { make in
-            make.height.equalTo(50)
-        }
-        confirmButton.snp.makeConstraints { make in
-            make.height.equalTo(50)
-        }
     }
 
     private func makeOptionButton(
@@ -118,32 +115,51 @@ private final class PricingMethodSheetViewController: UIViewController {
         index: Int
     ) -> UIButton {
         let button = UIButton(type: .system)
-        button.tag = index
-        button.titleLabel?.numberOfLines = 2
-        button.titleLabel?.textAlignment = .center
-        button.setTitle("\(option.title)\n\(option.price)", for: .normal)
-        button.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
-        return button
-    }
+        var configuration = UIButton.Configuration.plain()
 
-    private func refreshSelection() {
-        for (index, button) in optionButtons.enumerated() {
-            let selected = options[index].type.caseInsensitiveCompare(draftType) == .orderedSame
-            OrderFilterChipAppearance.applyNeutral(to: button, isSelected: selected)
-            button.titleLabel?.numberOfLines = 2
-            button.titleLabel?.textAlignment = .center
+        var priceTitle = AttributedString(option.price)
+        priceTitle.font = Utils.mediumFont(size: 18)
+        priceTitle.foregroundColor = option.isSelected
+            ? APP_TONE_COLOR
+            : UIColor.textPrimary
+
+        var pricingMethodTitle = AttributedString(" / \(option.title)")
+        pricingMethodTitle.font = Utils.regularFont(size: 14)
+        pricingMethodTitle.foregroundColor = UIColor.textSecondary
+        priceTitle.append(pricingMethodTitle)
+
+        configuration.attributedTitle = priceTitle
+        configuration.titleAlignment = .leading
+        configuration.image = option.isSelected
+            ? UIImage(systemName: "checkmark.circle.fill")
+            : UIImage(systemName: "circle")
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 12
+        configuration.baseForegroundColor = option.isSelected ? APP_TONE_COLOR : .textPrimary
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: 8,
+            leading: 4,
+            bottom: 8,
+            trailing: 4
+        )
+        button.configuration = configuration
+        button.tag = index
+        button.contentHorizontalAlignment = .fill
+        button.accessibilityLabel = option.title
+        button.accessibilityTraits = option.isSelected
+            ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected
+            : UIAccessibilityTraitButton
+        button.accessibilityValue = option.price
+        button.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(52)
         }
+        return button
     }
 
     @objc private func optionTapped(_ sender: UIButton) {
         guard options.indices.contains(sender.tag) else { return }
-        draftType = options[sender.tag].type
-        refreshSelection()
-    }
-
-    @objc private func confirmTapped() {
-        onConfirm?(draftType)
-        dismiss(animated: true)
+        onSelect?(options[sender.tag].type)
     }
 
     @objc private func editPriceTapped() {
@@ -1218,8 +1234,9 @@ class ProductSelectedCell: UITableViewCell {
             options: options,
             editTitle: "Edit unit price".localized()
         )
-        controller.onConfirm = { [weak self] type in
+        controller.onSelect = { [weak self, weak controller] type in
             self?.selectPricingType(type)
+            controller?.dismiss(animated: true)
         }
         controller.onEditPrice = { [weak self, weak controller] in
             controller?.dismiss(animated: true) {

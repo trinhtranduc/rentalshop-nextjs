@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.ui.common.appInputTextStyle
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.push.PushRegistrar
 import kotlinx.coroutines.Dispatchers
@@ -148,7 +150,7 @@ private fun AuthField(
             else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge,
+            textStyle = appInputTextStyle(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
@@ -157,7 +159,7 @@ private fun AuthField(
                 unfocusedBorderColor = Color(0xFFD9DCE2),
                 cursorColor = AuthBlue,
             ),
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         )
     }
 }

@@ -65,12 +65,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -195,7 +197,7 @@ fun AppSearchField(
             }
         } else null,
         singleLine = true,
-        textStyle = MaterialTheme.typography.bodyLarge,
+        textStyle = appInputTextStyle(),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(
             onSearch = {
@@ -211,14 +213,14 @@ fun AppSearchField(
             unfocusedBorderColor = Color.Transparent,
             cursorColor = MaterialTheme.colorScheme.primary,
         ),
-        modifier = modifier.fillMaxWidth().heightIn(min = 50.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
     )
 }
 
 /**
  * Shared form field matching iOS `LabeledTextField` + `RCSimpleTextField`:
- * label above (Medium 14), value Regular 16, fixed ~50dp, radius 12.
- * Floating Material labels were making Android forms look denser/older than iOS.
+ * label above (Medium 14), value Regular 16, radius 12.
+ * Material outlined fields need ≥56dp; a hard 50dp height clipped descenders (g, y, p).
  */
 @Composable
 fun AppInputField(
@@ -271,7 +273,7 @@ fun AppInputField(
             minLines = minLines,
             isError = isError,
             enabled = enabled,
-            textStyle = MaterialTheme.typography.bodyLarge,
+            textStyle = appInputTextStyle(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -288,9 +290,7 @@ fun AppInputField(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (singleLine) Modifier.height(50.dp) else Modifier.heightIn(min = 50.dp),
-                ),
+                .heightIn(min = 56.dp),
         )
         if (supportingText != null || isError) {
             supportingText?.let { message ->
@@ -307,6 +307,17 @@ fun AppInputField(
         }
     }
 }
+
+@Composable
+internal fun appInputTextStyle(): TextStyle =
+    MaterialTheme.typography.bodyLarge.copy(
+        lineHeight = 22.sp,
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.None,
+        ),
+        platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
 
 /**
  * iOS NewProductViewController colors the `*` in required titles with actionDanger.
@@ -538,16 +549,24 @@ fun AppNumericPadSheet(
     ) {
         Column(Modifier.fillMaxWidth()) {
             AppSheetHeader(title = title)
-            Text(
-                formattedValue,
-                modifier = Modifier
+            // iOS NumberPicker valueLabel: bold 48pt, 65pt row. headlineMedium (~28sp) looked tiny.
+            Box(
+                Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
+                    .height(65.dp)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    formattedValue,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Column(Modifier.fillMaxWidth()) {
                 listOf(
                     listOf("1", "2", "3"),

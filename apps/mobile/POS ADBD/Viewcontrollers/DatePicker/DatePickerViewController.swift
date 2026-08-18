@@ -96,7 +96,9 @@ class DatePickerViewController: UIViewController {
         view.addSubview(confirmButton)
 
         NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // Pin to the sheet top. RCSheetHeaderView already has 20pt for the grabber;
+            // safe-area pinning stacked extra space and sat the title too low.
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 56),
@@ -382,12 +384,10 @@ extension DatePickerViewController {
         let controller = DatePickerViewController()
         
         if let sheet = controller.sheetPresentationController {
-            // Configure sheet properties
-            sheet.detents = [.medium()] // Use medium size (approximately half screen)
-            sheet.prefersGrabberVisible = true // Show grabber at top
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 16
             sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-            sheet.prefersEdgeAttachedInCompactHeight = true
         }
         
         return controller
