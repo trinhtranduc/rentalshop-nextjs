@@ -1286,18 +1286,8 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
                 self?.hideProgress()
                 return
             }
-            // Create form has no product id yet, so it cannot tap Update.
-            // Kick CLIP indexing the same way edit does after the product exists.
-            let productId = pro.id ?? (pro.product_id > 0 ? pro.product_id : nil)
-            if !images.isEmpty, let productId {
-                ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] _ in
-                    self?.hideProgress()
-                    self?.delegate?.didAddNewProduct(product: pro)
-                }
-            } else {
-                self.hideProgress()
-                self.delegate?.didAddNewProduct(product: pro)
-            }
+            self.hideProgress()
+            self.delegate?.didAddNewProduct(product: pro)
         }
     }
     

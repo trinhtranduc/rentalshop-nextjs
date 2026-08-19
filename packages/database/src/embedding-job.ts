@@ -131,5 +131,38 @@ export const simplifiedEmbeddingJobs = {
       failed,
       skipped
     };
+  },
+
+  /**
+   * Enqueue a job and kick the worker without blocking the HTTP response.
+   * Cron still drains leftover PENDING jobs if this isolate is frozen.
+   */
+  kickOff: (input: EnqueueInput) => {
+    void (async () => {
+      try {
+        await simplifiedEmbeddingJobs.enqueue(input);
+        await simplifiedEmbeddingJobs.processPending({
+          batchSize: 1,
+          productId: input.productId
+        });
+      } catch (error: any) {
+        console.error(
+          `[Embedding] kickOff failed for product ${input.productId}:`,
+          error?.message || error
+        );
+      }
+    })();
+  },
+
+  /**
+   * Enqueue and wait until this product's pending job has been attempted.
+   * Only for explicit Update image search — create/update product must not wait.
+   */
+  runNow: async (input: EnqueueInput) => {
+    await simplifiedEmbeddingJobs.enqueue(input);
+    return simplifiedEmbeddingJobs.processPending({
+      batchSize: 1,
+      productId: input.productId
+    });
   }
 };

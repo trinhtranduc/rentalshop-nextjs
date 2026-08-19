@@ -172,14 +172,6 @@ fun ProductFormScreen(
             result.onSuccess { product ->
                 pickedImageFile?.let { runCatching { it.delete() } }
                 file?.let { runCatching { it.delete() } }
-                // Create form has no product id yet, so it cannot tap Update.
-                // Kick CLIP indexing the same way edit does, in case the create
-                // request's background job was dropped when the HTTP response ended.
-                if (initial == null && file != null && product.id > 0) {
-                    withContext(Dispatchers.IO) {
-                        ApiClient.get().syncProductEmbeddings(product.id)
-                    }
-                }
                 loading = false
                 onSaved()
             }.onFailure {
