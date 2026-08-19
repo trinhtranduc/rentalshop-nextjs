@@ -774,7 +774,7 @@ export async function PUT(
                 priority: 20
               });
 
-              await db.embeddingJobs.processPending({ batchSize: 1 });
+              await db.embeddingJobs.processPending({ batchSize: 1, productId });
               console.log(`✅ Embedding regeneration queued/processed for product ${productId}`);
             } catch (error: any) {
               console.error(`❌ Error in embedding regeneration for product ${productId}:`, error);
