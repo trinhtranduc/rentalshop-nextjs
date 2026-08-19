@@ -35,6 +35,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
   const [imageSearchQueued, setImageSearchQueued] = useState(false);
+  const [indexedAt, setIndexedAt] = useState(product.embeddingGeneratedAt ?? null);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -143,10 +144,15 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     try {
       const response = await productsApi.syncProductEmbeddings(product.id);
       if (response.success) {
-        setImageSearchQueued(true);
+        const refreshed = await productsApi.getProduct(product.id);
+        const nextIndexedAt = refreshed.success
+          ? (refreshed.data as any)?.embeddingGeneratedAt ?? (response.data as any)?.embeddingGeneratedAt
+          : (response.data as any)?.embeddingGeneratedAt;
+        setIndexedAt(nextIndexedAt ?? null);
+        setImageSearchQueued(!nextIndexedAt);
         toastSuccess(
-          'Image search',
-          'Indexing started. Search this product in a few minutes after the job finishes.'
+          t('imageSearch.section'),
+          nextIndexedAt ? t('imageSearch.readyToast') : t('imageSearch.queuedToast')
         );
       } else {
         toastError(
@@ -192,14 +198,14 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
             className={
               imageSearchQueued || isSyncingEmbeddings
                 ? 'ml-auto rounded-full bg-blue-700/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700'
-                : product.embeddingGeneratedAt
+                : indexedAt
                   ? 'ml-auto rounded-full bg-emerald-700/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-800'
                   : 'ml-auto rounded-full bg-slate-500/10 px-2 py-0.5 text-[11px] font-semibold text-slate-600'
             }
           >
             {imageSearchQueued || isSyncingEmbeddings
               ? t('imageSearch.updating')
-              : product.embeddingGeneratedAt
+              : indexedAt
                 ? t('imageSearch.indexed')
                 : t('imageSearch.notIndexed')}
           </span>

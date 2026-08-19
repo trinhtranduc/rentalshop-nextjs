@@ -195,7 +195,9 @@
     "updating": "Đang cập nhật",
     "section": "Tìm bằng ảnh",
     "update": "Cập nhật",
-    "syncing": "Đang cập nhật…"
+    "syncing": "Đang cập nhật…",
+    "readyToast": "Tìm bằng ảnh đã sẵn sàng.",
+    "queuedToast": "Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút."
   },
   "searchResults": {
     "match": "Khớp",

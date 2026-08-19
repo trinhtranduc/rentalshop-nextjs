@@ -328,6 +328,7 @@
     <string name="update_image_search_short">Update</string>
     <string name="image_search_queued">Queued. Try scanning this product again in 1–2 minutes.</string>
     <string name="image_search_ready">Ready</string>
+    <string name="image_search_ready_toast">Image search is ready.</string>
     <string name="image_search_not_indexed">Not yet</string>
     <string name="image_search_will_index">Indexes on save</string>
     <string name="image_search_updating">Updating</string>

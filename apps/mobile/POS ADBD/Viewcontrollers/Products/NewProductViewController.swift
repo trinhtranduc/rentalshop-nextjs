@@ -868,20 +868,41 @@ class NewProductViewController: BaseViewControler {
 
         ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] error in
             guard let self else { return }
-            self.isSyncingImageSearch = false
-            self.saveButton.isEnabled = true
-            self.saveNavButton.isEnabled = true
-            self.refreshImageSearchButton()
             if let error {
-                UIAlertController.errorAlert(parent: self, error: error)
-            } else {
-                self.imageSearchQueued = true
+                self.isSyncingImageSearch = false
+                self.saveButton.isEnabled = true
+                self.saveNavButton.isEnabled = true
                 self.refreshImageSearchButton()
-                self.showToast(
-                    message: "product.imageSearch.queued".localized(),
-                    duration: 3.5,
-                    icon: UIImage(systemName: "checkmark.circle.fill")
-                )
+                UIAlertController.errorAlert(parent: self, error: error)
+                return
+            }
+
+            ProductService.shared.loadProduct(productId: productId) { [weak self] latest, _ in
+                guard let self else { return }
+                self.isSyncingImageSearch = false
+                self.saveButton.isEnabled = true
+                self.saveNavButton.isEnabled = true
+                if let latest {
+                    self.product = latest
+                }
+                let indexedAt = latest?.embeddingGeneratedAt ?? ""
+                if !indexedAt.isEmpty {
+                    self.imageSearchQueued = false
+                    self.refreshImageSearchButton()
+                    self.showToast(
+                        message: "product.imageSearch.readyToast".localized(),
+                        duration: 3.5,
+                        icon: UIImage(systemName: "checkmark.circle.fill")
+                    )
+                } else {
+                    self.imageSearchQueued = true
+                    self.refreshImageSearchButton()
+                    self.showToast(
+                        message: "product.imageSearch.queued".localized(),
+                        duration: 3.5,
+                        icon: UIImage(systemName: "checkmark.circle.fill")
+                    )
+                }
             }
         }
     }

@@ -101,6 +101,7 @@ fun ProductFormScreen(
     var loading by remember { mutableStateOf(false) }
     var syncingImageSearch by remember { mutableStateOf(false) }
     var imageSearchQueued by remember { mutableStateOf(false) }
+    var indexedAt by remember { mutableStateOf(initial?.embeddingGeneratedAt) }
     var moreOptions by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<Any?>(null) }
@@ -314,7 +315,7 @@ fun ProductFormScreen(
                         val hasPhoto = hasSavedPhoto || previewModel != null
                         ImageSearchRow(
                             queued = imageSearchQueued,
-                            ready = !initial?.embeddingGeneratedAt.isNullOrBlank(),
+                            ready = !indexedAt.isNullOrBlank(),
                             willIndexOnSave = !isEdit && hasPhoto,
                             syncing = syncingImageSearch,
                             showUpdate = isEdit,
@@ -331,14 +332,19 @@ fun ProductFormScreen(
                                     syncingImageSearch = true
                                     scope.launch {
                                         val result = withContext(Dispatchers.IO) {
-                                            ApiClient.get().syncProductEmbeddings(productId)
+                                            ApiClient.get().syncProductEmbeddings(productId).getOrThrow()
+                                            ApiClient.get().getProduct(productId)
                                         }
                                         syncingImageSearch = false
-                                        result.onSuccess {
-                                            imageSearchQueued = true
+                                        result.onSuccess { product ->
+                                            indexedAt = product.embeddingGeneratedAt
+                                            imageSearchQueued = product.embeddingGeneratedAt.isNullOrBlank()
                                             Toast.makeText(
                                                 context,
-                                                context.getString(R.string.image_search_queued),
+                                                context.getString(
+                                                    if (imageSearchQueued) R.string.image_search_queued
+                                                    else R.string.image_search_ready_toast,
+                                                ),
                                                 Toast.LENGTH_LONG,
                                             ).show()
                                         }.onFailure { e ->

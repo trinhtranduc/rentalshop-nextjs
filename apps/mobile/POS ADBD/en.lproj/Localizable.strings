@@ -1402,6 +1402,7 @@
 "product.availableBadge" = "%d available";
 "product.imageSearch.queued" = "Queued. Try scanning this product again in 1–2 minutes.";
 "product.imageSearch.ready" = "Ready";
+"product.imageSearch.readyToast" = "Image search is ready.";
 "product.imageSearch.notIndexed" = "Not yet";
 "product.imageSearch.willIndex" = "Indexes on save";
 "product.imageSearch.updating" = "Updating";
