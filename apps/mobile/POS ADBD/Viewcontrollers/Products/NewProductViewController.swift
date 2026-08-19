@@ -239,7 +239,7 @@ class NewProductViewController: BaseViewControler {
     private lazy var imageSearchTitleLabel: UILabel = {
         let label = UILabel()
         label.text = "product.imageSearch.section".localized()
-        label.font = Utils.mediumFont(size: 15)
+        label.font = Utils.mediumFont(size: 13)
         label.textColor = .textPrimary
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         label.lineBreakMode = .byTruncatingTail
@@ -257,10 +257,10 @@ class NewProductViewController: BaseViewControler {
     private lazy var imageSearchUpdateButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("product.imageSearch.update".localized(), for: .normal)
-        button.titleLabel?.font = Utils.mediumFont(size: 15)
+        button.titleLabel?.font = Utils.mediumFont(size: 13)
         button.setTitleColor(.brandPrimary, for: .normal)
         button.setTitleColor(.tertiaryLabel, for: .disabled)
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
+        button.contentEdgeInsets = UIEdgeInsets(top: 2, left: 4, bottom: 2, right: 4)
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.addTarget(self, action: #selector(syncImageSearch), for: .touchUpInside)
@@ -288,28 +288,28 @@ class NewProductViewController: BaseViewControler {
         row.addSubview(imageSearchSpinner)
 
         imageSearchIconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(10)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(18)
+            make.width.height.equalTo(16)
         }
         imageSearchTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(imageSearchIconView.snp.trailing).offset(8)
+            make.leading.equalTo(imageSearchIconView.snp.trailing).offset(6)
             make.centerY.equalToSuperview()
         }
         imageSearchStatusChip.snp.makeConstraints { make in
-            make.leading.greaterThanOrEqualTo(imageSearchTitleLabel.snp.trailing).offset(8)
+            make.leading.greaterThanOrEqualTo(imageSearchTitleLabel.snp.trailing).offset(6)
             make.centerY.equalToSuperview()
         }
         imageSearchUpdateButton.snp.makeConstraints { make in
-            make.leading.equalTo(imageSearchStatusChip.snp.trailing).offset(2)
-            make.trailing.equalToSuperview().offset(-4)
+            make.leading.equalTo(imageSearchStatusChip.snp.trailing).offset(0)
+            make.trailing.equalToSuperview().offset(-2)
             make.centerY.equalToSuperview()
         }
         imageSearchSpinner.snp.makeConstraints { make in
             make.center.equalTo(imageSearchUpdateButton)
         }
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        row.heightAnchor.constraint(equalToConstant: 34).isActive = true
         return row
     }()
 
@@ -797,14 +797,31 @@ class NewProductViewController: BaseViewControler {
         !(product?.image_url ?? "").isEmpty
     }
 
-    /// Staff and create-product must not see this. Disable if the product has no photo on the server yet.
+    /// Staff never see this. Create shows status only (no product id to Update yet).
     private func refreshImageSearchButton() {
         let isEdit = product != nil
         let canManage = PermissionManager.shared.canManageProducts()
-        let show = isEdit && canManage
+        let show = canManage
         imageSearchRow.isHidden = !show
-        imageSearchUpdateButton.isEnabled = hasSavedProductPhoto() && !isSyncingImageSearch
-        imageSearchUpdateButton.isHidden = isSyncingImageSearch
+        imageSearchUpdateButton.isEnabled = isEdit && hasSavedProductPhoto() && !isSyncingImageSearch
+        imageSearchUpdateButton.isHidden = !isEdit || isSyncingImageSearch
+        imageSearchStatusChip.snp.remakeConstraints { make in
+            make.leading.greaterThanOrEqualTo(imageSearchTitleLabel.snp.trailing).offset(6)
+            make.centerY.equalToSuperview()
+            if !isEdit {
+                make.trailing.equalToSuperview().offset(-10)
+            }
+        }
+        imageSearchUpdateButton.snp.remakeConstraints { make in
+            make.centerY.equalToSuperview()
+            if isEdit {
+                make.leading.equalTo(imageSearchStatusChip.snp.trailing)
+                make.trailing.equalToSuperview().offset(-2)
+            } else {
+                make.width.height.equalTo(0)
+                make.trailing.equalToSuperview()
+            }
+        }
         if isSyncingImageSearch {
             imageSearchSpinner.startAnimating()
         } else {
@@ -817,6 +834,7 @@ class NewProductViewController: BaseViewControler {
         imageSearchStatusChip.isHidden = !visible
         guard visible else { return }
 
+        let hasLocalPhoto = selectedImage != nil || img.image != nil
         if imageSearchQueued || isSyncingImageSearch {
             imageSearchStatusChip.applySoft(
                 tint: .brandPrimary,
@@ -826,6 +844,11 @@ class NewProductViewController: BaseViewControler {
             imageSearchStatusChip.applySoft(
                 tint: UIColor(hexString: "1B7A3D"),
                 text: "product.imageSearch.ready".localized()
+            )
+        } else if product == nil && hasLocalPhoto {
+            imageSearchStatusChip.applySoft(
+                tint: .brandPrimary,
+                text: "product.imageSearch.willIndex".localized()
             )
         } else {
             imageSearchStatusChip.applySoft(
@@ -845,20 +868,41 @@ class NewProductViewController: BaseViewControler {
 
         ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] error in
             guard let self else { return }
-            self.isSyncingImageSearch = false
-            self.saveButton.isEnabled = true
-            self.saveNavButton.isEnabled = true
-            self.refreshImageSearchButton()
             if let error {
-                UIAlertController.errorAlert(parent: self, error: error)
-            } else {
-                self.imageSearchQueued = true
+                self.isSyncingImageSearch = false
+                self.saveButton.isEnabled = true
+                self.saveNavButton.isEnabled = true
                 self.refreshImageSearchButton()
-                self.showToast(
-                    message: "product.imageSearch.queued".localized(),
-                    duration: 3.5,
-                    icon: UIImage(systemName: "checkmark.circle.fill")
-                )
+                UIAlertController.errorAlert(parent: self, error: error)
+                return
+            }
+
+            ProductService.shared.loadProduct(productId: productId) { [weak self] latest, _ in
+                guard let self else { return }
+                self.isSyncingImageSearch = false
+                self.saveButton.isEnabled = true
+                self.saveNavButton.isEnabled = true
+                if let latest {
+                    self.product = latest
+                }
+                let indexedAt = latest?.embeddingGeneratedAt ?? ""
+                if !indexedAt.isEmpty {
+                    self.imageSearchQueued = false
+                    self.refreshImageSearchButton()
+                    self.showToast(
+                        message: "product.imageSearch.readyToast".localized(),
+                        duration: 3.5,
+                        icon: UIImage(systemName: "checkmark.circle.fill")
+                    )
+                } else {
+                    self.imageSearchQueued = true
+                    self.refreshImageSearchButton()
+                    self.showToast(
+                        message: "product.imageSearch.queued".localized(),
+                        duration: 3.5,
+                        icon: UIImage(systemName: "checkmark.circle.fill")
+                    )
+                }
             }
         }
     }
@@ -928,6 +972,7 @@ class NewProductViewController: BaseViewControler {
         img.image = image
         // Store the image for later upload
         selectedImage = image
+        refreshImageSearchButton()
     }
     
     // MARK: - Pricing Options Helpers
@@ -1232,11 +1277,26 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
         
         // Use new request model method
         ProductService.shared.createProduct(request: request, images: images) { [weak self] product, error in
-            self?.hideProgress()
             if let err = error {
+                self?.hideProgress()
                 UIAlertController.errorAlert(parent: self, error: err)
-            } else if let pro = product {
-                self?.delegate?.didAddNewProduct(product: pro)
+                return
+            }
+            guard let self, let pro = product else {
+                self?.hideProgress()
+                return
+            }
+            // Create form has no product id yet, so it cannot tap Update.
+            // Kick CLIP indexing the same way edit does after the product exists.
+            let productId = pro.id ?? (pro.product_id > 0 ? pro.product_id : nil)
+            if !images.isEmpty, let productId {
+                ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] _ in
+                    self?.hideProgress()
+                    self?.delegate?.didAddNewProduct(product: pro)
+                }
+            } else {
+                self.hideProgress()
+                self.delegate?.didAddNewProduct(product: pro)
             }
         }
     }
@@ -1305,6 +1365,7 @@ extension NewProductViewController: UIImagePickerControllerDelegate, UINavigatio
             img.subviews.first?.isHidden = true
             imageErrorLabel.isHidden = true
             img.layer.borderWidth = 0
+            refreshImageSearchButton()
         }
         
         // Dismiss the picker

@@ -75,17 +75,25 @@ export async function POST(
         priority: 30
       });
 
-      void db.embeddingJobs
-        .processPending({ batchSize: 1 })
-        .catch((error: any) => {
-          console.error('[Sync embeddings] processPending failed:', error?.message || error);
-        });
+      // Wait for THIS product so the edit screen can show Ready instead of
+      // staying on Updating after a fire-and-forget job.
+      try {
+        await db.embeddingJobs.processPending({ batchSize: 1, productId });
+      } catch (error: any) {
+        console.error('[Sync embeddings] processPending failed:', error?.message || error);
+      }
+
+      const refreshed = await db.products.findById(productId);
+      const indexedAt = (refreshed as any)?.embeddingGeneratedAt
+        ? new Date((refreshed as any).embeddingGeneratedAt).toISOString()
+        : null;
 
       return NextResponse.json(
-        ResponseBuilder.success('EMBEDDING_SYNC_QUEUED', {
+        ResponseBuilder.success(indexedAt ? 'EMBEDDING_SYNC_COMPLETED' : 'EMBEDDING_SYNC_QUEUED', {
           productId,
-          queued: 1,
-          images: images.length
+          queued: indexedAt ? 0 : 1,
+          images: images.length,
+          embeddingGeneratedAt: indexedAt
         })
       );
     } catch (error) {

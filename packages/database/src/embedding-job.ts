@@ -51,7 +51,7 @@ export const simplifiedEmbeddingJobs = {
     });
   },
 
-  processPending: async (options?: { batchSize?: number }) => {
+  processPending: async (options?: { batchSize?: number; productId?: number }) => {
     const batchSize = Math.max(1, Math.min(50, options?.batchSize ?? 5));
     let processed = 0;
     let completed = 0;
@@ -61,7 +61,8 @@ export const simplifiedEmbeddingJobs = {
     const pendingJobs = await prismaAny.embeddingJob.findMany({
       where: {
         status: 'PENDING',
-        nextRunAt: { lte: new Date() }
+        nextRunAt: { lte: new Date() },
+        ...(typeof options?.productId === 'number' ? { productId: options.productId } : {})
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       take: batchSize
@@ -88,7 +89,11 @@ export const simplifiedEmbeddingJobs = {
 
       try {
         await generateProductEmbedding(job.productId, {
-          force: job.source === 'product-update' || job.source === 'manual-force'
+          force:
+            job.source === 'product-update' ||
+            job.source === 'product-create' ||
+            job.source === 'merchant-product-create' ||
+            job.source === 'manual-force'
         });
         await prismaAny.embeddingJob.update({
           where: { id: job.id },

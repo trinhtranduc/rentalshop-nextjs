@@ -196,7 +196,9 @@
     "updating": "Updating",
     "section": "Image search",
     "update": "Update",
-    "syncing": "Updating…"
+    "syncing": "Updating…",
+    "readyToast": "Image search is ready.",
+    "queuedToast": "Queued. Try scanning this product again in 1–2 minutes."
   },
   "searchResults": {
     "match": "Match",

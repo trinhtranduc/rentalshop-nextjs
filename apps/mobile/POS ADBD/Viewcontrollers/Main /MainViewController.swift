@@ -860,12 +860,16 @@ extension MainViewController: ProductCellDelegate {
 
         showProgressText(text: "Loading...".localized())
         ProductService.shared.syncProductEmbeddings(productId: productId) { [weak self] error in
-            self?.hideProgress()
             if let error {
+                self?.hideProgress()
                 UIAlertController.errorAlert(parent: self, error: error)
-            } else {
+                return
+            }
+            ProductService.shared.loadProduct(productId: productId) { [weak self] latest, _ in
+                self?.hideProgress()
+                let indexed = !(latest?.embeddingGeneratedAt ?? "").isEmpty
                 self?.showToast(
-                    message: "product.imageSearch.queued".localized(),
+                    message: (indexed ? "product.imageSearch.readyToast" : "product.imageSearch.queued").localized(),
                     duration: 3.5,
                     icon: UIImage(systemName: "checkmark.circle.fill")
                 )

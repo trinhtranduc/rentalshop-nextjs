@@ -327,7 +327,9 @@
     <string name="update_image_search_short">Cập nhật</string>
     <string name="image_search_queued">Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút.</string>
     <string name="image_search_ready">Sẵn sàng</string>
+    <string name="image_search_ready_toast">Tìm bằng ảnh đã sẵn sàng.</string>
     <string name="image_search_not_indexed">Chưa có</string>
+    <string name="image_search_will_index">Lập chỉ mục khi lưu</string>
     <string name="image_search_updating">Đang cập nhật</string>
     <string name="image_search_no_photos">Thêm ảnh sản phẩm rồi thử lại.</string>
     <string name="image_search_failed">Không cập nhật được tìm bằng ảnh.</string>

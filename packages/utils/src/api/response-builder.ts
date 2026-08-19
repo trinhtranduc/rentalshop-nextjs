@@ -248,6 +248,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'EMBEDDING_JOBS_PROCESSED': 'Embedding jobs processed',
   'EMBEDDING_JOBS_CRON_HEALTHY': 'Embedding jobs cron is healthy',
   'EMBEDDING_SYNC_QUEUED': 'Product queued for image-search indexing',
+  'EMBEDDING_SYNC_COMPLETED': 'Product image search is ready',
 };
 
 /**
