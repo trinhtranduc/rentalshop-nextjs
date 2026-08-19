@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Badge,
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
-import { ArrowLeft, Save, Loader2, Sparkles } from 'lucide-react';
+import { Save, Loader2, ScanSearch } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import { productsApi } from '@rentalshop/utils';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
@@ -36,6 +35,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
   const [imageSearchQueued, setImageSearchQueued] = useState(false);
+  const [indexedAt, setIndexedAt] = useState(product.embeddingGeneratedAt ?? null);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -144,10 +144,15 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     try {
       const response = await productsApi.syncProductEmbeddings(product.id);
       if (response.success) {
-        setImageSearchQueued(true);
+        const refreshed = await productsApi.getProduct(product.id);
+        const nextIndexedAt = refreshed.success
+          ? (refreshed.data as any)?.embeddingGeneratedAt ?? (response.data as any)?.embeddingGeneratedAt
+          : (response.data as any)?.embeddingGeneratedAt;
+        setIndexedAt(nextIndexedAt ?? null);
+        setImageSearchQueued(!nextIndexedAt);
         toastSuccess(
-          'Image search',
-          'Indexing started. Search this product in a few minutes after the job finishes.'
+          t('imageSearch.section'),
+          nextIndexedAt ? t('imageSearch.readyToast') : t('imageSearch.queuedToast')
         );
       } else {
         toastError(
@@ -183,45 +188,46 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
         useMultipartUpload={useMultipartUpload}
       />
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center justify-end gap-3 mt-6 pt-4 border-t">
-        {canManageProducts && (
-          <div className="mr-auto flex items-center gap-2">
+      {canManageProducts && (
+        <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5">
+          <ScanSearch className="h-3.5 w-3.5 shrink-0 text-blue-700" />
+          <span className="text-xs font-medium text-slate-800">
+            {t('imageSearch.section')}
+          </span>
+          <span
+            className={
+              imageSearchQueued || isSyncingEmbeddings
+                ? 'ml-auto rounded-full bg-blue-700/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700'
+                : indexedAt
+                  ? 'ml-auto rounded-full bg-emerald-700/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-800'
+                  : 'ml-auto rounded-full bg-slate-500/10 px-2 py-0.5 text-[11px] font-semibold text-slate-600'
+            }
+          >
+            {imageSearchQueued || isSyncingEmbeddings
+              ? t('imageSearch.updating')
+              : indexedAt
+                ? t('imageSearch.indexed')
+                : t('imageSearch.notIndexed')}
+          </span>
+          {isSyncingEmbeddings ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-700" />
+          ) : (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={handleSyncEmbeddings}
-              disabled={isSubmitting || isSyncingEmbeddings}
+              disabled={isSubmitting}
+              className="h-7 shrink-0 px-2 text-xs font-semibold text-blue-700 hover:text-blue-800"
             >
-              {isSyncingEmbeddings ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Syncing image search...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Sync image search
-                </>
-              )}
+              {t('imageSearch.update')}
             </Button>
-            <Badge
-              className={
-                imageSearchQueued
-                  ? 'border-transparent bg-blue-600 text-white hover:bg-blue-600'
-                  : product.embeddingGeneratedAt
-                    ? 'border-transparent bg-green-700 text-white hover:bg-green-700'
-                    : 'border-transparent bg-gray-500 text-white hover:bg-gray-500'
-              }
-            >
-              {imageSearchQueued
-                ? t('imageSearch.updating')
-                : product.embeddingGeneratedAt
-                  ? t('imageSearch.indexed')
-                  : t('imageSearch.notIndexed')}
-            </Badge>
-          </div>
-        )}
+          )}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center justify-end gap-3 mt-6 pt-4 border-t">
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting || isSyncingEmbeddings}>
           {tc('buttons.cancel')}
         </Button>

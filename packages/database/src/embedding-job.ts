@@ -20,17 +20,24 @@ export const simplifiedEmbeddingJobs = {
   enqueue: async (input: EnqueueInput) => {
     const { productId, source = 'manual', priority = 0, maxAttempts = 5 } = input;
 
-    // Avoid flooding queue with duplicate pending/running jobs for same product.
-    const existing = await prismaAny.embeddingJob.findFirst({
+    // Dedupe PENDING only. A RUNNING create-job may still be embedding the
+    // previous photo — an image update must queue a second pass.
+    const existingPending = await prismaAny.embeddingJob.findFirst({
       where: {
         productId,
-        status: { in: ['PENDING', 'RUNNING'] }
+        status: 'PENDING'
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    if (existing) {
-      return existing;
+    if (existingPending) {
+      return prismaAny.embeddingJob.update({
+        where: { id: existingPending.id },
+        data: {
+          source,
+          priority: Math.max(existingPending.priority ?? 0, priority)
+        }
+      });
     }
 
     return prismaAny.embeddingJob.create({
@@ -44,7 +51,7 @@ export const simplifiedEmbeddingJobs = {
     });
   },
 
-  processPending: async (options?: { batchSize?: number }) => {
+  processPending: async (options?: { batchSize?: number; productId?: number }) => {
     const batchSize = Math.max(1, Math.min(50, options?.batchSize ?? 5));
     let processed = 0;
     let completed = 0;
@@ -54,7 +61,8 @@ export const simplifiedEmbeddingJobs = {
     const pendingJobs = await prismaAny.embeddingJob.findMany({
       where: {
         status: 'PENDING',
-        nextRunAt: { lte: new Date() }
+        nextRunAt: { lte: new Date() },
+        ...(typeof options?.productId === 'number' ? { productId: options.productId } : {})
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       take: batchSize
@@ -80,7 +88,13 @@ export const simplifiedEmbeddingJobs = {
       processed += 1;
 
       try {
-        await generateProductEmbedding(job.productId);
+        await generateProductEmbedding(job.productId, {
+          force:
+            job.source === 'product-update' ||
+            job.source === 'product-create' ||
+            job.source === 'merchant-product-create' ||
+            job.source === 'manual-force'
+        });
         await prismaAny.embeddingJob.update({
           where: { id: job.id },
           data: {

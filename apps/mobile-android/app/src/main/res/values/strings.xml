@@ -249,6 +249,7 @@
     <string name="sort_pickup_date">Pickup date</string>
     <string name="product_image">Product image</string>
     <string name="available_short">Available</string>
+    <string name="available_count">%1$s available</string>
     <string name="product_actions">Product actions</string>
     <string name="add_product">Add Product</string>
     <string name="product_image_required">Product image *</string>
@@ -323,9 +324,13 @@
     <string name="previous">Previous</string>
     <string name="update_product">Update Product</string>
     <string name="update_image_search">Update image search</string>
+    <string name="image_search_section">Image search</string>
+    <string name="update_image_search_short">Update</string>
     <string name="image_search_queued">Queued. Try scanning this product again in 1–2 minutes.</string>
     <string name="image_search_ready">Ready</string>
+    <string name="image_search_ready_toast">Image search is ready.</string>
     <string name="image_search_not_indexed">Not yet</string>
+    <string name="image_search_will_index">Indexes on save</string>
     <string name="image_search_updating">Updating</string>
     <string name="image_search_no_photos">Add a product photo, then try again.</string>
     <string name="image_search_failed">Could not update image search.</string>

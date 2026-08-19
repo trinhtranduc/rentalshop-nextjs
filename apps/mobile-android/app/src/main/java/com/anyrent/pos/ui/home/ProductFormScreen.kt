@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +29,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ImageSearch
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -63,7 +67,6 @@ import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppPrimaryButton
-import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.RequiredFieldLabel
 import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.copyUriToCacheFile
@@ -98,6 +101,7 @@ fun ProductFormScreen(
     var loading by remember { mutableStateOf(false) }
     var syncingImageSearch by remember { mutableStateOf(false) }
     var imageSearchQueued by remember { mutableStateOf(false) }
+    var indexedAt by remember { mutableStateOf(initial?.embeddingGeneratedAt) }
     var moreOptions by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<Any?>(null) }
@@ -165,12 +169,23 @@ fun ProductFormScreen(
                     )
                 }
             }
-            loading = false
-            result.onSuccess {
+            result.onSuccess { product ->
                 pickedImageFile?.let { runCatching { it.delete() } }
                 file?.let { runCatching { it.delete() } }
+                // Create form has no product id yet, so it cannot tap Update.
+                // Kick CLIP indexing the same way edit does, in case the create
+                // request's background job was dropped when the HTTP response ended.
+                if (initial == null && file != null && product.id > 0) {
+                    withContext(Dispatchers.IO) {
+                        ApiClient.get().syncProductEmbeddings(product.id)
+                    }
+                }
+                loading = false
                 onSaved()
-            }.onFailure { error = it.message }
+            }.onFailure {
+                loading = false
+                error = it.message
+            }
         }
     }
 
@@ -292,55 +307,54 @@ fun ProductFormScreen(
                                 tint = MaterialTheme.colorScheme.outline,
                             )
                         }
-                        if (initial != null && canManage) {
-                            ImageSearchStatusBadge(
-                                queued = imageSearchQueued,
-                                ready = !initial.embeddingGeneratedAt.isNullOrBlank(),
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(6.dp),
-                            )
-                        }
                     }
-                    // Edit only: re-queue image search after photo changes. Staff never see this.
-                    if (initial != null && canManage) {
-                        val hasSavedPhoto = !initial.imageUrl.isNullOrBlank()
-                        AppSecondaryButton(
-                            text = if (syncingImageSearch) {
-                                stringResource(R.string.loading)
-                            } else {
-                                stringResource(R.string.update_image_search)
-                            },
-                            enabled = hasSavedPhoto && !loading && !syncingImageSearch,
-                            onClick = {
-                                if (!hasSavedPhoto) {
+                    // Staff never see this. Create shows status only (no id to Update yet).
+                    if (canManage) {
+                        val isEdit = initial != null
+                        val hasSavedPhoto = !initial?.imageUrl.isNullOrBlank()
+                        val hasPhoto = hasSavedPhoto || previewModel != null
+                        ImageSearchRow(
+                            queued = imageSearchQueued,
+                            ready = !indexedAt.isNullOrBlank(),
+                            willIndexOnSave = !isEdit && hasPhoto,
+                            syncing = syncingImageSearch,
+                            showUpdate = isEdit,
+                            enabled = isEdit && hasSavedPhoto && !loading && !syncingImageSearch,
+                            onUpdate = {
+                                val productId = initial?.id
+                                if (!hasSavedPhoto || productId == null) {
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.image_search_no_photos),
                                         Toast.LENGTH_LONG,
                                     ).show()
-                                    return@AppSecondaryButton
-                                }
-                                syncingImageSearch = true
-                                scope.launch {
-                                    val result = withContext(Dispatchers.IO) {
-                                        ApiClient.get().syncProductEmbeddings(initial.id)
-                                    }
-                                    syncingImageSearch = false
-                                    result.onSuccess {
-                                        imageSearchQueued = true
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.image_search_queued),
-                                            Toast.LENGTH_LONG,
-                                        ).show()
-                                    }.onFailure { e ->
-                                        Toast.makeText(
-                                            context,
-                                            e.message?.takeIf { it.isNotBlank() }
-                                                ?: context.getString(R.string.image_search_failed),
-                                            Toast.LENGTH_LONG,
-                                        ).show()
+                                } else {
+                                    syncingImageSearch = true
+                                    scope.launch {
+                                        val result = withContext(Dispatchers.IO) {
+                                            ApiClient.get().syncProductEmbeddings(productId).getOrThrow()
+                                            ApiClient.get().getProduct(productId)
+                                        }
+                                        syncingImageSearch = false
+                                        result.onSuccess { product ->
+                                            indexedAt = product.embeddingGeneratedAt
+                                            imageSearchQueued = product.embeddingGeneratedAt.isNullOrBlank()
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(
+                                                    if (imageSearchQueued) R.string.image_search_queued
+                                                    else R.string.image_search_ready_toast,
+                                                ),
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }.onFailure { e ->
+                                            Toast.makeText(
+                                                context,
+                                                e.message?.takeIf { it.isNotBlank() }
+                                                    ?: context.getString(R.string.image_search_failed),
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
                                     }
                                 }
                             },
@@ -466,38 +480,93 @@ private fun ProductField(
 }
 
 @Composable
-private fun ImageSearchStatusBadge(
+private fun ImageSearchRow(
     queued: Boolean,
     ready: Boolean,
-    modifier: Modifier = Modifier,
+    willIndexOnSave: Boolean,
+    syncing: Boolean,
+    showUpdate: Boolean,
+    enabled: Boolean,
+    onUpdate: () -> Unit,
 ) {
-    val text = when {
-        queued -> stringResource(R.string.image_search_updating)
+    val statusText = when {
+        syncing || queued -> stringResource(R.string.image_search_updating)
         ready -> stringResource(R.string.image_search_ready)
+        willIndexOnSave -> stringResource(R.string.image_search_will_index)
         else -> stringResource(R.string.image_search_not_indexed)
     }
-    val background = when {
-        queued -> MaterialTheme.colorScheme.primary
-        ready -> Color(0xFF23844A)
-        else -> Color(0xFF6B7280)
+    val statusTint = when {
+        syncing || queued -> MaterialTheme.colorScheme.primary
+        ready -> Color(0xFF1B7A3D)
+        willIndexOnSave -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Box(
-        modifier = modifier
-            .heightIn(min = 22.dp)
-            .background(background, RoundedCornerShape(10.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center,
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
-                fontWeight = FontWeight.Bold,
-            ),
-            maxLines = 1,
-        )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 34.dp)
+                .padding(start = 10.dp, end = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                Icons.Filled.ImageSearch,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                stringResource(R.string.image_search_section),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+            )
+            Box(
+                modifier = Modifier
+                    .background(statusTint.copy(alpha = 0.12f), RoundedCornerShape(percent = 50))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    statusText,
+                    color = statusTint,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    maxLines = 1,
+                )
+            }
+            if (syncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .size(14.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else if (showUpdate) {
+                TextButton(
+                    onClick = onUpdate,
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.update_image_search_short),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
     }
 }
 

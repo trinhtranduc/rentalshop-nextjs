@@ -1397,9 +1397,14 @@
 "product.action.delete" = "Delete product";
 "product.action.update" = "Update product";
 "product.action.updateImageSearch" = "Update image search";
+"product.imageSearch.section" = "Image search";
+"product.imageSearch.update" = "Update";
+"product.availableBadge" = "%d available";
 "product.imageSearch.queued" = "Queued. Try scanning this product again in 1–2 minutes.";
 "product.imageSearch.ready" = "Ready";
+"product.imageSearch.readyToast" = "Image search is ready.";
 "product.imageSearch.notIndexed" = "Not yet";
+"product.imageSearch.willIndex" = "Indexes on save";
 "product.imageSearch.updating" = "Updating";
 "product.imageSearch.noPhotos" = "Add a product photo, then try again.";
 "product.imageSearch.failed" = "Could not update image search.";

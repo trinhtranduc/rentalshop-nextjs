@@ -273,7 +273,9 @@ struct Product: Codable, Comparable, Copying {
         // Pricing type
         self.pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
         self.pricingOptions = try container.decodeIfPresent([PricingOption].self, forKey: .pricingOptions)
-        self.embeddingGeneratedAt = try container.decodeIfPresent(String.self, forKey: .embeddingGeneratedAt)
+        // API may send ISO8601 string or omit/null. A type mismatch must not
+        // drop the whole product payload (that would leave the chip on "Not yet").
+        self.embeddingGeneratedAt = try? container.decodeIfPresent(String.self, forKey: .embeddingGeneratedAt)
     }
     
     func encode(to encoder: Encoder) throws {
