@@ -183,9 +183,9 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       />
 
       {canManageProducts && (
-        <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
-          <ScanSearch className="h-4 w-4 shrink-0 text-blue-700" />
-          <span className="text-sm font-medium text-slate-800">
+        <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5">
+          <ScanSearch className="h-3.5 w-3.5 shrink-0 text-blue-700" />
+          <span className="text-xs font-medium text-slate-800">
             {t('imageSearch.section')}
           </span>
           <span
@@ -212,7 +212,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
               size="sm"
               onClick={handleSyncEmbeddings}
               disabled={isSubmitting}
-              className="shrink-0 font-semibold text-blue-700 hover:text-blue-800"
+              className="h-7 shrink-0 px-2 text-xs font-semibold text-blue-700 hover:text-blue-800"
             >
               {t('imageSearch.update')}
             </Button>

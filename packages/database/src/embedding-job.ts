@@ -88,7 +88,11 @@ export const simplifiedEmbeddingJobs = {
 
       try {
         await generateProductEmbedding(job.productId, {
-          force: job.source === 'product-update' || job.source === 'manual-force'
+          force:
+            job.source === 'product-update' ||
+            job.source === 'product-create' ||
+            job.source === 'merchant-product-create' ||
+            job.source === 'manual-force'
         });
         await prismaAny.embeddingJob.update({
           where: { id: job.id },

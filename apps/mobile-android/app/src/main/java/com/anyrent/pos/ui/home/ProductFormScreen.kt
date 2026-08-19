@@ -168,12 +168,23 @@ fun ProductFormScreen(
                     )
                 }
             }
-            loading = false
-            result.onSuccess {
+            result.onSuccess { product ->
                 pickedImageFile?.let { runCatching { it.delete() } }
                 file?.let { runCatching { it.delete() } }
+                // Create form has no product id yet, so it cannot tap Update.
+                // Kick CLIP indexing the same way edit does, in case the create
+                // request's background job was dropped when the HTTP response ended.
+                if (initial == null && file != null && product.id > 0) {
+                    withContext(Dispatchers.IO) {
+                        ApiClient.get().syncProductEmbeddings(product.id)
+                    }
+                }
+                loading = false
                 onSaved()
-            }.onFailure { error = it.message }
+            }.onFailure {
+                loading = false
+                error = it.message
+            }
         }
     }
 
@@ -296,16 +307,21 @@ fun ProductFormScreen(
                             )
                         }
                     }
-                    // Edit only: compact row under the photo. Staff never see this.
-                    if (initial != null && canManage) {
-                        val hasSavedPhoto = !initial.imageUrl.isNullOrBlank()
+                    // Staff never see this. Create shows status only (no id to Update yet).
+                    if (canManage) {
+                        val isEdit = initial != null
+                        val hasSavedPhoto = !initial?.imageUrl.isNullOrBlank()
+                        val hasPhoto = hasSavedPhoto || previewModel != null
                         ImageSearchRow(
                             queued = imageSearchQueued,
-                            ready = !initial.embeddingGeneratedAt.isNullOrBlank(),
+                            ready = !initial?.embeddingGeneratedAt.isNullOrBlank(),
+                            willIndexOnSave = !isEdit && hasPhoto,
                             syncing = syncingImageSearch,
-                            enabled = hasSavedPhoto && !loading && !syncingImageSearch,
+                            showUpdate = isEdit,
+                            enabled = isEdit && hasSavedPhoto && !loading && !syncingImageSearch,
                             onUpdate = {
-                                if (!hasSavedPhoto) {
+                                val productId = initial?.id
+                                if (!hasSavedPhoto || productId == null) {
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.image_search_no_photos),
@@ -315,7 +331,7 @@ fun ProductFormScreen(
                                     syncingImageSearch = true
                                     scope.launch {
                                         val result = withContext(Dispatchers.IO) {
-                                            ApiClient.get().syncProductEmbeddings(initial.id)
+                                            ApiClient.get().syncProductEmbeddings(productId)
                                         }
                                         syncingImageSearch = false
                                         result.onSuccess {
@@ -461,18 +477,22 @@ private fun ProductField(
 private fun ImageSearchRow(
     queued: Boolean,
     ready: Boolean,
+    willIndexOnSave: Boolean,
     syncing: Boolean,
+    showUpdate: Boolean,
     enabled: Boolean,
     onUpdate: () -> Unit,
 ) {
     val statusText = when {
         syncing || queued -> stringResource(R.string.image_search_updating)
         ready -> stringResource(R.string.image_search_ready)
+        willIndexOnSave -> stringResource(R.string.image_search_will_index)
         else -> stringResource(R.string.image_search_not_indexed)
     }
     val statusTint = when {
         syncing || queued -> MaterialTheme.colorScheme.primary
         ready -> Color(0xFF1B7A3D)
+        willIndexOnSave -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -484,21 +504,21 @@ private fun ImageSearchRow(
         Row(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp)
-                .padding(start = 12.dp, end = 4.dp),
+                .heightIn(min = 34.dp)
+                .padding(start = 10.dp, end = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Icon(
                 Icons.Filled.ImageSearch,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
                 stringResource(R.string.image_search_section),
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
             )
@@ -522,19 +542,20 @@ private fun ImageSearchRow(
             if (syncing) {
                 CircularProgressIndicator(
                     modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .size(16.dp),
+                        .padding(horizontal = 6.dp)
+                        .size(14.dp),
                     strokeWidth = 2.dp,
                 )
-            } else {
+            } else if (showUpdate) {
                 TextButton(
                     onClick = onUpdate,
                     enabled = enabled,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier.height(28.dp),
                 ) {
                     Text(
                         stringResource(R.string.update_image_search_short),
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }

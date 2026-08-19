@@ -1403,6 +1403,7 @@
 "product.imageSearch.queued" = "Queued. Try scanning this product again in 1–2 minutes.";
 "product.imageSearch.ready" = "Ready";
 "product.imageSearch.notIndexed" = "Not yet";
+"product.imageSearch.willIndex" = "Indexes on save";
 "product.imageSearch.updating" = "Updating";
 "product.imageSearch.noPhotos" = "Add a product photo, then try again.";
 "product.imageSearch.failed" = "Could not update image search.";

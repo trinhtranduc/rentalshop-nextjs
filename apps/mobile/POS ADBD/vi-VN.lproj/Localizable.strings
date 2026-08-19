@@ -1401,6 +1401,7 @@
 "product.imageSearch.queued" = "Đã đưa vào hàng đợi. Thử quét lại sau 1–2 phút.";
 "product.imageSearch.ready" = "Sẵn sàng";
 "product.imageSearch.notIndexed" = "Chưa có";
+"product.imageSearch.willIndex" = "Lập chỉ mục khi lưu";
 "product.imageSearch.updating" = "Đang cập nhật";
 "product.imageSearch.noPhotos" = "Thêm ảnh sản phẩm rồi thử lại.";
 "product.imageSearch.failed" = "Không cập nhật được tìm bằng ảnh.";
