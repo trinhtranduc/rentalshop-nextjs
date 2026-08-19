@@ -645,24 +645,14 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       });
 
       try {
-        console.log(`[Qdrant]    Enqueue embedding job (non-blocking)`);
-        await db.embeddingJobs.enqueue({
+        console.log(`[Qdrant]    Queue embedding job (API returns; worker runs in background)`);
+        db.embeddingJobs.kickOff({
           productId: product.id,
           source: 'product-create',
-          priority: 10
+          priority: 20
         });
-
-        // Opportunistic processing keeps behavior near-real-time while still queue-based.
-        db.embeddingJobs
-          .processPending({ batchSize: 1 })
-          .then((result: any) => {
-            console.log(`[Qdrant] ✅ Embedding queue processed:`, result);
-          })
-          .catch((error: any) => {
-            console.error(`[Qdrant] ❌ Embedding queue processing failed:`, error?.message || error);
-          });
       } catch (error: any) {
-        console.error(`[Qdrant] ❌ Failed to enqueue embedding job:`, error?.message);
+        console.error(`[Qdrant] ❌ Failed to queue embedding job:`, error?.message);
       }
     } else {
       console.log(`[Qdrant] ⚠️ Product ${product.id} has no images, skip embedding`);
