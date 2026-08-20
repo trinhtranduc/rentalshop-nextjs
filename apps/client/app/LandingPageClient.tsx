@@ -49,7 +49,10 @@ import {
   ArrowRight,
   Info,
   HelpCircle,
-  Send
+  Send,
+  Camera,
+  ScanSearch,
+  Brain
 } from 'lucide-react'
 
 const LandingPage = () => {
@@ -533,6 +536,84 @@ const LandingPage = () => {
         </div>
       </section>
 
+        {/* AI Image Search Section - Key Differentiator */}
+        <section id="ai-search" className="py-24 bg-white" aria-label="AI Image Search feature">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1">
+                <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-blue-600 border-blue-200 bg-blue-50">
+                  <Brain className="w-4 h-4 mr-2 text-blue-600" />
+                  {t('aiSearch.badge')}
+                </Badge>
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">
+                  {t('aiSearch.title')}
+                </h2>
+                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                  {t('aiSearch.description')}
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Camera className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature1Title')}</h4>
+                      <p className="text-sm text-gray-600">{t('aiSearch.feature1Desc')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <ScanSearch className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature2Title')}</h4>
+                      <p className="text-sm text-gray-600">{t('aiSearch.feature2Desc')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Zap className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature3Title')}</h4>
+                      <p className="text-sm text-gray-600">{t('aiSearch.feature3Desc')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 lg:order-2 flex justify-center">
+                <div className="relative w-full max-w-md">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl p-8 shadow-lg">
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Camera className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-2 bg-gray-100 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center">
+                          <ScanSearch className="w-8 h-8 text-blue-400" />
+                        </div>
+                        <div className="aspect-square bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-xl flex items-center justify-center">
+                          <Brain className="w-8 h-8 text-indigo-400" />
+                        </div>
+                        <div className="col-span-2 h-16 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl flex items-center px-4">
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-sm font-medium text-green-700">{t('aiSearch.matchFound')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Features Section - Clean Design */}
         <section id="features" className="py-24 bg-gray-50" aria-label="Features section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -550,6 +631,19 @@ const LandingPage = () => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <Card className="group border-2 border-blue-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white relative overflow-hidden">
+                <div className="absolute top-3 right-3">
+                  <Badge className="bg-blue-100 text-blue-700 text-xs font-medium border-0">AI</Badge>
+                </div>
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <Camera className="w-6 h-6 text-blue-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.aiImageSearch')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.aiImageSearchDesc')}</p>
+                </CardContent>
+              </Card>
+
               <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">

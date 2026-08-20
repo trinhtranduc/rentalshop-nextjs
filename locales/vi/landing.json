@@ -24,6 +24,19 @@
     "analyticsDesc": "Nhận thông tin chi tiết về hiệu suất kinh doanh của bạn với các báo cáo chi tiết",
     "downloadOnAppStore": "Tải xuống trên App Store"
   },
+  "aiSearch": {
+    "badge": "Trí tuệ Nhân tạo",
+    "title": "Tìm sản phẩm cho thuê bằng Hình ảnh với AI",
+    "description": "Công nghệ AI tiên tiến cho phép khách hàng chụp ảnh hoặc tải hình lên để tìm ngay sản phẩm cho thuê phù hợp. Không cần nhớ tên, không cần gõ từ khóa — chỉ cần một bức ảnh là đủ. Đây là tính năng độc quyền giúp AnyRent vượt trội so với các phần mềm quản lý cho thuê khác trên thị trường.",
+    "feature1Title": "Chụp ảnh tìm sản phẩm",
+    "feature1Desc": "Khách hàng chỉ cần chụp ảnh mẫu áo dài, áo cưới, trang phục — AI sẽ nhận diện và gợi ý sản phẩm tương tự trong kho.",
+    "feature2Title": "Nhận diện thông minh bằng AI",
+    "feature2Desc": "Sử dụng công nghệ vector embedding và mạng neural để phân tích hình ảnh, nhận diện màu sắc, kiểu dáng, chất liệu với độ chính xác cao.",
+    "feature3Title": "Kết quả tức thì",
+    "feature3Desc": "Trả về kết quả trong vài giây với danh sách sản phẩm phù hợp nhất, kèm thông tin tình trạng còn hàng và giá cho thuê.",
+    "matchFound": "Tìm thấy 3 sản phẩm phù hợp",
+    "videoAlt": "Video demo tính năng tìm sản phẩm cho thuê bằng hình ảnh AI trên ứng dụng AnyRent"
+  },
   "features": {
     "title": "Tính năng Quản lý Cửa hàng Cho thuê",
     "description": "Hệ thống quản lý cho thuê với đầy đủ tính năng cần thiết để quản lý hiệu quả doanh nghiệp cho thuê của bạn. Phần mềm quản lý cửa hàng cho thuê phù hợp cho nhiều ngành nghề: cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Tích hợp quản lý đơn hàng, quản lý kho và quản lý khách hàng.",
