@@ -35,6 +35,7 @@ import enPlans from '../../locales/en/plans.json';
 import enSubscription from '../../locales/en/subscription.json';
 import enBankAccounts from '../../locales/en/bankAccounts.json';
 import enAvailability from '../../locales/en/availability.json';
+import enLanding from '../../locales/en/landing.json';
 
 import viCommon from '../../locales/vi/common.json';
 import viAuth from '../../locales/vi/auth.json';
@@ -53,6 +54,7 @@ import viPlans from '../../locales/vi/plans.json';
 import viSubscription from '../../locales/vi/subscription.json';
 import viBankAccounts from '../../locales/vi/bankAccounts.json';
 import viAvailability from '../../locales/vi/availability.json';
+import viLanding from '../../locales/vi/landing.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../locales/zh/common.json';
@@ -73,6 +75,7 @@ const messages = {
   en: {
     common: enCommon,
     auth: enAuth,
+    landing: enLanding,
     dashboard: enDashboard,
     orders: enOrders,
     products: enProducts,
@@ -92,6 +95,7 @@ const messages = {
   vi: {
     common: viCommon,
     auth: viAuth,
+    landing: viLanding,
     dashboard: viDashboard,
     orders: viOrders,
     products: viProducts,

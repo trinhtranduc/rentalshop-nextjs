@@ -24,9 +24,24 @@
     "analyticsDesc": "Get insights into your business performance with detailed reports",
     "downloadOnAppStore": "Download on App Store"
   },
+  "aiSearch": {
+    "badge": "Artificial Intelligence",
+    "title": "Find Rental Products by Image with AI",
+    "description": "Advanced AI technology allows customers to take a photo or upload an image to instantly find matching rental products. No need to remember names, no need to type keywords — just one photo is enough. This exclusive feature makes AnyRent stand out from other rental management software on the market.",
+    "feature1Title": "Snap a photo to find products",
+    "feature1Desc": "Customers simply take a photo of a sample ao dai, wedding dress, or costume — AI will recognize and suggest similar products in stock.",
+    "feature2Title": "Smart AI recognition",
+    "feature2Desc": "Uses vector embedding technology and neural networks to analyze images, recognizing colors, styles, and materials with high accuracy.",
+    "feature3Title": "Instant results",
+    "feature3Desc": "Returns results in seconds with a list of best-matching products, including availability status and rental pricing.",
+    "matchFound": "Found 3 matching products",
+    "videoAlt": "Demo video of AI image search feature for finding rental products on AnyRent app"
+  },
   "features": {
     "title": "Rental Shop Management Features",
     "description": "Comprehensive rental management system with all features needed to efficiently manage your rental business. Rental shop management software suitable for various industries: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental. Integrated with order management, inventory management, and customer management.",
+    "aiImageSearch": "AI Image Search",
+    "aiImageSearchDesc": "Find rental products instantly by uploading a photo. AI-powered visual search recognizes colors, styles, and materials to suggest matching items from your inventory.",
     "orderManagement": "Rental Order Management",
     "orderManagementDesc": "Professional rental order management system. Create, track, and manage rental orders with ease. Monitor rental order status and history with rental shop management software.",
     "customerManagement": "Customer Management",

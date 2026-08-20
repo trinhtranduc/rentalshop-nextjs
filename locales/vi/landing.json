@@ -40,6 +40,8 @@
   "features": {
     "title": "Tính năng Quản lý Cửa hàng Cho thuê",
     "description": "Hệ thống quản lý cho thuê với đầy đủ tính năng cần thiết để quản lý hiệu quả doanh nghiệp cho thuê của bạn. Phần mềm quản lý cửa hàng cho thuê phù hợp cho nhiều ngành nghề: cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Tích hợp quản lý đơn hàng, quản lý kho và quản lý khách hàng.",
+    "aiImageSearch": "Tìm sản phẩm bằng Hình ảnh AI",
+    "aiImageSearchDesc": "Chụp ảnh hoặc tải hình lên để tìm ngay sản phẩm cho thuê phù hợp. Công nghệ AI nhận diện màu sắc, kiểu dáng, chất liệu và gợi ý sản phẩm tương tự trong kho hàng của bạn.",
     "orderManagement": "Quản lý Đơn hàng Cho thuê",
     "orderManagementDesc": "Hệ thống quản lý đơn hàng cho thuê chuyên nghiệp. Tạo, theo dõi và quản lý đơn hàng cho thuê một cách dễ dàng. Theo dõi trạng thái và lịch sử đơn hàng cho thuê với phần mềm quản lý cửa hàng cho thuê.",
     "customerManagement": "Quản lý Khách hàng",

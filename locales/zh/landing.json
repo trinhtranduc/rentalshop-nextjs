@@ -24,9 +24,24 @@
     "analyticsDesc": "通过详细报告了解您的业务表现",
     "downloadOnAppStore": "在App Store下载"
   },
+  "aiSearch": {
+    "badge": "人工智能",
+    "title": "用图片AI搜索租赁产品",
+    "description": "先进的AI技术让客户拍照或上传图片即可立即找到匹配的租赁产品。无需记住名称，无需输入关键词——一张照片就够了。",
+    "feature1Title": "拍照搜索产品",
+    "feature1Desc": "客户只需拍摄旗袍、婚纱、服装的照片——AI将识别并推荐库存中类似的产品。",
+    "feature2Title": "AI智能识别",
+    "feature2Desc": "使用向量嵌入技术和神经网络分析图像，高精度识别颜色、款式和材质。",
+    "feature3Title": "即时结果",
+    "feature3Desc": "几秒钟内返回最匹配产品列表，包含库存状态和租赁价格信息。",
+    "matchFound": "找到3个匹配产品",
+    "videoAlt": "AnyRent应用AI图像搜索功能演示视频"
+  },
   "features": {
     "title": "租赁店管理功能",
     "description": "全面的租赁管理系统，具有高效管理租赁业务所需的所有功能。适用于各种行业的租赁店管理软件：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁。集成订单管理、库存管理和客户管理。",
+    "aiImageSearch": "AI图像搜索",
+    "aiImageSearchDesc": "上传照片即可立即找到租赁产品。AI视觉搜索识别颜色、款式和材质，推荐库存中匹配的产品。",
     "orderManagement": "租赁订单管理",
     "orderManagementDesc": "专业的租赁订单管理系统。轻松创建、跟踪和管理租赁订单。使用租赁店管理软件监控租赁订单状态和历史。",
     "customerManagement": "客户管理",
