@@ -17,16 +17,32 @@
     "title": "Available on All Platforms",
     "description": "Access your rental shop management from anywhere, anytime",
     "mobileApp": "Mobile App",
-    "mobileAppDesc": "Manage your rental shop on the go with our iOS",
+    "mobileAppDesc": "Manage your rental shop on the go with our iOS and Android app",
     "webPortal": "Web Portal",
     "webPortalDesc": "Access full features through any web browser with responsive design",
     "analytics": "Analytics Dashboard",
     "analyticsDesc": "Get insights into your business performance with detailed reports",
-    "downloadOnAppStore": "Download on App Store"
+    "downloadOnAppStore": "Download on App Store",
+    "downloadOnGooglePlay": "Download on Google Play"
+  },
+  "aiSearch": {
+    "badge": "Artificial Intelligence",
+    "title": "Find Rental Products by Image with AI",
+    "description": "Advanced AI technology allows customers to take a photo or upload an image to instantly find matching rental products. No need to remember names, no need to type keywords — just one photo is enough. This exclusive feature makes AnyRent stand out from other rental management software on the market.",
+    "feature1Title": "Snap a photo to find products",
+    "feature1Desc": "Customers simply take a photo of a sample ao dai, wedding dress, or costume — AI will recognize and suggest similar products in stock.",
+    "feature2Title": "Smart AI recognition",
+    "feature2Desc": "Uses vector embedding technology and neural networks to analyze images, recognizing colors, styles, and materials with high accuracy.",
+    "feature3Title": "Instant results",
+    "feature3Desc": "Returns results in seconds with a list of best-matching products, including availability status and rental pricing.",
+    "matchFound": "Found 3 matching products",
+    "videoAlt": "Demo video of AI image search feature for finding rental products on AnyRent app"
   },
   "features": {
     "title": "Rental Shop Management Features",
     "description": "Comprehensive rental management system with all features needed to efficiently manage your rental business. Rental shop management software suitable for various industries: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental. Integrated with order management, inventory management, and customer management.",
+    "aiImageSearch": "AI Image Search",
+    "aiImageSearchDesc": "Find rental products instantly by uploading a photo. AI-powered visual search recognizes colors, styles, and materials to suggest matching items from your inventory.",
     "orderManagement": "Rental Order Management",
     "orderManagementDesc": "Professional rental order management system. Create, track, and manage rental orders with ease. Monitor rental order status and history with rental shop management software.",
     "customerManagement": "Customer Management",
@@ -38,7 +54,7 @@
     "duplicatePrevention": "Duplicate Order Prevention",
     "duplicatePreventionDesc": "Smart system in rental shop management software prevents duplicate orders and ensures accurate inventory management. Efficient rental inventory management with rental management system.",
     "multiPlatform": "Multi-Platform Support",
-    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, , and web platforms seamlessly with rental shop management software.",
+    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software.",
     "viewAllFeatures": "View All Features Details"
   },
   "customSolution": {
@@ -141,7 +157,7 @@
       },
       "multipleDevices": {
         "question": "Can I use rental shop management software on multiple devices?",
-        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
+        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, Android, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
       },
       "dataSecure": {
         "question": "Is my rental shop management data secure?",

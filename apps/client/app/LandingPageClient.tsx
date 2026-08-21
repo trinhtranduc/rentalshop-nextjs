@@ -51,7 +51,7 @@ import {
   HelpCircle,
   Send,
   Camera,
-  ScanSearch,
+  Search,
   Brain
 } from 'lucide-react'
 
@@ -87,6 +87,7 @@ const LandingPage = () => {
     description: t('hero.description'),
     sameAs: [
       'https://apps.apple.com/vn/app/anyrent/id6754793592',
+      'https://play.google.com/store/apps/details?id=anyrent.shop',
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -390,7 +391,7 @@ const LandingPage = () => {
             <div className="max-w-2xl text-left">
               <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
                 <Sparkles className="h-3.5 w-3.5" />
-                AnyRent · iOS &amp; Web
+                AnyRent · iOS · Android &amp; Web
               </p>
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-4">
@@ -417,7 +418,21 @@ const LandingPage = () => {
                     rel="noopener noreferrer"
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    {t('hero.downloadApp')}
+                    {t('download.downloadOnAppStore')}
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg"
+                >
+                  <a
+                    href="https://play.google.com/store/apps/details?id=anyrent.shop"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    {t('download.downloadOnGooglePlay')}
                   </a>
                 </Button>
                 <Button
@@ -513,7 +528,7 @@ const LandingPage = () => {
                       className="rounded-3xl shadow-xl border border-gray-200"
                     />
                   </div>
-                  <div className="mt-8">
+                  <div className="mt-8 space-y-3">
                     <Button
                       asChild
                       size="lg"
@@ -526,6 +541,21 @@ const LandingPage = () => {
                       >
                         <Download className="w-5 h-5 mr-2" />
                         {t('download.downloadOnAppStore')}
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="outline"
+                      className="w-full border-2 border-gray-300 text-gray-900 hover:bg-gray-50 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <a 
+                        href="https://play.google.com/store/apps/details?id=anyrent.shop" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        {t('download.downloadOnGooglePlay')}
                       </a>
                     </Button>
                   </div>
@@ -563,7 +593,7 @@ const LandingPage = () => {
                   </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <ScanSearch className="w-4 h-4 text-blue-600" />
+                      <Search className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">{t('aiSearch.feature2Title')}</h4>
@@ -596,7 +626,7 @@ const LandingPage = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center">
-                          <ScanSearch className="w-8 h-8 text-blue-400" />
+                          <Search className="w-8 h-8 text-blue-400" />
                         </div>
                         <div className="aspect-square bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-xl flex items-center justify-center">
                           <Brain className="w-8 h-8 text-indigo-400" />
@@ -1168,7 +1198,21 @@ const CTA = React.memo(() => {
                 rel="noopener noreferrer"
               >
                 <Download className="w-5 h-5 mr-2" />
-                {tHero('downloadApp')}
+                App Store
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <a 
+                href="https://play.google.com/store/apps/details?id=anyrent.shop" 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Google Play
               </a>
             </Button>
             <Button
