@@ -52,7 +52,7 @@ export default function PublicSiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/#download" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href="/#" className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.downloadApp')}
                 </Link>
               </li>

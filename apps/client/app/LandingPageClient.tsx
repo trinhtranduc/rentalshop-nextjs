@@ -41,14 +41,12 @@ import {
   Users, 
   User,
   BarChart3, 
-  Smartphone, 
   Clock, 
   DollarSign,
   Star,
   Mail,
   MapPin,
   ExternalLink,
-  BarChart,
   AlertTriangle,
   X,
   Sparkles,
@@ -455,67 +453,6 @@ const LandingPage = () => {
             </div>
           </section>
         </SoftSkyStage>
-
-      {/* App Download Section */}
-      <SoftSkyStage tone="white" className="py-24 md:py-28">
-      <section id="download" className="relative" aria-label="Download section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className={softSkyBadgeClass}>
-              <Smartphone className="w-4 h-4 mr-2 text-sky-700" />
-              Platforms
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-              {t('download.title')}
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('download.description')}
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="space-y-6">
-              {[
-                { icon: Smartphone, title: t('download.mobileApp'), desc: t('download.mobileAppDesc') },
-                { icon: Globe, title: t('download.webPortal'), desc: t('download.webPortalDesc') },
-                { icon: BarChart, title: t('download.analytics'), desc: t('download.analyticsDesc') },
-              ].map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="flex items-start gap-4">
-                  <div className={softSkyIconBoxClass}>
-                    <Icon className="w-5 h-5 text-sky-700" />
-                  </div>
-                  <div className="pt-0.5">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-1">{title}</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="relative">
-              <div
-                className="absolute inset-6 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
-                aria-hidden="true"
-              />
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.3)] ring-1 ring-sky-100/70 bg-white">
-                <Image 
-                  src="/anyrent-landing-download-devices.png"
-                  alt="AnyRent on iPhone and Android"
-                  width={1280}
-                  height={960}
-                  loading="lazy"
-                  className="w-full h-auto object-cover"
-                  sizes="(max-width: 768px) 100vw, 560px"
-                />
-              </div>
-              <div className="relative mt-6 flex justify-center">
-                <StoreBadges tone="dark" stacked />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      </SoftSkyStage>
 
         {/* 3 main features — soft-sky spotlights */}
         <FeatureSpotlight
@@ -1773,7 +1710,7 @@ const Footer = React.memo(() => {
             <ul className="space-y-2">
               <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
               <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</a></li>
-              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
+              <li><a href="/#" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
             </ul>
           </div>
           
