@@ -22,7 +22,8 @@
     "webPortalDesc": "반응형 디자인의 모든 웹 브라우저를 통해 전체 기능에 액세스",
     "analytics": "분석 대시보드",
     "analyticsDesc": "상세한 보고서로 비즈니스 성과에 대한 인사이트를 얻으세요",
-    "downloadOnAppStore": "App Store에서 다운로드"
+    "downloadOnAppStore": "App Store에서 다운로드",
+    "downloadOnGooglePlay": "Google Play에서 다운로드"
   },
   "aiSearch": {
     "badge": "인공지능",

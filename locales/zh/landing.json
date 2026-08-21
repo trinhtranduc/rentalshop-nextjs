@@ -22,7 +22,8 @@
     "webPortalDesc": "通过任何具有响应式设计的网络浏览器访问完整功能",
     "analytics": "分析仪表板",
     "analyticsDesc": "通过详细报告了解您的业务表现",
-    "downloadOnAppStore": "在App Store下载"
+    "downloadOnAppStore": "在App Store下载",
+    "downloadOnGooglePlay": "在Google Play下载"
   },
   "aiSearch": {
     "badge": "人工智能",

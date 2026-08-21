@@ -20,7 +20,7 @@ const faqItems = [
   },
   {
     question: 'Tôi có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên nhiều thiết bị không?',
-    answer: 'Có, AnyRent hỗ trợ đa nền tảng. Bạn có thể sử dụng trên iOS (iPhone/iPad) và truy cập Web Portal từ bất kỳ trình duyệt nào.',
+    answer: 'Có, AnyRent hỗ trợ đa nền tảng. Bạn có thể sử dụng trên iOS (iPhone/iPad), Android và truy cập Web Portal từ bất kỳ trình duyệt nào.',
   },
   {
     question: 'Dữ liệu quản lý cửa hàng cho thuê của tôi có an toàn không?',
@@ -38,7 +38,7 @@ const softwareApplicationSchema = {
   '@type': 'SoftwareApplication',
   name: 'AnyRent',
   applicationCategory: 'BusinessApplication',
-  operatingSystem: ['iOS', 'Web'],
+  operatingSystem: ['iOS', 'Android', 'Web'],
   offers: {
     '@type': 'Offer',
     price: '99000',
@@ -64,6 +64,7 @@ const organizationSchema = {
   description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam.',
   sameAs: [
     'https://apps.apple.com/vn/app/anyrent/id6754793592',
+    'https://play.google.com/store/apps/details?id=anyrent.shop',
   ],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -111,7 +112,7 @@ const localBusinessSchema = {
   url: BASE_URL,
   description: 'Giải pháp quản lý cửa hàng cho thuê áo dài, áo cưới, trang thiết bị, xe, trang phục biểu diễn tại Việt Nam.',
   applicationCategory: 'BusinessApplication',
-  operatingSystem: ['iOS', 'Web'],
+  operatingSystem: ['iOS', 'Android', 'Web'],
   availableOnDevice: ['Mobile', 'Desktop', 'Tablet'],
   countriesSupported: 'VN',
   softwareVersion: '1.0.6',

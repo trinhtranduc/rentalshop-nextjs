@@ -17,12 +17,13 @@
     "title": "Available on All Platforms",
     "description": "Access your rental shop management from anywhere, anytime",
     "mobileApp": "Mobile App",
-    "mobileAppDesc": "Manage your rental shop on the go with our iOS",
+    "mobileAppDesc": "Manage your rental shop on the go with our iOS and Android app",
     "webPortal": "Web Portal",
     "webPortalDesc": "Access full features through any web browser with responsive design",
     "analytics": "Analytics Dashboard",
     "analyticsDesc": "Get insights into your business performance with detailed reports",
-    "downloadOnAppStore": "Download on App Store"
+    "downloadOnAppStore": "Download on App Store",
+    "downloadOnGooglePlay": "Download on Google Play"
   },
   "aiSearch": {
     "badge": "Artificial Intelligence",
@@ -53,7 +54,7 @@
     "duplicatePrevention": "Duplicate Order Prevention",
     "duplicatePreventionDesc": "Smart system in rental shop management software prevents duplicate orders and ensures accurate inventory management. Efficient rental inventory management with rental management system.",
     "multiPlatform": "Multi-Platform Support",
-    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, , and web platforms seamlessly with rental shop management software.",
+    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software.",
     "viewAllFeatures": "View All Features Details"
   },
   "customSolution": {
@@ -156,7 +157,7 @@
       },
       "multipleDevices": {
         "question": "Can I use rental shop management software on multiple devices?",
-        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
+        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, Android, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
       },
       "dataSecure": {
         "question": "Is my rental shop management data secure?",

@@ -22,7 +22,8 @@
     "webPortalDesc": "レスポンシブデザインの任意のWebブラウザから全機能にアクセス",
     "analytics": "分析ダッシュボード",
     "analyticsDesc": "詳細なレポートでビジネスパフォーマンスのインサイトを取得",
-    "downloadOnAppStore": "App Storeでダウンロード"
+    "downloadOnAppStore": "App Storeでダウンロード",
+    "downloadOnGooglePlay": "Google Playでダウンロード"
   },
   "aiSearch": {
     "badge": "人工知能",
