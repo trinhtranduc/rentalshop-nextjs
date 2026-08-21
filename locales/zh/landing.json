@@ -41,6 +41,34 @@
     "matchesAlt": "AI图像搜索匹配到的三件租赁服饰",
     "phoneAlt": "显示AI以图搜物结果的AnyRent手机界面"
   },
+  "duplicatePrevention": {
+    "badge": "防重复预订",
+    "title": "防止重叠租赁订单",
+    "description": "创建订单前自动检查档期。同一商品不能在重叠日期被预订，保护口碑与收入。",
+    "feature1Title": "自动检查档期",
+    "feature1Desc": "选择商品与租赁日期后，系统立即对照已预留、已取货与即将归还的订单。",
+    "feature2Title": "清晰冲突提醒",
+    "feature2Desc": "日期重叠时立刻提示，无需人工核对日历。",
+    "feature3Title": "库存始终准确",
+    "feature3Desc": "同一时段每件商品只租一次，尺码与库存状态更可靠。",
+    "blockedLabel": "冲突 — 无法创建订单",
+    "calendarAlt": "显示重叠预订冲突的租赁日历",
+    "alertAlt": "商品已在相同日期被预订的提醒"
+  },
+  "orderWorkflow": {
+    "badge": "租赁流程",
+    "title": "轻松便捷的租赁订单管理",
+    "description": "在一条清晰流程中管理全程：预订 → 取货 → 归还。员工操作更快，客户随时了解订单状态。",
+    "feature1Title": "快速创建与预留",
+    "feature1Desc": "选择客户、商品、取还日期，在 App 或网页几步即可创建 RESERVED 订单。",
+    "feature2Title": "取货与归还清晰",
+    "feature2Desc": "在合适时机切换到 PICKUPED / RETURNED，并与日历、库存同步。",
+    "feature3Title": "一步到位跟踪",
+    "feature3Desc": "在订单详情查看历史、付款与备注 — 减少遗漏与反复询问。",
+    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "phoneAlt": "AnyRent 租赁订单详情界面",
+    "flowAlt": "预订、已取、已还三种状态"
+  },
   "features": {
     "title": "租赁店管理功能",
     "description": "全面的租赁管理系统，具有高效管理租赁业务所需的所有功能。适用于各种行业的租赁店管理软件：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁。集成订单管理、库存管理和客户管理。",

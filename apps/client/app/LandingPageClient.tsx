@@ -20,6 +20,11 @@ import {
   softSkyCardClass,
   softSkyIconBoxClass,
 } from './components/LandingAtmosphere'
+import {
+  FeatureSpotlight,
+  SoftPhoneFrame,
+  SoftPhotoCard,
+} from './components/FeatureSpotlight'
 
 // Import Blog Section (Client Component that calls API) - lazy loaded
 import dynamic from 'next/dynamic'
@@ -512,123 +517,148 @@ const LandingPage = () => {
       </section>
       </SoftSkyStage>
 
-        {/* AI Smart Search — photo-first visual search */}
-        <SoftSkyStage tone="mist" className="py-24 md:py-28">
-        <section
+        {/* 3 main features — soft-sky spotlights */}
+        <FeatureSpotlight
           id="ai-search"
-          className="relative"
-          aria-label="AI Image Search feature"
-        >
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              <div className="order-2 lg:order-1">
-                <Badge
-                  variant="outline"
-                  className="mb-5 px-3 py-1 text-xs font-medium text-sky-800 border-sky-200/80 bg-white/80 backdrop-blur-sm"
-                >
-                  <Brain className="w-4 h-4 mr-2 text-sky-700" />
-                  {t('aiSearch.badge')}
-                </Badge>
-                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-5 tracking-tight leading-[1.12]">
-                  {t('aiSearch.title')}
-                </h2>
-                <p className="text-lg text-slate-600 mb-10 max-w-xl leading-relaxed">
-                  {t('aiSearch.description')}
-                </p>
-
-                <ol className="space-y-5">
-                  {[
-                    { icon: Camera, title: t('aiSearch.feature1Title'), desc: t('aiSearch.feature1Desc'), step: '01' },
-                    { icon: Search, title: t('aiSearch.feature2Title'), desc: t('aiSearch.feature2Desc'), step: '02' },
-                    { icon: Zap, title: t('aiSearch.feature3Title'), desc: t('aiSearch.feature3Desc'), step: '03' },
-                  ].map(({ icon: Icon, title, desc, step }) => (
-                    <li key={step} className="flex gap-4 group">
-                      <div className="relative flex-shrink-0">
-                        <div className="w-11 h-11 rounded-2xl bg-white border border-sky-100 shadow-sm flex items-center justify-center group-hover:border-sky-200 transition-colors">
-                          <Icon className="w-5 h-5 text-sky-700" />
-                        </div>
-                        <span className="absolute -top-1.5 -right-1.5 text-[10px] font-semibold tracking-wide text-sky-600/80 bg-sky-50 rounded-full px-1.5 py-0.5 border border-sky-100">
-                          {step}
-                        </span>
-                      </div>
-                      <div className="pt-0.5">
-                        <h4 className="font-semibold text-slate-900 mb-1">{title}</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+          ariaLabel="AI Image Search feature"
+          badgeIcon={Brain}
+          badge={t('aiSearch.badge')}
+          title={t('aiSearch.title')}
+          description={t('aiSearch.description')}
+          tone="mist"
+          steps={[
+            { icon: Camera, title: t('aiSearch.feature1Title'), desc: t('aiSearch.feature1Desc'), step: '01' },
+            { icon: Search, title: t('aiSearch.feature2Title'), desc: t('aiSearch.feature2Desc'), step: '02' },
+            { icon: Zap, title: t('aiSearch.feature3Title'), desc: t('aiSearch.feature3Desc'), step: '03' },
+          ]}
+          visual={
+            <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
+              <div
+                className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
+                aria-hidden="true"
+              />
+              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+                <SoftPhoneFrame src="/anyrent-ai-phone-results.png" alt={t('aiSearch.phoneAlt')} />
               </div>
-
-              <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-                <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
-                  {/* Soft stage */}
-                  <div
-                    className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
-                    aria-hidden="true"
-                  />
-
-                  {/* Phone results — primary */}
-                  <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
-                    <div className="overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.45)] ring-1 ring-sky-100/70 bg-white">
-                      <Image
-                        src="/anyrent-ai-phone-results.png"
-                        alt={t('aiSearch.phoneAlt')}
-                        width={720}
-                        height={1280}
-                        loading="lazy"
-                        className="w-full h-auto object-cover"
-                        sizes="240px"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Query photo — what the customer snaps */}
-                  <div className="absolute left-0 top-16 z-30 w-[38%] max-w-[150px] sm:left-2 sm:top-20">
-                    <div className="overflow-hidden rounded-2xl border-2 border-white shadow-xl ring-1 ring-sky-100/80 bg-white rotate-[-6deg]">
-                      <Image
-                        src="/anyrent-ai-query-aodai.png"
-                        alt={t('aiSearch.queryAlt')}
-                        width={640}
-                        height={640}
-                        loading="lazy"
-                        className="aspect-square w-full object-cover"
-                        sizes="150px"
-                      />
-                    </div>
-                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
-                      <Camera className="w-3 h-3" />
-                      <span>Snap</span>
-                    </div>
-                  </div>
-
-                  {/* Match strip — AI suggestions */}
-                  <div className="absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
-                    <div className="overflow-hidden rounded-2xl border border-white shadow-xl ring-1 ring-emerald-100/80 bg-white rotate-[3deg]">
-                      <Image
-                        src="/anyrent-ai-match-results.png"
-                        alt={t('aiSearch.matchesAlt')}
-                        width={1280}
-                        height={720}
-                        loading="lazy"
-                        className="w-full h-auto object-cover"
-                        sizes="280px"
-                      />
-                    </div>
-                    <div className="mt-2 ml-auto mr-1 flex w-fit items-center gap-1.5 rounded-full bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-100 rotate-[3deg]">
-                      <Check className="w-3 h-3" />
-                      <span>{t('aiSearch.matchFound')}</span>
-                    </div>
-                  </div>
+              <div className="absolute left-0 top-16 z-30 w-[38%] max-w-[150px] sm:left-2 sm:top-20">
+                <SoftPhotoCard
+                  src="/anyrent-ai-query-aodai.png"
+                  alt={t('aiSearch.queryAlt')}
+                  rotate="rotate-[-6deg]"
+                  width={640}
+                  height={640}
+                  sizes="150px"
+                  className="border-2"
+                />
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
+                  <Camera className="w-3 h-3" />
+                  <span>Snap</span>
+                </div>
+              </div>
+              <div className="absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
+                <SoftPhotoCard
+                  src="/anyrent-ai-match-results.png"
+                  alt={t('aiSearch.matchesAlt')}
+                  rotate="rotate-[3deg]"
+                  className="ring-emerald-100/80"
+                />
+                <div className="mt-2 ml-auto mr-1 flex w-fit items-center gap-1.5 rounded-full bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-100 rotate-[3deg]">
+                  <Check className="w-3 h-3" />
+                  <span>{t('aiSearch.matchFound')}</span>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-        </SoftSkyStage>
+          }
+        />
 
-        {/* Features Section */}
-        <SoftSkyStage tone="mist" className="py-24 md:py-28">
+        <FeatureSpotlight
+          id="duplicate-prevention"
+          ariaLabel="Duplicate order prevention feature"
+          badgeIcon={AlertTriangle}
+          badge={t('duplicatePrevention.badge')}
+          title={t('duplicatePrevention.title')}
+          description={t('duplicatePrevention.description')}
+          tone="white"
+          reverse
+          steps={[
+            { icon: Clock, title: t('duplicatePrevention.feature1Title'), desc: t('duplicatePrevention.feature1Desc'), step: '01' },
+            { icon: AlertTriangle, title: t('duplicatePrevention.feature2Title'), desc: t('duplicatePrevention.feature2Desc'), step: '02' },
+            { icon: Shield, title: t('duplicatePrevention.feature3Title'), desc: t('duplicatePrevention.feature3Desc'), step: '03' },
+          ]}
+          visual={
+            <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
+              <div
+                className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-amber-50/50"
+                aria-hidden="true"
+              />
+              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+                <SoftPhoneFrame
+                  src="/anyrent-landing-duplicate-calendar.png"
+                  alt={t('duplicatePrevention.calendarAlt')}
+                />
+              </div>
+              <div className="absolute right-0 bottom-10 z-30 w-[70%] max-w-[270px] sm:right-1">
+                <SoftPhotoCard
+                  src="/anyrent-landing-duplicate-alert.png"
+                  alt={t('duplicatePrevention.alertAlt')}
+                  rotate="rotate-[4deg]"
+                  width={800}
+                  height={800}
+                  sizes="270px"
+                  className="ring-amber-100/80"
+                />
+                <div className="mt-2 ml-auto flex w-fit items-center gap-1.5 rounded-full bg-amber-50/95 px-2.5 py-1 text-[11px] font-semibold text-amber-800 shadow-sm border border-amber-100 rotate-[4deg]">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>{t('duplicatePrevention.blockedLabel')}</span>
+                </div>
+              </div>
+            </div>
+          }
+        />
+
+        <FeatureSpotlight
+          id="order-workflow"
+          ariaLabel="Rental order workflow feature"
+          badgeIcon={BarChart3}
+          badge={t('orderWorkflow.badge')}
+          title={t('orderWorkflow.title')}
+          description={t('orderWorkflow.description')}
+          tone="mist"
+          steps={[
+            { icon: ShoppingBag, title: t('orderWorkflow.feature1Title'), desc: t('orderWorkflow.feature1Desc'), step: '01' },
+            { icon: Check, title: t('orderWorkflow.feature2Title'), desc: t('orderWorkflow.feature2Desc'), step: '02' },
+            { icon: Clock, title: t('orderWorkflow.feature3Title'), desc: t('orderWorkflow.feature3Desc'), step: '03' },
+          ]}
+          visual={
+            <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
+              <div
+                className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
+                aria-hidden="true"
+              />
+              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+                <SoftPhoneFrame
+                  src="/anyrent-landing-order-phone.png"
+                  alt={t('orderWorkflow.phoneAlt')}
+                />
+              </div>
+              <div className="absolute left-0 right-0 bottom-6 z-30 px-2 sm:px-0">
+                <SoftPhotoCard
+                  src="/anyrent-landing-order-flow-strip.png"
+                  alt={t('orderWorkflow.flowAlt')}
+                  rotate="rotate-[-2deg]"
+                  sizes="380px"
+                />
+                <div className="mt-2 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-sky-800 shadow-sm border border-sky-100 -rotate-2">
+                  <Check className="w-3 h-3" />
+                  <span>{t('orderWorkflow.flowLabel')}</span>
+                </div>
+              </div>
+            </div>
+          }
+        />
+
+        {/* Features — secondary cards + view details */}
+        <SoftSkyStage tone="white" className="py-24 md:py-28">
         <section id="features" className="relative" aria-label="Features section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -643,67 +673,8 @@ const LandingPage = () => {
                 {t('features.description')}
               </p>
             </div>
-
-            {/* Photo-first feature highlights */}
-            <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-8">
-              <Card className={`${softSkyCardClass} overflow-hidden`}>
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <Image
-                    src="/anyrent-landing-feature-orders.png"
-                    alt={t('features.orderManagement')}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 560px"
-                    loading="lazy"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={softSkyIconBoxClass}>
-                      <BarChart3 className="w-5 h-5 text-sky-700" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">{t('features.orderManagement')}</h3>
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.orderManagementDesc')}</p>
-                </CardContent>
-              </Card>
-              <Card className={`${softSkyCardClass} overflow-hidden`}>
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <Image
-                    src="/anyrent-landing-feature-calendar.png"
-                    alt={t('features.calendarScheduling')}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 560px"
-                    loading="lazy"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={softSkyIconBoxClass}>
-                      <Clock className="w-5 h-5 text-sky-700" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">{t('features.calendarScheduling')}</h3>
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
-                </CardContent>
-              </Card>
-            </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              <Card className={`${softSkyCardClass} relative overflow-hidden ring-1 ring-sky-100`}>
-                <div className="absolute top-3 right-3">
-                  <Badge className="bg-sky-100 text-sky-800 text-xs font-medium border-0">AI</Badge>
-                </div>
-                <CardContent className="p-6">
-                  <div className={`${softSkyIconBoxClass} mb-4`}>
-                    <Camera className="w-5 h-5 text-sky-700" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.aiImageSearch')}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.aiImageSearchDesc')}</p>
-                </CardContent>
-              </Card>
-
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               <Card className={softSkyCardClass}>
                 <CardContent className="p-6">
                   <div className={`${softSkyIconBoxClass} mb-4`}>
@@ -711,6 +682,16 @@ const LandingPage = () => {
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.customerManagement')}</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">{t('features.customerManagementDesc')}</p>
+                </CardContent>
+              </Card>
+
+              <Card className={softSkyCardClass}>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <Clock className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.calendarScheduling')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
                 </CardContent>
               </Card>
             
@@ -721,16 +702,6 @@ const LandingPage = () => {
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.financialReports')}</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">{t('features.financialReportsDesc')}</p>
-                </CardContent>
-              </Card>
-            
-              <Card className={softSkyCardClass}>
-                <CardContent className="p-6">
-                  <div className={`${softSkyIconBoxClass} mb-4`}>
-                    <AlertTriangle className="w-5 h-5 text-sky-700" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.duplicatePrevention')}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
                 </CardContent>
               </Card>
             
@@ -750,7 +721,7 @@ const LandingPage = () => {
                 asChild
                 variant="outline"
                 size="lg"
-                className="border-2 border-sky-200 text-sky-900 hover:bg-white hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+                className="border-2 border-sky-200 text-sky-900 hover:bg-sky-50 hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
               >
                 <Link href="/features">
                   <ArrowRight className="w-5 h-5 mr-2" />
