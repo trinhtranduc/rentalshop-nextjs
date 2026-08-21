@@ -48,18 +48,19 @@ export default function BlogSection({
 
   if (loading) {
     return (
-      <section className="py-24 bg-white" aria-label="Blog section">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden py-24 bg-[#F4F8FC]" aria-label="Blog section">
+        <div className="pointer-events-none absolute -top-24 right-0 h-[320px] w-[320px] rounded-full bg-[#C9DEF5]/40 blur-3xl" aria-hidden="true" />
+        <div className="relative w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 max-w-7xl mx-auto">
-            <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-              <FileText className="w-4 h-4 mr-2 text-gray-600" />
+            <Badge variant="outline" className="mb-5 px-3 py-1 text-xs font-medium text-sky-800 border-sky-200/80 bg-white/80">
+              <FileText className="w-4 h-4 mr-2 text-sky-700" />
               Blog
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">{title}</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">{title}</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">{subtitle}</p>
           </div>
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-700"></div>
           </div>
         </div>
       </section>
@@ -71,16 +72,17 @@ export default function BlogSection({
   }
 
   return (
-    <section className="py-24 bg-white" aria-label="Blog section">
+    <section className="relative overflow-hidden py-24 bg-white" aria-label="Blog section">
+      <div className="pointer-events-none absolute bottom-0 left-[-80px] h-[280px] w-[280px] rounded-full bg-[#D7E8F8]/50 blur-3xl" aria-hidden="true" />
       {/* Section Header - Centered with max-width */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 mb-16">
+      <div className="relative w-full px-4 sm:px-6 lg:px-8 mb-16">
         <div className="text-center max-w-7xl mx-auto">
-          <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-            <FileText className="w-4 h-4 mr-2 text-gray-600" />
+          <Badge variant="outline" className="mb-5 px-3 py-1 text-xs font-medium text-sky-800 border-sky-200/80 bg-white/80">
+            <FileText className="w-4 h-4 mr-2 text-sky-700" />
             Blog
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">{title}</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">{title}</h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">{subtitle}</p>
         </div>
       </div>
 

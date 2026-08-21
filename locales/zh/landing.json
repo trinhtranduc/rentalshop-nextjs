@@ -36,7 +36,10 @@
     "feature3Title": "即时结果",
     "feature3Desc": "几秒钟内返回最匹配产品列表，包含库存状态和租赁价格信息。",
     "matchFound": "找到3个匹配产品",
-    "videoAlt": "AnyRent应用AI图像搜索功能演示视频"
+    "videoAlt": "AnyRent应用AI图像搜索功能演示视频",
+    "queryAlt": "用于以图搜物的奥黛样片",
+    "matchesAlt": "AI图像搜索匹配到的三件租赁服饰",
+    "phoneAlt": "显示AI以图搜物结果的AnyRent手机界面"
   },
   "features": {
     "title": "租赁店管理功能",

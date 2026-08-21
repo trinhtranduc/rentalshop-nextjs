@@ -8,8 +8,9 @@ export default function PublicSiteFooter() {
   const t = useTranslations('landing.footer')
 
   return (
-    <footer id="contact" className="bg-gray-900 py-12 text-white" role="contentinfo">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <footer id="contact" className="relative overflow-hidden bg-slate-900 py-12 text-white" role="contentinfo">
+      <div className="pointer-events-none absolute -top-20 right-10 h-[300px] w-[300px] rounded-full bg-sky-500/15 blur-3xl" aria-hidden="true" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-12">
           <div className="md:col-span-4">
             <div className="mb-4 flex items-center">

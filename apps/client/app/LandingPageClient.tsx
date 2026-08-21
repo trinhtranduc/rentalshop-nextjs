@@ -13,18 +13,24 @@ import { createSchemas, createFAQSchema } from './lib/schemas'
 import { getAnyRentLogoUrl } from '../lib/brand'
 import { LandingBrandLogo } from './components/LandingBrandLogo'
 import PublicSiteFooter from './components/PublicSiteFooter'
+import { StoreBadges } from './components/StoreBadges'
+import {
+  SoftSkyStage,
+  softSkyBadgeClass,
+  softSkyCardClass,
+  softSkyIconBoxClass,
+} from './components/LandingAtmosphere'
 
 // Import Blog Section (Client Component that calls API) - lazy loaded
 import dynamic from 'next/dynamic'
 const BlogSection = dynamic(() => import('./components/BlogSection'), {
-  loading: () => <div className="py-24 bg-white" />,
+  loading: () => <div className="py-24 bg-[#F4F8FC]" />,
   ssr: false,
 })
 import { 
   Check, 
   ChevronDown, 
   ChevronUp, 
-  Download, 
   Globe, 
   Shield, 
   Users, 
@@ -52,7 +58,8 @@ import {
   Send,
   Camera,
   Search,
-  Brain
+  Brain,
+  Phone
 } from 'lucide-react'
 
 const LandingPage = () => {
@@ -301,27 +308,26 @@ const LandingPage = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteData) }}
       />
       
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F8FC] overflow-x-hidden">
       
         {/* Header */}
-        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50" role="banner">
+        <header className="bg-white/80 backdrop-blur-md border-b border-sky-100/80 sticky top-0 z-50" role="banner">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
                 <LandingBrandLogo />
               </Link>
               <div className="hidden md:flex items-center space-x-8">
-                <Link href="/features" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</a>
-                {/* <a href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.blog')}</a> */}
-                <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
-                <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
+                <Link href="/features" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
+                <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</a>
+                <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
+                <a href="#contact" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" />
                 {user ? (
                   <Button
                     onClick={() => router.push('/dashboard')}
                     variant="default"
-                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2"
+                    className="bg-sky-800 text-white hover:bg-sky-900 rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2"
                   >
                     <User className="h-4 w-4" />
                     {user.name || user.email || 'User'}
@@ -330,7 +336,7 @@ const LandingPage = () => {
                 <Button
                   asChild
                   variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium"
+                  className="bg-sky-800 text-white hover:bg-sky-900 rounded-xl px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/login">
                     {t('navigation.login')}
@@ -338,14 +344,13 @@ const LandingPage = () => {
                 </Button>
                 )}
               </div>
-              {/* Mobile menu - simplified */}
               <div className="md:hidden flex items-center space-x-3">
                 <LanguageSwitcher variant="compact" />
                 {user ? (
                   <Button
                     onClick={() => router.push('/dashboard')}
                     variant="default"
-                    className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium flex items-center gap-2"
+                    className="bg-sky-800 text-white hover:bg-sky-900 rounded-xl px-3 py-1.5 text-sm font-medium flex items-center gap-2"
                   >
                     <User className="h-4 w-4" />
                     {user.name || user.email || 'User'}
@@ -354,7 +359,7 @@ const LandingPage = () => {
                 <Button
                   asChild
                   variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-3 py-1.5 text-sm font-medium"
+                  className="bg-sky-800 text-white hover:bg-sky-900 rounded-xl px-3 py-1.5 text-sm font-medium"
                 >
                   <Link href="/login">
                     {t('navigation.login')}
@@ -366,276 +371,253 @@ const LandingPage = () => {
           </div>
         </header>
 
-        {/* Hero — app promo video (mute loop) */}
-        <section
-          className="relative overflow-hidden min-h-[88vh] flex items-center"
-          aria-label="Hero section"
-        >
-          <video
-            className="absolute inset-0 h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/videos/hero-app-promo-poster.jpg"
-            aria-hidden="true"
+        {/* Hero — soft sky, photo-first */}
+        <SoftSkyStage tone="mist" className="min-h-[88vh] flex items-center">
+          <section
+            className="relative w-full"
+            aria-label="Hero section"
           >
-            <source src="/videos/hero-app-promo.mp4" type="video/mp4" />
-          </video>
-          {/* Readability overlay — dark left / soft vignette so app UI still shows */}
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-950/85 via-gray-950/55 to-gray-950/25" />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-transparent to-gray-950/30" />
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+              <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <div className="text-left">
+                  <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-sky-800 backdrop-blur-sm">
+                    <Sparkles className="h-3.5 w-3.5 text-sky-700" />
+                    AnyRent · iOS · Android &amp; Web
+                  </p>
 
-          <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-28">
-            <div className="max-w-2xl text-left">
-              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
-                <Sparkles className="h-3.5 w-3.5" />
-                AnyRent · iOS · Android &amp; Web
-              </p>
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-[1.1] tracking-tight mb-4">
+                    {t('hero.title')}
+                  </h1>
+                  <p className="text-xl sm:text-2xl font-medium text-slate-700 mb-5">
+                    {t('hero.subtitle')}
+                  </p>
+                  <p className="sr-only">{t('hero.description')}</p>
+                  <p className="text-base sm:text-lg text-slate-600 mb-10 max-w-xl leading-relaxed">
+                    Quản lý đơn thuê, lịch &amp; sản phẩm trên một app — dùng thử miễn phí.
+                  </p>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-4">
-                {t('hero.title')}
-              </h1>
-              <p className="text-xl sm:text-2xl font-medium text-white/85 mb-5">
-                {t('hero.subtitle')}
-              </p>
-              {/* Full SEO copy kept for crawlers / a11y, visually compact on hero */}
-              <p className="sr-only">{t('hero.description')}</p>
-              <p className="text-base sm:text-lg text-white/75 mb-10 max-w-xl leading-relaxed">
-                Quản lý đơn thuê, lịch &amp; sản phẩm trên một app — dùng thử miễn phí.
-              </p>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4">
+                    <StoreBadges tone="dark" />
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-sky-200 bg-white text-sky-900 hover:bg-sky-50 hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium h-10"
+                    >
+                      <Link href="/login">
+                        <Globe className="w-5 h-5 mr-2" />
+                        {t('hero.tryWebPortal')}
+                      </Link>
+                    </Button>
+                  </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg"
-                >
-                  <a
-                    href="https://apps.apple.com/vn/app/anyrent/id6754793592"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {t('download.downloadOnAppStore')}
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg"
-                >
-                  <a
-                    href="https://play.google.com/store/apps/details?id=anyrent.shop"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {t('download.downloadOnGooglePlay')}
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-white/40 bg-white/5 text-white hover:bg-white/15 hover:border-white/60 rounded-xl px-8 py-3 text-base font-medium backdrop-blur-sm"
-                >
-                  <Link href="/login">
-                    <Globe className="w-5 h-5 mr-2" />
-                    {t('hero.tryWebPortal')}
-                  </Link>
-                </Button>
-              </div>
-
-              <div className="mt-12 flex flex-wrap items-center gap-6 text-sm text-white/70">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span>500+ Active Stores</span>
+                  <div className="mt-12 flex flex-wrap items-center gap-6 text-sm text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>500+ Active Stores</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500 fill-current" />
+                      <span>4.9/5 Rating</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-sky-700" />
+                      <span>Secure &amp; Reliable</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-amber-400 fill-current" />
-                  <span>4.9/5 Rating</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-white/80" />
-                  <span>Secure &amp; Reliable</span>
+
+                <div className="relative flex justify-center lg:justify-end">
+                  <div className="relative w-full max-w-[560px]">
+                    <div
+                      className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
+                      aria-hidden="true"
+                    />
+                    <div className="relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.35)] ring-1 ring-sky-100/70 bg-white">
+                      <Image
+                        src="/anyrent-landing-hero-soft.png"
+                        alt="AnyRent rental shop management on mobile in a boutique"
+                        width={1280}
+                        height={720}
+                        priority
+                        className="w-full h-auto object-cover"
+                        sizes="(max-width: 1024px) 100vw, 560px"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </SoftSkyStage>
 
-      {/* App Download Section - Clean Design */}
-      <section id="download" className="py-24 bg-white" aria-label="Download section">
+      {/* App Download Section */}
+      <SoftSkyStage tone="white" className="py-24 md:py-28">
+      <section id="download" className="relative" aria-label="Download section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-              <Smartphone className="w-4 h-4 mr-2 text-gray-600" />
+            <Badge variant="outline" className={softSkyBadgeClass}>
+              <Smartphone className="w-4 h-4 mr-2 text-sky-700" />
               Platforms
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
               {t('download.title')}
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
               {t('download.description')}
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Smartphone className="w-6 h-6 text-gray-900" />
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="space-y-6">
+              {[
+                { icon: Smartphone, title: t('download.mobileApp'), desc: t('download.mobileAppDesc') },
+                { icon: Globe, title: t('download.webPortal'), desc: t('download.webPortalDesc') },
+                { icon: BarChart, title: t('download.analytics'), desc: t('download.analyticsDesc') },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-4">
+                  <div className={softSkyIconBoxClass}>
+                    <Icon className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <div className="pt-0.5">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">{title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.mobileApp')}</h3>
-                  <p className="text-gray-600">{t('download.mobileAppDesc')}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Globe className="w-6 h-6 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.webPortal')}</h3>
-                  <p className="text-gray-600">{t('download.webPortalDesc')}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BarChart className="w-6 h-6 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.analytics')}</h3>
-                  <p className="text-gray-600">{t('download.analyticsDesc')}</p>
-                </div>
-              </div>
+              ))}
             </div>
             
-            <div className="text-center">
-              <Card className="bg-white border border-gray-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-0">
-                  <div className="w-full flex items-center justify-center mb-8">
-                    <Image 
-                      src="/anyrent-iphone-splashscreen.jpg"
-                      alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
-                      width={288}
-                      height={576}
-                      loading="lazy"
-                      className="rounded-3xl shadow-xl border border-gray-200"
-                    />
-                  </div>
-                  <div className="mt-8 space-y-3">
-                    <Button
-                      asChild
-                      size="lg"
-                      className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <a 
-                        href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        {t('download.downloadOnAppStore')}
-                      </a>
-                    </Button>
-                    <Button
-                      asChild
-                      size="lg"
-                      variant="outline"
-                      className="w-full border-2 border-gray-300 text-gray-900 hover:bg-gray-50 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <a 
-                        href="https://play.google.com/store/apps/details?id=anyrent.shop" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        {t('download.downloadOnGooglePlay')}
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="relative">
+              <div
+                className="absolute inset-6 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
+                aria-hidden="true"
+              />
+              <div className="relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.3)] ring-1 ring-sky-100/70 bg-white">
+                <Image 
+                  src="/anyrent-landing-download-devices.png"
+                  alt="AnyRent on iPhone and Android"
+                  width={1280}
+                  height={960}
+                  loading="lazy"
+                  className="w-full h-auto object-cover"
+                  sizes="(max-width: 768px) 100vw, 560px"
+                />
+              </div>
+              <div className="relative mt-6 flex justify-center">
+                <StoreBadges tone="dark" stacked />
+              </div>
             </div>
           </div>
         </div>
       </section>
+      </SoftSkyStage>
 
-        {/* AI Image Search Section - Key Differentiator */}
-        <section id="ai-search" className="py-24 bg-white" aria-label="AI Image Search feature">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* AI Smart Search — photo-first visual search */}
+        <SoftSkyStage tone="mist" className="py-24 md:py-28">
+        <section
+          id="ai-search"
+          className="relative"
+          aria-label="AI Image Search feature"
+        >
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div className="order-2 lg:order-1">
-                <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-blue-600 border-blue-200 bg-blue-50">
-                  <Brain className="w-4 h-4 mr-2 text-blue-600" />
+                <Badge
+                  variant="outline"
+                  className="mb-5 px-3 py-1 text-xs font-medium text-sky-800 border-sky-200/80 bg-white/80 backdrop-blur-sm"
+                >
+                  <Brain className="w-4 h-4 mr-2 text-sky-700" />
                   {t('aiSearch.badge')}
                 </Badge>
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">
+                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-5 tracking-tight leading-[1.12]">
                   {t('aiSearch.title')}
                 </h2>
-                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                <p className="text-lg text-slate-600 mb-10 max-w-xl leading-relaxed">
                   {t('aiSearch.description')}
                 </p>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Camera className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature1Title')}</h4>
-                      <p className="text-sm text-gray-600">{t('aiSearch.feature1Desc')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Search className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature2Title')}</h4>
-                      <p className="text-sm text-gray-600">{t('aiSearch.feature2Desc')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Zap className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{t('aiSearch.feature3Title')}</h4>
-                      <p className="text-sm text-gray-600">{t('aiSearch.feature3Desc')}</p>
-                    </div>
-                  </div>
-                </div>
+
+                <ol className="space-y-5">
+                  {[
+                    { icon: Camera, title: t('aiSearch.feature1Title'), desc: t('aiSearch.feature1Desc'), step: '01' },
+                    { icon: Search, title: t('aiSearch.feature2Title'), desc: t('aiSearch.feature2Desc'), step: '02' },
+                    { icon: Zap, title: t('aiSearch.feature3Title'), desc: t('aiSearch.feature3Desc'), step: '03' },
+                  ].map(({ icon: Icon, title, desc, step }) => (
+                    <li key={step} className="flex gap-4 group">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-11 h-11 rounded-2xl bg-white border border-sky-100 shadow-sm flex items-center justify-center group-hover:border-sky-200 transition-colors">
+                          <Icon className="w-5 h-5 text-sky-700" />
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 text-[10px] font-semibold tracking-wide text-sky-600/80 bg-sky-50 rounded-full px-1.5 py-0.5 border border-sky-100">
+                          {step}
+                        </span>
+                      </div>
+                      <div className="pt-0.5">
+                        <h4 className="font-semibold text-slate-900 mb-1">{title}</h4>
+                        <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               </div>
-              <div className="order-1 lg:order-2 flex justify-center">
-                <div className="relative w-full max-w-md">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl p-8 shadow-lg">
-                    <div className="bg-white rounded-2xl p-6 shadow-sm">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Camera className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-2 bg-gray-100 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center">
-                          <Search className="w-8 h-8 text-blue-400" />
-                        </div>
-                        <div className="aspect-square bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-xl flex items-center justify-center">
-                          <Brain className="w-8 h-8 text-indigo-400" />
-                        </div>
-                        <div className="col-span-2 h-16 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl flex items-center px-4">
-                          <Check className="w-5 h-5 text-green-500 mr-2" />
-                          <span className="text-sm font-medium text-green-700">{t('aiSearch.matchFound')}</span>
-                        </div>
-                      </div>
+
+              <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+                <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
+                  {/* Soft stage */}
+                  <div
+                    className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
+                    aria-hidden="true"
+                  />
+
+                  {/* Phone results — primary */}
+                  <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+                    <div className="overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.45)] ring-1 ring-sky-100/70 bg-white">
+                      <Image
+                        src="/anyrent-ai-phone-results.png"
+                        alt={t('aiSearch.phoneAlt')}
+                        width={720}
+                        height={1280}
+                        loading="lazy"
+                        className="w-full h-auto object-cover"
+                        sizes="240px"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Query photo — what the customer snaps */}
+                  <div className="absolute left-0 top-16 z-30 w-[38%] max-w-[150px] sm:left-2 sm:top-20">
+                    <div className="overflow-hidden rounded-2xl border-2 border-white shadow-xl ring-1 ring-sky-100/80 bg-white rotate-[-6deg]">
+                      <Image
+                        src="/anyrent-ai-query-aodai.png"
+                        alt={t('aiSearch.queryAlt')}
+                        width={640}
+                        height={640}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover"
+                        sizes="150px"
+                      />
+                    </div>
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
+                      <Camera className="w-3 h-3" />
+                      <span>Snap</span>
+                    </div>
+                  </div>
+
+                  {/* Match strip — AI suggestions */}
+                  <div className="absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
+                    <div className="overflow-hidden rounded-2xl border border-white shadow-xl ring-1 ring-emerald-100/80 bg-white rotate-[3deg]">
+                      <Image
+                        src="/anyrent-ai-match-results.png"
+                        alt={t('aiSearch.matchesAlt')}
+                        width={1280}
+                        height={720}
+                        loading="lazy"
+                        className="w-full h-auto object-cover"
+                        sizes="280px"
+                      />
+                    </div>
+                    <div className="mt-2 ml-auto mr-1 flex w-fit items-center gap-1.5 rounded-full bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-100 rotate-[3deg]">
+                      <Check className="w-3 h-3" />
+                      <span>{t('aiSearch.matchFound')}</span>
                     </div>
                   </div>
                 </div>
@@ -643,105 +625,132 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        </SoftSkyStage>
 
-        {/* Features Section - Clean Design */}
-        <section id="features" className="py-24 bg-gray-50" aria-label="Features section">
+        {/* Features Section */}
+        <SoftSkyStage tone="mist" className="py-24 md:py-28">
+        <section id="features" className="relative" aria-label="Features section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-                <Sparkles className="w-4 h-4 mr-2 text-gray-600" />
+              <Badge variant="outline" className={softSkyBadgeClass}>
+                <Sparkles className="w-4 h-4 mr-2 text-sky-700" />
                 Features
               </Badge>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
                 {t('features.title')}
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
                 {t('features.description')}
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              <Card className="group border-2 border-blue-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white relative overflow-hidden">
-                <div className="absolute top-3 right-3">
-                  <Badge className="bg-blue-100 text-blue-700 text-xs font-medium border-0">AI</Badge>
+
+            {/* Photo-first feature highlights */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-8">
+              <Card className={`${softSkyCardClass} overflow-hidden`}>
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <Image
+                    src="/anyrent-landing-feature-orders.png"
+                    alt={t('features.orderManagement')}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    loading="lazy"
+                  />
                 </div>
                 <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <Camera className="w-6 h-6 text-blue-700" />
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={softSkyIconBoxClass}>
+                      <BarChart3 className="w-5 h-5 text-sky-700" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">{t('features.orderManagement')}</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.aiImageSearch')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.aiImageSearchDesc')}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.orderManagementDesc')}</p>
                 </CardContent>
               </Card>
-
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+              <Card className={`${softSkyCardClass} overflow-hidden`}>
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <Image
+                    src="/anyrent-landing-feature-calendar.png"
+                    alt={t('features.calendarScheduling')}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    loading="lazy"
+                  />
+                </div>
                 <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <BarChart3 className="w-6 h-6 text-gray-900" />
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={softSkyIconBoxClass}>
+                      <Clock className="w-5 h-5 text-sky-700" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">{t('features.calendarScheduling')}</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.orderManagement')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.orderManagementDesc')}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <Users className="w-6 h-6 text-gray-900" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.customerManagement')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.customerManagementDesc')}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <Clock className="w-6 h-6 text-gray-900" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.calendarScheduling')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
-                </CardContent>
-              </Card>
-            
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <DollarSign className="w-6 h-6 text-gray-900" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.financialReports')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.financialReportsDesc')}</p>
-                </CardContent>
-              </Card>
-            
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <AlertTriangle className="w-6 h-6 text-gray-900" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.duplicatePrevention')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
-                </CardContent>
-              </Card>
-            
-              <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-4 transition-colors duration-300">
-                    <Sparkles className="w-6 h-6 text-gray-900" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('features.multiPlatform')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{t('features.multiPlatformDesc')}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
                 </CardContent>
               </Card>
             </div>
             
-            {/* View Details Button */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <Card className={`${softSkyCardClass} relative overflow-hidden ring-1 ring-sky-100`}>
+                <div className="absolute top-3 right-3">
+                  <Badge className="bg-sky-100 text-sky-800 text-xs font-medium border-0">AI</Badge>
+                </div>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <Camera className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.aiImageSearch')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.aiImageSearchDesc')}</p>
+                </CardContent>
+              </Card>
+
+              <Card className={softSkyCardClass}>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <Users className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.customerManagement')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.customerManagementDesc')}</p>
+                </CardContent>
+              </Card>
+            
+              <Card className={softSkyCardClass}>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <DollarSign className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.financialReports')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.financialReportsDesc')}</p>
+                </CardContent>
+              </Card>
+            
+              <Card className={softSkyCardClass}>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <AlertTriangle className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.duplicatePrevention')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
+                </CardContent>
+              </Card>
+            
+              <Card className={softSkyCardClass}>
+                <CardContent className="p-6">
+                  <div className={`${softSkyIconBoxClass} mb-4`}>
+                    <Sparkles className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('features.multiPlatform')}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t('features.multiPlatformDesc')}</p>
+                </CardContent>
+              </Card>
+            </div>
+            
             <div className="mt-12 text-center">
               <Button
                 asChild
                 variant="outline"
                 size="lg"
-                className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+                className="border-2 border-sky-200 text-sky-900 hover:bg-white hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
               >
                 <Link href="/features">
                   <ArrowRight className="w-5 h-5 mr-2" />
@@ -750,68 +759,52 @@ const LandingPage = () => {
               </Button>
             </div>
             
-            {/* Niche Solutions Links */}
-            <div className="mt-16 pt-12 border-t border-gray-200">
-              <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-3">Giải pháp theo ngành nghề</h3>
-              <p className="text-center text-gray-500 mb-10 max-w-xl mx-auto">Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê</p>
+            <div className="mt-16 pt-12 border-t border-sky-100">
+              <h3 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-3">Giải pháp theo ngành nghề</h3>
+              <p className="text-center text-slate-500 mb-10 max-w-xl mx-auto">Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                  <Link href="/cho-thue-ao-dai" className="block">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo dài</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.</p>
-                    </CardContent>
-                  </Link>
-                </Card>
-                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                  <Link href="/cho-thue-ao-cuoi" className="block">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Áo cưới</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.</p>
-                    </CardContent>
-                  </Link>
-                </Card>
-                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                  <Link href="/cho-thue-trang-thiet-bi" className="block">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Thiết bị</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.</p>
-                    </CardContent>
-                  </Link>
-                </Card>
-                <Card className="group border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
-                  <Link href="/cho-thue-trang-phuc" className="block">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Cho thuê Trang phục</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.</p>
-                    </CardContent>
-                  </Link>
-                </Card>
+                {[
+                  { href: '/cho-thue-ao-dai', title: 'Cho thuê Áo dài', desc: 'Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.' },
+                  { href: '/cho-thue-ao-cuoi', title: 'Cho thuê Áo cưới', desc: 'Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.' },
+                  { href: '/cho-thue-trang-thiet-bi', title: 'Cho thuê Thiết bị', desc: 'Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.' },
+                  { href: '/cho-thue-trang-phuc', title: 'Cho thuê Trang phục', desc: 'Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.' },
+                ].map((item) => (
+                  <Card key={item.href} className={softSkyCardClass}>
+                    <Link href={item.href} className="block">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
+                        <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
+                      </CardContent>
+                    </Link>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
         </section>
+        </SoftSkyStage>
 
       {/* Custom Solution Contact Section */}
-      <section id="custom-solution" className="py-24 bg-gray-900" aria-label="Custom solution contact section">
+      <SoftSkyStage tone="white" className="py-24 md:py-28">
+      <section id="custom-solution" className="relative" aria-label="Custom solution contact section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-6">
-              <Briefcase className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-sky-100 shadow-sm mb-6">
+              <Briefcase className="w-7 h-7 text-sky-700" />
             </div>
-            <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
               {t('customSolution.title')}
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
               {t('customSolution.description')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Benefits Card */}
-            <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+            <Card className={softSkyCardClass}>
               <CardContent className="p-8">
-                <h3 className="text-2xl font-semibold mb-6 text-white">{t('customSolution.benefits.title')}</h3>
+                <h3 className="text-2xl font-semibold mb-6 text-slate-900">{t('customSolution.benefits.title')}</h3>
                 <ul className="space-y-4">
                   {[
                     'customSolution.benefits.customized',
@@ -820,10 +813,10 @@ const LandingPage = () => {
                     'customSolution.benefits.integration'
                   ].map((key, index) => (
                     <li key={index} className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-4 h-4 text-white" />
+                      <div className="w-6 h-6 bg-sky-50 border border-sky-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-3.5 h-3.5 text-sky-700" />
                       </div>
-                      <span className="text-white/90 text-sm">{t(key)}</span>
+                      <span className="text-slate-700 text-sm">{t(key)}</span>
                     </li>
                   ))}
                 </ul>
@@ -831,10 +824,10 @@ const LandingPage = () => {
             </Card>
 
             {/* Contact Card */}
-            <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+            <Card className={softSkyCardClass}>
               <CardContent className="p-8">
-                <h3 className="text-2xl font-semibold mb-6 text-white">{t('customSolution.contact.title')}</h3>
-                <p className="text-white/80 mb-6 text-sm">
+                <h3 className="text-2xl font-semibold mb-6 text-slate-900">{t('customSolution.contact.title')}</h3>
+                <p className="text-slate-600 mb-6 text-sm">
                   {t('customSolution.contact.description')}
                 </p>
                 
@@ -842,16 +835,16 @@ const LandingPage = () => {
                   {/* Email */}
                   <a
                     href={`mailto:trinhduc20@gmail.com?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
-                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                    className="flex items-center space-x-4 p-4 bg-sky-50/80 hover:bg-sky-50 rounded-xl transition-all duration-200 border border-sky-100 hover:border-sky-200 group"
                   >
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                      <Mail className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 bg-white border border-sky-100 rounded-xl flex items-center justify-center group-hover:border-sky-200 transition-colors">
+                      <Mail className="w-6 h-6 text-sky-700" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.email')}</div>
-                      <div className="text-white font-semibold text-sm">trinhduc20@gmail.com</div>
+                      <div className="text-sm text-slate-500 mb-1">{t('customSolution.contact.email')}</div>
+                      <div className="text-slate-900 font-semibold text-sm">trinhduc20@gmail.com</div>
                     </div>
-                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                    <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-sky-700 transition-colors" />
                   </a>
 
                   {/* WhatsApp */}
@@ -859,31 +852,31 @@ const LandingPage = () => {
                     href={`https://wa.me/840764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                    className="flex items-center space-x-4 p-4 bg-sky-50/80 hover:bg-sky-50 rounded-xl transition-all duration-200 border border-sky-100 hover:border-sky-200 group"
                   >
-                    <div className="w-12 h-12 bg-[#25D366]/30 rounded-xl flex items-center justify-center group-hover:bg-[#25D366]/40 transition-colors">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6" fill="white">
+                    <div className="w-12 h-12 bg-[#25D366]/15 rounded-xl flex items-center justify-center group-hover:bg-[#25D366]/25 transition-colors">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6" fill="#25D366">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm text-white/70 mb-1">WhatsApp</div>
-                      <div className="text-white font-semibold text-sm">0764774647</div>
+                      <div className="text-sm text-slate-500 mb-1">WhatsApp</div>
+                      <div className="text-slate-900 font-semibold text-sm">0764774647</div>
                     </div>
-                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                    <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-sky-700 transition-colors" />
                   </a>
                   
                   {/* Zalo with QR Code */}
-                  <div className="flex items-start space-x-4 p-4 bg-white/10 rounded-xl border border-white/20">
-                    <div className="w-12 h-12 bg-[#0068FF]/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-start space-x-4 p-4 bg-sky-50/80 rounded-xl border border-sky-100">
+                    <div className="w-12 h-12 bg-[#0068FF]/15 rounded-xl flex items-center justify-center flex-shrink-0">
                       <svg viewBox="0 0 48 48" className="w-7 h-7" fill="none">
                         <path d="M12.5 7h23A5.5 5.5 0 0 1 41 12.5v23a5.5 5.5 0 0 1-5.5 5.5h-23A5.5 5.5 0 0 1 7 35.5v-23A5.5 5.5 0 0 1 12.5 7z" fill="#0068FF"/>
                         <path d="M31.2 18.6H17.8c-.5 0-.8.4-.8.8v1.1c0 .4.3.8.8.8h8.5l-9.1 9.3c-.3.3-.1.9.4.9h13.4c.5 0 .8-.4.8-.8v-1.1c0-.4-.3-.8-.8-.8H22l9.5-9.3c.3-.3.1-.9-.3-.9z" fill="white"/>
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white/70 mb-1">Zalo</div>
-                      <div className="text-white font-semibold text-sm mb-3">0764774647</div>
+                      <div className="text-sm text-slate-500 mb-1">Zalo</div>
+                      <div className="text-slate-900 font-semibold text-sm mb-3">0764774647</div>
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0">
                           <Image
@@ -891,11 +884,11 @@ const LandingPage = () => {
                             alt="Zalo QR Code"
                             width={100}
                             height={100}
-                            className="rounded-lg border border-white/20"
+                            className="rounded-lg border border-sky-100"
                           />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-white/70 mb-2">
+                          <p className="text-xs text-slate-500 mb-2">
                             Quét mã QR để liên hệ Zalo
                           </p>
                           <a
@@ -917,23 +910,23 @@ const LandingPage = () => {
                     href="https://t.me/0764774647"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                    className="flex items-center space-x-4 p-4 bg-sky-50/80 hover:bg-sky-50 rounded-xl transition-all duration-200 border border-sky-100 hover:border-sky-200 group"
                   >
-                    <div className="w-12 h-12 bg-[#0088cc]/30 rounded-xl flex items-center justify-center group-hover:bg-[#0088cc]/40 transition-colors">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6" fill="white">
+                    <div className="w-12 h-12 bg-[#0088cc]/15 rounded-xl flex items-center justify-center group-hover:bg-[#0088cc]/25 transition-colors">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6" fill="#0088cc">
                         <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm text-white/70 mb-1">Telegram</div>
-                      <div className="text-white font-semibold text-sm">0764774647</div>
+                      <div className="text-sm text-slate-500 mb-1">Telegram</div>
+                      <div className="text-slate-900 font-semibold text-sm">0764774647</div>
                     </div>
-                    <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                    <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-sky-700 transition-colors" />
                   </a>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-white/20">
-                  <p className="text-sm text-white/70 text-center">
+                <div className="mt-6 pt-6 border-t border-sky-100">
+                  <p className="text-sm text-slate-500 text-center">
                     {t('customSolution.contact.responseTime')}
                   </p>
                 </div>
@@ -942,81 +935,60 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </SoftSkyStage>
 
-      {/* Why Choose Us Section - Clean Design */}
-      <section className="py-24 bg-white">
+      {/* Why Choose Us Section */}
+      <SoftSkyStage tone="mist" className="py-24 md:py-28">
+      <section className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-              <Star className="w-4 h-4 mr-2 text-gray-600" />
+            <Badge variant="outline" className={softSkyBadgeClass}>
+              <Star className="w-4 h-4 mr-2 text-sky-700" />
               Why Choose Us
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
               {t('whyChoose.title')}
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
               {t('whyChoose.description')}
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Star className="w-6 h-6 text-gray-900" />
+            <div className="space-y-6">
+              {[
+                { icon: Star, title: t('whyChoose.easyToUse'), desc: t('whyChoose.easyToUseDesc') },
+                { icon: Clock, title: t('whyChoose.timeSaving'), desc: t('whyChoose.timeSavingDesc') },
+                { icon: DollarSign, title: t('whyChoose.increaseRevenue'), desc: t('whyChoose.increaseRevenueDesc') },
+                { icon: Shield, title: t('whyChoose.support'), desc: t('whyChoose.supportDesc') },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-4">
+                  <div className={softSkyIconBoxClass}>
+                    <Icon className="w-5 h-5 text-sky-700" />
+                  </div>
+                  <div className="pt-0.5">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">{title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.easyToUse')}</h3>
-                  <p className="text-gray-600">{t('whyChoose.easyToUseDesc')}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-6 h-6 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.timeSaving')}</h3>
-                  <p className="text-gray-600">{t('whyChoose.timeSavingDesc')}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-6 h-6 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.increaseRevenue')}</h3>
-                  <p className="text-gray-600">{t('whyChoose.increaseRevenueDesc')}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('whyChoose.support')}</h3>
-                  <p className="text-gray-600">{t('whyChoose.supportDesc')}</p>
-                </div>
-              </div>
+              ))}
             </div>
             
             <div className="relative">
-              <Card className="bg-gray-900 border-0 rounded-3xl p-10 text-white shadow-2xl">
+              <Card className={`${softSkyCardClass} p-10`}>
                 <CardContent className="p-0">
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-4">
-                      <Zap className="w-10 h-10 mr-3 text-yellow-400" />
-                      <div className="text-7xl font-extrabold text-white">500+</div>
+                      <Zap className="w-8 h-8 mr-3 text-sky-600" />
+                      <div className="text-6xl font-extrabold text-slate-900">500+</div>
                     </div>
-                    <div className="text-2xl mb-10 font-bold">{t('whyChoose.activeStores')}</div>
+                    <div className="text-xl mb-8 font-bold text-slate-800">{t('whyChoose.activeStores')}</div>
                     <div className="flex justify-center space-x-2 mb-6">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="w-7 h-7 fill-yellow-400 text-yellow-400" />
+                        <Star key={star} className="w-6 h-6 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <div className="text-lg font-semibold">{t('whyChoose.rating')}</div>
+                    <div className="text-base font-semibold text-slate-700">{t('whyChoose.rating')}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -1024,6 +996,7 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </SoftSkyStage>
 
       {/* Stats Section - Below the fold, lazy loaded */}
       <Stats />
@@ -1059,28 +1032,25 @@ const LandingPage = () => {
 // Lazy load heavy components to reduce initial bundle size
 const Stats = React.memo(() => {
   return (
-    <section className="py-20 bg-gray-900" aria-label="Statistics section">
+    <SoftSkyStage tone="white" className="py-20">
+    <section className="relative" aria-label="Statistics section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div className="text-4xl font-bold text-white mb-2">500+</div>
-            <div className="text-gray-300">Active Stores</div>
-          </div>
-          <div>
-            <div className="text-4xl font-bold text-white mb-2">500,000+</div>
-            <div className="text-gray-300">Orders Processed</div>
-          </div>
-          <div>
-            <div className="text-4xl font-bold text-white mb-2">4.9/5</div>
-            <div className="text-gray-300">Customer Rating</div>
-          </div>
-          <div>
-            <div className="text-4xl font-bold text-white mb-2">24/7</div>
-            <div className="text-gray-300">Support Available</div>
-          </div>
+          {[
+            { value: '500+', label: 'Active Stores' },
+            { value: '500,000+', label: 'Orders Processed' },
+            { value: '4.9/5', label: 'Customer Rating' },
+            { value: '24/7', label: 'Support Available' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-8 shadow-sm">
+              <div className="text-4xl font-bold text-slate-900 mb-2">{stat.value}</div>
+              <div className="text-slate-600 text-sm">{stat.label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
+    </SoftSkyStage>
   );
 });
 
@@ -1108,30 +1078,29 @@ const Testimonials = React.memo(() => {
   ] as const;
   
   return (
-    <section className="py-24 bg-white" aria-label="Testimonials section">
+    <SoftSkyStage tone="mist" className="py-24 md:py-28">
+    <section className="relative" aria-label="Testimonials section">
       <div className="w-full">
-        {/* Header Section */}
         <div className="text-center mb-16 px-4 sm:px-6 lg:px-8">
-          <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-medium text-gray-600 border-gray-200 bg-white">
-            <Star className="w-4 h-4 mr-2 text-gray-600 fill-gray-600" />
+          <Badge variant="outline" className={softSkyBadgeClass}>
+            <Star className="w-4 h-4 mr-2 text-sky-700 fill-sky-700" />
             <span className="text-sm font-medium">Testimonials</span>
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             {t('description')}
           </p>
         </div>
         
-        {/* Testimonials Grid */}
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
             {testimonials.map(({ key }) => {
               return (
                 <Card 
                   key={key} 
-                  className="group border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white w-full md:w-[calc(33.333%-1rem)] max-w-md"
+                  className={`${softSkyCardClass} w-full md:w-[calc(33.333%-1rem)] max-w-md`}
                 >
                   <CardContent className="p-6">
                     {/* Stars */}
@@ -1171,6 +1140,7 @@ const Testimonials = React.memo(() => {
         </div>
       </div>
     </section>
+    </SoftSkyStage>
   );
 });
 
@@ -1178,48 +1148,22 @@ const CTA = React.memo(() => {
   const t = useTranslations('landing.cta')
   const tHero = useTranslations('landing.hero')
   return (
-      <section className="py-24 bg-gray-900" aria-label="Call to action section">
+      <SoftSkyStage tone="mist" className="py-24 md:py-28">
+      <section className="relative" aria-label="Call to action section">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
             {t('description')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <a 
-                href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                App Store
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <a 
-                href="https://play.google.com/store/apps/details?id=anyrent.shop" 
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Google Play
-              </a>
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 justify-center items-center">
+            <StoreBadges tone="dark" />
             <Button
               asChild
               variant="outline"
               size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
+              className="border-2 border-sky-200 bg-white text-sky-900 hover:bg-sky-50 hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200 h-10"
             >
               <Link href="/login">
                 <Globe className="w-5 h-5 mr-2" />
@@ -1229,6 +1173,7 @@ const CTA = React.memo(() => {
           </div>
         </div>
     </section>
+    </SoftSkyStage>
   );
 });
 
@@ -1288,35 +1233,39 @@ const FAQ = React.memo(() => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
       />
-      <section id="faq" className="py-24 bg-gray-50" aria-label="Frequently asked questions">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="faq" className="relative py-24 md:py-28 bg-[#F4F8FC]" aria-label="Frequently asked questions">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-24 right-0 h-[420px] w-[420px] rounded-full bg-[#C9DEF5]/40 blur-3xl" />
+        <div className="absolute bottom-0 left-[-80px] h-[360px] w-[360px] rounded-full bg-[#D7E8F8]/50 blur-3xl" />
+      </div>
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
             {t('title')}
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-slate-600">
             {t('description')}
           </p>
         </div>
         
         <div className="space-y-4">
           {faqItems.map((item, index) => (
-            <Card key={index} className="border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 bg-white">
+            <Card key={index} className={softSkyCardClass}>
               <Button
                 onClick={() => toggleItem(index)}
                 variant="ghost"
-                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-gray-50 rounded-lg"
+                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-sky-50/50 rounded-xl"
               >
-                <span className="font-semibold text-gray-900">{item.question}</span>
+                <span className="font-semibold text-slate-900">{item.question}</span>
                 {openItems.has(index) ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                  <ChevronUp className="w-5 h-5 text-sky-700" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                  <ChevronDown className="w-5 h-5 text-slate-400" />
                 )}
               </Button>
               {openItems.has(index) && (
                 <div className="px-6 pb-4">
-                  <p className="text-gray-600">{item.answer}</p>
+                  <p className="text-slate-600">{item.answer}</p>
                 </div>
               )}
             </Card>
@@ -1579,51 +1528,52 @@ const Pricing = React.memo(() => {
   const pricingData = getPricingData();
 
   return (
-    <section id="pricing" className="py-24 bg-white" aria-label="Pricing plans">
+    <SoftSkyStage tone="white" className="py-24 md:py-28">
+    <section id="pricing" className="relative" aria-label="Pricing plans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
             {tPricing('title')}
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-slate-600">
             {tPricing('description')}
           </p>
         </div>
         
         {/* Duration Toggle */}
         <div className="flex justify-center mb-12">
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center bg-sky-50 border border-sky-100 rounded-xl p-1">
             <Button
               onClick={() => setSelectedDuration('3')}
               variant={selectedDuration === '3' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '3' ? 'bg-white shadow-sm' : ''}
+              className={selectedDuration === '3' ? 'bg-white shadow-sm border border-sky-100' : ''}
             >
               <div className="text-center">
                 <div className="text-sm">{tPricing('months.three')}</div>
-                <div className="text-lg text-gray-900 font-bold">{tPricing('discounts.three')}</div>
+                <div className="text-lg text-slate-900 font-bold">{tPricing('discounts.three')}</div>
               </div>
             </Button>
             <Button
               onClick={() => setSelectedDuration('6')}
               variant={selectedDuration === '6' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '6' ? 'bg-white shadow-sm' : ''}
+              className={selectedDuration === '6' ? 'bg-white shadow-sm border border-sky-100' : ''}
             >
               <div className="text-center">
                 <div className="text-sm">{tPricing('months.six')}</div>
-                <div className="text-lg text-green-600 font-bold">{tPricing('discounts.six')}</div>
+                <div className="text-lg text-emerald-600 font-bold">{tPricing('discounts.six')}</div>
               </div>
             </Button>
             <Button
               onClick={() => setSelectedDuration('12')}
               variant={selectedDuration === '12' ? 'secondary' : 'ghost'}
               size="sm"
-              className={selectedDuration === '12' ? 'bg-white shadow-sm' : ''}
+              className={selectedDuration === '12' ? 'bg-white shadow-sm border border-sky-100' : ''}
             >
               <div className="text-center">
                 <div className="text-sm">{tPricing('months.twelve')}</div>
-                <div className="text-lg text-red-600 font-bold">{tPricing('discounts.twelve')}</div>
+                <div className="text-lg text-sky-700 font-bold">{tPricing('discounts.twelve')}</div>
               </div>
             </Button>
           </div>
@@ -1655,12 +1605,12 @@ const Pricing = React.memo(() => {
         {!loading && !error && pricingData.length > 0 && (
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pricingData.map((plan, index) => (
-            <Card key={index} className={`relative border-2 transition-all duration-300 hover:shadow-xl bg-white ${
-              plan.popular ? 'border-gray-900 scale-105' : 'border-gray-200'
+            <Card key={index} className={`relative transition-all duration-300 ${softSkyCardClass} ${
+              plan.popular ? 'border-sky-300 ring-2 ring-sky-100 scale-[1.02]' : ''
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                  <Badge className="bg-sky-800 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
                     {tPricing('plans.basic.mostPopular')}
                   </Badge>
                 </div>
@@ -1697,7 +1647,7 @@ const Pricing = React.memo(() => {
                 {/* CTA Button */}
                 <Button
                   asChild
-                  className={`w-full ${plan.popular ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'} rounded-xl font-semibold transition-all duration-200`}
+                  className={`w-full ${plan.popular ? 'bg-sky-800 hover:bg-sky-900 text-white' : 'bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-100'} rounded-xl font-semibold transition-all duration-200`}
                 >
                   <Link href="/login">
                     {plan.buttonText || tPricing('buttonText')}
@@ -1718,9 +1668,9 @@ const Pricing = React.memo(() => {
         
         {/* Additional information */}
         <div className="mt-16 text-center">
-          <Card className="bg-gray-50 border border-gray-200 rounded-2xl p-8 max-w-4xl mx-auto">
+          <Card className={`${softSkyCardClass} p-8 max-w-4xl mx-auto`}>
             <CardContent className="p-0">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+              <h3 className="text-2xl font-bold text-slate-900 mb-6">
                 {tPricing('allPlansInclude')}
               </h3>
               <div className="grid md:grid-cols-3 gap-6">
@@ -1819,13 +1769,14 @@ const Pricing = React.memo(() => {
         </Dialog>
       </div>
     </section>
+    </SoftSkyStage>
   );
 });
 
 const Footer = React.memo(() => {
   const tf = useTranslations('landing.footer')
   return (
-    <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
+    <footer id="contact" className="bg-slate-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-12 gap-8">
           <div className="md:col-span-4">
