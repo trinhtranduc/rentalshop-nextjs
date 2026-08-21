@@ -36,7 +36,10 @@
     "feature3Title": "Kết quả tức thì",
     "feature3Desc": "Trả về kết quả trong vài giây với danh sách sản phẩm phù hợp nhất, kèm thông tin tình trạng còn hàng và giá cho thuê.",
     "matchFound": "Tìm thấy 3 sản phẩm phù hợp",
-    "videoAlt": "Video demo tính năng tìm sản phẩm cho thuê bằng hình ảnh AI trên ứng dụng AnyRent"
+    "videoAlt": "Demo tìm sản phẩm cho thuê bằng hình ảnh AI trên AnyRent",
+    "queryAlt": "Ảnh áo dài mẫu dùng để tìm kiếm bằng hình",
+    "matchesAlt": "Ba trang phục cho thuê tương tự được AI gợi ý",
+    "phoneAlt": "Màn hình điện thoại AnyRent hiển thị kết quả tìm bằng ảnh AI"
   },
   "features": {
     "title": "Tính năng Quản lý Cửa hàng Cho thuê",

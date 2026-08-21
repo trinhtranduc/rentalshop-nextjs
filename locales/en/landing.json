@@ -36,7 +36,10 @@
     "feature3Title": "Instant results",
     "feature3Desc": "Returns results in seconds with a list of best-matching products, including availability status and rental pricing.",
     "matchFound": "Found 3 matching products",
-    "videoAlt": "Demo video of AI image search feature for finding rental products on AnyRent app"
+    "videoAlt": "Demo of AI image search finding rental products on AnyRent",
+    "queryAlt": "Sample ao dai photo used as visual search query",
+    "matchesAlt": "Three similar rental dresses matched by AI image search",
+    "phoneAlt": "AnyRent phone screen showing AI image search results"
   },
   "features": {
     "title": "Rental Shop Management Features",

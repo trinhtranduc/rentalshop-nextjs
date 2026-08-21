@@ -36,7 +36,10 @@
     "feature3Title": "即時結果",
     "feature3Desc": "数秒で最適な商品リストを返し、在庫状況とレンタル価格情報が含まれます。",
     "matchFound": "3つの一致する商品が見つかりました",
-    "videoAlt": "AnyRentアプリのAI画像検索機能デモビデオ"
+    "videoAlt": "AnyRentアプリのAI画像検索機能デモビデオ",
+    "queryAlt": "ビジュアル検索クエリ用のアオザイ写真",
+    "matchesAlt": "AI画像検索でマッチした3着のレンタル衣装",
+    "phoneAlt": "AI画像検索結果を表示するAnyRentのスマホ画面"
   },
   "features": {
     "title": "レンタルショップ管理機能",
