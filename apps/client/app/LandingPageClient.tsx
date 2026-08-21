@@ -418,7 +418,21 @@ const LandingPage = () => {
                     rel="noopener noreferrer"
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    {t('hero.downloadApp')}
+                    {t('download.downloadOnAppStore')}
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg"
+                >
+                  <a
+                    href="https://play.google.com/store/apps/details?id=anyrent.shop"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    {t('download.downloadOnGooglePlay')}
                   </a>
                 </Button>
                 <Button
@@ -1184,7 +1198,21 @@ const CTA = React.memo(() => {
                 rel="noopener noreferrer"
               >
                 <Download className="w-5 h-5 mr-2" />
-                {tHero('downloadApp')}
+                App Store
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-gray-900 hover:bg-gray-100 rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <a 
+                href="https://play.google.com/store/apps/details?id=anyrent.shop" 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Google Play
               </a>
             </Button>
             <Button
