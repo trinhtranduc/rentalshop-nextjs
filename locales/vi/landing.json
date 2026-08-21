@@ -41,6 +41,34 @@
     "matchesAlt": "Ba trang phục cho thuê tương tự được AI gợi ý",
     "phoneAlt": "Màn hình điện thoại AnyRent hiển thị kết quả tìm bằng ảnh AI"
   },
+  "duplicatePrevention": {
+    "badge": "Chống trùng lịch",
+    "title": "Ngăn chặn đơn hàng trùng lặp",
+    "description": "AnyRent tự động kiểm tra lịch thuê trước khi tạo đơn. Cùng một sản phẩm không thể được đặt trùng ngày — tránh mất mặt khách hàng và thất thoát doanh thu.",
+    "feature1Title": "Kiểm tra lịch tự động",
+    "feature1Desc": "Khi chọn sản phẩm và ngày thuê, hệ thống đối chiếu ngay với các đơn đang giữ, đã lấy hoặc sắp trả.",
+    "feature2Title": "Cảnh báo xung đột rõ ràng",
+    "feature2Desc": "Nếu khoảng thời gian bị trùng, bạn thấy cảnh báo ngay trên màn hình — không cần nhớ lịch thủ công.",
+    "feature3Title": "Giữ kho luôn chính xác",
+    "feature3Desc": "Mỗi sản phẩm chỉ được thuê một lần trong cùng khung giờ, giúp quản lý size và tình trạng kho tin cậy hơn.",
+    "blockedLabel": "Trùng lịch — không tạo đơn",
+    "calendarAlt": "Lịch thuê hiển thị xung đột đơn trùng sản phẩm",
+    "alertAlt": "Cảnh báo sản phẩm đã được đặt trong cùng khoảng ngày"
+  },
+  "orderWorkflow": {
+    "badge": "Quy trình đơn thuê",
+    "title": "Quản lý đơn hàng thuê dễ dàng, thuận tiện",
+    "description": "Theo dõi toàn bộ vòng đời đơn thuê trên một luồng rõ ràng: đặt trước → lấy hàng → trả hàng. Nhân viên thao tác nhanh, khách hàng hiểu trạng thái đơn ngay.",
+    "feature1Title": "Tạo đơn & giữ chỗ nhanh",
+    "feature1Desc": "Chọn khách, sản phẩm, ngày nhận/trả — tạo đơn RESERVED chỉ trong vài bước trên app hoặc web.",
+    "feature2Title": "Lấy hàng & trả hàng rõ ràng",
+    "feature2Desc": "Chuyển trạng thái PICKUPED / RETURNED đúng lúc, gắn với lịch và tồn kho thực tế.",
+    "feature3Title": "Theo dõi mọi bước trên một màn hình",
+    "feature3Desc": "Xem lịch sử đơn, thanh toán và ghi chú ngay trên chi tiết đơn — giảm sót bước, giảm hỏi lại.",
+    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "phoneAlt": "Màn hình chi tiết đơn thuê trên AnyRent",
+    "flowAlt": "Ba trạng thái đơn thuê: đặt trước, đã lấy, đã trả"
+  },
   "features": {
     "title": "Tính năng Quản lý Cửa hàng Cho thuê",
     "description": "Hệ thống quản lý cho thuê với đầy đủ tính năng cần thiết để quản lý hiệu quả doanh nghiệp cho thuê của bạn. Phần mềm quản lý cửa hàng cho thuê phù hợp cho nhiều ngành nghề: cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Tích hợp quản lý đơn hàng, quản lý kho và quản lý khách hàng.",
