@@ -74,6 +74,7 @@ export interface ApiUrls {
     bulkImport: string;
     batchDelete: string;
     availability: (id: number) => string;
+    availabilityCalendar: (id: number) => string;
     batchAvailability: string;
     export: string;
   };
@@ -633,6 +634,7 @@ function createApiUrls(): ApiUrls {
       bulkImport: `${base}/api/products/bulk-import`,
       batchDelete: `${base}/api/products/batch-delete`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
+      availabilityCalendar: (id: number) => `${base}/api/products/${id}/availability-calendar`,
       batchAvailability: `${base}/api/products/batch-availability`,
       export: `${base}/api/products/export`,
     },

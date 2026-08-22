@@ -127,4 +127,10 @@ private class BatchFakeRepository(
         this.requests = requests
         return batch(requests)
     }
+
+    override suspend fun occupancyCalendar(
+        productId: Int,
+        from: LocalDate,
+        to: LocalDate,
+    ): Map<LocalDate, Int> = emptyMap()
 }

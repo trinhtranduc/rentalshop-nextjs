@@ -26,6 +26,13 @@ class DatePickerViewController: UIViewController {
     private var firstDate: Date?
     private var lastDate: Date?
     private var datesRange: [Date]?
+
+    /// When true, remaining units are shown; green = still available, red = none left.
+    var occupancyColoringEnabled = false
+    var onVisibleMonthChange: ((Date) -> Void)?
+    private var occupancyLoaded = false
+    private var availableByDate: [String: Int] = [:]
+    private var legendHeightConstraint: NSLayoutConstraint?
     
     // Mode of operation
     enum SelectionMode {
@@ -50,6 +57,50 @@ class DatePickerViewController: UIViewController {
         return header
     }()
 
+    private lazy var occupancyLegendView: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        func swatch(_ color: UIColor, _ title: String) -> UIView {
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.spacing = 6
+            row.alignment = .center
+            let dot = UIView()
+            dot.backgroundColor = color
+            dot.layer.cornerRadius = 6
+            dot.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                dot.widthAnchor.constraint(equalToConstant: 12),
+                dot.heightAnchor.constraint(equalToConstant: 12),
+            ])
+            let label = UILabel()
+            label.text = title
+            label.font = Utils.regularFont(size: 13)
+            label.textColor = .textSecondary
+            row.addArrangedSubview(dot)
+            row.addArrangedSubview(label)
+            return row
+        }
+
+        let stack = UIStackView(arrangedSubviews: [
+            swatch(.systemGreen, "Remaining qty".localized()),
+            swatch(.systemRed, "None left".localized()),
+        ])
+        stack.axis = .horizontal
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            stack.topAnchor.constraint(equalTo: view.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        return view
+    }()
+
     private lazy var confirmButton: RCPrimaryButton = {
         let button = RCPrimaryButton(title: "Confirm".localized(), backgroundColor: APP_TONE_COLOR)
         button.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
@@ -69,6 +120,11 @@ class DatePickerViewController: UIViewController {
         calendar.appearance.selectionColor = .label
         calendar.appearance.headerTitleFont = Utils.boldFont(size: 17)
         calendar.appearance.titleFont = Utils.regularFont(size: 15)
+        calendar.appearance.subtitleFont = Utils.mediumFont(size: 11)
+        calendar.appearance.subtitleDefaultColor = .white
+        calendar.appearance.subtitleSelectionColor = .white
+        calendar.appearance.subtitleTodayColor = .white
+        calendar.appearance.subtitleOffset = CGPoint(x: 0, y: 1)
         calendar.appearance.weekdayFont = Utils.regularFont(size: 14)
         calendar.allowsMultipleSelection = false
         calendar.appearance.selectionColor = .label
@@ -92,18 +148,21 @@ class DatePickerViewController: UIViewController {
 
         headerView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(headerView)
+        view.addSubview(occupancyLegendView)
         view.addSubview(calendar)
         view.addSubview(confirmButton)
 
         NSLayoutConstraint.activate([
-            // Pin to the sheet top. RCSheetHeaderView already has 20pt for the grabber;
-            // safe-area pinning stacked extra space and sat the title too low.
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 56),
 
-            calendar.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
+            occupancyLegendView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 4),
+            occupancyLegendView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            occupancyLegendView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            calendar.topAnchor.constraint(equalTo: occupancyLegendView.bottomAnchor, constant: 4),
             calendar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             calendar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             calendar.bottomAnchor.constraint(equalTo: confirmButton.topAnchor, constant: -16),
@@ -113,6 +172,11 @@ class DatePickerViewController: UIViewController {
             confirmButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
             confirmButton.heightAnchor.constraint(equalToConstant: 50),
         ])
+
+        let legendHeight = occupancyLegendView.heightAnchor.constraint(equalToConstant: occupancyColoringEnabled ? 20 : 0)
+        legendHeight.isActive = true
+        legendHeightConstraint = legendHeight
+        occupancyLegendView.isHidden = !occupancyColoringEnabled
     }
     
     // MARK: - Public Methods
@@ -201,6 +265,47 @@ class DatePickerViewController: UIViewController {
         }
         
         return dates
+    }
+
+    func enableOccupancyColoring() {
+        occupancyColoringEnabled = true
+        occupancyLegendView.isHidden = false
+        legendHeightConstraint?.constant = 20
+        calendar.appearance.todayColor = .clear
+        calendar.appearance.titleTodayColor = .white
+        calendar.rowHeight = 48
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.selectedDetentIdentifier = .large
+        }
+        calendar.reloadData()
+        onVisibleMonthChange?(calendar.currentPage)
+    }
+
+    func setDayAvailability(_ availableByDate: [String: Int]) {
+        occupancyLoaded = true
+        self.availableByDate = availableByDate
+        calendar.reloadData()
+    }
+
+    private func remainingQuantity(for date: Date) -> Int? {
+        guard occupancyColoringEnabled, occupancyLoaded else { return nil }
+        let day = Calendar.current.startOfDay(for: date)
+        if let minimumDate, day < Calendar.current.startOfDay(for: minimumDate) {
+            return nil
+        }
+        if let maximumDate, day > Calendar.current.startOfDay(for: maximumDate) {
+            return nil
+        }
+        guard let key = date.dateServerInString() else { return nil }
+        return availableByDate[key]
+    }
+
+    private func occupancyFillColor(for date: Date) -> UIColor? {
+        guard let remaining = remainingQuantity(for: date) else { return nil }
+        return remaining > 0
+            ? UIColor.systemGreen.withAlphaComponent(0.88)
+            : UIColor.systemRed.withAlphaComponent(0.88)
     }
     
     // MARK: - Actions
@@ -316,6 +421,10 @@ extension DatePickerViewController: FSCalendarDelegate {
         }
     }
     
+    func calendarCurrentPageDidChange(_ calendar: FSCalendar) {
+        onVisibleMonthChange?(calendar.currentPage)
+    }
+    
     func calendar(_ calendar: FSCalendar, didDeselect date: Date, at monthPosition: FSCalendarMonthPosition) {
         if selectionMode == .range {
             // If both dates are selected and user deselects a date, reset the selection
@@ -331,17 +440,6 @@ extension DatePickerViewController: FSCalendarDelegate {
             }
         }
     }
-    
-    // Add appearance customization for date range
-    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillDefaultColorFor date: Date) -> UIColor? {
-        if selectionMode == .range && datesRange?.contains(date) == true {
-            // Use a lighter color for dates in the range that aren't the start/end
-            if date != firstDate && date != lastDate {
-                return nil//APP_BUTTON_BG_COLOR.withAlphaComponent(0.2)
-            }
-        }
-        return nil
-    }
 }
 
 // MARK: - FSCalendarDataSource
@@ -353,11 +451,26 @@ extension DatePickerViewController: FSCalendarDataSource {
     func maximumDate(for calendar: FSCalendar) -> Date {
         return maximumDate ?? Date().addingTimeInterval(365*24*60*60) // Default 1 year ahead
     }
+
+    func calendar(_ calendar: FSCalendar, subtitleFor date: Date) -> String? {
+        guard let remaining = remainingQuantity(for: date) else { return nil }
+        return "\(remaining)"
+    }
 }
 
 // MARK: - FSCalendarDelegateAppearance
 extension DatePickerViewController: FSCalendarDelegateAppearance {
-    // This method is called to customize the appearance of a cell
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillDefaultColorFor date: Date) -> UIColor? {
+        occupancyFillColor(for: date)
+    }
+
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, titleDefaultColorFor date: Date) -> UIColor? {
+        if occupancyFillColor(for: date) != nil {
+            return .white
+        }
+        return nil
+    }
+
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
         if selectionMode == .range {
             if date == firstDate || date == lastDate {
@@ -365,6 +478,9 @@ extension DatePickerViewController: FSCalendarDelegateAppearance {
             } else if datesRange?.contains(date) == true {
                 return UIColor.label.withAlphaComponent(0.12)
             }
+        }
+        if occupancyColoringEnabled {
+            return .label
         }
         return nil
     }

@@ -184,4 +184,10 @@ private class FakeAvailabilityRepository(
     ): Map<Int, ProductAvailability> = requests.associate {
         it.productId to checkAvailability(it.productId, startDate, endDate, it.quantity)
     }
+
+    override suspend fun occupancyCalendar(
+        productId: Int,
+        from: LocalDate,
+        to: LocalDate,
+    ): Map<LocalDate, Int> = emptyMap()
 }
