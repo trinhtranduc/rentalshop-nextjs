@@ -172,6 +172,19 @@ export function resolvePreviousPeriod(rangeStart: Date, rangeEnd: Date): { prevS
   };
 }
 
+/**
+ * Percent change vs previous equal-length window.
+ * Previous = 0 and current > 0 cannot divide; treat as +100% (new activity), not 0.
+ * Previous > 0 and current = 0 is -100%. Both 0 stays 0.
+ */
+export function percentChange(current: number, previous: number): number {
+  if (previous > 0) {
+    return Math.round(((current - previous) / previous) * 10000) / 100;
+  }
+  if (current > 0) return 100;
+  return 0;
+}
+
 function mapRevenueOrder(order: any) {
   return {
     orderType: order.orderType,
@@ -386,12 +399,18 @@ export async function buildAnalyticsPeriodReport(
 
     const curCount = curCountRes.total || 0;
     const prevCount = prevCountRes.total || 0;
-    const orderGrowth = prevCount > 0 ? ((curCount - prevCount) / prevCount) * 100 : 0;
-    const revenueGrowth = prevRevenue > 0 ? ((curRevenue - prevRevenue) / prevRevenue) * 100 : 0;
 
     return {
-      orders: { current: curCount, previous: prevCount, growth: Math.round(orderGrowth * 100) / 100 },
-      revenue: { current: curRevenue, previous: prevRevenue, growth: Math.round(revenueGrowth * 100) / 100 }
+      orders: {
+        current: curCount,
+        previous: prevCount,
+        growth: percentChange(curCount, prevCount)
+      },
+      revenue: {
+        current: curRevenue,
+        previous: prevRevenue,
+        growth: percentChange(curRevenue, prevRevenue)
+      }
     };
   };
 
