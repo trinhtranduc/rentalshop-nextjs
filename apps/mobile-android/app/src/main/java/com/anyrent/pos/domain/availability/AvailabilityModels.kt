@@ -66,4 +66,10 @@ interface AvailabilityRepository {
         startDate: LocalDate,
         endDate: LocalDate,
     ): Map<Int, ProductAvailability>
+
+    suspend fun occupancyCalendar(
+        productId: Int,
+        from: LocalDate,
+        to: LocalDate,
+    ): Map<LocalDate, Int>
 }

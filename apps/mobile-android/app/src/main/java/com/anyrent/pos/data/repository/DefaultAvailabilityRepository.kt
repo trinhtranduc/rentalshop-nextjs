@@ -259,4 +259,26 @@ class DefaultAvailabilityRepository(
             message = data.optString("message").takeIf { it.isNotBlank() },
         )
     }
+
+    override suspend fun occupancyCalendar(
+        productId: Int,
+        from: LocalDate,
+        to: LocalDate,
+    ): Map<LocalDate, Int> = withContext(ioDispatcher) {
+        val outletId = outletIdProvider()
+            ?: throw AppError.Validation("An outlet is required to check availability")
+        runCatching {
+            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to&outletId=$outletId"
+            val json = api.authedGet(path)
+            val data = json.optJSONObject("data") ?: json
+            val days = data.optJSONArray("days") ?: JSONArray()
+            (0 until days.length()).mapNotNull { index ->
+                val day = days.optJSONObject(index) ?: return@mapNotNull null
+                val date = day.optString("date").takeIf { it.isNotBlank() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: return@mapNotNull null
+                date to day.optInt("available", 0)
+            }.toMap()
+        }.getOrElse { throw AppError.from(it) }
+    }
 }

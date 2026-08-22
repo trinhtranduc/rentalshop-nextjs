@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { percentChange } from '@rentalshop/utils/server';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
@@ -176,19 +177,16 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       fetchPeriodRevenue(lastMonth, lastMonthEnd)
     ]);
 
-    const orderGrowth = lastMonthCount > 0 ? ((currentMonthCount - lastMonthCount) / lastMonthCount * 100) : 0;
-    const revenueGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
-
     const growthMetrics = {
       orders: {
         current: currentMonthCount,
         previous: lastMonthCount,
-        growth: Math.round(orderGrowth * 100) / 100
+        growth: percentChange(currentMonthCount, lastMonthCount)
       },
       revenue: {
         current: currentMonthRevenue,
         previous: lastMonthRevenue,
-        growth: Math.round(revenueGrowth * 100) / 100
+        growth: percentChange(currentMonthRevenue, lastMonthRevenue)
       }
     };
 

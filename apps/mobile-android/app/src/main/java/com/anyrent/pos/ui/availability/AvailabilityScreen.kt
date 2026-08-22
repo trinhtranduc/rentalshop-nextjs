@@ -1,7 +1,9 @@
 package com.anyrent.pos.ui.availability
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +34,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
@@ -57,9 +59,13 @@ import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import java.time.Instant
-import java.time.ZoneOffset
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -253,10 +259,11 @@ fun AvailabilityScreen(
     }
 
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.selectedDate
-                .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        )
+        var visibleMonth by remember { mutableStateOf(YearMonth.from(state.selectedDate)) }
+        var draftDate by remember { mutableStateOf(state.selectedDate) }
+        LaunchedEffect(visibleMonth, state.selectedProduct?.id) {
+            viewModel.loadOccupancy(visibleMonth)
+        }
         ModalBottomSheet(
             onDismissRequest = { showDatePicker = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -272,14 +279,16 @@ fun AvailabilityScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
-                DatePicker(
-                    state = pickerState,
-                    // Full width: forcing 600.dp clipped the Sunday (last) column on vi locale.
-                    modifier = Modifier.fillMaxWidth().height(430.dp),
-                    title = null,
-                    headline = null,
-                    showModeToggle = false,
-                    colors = DatePickerDefaults.colors(containerColor = Color.White),
+                OccupancyLegend()
+                OccupancyMonthCalendar(
+                    month = visibleMonth,
+                    selected = draftDate,
+                    availableByDate = state.availableByDate,
+                    occupancyLoaded = state.occupancyLoaded,
+                    minDate = LocalDate.now(),
+                    maxDate = LocalDate.now().plusYears(1),
+                    onMonthChange = { visibleMonth = it },
+                    onSelect = { draftDate = it },
                 )
                 Row(
                     Modifier
@@ -292,13 +301,9 @@ fun AvailabilityScreen(
                         modifier = Modifier.weight(1f),
                     ) { Text(stringResource(R.string.cancel)) }
                     Button(
-                        enabled = pickerState.selectedDateMillis != null,
                         modifier = Modifier.weight(2f),
                         onClick = {
-                            val selected = pickerState.selectedDateMillis ?: return@Button
-                            viewModel.updateDate(
-                                Instant.ofEpochMilli(selected).atZone(ZoneOffset.UTC).toLocalDate().toString(),
-                            )
+                            viewModel.updateDate(draftDate.toString())
                             showDatePicker = false
                             viewModel.check()
                         },
@@ -466,5 +471,140 @@ private fun AvailabilityDateCell(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+private val OccupiedRed = Color(0xFFE53935)
+private val EmptyGreen = Color(0xFF18BF63)
+
+@Composable
+private fun OccupancyLegend() {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LegendSwatch(EmptyGreen, stringResource(R.string.calendar_empty_day))
+        LegendSwatch(OccupiedRed, stringResource(R.string.calendar_has_orders))
+    }
+}
+
+@Composable
+private fun LegendSwatch(color: Color, label: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(12.dp).background(color, CircleShape))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun OccupancyMonthCalendar(
+    month: YearMonth,
+    selected: LocalDate,
+    availableByDate: Map<LocalDate, Int>,
+    occupancyLoaded: Boolean,
+    minDate: LocalDate,
+    maxDate: LocalDate,
+    onMonthChange: (YearMonth) -> Unit,
+    onSelect: (LocalDate) -> Unit,
+) {
+    val firstDay = month.atDay(1)
+    val daysInMonth = month.lengthOfMonth()
+    val locale = Locale.getDefault()
+    val firstWeekday = WeekFields.of(locale).firstDayOfWeek
+    val weekDays = (0..6).map { firstWeekday.plus(it.toLong()) }
+    val startOffset = ((firstDay.dayOfWeek.value - firstWeekday.value) + 7) % 7
+
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = { onMonthChange(month.minusMonths(1)) }) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+            Text(
+                "${month.month.getDisplayName(TextStyle.FULL, locale)} ${month.year}",
+                modifier = Modifier.weight(1f),
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            IconButton(
+                onClick = { onMonthChange(month.plusMonths(1)) },
+                enabled = month.plusMonths(1).atDay(1) <= maxDate,
+            ) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            weekDays.forEach { day ->
+                    Text(
+                    day.getDisplayName(TextStyle.NARROW, locale),
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        val cellCount = startOffset + daysInMonth
+        val rows = (cellCount + 6) / 7
+        repeat(rows) { row ->
+            Row(Modifier.fillMaxWidth()) {
+                repeat(7) { column ->
+                    val index = row * 7 + column
+                    val dayNumber = index - startOffset + 1
+                    if (dayNumber in 1..daysInMonth) {
+                        val date = month.atDay(dayNumber)
+                        val enabled = !date.isBefore(minDate) && !date.isAfter(maxDate)
+                        val remaining = availableByDate[date]
+                        val fill = when {
+                            !occupancyLoaded || !enabled || remaining == null -> Color.Transparent
+                            remaining > 0 -> EmptyGreen
+                            else -> OccupiedRed
+                        }
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(52.dp)
+                                .padding(2.dp)
+                                .background(fill, RoundedCornerShape(8.dp))
+                                .then(
+                                    if (date == selected) Modifier.border(2.dp, Color.Black, RoundedCornerShape(8.dp))
+                                    else Modifier,
+                                )
+                                .clickable(enabled = enabled) { onSelect(date) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "$dayNumber",
+                                    color = when {
+                                        !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                                        remaining != null && occupancyLoaded -> Color.White
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    },
+                                    fontWeight = if (date == selected) FontWeight.Bold else FontWeight.Normal,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                if (occupancyLoaded && enabled && remaining != null) {
+                                    Text(
+                                        "$remaining",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Box(Modifier.weight(1f).height(52.dp))
+                    }
+                }
+            }
+        }
     }
 }

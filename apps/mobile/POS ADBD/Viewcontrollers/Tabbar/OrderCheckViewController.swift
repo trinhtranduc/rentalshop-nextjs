@@ -237,6 +237,8 @@ class OrderCheckViewController: BaseViewControler {
         return formatter.string(from: date)
     }
 
+    private var occupancyPicker: DatePickerViewController?
+
     @objc private func dateButtonTapped() {
         let controller = DatePickerViewController.instance()
         controller.delegate = self
@@ -247,7 +249,32 @@ class OrderCheckViewController: BaseViewControler {
         let maxDate = calendar.date(byAdding: .year, value: 1, to: today) ?? today
 
         controller.configure(selectedDate: date, minimumDate: minDate, maximumDate: maxDate)
+        occupancyPicker = controller
+        controller.onVisibleMonthChange = { [weak self] page in
+            self?.loadOccupancyCalendar(for: page)
+        }
+        controller.enableOccupancyColoring()
         present(controller, animated: true)
+    }
+
+    private func loadOccupancyCalendar(for visibleMonth: Date) {
+        guard let product else { return }
+        let calendar = Calendar.current
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: visibleMonth)) ?? visibleMonth
+        let from = calendar.date(byAdding: .day, value: -7, to: startOfMonth) ?? startOfMonth
+        let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth) ?? startOfMonth
+        let to = calendar.date(byAdding: .day, value: 7, to: endOfMonth) ?? endOfMonth
+
+        OrderService.shared.loadProductAvailabilityCalendar(
+            productId: product.product_id,
+            from: from,
+            to: to,
+            outletId: currentOutletId
+        ) { [weak self] availableByDate, _ in
+            DispatchQueue.main.async {
+                self?.occupancyPicker?.setDayAvailability(availableByDate)
+            }
+        }
     }
 
     private func updateNavigationTitle() {

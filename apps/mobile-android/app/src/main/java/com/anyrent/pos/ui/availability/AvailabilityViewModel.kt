@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 
 data class AvailabilityUiState(
     val query: String = "",
@@ -22,6 +23,8 @@ data class AvailabilityUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val quantity: Int = 1,
     val result: ProductAvailability? = null,
+    val availableByDate: Map<LocalDate, Int> = emptyMap(),
+    val occupancyLoaded: Boolean = false,
     val searching: Boolean = false,
     val checking: Boolean = false,
     val error: String? = null,
@@ -33,6 +36,7 @@ class AvailabilityViewModel(
     private val _state = MutableStateFlow(AvailabilityUiState())
     val state: StateFlow<AvailabilityUiState> = _state.asStateFlow()
     private var searchJob: Job? = null
+    private var occupancyJob: Job? = null
     private var checkJob: Job? = null
     private var checkGeneration = 0
 
@@ -92,6 +96,22 @@ class AvailabilityViewModel(
                 result = null,
                 error = null,
             )
+        }
+    }
+
+    fun loadOccupancy(month: YearMonth) {
+        val product = _state.value.selectedProduct ?: return
+        occupancyJob?.cancel()
+        occupancyJob = viewModelScope.launch {
+            val from = month.atDay(1).minusDays(7)
+            val to = month.atEndOfMonth().plusDays(7)
+            runCatching { repository.occupancyCalendar(product.id, from, to) }
+                .onSuccess { availableByDate ->
+                    _state.update { it.copy(availableByDate = availableByDate, occupancyLoaded = true) }
+                }
+                .onFailure {
+                    _state.update { it.copy(occupancyLoaded = false) }
+                }
         }
     }
 

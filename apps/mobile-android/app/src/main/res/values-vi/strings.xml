@@ -279,6 +279,8 @@
     <string name="products_available_on_date">%1$s sản phẩm khả dụng</string>
     <string name="availability_date">Ngày kiểm tra</string>
     <string name="select_availability_date">Chọn ngày kiểm tra</string>
+    <string name="calendar_empty_day">Còn</string>
+    <string name="calendar_has_orders">Hết</string>
     <string name="storage">Trong kho</string>
     <string name="renting">Đang thuê</string>
     <string name="swipe_charts">Vuốt ngang để xem thêm</string>
