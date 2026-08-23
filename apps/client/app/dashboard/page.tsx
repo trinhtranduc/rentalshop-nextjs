@@ -258,6 +258,19 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
   return <div className="h-full">{cardContent}</div>;
 };
 
+type DashboardPeriod = 'today' | '7d' | '30d' | 'month' | 'year';
+const DASHBOARD_PERIODS: DashboardPeriod[] = ['today', '7d', '30d', 'month', 'year'];
+type PerformanceChartMode = 'revenue' | 'growth' | 'orders';
+
+function formatGrowthPercent(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const abs = Math.abs(value);
+  const formatted = abs.toFixed(abs % 1 === 0 ? 0 : 1);
+  if (value > 0) return `↑${formatted}%`;
+  if (value < 0) return `↓${formatted}%`;
+  return `→${formatted}%`;
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -280,8 +293,14 @@ export default function DashboardPage() {
   
   // Get timePeriod from URL params or default to 'today'
   // Users without full analytics access can only view 'today' period
-  const defaultPeriod = !hasFullAnalyticsAccess ? 'today' : ((searchParams.get('period') as 'today' | 'month' | 'year') || 'today');
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(defaultPeriod);
+  const defaultPeriod = !hasFullAnalyticsAccess
+    ? 'today'
+    : ((DASHBOARD_PERIODS.includes(searchParams.get('period') as DashboardPeriod)
+        ? (searchParams.get('period') as DashboardPeriod)
+        : 'today'));
+  const [timePeriod, setTimePeriod] = useState<DashboardPeriod>(defaultPeriod);
+  const [performanceMode, setPerformanceMode] = useState<PerformanceChartMode>('revenue');
+  const isRangePeriod = timePeriod !== 'today';
   const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
   const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
   
@@ -392,7 +411,7 @@ export default function DashboardPage() {
 
   // Function to update URL when time period changes
   // Users without full analytics access can only view 'today' period - force to 'today' if they try to change
-  const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
+  const updateTimePeriod = (newPeriod: DashboardPeriod) => {
     // Force users without full analytics access to stay on 'today' period
     if (!hasFullAnalyticsAccess) {
       setTimePeriod('today');
@@ -421,8 +440,8 @@ export default function DashboardPage() {
     }
     
     const urlPeriod = searchParams.get('period');
-    if (urlPeriod && ['today', 'month', 'year'].includes(urlPeriod)) {
-      setTimePeriod(urlPeriod as 'today' | 'month' | 'year');
+    if (urlPeriod && DASHBOARD_PERIODS.includes(urlPeriod as DashboardPeriod)) {
+      setTimePeriod(urlPeriod as DashboardPeriod);
     }
       }, [searchParams, hasFullAnalyticsAccess, router]);
 
@@ -472,32 +491,51 @@ export default function DashboardPage() {
       let groupBy: 'day' | 'month';
 
       switch (timePeriod) {
-        case 'today':
+        case 'today': {
           const todayStr = today.toISOString().split('T')[0];
           startDate = todayStr;
           endDate = todayStr;
           groupBy = 'day';
           break;
-        case 'month':
+        }
+        case '7d': {
+          const start = new Date(today);
+          start.setDate(today.getDate() - 6);
+          startDate = start.toISOString().split('T')[0];
+          endDate = today.toISOString().split('T')[0];
+          groupBy = 'day';
+          break;
+        }
+        case '30d': {
+          const start = new Date(today);
+          start.setDate(today.getDate() - 29);
+          startDate = start.toISOString().split('T')[0];
+          endDate = today.toISOString().split('T')[0];
+          groupBy = 'day';
+          break;
+        }
+        case 'month': {
           const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
           const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
           startDate = monthStart.toISOString().split('T')[0];
           endDate = monthEnd.toISOString().split('T')[0];
           groupBy = 'day';
           break;
-        case 'year':
-          // Use current year for both start and end
+        }
+        case 'year': {
           const currentYear = today.getFullYear();
           startDate = `${currentYear}-01-01`;
           endDate = `${currentYear}-12-31`;
           groupBy = 'month';
           break;
-        default:
+        }
+        default: {
           const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
           const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
           startDate = defaultStart.toISOString().split('T')[0];
           endDate = defaultEnd.toISOString().split('T')[0];
           groupBy = 'day';
+        }
       }
       
       const defaultFilters = {
@@ -531,13 +569,11 @@ export default function DashboardPage() {
       
       // Users without full analytics permissions can only access dashboard APIs
       if (canViewFullAnalytics) {
-      console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  📊 Period Report:', `/api/analytics/period?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&limit=5`);
       console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
       console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
-      console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       } else {
-        console.log('  ⚠️ Limited permissions: Skipping restricted analytics APIs (growth, income, orders, top-products, top-customers)');
+        console.log('  ⚠️ Limited permissions: Skipping restricted analytics APIs (period, income, orders)');
       }
       console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
       
@@ -551,7 +587,11 @@ export default function DashboardPage() {
           console.log('📈 Today Metrics API:', response);
           return response;
         }),
-        analyticsApi.getDashboardSummary(timePeriod).then(response => {
+        analyticsApi.getDashboardSummary(
+          timePeriod === 'today' || timePeriod === 'month' || timePeriod === 'year'
+            ? timePeriod
+            : 'month'
+        ).then(response => {
           console.log('📋 Dashboard Summary API:', response);
           return response;
         })
@@ -560,8 +600,11 @@ export default function DashboardPage() {
       // Only call restricted APIs if user has full analytics permissions
       if (canViewFullAnalytics) {
         apiCalls.push(
-        analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
-          console.log('📉 Growth Metrics API:', response);
+        analyticsApi.getPeriodReport({
+          ...defaultFilters,
+          limit: 5,
+        }).then(response => {
+          console.log('📊 Period Report API:', response);
           return response;
         }),
         analyticsApi.getIncomeAnalytics({
@@ -577,15 +620,7 @@ export default function DashboardPage() {
         }).then(response => {
           console.log('📦 Order Analytics API:', response);
           return response;
-        }),
-        analyticsApi.getTopProducts(defaultFilters).then(response => {
-          console.log('🏆 Top Products API:', response);
-          return response;
-        }),
-        analyticsApi.getTopCustomers(defaultFilters).then(response => {
-          console.log('👥 Top Customers API:', response);
-          return response;
-          })
+        })
         );
       }
       
@@ -603,12 +638,28 @@ export default function DashboardPage() {
       let topProductsResponse: any = { success: false, data: null };
       let topCustomersResponse: any = { success: false, data: null };
       
+      let periodRevenueTotals: { totalRevenue?: number; totalActualRevenue?: number; totalOrders?: number } | null = null;
+      
       if (canViewFullAnalytics) {
-        growthMetricsResponse = results[3];
+        const periodResponse = results[3];
         incomeResponse = results[4];
         ordersResponse = results[5];
-        topProductsResponse = results[6];
-        topCustomersResponse = results[7];
+        if (periodResponse?.success && periodResponse.data) {
+          const period = periodResponse.data as any;
+          periodRevenueTotals = period.revenue ?? null;
+          growthMetricsResponse = {
+            success: true,
+            data: period.growth ?? null,
+          };
+          topProductsResponse = {
+            success: true,
+            data: period.topProducts ?? [],
+          };
+          topCustomersResponse = {
+            success: true,
+            data: period.topCustomers ?? [],
+          };
+        }
       }
 
       // Process responses
@@ -681,13 +732,20 @@ export default function DashboardPage() {
           productUtilization: todayMetrics.productUtilization || 0,
           
           // This month metrics - use correct API structure  
-          totalRevenue: apiStats.thisMonth?.revenue || 0,
-          totalRentals: apiStats.thisMonth?.orders || 0,
-          completedRentals: apiStats.thisMonth?.orders || 0, // Use total orders as completed for now
+          totalRevenue:
+            periodRevenueTotals?.totalActualRevenue ??
+            periodRevenueTotals?.totalRevenue ??
+            apiStats.thisMonth?.revenue ||
+            0,
+          totalRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders || 0,
+          completedRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders || 0,
+          // Period growth is vs previous equal-length window; prefer it over enhanced-dashboard MoM.
           customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: 0, // Not available in current API
-          revenueGrowth: apiStats.growth?.revenue || 0,
-          ordersGrowth: apiStats.growth?.orders || 0,
+          revenueGrowth:
+            growthMetrics.revenue?.growth ?? apiStats.growth?.revenue ?? 0,
+          ordersGrowth:
+            growthMetrics.orders?.growth ?? apiStats.growth?.orders ?? 0,
           customerBase: growthMetrics.customerBase || 0,
           totalCollateral: totalCollateral // Calculated from income data
         };
@@ -1286,8 +1344,12 @@ export default function DashboardPage() {
                 {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')} 👋
               </h1>
               <p className="text-base text-gray-600">
-                {timePeriod === 'today' 
+                {timePeriod === 'today'
                   ? t('overview')
+                  : timePeriod === '7d'
+                  ? `${t('overview')} — ${tc('time.last7Days')}`
+                  : timePeriod === '30d'
+                  ? `${t('overview')} — ${tc('time.last30Days')}`
                   : timePeriod === 'month'
                   ? `${t('overview')} - ${new Date().toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' })}`
                   : `${t('overview')} - ${new Date().getFullYear()}`
@@ -1298,15 +1360,17 @@ export default function DashboardPage() {
             {/* Time Period Filter - Modern Pills */}
             {/* Users without full analytics access can only view 'today' - hide month/year tabs */}
             {hasFullAnalyticsAccess ? (
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
               {[
                 { id: 'today', label: tc('time.today') },
+                { id: '7d', label: tc('time.last7Days') },
+                { id: '30d', label: tc('time.last30Days') },
                 { id: 'month', label: tc('time.thisMonth') },
                 { id: 'year', label: tc('time.year') }
               ].map(period => (
                 <button
                   key={period.id}
-                  onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
+                  onClick={() => updateTimePeriod(period.id as DashboardPeriod)}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     timePeriod === period.id
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -1587,24 +1651,10 @@ export default function DashboardPage() {
         )}
 
         {/* Month/Year View - Strategic Focus */}
-        {(timePeriod === 'month' || timePeriod === 'year') && (
+        {isRangePeriod && (
           <>
             {/* Business Performance Metrics - Simplified */}
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 items-stretch ${
-              !hasFullAnalyticsAccess ? 'md:grid-cols-3' : ''
-            }`}>
-              {/* Revenue Card - Hidden for users without full analytics access */}
-              {hasFullAnalyticsAccess && (
-                <StatCard
-                  title={t('stats.totalRevenue')}
-                  value={currentStats.totalRevenue}
-                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : ''}
-                  description=""
-                  tooltip={t('tooltips.totalRevenue')}
-                  color="text-blue-700"
-                  trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
-                />
-              )}
+            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 items-stretch`}>
               <StatCard
                 title={t('stats.totalOrders')}
                 value={currentStats.totalRentals}
@@ -1640,7 +1690,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Outlet Selector - Only for MERCHANT role in month/year views */}
-            {user?.role === 'MERCHANT' && outlets.length > 1 && (timePeriod === 'month' || timePeriod === 'year') && (
+            {user?.role === 'MERCHANT' && outlets.length > 1 && isRangePeriod && (
               <CardClean size="md" className="mb-6">
                 <CardHeaderClean>
                   <CardTitleClean size="sm">{t('charts.compareOutlets')}</CardTitleClean>
@@ -1709,58 +1759,108 @@ export default function DashboardPage() {
 
             {/* Revenue Charts - Hidden for users without full analytics access - Simplified */}
             {hasFullAnalyticsAccess && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                <CardClean size="md">
-                  <CardHeaderClean>
-                    <CardTitleClean size="md">
-                      {timePeriod === 'month' 
-                        ? `${useFormattedMonthOnly(new Date())} ${t('chartTitles.monthlyRevenue')}`
-                        : `${new Date().getFullYear()} ${t('chartTitles.yearlyRevenue')}`
+              <CardClean size="md" className="mb-6">
+                <CardHeaderClean>
+                  <CardTitleClean size="md">{t('charts.performance')}</CardTitleClean>
+                </CardHeaderClean>
+                <CardContentClean>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {([
+                      { id: 'revenue', label: t('stats.totalRevenue') },
+                      { id: 'growth', label: t('charts.growthPercent') },
+                      { id: 'orders', label: t('stats.totalOrders') },
+                    ] as const).map(mode => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setPerformanceMode(mode.id)}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                          performanceMode === mode.id
+                            ? 'bg-white text-gray-900 border-gray-900'
+                            : 'bg-gray-50 text-gray-600 border-transparent hover:text-gray-900'
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500">
+                      {performanceMode === 'revenue'
+                        ? t('stats.totalRevenue')
+                        : performanceMode === 'growth'
+                        ? t('charts.growthPercent')
+                        : t('stats.totalOrders')}
+                    </p>
+                    <p className={`text-3xl font-bold ${
+                      performanceMode === 'orders'
+                        ? 'text-amber-600'
+                        : performanceMode === 'growth'
+                        ? currentStats.revenueGrowth > 0
+                          ? 'text-green-700'
+                          : currentStats.revenueGrowth < 0
+                          ? 'text-red-700'
+                          : 'text-gray-700'
+                        : 'text-blue-700'
+                    }`}>
+                      {performanceMode === 'revenue'
+                        ? formatMoney(currentStats.totalRevenue)
+                        : performanceMode === 'growth'
+                        ? formatGrowthPercent(currentStats.revenueGrowth)
+                        : currentStats.totalRentals}
+                    </p>
+                    {(performanceMode === 'growth'
+                      ? true
+                      : performanceMode === 'orders'
+                      ? currentStats.ordersGrowth !== 0
+                      : currentStats.revenueGrowth !== 0) && (
+                      <p className={`text-sm mt-1 ${
+                        (performanceMode === 'orders' ? currentStats.ordersGrowth : currentStats.revenueGrowth) > 0
+                          ? 'text-green-700'
+                          : (performanceMode === 'orders' ? currentStats.ordersGrowth : currentStats.revenueGrowth) < 0
+                          ? 'text-red-700'
+                          : 'text-gray-500'
+                      }`}>
+                        {performanceMode === 'growth'
+                          ? t('charts.vsPreviousPeriod')
+                          : `${formatGrowthPercent(
+                              performanceMode === 'orders'
+                                ? currentStats.ordersGrowth
+                                : currentStats.revenueGrowth
+                            )}  ${t('charts.vsPreviousPeriod')}`}
+                      </p>
+                    )}
+                  </div>
+                  {performanceMode === 'orders' ? (
+                    <OrderChart
+                      data={currentOrderData}
+                      loading={loadingCharts}
+                      legendLabel={t('charts.rentalOrders')}
+                      tooltipLabel={t('charts.ordersCount')}
+                      timePeriod={timePeriod === 'year' ? 'year' : 'month'}
+                      outlets={selectedOutlets.length > 0
+                        ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
+                        : []
                       }
-                    </CardTitleClean>
-                  </CardHeaderClean>
-                  <CardContentClean>
-                    <IncomeChart 
-                      data={currentRevenueData} 
+                    />
+                  ) : (
+                    <IncomeChart
+                      data={currentRevenueData}
                       loading={loadingCharts}
                       actualLabel={t('charts.actualRevenue')}
                       projectedLabel={t('charts.projectedRevenue')}
                       noDataText={t('charts.noData')}
                       loadingText={tc('labels.loading')}
-                      timePeriod={timePeriod}
+                      timePeriod={timePeriod === 'year' ? 'year' : 'month'}
                       outlets={
                         selectedOutlets.length > 0 && selectedOutlets.length < outlets.length
                           ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
                           : outlets.map(o => ({ id: o.id, name: o.name }))
                       }
                     />
-                  </CardContentClean>
-                </CardClean>
-              
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">
-                    {timePeriod === 'month' 
-                      ? `${useFormattedMonthOnly(new Date())} ${t('chartTitles.monthlyRentals')}`
-                      : `${new Date().getFullYear()} ${t('chartTitles.yearlyRentals')}`
-                    }
-                  </CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
-                  <OrderChart 
-                    data={currentOrderData} 
-                    loading={loadingCharts}
-                    legendLabel={t('charts.rentalOrders')}
-                    tooltipLabel={t('charts.ordersCount')}
-                    timePeriod={timePeriod}
-                    outlets={selectedOutlets.length > 0 
-                      ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
-                      : []
-                    }
-                  />
+                  )}
                 </CardContentClean>
               </CardClean>
-              </div>
             )}
 
             {/* Analytics Section - Simplified */}
@@ -1790,12 +1890,23 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       {(currentTopProducts || []).map(product => (
                         <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <Package className="w-5 h-5 text-blue-700" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-800">{product.name}</h4>
-                            <p className="text-sm text-gray-600">{product.category}</p>
+                          {product.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-100 bg-gray-50 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                              <Package className="w-5 h-5 text-blue-700" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-800 truncate">{product.name}</h4>
+                            <p className="text-sm text-gray-600 truncate">{product.category}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right flex-shrink-0">
                             <p className="font-medium text-gray-900 text-base">{formatMoney(product.totalRevenue || 0)}</p>
                             <p className="text-sm text-gray-500">{product.rentalCount || 0} {t('charts.totalOrders')}</p>
                           </div>

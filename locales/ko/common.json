@@ -138,6 +138,8 @@
     "tomorrow": "내일",
     "thisWeek": "이번 주",
     "thisMonth": "이번 달",
+    "last7Days": "7일",
+    "last30Days": "30일",
     "lastMonth": "지난 달",
     "thisYear": "올해",
     "lastYear": "작년",

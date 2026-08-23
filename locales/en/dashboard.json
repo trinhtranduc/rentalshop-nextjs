@@ -67,7 +67,10 @@
     "ordersCount": "orders",
     "totalOrders": "total orders",
     "rentals": "rentals",
-    "sales": "sales"
+    "sales": "sales",
+    "performance": "Performance",
+    "growthPercent": "Growth %",
+    "vsPreviousPeriod": "vs previous period"
   },
   "chartTitles": {
     "dailyRevenue": "Daily Revenue",
