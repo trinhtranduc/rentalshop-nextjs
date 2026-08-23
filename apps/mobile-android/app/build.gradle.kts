@@ -30,8 +30,8 @@ android {
         applicationId = "anyrent.shop"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 4
+        versionName = "0.1.3"
 
         // Overridden per buildType below.
         buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
@@ -99,6 +99,7 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.8")
     implementation("androidx.compose.ui:ui")

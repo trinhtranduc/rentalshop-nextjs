@@ -159,6 +159,7 @@ class CartViewModel: PreviewViewModelProtocol {
             loyaltyRedeemPoints = 0
             cart.loyaltyRedeemPoints = 0
             cart.loyaltyDiscountAmount = 0
+            CartStore.shared.persistToDiskNow()
         }
         validateLoyaltyRedeem(completion: nil)
     }
@@ -174,6 +175,7 @@ class CartViewModel: PreviewViewModelProtocol {
               let customerId = cart.customer?.customer_id else {
             cart.loyaltyRedeemPoints = 0
             cart.loyaltyDiscountAmount = 0
+            CartStore.shared.persistToDiskNow()
             completion?()
             return
         }
@@ -196,6 +198,7 @@ class CartViewModel: PreviewViewModelProtocol {
                 self.cart.loyaltyRedeemPoints = 0
                 self.cart.loyaltyDiscountAmount = 0
             }
+            CartStore.shared.persistToDiskNow()
             completion?()
         }
     }

@@ -2,6 +2,7 @@ package com.anyrent.pos.ui.availability
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,30 +20,28 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -53,8 +53,12 @@ import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.availability.AvailabilityOrder
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
 import com.anyrent.pos.ui.common.AppCard
-import com.anyrent.pos.ui.common.formatDisplayDate
+import com.anyrent.pos.ui.theme.BrandPrimary
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
@@ -83,13 +87,42 @@ fun AvailabilityScreen(
     }
     val viewModel: AvailabilityViewModel = viewModel(factory = factory)
     val state by viewModel.state.collectAsState()
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
+    var showHistorySheet by remember { mutableStateOf(false) }
+    var pendingHistorySheet by remember { mutableStateOf(false) }
+    var visibleMonth by remember { mutableStateOf(YearMonth.from(state.selectedDate)) }
 
     LaunchedEffect(scannedProductId) {
         scannedProductId?.let(viewModel::selectProductById)
     }
 
+    LaunchedEffect(state.selectedDate) {
+        visibleMonth = YearMonth.from(state.selectedDate)
+    }
+
+    LaunchedEffect(state.selectedProduct?.id) {
+        showHistory = false
+        showHistorySheet = false
+        pendingHistorySheet = false
+    }
+
+    LaunchedEffect(state.result, state.checking, pendingHistorySheet) {
+        if (!state.checking && pendingHistorySheet) {
+            pendingHistorySheet = false
+            if (focusedProductMode && state.result?.orders?.isNotEmpty() == true) {
+                showHistorySheet = true
+            }
+        }
+    }
+
+    LaunchedEffect(visibleMonth, state.selectedProduct?.id) {
+        if (state.selectedProduct != null) {
+            viewModel.onCalendarMonthVisible(visibleMonth)
+        }
+    }
+
     Scaffold(
+        containerColor = if (focusedProductMode) Color(0xFFF4F5F7) else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -120,8 +153,11 @@ fun AvailabilityScreen(
         },
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = if (focusedProductMode) 12.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (focusedProductMode) 12.dp else 10.dp),
         ) {
             if (!focusedProductMode) item {
                 OutlinedTextField(
@@ -190,32 +226,6 @@ fun AvailabilityScreen(
                         )
                     }
                 }
-                item {
-                    AppCard(
-                        Modifier.fillMaxWidth(),
-                        onClick = { showDatePicker = true },
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    stringResource(R.string.availability_date),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(formatDisplayDate(state.selectedDate), fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-                }
                 if (!focusedProductMode) item {
                     OutlinedTextField(
                         value = state.quantity.toString(),
@@ -241,143 +251,219 @@ fun AvailabilityScreen(
             state.error?.let { message ->
                 item { Text(message, color = MaterialTheme.colorScheme.error) }
             }
+            if (focusedProductMode && state.selectedProduct != null && state.result == null && state.checking) {
+                item {
+                    Text(
+                        stringResource(R.string.loading),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            }
             state.result?.let { result ->
-                item { AvailabilitySummary(result) }
-                if (result.orders.isNotEmpty()) {
-                    item {
-                        Text(
-                            stringResource(R.string.related_orders),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                item {
+                    AvailabilitySummary(
+                        result = result,
+                        dateLabel = state.selectedDate.format(
+                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                        ),
+                    )
+                }
+            }
+            if (state.selectedProduct != null && (focusedProductMode || state.result != null)) {
+                item {
+                    AppCard(
+                        Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Column(
+                            Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            OccupancyLegend()
+                            OccupancyMonthCalendar(
+                                month = visibleMonth,
+                                selected = state.selectedDate,
+                                availableByDate = state.availableByDate,
+                                occupancyLoaded = state.occupancyLoaded,
+                                occupancyMonth = state.occupancyMonth,
+                                stock = state.result?.totalStock ?: state.selectedProduct?.stock ?: 0,
+                                minDate = LocalDate.now(),
+                                maxDate = LocalDate.now().plusYears(1),
+                                onMonthChange = { visibleMonth = it },
+                                onSelect = { day ->
+                                    val sameDay = day == state.selectedDate
+                                    if (focusedProductMode && sameDay && state.result?.orders?.isNotEmpty() == true) {
+                                        showHistorySheet = true
+                                    } else {
+                                        pendingHistorySheet = focusedProductMode
+                                        viewModel.updateDate(day.toString())
+                                        viewModel.check()
+                                    }
+                                },
+                            )
+                            Text(
+                                stringResource(R.string.availability_calendar_tap_hint),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
-                    items(result.orders, key = { "order-${it.id}" }) { order ->
-                        AvailabilityOrderCard(order, onClick = { onOpenOrder(order.id) })
+                }
+                if (!focusedProductMode) {
+                    item {
+                        OutlinedButton(
+                            onClick = { showHistory = !showHistory },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (showHistory) R.string.hide_order_history
+                                    else R.string.view_order_history,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+            if (!focusedProductMode && showHistory) {
+                state.result?.let { result ->
+                    if (result.orders.isEmpty()) {
+                        item {
+                            Text(
+                                stringResource(R.string.empty_orders),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp),
+                            )
+                        }
+                    } else {
+                        items(result.orders, key = { "order-${it.id}" }) { order ->
+                            AvailabilityOrderCard(order, onClick = { onOpenOrder(order.id) })
+                        }
                     }
                 }
             }
         }
     }
 
-    if (showDatePicker) {
-        var visibleMonth by remember { mutableStateOf(YearMonth.from(state.selectedDate)) }
-        var draftDate by remember { mutableStateOf(state.selectedDate) }
-        LaunchedEffect(visibleMonth, state.selectedProduct?.id) {
-            viewModel.loadOccupancy(visibleMonth)
+    if (focusedProductMode && showHistorySheet) {
+        state.result?.let { result ->
+            AvailabilityOrdersBottomSheet(
+                orders = result.orders,
+                dateLabel = state.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                stock = result.totalStock,
+                available = result.effectivelyAvailable,
+                renting = result.totalRenting,
+                onDismiss = { showHistorySheet = false },
+                onOpenOrder = { orderId ->
+                    showHistorySheet = false
+                    onOpenOrder(orderId)
+                },
+            )
         }
-        ModalBottomSheet(
-            onDismissRequest = { showDatePicker = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = Color.White,
-        ) {
+    }
+}
+
+@Composable
+private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
+    val hasConflicts = result.conflicts.isNotEmpty() || result.orders.any { it.isConflict }
+    val accent = when {
+        result.isAvailable -> Color(0xFF16A34A)
+        hasConflicts -> Color(0xFFEA580C)
+        else -> MaterialTheme.colorScheme.error
+    }
+    val headline = when {
+        result.isAvailable -> stringResource(R.string.available)
+        hasConflicts -> stringResource(R.string.availability_conflicts)
+        else -> stringResource(R.string.unavailable)
+    }
+    val cardTint = when {
+        result.isAvailable -> Color(0xFF22C55E).copy(alpha = 0.05f)
+        hasConflicts -> Color(0xFFEA580C).copy(alpha = 0.06f)
+        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
+    }
+
+    AppCard(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(accent),
+            )
             Column(
-                Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                Modifier
+                    .weight(1f)
+                    .background(cardTint)
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    stringResource(R.string.select_availability_date),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                )
-                OccupancyLegend()
-                OccupancyMonthCalendar(
-                    month = visibleMonth,
-                    selected = draftDate,
-                    availableByDate = state.availableByDate,
-                    occupancyLoaded = state.occupancyLoaded,
-                    minDate = LocalDate.now(),
-                    maxDate = LocalDate.now().plusYears(1),
-                    onMonthChange = { visibleMonth = it },
-                    onSelect = { draftDate = it },
-                )
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    TextButton(
-                        onClick = { showDatePicker = false },
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.cancel)) }
-                    Button(
-                        modifier = Modifier.weight(2f),
-                        onClick = {
-                            viewModel.updateDate(draftDate.toString())
-                            showDatePicker = false
-                            viewModel.check()
-                        },
-                    ) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AvailabilitySummary(result: ProductAvailability) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        AppCard(Modifier.fillMaxWidth()) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        if (result.isAvailable) Color(0xFFE7F7EE) else MaterialTheme.colorScheme.errorContainer,
-                    )
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                androidx.compose.foundation.layout.Box(
-                    Modifier.size(44.dp).background(
-                        if (result.isAvailable) Color(0xFF18BF63) else MaterialTheme.colorScheme.error,
-                        CircleShape,
-                    ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
-                }
-                Text(
-                    stringResource(
-                        R.string.products_available_on_date,
+                    Text(
                         formatQuantity(result.effectivelyAvailable),
-                    ),
-                    color = if (result.isAvailable) Color(0xFF0E9F50) else MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            headline,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = accent,
+                        )
+                        Text(
+                            stringResource(R.string.availability_verdict_date_context, dateLabel),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                androidx.compose.material3.HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
                 )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    CompactMetric(stringResource(R.string.storage), result.totalStock)
+                    CompactMetric(
+                        stringResource(R.string.available),
+                        result.effectivelyAvailable,
+                        highlighted = true,
+                    )
+                    CompactMetric(stringResource(R.string.renting), result.totalRenting)
+                }
             }
         }
-        AppCard(Modifier.fillMaxWidth()) {
-            Row(
-                Modifier.fillMaxWidth().padding(18.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-            ) {
-                AvailabilityMetric(stringResource(R.string.storage), result.totalStock, Icons.Default.Inventory2)
-                AvailabilityMetric(stringResource(R.string.available), result.effectivelyAvailable, Icons.Default.Check, true)
-                AvailabilityMetric(stringResource(R.string.renting), result.totalRenting, Icons.Default.Inventory2)
-            }
-        }
-        result.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+    result.message?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun AvailabilityMetric(
-    label: String,
-    value: Int,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    highlighted: Boolean = false,
-) {
+private fun CompactMetric(label: String, value: Int, highlighted: Boolean = false) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
             formatQuantity(value),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
             color = if (highlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -474,29 +560,63 @@ private fun AvailabilityDateCell(
     }
 }
 
-private val OccupiedRed = Color(0xFFE53935)
-private val EmptyGreen = Color(0xFF18BF63)
+private val EmptyGreenFill = Color(0xFFEDF9F2)
+private val EmptyGreenText = Color(0xFF178C57)
+private val LowYellowFill = Color(0xFFFFFAEB)
+private val LowYellowText = Color(0xFFB87A0D)
+private val OccupiedRedFill = Color(0xFFFFF2F2)
+private val OccupiedRedText = Color(0xFFC73333)
+private val SelectedRing = BrandPrimary
+
+private enum class AvailabilityHeatLevel {
+    Plenty,
+    Low,
+    None,
+}
+
+private fun heatLevel(remaining: Int, stock: Int): AvailabilityHeatLevel {
+    if (remaining <= 0) return AvailabilityHeatLevel.None
+    if (stock > 0) {
+        return if (remaining.toDouble() / stock > 0.5) AvailabilityHeatLevel.Plenty else AvailabilityHeatLevel.Low
+    }
+    return if (remaining >= 3) AvailabilityHeatLevel.Plenty else AvailabilityHeatLevel.Low
+}
+
+private data class HeatColors(val fill: Color, val accent: Color)
+
+private fun colorsFor(level: AvailabilityHeatLevel): HeatColors = when (level) {
+    AvailabilityHeatLevel.Plenty -> HeatColors(EmptyGreenFill, EmptyGreenText)
+    AvailabilityHeatLevel.Low -> HeatColors(LowYellowFill, LowYellowText)
+    AvailabilityHeatLevel.None -> HeatColors(OccupiedRedFill, OccupiedRedText)
+}
 
 @Composable
 private fun OccupancyLegend() {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        LegendSwatch(EmptyGreen, stringResource(R.string.calendar_empty_day))
-        LegendSwatch(OccupiedRed, stringResource(R.string.calendar_has_orders))
+        LegendDot(accent = EmptyGreenText, label = stringResource(R.string.calendar_plenty))
+        LegendDot(accent = LowYellowText, label = stringResource(R.string.calendar_low_stock))
+        LegendDot(accent = OccupiedRedText, label = stringResource(R.string.calendar_has_orders))
     }
 }
 
 @Composable
-private fun LegendSwatch(color: Color, label: String) {
+private fun LegendDot(accent: Color, label: String) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(12.dp).background(color, CircleShape))
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box(Modifier.size(8.dp).background(accent, CircleShape))
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -506,11 +626,14 @@ private fun OccupancyMonthCalendar(
     selected: LocalDate,
     availableByDate: Map<LocalDate, Int>,
     occupancyLoaded: Boolean,
+    occupancyMonth: YearMonth?,
+    stock: Int,
     minDate: LocalDate,
     maxDate: LocalDate,
     onMonthChange: (YearMonth) -> Unit,
     onSelect: (LocalDate) -> Unit,
 ) {
+    val occupancyReady = occupancyLoaded && occupancyMonth == month
     val firstDay = month.atDay(1)
     val daysInMonth = month.lengthOfMonth()
     val locale = Locale.getDefault()
@@ -518,7 +641,7 @@ private fun OccupancyMonthCalendar(
     val weekDays = (0..6).map { firstWeekday.plus(it.toLong()) }
     val startOffset = ((firstDay.dayOfWeek.value - firstWeekday.value) + 7) % 7
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -553,57 +676,170 @@ private fun OccupancyMonthCalendar(
         val cellCount = startOffset + daysInMonth
         val rows = (cellCount + 6) / 7
         repeat(rows) { row ->
-            Row(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+            ) {
                 repeat(7) { column ->
                     val index = row * 7 + column
                     val dayNumber = index - startOffset + 1
                     if (dayNumber in 1..daysInMonth) {
                         val date = month.atDay(dayNumber)
-                        val enabled = !date.isBefore(minDate) && !date.isAfter(maxDate)
-                        val remaining = availableByDate[date]
-                        val fill = when {
-                            !occupancyLoaded || !enabled || remaining == null -> Color.Transparent
-                            remaining > 0 -> EmptyGreen
-                            else -> OccupiedRed
-                        }
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(52.dp)
-                                .padding(2.dp)
-                                .background(fill, RoundedCornerShape(8.dp))
-                                .then(
-                                    if (date == selected) Modifier.border(2.dp, Color.Black, RoundedCornerShape(8.dp))
-                                    else Modifier,
-                                )
-                                .clickable(enabled = enabled) { onSelect(date) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    "$dayNumber",
-                                    color = when {
-                                        !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                                        remaining != null && occupancyLoaded -> Color.White
-                                        else -> MaterialTheme.colorScheme.onSurface
-                                    },
-                                    fontWeight = if (date == selected) FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                                if (occupancyLoaded && enabled && remaining != null) {
-                                    Text(
-                                        "$remaining",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                    )
-                                }
-                            }
-                        }
+                        AvailabilityDayCell(
+                            dayNumber = dayNumber,
+                            selected = date == selected,
+                            enabled = !date.isBefore(minDate) && !date.isAfter(maxDate),
+                            isToday = date == LocalDate.now(),
+                            remaining = if (occupancyReady && !date.isBefore(minDate) && !date.isAfter(maxDate)) {
+                                availableByDate[date] ?: 0
+                            } else {
+                                null
+                            },
+                            occupancyLoaded = occupancyReady,
+                            stock = stock,
+                            onClick = { onSelect(date) },
+                            modifier = Modifier.weight(1f),
+                        )
                     } else {
-                        Box(Modifier.weight(1f).height(52.dp))
+                        Box(Modifier.weight(1f).height(68.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AvailabilityDayCell(
+    dayNumber: Int,
+    selected: Boolean,
+    enabled: Boolean,
+    isToday: Boolean,
+    remaining: Int?,
+    occupancyLoaded: Boolean,
+    stock: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Inventory-calendar pattern: soft heat wash + day top + qty bottom.
+    // No nested pills/dots — color wash = status, number = decision metric.
+    val hasQty = occupancyLoaded && enabled && remaining != null
+    val level = if (hasQty && remaining != null) heatLevel(remaining, stock) else null
+    val palette = level?.let { colorsFor(it) }
+    val tileFill = palette?.fill
+        ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+    val accent = palette?.accent ?: MaterialTheme.colorScheme.onSurfaceVariant
+
+    Box(
+        modifier
+            .height(68.dp)
+            .padding(2.5.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(tileFill)
+            .then(
+                if (selected) Modifier.border(2.dp, SelectedRing, RoundedCornerShape(12.dp))
+                else Modifier,
+            )
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
+            .then(if (!enabled) Modifier.alpha(0.32f) else Modifier),
+    ) {
+        if (isToday) {
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(2.5.dp)
+                    .background(BrandPrimary),
+            )
+        }
+        Text(
+            "$dayNumber",
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 8.dp),
+            fontSize = 11.sp,
+            fontWeight = if (isToday) FontWeight.Medium else FontWeight.Normal,
+            color = when {
+                isToday -> BrandPrimary
+                !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+        if (hasQty) {
+            Text(
+                "$remaining",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = accent,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AvailabilityOrdersBottomSheet(
+    orders: List<AvailabilityOrder>,
+    dateLabel: String,
+    stock: Int,
+    available: Int,
+    renting: Int,
+    onDismiss: () -> Unit,
+    onOpenOrder: (Int) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                stringResource(R.string.availability_orders_sheet_title, dateLabel),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                stringResource(R.string.availability_order_count, orders.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            AppCard(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    CompactMetric(stringResource(R.string.storage), stock)
+                    CompactMetric(stringResource(R.string.renting), renting)
+                    CompactMetric(
+                        stringResource(R.string.available),
+                        available,
+                        highlighted = true,
+                    )
+                }
+            }
+            orders.forEach { order ->
+                AvailabilityOrderCard(order, onClick = { onOpenOrder(order.id) })
             }
         }
     }

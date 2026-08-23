@@ -4,6 +4,7 @@
 //
 
 import UIKit
+import DGCharts
 import SnapKit
 
 final class OverviewSummaryCardView: UIView {
@@ -11,6 +12,12 @@ final class OverviewSummaryCardView: UIView {
     enum SummaryMode {
         case today
         case range
+    }
+
+    enum PerformanceMode: Int {
+        case revenue = 0
+        case growth = 1
+        case orders = 2
     }
 
     let incomeLabel: UILabel
@@ -22,15 +29,29 @@ final class OverviewSummaryCardView: UIView {
     let revenueInfoButton: UIButton
     let growthPillView: UIView
     let growthPillLabel: UILabel
+    let chartView: LineChartView
+
+    var performanceMode: PerformanceMode = .revenue {
+        didSet {
+            guard oldValue != performanceMode else { return }
+            refreshModeChrome()
+            renderStoredHero()
+            onPerformanceModeChanged?(performanceMode)
+        }
+    }
+
+    var onPerformanceModeChanged: ((PerformanceMode) -> Void)?
 
     private let isIPad: Bool
     private let contentStack = UIStackView()
-    private let metricsStack = UIStackView()
-    private let contextLabel = UILabel()
-    private let metricsSurfaceView = UIView()
-    private let rangeOrderStack = UIStackView()
+    private let metricTitleLabel = UILabel()
+    private let swipeHintLabel = UILabel()
+    private var modeButtons: [UIButton] = []
 
-    private var currentMode: SummaryMode = .today
+    private var storedRevenue: Double = 0
+    private var storedOrders: Double = 0
+    private var storedRevenueGrowth: Double?
+    private var storedOrdersGrowth: Double?
 
     init(
         isIPad: Bool,
@@ -57,17 +78,23 @@ final class OverviewSummaryCardView: UIView {
 
         growthPillView = UIView()
         growthPillView.backgroundColor = .clear
-        growthPillView.isHidden = true
         growthPillView.addSubview(growthPillLabel)
         growthPillLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
+        chartView = LineChartView()
+        chartView.snp.makeConstraints { make in
+            make.height.equalTo(isIPad ? 240 : 200)
+        }
+        chartView.setContentHuggingPriority(.required, for: .vertical)
+        chartView.setContentCompressionResistancePriority(.required, for: .vertical)
+
         super.init(frame: .zero)
 
         configureBaseLabels()
         buildLayout()
-        setMode(.today)
+        refreshModeChrome()
     }
 
     required init?(coder: NSCoder) {
@@ -75,25 +102,18 @@ final class OverviewSummaryCardView: UIView {
     }
 
     func setMode(_ mode: SummaryMode) {
-        currentMode = mode
-
-        contextLabel.isHidden = true
-        growthPillView.isHidden = true
-        rangeOrderStack.isHidden = false
-        metricsSurfaceView.isHidden = true
-        rebuildMetricLayout(for: mode)
-        updateMetricFonts(for: mode)
-
         incomeLabel.font = .bodyBold(size: isIPad ? 31 : 27)
         incomeLabel.minimumScaleFactor = 0.7
+        _ = mode
+        renderStoredHero()
     }
 
     func setContextText(_ text: String?) {
-        contextLabel.text = text
-        contextLabel.isHidden = true
+        _ = text
     }
 
     func applyIncomeColor(for amount: Double) {
+        guard performanceMode == .revenue else { return }
         incomeLabel.textColor = OverviewUIBuilder.revenueDisplayColor(for: amount, positiveColor: .brandPrimary)
     }
 
@@ -101,6 +121,26 @@ final class OverviewSummaryCardView: UIView {
         let value = (text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? text! : "—"
         changeMetricLabel.text = value
         changeMetricLabel.textColor = color
+    }
+
+    func setShowsHorizontalHint(_ shows: Bool) {
+        swipeHintLabel.isHidden = !shows
+        swipeHintLabel.text = "Overview_Charts_SwipeHint".localized()
+    }
+
+    func applyHero(
+        revenue: Double,
+        orders: Double,
+        revenueGrowth: Double?,
+        ordersGrowth: Double?
+    ) {
+        storedRevenue = revenue
+        storedOrders = orders
+        storedRevenueGrowth = revenueGrowth
+        storedOrdersGrowth = ordersGrowth
+        ordersLabel.text = orders.formatStringInCommon()
+        changeMetricLabel.text = orders.formatStringInCommon()
+        renderStoredHero()
     }
 
     private func configureBaseLabels() {
@@ -124,64 +164,43 @@ final class OverviewSummaryCardView: UIView {
             $0.numberOfLines = 1
             $0.adjustsFontSizeToFitWidth = true
             $0.minimumScaleFactor = 0.72
-            $0.setContentCompressionResistancePriority(.required, for: .vertical)
+            $0.isHidden = true
         }
 
-        contextLabel.font = .captionMedium(size: 12)
-        contextLabel.textColor = .textSecondary
-        contextLabel.numberOfLines = 1
-        contextLabel.isHidden = true
+        metricTitleLabel.font = .captionMedium(size: 12)
+        metricTitleLabel.textColor = .textTertiary
+
+        swipeHintLabel.font = .captionMedium(size: 11)
+        swipeHintLabel.textColor = .brandPrimary
+        swipeHintLabel.isHidden = true
     }
 
     private func buildLayout() {
         let titleLabel = UILabel()
-        titleLabel.text = "Report_Summary_Revenue".localized()
-        titleLabel.font = .captionMedium(size: 12)
-        titleLabel.textColor = .textTertiary
+        titleLabel.text = "Overview_Performance_Title".localized()
+        titleLabel.font = .bodyBold(size: isIPad ? 18 : 16)
+        titleLabel.textColor = .textPrimary
 
-        let titleRow = UIStackView(arrangedSubviews: [titleLabel, revenueInfoButton, UIView()])
+        let pills = makeModePills()
+
+        let titleRow = UIStackView(arrangedSubviews: [metricTitleLabel, revenueInfoButton, UIView()])
         titleRow.axis = .horizontal
         titleRow.spacing = 4
         titleRow.alignment = .center
 
-        let revenueStack = UIStackView(arrangedSubviews: [titleRow, incomeLabel, contextLabel, growthPillView])
-        revenueStack.axis = .vertical
-        revenueStack.spacing = 4
-        revenueStack.alignment = .leading
-
-        let rangeOrderTitleLabel = UILabel()
-        rangeOrderTitleLabel.text = "Report_Summary_Orders".localized()
-        rangeOrderTitleLabel.font = .captionMedium(size: 11)
-        rangeOrderTitleLabel.textColor = .textSecondary
-        rangeOrderTitleLabel.textAlignment = .right
-
-        rangeOrderStack.axis = .vertical
-        rangeOrderStack.spacing = 4
-        rangeOrderStack.alignment = .trailing
-        rangeOrderStack.addArrangedSubview(rangeOrderTitleLabel)
-        rangeOrderStack.addArrangedSubview(changeMetricLabel)
-
-        let heroRow = UIStackView(arrangedSubviews: [revenueStack, UIView(), rangeOrderStack])
-        heroRow.axis = .horizontal
-        heroRow.spacing = 12
-        heroRow.alignment = .top
-
-        metricsSurfaceView.backgroundColor = .clear
-        metricsSurfaceView.addSubview(metricsStack)
-
-        metricsStack.axis = .horizontal
-        metricsStack.spacing = 0
-        metricsStack.distribution = .fill
-        metricsStack.alignment = .top
-        metricsStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        let heroStack = UIStackView(arrangedSubviews: [titleRow, incomeLabel, growthPillView])
+        heroStack.axis = .vertical
+        heroStack.spacing = 4
+        heroStack.alignment = .leading
 
         contentStack.axis = .vertical
-        contentStack.spacing = 14
+        contentStack.spacing = 12
         contentStack.alignment = .fill
-        contentStack.addArrangedSubview(heroRow)
-        contentStack.addArrangedSubview(metricsSurfaceView)
+        contentStack.addArrangedSubview(titleLabel)
+        contentStack.addArrangedSubview(pills)
+        contentStack.addArrangedSubview(heroStack)
+        contentStack.addArrangedSubview(chartView)
+        contentStack.addArrangedSubview(swipeHintLabel)
 
         addSubview(contentStack)
         contentStack.snp.makeConstraints { make in
@@ -189,92 +208,110 @@ final class OverviewSummaryCardView: UIView {
         }
     }
 
-    private func rebuildMetricLayout(for mode: SummaryMode) {
-        metricsStack.arrangedSubviews.forEach { view in
-            metricsStack.removeArrangedSubview(view)
-            view.removeFromSuperview()
-        }
+    private func makeModePills() -> UIStackView {
+        let titles = [
+            "Report_Summary_Revenue".localized(),
+            "Overview_Performance_GrowthPercent".localized(),
+            "Report_Summary_Orders".localized()
+        ]
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.distribution = .fillEqually
 
-        switch mode {
-        case .today:
-            return
-
-        case .range:
-            return
-        }
-    }
-
-    private func installMetricItems(_ items: [UIView]) {
-        guard let firstItem = items.first else { return }
-
-        for (index, item) in items.enumerated() {
-            metricsStack.addArrangedSubview(item)
-            if index > 0 {
-                item.snp.makeConstraints { make in
-                    make.width.equalTo(firstItem)
-                }
+        for (index, title) in titles.enumerated() {
+            let button = UIButton(type: .system)
+            button.tag = index
+            button.setTitle(title, for: .normal)
+            button.titleLabel?.font = .captionMedium(size: isIPad ? 13 : 12)
+            button.titleLabel?.adjustsFontSizeToFitWidth = true
+            button.titleLabel?.minimumScaleFactor = 0.8
+            button.layer.cornerRadius = 8
+            button.layer.borderWidth = 1.5
+            button.addTarget(self, action: #selector(modePillTapped(_:)), for: .touchUpInside)
+            button.snp.makeConstraints { make in
+                make.height.equalTo(32)
             }
-            if index < items.count - 1 {
-                metricsStack.addArrangedSubview(makeMetricDivider())
+            modeButtons.append(button)
+            stack.addArrangedSubview(button)
+        }
+        return stack
+    }
+
+    @objc private func modePillTapped(_ sender: UIButton) {
+        guard let mode = PerformanceMode(rawValue: sender.tag) else { return }
+        performanceMode = mode
+    }
+
+    private func refreshModeChrome() {
+        for button in modeButtons {
+            let selected = button.tag == performanceMode.rawValue
+            button.backgroundColor = selected ? .backgroundPrimary : UIColor.systemGray6
+            button.setTitleColor(.textPrimary, for: .normal)
+            button.layer.borderColor = selected
+                ? UIColor.label.cgColor
+                : UIColor.clear.cgColor
+        }
+
+        switch performanceMode {
+        case .revenue:
+            metricTitleLabel.text = "Report_Summary_Revenue".localized()
+            revenueInfoButton.isHidden = false
+        case .growth:
+            metricTitleLabel.text = "Overview_Performance_GrowthPercent".localized()
+            revenueInfoButton.isHidden = true
+        case .orders:
+            metricTitleLabel.text = "Report_Summary_Orders".localized()
+            revenueInfoButton.isHidden = true
+        }
+    }
+
+    private func renderStoredHero() {
+        let vsPrevious = "vs previous period".localized()
+
+        switch performanceMode {
+        case .revenue:
+            incomeLabel.text = storedRevenue.formatStringInCommon()
+            incomeLabel.textColor = OverviewUIBuilder.revenueDisplayColor(
+                for: storedRevenue,
+                positiveColor: .brandPrimary
+            )
+            applyGrowthCaption(storedRevenueGrowth, prefix: nil, vsPrevious: vsPrevious)
+
+        case .growth:
+            let growth = storedRevenueGrowth
+            incomeLabel.text = growth.map { OverviewUIBuilder.growthText($0) } ?? "—"
+            incomeLabel.textColor = growthColor(growth)
+            if growth != nil {
+                growthPillLabel.text = vsPrevious
+                growthPillLabel.textColor = .textSecondary
+                growthPillView.isHidden = false
+            } else {
+                growthPillView.isHidden = true
             }
+
+        case .orders:
+            incomeLabel.text = storedOrders.formatStringInCommon()
+            incomeLabel.textColor = .accentOrange
+            applyGrowthCaption(storedOrdersGrowth, prefix: nil, vsPrevious: vsPrevious)
         }
     }
 
-    private func makeMetricDivider() -> UIView {
-        let divider = UIView()
-        divider.backgroundColor = UIColor.borderColor.withAlphaComponent(0.65)
-        divider.snp.makeConstraints { make in
-            make.width.equalTo(1 / UIScreen.main.scale)
-            make.height.equalTo(48)
+    private func applyGrowthCaption(_ growth: Double?, prefix: String?, vsPrevious: String) {
+        guard let growth else {
+            growthPillView.isHidden = true
+            return
         }
-        return divider
+        let text = OverviewUIBuilder.growthText(growth) + "  " + vsPrevious
+        growthPillLabel.text = prefix.map { $0 + " " + text } ?? text
+        growthPillLabel.textColor = growthColor(growth)
+        growthPillView.isHidden = false
     }
 
-    private func updateMetricFonts(for mode: SummaryMode) {
-        switch mode {
-        case .today:
-            ordersLabel.font = .bodyBold(size: isIPad ? 22 : 20)
-            ordersLabel.textColor = .accentOrange
-            changeMetricLabel.font = .bodyBold(size: isIPad ? 34 : 30)
-            changeMetricLabel.textColor = .accentOrange
-            changeMetricLabel.textAlignment = .right
-
-        case .range:
-            ordersLabel.font = .bodyBold(size: isIPad ? 22 : 20)
-            ordersLabel.textColor = .accentOrange
-            changeMetricLabel.font = .bodyBold(size: isIPad ? 34 : 30)
-            changeMetricLabel.textColor = .accentOrange
-            changeMetricLabel.textAlignment = .right
-        }
-    }
-
-    private func makeMetricStripItem(title: String, valueLabel: UILabel) -> UIView {
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .captionMedium(size: isIPad ? 12 : 11)
-        titleLabel.textColor = .textSecondary
-        titleLabel.numberOfLines = 2
-        titleLabel.textAlignment = .center
-        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-
-        valueLabel.textAlignment = .center
-        valueLabel.setContentHuggingPriority(.required, for: .vertical)
-        valueLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-
-        let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
-        stack.axis = .vertical
-        stack.spacing = 5
-        stack.alignment = .center
-        stack.distribution = .fill
-
-        let container = UIView()
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8))
-        }
-        container.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(62)
-        }
-        return container
+    private func growthColor(_ growth: Double?) -> UIColor {
+        guard let growth else { return .textSecondary }
+        if growth > 0 { return .actionSuccess }
+        if growth < 0 { return .actionDanger }
+        return .textSecondary
     }
 }

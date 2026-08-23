@@ -49,6 +49,7 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.auth.CheckEmailScreen
 import com.anyrent.pos.ui.auth.ForgotPasswordScreen
 import com.anyrent.pos.ui.auth.LoginScreen
@@ -371,6 +372,8 @@ fun AnyRentNavHost(
             AppInfoScreen(onBack = { rootNavController.popBackStack() })
         }
     }
+
+    LaunchedOpenDraftCart(rootNavController)
 }
 
 @Composable
@@ -572,5 +575,26 @@ private fun LaunchedOpenPendingOrder(navController: NavHostController, startOrde
             SessionStore.pendingOrderId = null
             navController.navigate(Routes.orderDetail(id))
         }
+    }
+}
+
+@Composable
+private fun LaunchedOpenDraftCart(navController: NavHostController) {
+    val pending by DraftOrderReminder.pendingOpenCart.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (!pending || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (dest == Routes.Login ||
+            dest == Routes.Forgot ||
+            dest == Routes.Register ||
+            dest == Routes.Onboarding ||
+            dest.startsWith("check-email")
+        ) {
+            return@LaunchedEffect
+        }
+        if (!DraftOrderReminder.consumeOpenCart()) return@LaunchedEffect
+        MainTabRouter.openHome()
+        navController.navigate(Routes.Cart) { launchSingleTop = true }
     }
 }

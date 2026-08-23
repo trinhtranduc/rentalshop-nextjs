@@ -193,6 +193,8 @@ export interface ApiUrls {
     revenue: string;
     orders: string;
     income: string;
+    period: string;
+    overview: string;
     topProducts: string;
     topCustomers: string;
     recentOrders: string;
@@ -753,6 +755,8 @@ function createApiUrls(): ApiUrls {
       revenue: `${base}/api/analytics/revenue`,
       orders: `${base}/api/analytics/orders`,
       income: `${base}/api/analytics/income`,
+      period: `${base}/api/analytics/period`,
+      overview: `${base}/api/analytics/overview`,
       topProducts: `${base}/api/analytics/top-products`,
       topCustomers: `${base}/api/analytics/top-customers`,
       recentOrders: `${base}/api/analytics/recent-orders`,

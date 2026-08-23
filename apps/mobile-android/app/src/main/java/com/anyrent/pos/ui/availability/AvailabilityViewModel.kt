@@ -25,6 +25,7 @@ data class AvailabilityUiState(
     val result: ProductAvailability? = null,
     val availableByDate: Map<LocalDate, Int> = emptyMap(),
     val occupancyLoaded: Boolean = false,
+    val occupancyMonth: YearMonth? = null,
     val searching: Boolean = false,
     val checking: Boolean = false,
     val error: String? = null,
@@ -39,6 +40,27 @@ class AvailabilityViewModel(
     private var occupancyJob: Job? = null
     private var checkJob: Job? = null
     private var checkGeneration = 0
+    private var occupancyGeneration = 0
+    private val occupancyCache = mutableMapOf<YearMonth, Map<LocalDate, Int>>()
+    private var occupancyCacheProductId: Int? = null
+    private var occupancyLoadingMonth: YearMonth? = null
+    private var pendingDisplayMonth: YearMonth? = null
+
+    private fun resetOccupancyCache() {
+        occupancyJob?.cancel()
+        occupancyGeneration += 1
+        occupancyCache.clear()
+        occupancyCacheProductId = null
+        occupancyLoadingMonth = null
+        pendingDisplayMonth = null
+        _state.update {
+            it.copy(
+                availableByDate = emptyMap(),
+                occupancyLoaded = false,
+                occupancyMonth = null,
+            )
+        }
+    }
 
     fun updateQuery(value: String) {
         _state.update { it.copy(query = value) }
@@ -61,6 +83,7 @@ class AvailabilityViewModel(
     }
 
     fun selectProduct(product: AvailabilityProduct) {
+        resetOccupancyCache()
         _state.update {
             it.copy(selectedProduct = product, products = emptyList(), query = product.name, result = null)
         }
@@ -99,18 +122,69 @@ class AvailabilityViewModel(
         }
     }
 
-    fun loadOccupancy(month: YearMonth) {
+    /**
+     * Called when the calendar shows a month.
+     * Cached months render immediately; new months stay neutral until the API returns.
+     */
+    fun onCalendarMonthVisible(month: YearMonth) {
         val product = _state.value.selectedProduct ?: return
+        pendingDisplayMonth = month
+
+        if (product.id == occupancyCacheProductId && occupancyCache.containsKey(month)) {
+            _state.update {
+                it.copy(
+                    availableByDate = occupancyCache[month].orEmpty(),
+                    occupancyLoaded = true,
+                    occupancyMonth = month,
+                )
+            }
+            return
+        }
+
+        _state.update {
+            it.copy(
+                availableByDate = emptyMap(),
+                occupancyLoaded = false,
+                occupancyMonth = null,
+            )
+        }
+
+        if (occupancyLoadingMonth == month) return
+
         occupancyJob?.cancel()
+        occupancyLoadingMonth = month
+        val generation = ++occupancyGeneration
         occupancyJob = viewModelScope.launch {
             val from = month.atDay(1).minusDays(7)
             val to = month.atEndOfMonth().plusDays(7)
             runCatching { repository.occupancyCalendar(product.id, from, to) }
                 .onSuccess { availableByDate ->
-                    _state.update { it.copy(availableByDate = availableByDate, occupancyLoaded = true) }
+                    if (generation != occupancyGeneration) return@onSuccess
+                    occupancyLoadingMonth = null
+                    occupancyCache[month] = availableByDate
+                    occupancyCacheProductId = product.id
+                    if (pendingDisplayMonth == month) {
+                        _state.update {
+                            it.copy(
+                                availableByDate = availableByDate,
+                                occupancyLoaded = true,
+                                occupancyMonth = month,
+                            )
+                        }
+                    }
                 }
                 .onFailure {
-                    _state.update { it.copy(occupancyLoaded = false) }
+                    if (generation != occupancyGeneration) return@onFailure
+                    occupancyLoadingMonth = null
+                    if (pendingDisplayMonth == month) {
+                        _state.update {
+                            it.copy(
+                                availableByDate = emptyMap(),
+                                occupancyLoaded = false,
+                                occupancyMonth = null,
+                            )
+                        }
+                    }
                 }
         }
     }

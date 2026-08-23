@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ListAlt
@@ -84,6 +83,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.ui.Modifier
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.max
 
@@ -100,6 +100,8 @@ private data class AnalyticsChartPoint(
     val revenue: Double,
     val orders: Double,
 )
+
+private enum class PerformanceMode { REVENUE, GROWTH, ORDERS }
 
 private enum class OverviewPeriod {
     TODAY, D7, D30, D90, D180, ALL, CUSTOM
@@ -162,7 +164,7 @@ fun OverviewScreen(
     var showDateSheet by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableIntStateOf(0) }
     var chartPoints by remember { mutableStateOf<List<AnalyticsChartPoint>>(emptyList()) }
-    var chartsExpanded by remember { mutableStateOf(false) }
+    var performanceMode by remember { mutableStateOf(PerformanceMode.REVENUE) }
     val scope = rememberCoroutineScope()
     val (start, end) = remember(period, customStart, customEnd, refreshTick) {
         period.range(customStart, customEnd)
@@ -172,13 +174,6 @@ fun OverviewScreen(
         scope.launch {
             loading = true
             error = null
-            val overview = withContext(Dispatchers.IO) {
-                ApiClient.get().analyticsOverview(start.toString(), end.toString())
-            }
-            overview.onSuccess {
-                topProducts = it.first
-                topCustomers = it.second
-            }.onFailure { if (error == null) error = it.message }
 
             val periodResult = withContext(Dispatchers.IO) {
                 ApiParity.analyticsPeriod(start.toString(), end.toString())
@@ -216,6 +211,16 @@ fun OverviewScreen(
                     ?.takeIf { !it.isNaN() }
                     ?: operational?.optDouble("totalCollateralPlan")?.takeIf { !it.isNaN() }
                     ?: 0.0
+
+                // Prefer rankings from period (includes product image)
+                val products = data.optJSONArray("topProducts")
+                val customers = data.optJSONArray("topCustomers")
+                if (products != null) {
+                    topProducts = ApiClient.get().parseRankingsArray(products)
+                }
+                if (customers != null) {
+                    topCustomers = ApiClient.get().parseRankingsArray(customers)
+                }
             }.onFailure {
                 hasOperationalSnapshot = false
                 depositHeld = 0.0
@@ -229,6 +234,13 @@ fun OverviewScreen(
                             activeOrders = today.activeRentals
                             completedOrders = today.completedOrders
                         }
+                }
+                // Fallback rankings from legacy overview
+                withContext(Dispatchers.IO) {
+                    ApiClient.get().analyticsOverview(start.toString(), end.toString())
+                }.onSuccess {
+                    topProducts = it.first
+                    topCustomers = it.second
                 }
             }
             loading = false
@@ -279,47 +291,113 @@ fun OverviewScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 AppCard(Modifier.fillMaxWidth()) {
+                    val growthValue = when (performanceMode) {
+                        PerformanceMode.ORDERS -> orderGrowth
+                        else -> revenueGrowth
+                    }
+                    val heroLabel = when (performanceMode) {
+                        PerformanceMode.REVENUE -> stringResource(R.string.period_revenue)
+                        PerformanceMode.GROWTH -> stringResource(R.string.growth_percent)
+                        PerformanceMode.ORDERS -> stringResource(R.string.period_orders)
+                    }
+                    val heroValue = when (performanceMode) {
+                        PerformanceMode.REVENUE -> formatMoney(periodRevenue)
+                        PerformanceMode.GROWTH -> formatGrowthPercent(revenueGrowth)
+                        PerformanceMode.ORDERS -> formatQuantity(periodOrders)
+                    }
+                    val heroColor = when (performanceMode) {
+                        PerformanceMode.REVENUE -> MaterialTheme.colorScheme.primary
+                        PerformanceMode.GROWTH -> growthTint(revenueGrowth)
+                        PerformanceMode.ORDERS -> Color(0xFFF39A1B)
+                    }
+                    val chartPointsForMode = when (performanceMode) {
+                        PerformanceMode.ORDERS -> chartPoints.map { it.orders }
+                        else -> chartPoints.map { it.revenue }
+                    }
+                    val chartColor = when (performanceMode) {
+                        PerformanceMode.ORDERS -> Color(0xFFF39A1B)
+                        PerformanceMode.GROWTH -> growthTint(revenueGrowth)
+                        PerformanceMode.REVENUE -> MaterialTheme.colorScheme.primary
+                    }
+
                     Column(
                         Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        Text(
+                            stringResource(R.string.performance),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            HeroMetric(
-                                stringResource(R.string.period_revenue),
-                                formatMoney(periodRevenue),
-                                MaterialTheme.colorScheme.primary,
-                                Modifier.weight(1f),
-                                alignment = Alignment.Start,
-                            )
-                            HeroMetric(
-                                stringResource(R.string.period_orders),
-                                formatQuantity(periodOrders),
-                                Color(0xFFF39A1B),
-                                Modifier.weight(1f),
-                                alignment = Alignment.End,
+                            PerformanceMode.REVENUE,
+                            PerformanceMode.GROWTH,
+                            PerformanceMode.ORDERS,
+                        ).forEach { mode ->
+                                val label = when (mode) {
+                                    PerformanceMode.REVENUE -> stringResource(R.string.revenue)
+                                    PerformanceMode.GROWTH -> stringResource(R.string.growth_percent)
+                                    PerformanceMode.ORDERS -> stringResource(R.string.period_orders)
+                                }
+                                val selected = performanceMode == mode
+                                Surface(
+                                    onClick = { performanceMode = mode },
+                                    modifier = Modifier.weight(1f).height(32.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (selected) {
+                                        MaterialTheme.colorScheme.background
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                    border = BorderStroke(
+                                        1.5.dp,
+                                        if (selected) MaterialTheme.colorScheme.onSurface
+                                        else Color.Transparent,
+                                    ),
+                                ) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        HeroMetric(
+                            heroLabel,
+                            heroValue,
+                            heroColor,
+                            Modifier.fillMaxWidth(),
+                            alignment = Alignment.Start,
+                        )
+                        if (growthValue != null) {
+                            Text(
+                                if (performanceMode == PerformanceMode.GROWTH) {
+                                    stringResource(R.string.vs_previous_period)
+                                } else {
+                                    "${formatGrowthPercent(growthValue)}  ${stringResource(R.string.vs_previous_period)}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = growthTint(growthValue),
                             )
                         }
-                        if (revenueGrowth != null || orderGrowth != null) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            ) {
-                                GrowthMetric(
-                                    stringResource(R.string.revenue_growth),
-                                    revenueGrowth,
-                                    Modifier.weight(1f),
-                                )
-                                GrowthMetric(
-                                    stringResource(R.string.order_growth),
-                                    orderGrowth,
-                                    Modifier.weight(1f),
-                                )
-                            }
+                        AnalyticsLineChart(
+                            title = null,
+                            points = chartPointsForMode,
+                            color = chartColor,
+                        )
+                        if (period != OverviewPeriod.TODAY) {
+                            Text(
+                                stringResource(R.string.swipe_charts),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
                         }
                     }
                 }
@@ -407,92 +485,48 @@ fun OverviewScreen(
                     }
                 }
 
-                AppCard(Modifier.fillMaxWidth()) {
-                    Column {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { chartsExpanded = !chartsExpanded }
-                                .padding(horizontal = 16.dp, vertical = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.ShowChart,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Column(Modifier.weight(1f)) {
-                                Text(stringResource(R.string.charts), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    if (chartsExpanded) stringResource(R.string.swipe_charts)
-                                    else stringResource(R.string.show_charts),
-                                    color = if (chartsExpanded) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                if (start != end) {
+                    RankingCard(
+                        title = stringResource(R.string.top_products),
+                        subtitle = stringResource(R.string.top_products_subtitle),
+                        icon = Icons.Default.Inventory2,
+                    ) {
+                        if (topProducts.isEmpty()) {
+                            Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            topProducts.take(3).forEachIndexed { index, item ->
+                                RankingRow(
+                                    index + 1,
+                                    item,
+                                    MaterialTheme.colorScheme.primary,
+                                    showThumbnail = true,
+                                    onClick = { onViewProductOrders(item) },
                                 )
-                            }
-                            Text(if (chartsExpanded) "⌃" else "›", style = MaterialTheme.typography.titleMedium)
-                        }
-                        if (chartsExpanded) {
-                            Column(
-                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(18.dp),
-                            ) {
-                                AnalyticsLineChart(
-                                    title = stringResource(R.string.revenue),
-                                    points = chartPoints.map { it.revenue },
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                AnalyticsLineChart(
-                                    title = stringResource(R.string.order_count),
-                                    points = chartPoints.map { it.orders },
-                                    color = Color(0xFFF39A1B),
-                                )
+                                if (index < topProducts.take(3).lastIndex) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
                             }
                         }
                     }
-                }
 
-                RankingCard(
-                    title = stringResource(R.string.top_products),
-                    subtitle = stringResource(R.string.top_products_subtitle),
-                    icon = Icons.Default.Inventory2,
-                ) {
-                    if (topProducts.isEmpty()) {
-                        Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        topProducts.take(3).forEachIndexed { index, item ->
-                            RankingRow(
-                                index + 1,
-                                item,
-                                MaterialTheme.colorScheme.primary,
-                                showThumbnail = true,
-                                onClick = { onViewProductOrders(item) },
-                            )
-                            if (index < topProducts.take(3).lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            }
-                        }
-                    }
-                }
-
-                RankingCard(
-                    title = stringResource(R.string.top_customers),
-                    subtitle = stringResource(R.string.top_customers_subtitle),
-                    icon = Icons.Default.Groups,
-                ) {
-                    if (topCustomers.isEmpty()) {
-                        Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        topCustomers.take(3).forEachIndexed { index, item ->
-                            RankingRow(
-                                index + 1,
-                                item,
-                                Color(0xFFE88A19),
-                                onClick = { onViewCustomerOrders(item) },
-                            )
-                            if (index < topCustomers.take(3).lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    RankingCard(
+                        title = stringResource(R.string.top_customers),
+                        subtitle = stringResource(R.string.top_customers_subtitle),
+                        icon = Icons.Default.Groups,
+                    ) {
+                        if (topCustomers.isEmpty()) {
+                            Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            topCustomers.take(3).forEachIndexed { index, item ->
+                                RankingRow(
+                                    index + 1,
+                                    item,
+                                    Color(0xFFE88A19),
+                                    onClick = { onViewCustomerOrders(item) },
+                                )
+                                if (index < topCustomers.take(3).lastIndex) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
                             }
                         }
                     }
@@ -745,11 +779,39 @@ private fun OverviewDateField(
     }
 }
 
+private fun formatGrowthPercent(growth: Double?): String {
+    val value = growth ?: return "—"
+    val prefix = when {
+        value > 0 -> "↑"
+        value < 0 -> "↓"
+        else -> "→"
+    }
+    val absolute = kotlin.math.abs(value)
+    val formatted = if (absolute % 1.0 == 0.0) {
+        String.format("%.0f", absolute)
+    } else {
+        String.format("%.1f", absolute)
+    }
+    return "$prefix$formatted%"
+}
+
 @Composable
-private fun AnalyticsLineChart(title: String, points: List<Double>, color: Color) {
+private fun growthTint(growth: Double?): Color {
+    val value = growth ?: 0.0
+    return when {
+        value > 0 -> Color(0xFF177A3F)
+        value < 0 -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+}
+
+@Composable
+private fun AnalyticsLineChart(title: String?, points: List<Double>, color: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Canvas(Modifier.fillMaxWidth().height(170.dp)) {
+        if (!title.isNullOrBlank()) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        }
+        Canvas(Modifier.fillMaxWidth().height(180.dp)) {
             val values = if (points.isEmpty()) listOf(0.0, 0.0) else points
             val maximum = max(values.maxOrNull() ?: 0.0, 1.0)
             repeat(4) { line ->
@@ -805,33 +867,6 @@ private fun HeroMetric(
             fontWeight = FontWeight.Bold,
             color = color,
             maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun GrowthMetric(
-    label: String,
-    growth: Double?,
-    modifier: Modifier = Modifier,
-) {
-    val value = growth ?: 0.0
-    val color = when {
-        value > 0 -> Color(0xFF177A3F)
-        value < 0 -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            "${if (value > 0) "+" else ""}${String.format("%.1f", value)}%",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = color,
         )
     }
 }

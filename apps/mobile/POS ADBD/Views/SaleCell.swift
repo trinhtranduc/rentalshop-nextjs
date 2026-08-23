@@ -158,6 +158,11 @@ class SaleCell: UITableViewCell {
         activeLayout = layout
         contentView.backgroundColor = .clear
         backgroundColor = .clear
+        containerStackView.snp.removeConstraints()
+        rowSurfaceView.snp.removeConstraints()
+        statusContainer.snp.removeConstraints()
+        statusLabel.snp.removeConstraints()
+        datesStack.snp.removeConstraints()
         rowSurfaceView.removeFromSuperview()
         containerStackView.removeFromSuperview()
         statusContainer.removeFromSuperview()
@@ -247,13 +252,7 @@ class SaleCell: UITableViewCell {
             
         case .chart:
             // Flat row inside grouped today-orders card.
-            // Left column: order # + customer (top-aligned). Trailing column: the
-            // status badge, revenue and date stacked vertically and right-aligned,
-            // so the badge sits at the top-right and money lines up in one column
-            // across rows — WITHOUT the absolute-pinned badge + top headroom hack
-            // that left a large empty gap above every row.
             selectionStyle = .default
-            contentView.addSubview(containerStackView)
 
             orderIdLabel.setContentHuggingPriority(.required, for: .horizontal)
             let orderRow = UIStackView(arrangedSubviews: [orderIdLabel, typeBadgeContainer, UIView()])
@@ -300,6 +299,8 @@ class SaleCell: UITableViewCell {
             containerStackView.distribution = .fill
             containerStackView.addArrangedSubview(leftStack)
             containerStackView.addArrangedSubview(moneyStack)
+            leftStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            leftStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
             containerStackView.snp.makeConstraints { make in
                 make.leading.equalToSuperview()
@@ -310,6 +311,7 @@ class SaleCell: UITableViewCell {
 
             moneyStack.snp.makeConstraints { make in
                 make.width.greaterThanOrEqualTo(isIPad ? 108 : 96)
+                make.width.lessThanOrEqualToSuperview().multipliedBy(0.48)
             }
 
             // Size the chip from the label text + padding. Pinning label.edges
@@ -351,6 +353,9 @@ class SaleCell: UITableViewCell {
             getDateLabel.font = Utils.regularFont(size: isIPad ? 16 : 15)
             getDateLabel.textColor = .textPrimary
             getDateLabel.textAlignment = .right
+            getDateLabel.numberOfLines = 1
+            getDateLabel.adjustsFontSizeToFitWidth = true
+            getDateLabel.minimumScaleFactor = 0.7
 
         case .order:
             selectionStyle = .default

@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.push.PushRegistrar
+import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.navigation.AnyRentNavHost
 import com.anyrent.pos.ui.theme.AnyRentTheme
 
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
         if (launchOrderId != null) {
             SessionStore.pendingOrderId = launchOrderId
         }
+        consumeOpenCartIntent(intent)
         requestNotificationPermissionIfNeeded()
         if (SessionStore.isLoggedIn) {
             PushRegistrar.refreshTokenIfLoggedIn()
@@ -42,12 +44,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        DraftOrderReminder.onAppForegrounded()
+    }
+
+    override fun onStop() {
+        DraftOrderReminder.onAppBackgrounded()
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         val orderId = intent.getIntExtra(EXTRA_ORDER_ID, -1).takeIf { it > 0 }
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
+        }
+        consumeOpenCartIntent(intent)
+    }
+
+    private fun consumeOpenCartIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(DraftOrderReminder.EXTRA_OPEN_CART, false) == true ||
+            intent?.getBooleanExtra(EXTRA_OPEN_CART, false) == true
+        ) {
+            DraftOrderReminder.requestOpenCart()
         }
     }
 
@@ -62,5 +83,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_ORDER_ID = "orderId"
+        const val EXTRA_OPEN_CART = "openDraftCart"
     }
 }

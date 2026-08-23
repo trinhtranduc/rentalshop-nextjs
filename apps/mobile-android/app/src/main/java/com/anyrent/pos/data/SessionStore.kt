@@ -177,6 +177,8 @@ object SessionStore {
             lastLoginEmail = rememberedEmail
         }
         runCatching { com.anyrent.pos.billing.PurchasesManager.logOut() }
+        com.anyrent.pos.push.DraftOrderReminder.cancel()
+        CartStore.clear(persistToDisk = false)
     }
 
     fun expireAuth() {

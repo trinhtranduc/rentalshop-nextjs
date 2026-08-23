@@ -214,6 +214,7 @@ struct Customer: Codable, Comparable, Copying {
         case loyaltyStatus
         case orderCount
         case count = "_count"
+        case full_name
         
         // New API fields
         case id
@@ -251,6 +252,12 @@ struct Customer: Codable, Comparable, Copying {
             return trimmed.isEmpty ? nil : trimmed
         }
         self.full_name = nameParts.joined(separator: " ")
+        if self.full_name?.isEmpty != false {
+            let persisted = try container.decodeIfPresent(String.self, forKey: .full_name)
+            if let persisted, !persisted.trimmingCharacters(in: .whitespaces).isEmpty {
+                self.full_name = persisted
+            }
+        }
         
         self.email = try container.decodeIfPresent(String.self, forKey: .email)
         self.address = try container.decodeIfPresent(String.self, forKey: .address)
@@ -299,6 +306,7 @@ struct Customer: Codable, Comparable, Copying {
         try container.encodeIfPresent(loyalty, forKey: .loyalty)
         try container.encodeIfPresent(loyaltyStatus, forKey: .loyaltyStatus)
         try container.encode(orderCount, forKey: .orderCount)
+        try container.encodeIfPresent(full_name, forKey: .full_name)
         
         // New API fields
         try container.encodeIfPresent(id, forKey: .id)

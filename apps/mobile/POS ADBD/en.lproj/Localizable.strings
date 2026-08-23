@@ -209,6 +209,7 @@
 // MARK: - Printer Configuration
 "IP Address" = "IP Address";
 "Enter printer IP address" = "Enter printer IP address";
+"Configure network thermal printer (ESC/POS). Enter the printer IP, then save and run a test print." = "Configure network thermal printer (ESC/POS). Enter the printer IP, then save and run a test print.";
 "Printer Note" = "Printer Note";
 "Test Printer" = "Test Printer";
 "Printer Configuration" = "Printer Configuration";
@@ -276,6 +277,24 @@
 "Privacy Policy Required" = "Privacy Policy Required";
 "Please accept the Privacy Policy and Terms of Service to continue." = "Please accept the Privacy Policy and Terms of Service to continue.";
 "Legal" = "Legal";
+
+// MARK: - Draft order reminder (local notification)
+"Unfinished order" = "Unfinished order";
+"Unsaved order changes" = "Unsaved order changes";
+"Continue Order" = "Continue";
+"Draft order reminder body" = "%d items • %@. Tap to continue.";
+"Draft order item qty" = "%@ ×%d";
+"Draft order items more" = "+%d more";
+"Draft chart pickup" = "Pickup";
+"Draft chart return" = "Return";
+"Draft chart days unit" = "days";
+"Draft chart day unit" = "day";
+"Draft chart today" = "today";
+"Draft chart now" = "Now";
+"Draft chart checkout" = "Checkout";
+"Draft chart live" = "LIVE";
+"Draft missing customer" = "Missing customer";
+"Draft live item count" = "%d items";
 "View" = "View";
 "Rent" = "Rent";
 
@@ -543,7 +562,7 @@
 
 // MARK: - Product Management
 "Product" = "Product";
-"Product check" = "View order history";
+"Product check" = "Check availability";
 "Product name" = "Product name";
 "Product name *" = "Product name *";
 "Product name..." = "Product name...";
@@ -832,6 +851,8 @@
 "View all" = "View all";
 "vs previous period" = "vs previous period";
 "Revenue" = "Revenue";
+"Overview_Performance_Title" = "Performance";
+"Overview_Performance_GrowthPercent" = "Growth %";
 "No product performance for this period" = "No product performance for this period";
 "No customer performance for this period" = "No customer performance for this period";
 "Unnamed product" = "Unnamed product";
@@ -1256,6 +1277,13 @@
 "Rental history" = "Rental history";
 "availability_order_count" = "%d orders";
 "availability_history_empty" = "No rental history for this day";
+"availability_calendar_plenty" = "Plenty";
+"availability_calendar_low" = "Low";
+"availability_calendar_none" = "None left";
+"availability_calendar_qty_label" = "avail.";
+"availability_calendar_qty_hint" = "Number in each cell = qty available to rent";
+"availability_calendar_tap_hint" = "Tap a day to see rental orders for that date";
+"availability_orders_sheet_title" = "Orders on %@";
 "availability_overlap_on_check_day" = "Overlap on check day";
 
 // MARK: - Image Search
@@ -1383,6 +1411,7 @@
 "User Name" = "User name";
 "User not logged in" = "User not signed in";
 "View order history" = "View order history";
+"Hide order history" = "Hide order history";
 "Yes" = "Yes";
 "You're account has been expired. Please check a payment to extend account duration" = "Your account has expired. Please renew your plan to continue.";
 "order" = "order";
@@ -1410,7 +1439,7 @@
 "product.imageSearch.updating" = "Updating";
 "product.imageSearch.noPhotos" = "Add a product photo, then try again.";
 "product.imageSearch.failed" = "Could not update image search.";
-"product.action.viewOrderHistory" = "View order history";
+"product.action.viewOrderHistory" = "Check availability";
 "product.search.found" = "Products found";
 "product.search.progress" = "AI is searching for products...";
 "product.form.name.required" = "Product name *";

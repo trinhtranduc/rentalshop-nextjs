@@ -26,12 +26,7 @@ class OrderCheckViewController: BaseViewControler {
     }
 
     // MARK: - Properties
-    private var availabilityOrders: [NewAvailabilityOrder] = [] {
-        didSet {
-            updateHistorySection()
-            orderTableView.reloadData()
-        }
-    }
+    private var availabilityOrders: [NewAvailabilityOrder] = []
 
     private var date: Date = Date() {
         didSet {
@@ -45,9 +40,17 @@ class OrderCheckViewController: BaseViewControler {
         }
     }
 
-    private var isHistoryExpanded = true
-    private var hasLaidOutTableHeader = false
     private var isLoadingAvailability = false
+    private var hasRevealedContent = false
+    private var productStock = 0
+    private var lastAvailabilityMetrics: AvailabilityMetrics?
+    private var shouldPresentHistoryOnNextLoad = false
+    private weak var presentedHistorySheet: AvailabilityOrderHistorySheetViewController?
+    private var occupancyLoadGeneration = 0
+    /// Cached occupancy per month (key `yyyy-MM`) for the current product — no re-fetch when scrolling back.
+    private var occupancyCacheByMonth: [String: [String: Int]] = [:]
+    private var occupancyCacheProductId: Int?
+    private var occupancyLoadingMonthKey: String?
 
     private var currentOutletId: Int? {
         User.current()?.outlet?.id ?? User.current()?.outletId
@@ -56,31 +59,38 @@ class OrderCheckViewController: BaseViewControler {
     var delegate: OrderCheckViewControllerDelegate?
 
     // MARK: - UI Components
-    private lazy var summaryHeaderView = AvailabilitySummaryHeaderView()
-
-    private lazy var historyEmptyView = AvailabilityHistoryEmptyView()
-
-    private lazy var orderTableView: UITableView = {
-        let table = UITableView(frame: .zero, style: .plain)
-        table.delegate = self
-        table.dataSource = self
-        table.register(
-            AvailabilityHistoryCell.self,
-            forCellReuseIdentifier: AvailabilityHistoryCell.reuseIdentifier
-        )
-        table.separatorStyle = .none
-        table.backgroundColor = .backgroundPrimary
-        table.tableHeaderView = summaryHeaderView
-        table.tableFooterView = UIView()
-        table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 112
-        table.sectionHeaderHeight = UITableViewAutomaticDimension
-        table.estimatedSectionHeaderHeight = 44
-        if #available(iOS 15.0, *) {
-            table.sectionHeaderTopPadding = 0
+    private lazy var occupancyCalendarView: AvailabilityOccupancyCalendarView = {
+        let calendarView = AvailabilityOccupancyCalendarView()
+        calendarView.onSelectDate = { [weak self] selected in
+            self?.handleCalendarDaySelection(selected)
         }
-        return table
+        calendarView.onVisibleMonthChange = { [weak self] page in
+            self?.loadOccupancyCalendar(for: page)
+        }
+        return calendarView
     }()
+
+    private var occupancyCalendarHeightConstraint: Constraint?
+    private var summaryHeightConstraint: Constraint?
+    private var lastOccupancyCalendarHeight: CGFloat = 0
+    private var lastSummaryHeight: CGFloat = 0
+
+    private lazy var scrollView: UIScrollView = {
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = true
+        scroll.showsVerticalScrollIndicator = false
+        scroll.keyboardDismissMode = .onDrag
+        scroll.contentInsetAdjustmentBehavior = .never
+        return scroll
+    }()
+
+    private lazy var calendarSurfaceView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }()
+
+    private lazy var summaryView = AvailabilitySummaryHeaderView()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -96,7 +106,14 @@ class OrderCheckViewController: BaseViewControler {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        resizeTableHeaderIfNeeded()
+        resizeSummaryIfNeeded()
+    }
+
+    private func updateOccupancyCalendarHeightIfNeeded() {
+        let fixedHeight = AvailabilityOccupancyCalendarView.fixedBlockHeight
+        guard abs(lastOccupancyCalendarHeight - fixedHeight) > 0.5 else { return }
+        lastOccupancyCalendarHeight = fixedHeight
+        occupancyCalendarHeightConstraint?.update(offset: fixedHeight)
     }
 
     // MARK: - Setup
@@ -106,24 +123,72 @@ class OrderCheckViewController: BaseViewControler {
 
         guard customNavBar != nil else { return }
 
-        view.addSubview(orderTableView)
-        orderTableView.snp.makeConstraints { make in
+        view.addSubview(scrollView)
+        scrollView.addSubview(summaryView)
+        scrollView.addSubview(calendarSurfaceView)
+        calendarSurfaceView.addSubview(occupancyCalendarView)
+
+        summaryView.alpha = 0
+        summaryView.isHidden = true
+
+        scrollView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar!.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
         }
-        orderTableView.isHidden = true
-        orderTableView.alpha = 0
+
+        summaryView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(6)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide)
+            summaryHeightConstraint = make.height.equalTo(0).constraint
+        }
+
+        let initialCalendarHeight = AvailabilityOccupancyCalendarView.fixedBlockHeight
+        calendarSurfaceView.snp.makeConstraints { make in
+            make.top.equalTo(summaryView.snp.bottom).offset(12)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide).inset(16)
+            make.bottom.equalToSuperview().offset(-16)
+        }
+
+        occupancyCalendarView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            occupancyCalendarHeightConstraint = make.height.equalTo(initialCalendarHeight).constraint
+        }
+
+        configureOccupancyCalendar()
+        updateOccupancyCalendarHeightIfNeeded()
+        if product != nil {
+            loadOccupancyCalendar(for: date)
+        }
     }
 
-    private func resizeTableHeaderIfNeeded() {
-        let width = orderTableView.bounds.width
-        guard width > 0 else { return }
+    private func configureOccupancyCalendar() {
+        let today = Calendar.current.startOfDay(for: Date())
+        let maxDate = Calendar.current.date(byAdding: .year, value: 1, to: today) ?? today
+        occupancyCalendarView.configure(
+            selectedDate: date,
+            minimumDate: today,
+            maximumDate: maxDate
+        )
+    }
 
-        summaryHeaderView.frame = CGRect(x: 0, y: 0, width: width, height: 1)
-        summaryHeaderView.setNeedsLayout()
-        summaryHeaderView.layoutIfNeeded()
+    private func updateOccupancyCalendarHeight() {
+        updateOccupancyCalendarHeightIfNeeded()
+    }
 
-        let height = summaryHeaderView.systemLayoutSizeFitting(
+    private func resizeSummaryIfNeeded() {
+        let width = view.bounds.width
+        guard width > 0, !summaryView.isHidden else {
+            if summaryHeightConstraint?.layoutConstraints.first?.constant != 0 {
+                summaryHeightConstraint?.update(offset: 0)
+            }
+            return
+        }
+
+        summaryView.frame = CGRect(x: 0, y: 0, width: width, height: 1)
+        summaryView.setNeedsLayout()
+        summaryView.layoutIfNeeded()
+
+        let height = summaryView.systemLayoutSizeFitting(
             CGSize(width: width, height: UILayoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
             verticalFittingPriority: .fittingSizeLevel
@@ -131,10 +196,10 @@ class OrderCheckViewController: BaseViewControler {
 
         guard height > 0 else { return }
 
-        if !hasLaidOutTableHeader || abs(summaryHeaderView.frame.height - height) > 0.5 {
-            summaryHeaderView.frame.size.height = height
-            orderTableView.tableHeaderView = summaryHeaderView
-            hasLaidOutTableHeader = true
+        if abs(lastSummaryHeight - height) > 0.5 {
+            lastSummaryHeight = height
+            summaryHeightConstraint?.update(offset: height)
+            view.layoutIfNeeded()
         }
     }
 
@@ -155,7 +220,7 @@ class OrderCheckViewController: BaseViewControler {
             }
         )
         navBar.setDismissButton()
-        navBar.setPreferredBarHeight(68, customTitleMaxHeight: 64)
+        navBar.setPreferredBarHeight(56, customTitleMaxHeight: 44)
     }
 
     private func createCustomTitleView() -> UIView {
@@ -167,69 +232,21 @@ class OrderCheckViewController: BaseViewControler {
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 2
         titleLabel.text = product?.name ?? ""
-
-        let dateButton = UIButton(type: .system)
-        dateButton.addTarget(self, action: #selector(dateButtonTapped), for: .touchUpInside)
-        styleDateChip(dateButton)
-        updateDateChip(dateButton)
-
         self.titleLabel = titleLabel
-        self.dateButton = dateButton
 
-        let mainStackView = UIStackView(arrangedSubviews: [titleLabel, dateButton])
-        mainStackView.axis = .vertical
-        mainStackView.spacing = 6
-        mainStackView.alignment = .center
-
-        containerView.addSubview(mainStackView)
-        mainStackView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.centerX.equalToSuperview()
-            make.leading.greaterThanOrEqualToSuperview()
-            make.trailing.lessThanOrEqualToSuperview()
+        containerView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
 
         containerView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(64)
+            make.height.greaterThanOrEqualTo(44)
         }
 
         return containerView
     }
 
     private var titleLabel: UILabel?
-    private var dateButton: UIButton?
-
-    private func styleDateChip(_ button: UIButton) {
-        button.titleLabel?.font = .bodyRegular(size: 14)
-        button.setTitleColor(.brandPrimary, for: .normal)
-        button.tintColor = .brandPrimary
-        button.backgroundColor = .clear
-        button.setImage(UIImage(systemName: "calendar"), for: .normal)
-        button.semanticContentAttribute = .forceLeftToRight
-        if #available(iOS 15.0, *) {
-            var config = UIButton.Configuration.plain()
-            config.image = UIImage(systemName: "calendar")
-            config.imagePadding = 4
-            config.baseForegroundColor = .brandPrimary
-            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming
-                outgoing.font = .bodyRegular(size: 14)
-                return outgoing
-            }
-            button.configuration = config
-        } else {
-            button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 4)
-        }
-    }
-
-    private func updateDateChip(_ button: UIButton) {
-        let title = formatDateString(date)
-        if #available(iOS 15.0, *) {
-            button.configuration?.title = title
-        } else {
-            button.setTitle(title, for: .normal)
-        }
-    }
 
     private func formatDateString(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -237,33 +254,45 @@ class OrderCheckViewController: BaseViewControler {
         return formatter.string(from: date)
     }
 
-    private var occupancyPicker: DatePickerViewController?
+    private func occupancyMonthCacheKey(for date: Date) -> String {
+        let components = Calendar.current.dateComponents([.year, .month], from: date)
+        return String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
+    }
 
-    @objc private func dateButtonTapped() {
-        let controller = DatePickerViewController.instance()
-        controller.delegate = self
-
-        let calendar = Calendar.current
-        let today = Date()
-        let minDate = calendar.startOfDay(for: today)
-        let maxDate = calendar.date(byAdding: .year, value: 1, to: today) ?? today
-
-        controller.configure(selectedDate: date, minimumDate: minDate, maximumDate: maxDate)
-        occupancyPicker = controller
-        controller.onVisibleMonthChange = { [weak self] page in
-            self?.loadOccupancyCalendar(for: page)
-        }
-        controller.enableOccupancyColoring()
-        present(controller, animated: true)
+    private func startOfMonth(for date: Date) -> Date {
+        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date)) ?? date
     }
 
     private func loadOccupancyCalendar(for visibleMonth: Date) {
         guard let product else { return }
         let calendar = Calendar.current
-        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: visibleMonth)) ?? visibleMonth
-        let from = calendar.date(byAdding: .day, value: -7, to: startOfMonth) ?? startOfMonth
-        let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth) ?? startOfMonth
+        let monthStart = startOfMonth(for: visibleMonth)
+        let cacheKey = occupancyMonthCacheKey(for: monthStart)
+
+        // Already loaded for this product — show cached heat/qty immediately, no API call.
+        if occupancyCacheProductId == product.product_id,
+           let cached = occupancyCacheByMonth[cacheKey] {
+            occupancyCalendarView.setDayAvailability(
+                cached,
+                stock: productStock,
+                forVisibleMonth: monthStart
+            )
+            updateOccupancyCalendarHeight()
+            return
+        }
+
+        // New month — neutral tiles until API succeeds.
+        occupancyCalendarView.clearDayAvailabilityPendingLoad()
+
+        if occupancyLoadingMonthKey == cacheKey { return }
+        occupancyLoadingMonthKey = cacheKey
+
+        let from = calendar.date(byAdding: .day, value: -7, to: monthStart) ?? monthStart
+        let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) ?? monthStart
         let to = calendar.date(byAdding: .day, value: 7, to: endOfMonth) ?? endOfMonth
+
+        occupancyLoadGeneration += 1
+        let generation = occupancyLoadGeneration
 
         OrderService.shared.loadProductAvailabilityCalendar(
             productId: product.product_id,
@@ -272,16 +301,39 @@ class OrderCheckViewController: BaseViewControler {
             outletId: currentOutletId
         ) { [weak self] availableByDate, _ in
             DispatchQueue.main.async {
-                self?.occupancyPicker?.setDayAvailability(availableByDate)
+                guard let self else { return }
+                self.occupancyLoadingMonthKey = nil
+                guard generation == self.occupancyLoadGeneration else { return }
+
+                self.occupancyCacheByMonth[cacheKey] = availableByDate
+                self.occupancyCacheProductId = product.product_id
+
+                // Paint only if user is still on this month page.
+                let visibleKey = self.occupancyMonthCacheKey(
+                    for: self.occupancyCalendarView.visibleMonthStart
+                )
+                guard visibleKey == cacheKey else { return }
+
+                self.occupancyCalendarView.setDayAvailability(
+                    availableByDate,
+                    stock: self.productStock,
+                    forVisibleMonth: monthStart
+                )
+                self.updateOccupancyCalendarHeight()
             }
         }
     }
 
+    private func resetOccupancyCache() {
+        occupancyCacheByMonth = [:]
+        occupancyCacheProductId = nil
+        occupancyLoadingMonthKey = nil
+        occupancyLoadGeneration += 1
+        occupancyCalendarView.clearDayAvailabilityPendingLoad()
+    }
+
     private func updateNavigationTitle() {
         titleLabel?.text = product?.name ?? ""
-        if let dateButton {
-            updateDateChip(dateButton)
-        }
     }
 
     override func setupData() {
@@ -302,34 +354,38 @@ class OrderCheckViewController: BaseViewControler {
             date: date,
             outletId: currentOutletId
         ) { [weak self] response, error in
-            self?.hideProgress()
-
             if let err = error {
+                self?.hideProgress()
+                self?.shouldPresentHistoryOnNextLoad = false
                 UIAlertController.errorAlert(parent: self, error: err)
             } else if let availabilityResponse = response {
                 self?.handleNewAvailabilityResponse(availabilityResponse)
+            } else {
+                self?.hideProgress()
+                self?.shouldPresentHistoryOnNextLoad = false
             }
         }
     }
 
     private func beginAvailabilityLoading() {
+        if hasRevealedContent {
+            showProgressText(text: "Loading...".localized())
+            return
+        }
         isLoadingAvailability = true
-        orderTableView.isHidden = true
-        orderTableView.alpha = 0
         showProgressText(text: "Loading...".localized())
     }
 
     private func revealAvailabilityContent() {
-        guard isLoadingAvailability else { return }
-
-        isLoadingAvailability = false
-        orderTableView.isHidden = false
-        UIView.animate(
-            withDuration: 0.2,
-            delay: 0,
-            options: [.beginFromCurrentState, .curveEaseOut]
-        ) {
-            self.orderTableView.alpha = 1
+        hideProgress()
+        hasRevealedContent = true
+        if isLoadingAvailability {
+            isLoadingAvailability = false
+            summaryView.isHidden = false
+            UIView.animate(withDuration: 0.2) {
+                self.summaryView.alpha = 1
+            }
+            resizeSummaryIfNeeded()
         }
     }
 
@@ -339,18 +395,10 @@ class OrderCheckViewController: BaseViewControler {
 
             if response.success, let data = response.data {
                 let metrics = self.resolveAvailabilityMetrics(from: data)
+                self.productStock = metrics.stock
+                self.lastAvailabilityMetrics = metrics
 
-                let headerWidth = self.orderTableView.bounds.width
-                if headerWidth > 0 {
-                    self.summaryHeaderView.frame = CGRect(
-                        x: 0,
-                        y: 0,
-                        width: headerWidth,
-                        height: self.summaryHeaderView.frame.height
-                    )
-                }
-
-                self.summaryHeaderView.configure(
+                self.summaryView.configure(
                     stock: metrics.stock,
                     shelfAvailable: metrics.shelfAvailable,
                     effectiveAvailable: metrics.effectiveAvailable,
@@ -358,21 +406,19 @@ class OrderCheckViewController: BaseViewControler {
                     conflicts: metrics.conflicts,
                     checkDate: self.formatDateString(self.date)
                 )
-                self.orderTableView.setNeedsLayout()
-                self.orderTableView.layoutIfNeeded()
-                self.resizeTableHeaderIfNeeded()
+                self.configureOccupancyCalendar()
+                self.resizeSummaryIfNeeded()
 
                 self.availabilityOrders = self.sortedAvailabilityOrders(data.orders ?? [])
                 self.revealAvailabilityContent()
+                self.loadOccupancyCalendar(for: self.date)
 
-                print("📊 New Availability Response:")
-                print("   Product: \(data.productName ?? "Unknown")")
-                if let outletName = metrics.outletName {
-                    print("   Outlet: \(outletName)")
+                if self.shouldPresentHistoryOnNextLoad {
+                    self.shouldPresentHistoryOnNextLoad = false
+                    self.presentOrderHistorySheetIfNeeded()
                 }
-                print("   Stock: \(metrics.stock), Shelf: \(metrics.shelfAvailable), Renting: \(metrics.renting), Conflicts: \(metrics.conflicts), Effective: \(metrics.effectiveAvailable)")
-                print("   Orders: \(self.availabilityOrders.count)")
             } else {
+                self.shouldPresentHistoryOnNextLoad = false
                 let errorMessage = response.message ?? "Failed to load product availability"
                 let error = NSError.errorWithOwnMessage(message: errorMessage, domain: "OrderCheckViewController")
                 UIAlertController.errorAlert(parent: self, error: error)
@@ -398,14 +444,12 @@ class OrderCheckViewController: BaseViewControler {
 
         let renting = normalizedMetric(rawRenting, upperBound: stockUpperBound)
 
-        // Có sẵn: current shelf count (not date-specific). SALE is reflected in outlet.available.
         let rawShelfAvailable = outletData?.available
             ?? data.totalAvailableStock
             ?? derivedShelfAvailable(stock: stock, renting: renting)
 
         let shelfAvailable = normalizedMetric(rawShelfAvailable, upperBound: stockUpperBound)
 
-        // Verdict: units free for the checked rental day (date-specific).
         let rawEffective = outletData?.effectivelyAvailable
             ?? derivedEffectiveAvailability(outletData: outletData, conflicts: conflicts)
             ?? max(0, shelfAvailable - max(0, conflicts))
@@ -528,105 +572,86 @@ class OrderCheckViewController: BaseViewControler {
         }
     }
 
-    private func updateHistorySection() {
-        if isHistoryExpanded && availabilityOrders.isEmpty {
-            historyEmptyView.frame = CGRect(x: 0, y: 0, width: orderTableView.bounds.width, height: 120)
-            orderTableView.tableFooterView = historyEmptyView
-        } else {
-            orderTableView.tableFooterView = UIView()
+    // MARK: - Calendar + history sheet (option B)
+    private func handleCalendarDaySelection(_ selected: Date) {
+        guard let product else { return }
+        let day = Calendar.current.startOfDay(for: selected)
+        let isSameDay = day == Calendar.current.startOfDay(for: date)
+
+        if isSameDay {
+            presentOrderHistorySheetIfNeeded()
+            return
         }
+
+        shouldPresentHistoryOnNextLoad = true
+        date = day
+        configureOccupancyCalendar()
+        loadProductAvailabilityV2(productId: product.product_id, date: day)
     }
 
-    private func toggleHistorySection() {
-        isHistoryExpanded.toggle()
-        updateHistorySection()
-        orderTableView.reloadSections(IndexSet(integer: 0), with: .fade)
-    }
+    private func presentOrderHistorySheetIfNeeded() {
+        guard !availabilityOrders.isEmpty else { return }
+        if presentedHistorySheet != nil { return }
 
-    // MARK: - Helper Methods
-    func processDate(date: Date) {
-        guard let product = self.product else { return }
-        self.date = date
-        loadProductAvailabilityV2(productId: product.product_id, date: date)
-    }
-
-    // MARK: - Public Methods
-    func loadProduct(_ product: Product) {
-        self.product = product
-        self.date = Date()
-    }
-}
-
-// MARK: - UITableViewDataSource, UITableViewDelegate
-extension OrderCheckViewController: UITableViewDataSource, UITableViewDelegate {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        1
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard isHistoryExpanded else { return 0 }
-        return availabilityOrders.count
-    }
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let header = AvailabilityHistorySectionHeaderView(
-            frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 44)
+        let metrics = lastAvailabilityMetrics
+        let sheet = AvailabilityOrderHistorySheetViewController(
+            orders: availabilityOrders,
+            dateTitle: formatDateString(date),
+            stock: metrics?.stock ?? productStock,
+            available: metrics?.shelfAvailable ?? metrics?.effectiveAvailable ?? 0,
+            renting: metrics?.renting ?? 0
         )
-        header.configure(orderCount: availabilityOrders.count, isExpanded: isHistoryExpanded)
-        header.onToggle = { [weak self] in
-            self?.toggleHistorySection()
+        sheet.onSelectOrder = { [weak self, weak sheet] order in
+            self?.openOrderDetail(from: order, dismissing: sheet)
         }
-        return header
+        sheet.modalPresentationStyle = .pageSheet
+        presentedHistorySheet = sheet
+        present(sheet, animated: true)
     }
 
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        44
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: AvailabilityHistoryCell.reuseIdentifier,
-            for: indexPath
-        ) as? AvailabilityHistoryCell else {
-            return UITableViewCell()
-        }
-
-        cell.bind(order: availabilityOrders[indexPath.row])
-        return cell
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-
-        let availOrder = availabilityOrders[indexPath.row]
+    private func openOrderDetail(from availOrder: NewAvailabilityOrder, dismissing sheet: AvailabilityOrderHistorySheetViewController?) {
         guard let orderId = availOrder.id else { return }
 
         showProgressText(text: "Loading...".localized())
         OrderService.shared.loadOrderDetail(orderId: orderId) { [weak self] detail, error in
             self?.hideProgress()
-            guard let self = self else { return }
+            guard let self else { return }
 
             if let error = error {
-                UIAlertController.errorAlert(parent: self, error: error)
+                UIAlertController.errorAlert(parent: sheet ?? self, error: error)
                 return
             }
 
             guard let detail = detail else { return }
             let fullOrder = Order.from(detail: detail)
 
-            self.dismiss(animated: true) {
-                self.delegate?.didSelectOrder(order: fullOrder, sender: self)
+            sheet?.dismiss(animated: true) {
+                self.presentedHistorySheet = nil
+                self.dismiss(animated: true) {
+                    self.delegate?.didSelectOrder(order: fullOrder, sender: self)
+                }
             }
         }
     }
-}
 
-// MARK: - DatePickerViewControllerDelegate
-extension OrderCheckViewController: DatePickerViewControllerDelegate {
-    func didSelectDate(_ date: Date, sender: DatePickerViewController) {
-        self.date = date
-        if let product = self.product {
-            loadProductAvailabilityV2(productId: product.product_id, date: date)
+    // MARK: - Public Methods
+    func loadProduct(_ product: Product) {
+        self.product = product
+        self.date = Date()
+        hasRevealedContent = false
+        shouldPresentHistoryOnNextLoad = false
+        presentedHistorySheet = nil
+        availabilityOrders = []
+        lastAvailabilityMetrics = nil
+        summaryView.alpha = 0
+        summaryView.isHidden = true
+        lastSummaryHeight = 0
+        summaryHeightConstraint?.update(offset: 0)
+        if isViewLoaded {
+            resetOccupancyCache()
+            configureOccupancyCalendar()
+            loadOccupancyCalendar(for: date)
+            loadOrdersForProduct(productId: product.product_id)
         }
     }
 }

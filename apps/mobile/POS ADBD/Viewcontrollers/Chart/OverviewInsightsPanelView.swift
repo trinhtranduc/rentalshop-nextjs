@@ -94,6 +94,7 @@ final class OverviewInsightsPanelView: UIView {
                 accentColor: .brandPrimary,
                 isIPad: isIPad,
                 style: .embedded,
+                imageURL: product.image,
                 onViewOrders: makeProductOrdersAction(product: product, title: title)
             )
         }
