@@ -595,7 +595,7 @@ extension ImageSearchResultsViewController: ProductCellDelegate {
 
         let checkAction = UIAction(
             title: "product.action.viewOrderHistory".localized(),
-            image: UIImage(systemName: "list.bullet.rectangle")
+            image: UIImage(systemName: "calendar")
         ) { [weak self] _ in
             self?.previewOrders(sender: cell, product: product)
         }

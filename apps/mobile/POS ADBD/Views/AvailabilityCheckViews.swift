@@ -5,6 +5,7 @@
 
 import UIKit
 import SnapKit
+import FSCalendar
 
 // MARK: - Verdict Card
 
@@ -308,17 +309,98 @@ final class AvailabilityMetricsCardView: UIView {
     }
 }
 
-// MARK: - Summary Header (verdict + metrics)
+// MARK: - Summary Header (compact verdict + metrics)
 
 final class AvailabilitySummaryHeaderView: UIView {
 
-    private let verdictView = AvailabilityVerdictView()
-    private let metricsCardView = AvailabilityMetricsCardView()
+    private enum Metrics {
+        static let cornerRadius: CGFloat = 12
+        static let accentWidth: CGFloat = 4
+    }
 
-    private let contentStackView: UIStackView = {
-        let stack = UIStackView()
+    private let cardView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundCard
+        view.layer.cornerRadius = Metrics.cornerRadius
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let accentBar: UIView = {
+        let view = UIView()
+        view.backgroundColor = .brandPrimary
+        return view
+    }()
+
+    private let countLabel: UILabel = {
+        let label = UILabel()
+        label.font = .bodyBold(size: 34)
+        label.textColor = .textPrimary
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        return label
+    }()
+
+    private let headlineLabel: UILabel = {
+        let label = UILabel()
+        label.font = .bodyMedium(size: 15)
+        label.textColor = .textPrimary
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let dateContextLabel: UILabel = {
+        let label = UILabel()
+        label.font = .captionMedium(size: 12)
+        label.textColor = .textSecondary
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let metricsDivider: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.borderColor.withAlphaComponent(0.55)
+        return view
+    }()
+
+    private let storageValueLabel = UILabel()
+    private let availableValueLabel = UILabel()
+    private let rentingValueLabel = UILabel()
+
+    private lazy var heroTextStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [headlineLabel, dateContextLabel])
+        stack.axis = .vertical
+        stack.spacing = 2
+        stack.alignment = .leading
+        return stack
+    }()
+
+    private lazy var heroRowStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [countLabel, heroTextStack])
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+        return stack
+    }()
+
+    private lazy var metricsRowStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [
+            makeMetricColumn(title: "Storage".localized(), valueLabel: storageValueLabel),
+            makeMetricColumn(title: "Available".localized(), valueLabel: availableValueLabel),
+            makeMetricColumn(title: "Renting".localized(), valueLabel: rentingValueLabel),
+        ])
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.alignment = .fill
+        return stack
+    }()
+
+    private lazy var contentStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [heroRowStack, metricsDivider, metricsRowStack])
         stack.axis = .vertical
         stack.spacing = 12
+        stack.alignment = .fill
         return stack
     }()
 
@@ -335,15 +417,60 @@ final class AvailabilitySummaryHeaderView: UIView {
     private func setupUI() {
         backgroundColor = .backgroundPrimary
 
-        contentStackView.addArrangedSubview(verdictView)
-        contentStackView.addArrangedSubview(metricsCardView)
-        addSubview(contentStackView)
+        addSubview(cardView)
+        cardView.addSubview(accentBar)
+        cardView.addSubview(contentStackView)
+
+        cardView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview()
+        }
+
+        accentBar.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+            make.width.equalTo(Metrics.accentWidth)
+        }
 
         contentStackView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-12)
+            make.top.bottom.equalToSuperview().inset(14)
+            make.leading.equalTo(accentBar.snp.trailing).offset(14)
+            make.trailing.equalToSuperview().inset(14)
         }
+
+        metricsDivider.snp.makeConstraints { make in
+            make.height.equalTo(1)
+        }
+    }
+
+    private func makeMetricColumn(title: String, valueLabel: UILabel) -> UIView {
+        let container = UIView()
+
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = .captionMedium(size: 11)
+        titleLabel.textColor = .textTertiary
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 1
+
+        valueLabel.font = .bodyBold(size: 18)
+        valueLabel.textColor = .textPrimary
+        valueLabel.textAlignment = .center
+        valueLabel.text = "0"
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.75
+
+        let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        stack.axis = .vertical
+        stack.spacing = 4
+        stack.alignment = .center
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        return container
     }
 
     func configure(
@@ -354,15 +481,42 @@ final class AvailabilitySummaryHeaderView: UIView {
         conflicts: Int,
         checkDate: String
     ) {
+        storageValueLabel.text = stock.formatStringInCommon()
+        availableValueLabel.text = shelfAvailable.formatStringInCommon()
+        rentingValueLabel.text = renting.formatStringInCommon()
+        availableValueLabel.textColor = shelfAvailable > 0 ? .brandPrimary : .actionDanger
+
+        dateContextLabel.text = String(
+            format: "availability_verdict_date_context".localized(),
+            checkDate
+        )
+
+        let accentColor: UIColor
         if effectiveAvailable > 0 {
-            verdictView.configure(style: .available, availableCount: effectiveAvailable, checkDate: checkDate)
+            accentColor = UIColor(hexString: "16A34A")
+            countLabel.text = effectiveAvailable.formatStringInCommon()
+            countLabel.textColor = accentColor
+            headlineLabel.text = "Available".localized()
+            cardView.backgroundColor = UIColor(hexString: "22C55E").withAlphaComponent(0.05)
+            cardView.layer.borderColor = UIColor(hexString: "22C55E").withAlphaComponent(0.14).cgColor
         } else if conflicts > 0 {
-            verdictView.configure(style: .conflictWarning, availableCount: 0, checkDate: checkDate)
+            accentColor = APP_ORANGE_COLOR
+            countLabel.text = "0"
+            countLabel.textColor = accentColor
+            headlineLabel.text = "availability_verdict_conflict_headline".localized()
+            cardView.backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.06)
+            cardView.layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.16).cgColor
         } else {
-            verdictView.configure(style: .outOfStock, availableCount: 0, checkDate: checkDate)
+            accentColor = .actionDanger
+            countLabel.text = "0"
+            countLabel.textColor = accentColor
+            headlineLabel.text = "availability_verdict_out_of_stock_headline".localized()
+            cardView.backgroundColor = UIColor.actionDanger.withAlphaComponent(0.05)
+            cardView.layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.14).cgColor
         }
 
-        metricsCardView.configure(stock: stock, available: shelfAvailable, renting: renting)
+        accentBar.backgroundColor = accentColor
+        headlineLabel.textColor = accentColor
     }
 }
 
@@ -763,5 +917,837 @@ final class AvailabilityHistoryEmptyView: UIView {
             make.leading.trailing.equalToSuperview().inset(32)
             make.bottom.lessThanOrEqualToSuperview().offset(-16)
         }
+    }
+}
+
+// MARK: - Availability calendar colors (soft inventory wash)
+
+private extension UIColor {
+    /// Soft pastel washes — readable without overpowering the day number.
+    static let availabilityOpenFill = UIColor(red: 0.93, green: 0.98, blue: 0.95, alpha: 1)
+    static let availabilityOpenText = UIColor(red: 0.09, green: 0.55, blue: 0.34, alpha: 1)
+    static let availabilityLowFill = UIColor(red: 1.0, green: 0.98, blue: 0.92, alpha: 1)
+    static let availabilityLowText = UIColor(red: 0.72, green: 0.48, blue: 0.05, alpha: 1)
+    static let availabilityFullFill = UIColor(red: 1.0, green: 0.95, blue: 0.95, alpha: 1)
+    static let availabilityFullText = UIColor(red: 0.78, green: 0.20, blue: 0.20, alpha: 1)
+}
+
+private enum AvailabilityHeatLevel {
+    case plenty
+    case low
+    case none
+
+    static func from(remaining: Int, stock: Int) -> AvailabilityHeatLevel {
+        if remaining <= 0 { return .none }
+        if stock > 0 {
+            return Double(remaining) / Double(stock) > 0.5 ? .plenty : .low
+        }
+        return remaining >= 3 ? .plenty : .low
+    }
+
+    var fillColor: UIColor {
+        switch self {
+        case .plenty: return .availabilityOpenFill
+        case .low: return .availabilityLowFill
+        case .none: return .availabilityFullFill
+        }
+    }
+
+    var textColor: UIColor {
+        switch self {
+        case .plenty: return .availabilityOpenText
+        case .low: return .availabilityLowText
+        case .none: return .availabilityFullText
+        }
+    }
+}
+
+// MARK: - Day cell
+//
+// Expert inventory-calendar pattern (PMS / Booking-style):
+// - Soft heat wash = status at a glance
+// - Day number top (identity), qty bottom (decision metric)
+// - No nested pills / dots / chrome stacks
+// - Selected = brand ring; Today = brand day number + slim top accent
+
+final class AvailabilityCalendarDayCell: FSCalendarCell {
+
+    static let reuseId = "AvailabilityCalendarDayCell"
+
+    private enum Metrics {
+        static let cornerRadius: CGFloat = 12
+        static let inset: CGFloat = 2.5
+        static let topAccentHeight: CGFloat = 2.5
+        static let contentInset: CGFloat = 6
+    }
+
+    private let tileView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = Metrics.cornerRadius
+        view.clipsToBounds = true
+        return view
+    }()
+
+    /// Slim brand bar — only for “today” (doesn’t fight heat fill).
+    private let todayAccentView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .brandPrimary
+        view.isHidden = true
+        return view
+    }()
+
+    private let dayLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 11)
+        label.textAlignment = .center
+        label.textColor = .textSecondary
+        return label
+    }()
+
+    private let qtyLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.mediumFont(size: 16)
+        label.textAlignment = .center
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.7
+        return label
+    }()
+
+    override init!(frame: CGRect) {
+        super.init(frame: frame)
+        setupTile()
+    }
+
+    required init!(coder: NSCoder!) {
+        super.init(coder: coder)
+        setupTile()
+    }
+
+    private func setupTile() {
+        titleLabel.isHidden = true
+        subtitleLabel.isHidden = true
+        imageView.isHidden = true
+        eventIndicator.isHidden = true
+
+        tileView.addSubview(todayAccentView)
+        tileView.addSubview(dayLabel)
+        tileView.addSubview(qtyLabel)
+        contentView.addSubview(tileView)
+
+        tileView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(Metrics.inset)
+        }
+        todayAccentView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(Metrics.topAccentHeight)
+        }
+        dayLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Metrics.contentInset + 2)
+            make.leading.trailing.equalToSuperview().inset(2)
+        }
+        qtyLabel.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(3)
+            make.bottom.equalToSuperview().offset(-(Metrics.contentInset + 2))
+            make.top.greaterThanOrEqualTo(dayLabel.snp.bottom).offset(2)
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        titleLabel.isHidden = true
+        subtitleLabel.isHidden = true
+        imageView.isHidden = true
+        eventIndicator.isHidden = true
+    }
+
+    func configure(
+        day: Int,
+        remaining: Int?,
+        occupancyLoaded: Bool,
+        stock: Int,
+        isSelected: Bool,
+        isToday: Bool,
+        isPlaceholder: Bool,
+        isEnabled: Bool = true
+    ) {
+        dayLabel.text = "\(day)"
+
+        if isPlaceholder {
+            tileView.isHidden = true
+            return
+        }
+        tileView.isHidden = false
+        tileView.alpha = isEnabled ? 1 : 0.32
+
+        let hasQty = occupancyLoaded && remaining != nil && isEnabled
+        todayAccentView.isHidden = !isToday
+
+        // Day identity — secondary; today uses brand (no filled circle).
+        if isToday {
+            dayLabel.font = Utils.mediumFont(size: 11)
+            dayLabel.textColor = .brandPrimary
+        } else {
+            dayLabel.font = Utils.regularFont(size: 11)
+            dayLabel.textColor = isEnabled ? .textSecondary : .textTertiary
+        }
+
+        // Qty = primary decision metric.
+        if hasQty, let remaining {
+            qtyLabel.isHidden = false
+            qtyLabel.text = "\(remaining)"
+            let level = AvailabilityHeatLevel.from(remaining: remaining, stock: stock)
+            tileView.backgroundColor = level.fillColor
+            qtyLabel.textColor = level.textColor
+            qtyLabel.font = remaining == 0
+                ? Utils.mediumFont(size: 15)
+                : Utils.mediumFont(size: 16)
+        } else {
+            qtyLabel.isHidden = true
+            qtyLabel.text = nil
+            tileView.backgroundColor = UIColor.backgroundTertiary.withAlphaComponent(0.28)
+        }
+
+        // Selection = brand ring only (keeps heat readable).
+        if isSelected {
+            tileView.layer.borderWidth = 2
+            tileView.layer.borderColor = UIColor.brandPrimary.cgColor
+        } else {
+            tileView.layer.borderWidth = 0
+            tileView.layer.borderColor = UIColor.clear.cgColor
+        }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        tileView.alpha = 1
+        tileView.isHidden = false
+        todayAccentView.isHidden = true
+        qtyLabel.isHidden = true
+        qtyLabel.text = nil
+        titleLabel.isHidden = true
+        subtitleLabel.isHidden = true
+    }
+}
+
+// MARK: - Inline occupancy calendar (remaining qty per day)
+
+final class AvailabilityOccupancyCalendarView: UIView {
+
+    var onSelectDate: ((Date) -> Void)?
+    var onVisibleMonthChange: ((Date) -> Void)?
+
+    private var minimumDate = Calendar.current.startOfDay(for: Date())
+    private var maximumDate = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
+    private var occupancyLoaded = false
+    private var stockCapacity = 0
+    private var availableByDate: [String: Int] = [:]
+    /// Month the current `availableByDate` belongs to — heat/qty only when this matches the visible page.
+    private var loadedOccupancyMonth: DateComponents?
+    private var calendarHeightConstraint: Constraint?
+    /// Tracks last tapped day so we can refresh only old/new selection — not the whole grid.
+    private var lastSelectedDate: Date?
+
+    /// Total stack height: legend + calendar (6 rows) + tap hint + padding — fixed so hint never clips.
+    static var fixedBlockHeight: CGFloat {
+        let hintEstimate: CGFloat = 36
+        return 20 + 24 + 8 + preferredCalendarGridHeight + 8 + hintEstimate + 10
+    }
+
+    private lazy var legendView: UIView = {
+        let view = UIView()
+
+        func legendItem(accent: UIColor, title: String) -> UIView {
+            let dot = UIView()
+            dot.backgroundColor = accent
+            dot.layer.cornerRadius = 4
+
+            let label = UILabel()
+            label.text = title
+            label.font = Utils.mediumFont(size: 14)
+            label.textColor = .textSecondary
+
+            let row = UIStackView(arrangedSubviews: [dot, label])
+            row.axis = .horizontal
+            row.spacing = 6
+            row.alignment = .center
+
+            dot.snp.makeConstraints { make in
+                make.width.height.equalTo(8)
+            }
+            return row
+        }
+
+        let stack = UIStackView(arrangedSubviews: [
+            legendItem(accent: .availabilityOpenText, title: "availability_calendar_plenty".localized()),
+            legendItem(accent: .availabilityLowText, title: "availability_calendar_low".localized()),
+            legendItem(accent: .availabilityFullText, title: "availability_calendar_none".localized()),
+        ])
+        stack.axis = .horizontal
+        stack.spacing = 16
+        stack.distribution = .equalCentering
+        view.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.bottom.equalToSuperview()
+        }
+        return view
+    }()
+
+    private lazy var calendar: FSCalendar = {
+        let calendar = FSCalendar()
+        calendar.delegate = self
+        calendar.dataSource = self
+        calendar.locale = Locale.langCode == LangCode.vi.rawValue
+            ? Locale(identifier: "vi_VN")
+            : Locale(identifier: "en_US")
+        calendar.placeholderType = .fillHeadTail
+        calendar.scrollEnabled = true
+        calendar.scrollDirection = .horizontal
+        calendar.swipeToChooseGesture.isEnabled = true
+        calendar.backgroundColor = .backgroundCard
+        calendar.appearance.titleDefaultColor = .textPrimary
+        calendar.appearance.headerTitleColor = .textPrimary
+        calendar.appearance.weekdayTextColor = .textSecondary
+        calendar.appearance.todayColor = .clear
+        calendar.appearance.titleTodayColor = .clear
+        calendar.appearance.todaySelectionColor = .clear
+        calendar.appearance.selectionColor = .clear
+        calendar.appearance.borderSelectionColor = .clear
+        calendar.appearance.titleSelectionColor = .clear
+        calendar.appearance.titleDefaultColor = .clear
+        calendar.appearance.subtitleDefaultColor = .clear
+        calendar.appearance.subtitleSelectionColor = .clear
+        calendar.appearance.subtitleTodayColor = .clear
+        calendar.appearance.headerTitleFont = Utils.boldFont(size: 15)
+        calendar.appearance.titleFont = Utils.regularFont(size: 10)
+        calendar.appearance.weekdayFont = Utils.mediumFont(size: 11)
+        calendar.appearance.titlePlaceholderColor = .clear
+        calendar.appearance.borderRadius = 0
+        calendar.appearance.headerDateFormat = "MMMM yyyy"
+        calendar.appearance.headerMinimumDissolvedAlpha = 0.15
+        calendar.appearance.caseOptions = [.headerUsesCapitalized]
+        // Keep header/weekday compact so rowHeight can stay tall without clipping.
+        calendar.headerHeight = 40
+        calendar.weekdayHeight = 22
+        calendar.rowHeight = Self.dayRowHeight
+        calendar.adjustsBoundingRectWhenChangingMonths = false
+        calendar.allowsMultipleSelection = false
+        calendar.register(
+            AvailabilityCalendarDayCell.self,
+            forCellReuseIdentifier: AvailabilityCalendarDayCell.reuseId
+        )
+        return calendar
+    }()
+
+    static var dayRowHeight: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 74 : 68
+    }
+
+    /// header + weekday + up to 6 rows (FSCalendar may use 5–6).
+    static var preferredCalendarGridHeight: CGFloat {
+        40 + 22 + (dayRowHeight * 6)
+    }
+
+    static func weekRowCount(for month: Date, calendar cal: Calendar = .current) -> Int {
+        guard let startOfMonth = cal.date(from: cal.dateComponents([.year, .month], from: month)),
+              let dayRange = cal.range(of: .day, in: .month, for: startOfMonth) else {
+            return 6
+        }
+        let daysInMonth = dayRange.count
+        let weekdayOfFirst = cal.component(.weekday, from: startOfMonth)
+        let startOffset = (weekdayOfFirst - cal.firstWeekday + 7) % 7
+        return (startOffset + daysInMonth + 6) / 7
+    }
+
+    static func gridHeight(for month: Date, rowHeight: CGFloat = dayRowHeight) -> CGFloat {
+        let weeks = CGFloat(weekRowCount(for: month))
+        return 40 + 22 + (rowHeight * weeks)
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUI()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        calendar.layoutIfNeeded()
+    }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        let cardView = UIView()
+        cardView.backgroundColor = .backgroundCard
+        cardView.layer.cornerRadius = 12
+        cardView.layer.borderWidth = 1
+        cardView.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
+        cardView.clipsToBounds = true
+
+        let stack = UIStackView(arrangedSubviews: [legendView, calendar, tapHintLabel])
+        stack.axis = .vertical
+        stack.spacing = 8
+        cardView.addSubview(stack)
+        addSubview(cardView)
+
+        cardView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8))
+        }
+        legendView.snp.makeConstraints { make in
+            make.height.equalTo(24)
+        }
+        calendar.snp.makeConstraints { make in
+            calendarHeightConstraint = make.height.equalTo(Self.preferredCalendarGridHeight).constraint
+        }
+        calendar.backgroundColor = .clear
+    }
+
+    private lazy var tapHintLabel: UILabel = {
+        let label = UILabel()
+        label.text = "availability_calendar_tap_hint".localized()
+        label.font = Utils.regularFont(size: 13)
+        label.textColor = .textTertiary
+        label.textAlignment = .center
+        label.numberOfLines = 2
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentHuggingPriority(.required, for: .vertical)
+        return label
+    }()
+
+    private var initialCalendarHeight: CGFloat {
+        Self.preferredCalendarGridHeight
+    }
+
+    func configure(selectedDate: Date, minimumDate: Date? = nil, maximumDate: Date? = nil) {
+        if let minimumDate {
+            self.minimumDate = Calendar.current.startOfDay(for: minimumDate)
+        }
+        if let maximumDate {
+            self.maximumDate = Calendar.current.startOfDay(for: maximumDate)
+        }
+        let day = Calendar.current.startOfDay(for: selectedDate)
+        let selectedMonth = Calendar.current.dateComponents([.year, .month], from: day)
+        let visibleMonth = Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
+        var needsFullReload = selectedMonth != visibleMonth
+        if needsFullReload {
+            calendar.setCurrentPage(day, animated: false)
+        }
+
+        let previousSelections = calendar.selectedDates
+        let alreadySelected = previousSelections.contains { Calendar.current.isDate($0, inSameDayAs: day) }
+        if !alreadySelected {
+            previousSelections.forEach { calendar.deselect($0) }
+            calendar.select(day)
+            if !needsFullReload {
+                refreshSelectionAppearance(
+                    previousDates: previousSelections,
+                    newDate: day
+                )
+            }
+        }
+        lastSelectedDate = day
+
+        calendar.rowHeight = Self.dayRowHeight
+        if needsFullReload {
+            reloadCalendarWithoutAnimation()
+        }
+        syncCalendarHeight()
+        onVisibleMonthChange?(calendar.currentPage)
+    }
+
+    /// First day of the month currently shown in the calendar pager.
+    var visibleMonthStart: Date {
+        Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
+        ) ?? calendar.currentPage
+    }
+
+    func setDayAvailability(_ availableByDate: [String: Int], stock: Int, forVisibleMonth month: Date) {
+        loadedOccupancyMonth = Calendar.current.dateComponents([.year, .month], from: month)
+        occupancyLoaded = true
+        stockCapacity = max(0, stock)
+        self.availableByDate = availableByDate
+        calendar.rowHeight = Self.dayRowHeight
+        reloadCalendarWithoutAnimation()
+        syncCalendarHeight()
+    }
+
+    /// Neutral cells while fetching a new month — no stale heat or red "0".
+    func clearDayAvailabilityPendingLoad() {
+        occupancyLoaded = false
+        loadedOccupancyMonth = nil
+        availableByDate = [:]
+        reloadCalendarWithoutAnimation()
+    }
+
+    private func reloadCalendarWithoutAnimation() {
+        UIView.performWithoutAnimation {
+            calendar.reloadData()
+            calendar.layoutIfNeeded()
+        }
+    }
+
+    private func refreshSelectionAppearance(previousDates: [Date], newDate: Date) {
+        var datesToRefresh = previousDates
+        datesToRefresh.append(newDate)
+        refreshVisibleDayCells(for: datesToRefresh)
+    }
+
+    private func refreshVisibleDayCells(for dates: [Date]) {
+        let positions: [FSCalendarMonthPosition] = [.previous, .current, .next]
+        UIView.performWithoutAnimation {
+            for date in dates {
+                for position in positions {
+                    guard let cell = calendar.cell(for: date, at: position) else { continue }
+                    configureDayCell(cell, for: date, at: position)
+                }
+            }
+        }
+    }
+
+    private func syncCalendarHeight() {
+        calendarHeightConstraint?.update(offset: Self.preferredCalendarGridHeight)
+    }
+
+    private var visiblePageMonth: DateComponents {
+        Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
+    }
+
+    private func isOccupancyVisible(for date: Date, at monthPosition: FSCalendarMonthPosition) -> Bool {
+        guard occupancyLoaded, monthPosition == .current else { return false }
+        guard let loadedOccupancyMonth else { return false }
+        let cellMonth = Calendar.current.dateComponents([.year, .month], from: date)
+        // Keep current-month UI while swiping; only paint cells that belong to the loaded month.
+        guard cellMonth == loadedOccupancyMonth, cellMonth == visiblePageMonth else { return false }
+        let day = Calendar.current.startOfDay(for: date)
+        return day >= minimumDate && day <= maximumDate
+    }
+
+    private func remainingQuantity(for date: Date) -> Int? {
+        guard isOccupancyVisible(for: date, at: .current) else { return nil }
+        guard let key = date.dateServerInString() else { return nil }
+        return availableByDate[key] ?? 0
+    }
+
+    private func configureDayCell(_ cell: FSCalendarCell, for date: Date, at monthPosition: FSCalendarMonthPosition) {
+        guard let dayCell = cell as? AvailabilityCalendarDayCell else { return }
+        let day = Calendar.current.component(.day, from: date)
+        let inCurrentMonth = monthPosition == .current
+        let showOccupancy = isOccupancyVisible(for: date, at: monthPosition)
+        let remaining = showOccupancy ? remainingQuantity(for: date) : nil
+        let isSelected = calendar.selectedDates.contains { Calendar.current.isDate($0, inSameDayAs: date) }
+        let dayStart = Calendar.current.startOfDay(for: date)
+        let isEnabled = inCurrentMonth && dayStart >= minimumDate && dayStart <= maximumDate
+        dayCell.configure(
+            day: day,
+            remaining: remaining,
+            occupancyLoaded: showOccupancy,
+            stock: stockCapacity,
+            isSelected: isSelected,
+            isToday: Calendar.current.isDateInToday(date),
+            isPlaceholder: !inCurrentMonth,
+            isEnabled: isEnabled
+        )
+    }
+}
+
+extension AvailabilityOccupancyCalendarView: FSCalendarDelegate, FSCalendarDataSource, FSCalendarDelegateAppearance {
+    func minimumDate(for calendar: FSCalendar) -> Date { minimumDate }
+    func maximumDate(for calendar: FSCalendar) -> Date { maximumDate }
+
+    func calendar(_ calendar: FSCalendar, boundingRectWillChange bounds: CGRect, animated: Bool) {
+        calendarHeightConstraint?.update(offset: Self.preferredCalendarGridHeight)
+    }
+
+    func calendar(_ calendar: FSCalendar, cellFor date: Date, at position: FSCalendarMonthPosition) -> FSCalendarCell {
+        calendar.dequeueReusableCell(
+            withIdentifier: AvailabilityCalendarDayCell.reuseId,
+            for: date,
+            at: position
+        )
+    }
+
+    func calendar(_ calendar: FSCalendar, willDisplay cell: FSCalendarCell, for date: Date, at monthPosition: FSCalendarMonthPosition) {
+        configureDayCell(cell, for: date, at: monthPosition)
+    }
+
+    func calendarCurrentPageDidChange(_ calendar: FSCalendar) {
+        syncCalendarHeight()
+        onVisibleMonthChange?(calendar.currentPage)
+    }
+
+    func calendar(_ calendar: FSCalendar, didSelect date: Date, at monthPosition: FSCalendarMonthPosition) {
+        if monthPosition == .previous || monthPosition == .next {
+            calendar.setCurrentPage(date, animated: true)
+        }
+        let day = Calendar.current.startOfDay(for: date)
+        var previousDates: [Date] = []
+        if let lastSelectedDate,
+           !Calendar.current.isDate(lastSelectedDate, inSameDayAs: day) {
+            previousDates.append(lastSelectedDate)
+        }
+        lastSelectedDate = day
+        refreshSelectionAppearance(previousDates: previousDates, newDate: day)
+        onSelectDate?(day)
+    }
+
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillDefaultColorFor date: Date) -> UIColor? {
+        .clear
+    }
+
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
+        .clear
+    }
+}
+
+// MARK: - Order history sheet (Order Check)
+
+final class AvailabilityOrderHistorySheetViewController: UIViewController {
+
+    var onSelectOrder: ((NewAvailabilityOrder) -> Void)?
+
+    private let orders: [NewAvailabilityOrder]
+    private let dateTitle: String
+    private let stock: Int
+    private let available: Int
+    private let renting: Int
+
+    private lazy var tableView: UITableView = {
+        let table = UITableView(frame: .zero, style: .plain)
+        table.delegate = self
+        table.dataSource = self
+        table.register(
+            AvailabilityHistoryCell.self,
+            forCellReuseIdentifier: AvailabilityHistoryCell.reuseIdentifier
+        )
+        table.separatorStyle = .none
+        table.backgroundColor = .backgroundPrimary
+        table.rowHeight = UITableViewAutomaticDimension
+        table.estimatedRowHeight = 112
+        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        return table
+    }()
+
+    init(
+        orders: [NewAvailabilityOrder],
+        dateTitle: String,
+        stock: Int,
+        available: Int,
+        renting: Int
+    ) {
+        self.orders = orders
+        self.dateTitle = dateTitle
+        self.stock = stock
+        self.available = available
+        self.renting = renting
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .backgroundPrimary
+
+        let titleLabel = UILabel()
+        titleLabel.font = Utils.boldFont(size: 17)
+        titleLabel.textColor = .textPrimary
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 2
+        titleLabel.text = String(format: "availability_orders_sheet_title".localized(), dateTitle)
+
+        let countLabel = UILabel()
+        countLabel.font = .captionMedium(size: 13)
+        countLabel.textColor = .textSecondary
+        countLabel.textAlignment = .center
+        countLabel.text = String(format: "availability_order_count".localized(), orders.count)
+
+        let metricsCard = makeMetricsHeader()
+
+        let headerStack = UIStackView(arrangedSubviews: [titleLabel, countLabel, metricsCard])
+        headerStack.axis = .vertical
+        headerStack.spacing = 10
+        headerStack.alignment = .fill
+        headerStack.setCustomSpacing(4, after: titleLabel)
+
+        view.addSubview(headerStack)
+        view.addSubview(tableView)
+
+        headerStack.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+        tableView.snp.makeConstraints { make in
+            make.top.equalTo(headerStack.snp.bottom).offset(12)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+        }
+    }
+
+    private func makeMetricsHeader() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .backgroundCard
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
+
+        func column(title: String, value: Int, valueColor: UIColor) -> UIView {
+            let titleLabel = UILabel()
+            titleLabel.text = title
+            titleLabel.font = .captionMedium(size: 11)
+            titleLabel.textColor = .textTertiary
+            titleLabel.textAlignment = .center
+
+            let valueLabel = UILabel()
+            valueLabel.text = value.formatStringInCommon()
+            valueLabel.font = .bodyBold(size: 20)
+            valueLabel.textColor = valueColor
+            valueLabel.textAlignment = .center
+            valueLabel.adjustsFontSizeToFitWidth = true
+            valueLabel.minimumScaleFactor = 0.75
+
+            let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+            stack.axis = .vertical
+            stack.spacing = 4
+            stack.alignment = .center
+            return stack
+        }
+
+        let availableColor: UIColor = available > 0 ? .brandPrimary : .actionDanger
+        let row = UIStackView(arrangedSubviews: [
+            column(title: "Storage".localized(), value: stock, valueColor: .textPrimary),
+            column(title: "Renting".localized(), value: renting, valueColor: .textPrimary),
+            column(title: "Available".localized(), value: available, valueColor: availableColor),
+        ])
+        row.axis = .horizontal
+        row.distribution = .fillEqually
+        row.alignment = .center
+
+        card.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 8, bottom: 12, right: 8))
+        }
+        return card
+    }
+}
+
+extension AvailabilityOrderHistorySheetViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        orders.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: AvailabilityHistoryCell.reuseIdentifier,
+            for: indexPath
+        ) as? AvailabilityHistoryCell else {
+            return UITableViewCell()
+        }
+        cell.bind(order: orders[indexPath.row])
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        onSelectOrder?(orders[indexPath.row])
+    }
+}
+
+// MARK: - Order Check history toggle bar (legacy — unused in Order Check sheet flow)
+
+final class AvailabilityOrderCheckHistoryBarView: UIView {
+
+    var onHistoryTap: (() -> Void)?
+
+    private lazy var historyButton: RCPrimaryButton = {
+        let button = RCPrimaryButton(
+            title: "View order history".localized(),
+            borderStyle: true,
+            borderColor: .brandPrimary
+        )
+        button.addTarget(self, action: #selector(historyTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private let countPillView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundTertiary
+        view.layer.cornerRadius = 10
+        view.isHidden = true
+        return view
+    }()
+
+    private let countLabel: UILabel = {
+        let label = UILabel()
+        label.font = .captionMedium(size: 12)
+        label.textColor = .textSecondary
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUI()
+    }
+
+    private func setupUI() {
+        backgroundColor = .backgroundPrimary
+
+        countPillView.addSubview(countLabel)
+        addSubview(historyButton)
+        addSubview(countPillView)
+
+        historyButton.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(44)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+
+        countLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8))
+        }
+
+        countPillView.snp.makeConstraints { make in
+            make.trailing.equalTo(historyButton.snp.trailing).offset(-12)
+            make.centerY.equalTo(historyButton)
+        }
+    }
+
+    func configure(orderCount: Int, isExpanded: Bool) {
+        let title = isExpanded
+            ? "Hide order history".localized()
+            : "View order history".localized()
+        historyButton.setButtonTitle(title)
+
+        if orderCount > 0 {
+            countPillView.isHidden = false
+            countLabel.text = String(format: "availability_order_count".localized(), orderCount)
+        } else {
+            countPillView.isHidden = true
+        }
+    }
+
+    @objc private func historyTapped() {
+        onHistoryTap?()
     }
 }

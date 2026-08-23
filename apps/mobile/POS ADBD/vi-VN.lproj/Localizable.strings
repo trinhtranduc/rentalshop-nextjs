@@ -208,6 +208,7 @@
 // MARK: - Printer Configuration
 "IP Address" = "Địa chỉ IP";
 "Enter printer IP address" = "Nhập địa chỉ IP máy in";
+"Configure network thermal printer (ESC/POS). Enter the printer IP, then save and run a test print." = "Cấu hình máy in nhiệt qua mạng (ESC/POS). Nhập địa chỉ IP, lưu, rồi in thử.";
 "Printer Note" = "Ghi chú máy in";
 "Test Printer" = "Kiểm tra máy in";
 "Printer Configuration" = "Cấu hình máy in";
@@ -275,6 +276,24 @@
 "Privacy Policy Required" = "Yêu cầu chính sách bảo mật";
 "Please accept the Privacy Policy and Terms of Service to continue." = "Vui lòng chấp nhận Chính sách bảo mật và Điều khoản sử dụng để tiếp tục.";
 "Legal" = "Pháp lý";
+
+// MARK: - Draft order reminder (local notification)
+"Unfinished order" = "Đơn hàng chưa hoàn tất";
+"Unsaved order changes" = "Chỉnh sửa đơn chưa lưu";
+"Continue Order" = "Tiếp tục";
+"Draft order reminder body" = "%d sản phẩm • %@. Nhấn để tiếp tục.";
+"Draft order item qty" = "%@ ×%d";
+"Draft order items more" = "+%d sản phẩm nữa";
+"Draft chart pickup" = "Nhận";
+"Draft chart return" = "Trả";
+"Draft chart days unit" = "ngày";
+"Draft chart day unit" = "ngày";
+"Draft chart today" = "hôm nay";
+"Draft chart now" = "Bây giờ";
+"Draft chart checkout" = "Thanh toán";
+"Draft chart live" = "LIVE";
+"Draft missing customer" = "Thiếu khách";
+"Draft live item count" = "%d món";
 "View" = "Xem";
 "Rent" = "Đơn Thuê";
 "My Order" = "Đơn hàng";
@@ -542,7 +561,7 @@
 
 // MARK: - Product Management
 "Product" = "Sản phẩm";
-"Product check" = "Xem lịch sử đơn hàng";
+"Product check" = "Kiểm tra lịch sản phẩm";
 "Product name" = "Tên sản phẩm";
 "Product name *" = "Tên sản phẩm *";
 "Product name..." = "Tìm theo sản phẩm";
@@ -830,6 +849,8 @@
 "View all" = "Xem tất cả";
 "vs previous period" = "so với kỳ trước";
 "Revenue" = "Doanh thu";
+"Overview_Performance_Title" = "Hiệu suất";
+"Overview_Performance_GrowthPercent" = "Tăng trưởng %";
 "No product performance for this period" = "Chưa có dữ liệu sản phẩm trong kỳ này";
 "No customer performance for this period" = "Chưa có dữ liệu khách hàng trong kỳ này";
 "Unnamed product" = "Sản phẩm chưa đặt tên";
@@ -1254,6 +1275,13 @@
 "Rental history" = "Lịch sử thuê";
 "availability_order_count" = "%d đơn";
 "availability_history_empty" = "Chưa có lịch sử thuê cho ngày này";
+"availability_calendar_plenty" = "Nhiều";
+"availability_calendar_low" = "Sắp hết";
+"availability_calendar_none" = "Hết";
+"availability_calendar_qty_label" = "còn";
+"availability_calendar_qty_hint" = "Số trong ô = lượng còn cho thuê";
+"availability_calendar_tap_hint" = "Chạm một ngày để xem đơn thuê trong ngày";
+"availability_orders_sheet_title" = "Đơn thuê · %@";
 "availability_overlap_on_check_day" = "Trùng trong ngày kiểm tra";
 
 // MARK: - Image Search
@@ -1381,6 +1409,7 @@
 "User Name" = "Tên người dùng";
 "User not logged in" = "Người dùng chưa đăng nhập";
 "View order history" = "Xem lịch sử đơn hàng";
+"Hide order history" = "Ẩn lịch sử đơn hàng";
 "Yes" = "Có";
 "You're account has been expired. Please check a payment to extend account duration" = "Tài khoản đã hết hạn. Vui lòng gia hạn gói để tiếp tục sử dụng.";
 "order" = "đơn hàng";
@@ -1408,7 +1437,7 @@
 "product.imageSearch.updating" = "Đang cập nhật";
 "product.imageSearch.noPhotos" = "Thêm ảnh sản phẩm rồi thử lại.";
 "product.imageSearch.failed" = "Không cập nhật được tìm bằng ảnh.";
-"product.action.viewOrderHistory" = "Xem lịch sử đơn hàng";
+"product.action.viewOrderHistory" = "Kiểm tra lịch sản phẩm";
 "product.search.found" = "Đã tìm thấy sản phẩm";
 "product.search.progress" = "AI đang tìm sản phẩm...";
 "product.form.name.required" = "Tên sản phẩm *";
