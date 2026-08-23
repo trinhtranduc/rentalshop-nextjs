@@ -602,6 +602,24 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const planLimitError = await checkPlanLimitIfNeeded(user, outlet.merchantId, 'orders');
     if (planLimitError) return planLimitError;
 
+    // ✅ Validate customerId exists and belongs to the same merchant
+    if (parsed.data.customerId) {
+      const customer = await db.customers.findById(parsed.data.customerId);
+      if (!customer) {
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: 404 }
+        );
+      }
+      // Non-admin: check customer belongs to same merchant
+      if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== outlet.merchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Don't reveal customer exists for another merchant
+          { status: 404 }
+        );
+      }
+    }
+
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
     // Use atomic transaction to ensure uniqueness
     const orderNumberResult = await db.prisma.$transaction(async (tx: any) => {
@@ -698,15 +716,23 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           });
 
           // Resolve pricing mode for this line:
-          // 1) explicit pricingOptionId → that option's type
-          // 2) client-sent pricingType (mobile may send DAILY without an option id)
-          // 3) product default option / product.pricingType
-          // IMPORTANT: resolveSelectedOption() always returns a default, so it must
-          // NOT override an explicit item.pricingType when pricingOptionId is absent.
+          // Source of truth for the order is pricingType (+ snapshot prices).
+          // pricingOptionId is optional catalog linkage — only persist when the
+          // option still exists on this product (stale cart IDs must not fail create).
           const requestedOptionId = (item as any).pricingOptionId ?? null;
-          const selectedOption = resolveSelectedOption(product as Product, requestedOptionId);
+          const productOptions = Array.isArray(product.pricingOptions)
+            ? product.pricingOptions
+            : [];
+          const requestedExists =
+            requestedOptionId != null &&
+            productOptions.some((option: { id?: number }) => option.id === requestedOptionId);
+
+          const selectedOption = resolveSelectedOption(
+            product as Product,
+            requestedExists ? requestedOptionId : null
+          );
           const optionType = (
-            (requestedOptionId != null ? selectedOption?.type : null) ||
+            (requestedExists ? selectedOption?.type : null) ||
             item.pricingType ||
             selectedOption?.type ||
             PricingResolver.resolvePricingType(product as Product, merchant as any)
@@ -729,6 +755,22 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             rentalDays = rentalDuration || 1;
           }
 
+          // Persist FK only for a real ProductPricingOption on this product.
+          // Prefer the client-selected id when valid; otherwise the active option
+          // matching optionType (if any). Never write a stale id.
+          let pricingOptionId: number | null = null;
+          if (requestedExists) {
+            pricingOptionId = requestedOptionId;
+          } else {
+            const matchingOption = productOptions.find(
+              (option: { id?: number; type?: string; isActive?: boolean }) =>
+                option.id != null &&
+                option.type === optionType &&
+                option.isActive !== false
+            );
+            pricingOptionId = matchingOption?.id ?? null;
+          }
+
           // Snapshot product info + selected option to preserve them even if changed later
           return {
             productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
@@ -743,14 +785,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
             rentalDays: rentalDays,
-            // Pricing option snapshot — only attach option id when client selected one
-            // or the resolved option actually matches optionType (avoid stamping FIXED
-            // default id onto a DAILY line that only sent pricingType).
             pricingType: optionType,
-            pricingOptionId:
-              requestedOptionId ??
-              (selectedOption?.type === optionType ? selectedOption?.id ?? null : null) ??
-              null,
+            pricingOptionId,
           };
     }) || []);
 

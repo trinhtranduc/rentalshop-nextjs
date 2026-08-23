@@ -650,6 +650,7 @@ export const PUT = async (
 
       // Preserve each item's pricing snapshot when older clients update an order
       // without sending the newly supported pricing fields.
+      // pricingOptionId is optional — stale IDs are nullified in updateOrder before write.
       if (Array.isArray(validUpdateData.orderItems)) {
         validUpdateData.orderItems = validUpdateData.orderItems.map((item: any) => {
           const existingItem = existingOrder.orderItems?.find(
@@ -662,10 +663,10 @@ export const PUT = async (
             ...item,
             rentalDays: item.rentalDays ?? item.rentDays ?? existingItem?.rentalDays,
             pricingType: item.pricingType ?? existingItem?.pricingType,
-            // A new client sends pricingType whenever it intentionally chooses a
-            // mode. If that mode has no configured option, clear the old option ID.
+            // Intent is pricingType. Only keep a client-sent option id when present;
+            // clearing happens when client sends a new pricingType without an option.
             pricingOptionId: sendsPricingOptionId
-              ? item.pricingOptionId
+              ? item.pricingOptionId ?? null
               : sendsPricingType
                 ? null
                 : existingItem?.pricingOptionId,

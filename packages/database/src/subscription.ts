@@ -134,11 +134,23 @@ function transformSubscriptionFromDb(sub: any): Subscription {
   // Compute status from dates (single source of truth) instead of DB status field
   const now = new Date();
   const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+  const trialEnd = sub.trialEnd ? new Date(sub.trialEnd) : null;
   let computedStatus: string = sub.status;
   if (periodEnd && periodEnd > now) {
     // Period still active → ACTIVE (regardless of DB status which can be stale)
     if (sub.status === 'EXPIRED' || sub.status === 'PAST_DUE') {
       computedStatus = 'ACTIVE';
+    }
+    // TRIAL → ACTIVE: when trial period has ended OR subscription was renewed/extended
+    // Conditions to promote TRIAL to ACTIVE:
+    // 1. trialEnd has passed (explicit trial expiry)
+    // 2. trialEnd is null but amount > 0 (payment received, no longer free trial)
+    if (sub.status === 'TRIAL') {
+      const trialExpired = trialEnd && trialEnd < now;
+      const hasPaidAmount = sub.amount > 0;
+      if (trialExpired || hasPaidAmount) {
+        computedStatus = 'ACTIVE';
+      }
     }
   } else if (periodEnd && periodEnd <= now) {
     computedStatus = 'EXPIRED';

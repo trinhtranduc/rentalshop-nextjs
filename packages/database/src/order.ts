@@ -535,6 +535,33 @@ export async function updateOrder(
   // Handle order items separately if provided
   if (inputOrderItems && inputOrderItems.length > 0) {
     console.log('🔧 Processing', inputOrderItems.length, 'order items');
+
+    // pricingOptionId is optional catalog linkage. Drop stale IDs so updates
+    // never fail OrderItem_pricingOptionId_fkey (P2003).
+    const requestedOptionIds = [
+      ...new Set(
+        inputOrderItems
+          .map((item) => item.pricingOptionId)
+          .filter((id): id is number => typeof id === 'number' && Number.isFinite(id))
+      ),
+    ];
+    const validOptionIds = new Set<number>();
+    if (requestedOptionIds.length > 0) {
+      const existingOptions = await prisma.productPricingOption.findMany({
+        where: { id: { in: requestedOptionIds } },
+        select: { id: true, productId: true },
+      });
+      for (const option of existingOptions) {
+        // Only accept the option when it belongs to the same product line.
+        const belongsToLine = inputOrderItems.some(
+          (item) => item.pricingOptionId === option.id && item.productId === option.productId
+        );
+        if (belongsToLine) {
+          validOptionIds.add(option.id);
+        }
+      }
+    }
+
     updateData.orderItems = {
       // Delete all existing order items
       deleteMany: {},
@@ -548,7 +575,10 @@ export async function updateOrder(
         notes: item.notes,
         rentalDays: item.rentalDays,
         pricingType: item.pricingType,
-        pricingOptionId: item.pricingOptionId
+        pricingOptionId:
+          item.pricingOptionId != null && validOptionIds.has(item.pricingOptionId)
+            ? item.pricingOptionId
+            : null,
       }))
     }
     console.log('🔧 Converted orderItems to nested write format');
