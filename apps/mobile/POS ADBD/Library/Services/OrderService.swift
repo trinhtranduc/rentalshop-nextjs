@@ -16,6 +16,7 @@ protocol OrderServiceProtocol {
     func loadCalendarOrders(startDate: Date, endDate: Date, outletId: Int?, completion: @escaping (_ response: [String: CalendarDayData]?, _ error: NSError?) -> Void)
     func loadProductAvailability(productId: Int, date: Date, outletId: Int?, completion: @escaping (_ response: ProductAvailabilityResponse?, _ error: NSError?) -> Void)
     func loadProductAvailabilityForDateRange(productId: Int, pickupDate: Date, returnDate: Date, outletId: Int?, completion: @escaping (_ response: ProductAvailabilityResponse?, _ error: NSError?) -> Void)
+    func loadProductAvailabilityCalendar(productId: Int, from: Date, to: Date, outletId: Int?, completion: @escaping (_ availableByDate: [String: Int], _ error: NSError?) -> Void)
     func loadBatchProductAvailability(products: [BatchProductRequest], startDate: Date, endDate: Date, outletId: Int?, excludeOrderId: Int?, completion: @escaping (_ response: BatchAvailabilityResponse?, _ error: NSError?) -> Void)
 }
 
@@ -909,6 +910,41 @@ class OrderService: BaseService, OrderServiceProtocol {
                 
                 completion(nil, error)
             }
+        }
+    }
+
+    /// Remaining units per day for Order Check calendar coloring.
+    func loadProductAvailabilityCalendar(
+        productId: Int,
+        from: Date,
+        to: Date,
+        outletId: Int?,
+        completion: @escaping ([String: Int], NSError?) -> Void
+    ) {
+        let path = "/api/products/\(productId)/availability-calendar"
+        var params: [String: Any] = [
+            "from": from.dateServerInString() ?? "",
+            "to": to.dateServerInString() ?? ""
+        ]
+        if let outletId {
+            params["outletId"] = outletId
+        }
+
+        performGET(
+            path: path,
+            parameters: params,
+            responseType: AvailabilityCalendarResponse.self,
+            context: "OrderService.loadProductAvailabilityCalendar"
+        ) { response, error in
+            if let error {
+                completion([:], error)
+                return
+            }
+            var map: [String: Int] = [:]
+            for day in response?.data?.days ?? [] {
+                map[day.date] = day.available
+            }
+            completion(map, nil)
         }
     }
     

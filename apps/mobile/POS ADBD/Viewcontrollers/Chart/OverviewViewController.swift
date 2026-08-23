@@ -55,18 +55,11 @@ class OverviewViewController: DemoBaseViewController {
     
     // Stats
     private var totalOrder: Double = 0 {
-        didSet {
-            let value = totalOrder.formatStringInCommon()
-            summaryCard.ordersLabel.text = value
-            summaryCard.changeMetricLabel.text = value
-        }
+        didSet { refreshPerformanceHero() }
     }
 
     private var realIncome: Double = 0 {
-        didSet {
-            summaryCard.incomeLabel.text = realIncome.formatStringInCommon()
-            summaryCard.applyIncomeColor(for: realIncome)
-        }
+        didSet { refreshPerformanceHero() }
     }
 
     private var averageDailyIncome: Double = 0 {
@@ -97,11 +90,15 @@ class OverviewViewController: DemoBaseViewController {
     }()
 
     private lazy var summaryCard: OverviewSummaryCardView = {
-        OverviewSummaryCardView(
+        let card = OverviewSummaryCardView(
             isIPad: isIPad,
             infoTarget: self,
             infoAction: #selector(overviewInfoButtonTapped(_:))
         )
+        card.onPerformanceModeChanged = { [weak self] _ in
+            self?.reloadChart()
+        }
+        return card
     }()
 
     private lazy var snapshotSectionView: OverviewSnapshotSectionView = {
@@ -127,12 +124,7 @@ class OverviewViewController: DemoBaseViewController {
         button.tintColor = .brandPrimary
         button.tag = 101
         button.addTarget(self, action: #selector(emptyStateTryAnotherDateTapped), for: .touchUpInside)
-        container.addSubview(button)
-        button.snp.makeConstraints { make in
-            make.top.equalTo(container.viewWithTag(100)!.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-            make.bottom.equalToSuperview().inset(16)
-        }
+        (container.viewWithTag(99) as? UIStackView)?.addArrangedSubview(button)
         return container
     }()
 
@@ -179,10 +171,6 @@ class OverviewViewController: DemoBaseViewController {
         return stack
     }()
 
-    private lazy var chartsSection: OverviewChartsSectionView = {
-        OverviewChartsSectionView(isIPad: isIPad)
-    }()
-
     private lazy var insightsPanel: OverviewInsightsPanelView = {
         let view = OverviewInsightsPanelView(isIPad: isIPad)
         view.onTopProductsTapped = { [weak self] in
@@ -200,8 +188,8 @@ class OverviewViewController: DemoBaseViewController {
         return view
     }()
 
-    private lazy var orderTableView: UITableView = {
-        let table = UITableView()
+    private lazy var orderTableView: IntrinsicHeightTableView = {
+        let table = IntrinsicHeightTableView()
         table.delegate = self
         table.dataSource = self
         table.isHidden = false
@@ -210,7 +198,7 @@ class OverviewViewController: DemoBaseViewController {
         table.backgroundColor = .clear
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 96
+        table.estimatedRowHeight = 88
         table.contentInset = .zero
         if #available(iOS 15.0, *) {
             table.sectionHeaderTopPadding = 0
@@ -220,18 +208,19 @@ class OverviewViewController: DemoBaseViewController {
 
     private lazy var orderTableContainerView: UIView = {
         let view = UIView()
+        view.setContentHuggingPriority(.required, for: .vertical)
+        view.setContentCompressionResistancePriority(.required, for: .vertical)
         view.addSubview(orderTableView)
         orderTableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
-            orderTableHeightConstraint = make.height.equalTo(1).constraint
         }
         return view
     }()
 
+    private var lastOrderTableWidth: CGFloat = 0
     private var chartTopToSummaryConstraint: Constraint?
     private var listHeaderTopToFilterConstraint: Constraint?
     private var listHeaderTopToNavConstraint: Constraint?
-    private var orderTableHeightConstraint: Constraint?
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -243,7 +232,6 @@ class OverviewViewController: DemoBaseViewController {
         // Set initial view state for today mode (before setting selectedPeriod)
         chartScrollView.isHidden = false
         chartStackView.isHidden = false
-        chartsSection.isHidden = true
         insightsPanel.isHidden = true
         orderTableContainerView.isHidden = false
         todayOrdersSectionCard.isHidden = false
@@ -251,7 +239,6 @@ class OverviewViewController: DemoBaseViewController {
         // Initialize period selection and load data
         initializePeriodSelection()
         enforceStaffReportRestrictions()
-        chartsSection.configureInitialExpansion(isIPad: isIPad)
         updateDateFilterTitle()
         applySummaryLayout()
         loadData()
@@ -261,6 +248,15 @@ class OverviewViewController: DemoBaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         enforceStaffReportRestrictions()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let width = orderTableView.bounds.width
+        guard selectedPeriod == .today, !orderTableContainerView.isHidden, width > 1 else { return }
+        guard abs(width - lastOrderTableWidth) > 0.5 else { return }
+        lastOrderTableWidth = width
+        orderTableView.invalidateIntrinsicContentSize()
     }
     
     // MARK: - Setup
@@ -328,8 +324,7 @@ class OverviewViewController: DemoBaseViewController {
 
         summaryCard.setMode(isToday ? .today : .range)
         summaryCard.setContextText(nil)
-        summaryCard.revenueInfoButton.isHidden = false
-        summaryCard.growthPillView.isHidden = true
+        refreshPerformanceHero()
 
         refreshPeriodFilter()
         if isToday {
@@ -341,9 +336,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func syncSummaryLabelsForRangeMode() {
-        summaryCard.incomeLabel.text = realIncome.formatStringInCommon()
-        summaryCard.ordersLabel.text = totalOrder.formatStringInCommon()
-        summaryCard.applyIncomeColor(for: realIncome)
+        refreshPerformanceHero()
     }
 
     private func averageIncome(total: Double, for period: ReportPeriod) -> Double {
@@ -370,7 +363,6 @@ class OverviewViewController: DemoBaseViewController {
         chartScrollContentView.addSubview(chartStackView)
         chartStackView.addArrangedSubview(summaryCard)
         chartStackView.addArrangedSubview(snapshotSectionView)
-        chartStackView.addArrangedSubview(chartsSection)
         chartStackView.addArrangedSubview(insightsPanel)
         chartStackView.addArrangedSubview(todayOrdersSectionCard)
     }
@@ -403,22 +395,11 @@ class OverviewViewController: DemoBaseViewController {
     }
     
     private func setupCharts() {
-        let chart = chartsSection.revenueChartView
+        let chart = summaryCard.chartView
         setup(barLineChartView: chart)
         configureOverviewChartInteraction(chart)
         configureRevenueChartStyle(chart)
         configureXAxis(chart.xAxis)
-
-        // Order-count chart shares the same base style; only the series colour and
-        // an integer y-axis (whole orders) differ.
-        let ordersChart = chartsSection.ordersChartView
-        setup(barLineChartView: ordersChart)
-        configureOverviewChartInteraction(ordersChart)
-        configureRevenueChartStyle(ordersChart)
-        ordersChart.leftAxis.granularity = 1
-        ordersChart.leftAxis.granularityEnabled = true
-        configureXAxis(ordersChart.xAxis)
-
         applyChartPanMode(for: selectedPeriod)
     }
 
@@ -461,14 +442,12 @@ class OverviewViewController: DemoBaseViewController {
     /// Nested inside a vertical `UIScrollView`; DGCharts coordinates with the parent scroll view.
     private func applyChartPanMode(for period: ReportPeriod) {
         let allowHorizontalDrag = period != .today
-        for chart in [chartsSection.revenueChartView, chartsSection.ordersChartView] {
-            chart.dragEnabled = allowHorizontalDrag
-            chart.dragXEnabled = allowHorizontalDrag
-            chart.dragYEnabled = false
-            // Highlight-on-drag fights horizontal pan when the chart is zoomed to a window.
-            chart.highlightPerDragEnabled = !allowHorizontalDrag
-        }
-        chartsSection.setShowsHorizontalHint(allowHorizontalDrag)
+        let chart = summaryCard.chartView
+        chart.dragEnabled = allowHorizontalDrag
+        chart.dragXEnabled = allowHorizontalDrag
+        chart.dragYEnabled = false
+        chart.highlightPerDragEnabled = !allowHorizontalDrag
+        summaryCard.setShowsHorizontalHint(allowHorizontalDrag)
     }
 
     private func chartVisibleWindowSize(for period: ReportPeriod, pointCount: Int) -> Double? {
@@ -487,21 +466,19 @@ class OverviewViewController: DemoBaseViewController {
 
     private func applyChartVisibleRangeIfNeeded() {
         let count = max(xValues.count, 1)
-        let charts = [chartsSection.revenueChartView, chartsSection.ordersChartView]
+        let chart = summaryCard.chartView
         guard let visibleCount = chartVisibleWindowSize(for: selectedPeriod, pointCount: count),
               visibleCount > 0,
               Double(count) > visibleCount else {
-            charts.forEach { $0.fitScreen() }
+            chart.fitScreen()
             return
         }
 
         // `moveViewToX` aligns the left edge — offset so the latest days/months stay in view.
         let latestIndex = Double(count - 1)
         let leftIndex = max(0, latestIndex - visibleCount + 1)
-        charts.forEach { chart in
-            chart.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
-            chart.moveViewToX(leftIndex)
-        }
+        chart.setVisibleXRange(minXRange: visibleCount, maxXRange: visibleCount)
+        chart.moveViewToX(leftIndex)
     }
     
     private func configureXAxis(_ axis: XAxis) {
@@ -530,12 +507,11 @@ class OverviewViewController: DemoBaseViewController {
         applyChartPanMode(for: selectedPeriod)
 
         let showOrderList = selectedPeriod.showsOrderList
-        let showCharts = selectedPeriod.showsChartsAndInsights
+        let showRankings = selectedPeriod.showsRankings
         UIView.animate(withDuration: 0.25) {
             self.chartScrollView.isHidden = false
             self.chartStackView.isHidden = false
-            self.chartsSection.isHidden = !showCharts
-            self.insightsPanel.isHidden = !showCharts
+            self.insightsPanel.isHidden = !showRankings
             self.todayOrdersSectionCard.isHidden = !showOrderList
             if !showOrderList {
                 self.todayOrdersInlineEmptyView.isHidden = true
@@ -696,7 +672,6 @@ class OverviewViewController: DemoBaseViewController {
         if selectedPeriod == .today {
             orderTableContainerView.isHidden = true
             todayOrdersInlineEmptyView.isHidden = true
-            orderTableHeightConstraint?.update(offset: 1)
         }
         if selectedPeriod.showsChartsAndInsights {
             resetOverviewInsightState()
@@ -760,7 +735,7 @@ class OverviewViewController: DemoBaseViewController {
         }
     }
 
-    /// Growth vs previous day — from `/api/analytics/period` (same duration logic as 7d/30d).
+    /// Growth, charts, and rankings for Today — from `/api/analytics/period`.
     private func loadTodayGrowthComparison(for date: Date) {
         AnalyticsAPIService.shared.loadAnalyticsPeriod(
             startDate: date,
@@ -773,6 +748,13 @@ class OverviewViewController: DemoBaseViewController {
                 guard self.selectedPeriod == .today else { return }
                 guard Calendar.current.isDate(self.todayDate, inSameDayAs: date) else { return }
                 self.overviewGrowthMetrics = periodResponse?.growth
+                self.overviewTopProducts = []
+                self.overviewTopCustomers = []
+                // Keep Today hero numbers from daily income; still plot period series when present.
+                if let series = periodResponse?.series, !series.isEmpty {
+                    self.processIncomeChartData(incomeData: series, period: .today)
+                }
+                self.refreshOverviewInsightSections()
                 self.refreshOverviewGrowthPill()
             }
         }
@@ -870,9 +852,11 @@ class OverviewViewController: DemoBaseViewController {
 
         guard let incomeData = incomeData, !incomeData.isEmpty else {
             initializeEmptyChartData(for: period)
-            totalOrder = Double(overviewGrowthMetrics?.orders?.current ?? 0)
-            realIncome = overviewGrowthMetrics?.revenue?.current ?? 0
-            averageDailyIncome = averageIncome(total: realIncome, for: period)
+            if period != .today {
+                totalOrder = Double(overviewGrowthMetrics?.orders?.current ?? 0)
+                realIncome = overviewGrowthMetrics?.revenue?.current ?? 0
+                averageDailyIncome = averageIncome(total: realIncome, for: period)
+            }
             expectedIncome = 0
             reloadChart()
             syncSummaryLabelsForRangeMode()
@@ -955,9 +939,11 @@ class OverviewViewController: DemoBaseViewController {
             initializeEmptyChartData(for: period)
         }
 
-        totalOrder = totalOrderCount
-        realIncome = totalRealIncome
-        averageDailyIncome = averageIncome(total: totalRealIncome, for: period)
+        if period != .today {
+            totalOrder = totalOrderCount
+            realIncome = totalRealIncome
+            averageDailyIncome = averageIncome(total: totalRealIncome, for: period)
+        }
         reloadChart()
         DispatchQueue.main.async { [weak self] in
             self?.syncSummaryLabelsForRangeMode()
@@ -1033,33 +1019,56 @@ class OverviewViewController: DemoBaseViewController {
     // MARK: - Chart Updates
     override func updateChartData() {
         guard !shouldHideData && (selectedPeriod == .today || canViewChartAnalytics()) else {
-            chartsSection.revenueChartView.data = nil
-            chartsSection.ordersChartView.data = nil
+            summaryCard.chartView.data = nil
             return
         }
 
-        setRevenueChartData()
-        setOrdersChartData()
+        setPerformanceChartData()
     }
 
-    private func setRevenueChartData() {
-        let entries = yRValues.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
+    private func setPerformanceChartData() {
+        let mode = summaryCard.performanceMode
+        let values: [Double]
+        let color: UIColor
+        let label: String
+        switch mode {
+        case .orders:
+            values = yOValues
+            color = .accentOrange
+            label = "Overview_Charts_OrderCount".localized()
+        case .growth:
+            values = yRValues
+            let growth = overviewGrowthMetrics?.revenue?.growth ?? 0
+            if growth > 0 {
+                color = .actionSuccess
+            } else if growth < 0 {
+                color = .actionDanger
+            } else {
+                color = .brandPrimary
+            }
+            label = "Revenue".localized()
+        case .revenue:
+            values = yRValues
+            color = .brandPrimary
+            label = "Revenue".localized()
+        }
 
-        let set = LineChartDataSet(entries: entries, label: "Revenue".localized())
+        let entries = values.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
+        let set = LineChartDataSet(entries: entries, label: label)
         set.axisDependency = .left
-        set.setColor(.brandPrimary)
+        set.setColor(color)
         set.lineWidth = 2.5
         set.circleRadius = 4
-        set.setCircleColor(.brandPrimary)
+        set.setCircleColor(color)
         set.drawCircleHoleEnabled = false
         set.drawValuesEnabled = false
         set.mode = .linear
         set.drawFilledEnabled = true
-        set.highlightColor = .brandPrimary
+        set.highlightColor = color
         set.highlightLineWidth = 1.5
 
-        let topColor = UIColor.brandPrimary.withAlphaComponent(0.28).cgColor
-        let bottomColor = UIColor.brandPrimary.withAlphaComponent(0.02).cgColor
+        let topColor = color.withAlphaComponent(0.28).cgColor
+        let bottomColor = color.withAlphaComponent(0.02).cgColor
         if let gradient = CGGradient(
             colorsSpace: CGColorSpaceCreateDeviceRGB(),
             colors: [topColor, bottomColor] as CFArray,
@@ -1067,49 +1076,13 @@ class OverviewViewController: DemoBaseViewController {
         ) {
             set.fill = LinearGradientFill(gradient: gradient, angle: 90)
         } else {
-            set.fillColor = UIColor.brandPrimary.withAlphaComponent(0.12)
+            set.fillColor = color.withAlphaComponent(0.12)
         }
 
-        let data = LineChartData(dataSet: set)
-        let chart = chartsSection.revenueChartView
-        chart.data = data
-        chart.notifyDataSetChanged()
-        applyChartPanMode(for: selectedPeriod)
-        applyChartVisibleRangeIfNeeded()
-        chart.setNeedsDisplay()
-    }
-
-    private func setOrdersChartData() {
-        let entries = yOValues.enumerated().map { ChartDataEntry(x: Double($0.offset), y: $0.element) }
-
-        let set = LineChartDataSet(entries: entries, label: "Overview_Charts_OrderCount".localized())
-        set.axisDependency = .left
-        set.setColor(.accentOrange)
-        set.lineWidth = 2.5
-        set.circleRadius = 4
-        set.setCircleColor(.accentOrange)
-        set.drawCircleHoleEnabled = false
-        set.drawValuesEnabled = false
-        set.mode = .linear
-        set.drawFilledEnabled = true
-        set.highlightColor = .accentOrange
-        set.highlightLineWidth = 1.5
-
-        let topColor = UIColor.accentOrange.withAlphaComponent(0.24).cgColor
-        let bottomColor = UIColor.accentOrange.withAlphaComponent(0.02).cgColor
-        if let gradient = CGGradient(
-            colorsSpace: CGColorSpaceCreateDeviceRGB(),
-            colors: [topColor, bottomColor] as CFArray,
-            locations: [0.0, 1.0]
-        ) {
-            set.fill = LinearGradientFill(gradient: gradient, angle: 90)
-        } else {
-            set.fillColor = UIColor.accentOrange.withAlphaComponent(0.12)
-        }
-
-        let data = LineChartData(dataSet: set)
-        let chart = chartsSection.ordersChartView
-        chart.data = data
+        let chart = summaryCard.chartView
+        chart.leftAxis.granularityEnabled = mode == .orders
+        chart.leftAxis.granularity = mode == .orders ? 1 : chart.leftAxis.granularity
+        chart.data = LineChartData(dataSet: set)
         chart.notifyDataSetChanged()
         applyChartPanMode(for: selectedPeriod)
         applyChartVisibleRangeIfNeeded()
@@ -1117,8 +1090,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func clearChart() {
-        chartsSection.revenueChartView.data = nil
-        chartsSection.ordersChartView.data = nil
+        summaryCard.chartView.data = nil
         totalOrder = 0
         realIncome = 0
         averageDailyIncome = 0
@@ -1164,35 +1136,7 @@ class OverviewViewController: DemoBaseViewController {
         }
 
         orderTableView.reloadData()
-        DispatchQueue.main.async { [weak self] in
-            self?.updateOrderTableHeight()
-        }
-    }
-
-    private func updateOrderTableHeight() {
-        guard selectedPeriod == .today else {
-            orderTableHeightConstraint?.update(offset: 1)
-            view.layoutIfNeeded()
-            return
-        }
-
-        let rowCount = orderTableView.numberOfRows(inSection: 0)
-        guard rowCount > 0 else {
-            orderTableHeightConstraint?.update(offset: 1)
-            view.layoutIfNeeded()
-            return
-        }
-
-        // The constraint may currently be collapsed to 1pt, which stops the
-        // self-sizing cells from laying out — reading contentSize there gives a
-        // wrong (shrunk) height. Give the table a generous height first so every
-        // cell lays out, then read the real contentSize.
-        orderTableHeightConstraint?.update(offset: CGFloat(rowCount) * max(orderTableView.estimatedRowHeight, 1))
-        orderTableView.layoutIfNeeded()
-
-        let height = max(orderTableView.contentSize.height, 1)
-        orderTableHeightConstraint?.update(offset: height)
-        view.layoutIfNeeded()
+        orderTableView.invalidateIntrinsicContentSize()
     }
 
     private func setSummaryPlaceholder(placeholder: String) {
@@ -1202,7 +1146,6 @@ class OverviewViewController: DemoBaseViewController {
         summaryCard.changeMetricLabel.text = placeholder
         setOrdersSectionPlaceholder(placeholder)
         summaryCard.setContextText(nil)
-        summaryCard.growthPillView.isHidden = true
     }
 
     // MARK: - Insight refresh
@@ -1235,35 +1178,17 @@ class OverviewViewController: DemoBaseViewController {
         insightsPanel.updateTopCustomers(overviewTopCustomers)
     }
 
+    private func refreshPerformanceHero() {
+        summaryCard.applyHero(
+            revenue: realIncome,
+            orders: totalOrder,
+            revenueGrowth: overviewGrowthMetrics?.revenue?.growth,
+            ordersGrowth: overviewGrowthMetrics?.orders?.growth
+        )
+    }
+
     private func refreshOverviewGrowthPill() {
-        let revenueGrowth = overviewGrowthMetrics?.revenue?.growth
-        let ordersGrowth = overviewGrowthMetrics?.orders?.growth
-
-        guard revenueGrowth != nil || ordersGrowth != nil else {
-            summaryCard.growthPillView.isHidden = true
-            return
-        }
-
-        var segments: [String] = []
-        if let revenueGrowth = revenueGrowth {
-            segments.append(OverviewUIBuilder.growthText(revenueGrowth))
-        } else if let ordersGrowth = ordersGrowth {
-            segments.append("Orders".localized() + " " + OverviewUIBuilder.growthText(ordersGrowth))
-        }
-
-        let primaryGrowth = revenueGrowth ?? ordersGrowth ?? 0
-        // Text + symbol only — no filled chip background (was too loud under Cash Strip).
-        summaryCard.growthPillView.backgroundColor = .clear
-        if primaryGrowth > 0 {
-            summaryCard.growthPillLabel.textColor = .actionSuccess
-        } else if primaryGrowth < 0 {
-            summaryCard.growthPillLabel.textColor = .actionDanger
-        } else {
-            summaryCard.growthPillLabel.textColor = .textSecondary
-        }
-
-        summaryCard.growthPillLabel.text = segments.joined(separator: "  ") + "  " + "vs previous period".localized()
-        summaryCard.growthPillView.isHidden = false
+        refreshPerformanceHero()
     }
 
     private func refreshOverviewSnapshotSection() {
@@ -1304,7 +1229,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func presentOverviewRankingList(mode: OverviewRankingListMode) {
-        guard selectedPeriod.showsChartsAndInsights else { return }
+        guard selectedPeriod.showsRankings else { return }
         guard let navigationController = navigationController else { return }
 
         let range = currentDateRange(for: selectedPeriod)
@@ -1324,7 +1249,7 @@ class OverviewViewController: DemoBaseViewController {
     }
 
     private func presentRankingOrders(filter: OverviewRankingOrdersFilter) {
-        guard selectedPeriod.showsChartsAndInsights else { return }
+        guard selectedPeriod.showsRankings else { return }
         guard let navigationController = navigationController else { return }
 
         let range = currentDateRange(for: selectedPeriod)
@@ -1391,6 +1316,22 @@ class OverviewViewController: DemoBaseViewController {
             make.center.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(32)
         }
+    }
+}
+
+/// UITableView inside a vertical stack/scroll view has no intrinsic height.
+/// Size to content so today's order rows are not clipped to 1pt or stretched.
+private final class IntrinsicHeightTableView: UITableView {
+    override var contentSize: CGSize {
+        didSet {
+            if oldValue.height != contentSize.height {
+                invalidateIntrinsicContentSize()
+            }
+        }
+    }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIViewNoIntrinsicMetric, height: max(contentSize.height, 1))
     }
 }
 
@@ -1647,6 +1588,7 @@ private final class OverviewRankingListViewController: BaseViewControler {
                 value: (product.totalRevenue ?? 0).formatStringInCommon(),
                 accentColor: .brandPrimary,
                 isIPad: isIPad,
+                imageURL: product.image,
                 onViewOrders: makeProductOrdersAction(product: product, title: title)
             )
         }

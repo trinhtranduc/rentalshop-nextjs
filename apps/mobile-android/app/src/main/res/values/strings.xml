@@ -3,6 +3,24 @@
     <string name="app_name">AnyRent</string>
     <string name="notification_channel_name">Order updates</string>
     <string name="notification_channel_desc">Alerts when orders are created or change status</string>
+    <string name="draft_channel_name">Unfinished order</string>
+    <string name="draft_channel_desc">Pinned reminder while a cart is still open. No sound.</string>
+    <string name="draft_notify_permission">Turn on notifications for AnyRent to pin unfinished orders.</string>
+    <string name="draft_order_unfinished_title">Unfinished order</string>
+    <string name="draft_order_unsaved_title">Unsaved order changes</string>
+    <string name="draft_order_reminder_body">%1$d items • %2$s. Tap to continue.</string>
+    <string name="draft_order_total_label">Total</string>
+    <string name="draft_order_item_count">%d items</string>
+    <string name="draft_order_item_qty">%1$s ×%2$d</string>
+    <string name="draft_order_items_more">+%d more</string>
+    <string name="draft_chart_pickup">Pickup</string>
+    <string name="draft_chart_return">Return</string>
+    <string name="draft_chart_days_unit">days</string>
+    <string name="draft_chart_day_unit">day</string>
+    <string name="draft_missing_customer">Missing customer</string>
+    <string name="draft_live_item_count">%d items</string>
+    <string name="draft_ticket_arrow" translatable="false">→</string>
+    <string name="continue_order">Continue order</string>
     <string name="login_subtitle">Sign in to your outlet</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -187,6 +205,11 @@
     <string name="quantity">Quantity</string>
     <string name="unavailable">Unavailable</string>
     <string name="related_orders">Related orders</string>
+    <string name="view_order_history">View order history</string>
+    <string name="hide_order_history">Hide order history</string>
+    <string name="availability_orders_sheet_title">Orders on %1$s</string>
+    <string name="availability_order_count">%1$d orders</string>
+    <string name="availability_verdict_date_context">On %1$s</string>
     <string name="total_stock_value">Total stock: %1$d</string>
     <string name="renting_value">Renting in period: %1$d</string>
     <string name="effective_available_value">Effectively available: %1$d</string>
@@ -196,6 +219,7 @@
     <string name="pick_image">Pick image</string>
     <string name="image_selected">Image selected</string>
     <string name="available">Available</string>
+    <string name="low_stock">Low Stock</string>
     <string name="create_date">Create date</string>
     <string name="availability_conflicts">Conflicts found</string>
     <string name="collect_payment">Collect payment</string>
@@ -280,6 +304,13 @@
     <string name="products_available_on_date">%1$s products available</string>
     <string name="availability_date">Availability date</string>
     <string name="select_availability_date">Select a date</string>
+    <string name="calendar_empty_day">Remaining</string>
+    <string name="calendar_plenty">Plenty</string>
+    <string name="calendar_low_stock">Low</string>
+    <string name="calendar_has_orders">None left</string>
+    <string name="availability_calendar_qty_label">avail.</string>
+    <string name="availability_calendar_qty_hint">Number in each cell = qty available to rent</string>
+    <string name="availability_calendar_tap_hint">Tap a day to see rental orders for that date</string>
     <string name="storage">Storage</string>
     <string name="renting">Renting</string>
     <string name="swipe_charts">Swipe horizontally to see more</string>
@@ -411,6 +442,9 @@
     <string name="choose_another_day">Choose another day on the calendar to view orders.</string>
     <string name="active_rentals">Active rentals</string>
     <string name="charts">Charts</string>
+    <string name="performance">Performance</string>
+    <string name="growth_percent">Growth %</string>
+    <string name="vs_previous_period">vs previous period</string>
     <string name="show_charts">Show charts</string>
     <string name="top_products_subtitle">Highest revenue drivers</string>
     <string name="top_customers_subtitle">Most valuable customers</string>

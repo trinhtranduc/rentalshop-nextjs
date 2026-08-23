@@ -54,7 +54,7 @@ class AppInformationViewController: BaseViewControler {
             case .privacyPolicy: return ""
             case .termsOfService: return ""
             case .email: return "trinhduc20@gmail.com"
-            case .website: return "www.anyrent.shop"
+            case .website: return AppLegalLinks.websiteHost
             }
         }
         
@@ -70,15 +70,13 @@ class AppInformationViewController: BaseViewControler {
         var url: URL? {
             switch self {
             case .privacyPolicy:
-                let urlString = "https://www.anyrent.shop/privacy"
-                return URL(string: urlString)
+                return URL(string: AppLegalLinks.privacyURL)
             case .termsOfService:
-                let urlString = "https://www.anyrent.shop/terms"
-                return URL(string: urlString)
+                return URL(string: AppLegalLinks.termsURL)
             case .email:
                 return URL(string: "mailto:trinhduc20@gmail.com")
             case .website:
-                return URL(string: "https://www.anyrent.shop")
+                return URL(string: AppLegalLinks.websiteURL)
             default:
                 return nil
             }

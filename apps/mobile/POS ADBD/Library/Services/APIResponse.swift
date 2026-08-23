@@ -1757,6 +1757,25 @@ struct BatchProductRequest: Codable {
 // MARK: - New Product Availability API Response (GET /api/products/[id]/availability)
 // Used by Order Check screen for detailed conflict analysis
 
+struct AvailabilityCalendarResponse: Codable {
+    let success: Bool
+    let code: String?
+    let message: String?
+    let data: AvailabilityCalendarData?
+}
+
+struct AvailabilityCalendarDay: Codable {
+    let date: String
+    let available: Int
+    let booked: Int?
+}
+
+struct AvailabilityCalendarData: Codable {
+    let stock: Int?
+    let days: [AvailabilityCalendarDay]?
+    let occupiedDates: [String]?
+}
+
 struct NewAvailabilityResponse: Codable {
     let success: Bool
     let code: String?

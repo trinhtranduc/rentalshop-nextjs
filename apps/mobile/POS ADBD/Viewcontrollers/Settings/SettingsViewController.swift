@@ -99,13 +99,17 @@ class SettingsViewController: BaseViewControler {
         }
     }
     
+    /// Temporary: hide plan / renew UI until billing is ready to ship.
+    /// Flip to `true` to restore the Settings row, header plan badge, and Subscription screen.
+    private static let showsSubscriptionRenewal = false
+
     // Helper method to get items for a section based on user permissions
     private func items(for section: Section) -> [SettingsItem] {
         switch section {
         case .account:
             var items: [SettingsItem] = [.account]
             // MERCHANT-only: in-app subscription renew via RevenueCat
-            if User.account()?.role == .merchant {
+            if Self.showsSubscriptionRenewal, User.account()?.role == .merchant {
                 items.append(.subscription)
             }
             // Show user management if user has users.manage permission
@@ -331,7 +335,7 @@ class SettingsViewController: BaseViewControler {
         roleLabel.text = roleName
         
         // Load subscription info for merchants
-        if User.account()?.role == .merchant {
+        if Self.showsSubscriptionRenewal, User.account()?.role == .merchant {
             NSLog("[Settings] Loading subscription info for merchant...")
             SubscriptionAPIService.shared.getStatus { [weak self] info, error in
                 DispatchQueue.main.async {

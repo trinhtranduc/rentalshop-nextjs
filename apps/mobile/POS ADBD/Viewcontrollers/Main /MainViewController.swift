@@ -799,7 +799,7 @@ extension MainViewController: ProductCellDelegate {
         // Product check action
         let checkAction = UIAction(
             title: "product.action.viewOrderHistory".localized(),
-            image: UIImage(systemName: "list.bullet.rectangle")
+            image: UIImage(systemName: "calendar")
         ) { [weak self] _ in
             self?.previewOrders(sender: cell, product: product)
         }
@@ -919,7 +919,7 @@ extension MainViewController: NewProductViewControllerDelegate {
     
     func didUpdateProduct(product: Product) {
         controller?.dismiss(animated: true) {
-            self.viewModel.refreshProducts()
+            self.viewModel.replaceProduct(product)
         }
     }
 }
@@ -968,8 +968,40 @@ extension MainViewController: InfoCustomerViewDelegate {
 // MARK: - MainViewModelDelegate
 extension MainViewController: MainViewModelDelegate {
     func didUpdateProducts(_ products: [Product]) {
+        let previous = self.products
         self.products = products
-        tableView?.reloadData()
+        guard let tableView = tableView else { return }
+
+        let previousIds = previous.map { $0.id ?? $0.product_id }
+        let nextIds = products.map { $0.id ?? $0.product_id }
+
+        // Same order/length: reload only changed rows so scroll stays put.
+        if previousIds == nextIds, !previousIds.isEmpty {
+            var changed: [IndexPath] = []
+            for (index, product) in products.enumerated() where index < previous.count {
+                let old = previous[index]
+                let oldId = old.id ?? old.product_id
+                let newId = product.id ?? product.product_id
+                if oldId != newId
+                    || old.name != product.name
+                    || old.image_url != product.image_url
+                    || old.rentPrice != product.rentPrice
+                    || old.salePrice != product.salePrice
+                    || old.totalStock != product.totalStock
+                    || old.barcode != product.barcode {
+                    changed.append(IndexPath(row: index, section: 0))
+                }
+            }
+            if !changed.isEmpty {
+                UIView.performWithoutAnimation {
+                    tableView.reloadRows(at: changed, with: .none)
+                }
+                return
+            }
+            return
+        }
+
+        tableView.reloadData()
     }
     
     func didUpdateLoadingState(_ isLoading: Bool) {

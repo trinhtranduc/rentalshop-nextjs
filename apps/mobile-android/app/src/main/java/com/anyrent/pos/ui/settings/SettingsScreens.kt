@@ -83,9 +83,13 @@ import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.SectionLabel
 import com.anyrent.pos.ui.common.SettingsCardRow
+import com.anyrent.pos.config.AppLegalLinks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** Temporary: hide plan / renew UI until billing is ready to ship. */
+private const val SHOWS_SUBSCRIPTION_RENEWAL = false
 
 @Composable
 fun SettingsScreen(
@@ -140,7 +144,7 @@ fun SettingsScreen(
             SectionLabel(stringResource(R.string.account))
             AppCard {
                 SettingsCardRow(Icons.Default.Store, stringResource(R.string.store_info), onOpenStore)
-                if (SessionStore.role == "MERCHANT") {
+                if (SHOWS_SUBSCRIPTION_RENEWAL && SessionStore.role == "MERCHANT") {
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(
                         Icons.Default.CardMembership,
@@ -685,7 +689,7 @@ fun AppInfoScreen(onBack: () -> Unit) {
                 AppCard {
                     AppInfoLinkRow(
                         title = stringResource(R.string.privacy),
-                        onClick = { openUrl("https://www.anyrent.shop/privacy") },
+                        onClick = { openUrl(AppLegalLinks.PRIVACY_URL) },
                     )
                     HorizontalDivider(
                         Modifier.padding(start = 16.dp),
@@ -693,7 +697,7 @@ fun AppInfoScreen(onBack: () -> Unit) {
                     )
                     AppInfoLinkRow(
                         title = stringResource(R.string.terms),
-                        onClick = { openUrl("https://www.anyrent.shop/terms") },
+                        onClick = { openUrl(AppLegalLinks.TERMS_URL) },
                     )
                 }
             }
@@ -713,8 +717,8 @@ fun AppInfoScreen(onBack: () -> Unit) {
                     )
                     AppInfoLinkRow(
                         title = stringResource(R.string.website),
-                        value = "www.anyrent.shop",
-                        onClick = { openUrl("https://www.anyrent.shop") },
+                        value = AppLegalLinks.WEBSITE_HOST,
+                        onClick = { openUrl(AppLegalLinks.WEBSITE_URL) },
                     )
                 }
             }

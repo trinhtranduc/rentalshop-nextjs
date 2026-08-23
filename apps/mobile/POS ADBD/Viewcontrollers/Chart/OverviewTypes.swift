@@ -40,7 +40,11 @@ enum ReportPeriod: Int, CaseIterable {
 
     var showsOrderList: Bool { self == .today }
 
-    var showsChartsAndInsights: Bool { self != .today }
+    /// Performance chart stays visible; rankings need a multi-day window.
+    var showsChartsAndInsights: Bool { true }
+
+    /// Top products / customers are noisy for a single day — Today already lists orders.
+    var showsRankings: Bool { self != .today }
 
     var incomeGroupBy: String {
         switch self {

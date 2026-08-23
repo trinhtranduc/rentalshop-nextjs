@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
@@ -86,6 +86,8 @@ export default function ProductsPage() {
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
+  /** Soft-patch products after edit so list scroll/page stay put */
+  const [productOverrides, setProductOverrides] = useState<Record<number, ProductWithDetails>>({});
   
   // ============================================================================
   // FETCH CATEGORIES & OUTLETS - Using Official Hooks
@@ -144,6 +146,11 @@ export default function ProductsPage() {
   }), [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
 
   const { data, loading, error, refetch } = useProductsData({ filters });
+
+  // Drop soft patches when list query changes
+  useEffect(() => {
+    setProductOverrides({});
+  }, [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
 
   // ============================================================================
   // URL UPDATE HELPER - Update URL = Update Everything
@@ -341,16 +348,21 @@ export default function ProductsPage() {
       const response = await productsApi.updateProduct(selectedProduct.id, productData, files);
       if (response.success) {
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
+        const updated = (response.data as ProductWithDetails | undefined) ?? {
+          ...selectedProduct,
+          ...productData,
+        } as ProductWithDetails;
+        setProductOverrides((prev) => ({ ...prev, [selectedProduct.id]: updated }));
         setShowEditDialog(false);
         setSelectedProduct(null);
-        refetch();
+        // Avoid full-list refetch — keeps scroll/page position
       }
       // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
       // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
-  }, [selectedProduct, toastSuccess, refetch, t]);
+  }, [selectedProduct, toastSuccess, t]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -462,6 +474,17 @@ export default function ProductsPage() {
     };
   }, [data, imageSearchResults]);
 
+  const displayProductsData = useMemo(() => {
+    if (!Object.keys(productOverrides).length) return productData;
+    const apply = (list: Product[] | ProductWithDetails[]) =>
+      list.map((p) => productOverrides[p.id] ?? p);
+    return {
+      ...productData,
+      items: apply(productData.items as ProductWithDetails[]),
+      products: apply(productData.products as ProductWithDetails[]),
+    };
+  }, [productData, productOverrides]);
+
   // ============================================================================
   // RENDER - Page renders immediately, show loading indicator
   // ============================================================================
@@ -551,7 +574,7 @@ export default function ProductsPage() {
         ) : (
           /* Products Content - Only render when data is loaded */
           <Products
-            data={productData}
+            data={displayProductsData}
             currentUser={user ?? undefined}
             filters={filters}
             onFiltersChange={handleFiltersChange}

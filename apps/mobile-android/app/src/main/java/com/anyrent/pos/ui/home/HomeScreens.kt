@@ -391,10 +391,16 @@ fun HomeScreen(
                         showNewProduct = false
                         productEditor = null
                     },
-                    onSaved = {
+                    onSaved = { saved ->
+                        val wasEditing = productEditor != null
                         showNewProduct = false
                         productEditor = null
-                        refresh()
+                        if (wasEditing) {
+                            products = products.map { if (it.id == saved.id) saved else it }
+                        } else {
+                            // New product: prepend without full-list loading flash
+                            products = listOf(saved) + products.filterNot { it.id == saved.id }
+                        }
                     },
                 )
             }
@@ -723,7 +729,7 @@ private fun PriceBlock(label: String, value: Double, modifier: Modifier = Modifi
 @Composable
 private fun AvailableStockBadge(available: Int) {
     val inStock = available > 0
-    val tint = if (inStock) Color(0xFF1B7A3D) else Color(0xFFB45309)
+    val tint = if (inStock) Color(0xFF34C759) else Color(0xFFFF9500)
     Surface(
         color = tint.copy(alpha = 0.12f),
         shape = RoundedCornerShape(percent = 50),

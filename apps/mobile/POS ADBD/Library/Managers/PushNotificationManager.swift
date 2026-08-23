@@ -30,6 +30,7 @@ final class PushNotificationManager: NSObject {
     func start() {
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
+        DraftOrderReminder.shared.registerCategory()
 
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if let error = error {
@@ -113,6 +114,11 @@ final class PushNotificationManager: NSObject {
     }
 
     func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
+        if DraftOrderReminder.shared.handles(userInfo) {
+            DraftOrderReminder.shared.openDraftCart()
+            return
+        }
+
         let orderIdString =
             (userInfo["orderId"] as? String)
             ?? (userInfo["order_id"] as? String)
@@ -209,6 +215,12 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // Draft-cart reminder is only useful when the merchant has left the app.
+        if DraftOrderReminder.shared.handles(notification.request.content.userInfo) {
+            completionHandler([])
+            return
+        }
+
         // Show banner even when app is foreground
         if #available(iOS 14.0, *) {
             completionHandler([.banner, .sound, .badge])

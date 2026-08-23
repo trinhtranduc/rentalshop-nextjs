@@ -84,6 +84,7 @@ class ApiClient(
         SessionStore.outletPhone = profile.outletPhone
         SessionStore.outletAddress = profile.outletAddress
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
+        CartStore.restoreFromDisk()
         profile
     }
 
@@ -837,6 +838,8 @@ class ApiClient(
             val customers = data.optJSONArray("topCustomers") ?: JSONArray()
             parseRankings(products) to parseRankings(customers)
         }
+
+    fun parseRankingsArray(array: JSONArray): List<RankingItem> = parseRankings(array)
 
     // -------------------------------------------------------------------------
     // Users / store

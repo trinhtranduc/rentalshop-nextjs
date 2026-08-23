@@ -138,6 +138,8 @@
     "tomorrow": "明天",
     "thisWeek": "本周",
     "thisMonth": "本月",
+    "last7Days": "7天",
+    "last30Days": "30天",
     "lastMonth": "上月",
     "thisYear": "今年",
     "lastYear": "去年",

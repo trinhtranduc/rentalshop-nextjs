@@ -67,7 +67,10 @@
     "ordersCount": "đơn hàng",
     "totalOrders": "tổng đơn hàng",
     "rentals": "đơn thuê",
-    "sales": "đơn bán"
+    "sales": "đơn bán",
+    "performance": "Hiệu suất",
+    "growthPercent": "Tăng trưởng %",
+    "vsPreviousPeriod": "so với kỳ trước"
   },
   "chartTitles": {
     "dailyRevenue": "Doanh thu theo ngày",

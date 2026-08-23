@@ -302,6 +302,24 @@ export const analyticsApi = {
   },
 
   /**
+   * Canonical Overview report — revenue, growth, series, operational snapshot, rankings.
+   * Prefer this over separate growth/top-products/top-customers calls.
+   */
+  async getPeriodReport(filters: AnalyticsFilters & { limit?: number } = {}): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
+    if (filters.groupBy) params.append('groupBy', filters.groupBy);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    params.append('t', Date.now().toString());
+
+    const response = await authenticatedFetch(`${apiUrls.analytics.period}?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
    * Get enhanced dashboard summary with all metrics
    */
   async getEnhancedDashboardSummary(filters?: AnalyticsFilters): Promise<ApiResponse<{

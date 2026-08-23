@@ -5,14 +5,24 @@ extension Notification.Name {
 }
 
 /// Central owner for the working cart state.
-/// AppShare bridges to this store so older code can keep reading the current cart
-/// while new mutations can move here gradually.
+/// Draft carts are saved to UserDefaults per logged-in user so killing the app
+/// does not lose an unfinished order. Logout clears memory only; the disk copy
+/// is restored on the next login of the same user.
 final class CartStore {
     static let shared = CartStore()
 
-    private var storage = Cart()
+    private static let defaultsPrefix = "anyrent.draftCart."
 
-    private init() {}
+    private var storage = Cart()
+    private var isRestoring = false
+    /// Set after we have loaded this user's disk snapshot (or confirmed there is none).
+    /// Empty-cart persist must not wipe disk before restore — that is what made
+    /// kill-and-reopen look like the cart vanished.
+    private var hydratedUserId: Int?
+
+    private init() {
+        restoreFromDisk()
+    }
 
     var cart: Cart {
         storage
@@ -20,15 +30,41 @@ final class CartStore {
 
     func replaceCart(with cart: Cart, notify: Bool = true) {
         storage = cart
+        persistToDiskNow()
         if notify {
-            notifyDidChange()
+            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
         }
     }
 
-    func resetCart(notify: Bool = true) {
+    func resetCart(notify: Bool = true, persistToDisk: Bool = true) {
         storage.clear()
+        if persistToDisk {
+            persistToDiskNow()
+        } else {
+            hydratedUserId = nil
+        }
         if notify {
-            notifyDidChange()
+            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+        }
+    }
+
+    func restoreFromDisk() {
+        guard let userId = User.account()?.id, userId > 0 else { return }
+        guard let data = UserDefaults.standard.data(forKey: Self.key(for: userId)) else {
+            hydratedUserId = userId
+            return
+        }
+
+        do {
+            let snapshot = try JSONDecoder().decode(Cart.DiskSnapshot.self, from: data)
+            isRestoring = true
+            storage.applyDiskSnapshot(snapshot)
+            isRestoring = false
+            hydratedUserId = userId
+            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+        } catch {
+            Swift.print("⚠️ Draft cart restore failed: \(error.localizedDescription)")
+            isRestoring = false
         }
     }
 
@@ -136,7 +172,7 @@ final class CartStore {
 
     func updateAvailabilityStatus(for productId: Int, status: AvailabilityStatus?) {
         storage.updateAvailabilityStatus(for: productId, status: status)
-        notifyDidChange()
+        NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
     }
 
     func syncPricesWithOrderType() {
@@ -145,6 +181,33 @@ final class CartStore {
     }
 
     private func notifyDidChange() {
+        persistToDiskNow()
         NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+    }
+
+    func persistToDiskNow() {
+        guard !isRestoring else { return }
+        guard let userId = User.account()?.id, userId > 0 else { return }
+        let key = Self.key(for: userId)
+        guard storage.hasDraftContent else {
+            // Only delete the saved cart after this user was restored, or after
+            // an explicit clear / successful order (`resetCart(persistToDisk: true)`).
+            guard hydratedUserId == userId else { return }
+            UserDefaults.standard.removeObject(forKey: key)
+            UserDefaults.standard.synchronize()
+            return
+        }
+        do {
+            let data = try JSONEncoder().encode(storage.makeDiskSnapshot())
+            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.synchronize()
+            hydratedUserId = userId
+        } catch {
+            Swift.print("⚠️ Draft cart persist failed: \(error.localizedDescription)")
+        }
+    }
+
+    private static func key(for userId: Int) -> String {
+        "\(defaultsPrefix)\(userId)"
     }
 }

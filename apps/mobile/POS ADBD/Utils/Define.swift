@@ -389,3 +389,11 @@ enum OrderFilterChipAppearance {
         applyNeutral(to: button, isSelected: isSelected)
     }
 }
+
+// MARK: - Legal links (App Information, registration)
+enum AppLegalLinks {
+    static let websiteHost = "www.anyrent.shop"
+    static let websiteURL = "https://\(websiteHost)"
+    static let privacyURL = "https://\(websiteHost)/privacy"
+    static let termsURL = "https://\(websiteHost)/terms"
+}

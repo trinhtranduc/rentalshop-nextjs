@@ -147,5 +147,21 @@ storybook-static
 .expo/
 web-build/
 ios/Pods/
+apps/mobile/Pods/
 *.jsbundle
 .metro-health-check*
+
+# Xcode user data (never commit)
+**/xcuserdata/
+*.xcuserstate
+**/xcdebugger/
+
+# Android signing & store credentials (never commit)
+apps/mobile-android/keystore.zip
+apps/mobile-android/**/*.jks
+apps/mobile-android/**/*.keystore
+apps/mobile-android/store/upload_certificate.pem
+apps/mobile-android/store/*.pem
+
+# Local git worktrees
+.worktrees/
