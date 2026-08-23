@@ -28,7 +28,7 @@ class AppShare{
     
     func reset(){
         // Reset the shared working cart in one place so the app keeps a single source of truth.
-        CartStore.shared.resetCart()
+        CartStore.shared.resetCart(persistToDisk: false)
         
         // Clear image cache
         cache.clearMemoryCache()

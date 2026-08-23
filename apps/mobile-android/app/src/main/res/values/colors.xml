@@ -3,4 +3,14 @@
     <color name="brand_primary">#0B6E4F</color>
     <color name="ic_launcher_background">#FFFFFF</color>
     <color name="splash_background">#F5FAFF</color>
+    <color name="notify_brand">#2454F4</color>
+    <color name="notify_on_brand">#FFFFFF</color>
+    <color name="notify_text">#1C1C1E</color>
+    <color name="notify_muted">#72757B</color>
+    <color name="notify_surface">#FFFFFF</color>
+    <color name="notify_thumb_bg">#EEF2FF</color>
+    <color name="notify_badge_bg">#242454F4</color>
+    <color name="notify_ticket_bg">#0D1C1C1E</color>
+    <color name="notify_warn">#E67314</color>
+    <color name="notify_warn_bg">#29E67314</color>
 </resources>

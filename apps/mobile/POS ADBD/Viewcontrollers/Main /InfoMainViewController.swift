@@ -564,8 +564,13 @@ class InfoMainViewController: BaseViewControler {
         selectedProductTableView.tableHeaderView = headerView
         layoutCartTableHeaderView()
         
-        // Update method selection to set initial state
-        updateMethodSelection()
+        // Restore rent/sale from the saved cart before applying layout, otherwise
+        // the default `.rent` would overwrite a SALE draft on every launch.
+        if CartStore.shared.cart.orderType == .sale {
+            methodSelect = .sale
+        } else {
+            updateMethodSelection()
+        }
         setCartSheet(expanded: true, animated: false)
         
         // Add tap gesture to dismiss keyboard

@@ -110,6 +110,17 @@ class MainViewModel {
         searchWords.removeAll()
         loadProducts(isRefreshing: true)
     }
+
+    /// Replace one product in the current list without resetting scroll/search.
+    func replaceProduct(_ product: Product) {
+        let productId = product.id ?? product.product_id
+        if let index = products.firstIndex(where: { ($0.id ?? $0.product_id) == productId }) {
+            products[index] = product
+        } else {
+            products.insert(product, at: 0)
+        }
+        delegate?.didUpdateProducts(products)
+    }
     
     func loadMoreProducts() {
         guard hasMorePages && loadingState.canLoadMore else { return }

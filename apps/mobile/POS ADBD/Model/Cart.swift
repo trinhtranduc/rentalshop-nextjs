@@ -241,6 +241,110 @@ class Cart {
         collateralDetails = nil
         manualDepositAmount = nil
         manualSecurityDeposit = nil
+        isDepositManuallyOverridden = false
+        loyaltyRedeemPoints = 0
+        loyaltyDiscountAmount = 0
+    }
+
+    var hasDraftContent: Bool {
+        !items.isEmpty || customer != nil || orderId != nil
+    }
+
+    /// Disk-safe snapshot. Dates are unix seconds so restore does not depend on ISO8601 quirks.
+    /// Customer is slim so loyalty fields cannot fail the whole save.
+    struct DiskSnapshot: Codable {
+        var orderId: Int?
+        var items: [CartItem]
+        var customer: DiskCustomer?
+        var orderType: String
+        var pickupPlanAt: TimeInterval?
+        var returnPlanAt: TimeInterval?
+        var notes: String?
+        var discount: Double
+        var discountType: String
+        var collateralDetails: String?
+        var manualDepositAmount: Double?
+        var isDepositManuallyOverridden: Bool
+        var manualSecurityDeposit: Double?
+        var loyaltyRedeemPoints: Int
+        var loyaltyDiscountAmount: Double
+    }
+
+    struct DiskCustomer: Codable {
+        var id: Int?
+        var customerId: Int
+        var firstName: String?
+        var lastName: String?
+        var fullName: String?
+        var phone: String?
+        var email: String?
+        var address: String?
+    }
+
+    func makeDiskSnapshot() -> DiskSnapshot {
+        DiskSnapshot(
+            orderId: orderId,
+            items: items.map { item in
+                var copy = item
+                copy.availabilityStatus = nil
+                return copy
+            },
+            customer: customer.map {
+                DiskCustomer(
+                    id: $0.id,
+                    customerId: $0.customer_id,
+                    firstName: $0.firstName,
+                    lastName: $0.lastName,
+                    fullName: $0.full_name,
+                    phone: $0.phone,
+                    email: $0.email,
+                    address: $0.address
+                )
+            },
+            orderType: orderType.rawValue,
+            pickupPlanAt: pickupPlanAt?.timeIntervalSince1970,
+            returnPlanAt: returnPlanAt?.timeIntervalSince1970,
+            notes: notes,
+            discount: discount,
+            discountType: discountType.rawValue,
+            collateralDetails: collateralDetails,
+            manualDepositAmount: manualDepositAmount,
+            isDepositManuallyOverridden: isDepositManuallyOverridden,
+            manualSecurityDeposit: manualSecurityDeposit,
+            loyaltyRedeemPoints: loyaltyRedeemPoints,
+            loyaltyDiscountAmount: loyaltyDiscountAmount
+        )
+    }
+
+    func applyDiskSnapshot(_ snapshot: DiskSnapshot) {
+        orderId = snapshot.orderId
+        items = snapshot.items
+        if let saved = snapshot.customer {
+            var restored = Customer()
+            restored.id = saved.id ?? saved.customerId
+            restored.customer_id = saved.customerId
+            restored.firstName = saved.firstName
+            restored.lastName = saved.lastName
+            restored.full_name = saved.fullName
+            restored.phone = saved.phone
+            restored.email = saved.email
+            restored.address = saved.address
+            customer = restored
+        } else {
+            customer = nil
+        }
+        orderType = OrderType(rawValue: snapshot.orderType) ?? .rent
+        pickupPlanAt = snapshot.pickupPlanAt.map { Date(timeIntervalSince1970: $0) }
+        returnPlanAt = snapshot.returnPlanAt.map { Date(timeIntervalSince1970: $0) }
+        notes = snapshot.notes
+        discount = snapshot.discount
+        discountType = DiscountType(rawValue: snapshot.discountType) ?? .amount
+        collateralDetails = snapshot.collateralDetails
+        manualDepositAmount = snapshot.manualDepositAmount
+        isDepositManuallyOverridden = snapshot.isDepositManuallyOverridden
+        manualSecurityDeposit = snapshot.manualSecurityDeposit
+        loyaltyRedeemPoints = snapshot.loyaltyRedeemPoints
+        loyaltyDiscountAmount = snapshot.loyaltyDiscountAmount
     }
     
     // MARK: - Helper Methods

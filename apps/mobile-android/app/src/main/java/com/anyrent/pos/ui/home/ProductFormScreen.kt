@@ -82,7 +82,7 @@ import androidx.compose.ui.Modifier
 fun ProductFormScreen(
     initial: Product? = null,
     onBack: () -> Unit,
-    onSaved: () -> Unit,
+    onSaved: (Product) -> Unit,
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
@@ -173,7 +173,7 @@ fun ProductFormScreen(
                 pickedImageFile?.let { runCatching { it.delete() } }
                 file?.let { runCatching { it.delete() } }
                 loading = false
-                onSaved()
+                onSaved(product)
             }.onFailure {
                 loading = false
                 error = it.message

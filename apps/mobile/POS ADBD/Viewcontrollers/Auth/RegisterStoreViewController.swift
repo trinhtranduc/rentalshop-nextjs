@@ -603,13 +603,13 @@ class RegisterStoreViewController: BaseViewControler {
     }
 
     private func openPrivacyPolicy() {
-        if let url = URL(string: "https://www.anyrent.shop/privacy") {
+        if let url = URL(string: AppLegalLinks.privacyURL) {
             presentWebView(url: url, title: "Privacy Policy".localized())
         }
     }
 
     private func openTermsOfService() {
-        if let url = URL(string: "https://www.anyrent.shop/terms") {
+        if let url = URL(string: AppLegalLinks.termsURL) {
             presentWebView(url: url, title: "Terms of Service".localized())
         }
     }

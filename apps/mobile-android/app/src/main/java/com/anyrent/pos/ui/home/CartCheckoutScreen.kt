@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -546,40 +547,36 @@ fun CartCheckoutScreen(
                             shape = RoundedCornerShape(10.dp),
                         ) {
                             Column(
-                                Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.small,
-                                    modifier = Modifier.size(64.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.size(44.dp),
                                 ) {
                                     Icon(
                                         Icons.Default.Image,
                                         contentDescription = stringResource(R.string.product_image),
-                                        modifier = Modifier.padding(18.dp),
+                                        modifier = Modifier.padding(10.dp),
                                         tint = MaterialTheme.colorScheme.outline,
                                     )
                                 }
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        line.product.name,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontSize = 18.sp,
-                                            lineHeight = 23.sp,
-                                            fontWeight = FontWeight.Normal,
-                                        ),
-                                        maxLines = 2,
-                                    )
-                                    Text(
-                                        line.product.barcode ?: "—",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
                                 Text(
-                                    stringResource(R.string.available),
-                                    color = Color(0xFF17B95E),
+                                    line.product.name,
+                                    modifier = Modifier.weight(1f),
+                                    fontSize = 16.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 2,
+                                )
+                                CartAvailabilityChip(
+                                    available = line.product.available,
+                                    quantity = line.quantity,
                                 )
                             }
                             Row(
@@ -591,44 +588,58 @@ fun CartCheckoutScreen(
                                     onClick = {
                                         CartStore.updateQuantity(line.product.id, line.quantity - 1)
                                     },
-                                ) { Text("−", style = MaterialTheme.typography.headlineMedium) }
+                                    modifier = Modifier.size(44.dp),
+                                ) {
+                                    Text(
+                                        "−",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
                                 Text(
                                     formatQuantity(line.quantity),
+                                    modifier = Modifier.padding(horizontal = 4.dp),
                                     color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    fontSize = 16.sp,
                                 )
                                 IconButton(
                                     enabled = !previewMode,
                                     onClick = {
                                         CartStore.updateQuantity(line.product.id, line.quantity + 1)
                                     },
-                                ) { Text("+", style = MaterialTheme.typography.headlineMedium) }
+                                    modifier = Modifier.size(44.dp),
+                                ) {
+                                    Text(
+                                        "+",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
                                 if (orderType == "RENT") {
                                     androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
-                                        // iOS rateSelector → PricingMethodSheet (not DropdownMenu)
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            shape = MaterialTheme.shapes.small,
+                                        Text(
+                                            (if (line.pricingType.equals("DAILY", ignoreCase = true)) {
+                                                stringResource(R.string.per_day)
+                                            } else {
+                                                stringResource(R.string.per_rental)
+                                            }) + "  ▾",
                                             modifier = Modifier
                                                 .align(Alignment.CenterEnd)
                                                 .clickable(enabled = !previewMode) {
                                                     pricingMenuProductId = line.product.id
-                                                },
-                                        ) {
-                                            Text(
-                                                if (line.pricingType.equals("DAILY", ignoreCase = true)) {
-                                                    stringResource(R.string.per_day)
-                                                } else {
-                                                    stringResource(R.string.per_rental)
-                                                } + "  ▾",
-                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                                style = MaterialTheme.typography.titleMedium,
-                                            )
-                                        }
+                                                }
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
                                     }
                                 }
                             }
-                            androidx.compose.material3.HorizontalDivider()
+                            androidx.compose.material3.HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                            )
                             Row(
                                 Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -639,8 +650,18 @@ fun CartCheckoutScreen(
                                         numericEditor = "PRICE:${line.product.id}"
                                     },
                                 ) {
-                                    Text(stringResource(R.string.unit_price), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(formatMoney(line.unitPrice), color = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        stringResource(R.string.unit_price),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 11.sp,
+                                        lineHeight = 14.sp,
+                                    )
+                                    Text(
+                                        formatMoney(line.unitPrice),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
                                     Text(
                                         if (orderType == "RENT" &&
                                             line.pricingType.equals("DAILY", ignoreCase = true)
@@ -659,12 +680,22 @@ fun CartCheckoutScreen(
                                             )
                                         },
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 11.sp,
+                                        lineHeight = 14.sp,
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text(stringResource(R.string.subtotal), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(formatMoney(line.lineTotal), fontWeight = FontWeight.Bold)
+                                    Text(
+                                        stringResource(R.string.subtotal),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp,
+                                        lineHeight = 15.sp,
+                                    )
+                                    Text(
+                                        formatMoney(line.lineTotal),
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
                             }
@@ -1160,6 +1191,34 @@ private fun cartLinePriceForType(line: CartLine, type: String): Double {
         line.product.rentPrice
     } else {
         0.0
+    }
+}
+
+/** iOS ProductSelectedCell default status: 11pt label + 7pt filled dot. */
+@Composable
+private fun CartAvailabilityChip(available: Int, quantity: Int) {
+    val ok = available > 0 && quantity <= available
+    val tint = if (ok) Color(0xFF34C759) else Color(0xFFFF9500)
+    val label = stringResource(if (ok) R.string.available else R.string.low_stock)
+    Row(
+        modifier = Modifier
+            .background(tint.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+            .padding(start = 6.dp, top = 3.dp, end = 8.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Box(
+            Modifier
+                .size(7.dp)
+                .background(tint, CircleShape),
+        )
+        Text(
+            label,
+            color = tint,
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
+            maxLines = 1,
+        )
     }
 }
 

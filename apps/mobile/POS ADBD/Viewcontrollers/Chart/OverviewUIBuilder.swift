@@ -5,6 +5,7 @@
 
 import UIKit
 import SnapKit
+import Kingfisher
 
 enum OverviewUIBuilder {
 
@@ -363,6 +364,12 @@ enum OverviewUIBuilder {
 
     static func makeInlineSectionEmptyView(text: String) -> UIView {
         let container = UIView()
+        let stack = UIStackView()
+        stack.tag = 99
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 12
+
         let label = UILabel()
         label.tag = 100
         label.text = text
@@ -370,10 +377,11 @@ enum OverviewUIBuilder {
         label.textColor = .textSecondary
         label.textAlignment = .center
         label.numberOfLines = 0
+        stack.addArrangedSubview(label)
 
-        container.addSubview(label)
-        label.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(UIEdgeInsets(top: 20, left: 8, bottom: 0, right: 8))
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 20, left: 8, bottom: 16, right: 8))
         }
         return container
     }
@@ -450,6 +458,7 @@ enum OverviewUIBuilder {
         accentColor: UIColor,
         isIPad: Bool,
         style: RankingRowStyle = .standalone,
+        imageURL: String? = nil,
         onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let subtitleLabel = UILabel()
@@ -466,6 +475,7 @@ enum OverviewUIBuilder {
             accentColor: accentColor,
             isIPad: isIPad,
             style: style,
+            imageURL: imageURL,
             onViewOrders: onViewOrders
         )
     }
@@ -478,6 +488,7 @@ enum OverviewUIBuilder {
         accentColor: UIColor,
         isIPad: Bool,
         style: RankingRowStyle = .standalone,
+        imageURL: String? = nil,
         onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let subtitleLabel = UILabel()
@@ -494,6 +505,7 @@ enum OverviewUIBuilder {
             accentColor: accentColor,
             isIPad: isIPad,
             style: style,
+            imageURL: imageURL,
             onViewOrders: onViewOrders
         )
     }
@@ -506,6 +518,7 @@ enum OverviewUIBuilder {
         accentColor: UIColor,
         isIPad: Bool,
         style: RankingRowStyle = .standalone,
+        imageURL: String? = nil,
         onViewOrders: (() -> Void)? = nil
     ) -> UIView {
         let container = UIView()
@@ -519,21 +532,75 @@ enum OverviewUIBuilder {
             container.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
         }
 
-        let rankContainer = UIView()
-        rankContainer.backgroundColor = accentColor.withAlphaComponent(0.10)
-        rankContainer.layer.cornerRadius = 12
-        rankContainer.snp.makeConstraints { make in
-            make.width.height.equalTo(30)
-        }
+        let leadingViews: [UIView]
+        if let imageURL, !imageURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let thumbContainer = UIView()
+            thumbContainer.snp.makeConstraints { make in
+                make.width.height.equalTo(44)
+            }
 
-        let rankLabel = UILabel()
-        rankLabel.text = "\(rank)"
-        rankLabel.font = .bodyBold(size: 13)
-        rankLabel.textColor = accentColor
-        rankLabel.textAlignment = .center
-        rankContainer.addSubview(rankLabel)
-        rankLabel.snp.makeConstraints { make in
-            make.center.equalToSuperview()
+            let imageView = UIImageView()
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            imageView.layer.cornerRadius = 10
+            imageView.backgroundColor = UIColor.systemGray6
+            imageView.image = UIImage(named: "no-image")
+            thumbContainer.addSubview(imageView)
+            imageView.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
+
+            let processor = RoundCornerImageProcessor(cornerRadius: 10)
+            imageView.kf.setImage(
+                with: URL(string: imageURL),
+                placeholder: UIImage(named: "no-image"),
+                options: [
+                    .processor(processor),
+                    .transition(.fade(0.15))
+                ]
+            )
+
+            let badge = UIView()
+            badge.backgroundColor = accentColor
+            badge.layer.cornerRadius = 9
+            badge.layer.borderWidth = 1.5
+            badge.layer.borderColor = UIColor.white.cgColor
+            thumbContainer.addSubview(badge)
+            badge.snp.makeConstraints { make in
+                make.width.height.equalTo(18)
+                make.top.equalToSuperview().offset(-4)
+                make.leading.equalToSuperview().offset(-4)
+            }
+
+            let rankLabel = UILabel()
+            rankLabel.text = "\(rank)"
+            rankLabel.font = .bodyBold(size: 10)
+            rankLabel.textColor = .white
+            rankLabel.textAlignment = .center
+            badge.addSubview(rankLabel)
+            rankLabel.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+
+            leadingViews = [thumbContainer]
+        } else {
+            let rankContainer = UIView()
+            rankContainer.backgroundColor = accentColor.withAlphaComponent(0.10)
+            rankContainer.layer.cornerRadius = 12
+            rankContainer.snp.makeConstraints { make in
+                make.width.height.equalTo(30)
+            }
+
+            let rankLabel = UILabel()
+            rankLabel.text = "\(rank)"
+            rankLabel.font = .bodyBold(size: 13)
+            rankLabel.textColor = accentColor
+            rankLabel.textAlignment = .center
+            rankContainer.addSubview(rankLabel)
+            rankLabel.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+            leadingViews = [rankContainer]
         }
 
         let titleLabel = UILabel()
@@ -566,7 +633,7 @@ enum OverviewUIBuilder {
             trailingStack.addArrangedSubview(valueLabel)
         }
 
-        let stack = UIStackView(arrangedSubviews: [rankContainer, textStack, trailingStack])
+        let stack = UIStackView(arrangedSubviews: leadingViews + [textStack, trailingStack])
         stack.axis = .horizontal
         stack.spacing = 10
         stack.alignment = .center

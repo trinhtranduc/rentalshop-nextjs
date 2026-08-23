@@ -340,9 +340,9 @@ class ProductCell: UITableViewCell {
         ))
         stockLabel.attributedText = stockString
         
-        // Number-first chip is easier to scan than "Available: 5"
+        // Same token as cart “Available” status — not a custom inventory green.
         let availableTint: UIColor = availableValue > 0
-            ? UIColor(hexString: "1B7A3D")
+            ? .actionSuccess
             : .actionWarning
         availableBadgeLabel.applySoft(
             tint: availableTint,

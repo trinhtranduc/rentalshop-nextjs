@@ -1,21 +1,35 @@
 package com.anyrent.pos.data
 
+import android.content.Context
+import android.content.SharedPreferences
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
+import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 /**
- * In-memory POS cart — mirrors iOS Cart (dates, discount, deposit, notes, collateral).
+ * POS cart. Draft state is written to SharedPreferences per user so killing
+ * the app does not lose an unfinished order. Logout clears memory only.
  */
 object CartStore {
     enum class DiscountType { AMOUNT, PERCENT }
+
+    private const val PREFS = "anyrent.cart"
+    private const val KEY_PREFIX = "draftCart."
+
+    private lateinit var prefs: SharedPreferences
+    /// Off until this user's disk snapshot is loaded so an empty in-memory cart
+    /// cannot wipe the saved draft on cold start.
+    private var persistEnabled = false
 
     /** Non-null when cart was loaded from an existing order (iOS `cart.orderId`). */
     private val _editingOrderId = MutableStateFlow<Int?>(null)
@@ -70,6 +84,24 @@ object CartStore {
     val totalAmount: Double
         get() = (subtotal - discountAmount).coerceAtLeast(0.0)
 
+    fun init(context: Context) {
+        prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    }
+
+    fun restoreFromDisk() {
+        if (!::prefs.isInitialized) return
+        val userId = SessionStore.userId ?: return
+        val raw = prefs.getString(KEY_PREFIX + userId, null)
+        persistEnabled = false
+        if (raw != null) {
+            runCatching { applyJson(JSONObject(raw)) }
+                .onFailure { android.util.Log.w("AnyRentCart", "Draft cart restore failed: ${it.message}") }
+        }
+        persistEnabled = true
+    }
+
+    private fun persist() = persistToDisk()
+
     fun rentalDaysInclusive(): Int {
         val days = ChronoUnit.DAYS.between(_pickupDate.value, _returnDate.value) + 1
         return days.toInt().coerceAtLeast(1)
@@ -79,24 +111,48 @@ object CartStore {
         val sale = type.equals("SALE", ignoreCase = true)
         _orderType.value = if (sale) "SALE" else "RENT"
         _lines.update { list -> list.map { it.copy(isSale = sale, rentalDays = rentalDaysInclusive()) } }
+        persist()
     }
 
-    fun setCustomer(customer: Customer?) { _customer.value = customer }
+    fun setCustomer(customer: Customer?) {
+        _customer.value = customer
+        persist()
+    }
     fun setPickup(date: LocalDate) {
         _pickupDate.value = date
         if (_returnDate.value.isBefore(date)) _returnDate.value = date.plusDays(1)
         syncRentalDays()
+        persist()
     }
     fun setReturn(date: LocalDate) {
         _returnDate.value = if (date.isBefore(_pickupDate.value)) _pickupDate.value else date
         syncRentalDays()
+        persist()
     }
-    fun setNotes(value: String) { _notes.value = value }
-    fun setDiscount(value: Double) { _discount.value = value }
-    fun setDiscountType(type: DiscountType) { _discountType.value = type }
-    fun setDeposit(value: Double) { _depositAmount.value = value }
-    fun setSecurityDeposit(value: Double) { _securityDeposit.value = value }
-    fun setCollateral(value: String) { _collateralDetails.value = value }
+    fun setNotes(value: String) {
+        _notes.value = value
+        persist()
+    }
+    fun setDiscount(value: Double) {
+        _discount.value = value
+        persist()
+    }
+    fun setDiscountType(type: DiscountType) {
+        _discountType.value = type
+        persist()
+    }
+    fun setDeposit(value: Double) {
+        _depositAmount.value = value
+        persist()
+    }
+    fun setSecurityDeposit(value: Double) {
+        _securityDeposit.value = value
+        persist()
+    }
+    fun setCollateral(value: String) {
+        _collateralDetails.value = value
+        persist()
+    }
 
     private fun syncRentalDays() {
         val days = rentalDaysInclusive()
@@ -128,6 +184,7 @@ object CartStore {
             val auto = _lines.value.sumOf { it.product.deposit * it.quantity }
             if (_depositAmount.value <= 0) _depositAmount.value = auto
         }
+        persist()
     }
 
     fun updateQuantity(productId: Int, quantity: Int) {
@@ -138,6 +195,7 @@ object CartStore {
         _lines.update { list ->
             list.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         }
+        persist()
     }
 
     fun updateUnitPrice(productId: Int, price: Double) {
@@ -146,6 +204,7 @@ object CartStore {
                 if (it.product.id == productId) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
             }
         }
+        persist()
     }
 
     fun updateRentalDays(productId: Int, days: Int) {
@@ -153,6 +212,7 @@ object CartStore {
         _lines.update { list ->
             list.map { if (it.product.id == productId) it.copy(rentalDays = safe) else it }
         }
+        persist()
     }
 
     fun setPricingType(productId: Int, type: String) {
@@ -176,13 +236,15 @@ object CartStore {
                 )
             }
         }
+        persist()
     }
 
     fun remove(productId: Int) {
         _lines.update { it.filterNot { line -> line.product.id == productId } }
+        persist()
     }
 
-    fun clear() {
+    fun clear(persistToDisk: Boolean = true) {
         _editingOrderId.value = null
         _lines.value = emptyList()
         _customer.value = null
@@ -195,6 +257,7 @@ object CartStore {
         _pickupDate.value = LocalDate.now()
         _returnDate.value = LocalDate.now().plusDays(1)
         _orderType.value = "RENT"
+        if (persistToDisk) persist() else persistEnabled = false
     }
 
     /**
@@ -296,6 +359,153 @@ object CartStore {
                 "lines=${mappedLines.size} customer=${customer?.id} " +
                 "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
         )
+        persistToDisk()
+    }
+
+    fun persistToDisk() {
+        if (!persistEnabled || !::prefs.isInitialized) return
+        val userId = SessionStore.userId ?: return
+        val key = KEY_PREFIX + userId
+        val hasDraft = _lines.value.isNotEmpty() ||
+            _customer.value != null ||
+            _editingOrderId.value != null
+        val editor = prefs.edit()
+        if (!hasDraft) {
+            editor.remove(key).commit()
+            return
+        }
+        editor.putString(key, toJson().toString()).commit()
+    }
+
+    private fun toJson(): JSONObject {
+        val customer = _customer.value
+        val customerJson = customer?.let {
+            JSONObject()
+                .put("id", it.id)
+                .put("firstName", it.firstName)
+                .put("lastName", it.lastName ?: JSONObject.NULL)
+                .put("phone", it.phone ?: JSONObject.NULL)
+                .put("email", it.email ?: JSONObject.NULL)
+                .put("address", it.address ?: JSONObject.NULL)
+        }
+        val linesJson = JSONArray()
+        _lines.value.forEach { line ->
+            val options = JSONArray()
+            line.product.pricingOptions.forEach { option ->
+                options.put(
+                    JSONObject()
+                        .put("id", option.id ?: JSONObject.NULL)
+                        .put("type", option.type)
+                        .put("price", option.price)
+                        .put("isDefault", option.isDefault),
+                )
+            }
+            val product = JSONObject()
+                .put("id", line.product.id)
+                .put("name", line.product.name)
+                .put("barcode", line.product.barcode ?: JSONObject.NULL)
+                .put("rentPrice", line.product.rentPrice)
+                .put("salePrice", line.product.salePrice ?: JSONObject.NULL)
+                .put("stock", line.product.stock)
+                .put("available", line.product.available)
+                .put("renting", line.product.renting)
+                .put("categoryId", line.product.categoryId ?: JSONObject.NULL)
+                .put("categoryName", line.product.categoryName ?: JSONObject.NULL)
+                .put("imageUrl", line.product.imageUrl ?: JSONObject.NULL)
+                .put("deposit", line.product.deposit)
+                .put("pricingType", line.product.pricingType)
+                .put("note", line.product.note ?: JSONObject.NULL)
+                .put("pricingOptions", options)
+            linesJson.put(
+                JSONObject()
+                    .put("quantity", line.quantity)
+                    .put("rentalDays", line.rentalDays)
+                    .put("isSale", line.isSale)
+                    .put("pricingType", line.pricingType)
+                    .put("unitPriceOverride", line.unitPriceOverride ?: JSONObject.NULL)
+                    .put("product", product),
+            )
+        }
+        return JSONObject()
+            .put("editingOrderId", _editingOrderId.value ?: JSONObject.NULL)
+            .put("orderType", _orderType.value)
+            .put("pickup", _pickupDate.value.toString())
+            .put("return", _returnDate.value.toString())
+            .put("notes", _notes.value)
+            .put("discount", _discount.value)
+            .put("discountType", _discountType.value.name)
+            .put("deposit", _depositAmount.value)
+            .put("security", _securityDeposit.value)
+            .put("collateral", _collateralDetails.value)
+            .put("customer", customerJson ?: JSONObject.NULL)
+            .put("lines", linesJson)
+    }
+
+    private fun applyJson(json: JSONObject) {
+        _editingOrderId.value = json.optInt("editingOrderId", 0).takeIf { it > 0 }
+        _orderType.value = json.optString("orderType").ifBlank { "RENT" }
+        _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(LocalDate.now())
+        _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(LocalDate.now().plusDays(1))
+        _notes.value = json.optString("notes")
+        _discount.value = json.optDouble("discount", 0.0)
+        _discountType.value = runCatching {
+            DiscountType.valueOf(json.optString("discountType"))
+        }.getOrDefault(DiscountType.AMOUNT)
+        _depositAmount.value = json.optDouble("deposit", 0.0)
+        _securityDeposit.value = json.optDouble("security", 0.0)
+        _collateralDetails.value = json.optString("collateral")
+        _customer.value = json.optJSONObject("customer")?.let { c ->
+            Customer(
+                id = c.optInt("id"),
+                firstName = c.optString("firstName"),
+                lastName = c.optString("lastName").takeIf { it.isNotBlank() && it != "null" },
+                phone = c.optString("phone").takeIf { it.isNotBlank() && it != "null" },
+                email = c.optString("email").takeIf { it.isNotBlank() && it != "null" },
+                address = c.optString("address").takeIf { it.isNotBlank() && it != "null" },
+            )
+        }
+        val linesArray = json.optJSONArray("lines") ?: JSONArray()
+        _lines.value = (0 until linesArray.length()).mapNotNull { index ->
+            val line = linesArray.optJSONObject(index) ?: return@mapNotNull null
+            val productJson = line.optJSONObject("product") ?: return@mapNotNull null
+            val optionsArray = productJson.optJSONArray("pricingOptions") ?: JSONArray()
+            val options = (0 until optionsArray.length()).mapNotNull { optionIndex ->
+                val option = optionsArray.optJSONObject(optionIndex) ?: return@mapNotNull null
+                PricingOption(
+                    id = option.optInt("id", 0).takeIf { it > 0 },
+                    type = option.optString("type"),
+                    price = option.optDouble("price", 0.0),
+                    isDefault = option.optBoolean("isDefault"),
+                )
+            }
+            val salePrice = if (productJson.isNull("salePrice")) null else productJson.optDouble("salePrice")
+            val product = Product(
+                id = productJson.optInt("id"),
+                name = productJson.optString("name"),
+                barcode = productJson.optString("barcode").takeIf { it.isNotBlank() && it != "null" },
+                rentPrice = productJson.optDouble("rentPrice", 0.0),
+                salePrice = salePrice,
+                stock = productJson.optInt("stock"),
+                available = productJson.optInt("available"),
+                renting = productJson.optInt("renting"),
+                categoryId = productJson.optInt("categoryId", 0).takeIf { it > 0 },
+                categoryName = productJson.optString("categoryName").takeIf { it.isNotBlank() && it != "null" },
+                imageUrl = productJson.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" },
+                deposit = productJson.optDouble("deposit", 0.0),
+                pricingType = productJson.optString("pricingType").ifBlank { "FIXED" },
+                pricingOptions = options,
+                note = productJson.optString("note").takeIf { it.isNotBlank() && it != "null" },
+            )
+            val override = if (line.isNull("unitPriceOverride")) null else line.optDouble("unitPriceOverride")
+            CartLine(
+                product = product,
+                quantity = line.optInt("quantity", 1).coerceAtLeast(1),
+                rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
+                isSale = line.optBoolean("isSale"),
+                pricingType = line.optString("pricingType").ifBlank { product.pricingType },
+                unitPriceOverride = override,
+            )
+        }
     }
 
     private fun parseOrderDate(raw: String?): LocalDate? {

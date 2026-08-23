@@ -267,20 +267,81 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.printer_config)) },
+                title = {
+                    Text(
+                        stringResource(R.string.printer_config),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
-        }
+        },
+        bottomBar = {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                AppSecondaryButton(
+                    text = stringResource(R.string.test_print),
+                    onClick = {
+                        prefs.edit()
+                            .putString("printerName", name)
+                            .putString("printerIp", ip)
+                            .putString("printerPort", port)
+                            .putString("paperWidth", paper)
+                            .putString("printerNote", note)
+                            .apply()
+                        val config = ThermalPrinter.Config(
+                            ip = ip,
+                            port = port.toIntOrNull() ?: 9100,
+                            paperWidthMm = paper.toIntOrNull() ?: 80,
+                            name = name,
+                            note = note,
+                        )
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) { ThermalPrinter.testPrint(config) }
+                            message = when (result) {
+                                is ThermalPrinter.Result.Success -> context.getString(R.string.test_print_ok)
+                                is ThermalPrinter.Result.Failure -> result.message
+                            }
+                        }
+                    },
+                )
+                AppPrimaryButton(
+                    text = stringResource(R.string.save),
+                    onClick = {
+                        prefs.edit()
+                            .putString("printerName", name)
+                            .putString("printerIp", ip)
+                            .putString("printerPort", port)
+                            .putString("paperWidth", paper)
+                            .putString("printerNote", note)
+                            .apply()
+                        message = context.getString(R.string.saved)
+                    },
+                )
+            }
+        },
     ) { padding ->
         Column(
             Modifier
+                .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -290,65 +351,46 @@ fun PrinterNetworkScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AppInputField(
-                value = name,
-                onValueChange = { name = it },
-                label = stringResource(R.string.printer_name),
-            )
-            AppInputField(
-                value = ip,
-                onValueChange = { ip = it },
-                label = stringResource(R.string.printer_ip),
-            )
-            AppInputField(
-                value = port,
-                onValueChange = { port = it.filter(Char::isDigit) },
-                label = stringResource(R.string.printer_port),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-            AppInputField(
-                value = paper,
-                onValueChange = { paper = it.filter(Char::isDigit) },
-                label = stringResource(R.string.paper_width),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-            AppInputField(
-                value = note,
-                onValueChange = { note = it },
-                label = stringResource(R.string.printer_note),
-            )
-            AppPrimaryButton(
-                text = stringResource(R.string.save),
-                onClick = {
-                    prefs.edit()
-                        .putString("printerName", name)
-                        .putString("printerIp", ip)
-                        .putString("printerPort", port)
-                        .putString("paperWidth", paper)
-                        .putString("printerNote", note)
-                        .apply()
-                    message = context.getString(R.string.saved)
-                },
-            )
-            AppSecondaryButton(
-                text = stringResource(R.string.test_print),
-                onClick = {
-                    val config = ThermalPrinter.Config(
-                        ip = ip,
-                        port = port.toIntOrNull() ?: 9100,
-                        paperWidthMm = paper.toIntOrNull() ?: 80,
-                        name = name,
-                        note = note,
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    AppInputField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = stringResource(R.string.printer_name),
                     )
-                    scope.launch {
-                        val result = withContext(Dispatchers.IO) { ThermalPrinter.testPrint(config) }
-                        message = when (result) {
-                            is ThermalPrinter.Result.Success -> context.getString(R.string.test_print_ok)
-                            is ThermalPrinter.Result.Failure -> result.message
-                        }
-                    }
-                },
-            )
+                    AppInputField(
+                        value = ip,
+                        onValueChange = { ip = it },
+                        label = stringResource(R.string.printer_ip),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    )
+                    AppInputField(
+                        value = port,
+                        onValueChange = { port = it.filter(Char::isDigit) },
+                        label = stringResource(R.string.printer_port),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                    AppInputField(
+                        value = paper,
+                        onValueChange = { paper = it.filter(Char::isDigit) },
+                        label = stringResource(R.string.paper_width),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                    AppInputField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = stringResource(R.string.printer_note),
+                        singleLine = false,
+                        minLines = 4,
+                    )
+                }
+            }
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
     }

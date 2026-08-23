@@ -17,6 +17,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
     
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
+        if url.scheme == "anyrent" {
+            DraftOrderReminder.shared.openDraftCart()
+            return true
+        }
+        return false
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Initialize window
         window = UIWindow(frame: UIScreen.main.bounds)
@@ -98,24 +106,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        DraftOrderReminder.shared.scheduleIfNeeded()
     }
     
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+        // Remind the merchant if they left mid-checkout. Cart is still in memory
+        // while the app is suspended; tapping the notification returns to Home.
+        DraftOrderReminder.shared.scheduleIfNeeded()
+        CartStore.shared.persistToDiskNow()
     }
     
     func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+        DraftOrderReminder.shared.cancel()
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
+        DraftOrderReminder.shared.cancel()
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        CartStore.shared.persistToDiskNow()
     }
     
     func connectToIp(ip: String, completion: @escaping (() -> Void)){
@@ -186,6 +196,7 @@ extension AppDelegate {
                 FirebaseManager.shared.logUserLogout(userId: String(user.id))
             }
             PurchasesManager.logOut()
+            DraftOrderReminder.shared.cancel()
             User.reset()
             Utils.removePreference()
             AppShare.shared.reset()
@@ -211,6 +222,10 @@ extension AppDelegate {
             return
         }
         
+        // Restore draft cart before the tab bar loads. InfoMain writes rent/sale
+        // on appear; doing that against an empty in-memory cart used to wipe disk.
+        CartStore.shared.restoreFromDisk()
+
         let tabBar = TabbarViewController()
         guard let window else { return }
         
