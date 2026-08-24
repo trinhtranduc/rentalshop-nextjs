@@ -1439,6 +1439,11 @@
 "product.imageSearch.updating" = "Updating";
 "product.imageSearch.noPhotos" = "Add a product photo, then try again.";
 "product.imageSearch.failed" = "Could not update image search.";
+"product.imageSearch.indexShop" = "Index product photos";
+"product.imageSearch.indexShopConfirm" = "Scan all product photos for image search. Products that are already indexed are skipped.";
+"product.imageSearch.indexShopQueued" = "Queued %d product(s). %d already indexed were skipped. Search works after indexing finishes.";
+"product.imageSearch.indexShopNone" = "All products with photos are already indexed.";
+"product.imageSearch.indexShopEmpty" = "No products with photos to index.";
 "product.action.viewOrderHistory" = "Check availability";
 "product.search.found" = "Products found";
 "product.search.progress" = "AI is searching for products...";

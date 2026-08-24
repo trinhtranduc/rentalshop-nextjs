@@ -232,18 +232,21 @@ export default function ProductsPage() {
     if (isSyncingEmbeddings) return;
     setIsSyncingEmbeddings(true);
     try {
-      const response = await productsApi.syncEmbeddings();
+      const response = await productsApi.indexShopImages();
       if (response.success && response.data) {
         const queued = response.data.queued;
+        const skipped = response.data.skippedIndexed;
         if (queued === 0) {
           toastSuccess(
             'Image search',
-            'All products with photos are already indexed. Change photos on edit to re-index one product.'
+            skipped > 0
+              ? 'All products with photos are already indexed.'
+              : 'No products with photos to index.'
           );
         } else {
           toastSuccess(
             'Image search sync started',
-            `${queued} product(s) queued. Search works after embeddings finish (a few minutes).`
+            `${queued} product(s) queued${skipped > 0 ? `, ${skipped} already indexed skipped` : ''}. Search works after embeddings finish.`
           );
         }
       } else {
@@ -552,7 +555,7 @@ export default function ProductsPage() {
                     disabled={isSyncingEmbeddings}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
-                    {isSyncingEmbeddings ? 'Syncing image search...' : 'Sync image search'}
+                    {isSyncingEmbeddings ? 'Indexing photos...' : 'Index all product photos'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

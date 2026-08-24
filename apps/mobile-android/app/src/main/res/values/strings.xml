@@ -365,6 +365,11 @@
     <string name="image_search_updating">Updating</string>
     <string name="image_search_no_photos">Add a product photo, then try again.</string>
     <string name="image_search_failed">Could not update image search.</string>
+    <string name="index_shop_images">Index product photos</string>
+    <string name="index_shop_images_confirm">Scan all product photos for image search. Products that are already indexed are skipped.</string>
+    <string name="index_shop_images_queued">Queued %1$d product(s). %2$d already indexed were skipped. Search works after indexing finishes.</string>
+    <string name="index_shop_images_none">All products with photos are already indexed.</string>
+    <string name="index_shop_images_empty">No products with photos to index.</string>
     <string name="delete_product">Delete Product</string>
     <string name="delete_product_confirmation">Delete “%1$s”? This action cannot be undone.</string>
     <string name="order_details">Order details</string>

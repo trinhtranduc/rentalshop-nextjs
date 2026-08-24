@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Key
@@ -104,6 +105,11 @@ fun SettingsScreen(
     onLoggedOut: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var showIndexShopImages by remember { mutableStateOf(false) }
+    var isIndexingShopImages by remember { mutableStateOf(false) }
+    var indexShopMessage by remember { mutableStateOf<String?>(null) }
+    var indexShopError by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showLogoutConfirmation by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
@@ -170,6 +176,14 @@ fun SettingsScreen(
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(Icons.Default.Upload, stringResource(R.string.export_data), onOpenExport)
                 }
+                if (PermissionManager.canManageProducts()) {
+                    HorizontalDivider(Modifier.padding(start = 56.dp))
+                    SettingsCardRow(
+                        Icons.Default.AutoAwesome,
+                        stringResource(R.string.index_shop_images),
+                        onClick = { showIndexShopImages = true },
+                    )
+                }
             }
         }
         item {
@@ -196,6 +210,60 @@ fun SettingsScreen(
             }
         }
         item { Box(Modifier.height(16.dp)) }
+    }
+
+    if (showIndexShopImages) {
+        AppAlertConfirm(
+            title = stringResource(R.string.index_shop_images),
+            message = stringResource(R.string.index_shop_images_confirm),
+            confirmLabel = stringResource(R.string.confirm),
+            confirmLoading = isIndexingShopImages,
+            dismissEnabled = !isIndexingShopImages,
+            onDismiss = { showIndexShopImages = false },
+            onConfirm = {
+                isIndexingShopImages = true
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        ApiClient.get().indexShopImages()
+                    }
+                    isIndexingShopImages = false
+                    showIndexShopImages = false
+                    result.fold(
+                        onSuccess = { data ->
+                            indexShopMessage = if (data.queued == 0) {
+                                if (data.skippedIndexed > 0) {
+                                    context.getString(R.string.index_shop_images_none)
+                                } else {
+                                    context.getString(R.string.index_shop_images_empty)
+                                }
+                            } else {
+                                context.getString(
+                                    R.string.index_shop_images_queued,
+                                    data.queued,
+                                    data.skippedIndexed,
+                                )
+                            }
+                        },
+                        onFailure = { indexShopError = it.message },
+                    )
+                }
+            },
+        )
+    }
+
+    indexShopMessage?.let { message ->
+        AppAlertError(
+            title = stringResource(R.string.index_shop_images),
+            message = message,
+            onDismiss = { indexShopMessage = null },
+        )
+    }
+
+    indexShopError?.let { message ->
+        AppAlertError(
+            message = message,
+            onDismiss = { indexShopError = null },
+        )
     }
 
     if (showLogoutConfirmation) {
