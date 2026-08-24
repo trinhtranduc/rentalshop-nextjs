@@ -735,10 +735,10 @@ export default function DashboardPage() {
           totalRevenue:
             periodRevenueTotals?.totalActualRevenue ??
             periodRevenueTotals?.totalRevenue ??
-            apiStats.thisMonth?.revenue ??
+            apiStats.thisMonth?.revenue ||
             0,
-          totalRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders ?? 0,
-          completedRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders ?? 0,
+          totalRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders || 0,
+          completedRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders || 0,
           // Period growth is vs previous equal-length window; prefer it over enhanced-dashboard MoM.
           customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: 0, // Not available in current API
