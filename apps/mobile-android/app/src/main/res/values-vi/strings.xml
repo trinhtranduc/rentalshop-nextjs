@@ -363,6 +363,11 @@
     <string name="image_search_updating">Đang cập nhật</string>
     <string name="image_search_no_photos">Thêm ảnh sản phẩm rồi thử lại.</string>
     <string name="image_search_failed">Không cập nhật được tìm bằng ảnh.</string>
+    <string name="index_shop_images">Cập nhật ảnh tìm kiếm</string>
+    <string name="index_shop_images_confirm">Quét toàn bộ ảnh sản phẩm để tìm bằng hình. Sản phẩm đã có rồi sẽ bỏ qua.</string>
+    <string name="index_shop_images_queued">Đã xếp hàng %1$d sản phẩm. Bỏ qua %2$d sản phẩm đã có. Tìm kiếm dùng được sau khi xử lý xong.</string>
+    <string name="index_shop_images_none">Tất cả sản phẩm có ảnh đã được cập nhật.</string>
+    <string name="index_shop_images_empty">Không có sản phẩm nào có ảnh để cập nhật.</string>
     <string name="delete_product">Xóa sản phẩm</string>
     <string name="delete_product_confirmation">Xóa “%1$s”? Thao tác này không thể hoàn tác.</string>
     <string name="order_details">Chi tiết đơn hàng</string>

@@ -48,6 +48,13 @@ class ApiClient(
         val unreadCount: Int? = null,
     )
 
+    data class ShopImageIndexResult(
+        val scanned: Int,
+        val skippedIndexed: Int,
+        val skippedNoImages: Int,
+        val queued: Int,
+    )
+
     // -------------------------------------------------------------------------
     // Auth
     // -------------------------------------------------------------------------
@@ -661,6 +668,23 @@ class ApiClient(
         val body = JSONObject().toString().toRequestBody(jsonMedia)
         authedPost("/api/products/$id/sync-embeddings", body)
         Unit
+    }
+
+    /**
+     * Scan shop catalog and queue CLIP for products with photos that are not indexed yet.
+     * POST /api/products/index-images — products.manage only.
+     */
+    fun indexShopImages(): Result<ShopImageIndexResult> = runCatching {
+        val body = JSONObject().toString().toRequestBody(jsonMedia)
+        val json = authedPost("/api/products/index-images", body)
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject()
+        ShopImageIndexResult(
+            scanned = data.optInt("scanned"),
+            skippedIndexed = data.optInt("skippedIndexed"),
+            skippedNoImages = data.optInt("skippedNoImages"),
+            queued = data.optInt("queued"),
+        )
     }
 
     // -------------------------------------------------------------------------

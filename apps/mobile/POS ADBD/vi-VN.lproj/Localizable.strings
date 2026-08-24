@@ -1437,6 +1437,11 @@
 "product.imageSearch.updating" = "Đang cập nhật";
 "product.imageSearch.noPhotos" = "Thêm ảnh sản phẩm rồi thử lại.";
 "product.imageSearch.failed" = "Không cập nhật được tìm bằng ảnh.";
+"product.imageSearch.indexShop" = "Cập nhật ảnh tìm kiếm";
+"product.imageSearch.indexShopConfirm" = "Quét toàn bộ ảnh sản phẩm để tìm bằng hình. Sản phẩm đã có rồi sẽ bỏ qua.";
+"product.imageSearch.indexShopQueued" = "Đã xếp hàng %d sản phẩm. Bỏ qua %d sản phẩm đã có. Tìm kiếm dùng được sau khi xử lý xong.";
+"product.imageSearch.indexShopNone" = "Tất cả sản phẩm có ảnh đã được cập nhật.";
+"product.imageSearch.indexShopEmpty" = "Không có sản phẩm nào có ảnh để cập nhật.";
 "product.action.viewOrderHistory" = "Kiểm tra lịch sản phẩm";
 "product.search.found" = "Đã tìm thấy sản phẩm";
 "product.search.progress" = "AI đang tìm sản phẩm...";
