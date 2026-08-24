@@ -34,6 +34,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -58,7 +60,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.AppCloseIconButton
 import com.anyrent.pos.ui.theme.BrandPrimary
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
@@ -124,39 +128,37 @@ fun AvailabilityScreen(
     Scaffold(
         containerColor = if (focusedProductMode) Color(0xFFF4F5F7) else MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (focusedProductMode) {
-                            state.selectedProduct?.name ?: stringResource(R.string.availability_check)
-                        } else {
-                            stringResource(R.string.availability_check)
-                        },
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                        )
-                    }
-                },
-                actions = {
-                    if (!focusedProductMode) {
-                    TextButton(onClick = onFindOrder) {
-                        Text(stringResource(R.string.find_order))
-                    }
-                    }
-                },
-            )
+            if (focusedProductMode) {
+                // iOS OrderCheckViewController: RCCustomNavigationBar — X dismiss + centered product name only.
+                AvailabilityProductNavBar(
+                    title = state.selectedProduct?.name.orEmpty(),
+                    onClose = onBack,
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.availability_check)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = onFindOrder) {
+                            Text(stringResource(R.string.find_order))
+                        }
+                    },
+                )
+            }
         },
     ) { padding ->
         LazyColumn(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = if (focusedProductMode) 12.dp else 16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(if (focusedProductMode) 12.dp else 10.dp),
         ) {
             if (!focusedProductMode) item {
@@ -260,14 +262,17 @@ fun AvailabilityScreen(
                     )
                 }
             }
-            state.result?.let { result ->
-                item {
-                    AvailabilitySummary(
-                        result = result,
-                        dateLabel = state.selectedDate.format(
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                        ),
-                    )
+            // iOS Order Check main screen: calendar only — verdict/metrics live in the order sheet, not above the grid.
+            if (!focusedProductMode) {
+                state.result?.let { result ->
+                    item {
+                        AvailabilitySummary(
+                            result = result,
+                            dateLabel = state.selectedDate.format(
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                            ),
+                        )
+                    }
                 }
             }
             if (state.selectedProduct != null && (focusedProductMode || state.result != null)) {
@@ -364,6 +369,49 @@ fun AvailabilityScreen(
                     onOpenOrder(orderId)
                 },
             )
+        }
+    }
+}
+
+/** iOS `OrderCheckViewController` custom nav: 56pt, white bar, X dismiss, centered product name. */
+@Composable
+private fun AvailabilityProductNavBar(
+    title: String,
+    onClose: () -> Unit,
+) {
+    Surface(
+        color = Color.White,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(56.dp),
+        ) {
+            AppCloseIconButton(
+                onClick = onClose,
+                contentDescription = stringResource(R.string.close),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 12.dp),
+            )
+            if (title.isNotBlank()) {
+                Text(
+                    text = title,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 56.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                    ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
