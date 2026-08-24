@@ -35,6 +35,48 @@ function buildImageUploadErrorResponse(detail?: string) {
   );
 }
 
+async function parseCreateProductRequest(request: NextRequest): Promise<{
+  productData: any;
+  imageFiles: File[];
+}> {
+  const contentType = request.headers.get('content-type') || '';
+  const isMultipart = contentType.includes('multipart/form-data');
+
+  if (!isMultipart) {
+    const productData = await request.json();
+    return {
+      productData,
+      imageFiles: []
+    };
+  }
+
+  const formData = await request.formData();
+  const jsonDataStr = formData.get('data');
+
+  if (typeof jsonDataStr !== 'string' || !jsonDataStr.trim()) {
+    throw new Error('MISSING_PRODUCT_DATA');
+  }
+
+  let productData: any;
+  try {
+    productData = JSON.parse(jsonDataStr);
+  } catch {
+    throw new Error('INVALID_JSON_DATA');
+  }
+
+  const imageFiles = (formData.getAll('images') as unknown[]).filter(
+    (entry): entry is File =>
+      !!entry &&
+      typeof entry === 'object' &&
+      typeof (entry as File).arrayBuffer === 'function'
+  );
+
+  return {
+    productData,
+    imageFiles
+  };
+}
+
 /**
  * GET /api/products
  * Get products with filtering and pagination using simplified database API
@@ -443,29 +485,16 @@ async function validateOutletStock(
  */
 export const POST = withPermissions(['products.manage', 'products.create'])(async (request, { user, userScope }) => {
   try {
-    // Parse multipart form data
-    const formData = await request.formData();
-    const jsonDataStr = formData.get('data') as string;
-    
-    if (!jsonDataStr) {
-      return NextResponse.json(
-        ResponseBuilder.error('MISSING_PRODUCT_DATA'),
-        { status: 400 }
-      );
-    }
+    const { productData, imageFiles } = await parseCreateProductRequest(request);
 
-    let productData: any;
-    try {
-      productData = JSON.parse(jsonDataStr);
-    } catch {
+    if (!productData || typeof productData !== 'object') {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_JSON_DATA'),
+        ResponseBuilder.error('INVALID_PAYLOAD'),
         { status: 400 }
       );
     }
 
     // Upload images to staging (if any)
-    const imageFiles = formData.getAll('images') as File[];
     let uploadedStagingKeys: string[] = [];
     let uploadedUrls: string[] = [];
 
@@ -672,6 +701,13 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     console.error('Error in POST /api/products:', error);
     
     // Map common errors to API responses
+    if (error.message === 'MISSING_PRODUCT_DATA' || error.message === 'INVALID_JSON_DATA') {
+      return NextResponse.json(
+        ResponseBuilder.error(error.message),
+        { status: 400 }
+      );
+    }
+
     if (error.message === 'IMAGE_VALIDATION_FAILED' || error.message === 'IMAGE_TOO_LARGE') {
       return NextResponse.json(
         ResponseBuilder.error(error.message),
@@ -697,6 +733,17 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
         ResponseBuilder.error(error.message),
         { status: error.message === 'FORBIDDEN' ? 403 : 
                  error.message === 'MERCHANT_NOT_FOUND' ? 404 : 400 }
+      );
+    }
+
+    if (error?.code === 'P2002' && Array.isArray(error?.meta?.target) && error.meta.target.includes('barcode')) {
+      return NextResponse.json(
+        {
+          ...ResponseBuilder.error('DUPLICATE_ENTRY'),
+          message: 'Product barcode already exists',
+          error: 'Product barcode already exists'
+        },
+        { status: 409 }
       );
     }
 
