@@ -1,4 +1,10 @@
 import { formatFullName } from '@rentalshop/utils';
+export {
+  AVAILABILITY_CALENDAR_TIMEZONE,
+  calendarDayAvailability,
+  getAvailabilityCivilDayBounds,
+  occupiedDateKeysForRange,
+} from './availability-calendar-days';
 
 export type AvailabilityOrderDisplayInput = {
   id: number;
@@ -60,65 +66,6 @@ export function resolveTotalAvailableStock(outletStock: {
   }
 
   return Math.max(0, outletStock.stock - outletStock.renting);
-}
-
-/**
- * Remaining units per civil UTC day in [fromYmd, toYmd].
- * available = stock − overlapping RENT qty (same overlap as GET /availability).
- */
-export function calendarDayAvailability(input: {
-  stock: number;
-  orders: Array<{ pickupPlanAt: Date | null; returnPlanAt: Date | null; quantity?: number }>;
-  fromYmd: string;
-  toYmd: string;
-}): Array<{ date: string; available: number; booked: number }> {
-  const from = new Date(`${input.fromYmd}T00:00:00.000Z`);
-  const to = new Date(`${input.toYmd}T00:00:00.000Z`);
-  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
-    return [];
-  }
-
-  const stock = Math.max(0, input.stock);
-  const MS_DAY = 86_400_000;
-  const bookedByDay = new Map<string, number>();
-
-  for (const order of input.orders) {
-    const pickup = order.pickupPlanAt;
-    const ret = order.returnPlanAt;
-    if (!pickup || !ret) continue;
-    const qty = Math.max(0, order.quantity ?? 1);
-
-    for (let t = from.getTime(); t <= to.getTime(); t += MS_DAY) {
-      const dayStart = new Date(t);
-      const dayEnd = new Date(t + MS_DAY);
-      if (pickup < dayEnd && ret > dayStart) {
-        const key = dayStart.toISOString().slice(0, 10);
-        bookedByDay.set(key, (bookedByDay.get(key) ?? 0) + qty);
-      }
-    }
-  }
-
-  const days: Array<{ date: string; available: number; booked: number }> = [];
-  for (let t = from.getTime(); t <= to.getTime(); t += MS_DAY) {
-    const date = new Date(t).toISOString().slice(0, 10);
-    const booked = bookedByDay.get(date) ?? 0;
-    days.push({
-      date,
-      booked,
-      available: Math.max(0, stock - booked),
-    });
-  }
-  return days;
-}
-
-export function occupiedDateKeysForRange(
-  orders: Array<{ pickupPlanAt: Date | null; returnPlanAt: Date | null; quantity?: number }>,
-  fromYmd: string,
-  toYmd: string
-): string[] {
-  return calendarDayAvailability({ stock: 1, orders, fromYmd, toYmd })
-    .filter((day) => day.booked > 0)
-    .map((day) => day.date);
 }
 
 /**

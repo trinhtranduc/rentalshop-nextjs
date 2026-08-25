@@ -3,7 +3,11 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { calendarDayAvailability } from '../../../../../lib/availability';
+import {
+  AVAILABILITY_CALENDAR_TIMEZONE,
+  calendarDayAvailability,
+  getAvailabilityCivilDayBounds,
+} from '../../../../../lib/availability-calendar-days';
 import { z } from 'zod';
 
 const querySchema = z.object({
@@ -14,7 +18,8 @@ const querySchema = z.object({
 
 /**
  * GET /api/products/[id]/availability-calendar
- * Remaining units per civil day for Order Check (stock − overlapping RENT qty).
+ * Remaining units per shop civil day for Order Check (stock − overlapping RENT qty).
+ * Day keys use Asia/Ho_Chi_Minh — same model as Lịch Thuê / getLocalDateKey.
  */
 export async function GET(
   request: NextRequest,
@@ -107,8 +112,17 @@ export async function GET(
           );
         }
 
-        const rangeStart = new Date(`${from}T00:00:00.000Z`);
-        const rangeEnd = new Date(`${to}T23:59:59.999Z`);
+        // Query window in shop civil days (VN), not UTC midnight — matches Lịch Thuê.
+        const fromBounds = getAvailabilityCivilDayBounds(from, AVAILABILITY_CALENDAR_TIMEZONE);
+        const toBounds = getAvailabilityCivilDayBounds(to, AVAILABILITY_CALENDAR_TIMEZONE);
+        if (!fromBounds || !toBounds) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_DATE_FORMAT'),
+            { status: 400 }
+          );
+        }
+        const rangeStart = fromBounds.start;
+        const rangeEnd = toBounds.end;
 
         const orders = await db.prisma.order.findMany({
           where: {
@@ -138,6 +152,7 @@ export async function GET(
           stock: outletStock.stock,
           fromYmd: from,
           toYmd: to,
+          timeZone: AVAILABILITY_CALENDAR_TIMEZONE,
           orders: orders.map((order) => ({
             pickupPlanAt: order.pickupPlanAt,
             returnPlanAt: order.returnPlanAt,
@@ -148,12 +163,15 @@ export async function GET(
         return NextResponse.json(
           ResponseBuilder.success('AVAILABILITY_CHECKED', {
             stock: outletStock.stock,
+            from,
+            to,
+            timeZone: AVAILABILITY_CALENDAR_TIMEZONE,
             days,
-            occupiedDates: days.filter((day) => day.available === 0).map((day) => day.date),
+            occupiedDates: days.filter((d) => d.available === 0).map((d) => d.date),
           })
         );
       } catch (error) {
-        console.error('Error loading availability calendar:', error);
+        console.error('Error in GET /api/products/[id]/availability-calendar:', error);
         const { response, statusCode } = handleApiError(error);
         return NextResponse.json(response, { status: statusCode });
       }
