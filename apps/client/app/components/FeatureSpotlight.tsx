@@ -25,6 +25,8 @@ type FeatureSpotlightProps = {
   reverse?: boolean
   tone?: 'mist' | 'white'
   visual: React.ReactNode
+  /** Optional deep-link under the step list (SEO sitelinks) */
+  cta?: React.ReactNode
 }
 
 /** Shared soft-sky spotlight layout (same language as AI Search section). */
@@ -39,6 +41,7 @@ export function FeatureSpotlight({
   reverse = false,
   tone = 'mist',
   visual,
+  cta,
 }: FeatureSpotlightProps) {
   return (
     <SoftSkyStage tone={tone} className="py-24 md:py-28">
@@ -75,6 +78,7 @@ export function FeatureSpotlight({
                   </li>
                 ))}
               </ol>
+              {cta ? <div className="mt-8">{cta}</div> : null}
             </div>
 
             <div

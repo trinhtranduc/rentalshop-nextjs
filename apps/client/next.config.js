@@ -91,7 +91,21 @@ const nextConfig = {
       },
     ];
   },
-  
+
+  async redirects() {
+    return [
+      {
+        source: '/ai-search',
+        destination: '/tim-san-pham-bang-hinh-anh',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/ai-search',
+        destination: '/:locale/tim-san-pham-bang-hinh-anh',
+        permanent: true,
+      },
+    ];
+  }, 
   // Removed rewrites() - client app calls API directly using NEXT_PUBLIC_API_URL
   // API calls are made from client-side (browser) to the API URL configured in @rentalshop/utils
   // No need to proxy through Next.js server
