@@ -90,13 +90,13 @@
 
 ### Responsive Search Ads
 
-**Headlines (15 options):**
-1. Phần mềm cho thuê áo dài | AnyRent
-2. Quản lý cho thuê áo cưới dễ dàng
-3. Phần mềm cho thuê trang phục #1
-4. Dùng thử miễn phí - Không cần thẻ
-5. Quản lý đơn hàng, lịch thuê, tồn kho
-6. App cho thuê áo dài trên điện thoại
+**Headlines (≤30 ký tự mỗi dòng):**
+1. Phần mềm cho thuê áo dài
+2. Quản lý cho thuê áo cưới
+3. Phần mềm cho thuê trang phục
+4. Dùng thử miễn phí - 0đ
+5. Quản lý đơn, lịch, tồn kho
+6. App cho thuê áo dài
 7. Hỗ trợ iOS, Android & Web
 8. Quản lý cho thuê từ A-Z
 9. Biết ngay hàng nào đang trống
@@ -104,15 +104,15 @@
 11. Setup 5 phút - Dùng ngay
 12. Giải pháp cho tiệm áo cưới
 13. Phần mềm cho thuê đồ cưới
-14. Từ 0đ/tháng - Nâng cấp khi cần
-15. Đã có 100+ tiệm đang dùng
+14. Từ 0đ/tháng - Nâng cấp sau
+15. 100+ tiệm đang dùng AnyRent
 
-**Headlines bổ sung (AI & Google Play):**
-16. Tìm sản phẩm bằng AI - Chụp ảnh là ra
-17. AI quét hình ảnh tìm đồ cho thuê
-18. App cho thuê đồ - iOS & Android
-19. Tải Google Play - Quản lý cho thuê
-20. Công nghệ AI nhận diện sản phẩm
+**Headlines bổ sung (AI & Google Play, ≤30 ký tự):**
+16. AI chụp ảnh tìm sản phẩm
+17. Quét hình ảnh bằng AI
+18. App cho thuê đồ iOS&Android
+19. Tải Google Play miễn phí
+20. AI nhận diện sản phẩm
 
 **Descriptions (4 options):**
 1. Phần mềm quản lý cho thuê áo dài, áo cưới, trang phục. Theo dõi lịch thuê trả, tồn kho real-time. Hỗ trợ iOS, Android & Web. Đăng ký miễn phí.
