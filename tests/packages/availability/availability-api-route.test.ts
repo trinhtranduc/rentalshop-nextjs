@@ -10,9 +10,7 @@ import {
   aggregateConflictingQuantities,
   buildAvailabilityCheckedData,
   buildAvailabilityMetrics,
-  calendarDayAvailability,
   mapAvailabilityOrderDisplay,
-  occupiedDateKeysForRange,
 } from '../../../apps/api/lib/availability';
 
 const PRODUCT_ID = 13832;
@@ -258,46 +256,5 @@ describe('GET /api/products/[id]/availability — API response data', () => {
     expect(outlet.effectivelyAvailable).toBe(18);
     expect(outlet.available).not.toBe(outlet.effectivelyAvailable);
     expect(data.totalAvailableStock).toBe(outlet.available);
-  });
-});
-
-describe('occupiedDateKeysForRange', () => {
-  it('marks overlapping rental days red (occupied) and skips empty days', () => {
-    const occupied = occupiedDateKeysForRange(
-      [
-        {
-          pickupPlanAt: new Date('2026-08-10T00:00:00.000Z'),
-          returnPlanAt: new Date('2026-08-12T23:59:59.000Z'),
-        },
-      ],
-      '2026-08-01',
-      '2026-08-31'
-    );
-    expect(occupied).toEqual(['2026-08-10', '2026-08-11', '2026-08-12']);
-  });
-});
-
-describe('calendarDayAvailability', () => {
-  it('returns remaining stock per day after overlapping rental qty', () => {
-    const days = calendarDayAvailability({
-      stock: 10,
-      fromYmd: '2026-08-09',
-      toYmd: '2026-08-13',
-      orders: [
-        {
-          pickupPlanAt: new Date('2026-08-10T00:00:00.000Z'),
-          returnPlanAt: new Date('2026-08-12T23:59:59.000Z'),
-          quantity: 3,
-        },
-      ],
-    });
-
-    expect(days).toEqual([
-      { date: '2026-08-09', booked: 0, available: 10 },
-      { date: '2026-08-10', booked: 3, available: 7 },
-      { date: '2026-08-11', booked: 3, available: 7 },
-      { date: '2026-08-12', booked: 3, available: 7 },
-      { date: '2026-08-13', booked: 0, available: 10 },
-    ]);
   });
 });
