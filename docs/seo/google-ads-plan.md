@@ -54,6 +54,9 @@
 "quản lý cho thuê trang phục"
 [phần mềm cho thuê camera]
 "cho thuê đồ" phần mềm
+[app cho thuê đồ]
+"app cho thuê đồ"
+[phần mềm cho thuê đồ]
 ```
 
 **Bid:** 5,000 - 8,000 VND/click
@@ -94,7 +97,7 @@
 4. Dùng thử miễn phí - Không cần thẻ
 5. Quản lý đơn hàng, lịch thuê, tồn kho
 6. App cho thuê áo dài trên điện thoại
-7. Hỗ trợ cả web lẫn iOS
+7. Hỗ trợ iOS, Android & Web
 8. Quản lý cho thuê từ A-Z
 9. Biết ngay hàng nào đang trống
 10. Không lo quên lịch trả đồ
@@ -104,11 +107,32 @@
 14. Từ 0đ/tháng - Nâng cấp khi cần
 15. Đã có 100+ tiệm đang dùng
 
+**Headlines bổ sung (AI & Google Play):**
+16. Tìm sản phẩm bằng AI - Chụp ảnh là ra
+17. AI quét hình ảnh tìm đồ cho thuê
+18. App cho thuê đồ - iOS & Android
+19. Tải Google Play - Quản lý cho thuê
+20. Công nghệ AI nhận diện sản phẩm
+
 **Descriptions (4 options):**
-1. Phần mềm quản lý cho thuê áo dài, áo cưới, trang phục. Theo dõi lịch thuê trả, tồn kho real-time. Hỗ trợ mobile. Đăng ký miễn phí.
-2. AnyRent giúp tiệm áo dài, áo cưới quản lý đơn hàng, kiểm tra hàng trống, theo dõi lịch trả. App iOS + Web dashboard.
-3. Không cần Excel nữa! Quản lý cho thuê trang phục chuyên nghiệp. Xem lịch, tạo đơn nhanh, biết ngay hàng nào available.
-4. Giải pháp cho thuê trang phục hiện đại. Tạo đơn 30 giây, quản lý tồn kho tự động, báo cáo doanh thu chi tiết.
+1. Phần mềm quản lý cho thuê áo dài, áo cưới, trang phục. Theo dõi lịch thuê trả, tồn kho real-time. Hỗ trợ iOS, Android & Web. Đăng ký miễn phí.
+2. AnyRent giúp tiệm áo dài, áo cưới quản lý đơn hàng, kiểm tra hàng trống, theo dõi lịch trả. App iOS + Android + Web dashboard.
+3. Không cần Excel nữa! Quản lý cho thuê trang phục chuyên nghiệp. AI quét hình ảnh tìm sản phẩm. Xem lịch, tạo đơn nhanh, biết ngay hàng nào available.
+4. Giải pháp cho thuê trang phục hiện đại. Tích hợp AI tìm sản phẩm bằng hình ảnh. Tạo đơn 30 giây, quản lý tồn kho tự động, báo cáo doanh thu.
+
+---
+
+## Sitelink Extensions
+
+| Sitelink | URL | Mô tả |
+|----------|-----|--------|
+| Tải App Store | https://apps.apple.com/vn/app/anyrent/id6754793592 | Quản lý cho thuê trên iPhone |
+| Tải Google Play | https://play.google.com/store/apps/details?id=anyrent.shop | Quản lý cho thuê trên Android |
+| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh tìm sản phẩm cho thuê bằng trí tuệ nhân tạo |
+| Bảng giá | anyrent.shop/#pricing | Từ 0đ/tháng. Nâng cấp khi cần |
+| Tính năng | anyrent.shop/features | Quản lý đơn, lịch, kho, khách hàng |
+| Cho thuê áo dài | anyrent.shop/cho-thue-ao-dai | Giải pháp quản lý tiệm áo dài |
+| Cho thuê áo cưới | anyrent.shop/cho-thue-ao-cuoi | Giải pháp cho tiệm áo cưới |
 
 ---
 
