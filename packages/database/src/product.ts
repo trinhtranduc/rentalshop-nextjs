@@ -209,7 +209,10 @@ export async function getProductByBarcode(barcode: string, merchantId: number) {
 // ============================================================================
 
 /**
- * Build order by clause for product queries
+ * Build order by clause for product queries.
+ * When sorting by `name`, Postgres uses the `natural_sort` ICU collation
+ * (und-u-kn-true) on Product.name so embedded numbers sort numerically
+ * (B2 < B3 < B19), not lexicographically (B19 before B2).
  */
 function buildProductOrderByClause(sortBy?: string, sortOrder?: string): any {
   const validSortFields = [

@@ -115,8 +115,9 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     }
 
     // Use simplified database API with role-based filtering
-    // Mobile app (on store) hardcodes sortBy=createdAt&sortOrder=desc
-    // Override to sort by name for consistent UX until next mobile app update
+    // Mobile app (on store) hardcodes sortBy=createdAt&sortOrder=desc.
+    // Override to name ASC for consistent storefront UX; Product.name uses
+    // ICU natural_sort collation so codes like B2 sort before B19.
     const platform = request.headers.get('x-platform') || request.headers.get('x-client-platform') || '';
     const isMobilePlatform = platform.toLowerCase() === 'mobile';
     const effectiveSortBy = isMobilePlatform ? 'name' : (sortBy as any);
