@@ -65,11 +65,17 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     // Use simplified database API — omit isActive unless explicitly filtered
     // so disabled (inactive) staff remain visible in outlet user lists.
     const searchFilters: any = {
-      role: q.role,
       search: q.search || q.q,
       page: q.page || 1,
       limit: q.limit || 20
     };
+
+    // Prefer multi-role filter (e.g. system users OPS+ARTICLE) over single role
+    if (Array.isArray(q.roles) && q.roles.length > 0) {
+      searchFilters.roles = q.roles;
+    } else if (q.role) {
+      searchFilters.role = q.role;
+    }
 
     const resolvedIsActive = resolveUsersIsActiveFilter({
       isActive: q.isActive,

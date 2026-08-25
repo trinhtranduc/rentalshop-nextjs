@@ -59,6 +59,10 @@ const SYSTEM_ROLES = [
   { value: 'ARTICLE', label: 'Blog / CMS Editor' },
 ];
 
+/** Default list: OPS + ARTICLE (not ADMIN). Avoids hiding OPS behind ARTICLE-only filter. */
+const DEFAULT_SYSTEM_ROLE_FILTER = 'all';
+const SYSTEM_LIST_ROLES = SYSTEM_ROLES.map((r) => r.value);
+
 // ============================================================================
 // PAGE
 // ============================================================================
@@ -90,23 +94,28 @@ export default function SystemUsersPage() {
     role: 'ARTICLE',
   });
 
-  // URL params
+  // URL params — empty role = "all" system staff (OPS + ARTICLE)
   const search = searchParams.get('q') || '';
-  const roleFilter = searchParams.get('role') || '';
+  const roleFilter = searchParams.get('role') || DEFAULT_SYSTEM_ROLE_FILTER;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
 
-  // Filters - system-level users only (ADMIN + ARTICLE, no merchantId)
-  const filters = useMemo(() => ({
-    q: search || undefined,
-    search: search || undefined,
-    role: roleFilter || 'ARTICLE', // Default filter to ARTICLE; ADMIN can change
-    page,
-    limit,
-    sortBy: 'createdAt',
-    sortOrder: 'desc' as const,
-    _pathname: pathname,
-  }), [search, roleFilter, page, limit, pathname]);
+  // Filters - system-level users only (no merchantId). Never default to ARTICLE-only.
+  const filters = useMemo(() => {
+    const base = {
+      q: search || undefined,
+      search: search || undefined,
+      page,
+      limit,
+      sortBy: 'createdAt',
+      sortOrder: 'desc' as const,
+      _pathname: pathname,
+    };
+    if (roleFilter === 'all') {
+      return { ...base, roles: SYSTEM_LIST_ROLES };
+    }
+    return { ...base, role: roleFilter };
+  }, [search, roleFilter, page, limit, pathname]);
 
   // Data fetching
   const { data, loading, error, refetch } = useDedupedApi<SystemUsersDataResponse>({
@@ -233,10 +242,21 @@ export default function SystemUsersPage() {
       if (response.success) {
         toastSuccess('Tạo tài khoản thành công');
         setShowAddDialog(false);
+        // Switch filter so the new OPS/ARTICLE account is visible (was hidden when stuck on ARTICLE)
+        updateURL({ role: formData.role, page: 1 });
         refetch();
+      } else {
+        toastError(
+          'Không tạo được tài khoản',
+          response.message || response.error || 'Vui lòng thử lại hoặc kiểm tra email đã tồn tại.'
+        );
       }
     } catch (err) {
       console.error('Error creating user:', err);
+      toastError(
+        'Không tạo được tài khoản',
+        err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -263,10 +283,22 @@ export default function SystemUsersPage() {
         toastSuccess('Cập nhật thành công');
         setShowEditDialog(false);
         setSelectedUser(null);
+        if (formData.role) {
+          updateURL({ role: formData.role, page: 1 });
+        }
         refetch();
+      } else {
+        toastError(
+          'Không cập nhật được',
+          response.message || response.error || 'Vui lòng thử lại.'
+        );
       }
     } catch (err) {
       console.error('Error updating user:', err);
+      toastError(
+        'Không cập nhật được',
+        err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -336,12 +368,12 @@ export default function SystemUsersPage() {
               className="pl-10"
             />
           </div>
-          <Select value={roleFilter || 'ARTICLE'} onValueChange={handleRoleFilterChange}>
+          <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Lọc theo role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả roles</SelectItem>
+              <SelectItem value="all">Tất cả (OPS + Editor)</SelectItem>
               {SYSTEM_ROLES.map(r => (
                 <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
               ))}
