@@ -25,11 +25,11 @@ export const metadata: Metadata = {
     canonical: PATH,
     languages: {
       'x-default': PATH,
-      vi: `/vi${PATH}`,
-      en: `/en${PATH}`,
-      zh: `/zh${PATH}`,
-      ko: `/ko${PATH}`,
-      ja: `/ja${PATH}`,
+      vi: PATH,
+      en: PATH,
+      zh: PATH,
+      ko: PATH,
+      ja: PATH,
     },
   },
   openGraph: {

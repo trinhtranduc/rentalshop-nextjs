@@ -78,14 +78,8 @@ export const createSchemas = (t: any, baseUrl: string) => {
         {
           '@type': 'ListItem',
           position: 6,
-          name: t('navigation.faq'),
-          item: `${baseUrl}/#faq`,
-        },
-        {
-          '@type': 'ListItem',
-          position: 7,
-          name: t('navigation.contact'),
-          item: `${baseUrl}/#contact`,
+          name: 'Blog',
+          item: `${baseUrl}/blog`,
         },
       ],
     },

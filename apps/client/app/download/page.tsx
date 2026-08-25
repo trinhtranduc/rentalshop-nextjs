@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     canonical: '/download',
     languages: {
       'x-default': '/download',
-      vi: '/vi/download',
-      en: '/en/download',
-      zh: '/zh/download',
-      ko: '/ko/download',
-      ja: '/ja/download',
+      vi: '/download',
+      en: '/download',
+      zh: '/download',
+      ko: '/download',
+      ja: '/download',
     },
   },
   openGraph: {

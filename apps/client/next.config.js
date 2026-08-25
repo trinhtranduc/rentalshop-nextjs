@@ -99,9 +99,35 @@ const nextConfig = {
         destination: '/tim-san-pham-bang-hinh-anh',
         permanent: true,
       },
+      // Locale-prefixed paths are not real routes (cookie i18n) — collapse to the VN SEO slug
       {
         source: '/:locale(vi|en|zh|ko|ja)/ai-search',
-        destination: '/:locale/tim-san-pham-bang-hinh-anh',
+        destination: '/tim-san-pham-bang-hinh-anh',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/tim-san-pham-bang-hinh-anh',
+        destination: '/tim-san-pham-bang-hinh-anh',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/features',
+        destination: '/features',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/pricing',
+        destination: '/pricing',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/download',
+        destination: '/download',
+        permanent: true,
+      },
+      {
+        source: '/:locale(vi|en|zh|ko|ja)/blog',
+        destination: '/blog',
         permanent: true,
       },
     ];

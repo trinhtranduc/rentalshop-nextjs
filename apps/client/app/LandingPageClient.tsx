@@ -145,14 +145,8 @@ const LandingPage = () => {
       {
         '@type': 'ListItem',
         position: 6,
-        name: t('navigation.faq'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/#faq`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 7,
-        name: t('navigation.contact'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/#contact`,
+        name: 'Blog',
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/blog`,
       },
     ],
   };
