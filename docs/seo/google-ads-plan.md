@@ -128,9 +128,9 @@
 |----------|-----|--------|
 | Tải App Store | https://apps.apple.com/vn/app/anyrent/id6754793592 | Quản lý cho thuê trên iPhone |
 | Tải Google Play | https://play.google.com/store/apps/details?id=anyrent.shop | Quản lý cho thuê trên Android |
-| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh tìm sản phẩm cho thuê bằng trí tuệ nhân tạo |
+| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh là tìm ra sản phẩm |
 | Bảng giá | anyrent.shop/#pricing | Từ 0đ/tháng. Nâng cấp khi cần |
-| Tính năng | anyrent.shop/features | Quản lý đơn, lịch, kho, khách hàng |
+| Tính năng | anyrent.shop/features | Đơn hàng, lịch, kho, khách hàng |
 | Cho thuê áo dài | anyrent.shop/cho-thue-ao-dai | Giải pháp quản lý tiệm áo dài |
 | Cho thuê áo cưới | anyrent.shop/cho-thue-ao-cuoi | Giải pháp cho tiệm áo cưới |
 
