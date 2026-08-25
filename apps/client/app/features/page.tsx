@@ -20,11 +20,11 @@ export const metadata: Metadata = {
     canonical: '/features',
     languages: {
       'x-default': '/features',
-      vi: '/vi/features',
-      en: '/en/features',
-      zh: '/zh/features',
-      ko: '/ko/features',
-      ja: '/ja/features',
+      vi: '/features',
+      en: '/features',
+      zh: '/features',
+      ko: '/features',
+      ja: '/features',
     },
   },
   openGraph: {

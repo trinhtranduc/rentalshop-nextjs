@@ -42,18 +42,23 @@ export default function PublicSiteFooter() {
             <h3 className="mb-4 text-lg font-semibold">{t('product.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/#features" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href="/features" className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.features')}
                 </Link>
               </li>
               <li>
-                <Link href="/#pricing" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href="/pricing" className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.pricing')}
                 </Link>
               </li>
               <li>
-                <Link href="/#" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href="/download" className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.downloadApp')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/tim-san-pham-bang-hinh-anh" className="text-sm text-gray-400 transition-colors hover:text-white">
+                  Tìm bằng hình ảnh AI
                 </Link>
               </li>
             </ul>

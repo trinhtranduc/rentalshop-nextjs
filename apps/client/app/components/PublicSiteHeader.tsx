@@ -36,7 +36,7 @@ export default function PublicSiteHeader() {
               {t('navigation.features')}
             </Link>
             <Link
-              href="/#pricing"
+              href="/pricing"
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
               {t('navigation.pricing')}

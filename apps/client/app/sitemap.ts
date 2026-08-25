@@ -1,23 +1,9 @@
 import { MetadataRoute } from 'next'
 import { postsApi } from '@rentalshop/utils'
+import { sitemapLanguageAlternates } from '../lib/seo'
 
 /** Refresh sitemap periodically so new blog posts appear without redeploying. */
 export const revalidate = 3600
-
-function languageAlternates(
-  baseUrl: string,
-  routePath: string
-): NonNullable<MetadataRoute.Sitemap[number]['alternates']>['languages'] {
-  const xDefault = `${baseUrl}${routePath}`
-  return {
-    'x-default': xDefault,
-    vi: `${baseUrl}/vi${routePath}`,
-    en: `${baseUrl}/en${routePath}`,
-    zh: `${baseUrl}/zh${routePath}`,
-    ko: `${baseUrl}/ko${routePath}`,
-    ja: `${baseUrl}/ja${routePath}`,
-  }
-}
 
 async function fetchPublishedBlogSlugs(): Promise<{ slug: string; lastModified: Date }[]> {
   const slugToTime = new Map<string, number>()
@@ -56,9 +42,13 @@ async function fetchPublishedBlogSlugs(): Promise<{ slug: string; lastModified: 
   }))
 }
 
+/**
+ * Public marketing URLs only.
+ * Cookie-based i18n → one URL per path (no /vi|/en prefixes).
+ * Auth pages (/login, /register) intentionally omitted.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = (process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop').replace(/\/$/, '')
-  const locales = ['', 'vi', 'en', 'zh', 'ko', 'ja']
 
   const routes: Array<{
     path: string
@@ -68,33 +58,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '', changeFrequency: 'weekly', priority: 1.0 },
     { path: '/features', changeFrequency: 'weekly', priority: 0.9 },
     { path: '/pricing', changeFrequency: 'weekly', priority: 0.9 },
+    { path: '/download', changeFrequency: 'weekly', priority: 0.9 },
+    { path: '/tim-san-pham-bang-hinh-anh', changeFrequency: 'weekly', priority: 0.9 },
     { path: '/cho-thue-ao-dai', changeFrequency: 'weekly', priority: 0.85 },
     { path: '/cho-thue-ao-cuoi', changeFrequency: 'weekly', priority: 0.85 },
     { path: '/cho-thue-trang-thiet-bi', changeFrequency: 'weekly', priority: 0.85 },
     { path: '/cho-thue-trang-phuc', changeFrequency: 'weekly', priority: 0.85 },
-    { path: '/login', changeFrequency: 'monthly', priority: 0.7 },
-    { path: '/register', changeFrequency: 'monthly', priority: 0.7 },
+    { path: '/blog', changeFrequency: 'daily', priority: 0.8 },
+    { path: '/affiliate', changeFrequency: 'monthly', priority: 0.6 },
     { path: '/terms', changeFrequency: 'yearly', priority: 0.5 },
     { path: '/privacy', changeFrequency: 'yearly', priority: 0.5 },
-    { path: '/affiliate', changeFrequency: 'monthly', priority: 0.6 },
-    { path: '/blog', changeFrequency: 'daily', priority: 0.8 },
   ]
 
-  const sitemapEntries: MetadataRoute.Sitemap = []
-
-  locales.forEach((locale) => {
-    routes.forEach((route) => {
-      const url = locale ? `${baseUrl}/${locale}${route.path}` : `${baseUrl}${route.path}`
-      sitemapEntries.push({
-        url,
-        lastModified: new Date(),
-        changeFrequency: route.changeFrequency,
-        priority: route.priority,
-        alternates: {
-          languages: languageAlternates(baseUrl, route.path),
-        },
-      })
-    })
+  const sitemapEntries: MetadataRoute.Sitemap = routes.map((route) => {
+    const url = `${baseUrl}${route.path}`
+    return {
+      url,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      alternates: {
+        languages: sitemapLanguageAlternates(baseUrl, route.path),
+      },
+    }
   })
 
   const blogPosts = await fetchPublishedBlogSlugs()
@@ -107,14 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.65,
       alternates: {
-        languages: {
-          'x-default': url,
-          vi: url,
-          en: url,
-          zh: url,
-          ko: url,
-          ja: url,
-        },
+        languages: sitemapLanguageAlternates(baseUrl, path),
       },
     })
   }
