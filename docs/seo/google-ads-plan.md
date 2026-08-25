@@ -27,62 +27,63 @@
 
 ## Chiến lược Campaign
 
-### Campaign 1: Search - Trang phục (30,000 VND/ngày) ⭐ CHÍNH
+### Campaign 1: Search (1 Ad Group)
 
-#### Ad Group A — Áo dài / Áo cưới (exact + phrase)
+**Mục tiêu:** Người tìm kiếm phần mềm cho thuê
+**Budget:** 30,000 VND/ngày
+**Bidding:** Manual CPC
 
+#### Ad Group: Phần mềm cho thuê
+
+**Keywords:**
 ```
 [phần mềm cho thuê áo dài]
 [phần mềm cho thuê áo cưới]
 [phần mềm quản lý cho thuê áo dài]
 [phần mềm quản lý cho thuê áo cưới]
-"cho thuê áo dài" phần mềm
-"cho thuê áo cưới" phần mềm
-"quản lý cho thuê áo dài"
-"quản lý cho thuê áo cưới"
-```
-
-**Bid:** 3,000 - 6,000 VND/click (CPC thấp vì ít competition)
-**Expected:** 5-10 clicks/ngày
-
-#### Ad Group B — Trang phục chung
-
-```
 [phần mềm cho thuê trang phục]
 [phần mềm quản lý cho thuê trang phục]
-"phần mềm cho thuê trang phục"
-"quản lý cho thuê trang phục"
 [phần mềm cho thuê camera]
-"cho thuê đồ" phần mềm
 [app cho thuê đồ]
-"app cho thuê đồ"
 [phần mềm cho thuê đồ]
-```
-
-**Bid:** 5,000 - 8,000 VND/click
-**Expected:** 3-5 clicks/ngày
-
----
-
-### Campaign 2: Search - Chung (10,000 VND/ngày)
-
-#### Ad Group C — Phần mềm cho thuê (broad intent)
-
-```
+"phần mềm cho thuê áo dài"
+"phần mềm cho thuê áo cưới"
+"quản lý cho thuê trang phục"
+"cho thuê đồ" phần mềm
+"app cho thuê đồ"
 "phần mềm quản lý cho thuê"
 "phần mềm cho thuê nhỏ"
-[phần mềm quản lý cho thuê nhỏ]
 ```
 
-**Bid:** 3,000 - 5,000 VND/click
-**Expected:** 2-3 clicks/ngày
+**Bid:** 3,000 - 6,000 VND/click
+**Landing:** anyrent.shop, /cho-thue-ao-dai, /cho-thue-ao-cuoi
 
 ---
 
-### Campaign 3: Remarketing (10,000 VND/ngày)
+### Campaign 2: App Install (1 Ad Group)
 
-- Retarget visitors đã vào anyrent.shop chưa đăng ký
-- Banner: "Quản lý cho thuê áo dài, áo cưới - Dùng thử miễn phí"
+**Mục tiêu:** Tải app trên App Store & Google Play
+**Budget:** 20,000 VND/ngày
+**Loại campaign:** App campaign (Universal App Campaign)
+
+#### Ad Group: AnyRent App Install
+
+**App links:**
+- iOS: https://apps.apple.com/vn/app/anyrent/id6754793592
+- Android: https://play.google.com/store/apps/details?id=anyrent.shop
+
+**Headlines (≤30 ký tự):**
+1. App quản lý cho thuê #1 VN
+2. Quản lý cho thuê trên điện thoại
+3. AI chụp ảnh tìm sản phẩm
+4. Tạo đơn thuê 30 giây
+5. Miễn phí - Tải ngay
+
+**Descriptions (≤90 ký tự):**
+1. Quản lý cho thuê áo dài, áo cưới ngay trên điện thoại. AI tìm sản phẩm bằng hình ảnh. Miễn phí.
+2. App cho thuê đồ với AI nhận diện sản phẩm. Quản lý đơn, lịch, tồn kho. iOS & Android.
+
+**Bid:** Target CPI 10,000 - 20,000 VND/install
 
 ---
 
