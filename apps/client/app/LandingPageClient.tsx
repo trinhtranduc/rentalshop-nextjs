@@ -122,25 +122,31 @@ const LandingPage = () => {
         '@type': 'ListItem',
         position: 2,
         name: t('navigation.features'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#features`,
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/features`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: t('navigation.pricing'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#pricing`,
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/pricing`,
       },
       {
         '@type': 'ListItem',
         position: 4,
-        name: t('navigation.faq'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#faq`,
+        name: t('download.title'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/download`,
       },
       {
         '@type': 'ListItem',
         position: 5,
-        name: t('navigation.contact'),
-        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#contact`,
+        name: t('aiSearch.title'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/tim-san-pham-bang-hinh-anh`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 6,
+        name: 'Blog',
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/blog`,
       },
     ],
   };
@@ -322,7 +328,7 @@ const LandingPage = () => {
               </Link>
               <div className="hidden md:flex items-center space-x-8">
                 <Link href="/features" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
-                <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</a>
+                <Link href="/pricing" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</Link>
                 <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
                 <a href="#contact" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" />
@@ -468,6 +474,14 @@ const LandingPage = () => {
             { icon: Search, title: t('aiSearch.feature2Title'), desc: t('aiSearch.feature2Desc'), step: '02' },
             { icon: Zap, title: t('aiSearch.feature3Title'), desc: t('aiSearch.feature3Desc'), step: '03' },
           ]}
+          cta={
+            <Link
+              href="/tim-san-pham-bang-hinh-anh"
+              className="inline-flex items-center text-sm font-semibold text-sky-800 hover:text-sky-950 underline-offset-4 hover:underline"
+            >
+              Tìm hiểu tìm sản phẩm bằng hình ảnh AI →
+            </Link>
+          }
           visual={
             <div className="relative w-full max-w-[420px] mx-auto lg:mx-0 min-h-[520px] sm:min-h-[560px]">
               <div
@@ -1708,9 +1722,10 @@ const Footer = React.memo(() => {
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</a></li>
-              <li><a href="/#" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</a></li>
+              <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</Link></li>
+              <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</Link></li>
+              <li><Link href="/download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</Link></li>
+              <li><Link href="/tim-san-pham-bang-hinh-anh" className="text-gray-400 hover:text-white transition-colors text-sm">Tìm bằng hình ảnh AI</Link></li>
             </ul>
           </div>
           

@@ -1,7 +1,7 @@
 import React from 'react'
 
-const APP_STORE_URL = 'https://apps.apple.com/vn/app/anyrent/id6754793592'
-const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=anyrent.shop'
+export const APP_STORE_URL = 'https://apps.apple.com/vn/app/anyrent/id6754793592'
+export const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=anyrent.shop'
 
 type BadgeTone = 'light' | 'dark'
 

@@ -125,13 +125,14 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
       alternates: {
         canonical: '/',
+        // Cookie i18n (NEXT_LOCALE) — no /vi|/en path segments
         languages: {
           'x-default': '/',
-          'vi': '/vi',
-          'en': '/en',
-          'zh': '/zh',
-          'ko': '/ko',
-          'ja': '/ja',
+          vi: '/',
+          en: '/',
+          zh: '/',
+          ko: '/',
+          ja: '/',
         },
       },
       openGraph: {
@@ -229,13 +230,14 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
       alternates: {
         canonical: '/',
+        // Cookie i18n (NEXT_LOCALE) — no /vi|/en path segments
         languages: {
           'x-default': '/',
-          'vi': '/vi',
-          'en': '/en',
-          'zh': '/zh',
-          'ko': '/ko',
-          'ja': '/ja',
+          vi: '/',
+          en: '/',
+          zh: '/',
+          ko: '/',
+          ja: '/',
         },
       },
       openGraph: {
@@ -333,13 +335,14 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
       alternates: {
         canonical: '/',
+        // Cookie i18n (NEXT_LOCALE) — no /vi|/en path segments
         languages: {
           'x-default': '/',
-          'vi': '/vi',
-          'en': '/en',
-          'zh': '/zh',
-          'ko': '/ko',
-          'ja': '/ja',
+          vi: '/',
+          en: '/',
+          zh: '/',
+          ko: '/',
+          ja: '/',
         },
       },
       openGraph: {
@@ -437,13 +440,14 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
       alternates: {
         canonical: '/',
+        // Cookie i18n (NEXT_LOCALE) — no /vi|/en path segments
         languages: {
           'x-default': '/',
-          'vi': '/vi',
-          'en': '/en',
-          'zh': '/zh',
-          'ko': '/ko',
-          'ja': '/ja',
+          vi: '/',
+          en: '/',
+          zh: '/',
+          ko: '/',
+          ja: '/',
         },
       },
       openGraph: {
@@ -545,13 +549,14 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
     alternates: {
       canonical: '/',
+      // Cookie i18n (NEXT_LOCALE) — no /vi|/en path segments
       languages: {
         'x-default': '/',
-        'vi': '/vi',
-        'en': '/en',
-        'zh': '/zh',
-        'ko': '/ko',
-        'ja': '/ja',
+        vi: '/',
+        en: '/',
+        zh: '/',
+        ko: '/',
+        ja: '/',
       },
     },
     openGraph: {

@@ -19,11 +19,11 @@ export const metadata: Metadata = {
     canonical: '/pricing',
     languages: {
       'x-default': '/pricing',
-      vi: '/vi/pricing',
-      en: '/en/pricing',
-      zh: '/zh/pricing',
-      ko: '/ko/pricing',
-      ja: '/ja/pricing',
+      vi: '/pricing',
+      en: '/pricing',
+      zh: '/pricing',
+      ko: '/pricing',
+      ja: '/pricing',
     },
   },
   openGraph: {
