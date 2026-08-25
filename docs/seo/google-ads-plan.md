@@ -114,11 +114,11 @@
 19. Tải Google Play miễn phí
 20. AI nhận diện sản phẩm
 
-**Descriptions (4 options):**
-1. Phần mềm quản lý cho thuê áo dài, áo cưới, trang phục. Theo dõi lịch thuê trả, tồn kho real-time. Hỗ trợ iOS, Android & Web. Đăng ký miễn phí.
-2. AnyRent giúp tiệm áo dài, áo cưới quản lý đơn hàng, kiểm tra hàng trống, theo dõi lịch trả. App iOS + Android + Web dashboard.
-3. Không cần Excel nữa! Quản lý cho thuê trang phục chuyên nghiệp. AI quét hình ảnh tìm sản phẩm. Xem lịch, tạo đơn nhanh, biết ngay hàng nào available.
-4. Giải pháp cho thuê trang phục hiện đại. Tích hợp AI tìm sản phẩm bằng hình ảnh. Tạo đơn 30 giây, quản lý tồn kho tự động, báo cáo doanh thu.
+**Descriptions (≤90 ký tự mỗi dòng):**
+1. Quản lý cho thuê áo dài, áo cưới. Lịch thuê trả, tồn kho real-time. iOS, Android & Web. Miễn phí.
+2. AnyRent giúp tiệm áo dài quản lý đơn, kiểm hàng trống, theo dõi lịch trả. App + Web dashboard.
+3. Không cần Excel! Quản lý cho thuê chuyên nghiệp. AI quét hình tìm sản phẩm. Tạo đơn nhanh 30 giây.
+4. Giải pháp cho thuê hiện đại. AI tìm sản phẩm bằng hình ảnh. Quản lý tồn kho tự động, báo cáo doanh thu.
 
 ---
 
