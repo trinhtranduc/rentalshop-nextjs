@@ -124,15 +124,15 @@
 
 ## Sitelink Extensions
 
-| Sitelink | URL | Mô tả |
-|----------|-----|--------|
-| Tải App Store | https://apps.apple.com/vn/app/anyrent/id6754793592 | Quản lý cho thuê trên iPhone |
-| Tải Google Play | https://play.google.com/store/apps/details?id=anyrent.shop | Quản lý cho thuê trên Android |
-| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh là tìm ra sản phẩm |
-| Bảng giá | anyrent.shop/#pricing | Từ 0đ/tháng. Nâng cấp khi cần |
-| Tính năng | anyrent.shop/features | Đơn hàng, lịch, kho, khách hàng |
-| Cho thuê áo dài | anyrent.shop/cho-thue-ao-dai | Giải pháp quản lý tiệm áo dài |
-| Cho thuê áo cưới | anyrent.shop/cho-thue-ao-cuoi | Giải pháp cho tiệm áo cưới |
+| Sitelink | URL | Mô tả 1 | Mô tả 2 |
+|----------|-----|----------|----------|
+| Tải App Store | https://apps.apple.com/vn/app/anyrent/id6754793592 | Quản lý cho thuê trên iPhone | Tải miễn phí, dùng ngay hôm nay |
+| Tải Google Play | https://play.google.com/store/apps/details?id=anyrent.shop | Quản lý cho thuê trên Android | Tải miễn phí trên Google Play |
+| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh là tìm ra sản phẩm | AI nhận diện màu, kiểu, chất liệu |
+| Bảng giá | anyrent.shop/#pricing | Từ 0đ/tháng. Nâng cấp khi cần | Gói Basic, Premium cho mọi quy mô |
+| Tính năng | anyrent.shop/features | Đơn hàng, lịch, kho, khách hàng | Báo cáo doanh thu, ngăn trùng đơn |
+| Cho thuê áo dài | anyrent.shop/cho-thue-ao-dai | Giải pháp quản lý tiệm áo dài | Quản lý size, màu, lịch đặt dễ |
+| Cho thuê áo cưới | anyrent.shop/cho-thue-ao-cuoi | Giải pháp cho tiệm áo cưới | Gói combo cưới, lịch hẹn thử đồ |
 
 ---
 
