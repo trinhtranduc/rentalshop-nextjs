@@ -70,7 +70,11 @@ export const usersApi = {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.q) params.append('q', filters.q);
-    if (filters.role) params.append('role', filters.role);
+    if (Array.isArray(filters.roles) && filters.roles.length > 0) {
+      params.append('roles', filters.roles.join(','));
+    } else if (filters.role) {
+      params.append('role', filters.role);
+    }
 
     const resolvedIsActive =
       filters.isActive !== undefined
