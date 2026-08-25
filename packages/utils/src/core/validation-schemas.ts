@@ -398,10 +398,24 @@ const usersIsActiveFilterSchema = z.preprocess((value) => {
   return value;
 }, z.boolean().optional());
 
+const usersRolesFilterSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const raw = Array.isArray(value) ? value.join(',') : String(value);
+  const roles = raw
+    .split(',')
+    .map((role) => role.trim())
+    .filter(Boolean);
+  return roles.length > 0 ? roles : undefined;
+}, z.array(userRoleEnum).optional());
+
 export const usersQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
   role: userRoleEnum.optional(),
+  /** Comma-separated roles, e.g. `OPS,ARTICLE` — takes priority over single `role` when set */
+  roles: usersRolesFilterSchema,
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   status: z.enum(['active', 'inactive', 'all']).optional(),
