@@ -133,7 +133,8 @@ export async function GET(
             outletId: finalOutletId,
             deletedAt: null,
             pickupPlanAt: { lt: rangeEnd },
-            returnPlanAt: { gt: rangeStart },
+            // Inclusive return civil day: same-day orders store pickup==return at VN midnight
+            returnPlanAt: { gte: rangeStart },
             orderItems: {
               some: { productId },
             },
