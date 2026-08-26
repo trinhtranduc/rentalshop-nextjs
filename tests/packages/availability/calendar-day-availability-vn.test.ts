@@ -9,6 +9,7 @@ import {
   calendarDayAvailability,
   getAvailabilityCivilDayBounds,
   occupiedDateKeysForRange,
+  toAvailabilityCivilDateKey,
 } from '../../../apps/api/lib/availability-calendar-days';
 
 describe('getAvailabilityCivilDayBounds', () => {
@@ -19,13 +20,19 @@ describe('getAvailabilityCivilDayBounds', () => {
   });
 });
 
+describe('toAvailabilityCivilDateKey', () => {
+  it('maps UTC instant at VN midnight to the VN civil day', () => {
+    expect(toAvailabilityCivilDateKey(new Date('2026-08-27T17:00:00.000Z'))).toBe('2026-08-28');
+  });
+});
+
 describe('occupiedDateKeysForRange', () => {
-  it('marks overlapping rental days and skips empty days', () => {
+  it('marks inclusive pickup..return civil days (mobile date-picker model)', () => {
     const occupied = occupiedDateKeysForRange(
       [
         {
           pickupPlanAt: new Date('2026-08-09T17:00:00.000Z'), // 10/08 VN
-          returnPlanAt: new Date('2026-08-12T17:00:00.000Z'), // 13/08 00:00 VN
+          returnPlanAt: new Date('2026-08-11T17:00:00.000Z'), // 12/08 VN (inclusive last day)
         },
       ],
       '2026-08-01',
@@ -44,7 +51,7 @@ describe('calendarDayAvailability', () => {
       orders: [
         {
           pickupPlanAt: new Date('2026-08-09T17:00:00.000Z'), // 10/08 VN
-          returnPlanAt: new Date('2026-08-12T17:00:00.000Z'), // 13/08 00:00 VN
+          returnPlanAt: new Date('2026-08-11T17:00:00.000Z'), // 12/08 VN inclusive
           quantity: 3,
         },
       ],
@@ -67,7 +74,7 @@ describe('calendarDayAvailability', () => {
       orders: [
         {
           pickupPlanAt: new Date('2026-08-30T17:00:00.000Z'), // 31/08 00:00 VN
-          returnPlanAt: new Date('2026-09-03T17:00:00.000Z'), // 04/09 00:00 VN
+          returnPlanAt: new Date('2026-09-03T17:00:00.000Z'), // 04/09 00:00 VN inclusive
           quantity: 1,
         },
       ],
@@ -79,6 +86,28 @@ describe('calendarDayAvailability', () => {
     expect(byDate['2026-09-01']).toEqual({ date: '2026-09-01', booked: 1, available: 0 });
     expect(byDate['2026-09-02']).toEqual({ date: '2026-09-02', booked: 1, available: 0 });
     expect(byDate['2026-09-03']).toEqual({ date: '2026-09-03', booked: 1, available: 0 });
-    expect(byDate['2026-09-04']).toEqual({ date: '2026-09-04', booked: 0, available: 1 });
+    expect(byDate['2026-09-04']).toEqual({ date: '2026-09-04', booked: 1, available: 0 });
+    expect(byDate['2026-09-05']).toEqual({ date: '2026-09-05', booked: 0, available: 1 });
+  });
+
+  it('same-day rental (pickup==return VN midnight) books that day — Aug 28 screenshot', () => {
+    const days = calendarDayAvailability({
+      stock: 1,
+      fromYmd: '2026-08-25',
+      toYmd: '2026-08-31',
+      orders: [
+        {
+          // Ngày thuê 28/08, Ngày trả 28/08 — mobile stores both as 28 VN 00:00
+          pickupPlanAt: new Date('2026-08-27T17:00:00.000Z'),
+          returnPlanAt: new Date('2026-08-27T17:00:00.000Z'),
+          quantity: 1,
+        },
+      ],
+    });
+
+    const byDate = Object.fromEntries(days.map((d) => [d.date, d]));
+    expect(byDate['2026-08-27']).toEqual({ date: '2026-08-27', booked: 0, available: 1 });
+    expect(byDate['2026-08-28']).toEqual({ date: '2026-08-28', booked: 1, available: 0 });
+    expect(byDate['2026-08-29']).toEqual({ date: '2026-08-29', booked: 0, available: 1 });
   });
 });

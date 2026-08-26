@@ -290,9 +290,10 @@ export async function GET(
           deletedAt: null,
           // Exclude a specific order from conflict check (used when editing an existing order)
           ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
-          // Overlap condition: orderPickup < rentalEnd AND orderReturn > rentalStart
+          // Overlap (inclusive civil days): orderPickup < rentalEnd AND orderReturn >= rentalStart
+          // Same-day rentals store pickup==return at VN midnight — `gt` would miss them.
           pickupPlanAt: { lt: rentalEnd },
-          returnPlanAt: { gt: rentalStart },
+          returnPlanAt: { gte: rentalStart },
           orderItems: {
             some: {
               productId: productId,
