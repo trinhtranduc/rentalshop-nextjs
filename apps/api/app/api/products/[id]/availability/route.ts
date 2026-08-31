@@ -7,7 +7,9 @@ import {
   aggregateConflictingQuantities,
   buildAvailabilityMetrics,
   mapAvailabilityOrderDisplay,
+  resolveAvailabilityQueryWindow,
   resolveTotalAvailableStock,
+  AVAILABILITY_CALENDAR_TIMEZONE,
 } from '../../../../../lib/availability';
 import { z } from 'zod';
 
@@ -220,23 +222,18 @@ export async function GET(
         );
       }
 
-      // 4. Parse rental dates with timezone support and precise time checking
-      let rentalStart: Date;
-      let rentalEnd: Date;
-      
-      if (date) {
-        // Single date mode - check availability for entire day
-        rentalStart = new Date(date + 'T00:00:00.000Z');
-        rentalEnd = new Date(date + 'T23:59:59.999Z');
-      } else if (startDate && endDate) {
-        // Date range mode - precise time checking
-        rentalStart = new Date(startDate);
-        rentalEnd = new Date(endDate);
-      } else {
-        // No dates provided - return basic stock info
-        rentalStart = new Date();
-        rentalEnd = new Date();
+      // 4. Parse rental dates — shop civil day (VN), same as Lịch Thuê / occupancy calendar.
+      // Store app still sends UTC day windows (T00:00Z…T23:59Z); reinterpret those here
+      // so App Store builds highlight the correct day without a client update.
+      const resolvedWindow = resolveAvailabilityQueryWindow({ date, startDate, endDate });
+      if (!resolvedWindow) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_RENTAL_DATES'),
+          { status: 400 }
+        );
       }
+      const rentalStart = resolvedWindow.start;
+      const rentalEnd = resolvedWindow.end;
 
       // Validate date range
       // Allow same-day rentals (rentalStart === rentalEnd is OK)
@@ -248,6 +245,10 @@ export async function GET(
         );
       }
 
+      // Prefer shop TZ for local display strings when client left default UTC
+      const effectiveTimeZone =
+        timeZone && timeZone !== 'UTC' ? timeZone : AVAILABILITY_CALENDAR_TIMEZONE;
+
       // Calculate precise duration
       const durationMs = rentalEnd.getTime() - rentalStart.getTime();
       const durationHours = durationMs / (1000 * 60 * 60);
@@ -258,7 +259,8 @@ export async function GET(
         end: rentalEnd.toISOString(),
         durationHours: Math.round(durationHours * 100) / 100,
         durationDays,
-        timeZone,
+        civilDayYmd: resolvedWindow.civilDayYmd,
+        timeZone: effectiveTimeZone,
         includeTimePrecision
       });
 
@@ -290,9 +292,10 @@ export async function GET(
           deletedAt: null,
           // Exclude a specific order from conflict check (used when editing an existing order)
           ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
-          // Overlap condition: orderPickup < rentalEnd AND orderReturn > rentalStart
+          // Overlap (inclusive civil days): orderPickup < rentalEnd AND orderReturn >= rentalStart
+          // Same-day rentals store pickup==return at VN midnight — `gt` would miss them.
           pickupPlanAt: { lt: rentalEnd },
-          returnPlanAt: { gt: rentalStart },
+          returnPlanAt: { gte: rentalStart },
           orderItems: {
             some: {
               productId: productId,
@@ -335,12 +338,14 @@ export async function GET(
         pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
       })));
 
-      // 5b. Also fetch orders for this product (for mobile order list display)
-      // If includeAllOrders=true, fetch ALL orders (including RETURNED, CANCELLED) of ALL types
-      // Otherwise, only fetch active RENT orders (RESERVED, PICKUPED)
+      // 5b. Fetch rental orders for the selected civil day (mobile sheet display).
+      // `includeAllOrders` expands statuses (RETURNED/CANCELLED), never the date range.
       const ordersWhereClause: any = {
+        orderType: ORDER_TYPE.RENT as any,
         outletId: finalOutletId,
         deletedAt: null,
+        pickupPlanAt: { lt: rentalEnd },
+        returnPlanAt: { gte: rentalStart },
         orderItems: {
           some: {
             productId: productId,
@@ -349,7 +354,6 @@ export async function GET(
       };
       
       if (!includeAllOrders) {
-        ordersWhereClause.orderType = ORDER_TYPE.RENT as any;
         ordersWhereClause.status = {
           in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
         };
@@ -467,10 +471,10 @@ export async function GET(
                 pickupDate: orderPickup.toISOString(),
                 returnDate: orderReturn.toISOString(),
                 pickupDateLocal: includeTimePrecision 
-                  ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                  ? orderPickup.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                   : orderPickup.toLocaleDateString('en-US'),
                 returnDateLocal: includeTimePrecision 
-                  ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                  ? orderReturn.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                   : orderReturn.toLocaleDateString('en-US'),
                 quantity: item.quantity,
                 conflictDuration: conflictMs,
@@ -486,12 +490,12 @@ export async function GET(
                 returnDate: orderReturn?.toISOString() || '',
                 pickupDateLocal: orderPickup ? 
                   (includeTimePrecision 
-                    ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                    ? orderPickup.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                     : orderPickup.toLocaleDateString('en-US'))
                   : 'Unknown',
                 returnDateLocal: orderReturn ? 
                   (includeTimePrecision 
-                    ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                    ? orderReturn.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                     : orderReturn.toLocaleDateString('en-US'))
                   : 'Unknown',
                 quantity: item.quantity,
@@ -569,15 +573,15 @@ export async function GET(
             startDate: rentalStart.toISOString(),
             endDate: rentalEnd.toISOString(),
             startDateLocal: includeTimePrecision 
-              ? rentalStart.toLocaleString('en-US', { timeZone, hour12: false })
+              ? rentalStart.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
               : rentalStart.toLocaleDateString('en-US'),
             endDateLocal: includeTimePrecision 
-              ? rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })
+              ? rentalEnd.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
               : rentalEnd.toLocaleDateString('en-US'),
             durationMs,
             durationHours: Math.round(durationHours * 100) / 100,
             durationDays,
-            timeZone,
+            timeZone: effectiveTimeZone,
             includeTimePrecision,
           },
           // Simplified: isAvailable = canFulfillRequest (already accounts for stock and conflicts)
@@ -604,7 +608,7 @@ export async function GET(
           // Enhanced message with time precision
           message: isAvailable
             ? includeTimePrecision
-              ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
+              ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
               : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
             : stockAvailable
             ? `Stock available but conflicts during requested period ${includeTimePrecision ? `(${Math.round(durationHours * 100) / 100} hours)` : `(${durationDays} days)`}`

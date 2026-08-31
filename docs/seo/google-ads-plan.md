@@ -27,59 +27,63 @@
 
 ## Chiến lược Campaign
 
-### Campaign 1: Search - Trang phục (30,000 VND/ngày) ⭐ CHÍNH
+### Campaign 1: Search (1 Ad Group)
 
-#### Ad Group A — Áo dài / Áo cưới (exact + phrase)
+**Mục tiêu:** Người tìm kiếm phần mềm cho thuê
+**Budget:** 30,000 VND/ngày
+**Bidding:** Manual CPC
 
+#### Ad Group: Phần mềm cho thuê
+
+**Keywords:**
 ```
 [phần mềm cho thuê áo dài]
 [phần mềm cho thuê áo cưới]
 [phần mềm quản lý cho thuê áo dài]
 [phần mềm quản lý cho thuê áo cưới]
-"cho thuê áo dài" phần mềm
-"cho thuê áo cưới" phần mềm
-"quản lý cho thuê áo dài"
-"quản lý cho thuê áo cưới"
-```
-
-**Bid:** 3,000 - 6,000 VND/click (CPC thấp vì ít competition)
-**Expected:** 5-10 clicks/ngày
-
-#### Ad Group B — Trang phục chung
-
-```
 [phần mềm cho thuê trang phục]
 [phần mềm quản lý cho thuê trang phục]
-"phần mềm cho thuê trang phục"
-"quản lý cho thuê trang phục"
 [phần mềm cho thuê camera]
+[app cho thuê đồ]
+[phần mềm cho thuê đồ]
+"phần mềm cho thuê áo dài"
+"phần mềm cho thuê áo cưới"
+"quản lý cho thuê trang phục"
 "cho thuê đồ" phần mềm
-```
-
-**Bid:** 5,000 - 8,000 VND/click
-**Expected:** 3-5 clicks/ngày
-
----
-
-### Campaign 2: Search - Chung (10,000 VND/ngày)
-
-#### Ad Group C — Phần mềm cho thuê (broad intent)
-
-```
+"app cho thuê đồ"
 "phần mềm quản lý cho thuê"
 "phần mềm cho thuê nhỏ"
-[phần mềm quản lý cho thuê nhỏ]
 ```
 
-**Bid:** 3,000 - 5,000 VND/click
-**Expected:** 2-3 clicks/ngày
+**Bid:** 3,000 - 6,000 VND/click
+**Landing:** anyrent.shop, /cho-thue-ao-dai, /cho-thue-ao-cuoi
 
 ---
 
-### Campaign 3: Remarketing (10,000 VND/ngày)
+### Campaign 2: App Install (1 Ad Group)
 
-- Retarget visitors đã vào anyrent.shop chưa đăng ký
-- Banner: "Quản lý cho thuê áo dài, áo cưới - Dùng thử miễn phí"
+**Mục tiêu:** Tải app trên App Store & Google Play
+**Budget:** 20,000 VND/ngày
+**Loại campaign:** App campaign (Universal App Campaign)
+
+#### Ad Group: AnyRent App Install
+
+**App links:**
+- iOS: https://apps.apple.com/vn/app/anyrent/id6754793592
+- Android: https://play.google.com/store/apps/details?id=anyrent.shop
+
+**Headlines (≤30 ký tự):**
+1. App quản lý cho thuê #1 VN
+2. Quản lý cho thuê trên điện thoại
+3. AI chụp ảnh tìm sản phẩm
+4. Tạo đơn thuê 30 giây
+5. Miễn phí - Tải ngay
+
+**Descriptions (≤90 ký tự):**
+1. Quản lý cho thuê áo dài, áo cưới ngay trên điện thoại. AI tìm sản phẩm bằng hình ảnh. Miễn phí.
+2. App cho thuê đồ với AI nhận diện sản phẩm. Quản lý đơn, lịch, tồn kho. iOS & Android.
+
+**Bid:** Target CPI 10,000 - 20,000 VND/install
 
 ---
 
@@ -87,28 +91,49 @@
 
 ### Responsive Search Ads
 
-**Headlines (15 options):**
-1. Phần mềm cho thuê áo dài | AnyRent
-2. Quản lý cho thuê áo cưới dễ dàng
-3. Phần mềm cho thuê trang phục #1
-4. Dùng thử miễn phí - Không cần thẻ
-5. Quản lý đơn hàng, lịch thuê, tồn kho
-6. App cho thuê áo dài trên điện thoại
-7. Hỗ trợ cả web lẫn iOS
+**Headlines (≤30 ký tự mỗi dòng):**
+1. Phần mềm cho thuê áo dài
+2. Quản lý cho thuê áo cưới
+3. Phần mềm cho thuê trang phục
+4. Dùng thử miễn phí - 0đ
+5. Quản lý đơn, lịch, tồn kho
+6. App cho thuê áo dài
+7. Hỗ trợ iOS, Android & Web
 8. Quản lý cho thuê từ A-Z
 9. Biết ngay hàng nào đang trống
 10. Không lo quên lịch trả đồ
 11. Setup 5 phút - Dùng ngay
 12. Giải pháp cho tiệm áo cưới
 13. Phần mềm cho thuê đồ cưới
-14. Từ 0đ/tháng - Nâng cấp khi cần
-15. Đã có 100+ tiệm đang dùng
+14. Từ 0đ/tháng - Nâng cấp sau
+15. 100+ tiệm đang dùng AnyRent
 
-**Descriptions (4 options):**
-1. Phần mềm quản lý cho thuê áo dài, áo cưới, trang phục. Theo dõi lịch thuê trả, tồn kho real-time. Hỗ trợ mobile. Đăng ký miễn phí.
-2. AnyRent giúp tiệm áo dài, áo cưới quản lý đơn hàng, kiểm tra hàng trống, theo dõi lịch trả. App iOS + Web dashboard.
-3. Không cần Excel nữa! Quản lý cho thuê trang phục chuyên nghiệp. Xem lịch, tạo đơn nhanh, biết ngay hàng nào available.
-4. Giải pháp cho thuê trang phục hiện đại. Tạo đơn 30 giây, quản lý tồn kho tự động, báo cáo doanh thu chi tiết.
+**Headlines bổ sung (AI & Google Play, ≤30 ký tự):**
+16. AI chụp ảnh tìm sản phẩm
+17. Quét hình ảnh bằng AI
+18. App cho thuê đồ iOS&Android
+19. Tải Google Play miễn phí
+20. AI nhận diện sản phẩm
+
+**Descriptions (≤90 ký tự mỗi dòng):**
+1. Quản lý cho thuê áo dài, áo cưới. Lịch thuê trả, tồn kho real-time. iOS, Android & Web. Miễn phí.
+2. AnyRent giúp tiệm áo dài quản lý đơn, kiểm hàng trống, theo dõi lịch trả. App + Web dashboard.
+3. Không cần Excel! Quản lý cho thuê chuyên nghiệp. AI quét hình tìm sản phẩm. Tạo đơn nhanh 30 giây.
+4. Giải pháp cho thuê hiện đại. AI tìm sản phẩm bằng hình ảnh. Quản lý tồn kho tự động, báo cáo doanh thu.
+
+---
+
+## Sitelink Extensions
+
+| Sitelink | URL | Mô tả 1 | Mô tả 2 |
+|----------|-----|----------|----------|
+| Tải App Store | https://apps.apple.com/vn/app/anyrent/id6754793592 | Quản lý cho thuê trên iPhone | Tải miễn phí, dùng ngay hôm nay |
+| Tải Google Play | https://play.google.com/store/apps/details?id=anyrent.shop | Quản lý cho thuê trên Android | Tải miễn phí trên Google Play |
+| Tìm sản phẩm bằng AI | anyrent.shop/#ai-search | Chụp ảnh là tìm ra sản phẩm | AI nhận diện màu, kiểu, chất liệu |
+| Bảng giá | anyrent.shop/#pricing | Từ 0đ/tháng. Nâng cấp khi cần | Gói Basic, Premium cho mọi quy mô |
+| Tính năng | anyrent.shop/features | Đơn hàng, lịch, kho, khách hàng | Báo cáo doanh thu, ngăn trùng đơn |
+| Cho thuê áo dài | anyrent.shop/cho-thue-ao-dai | Giải pháp quản lý tiệm áo dài | Quản lý size, màu, lịch đặt dễ |
+| Cho thuê áo cưới | anyrent.shop/cho-thue-ao-cuoi | Giải pháp cho tiệm áo cưới | Gói combo cưới, lịch hẹn thử đồ |
 
 ---
 

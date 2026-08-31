@@ -29,6 +29,7 @@ import {
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { getLocalDateKey } from '@rentalshop/utils';
 import { 
   User, 
   Search, 
@@ -263,8 +264,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 initialStartDate={formData.pickupPlanAt}
                 initialEndDate={formData.returnPlanAt}
                 onPeriodChange={(startAt, endAt) => {
-                  const startDate = startAt.toISOString().split('T')[0];
-                  const endDate = endAt.toISOString().split('T')[0];
+                  const startDate = getLocalDateKey(startAt);
+                  const endDate = getLocalDateKey(endAt);
                   
                   onFormDataChange('pickupPlanAt', startDate);
                   onFormDataChange('returnPlanAt', endDate);
@@ -288,8 +289,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                     to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
                   }}
                   onChange={(range) => {
-                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    const startDate = range.from ? getLocalDateKey(range.from) : '';
+                    const endDate = range.to ? getLocalDateKey(range.to) : '';
                     
                     onFormDataChange('pickupPlanAt', startDate);
                     onFormDataChange('returnPlanAt', endDate);

@@ -21,6 +21,12 @@ function formatYmd(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
+/** VN civil YYYY-MM-DD from a UTC instant (same as getLocalDateKey). */
+export function toAvailabilityCivilDateKey(date: Date): string {
+  const local = new Date(date.getTime() + VN_OFFSET_MS);
+  return formatYmd(local.getUTCFullYear(), local.getUTCMonth() + 1, local.getUTCDate());
+}
+
 /** Iterate inclusive civil YYYY-MM-DD keys (timezone-agnostic date arithmetic). */
 function iterateYmdKeys(fromYmd: string, toYmd: string): string[] {
   const from = parseYmd(fromYmd);
@@ -62,8 +68,68 @@ export function getAvailabilityCivilDayBounds(
 }
 
 /**
+ * Detect store-app Order Check windows:
+ *   startDate=YYYY-MM-DDT00:00:00.000Z
+ *   endDate=YYYY-MM-DDT23:59:59.999Z
+ * (same UTC calendar day). Those are NOT shop civil days.
+ */
+function extractUtcCivilDayWindowYmd(start: Date, end: Date): string | null {
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  const startMatch = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?Z$/.exec(startIso);
+  const endMatch = /^(\d{4}-\d{2}-\d{2})T23:59:59(?:\.999)?Z$/.exec(endIso);
+  if (!startMatch || !endMatch) return null;
+  if (startMatch[1] !== endMatch[1]) return null;
+  return startMatch[1];
+}
+
+/**
+ * Resolve rental window for GET /availability and batch-availability.
+ *
+ * Why API-side (not app-only): the iOS app on the App Store still sends UTC
+ * civil-day `T00:00Z…T23:59Z` windows. Reinterpret those as Asia/Ho_Chi_Minh
+ * civil days — same model as Lịch Thuê / occupancy calendar — so store builds
+ * highlight the correct day without an App Store update.
+ *
+ * Real multi-day ISO ranges (e.g. cart `26T17Z`→`28T17Z`) pass through unchanged.
+ *
+ * @returns `{ start, end }` with exclusive `end` for civil-day windows
+ *   (overlap: pickup < end AND return >= start).
+ */
+export function resolveAvailabilityQueryWindow(input: {
+  date?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}): { start: Date; end: Date; civilDayYmd: string | null } | null {
+  if (input.date) {
+    const bounds = getAvailabilityCivilDayBounds(input.date);
+    if (!bounds) return null;
+    return { start: bounds.start, end: bounds.end, civilDayYmd: input.date };
+  }
+
+  if (!input.startDate || !input.endDate) return null;
+
+  const start = new Date(input.startDate);
+  const end = new Date(input.endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+
+  const utcDayYmd = extractUtcCivilDayWindowYmd(start, end);
+  if (utcDayYmd) {
+    const bounds = getAvailabilityCivilDayBounds(utcDayYmd);
+    if (!bounds) return null;
+    return { start: bounds.start, end: bounds.end, civilDayYmd: utcDayYmd };
+  }
+
+  return { start, end, civilDayYmd: null };
+}
+
+/**
  * Remaining units per shop civil day in [fromYmd, toYmd].
  * Day keys match Lịch Thuê (`getLocalDateKey`), not UTC dates.
+ *
+ * Occupancy is **inclusive** of pickup and return civil days — same as mobile
+ * `calculateRentalDays` (same-day pickup=return stores one instant and must
+ * still book that day; interval overlap `return > dayStart` would miss it).
  */
 export function calendarDayAvailability(input: {
   stock: number;
@@ -72,25 +138,33 @@ export function calendarDayAvailability(input: {
   toYmd: string;
   timeZone?: string;
 }): Array<{ date: string; available: number; booked: number }> {
-  const timeZone = input.timeZone || AVAILABILITY_CALENDAR_TIMEZONE;
   const ymdKeys = iterateYmdKeys(input.fromYmd, input.toYmd);
   if (ymdKeys.length === 0) return [];
 
   const stock = Math.max(0, input.stock);
   const bookedByDay = new Map<string, number>();
+  const windowSet = new Set(ymdKeys);
 
-  for (const ymd of ymdKeys) {
-    const bounds = getAvailabilityCivilDayBounds(ymd, timeZone);
-    if (!bounds) continue;
+  for (const order of input.orders) {
+    const pickup = order.pickupPlanAt;
+    const ret = order.returnPlanAt;
+    if (!pickup || !ret) continue;
 
-    for (const order of input.orders) {
-      const pickup = order.pickupPlanAt;
-      const ret = order.returnPlanAt;
-      if (!pickup || !ret) continue;
-      const qty = Math.max(0, order.quantity ?? 1);
-      if (pickup < bounds.end && ret > bounds.start) {
-        bookedByDay.set(ymd, (bookedByDay.get(ymd) ?? 0) + qty);
-      }
+    const qty = Math.max(0, order.quantity ?? 1);
+    if (qty === 0) continue;
+
+    let startKey = toAvailabilityCivilDateKey(pickup);
+    let endKey = toAvailabilityCivilDateKey(ret);
+    // Guard inverted ranges (should not happen for valid orders)
+    if (endKey < startKey) {
+      const swap = startKey;
+      startKey = endKey;
+      endKey = swap;
+    }
+
+    for (const ymd of iterateYmdKeys(startKey, endKey)) {
+      if (!windowSet.has(ymd)) continue;
+      bookedByDay.set(ymd, (bookedByDay.get(ymd) ?? 0) + qty);
     }
   }
 
