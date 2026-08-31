@@ -1267,9 +1267,9 @@
 "On check day" = "Trong ngày kiểm tra";
 "availability_verdict_date_context" = "Trong ngày %@";
 "availability_verdict_available_headline" = "Còn %@ sản phẩm";
-"availability_verdict_available_title" = "Còn sẵn";
-"availability_verdict_out_of_stock_headline" = "Hết hàng";
-"availability_verdict_conflict_headline" = "Trùng lịch";
+"availability_verdict_available_title" = "Còn hàng";
+"availability_verdict_out_of_stock_headline" = "Hết hàng thật";
+"availability_verdict_conflict_headline" = "Trùng lịch (hết vì đã thuê)";
 "availability_verdict_available" = "Còn %@ item trong ngày %@";
 "availability_verdict_out_of_stock" = "Hết hàng ngày %@";
 "availability_verdict_conflict" = "Trùng lịch ngày %@";

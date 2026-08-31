@@ -221,9 +221,9 @@
     <string name="create_date">Ngày tạo</string>
     <string name="availability_conflicts">Có xung đột lịch</string>
     <string name="availability_conflict_badge">Trùng ngày</string>
-    <string name="availability_verdict_available_title">Còn sẵn</string>
-    <string name="availability_verdict_out_of_stock_headline">Hết hàng</string>
-    <string name="availability_verdict_conflict_headline">Trùng lịch</string>
+    <string name="availability_verdict_available_title">Còn hàng</string>
+    <string name="availability_verdict_out_of_stock_headline">Hết hàng thật</string>
+    <string name="availability_verdict_conflict_headline">Trùng lịch (hết vì đã thuê)</string>
     <string name="availability_verdict_available">Còn %1$s item trong ngày %2$s</string>
     <string name="availability_verdict_out_of_stock">Hết hàng ngày %1$s</string>
     <string name="availability_verdict_conflict">Trùng lịch ngày %1$s</string>
