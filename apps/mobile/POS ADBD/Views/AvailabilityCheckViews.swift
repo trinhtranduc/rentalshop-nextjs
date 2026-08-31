@@ -167,8 +167,7 @@ final class AvailabilityVerdictView: UIView {
                 checkDate: checkDate,
                 accentColor: accentColor
             )
-        case .outOfStock, .conflictWarning:
-            // User wants only remaining / out-of-stock copy — booked-out day = hết hàng.
+        case .outOfStock:
             backgroundColor = UIColor.actionDanger.withAlphaComponent(0.08)
             layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.18).cgColor
             iconContainerView.backgroundColor = .actionDanger
@@ -178,6 +177,17 @@ final class AvailabilityVerdictView: UIView {
                 formatKey: "availability_verdict_out_of_stock",
                 checkDate: checkDate,
                 color: .actionDanger
+            )
+        case .conflictWarning:
+            backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.10)
+            layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.22).cgColor
+            iconContainerView.backgroundColor = APP_ORANGE_COLOR
+            iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+            headlineLabel.textColor = APP_ORANGE_COLOR
+            headlineLabel.attributedText = datedHeadline(
+                formatKey: "availability_verdict_conflict",
+                checkDate: checkDate,
+                color: APP_ORANGE_COLOR
             )
         }
     }
@@ -361,6 +371,12 @@ final class AvailabilitySummaryHeaderView: UIView {
             verdictView.configure(
                 style: .available,
                 availableCount: effectiveAvailable,
+                checkDate: checkDate
+            )
+        } else if conflicts > 0 {
+            verdictView.configure(
+                style: .conflictWarning,
+                availableCount: 0,
                 checkDate: checkDate
             )
         } else {

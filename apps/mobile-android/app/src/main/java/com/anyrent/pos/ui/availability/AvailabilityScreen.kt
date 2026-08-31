@@ -373,46 +373,73 @@ fun AvailabilityScreen(
 @Composable
 private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
     val effectiveAvailable = result.effectivelyAvailable
-    val isAvailable = effectiveAvailable > 0
+    val hasConflicts = result.conflicts.isNotEmpty() || result.orders.any { it.isConflict }
+    val orange = Color(0xFFF19920)
 
-    val accent = if (isAvailable) Color(0xFF16A34A) else MaterialTheme.colorScheme.error
-    val cardTint = if (isAvailable) {
-        Color(0xFF22C55E).copy(alpha = 0.08f)
-    } else {
-        MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+    val accent = when {
+        effectiveAvailable > 0 -> Color(0xFF16A34A)
+        hasConflicts -> orange
+        else -> MaterialTheme.colorScheme.error
+    }
+    val cardTint = when {
+        effectiveAvailable > 0 -> Color(0xFF22C55E).copy(alpha = 0.08f)
+        hasConflicts -> orange.copy(alpha = 0.10f)
+        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+    }
+    val verdictIcon = when {
+        effectiveAvailable > 0 -> "✓"
+        hasConflicts -> "!"
+        else -> "✕"
     }
 
-    val verdictAnnotatedText = if (isAvailable) {
-        val countText = formatQuantity(effectiveAvailable)
-        val full = stringResource(
-            R.string.availability_verdict_available,
-            countText,
-            dateLabel,
-        )
-        buildAnnotatedString {
-            append(full)
-            listOf(countText, dateLabel).forEach { highlight ->
-                val start = full.indexOf(highlight)
+    val verdictAnnotatedText = when {
+        effectiveAvailable > 0 -> {
+            val countText = formatQuantity(effectiveAvailable)
+            val full = stringResource(
+                R.string.availability_verdict_available,
+                countText,
+                dateLabel,
+            )
+            buildAnnotatedString {
+                append(full)
+                listOf(countText, dateLabel).forEach { highlight ->
+                    val start = full.indexOf(highlight)
+                    if (start >= 0) {
+                        addStyle(
+                            SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                            start,
+                            start + highlight.length,
+                        )
+                    }
+                }
+            }
+        }
+        hasConflicts -> {
+            val full = stringResource(R.string.availability_verdict_conflict, dateLabel)
+            buildAnnotatedString {
+                append(full)
+                val start = full.indexOf(dateLabel)
                 if (start >= 0) {
                     addStyle(
                         SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
                         start,
-                        start + highlight.length,
+                        start + dateLabel.length,
                     )
                 }
             }
         }
-    } else {
-        val full = stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
-        buildAnnotatedString {
-            append(full)
-            val start = full.indexOf(dateLabel)
-            if (start >= 0) {
-                addStyle(
-                    SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
-                    start,
-                    start + dateLabel.length,
-                )
+        else -> {
+            val full = stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
+            buildAnnotatedString {
+                append(full)
+                val start = full.indexOf(dateLabel)
+                if (start >= 0) {
+                    addStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                        start,
+                        start + dateLabel.length,
+                    )
+                }
             }
         }
     }
@@ -437,7 +464,7 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        if (isAvailable) "✓" else "✕",
+                        verdictIcon,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -480,8 +507,8 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                 ImpressiveMetric(
                     label = stringResource(R.string.renting),
                     value = result.totalRenting,
-                    accent = Color(0xFFF19920),
-                    valueColor = Color(0xFFF19920),
+                    accent = orange,
+                    valueColor = orange,
                 )
             }
         }

@@ -1274,7 +1274,7 @@
 "availability_verdict_conflict_headline" = "Schedule conflict";
 "availability_verdict_available" = "%@ items left on %@";
 "availability_verdict_out_of_stock" = "Out of stock on %@";
-"availability_verdict_conflict" = "Out of stock on %@";
+"availability_verdict_conflict" = "Schedule conflict on %@";
 "Rental history" = "Rental history";
 "availability_order_count" = "%d orders";
 "availability_history_empty" = "No rental orders for this product";
