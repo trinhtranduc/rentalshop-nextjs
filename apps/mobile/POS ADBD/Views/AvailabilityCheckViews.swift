@@ -824,8 +824,8 @@ final class AvailabilityHistoryCell: UITableViewCell {
             customerLabel.isHidden = true
         }
 
-        pickupValueLabel.text = order.pickupPlanAt?.toDate()?.dateInString() ?? "N/A".localized()
-        returnValueLabel.text = order.returnPlanAt?.toDate()?.dateInString() ?? "N/A".localized()
+        pickupValueLabel.text = order.pickupPlanAt?.toDate()?.shopDateInString() ?? "N/A".localized()
+        returnValueLabel.text = order.returnPlanAt?.toDate()?.shopDateInString() ?? "N/A".localized()
         createdValueLabel.text = order.createdAt?.toDate()?.dateInString() ?? "N/A".localized()
         quantityValueLabel.text = (order.quantity ?? 0).formatStringInCommon()
 
@@ -1121,6 +1121,8 @@ final class AvailabilityCalendarDayCell: FSCalendarCell {
         super.prepareForReuse()
         tileView.alpha = 1
         tileView.isHidden = false
+        tileView.layer.borderWidth = 0
+        tileView.layer.borderColor = UIColor.clear.cgColor
         todayAccentView.isHidden = true
         qtyLabel.isHidden = true
         qtyLabel.text = nil
@@ -1136,8 +1138,28 @@ final class AvailabilityOccupancyCalendarView: UIView {
     var onSelectDate: ((Date) -> Void)?
     var onVisibleMonthChange: ((Date) -> Void)?
 
-    private var minimumDate = Calendar.current.startOfDay(for: Date())
-    private var maximumDate = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
+    private static let businessTimeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+    private static var businessCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        calendar.timeZone = businessTimeZone
+        return calendar
+    }
+    private static let dayKeyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = businessCalendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = businessTimeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    private var minimumDate = AvailabilityOccupancyCalendarView.businessCalendar.startOfDay(for: Date())
+    private var maximumDate = AvailabilityOccupancyCalendarView.businessCalendar.date(
+        byAdding: .year,
+        value: 1,
+        to: Date()
+    ) ?? Date()
     private var occupancyLoaded = false
     private var stockCapacity = 0
     private var availableByDate: [String: Int] = [:]
@@ -1146,6 +1168,9 @@ final class AvailabilityOccupancyCalendarView: UIView {
     private var calendarHeightConstraint: Constraint?
     /// Tracks last tapped day so we can refresh only old/new selection — not the whole grid.
     private var lastSelectedDate: Date?
+    /// Source of truth for the custom selection ring. Do not derive the ring from
+    /// FSCalendar.selectedDates because that state changes during reload/transitions.
+    private var selectedDayKey: String?
 
     /// Total stack height: legend + calendar (6 rows) + tap hint + padding — fixed so hint never clips.
     static var fixedBlockHeight: CGFloat {
@@ -1203,7 +1228,8 @@ final class AvailabilityOccupancyCalendarView: UIView {
         calendar.placeholderType = .fillHeadTail
         calendar.scrollEnabled = true
         calendar.scrollDirection = .horizontal
-        calendar.swipeToChooseGesture.isEnabled = true
+        // A slight finger drag must not move the selection to a neighbouring day.
+        calendar.swipeToChooseGesture.isEnabled = false
         calendar.backgroundColor = .backgroundCard
         calendar.appearance.titleDefaultColor = .textPrimary
         calendar.appearance.headerTitleColor = .textPrimary
@@ -1328,36 +1354,37 @@ final class AvailabilityOccupancyCalendarView: UIView {
 
     func configure(selectedDate: Date, minimumDate: Date? = nil, maximumDate: Date? = nil) {
         if let minimumDate {
-            self.minimumDate = Calendar.current.startOfDay(for: minimumDate)
+            self.minimumDate = Self.businessCalendar.startOfDay(for: minimumDate)
         }
         if let maximumDate {
-            self.maximumDate = Calendar.current.startOfDay(for: maximumDate)
+            self.maximumDate = Self.businessCalendar.startOfDay(for: maximumDate)
         }
-        let day = Calendar.current.startOfDay(for: selectedDate)
-        let selectedMonth = Calendar.current.dateComponents([.year, .month], from: day)
-        let visibleMonth = Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
-        var needsFullReload = selectedMonth != visibleMonth
+        let day = Self.businessCalendar.startOfDay(for: selectedDate)
+        let selectedMonth = Self.businessCalendar.dateComponents([.year, .month], from: day)
+        let visibleMonth = Self.businessCalendar.dateComponents([.year, .month], from: calendar.currentPage)
+        let needsFullReload = selectedMonth != visibleMonth
         if needsFullReload {
             calendar.setCurrentPage(day, animated: false)
         }
 
         let previousSelections = calendar.selectedDates
-        let alreadySelected = previousSelections.contains { Calendar.current.isDate($0, inSameDayAs: day) }
+        let previousHighlightedDate = lastSelectedDate
+        selectedDayKey = Self.dayKeyFormatter.string(from: day)
+        let alreadySelected = previousSelections.contains { Self.businessCalendar.isDate($0, inSameDayAs: day) }
         if !alreadySelected {
             previousSelections.forEach { calendar.deselect($0) }
             calendar.select(day)
-            if !needsFullReload {
-                refreshSelectionAppearance(
-                    previousDates: previousSelections,
-                    newDate: day
-                )
-            }
         }
         lastSelectedDate = day
 
         calendar.rowHeight = Self.dayRowHeight
         if needsFullReload {
             reloadCalendarWithoutAnimation()
+        } else {
+            refreshSelectionAppearance(
+                previousDates: [previousHighlightedDate].compactMap { $0 },
+                newDate: day
+            )
         }
         syncCalendarHeight()
         onVisibleMonthChange?(calendar.currentPage)
@@ -1365,13 +1392,13 @@ final class AvailabilityOccupancyCalendarView: UIView {
 
     /// First day of the month currently shown in the calendar pager.
     var visibleMonthStart: Date {
-        Calendar.current.date(
-            from: Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
+        Self.businessCalendar.date(
+            from: Self.businessCalendar.dateComponents([.year, .month], from: calendar.currentPage)
         ) ?? calendar.currentPage
     }
 
     func setDayAvailability(_ availableByDate: [String: Int], stock: Int, forVisibleMonth month: Date) {
-        loadedOccupancyMonth = Calendar.current.dateComponents([.year, .month], from: month)
+        loadedOccupancyMonth = Self.businessCalendar.dateComponents([.year, .month], from: month)
         occupancyLoaded = true
         stockCapacity = max(0, stock)
         self.availableByDate = availableByDate
@@ -1418,33 +1445,33 @@ final class AvailabilityOccupancyCalendarView: UIView {
     }
 
     private var visiblePageMonth: DateComponents {
-        Calendar.current.dateComponents([.year, .month], from: calendar.currentPage)
+        Self.businessCalendar.dateComponents([.year, .month], from: calendar.currentPage)
     }
 
     private func isOccupancyVisible(for date: Date, at monthPosition: FSCalendarMonthPosition) -> Bool {
         guard occupancyLoaded, monthPosition == .current else { return false }
         guard let loadedOccupancyMonth else { return false }
-        let cellMonth = Calendar.current.dateComponents([.year, .month], from: date)
+        let cellMonth = Self.businessCalendar.dateComponents([.year, .month], from: date)
         // Keep current-month UI while swiping; only paint cells that belong to the loaded month.
         guard cellMonth == loadedOccupancyMonth, cellMonth == visiblePageMonth else { return false }
-        let day = Calendar.current.startOfDay(for: date)
+        let day = Self.businessCalendar.startOfDay(for: date)
         return day >= minimumDate && day <= maximumDate
     }
 
     private func remainingQuantity(for date: Date) -> Int? {
         guard isOccupancyVisible(for: date, at: .current) else { return nil }
-        guard let key = date.dateServerInString() else { return nil }
+        let key = Self.dayKeyFormatter.string(from: date)
         return availableByDate[key] ?? 0
     }
 
     private func configureDayCell(_ cell: FSCalendarCell, for date: Date, at monthPosition: FSCalendarMonthPosition) {
         guard let dayCell = cell as? AvailabilityCalendarDayCell else { return }
-        let day = Calendar.current.component(.day, from: date)
+        let day = Self.businessCalendar.component(.day, from: date)
         let inCurrentMonth = monthPosition == .current
         let showOccupancy = isOccupancyVisible(for: date, at: monthPosition)
         let remaining = showOccupancy ? remainingQuantity(for: date) : nil
-        let isSelected = calendar.selectedDates.contains { Calendar.current.isDate($0, inSameDayAs: date) }
-        let dayStart = Calendar.current.startOfDay(for: date)
+        let isSelected = selectedDayKey == Self.dayKeyFormatter.string(from: date)
+        let dayStart = Self.businessCalendar.startOfDay(for: date)
         let isEnabled = inCurrentMonth && dayStart >= minimumDate && dayStart <= maximumDate
         dayCell.configure(
             day: day,
@@ -1452,7 +1479,7 @@ final class AvailabilityOccupancyCalendarView: UIView {
             occupancyLoaded: showOccupancy,
             stock: stockCapacity,
             isSelected: isSelected,
-            isToday: Calendar.current.isDateInToday(date),
+            isToday: Self.businessCalendar.isDateInToday(date),
             isPlaceholder: !inCurrentMonth,
             isEnabled: isEnabled
         )
@@ -1484,17 +1511,21 @@ extension AvailabilityOccupancyCalendarView: FSCalendarDelegate, FSCalendarDataS
         onVisibleMonthChange?(calendar.currentPage)
     }
 
+    func calendar(_ calendar: FSCalendar, shouldSelect date: Date, at monthPosition: FSCalendarMonthPosition) -> Bool {
+        guard monthPosition == .current else { return false }
+        let day = Self.businessCalendar.startOfDay(for: date)
+        return day >= minimumDate && day <= maximumDate
+    }
+
     func calendar(_ calendar: FSCalendar, didSelect date: Date, at monthPosition: FSCalendarMonthPosition) {
-        if monthPosition == .previous || monthPosition == .next {
-            calendar.setCurrentPage(date, animated: true)
-        }
-        let day = Calendar.current.startOfDay(for: date)
+        let day = Self.businessCalendar.startOfDay(for: date)
         var previousDates: [Date] = []
         if let lastSelectedDate,
-           !Calendar.current.isDate(lastSelectedDate, inSameDayAs: day) {
+           !Self.businessCalendar.isDate(lastSelectedDate, inSameDayAs: day) {
             previousDates.append(lastSelectedDate)
         }
         lastSelectedDate = day
+        selectedDayKey = Self.dayKeyFormatter.string(from: day)
         refreshSelectionAppearance(previousDates: previousDates, newDate: day)
         onSelectDate?(day)
     }
@@ -1533,6 +1564,15 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         table.rowHeight = UITableViewAutomaticDimension
         table.estimatedRowHeight = 112
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        if orders.isEmpty {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "No orders for this day".localized()
+            emptyLabel.font = Utils.regularFont(size: 15)
+            emptyLabel.textColor = .textSecondary
+            emptyLabel.textAlignment = .center
+            emptyLabel.numberOfLines = 0
+            table.backgroundView = emptyLabel
+        }
         return table
     }()
 

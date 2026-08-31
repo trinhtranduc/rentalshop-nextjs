@@ -4,6 +4,7 @@ export {
   calendarDayAvailability,
   getAvailabilityCivilDayBounds,
   occupiedDateKeysForRange,
+  resolveAvailabilityQueryWindow,
 } from './availability-calendar-days';
 
 export type AvailabilityOrderDisplayInput = {
@@ -101,7 +102,7 @@ export type ConflictingOrderInput = {
   orderType: string;
   status: string;
   outletId: number;
-  orderItems: Array<{ productId: number; quantity: number }>;
+  orderItems: Array<{ productId: number | null; quantity: number }>;
 };
 
 /**
