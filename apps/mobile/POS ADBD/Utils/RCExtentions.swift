@@ -965,6 +965,9 @@ extension Date {
     
     
     
+    /// Shop civil-day timezone (VN) — must match API `getLocalDateKey` / Order Check calendar.
+    static let shopTimeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+
     func dateInString() -> String?{
         
         let formatter = DateFormatter()
@@ -972,6 +975,24 @@ extension Date {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter.string(from: self)
         
+    }
+
+    /// Rental pickup/return label in shop civil day (dd/MM/yy), independent of device locale/TZ.
+    func shopDateInString() -> String? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = Date.shopTimeZone
+        return formatter.string(from: self)
+    }
+
+    /// YYYY-MM-DD civil day key in shop timezone — for availability API params.
+    func shopDateKeyString() -> String? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = Date.shopTimeZone
+        return formatter.string(from: self)
     }
     
     /// Format date with time: "dd/MM/yy HH:mm"

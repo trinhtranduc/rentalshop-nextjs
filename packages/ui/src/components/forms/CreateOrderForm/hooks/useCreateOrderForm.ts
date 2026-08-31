@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@rentalshop/ui';
-import { customersApi, handleApiError, convertLocalDateToUTCDatetime } from '@rentalshop/utils';
+import { customersApi, handleApiError, convertLocalDateToUTCDatetime, getLocalDateKey } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
   OrderFormData, 
@@ -118,8 +118,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: parseInt(initialOrder.customerId) || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: initialOrder.discountType || 'amount',
@@ -260,8 +260,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: initialOrder.customerId || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: initialOrder.discountType || 'amount',
@@ -580,8 +580,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderType: initialOrder.orderType || 'RENT',
         customerId: parseInt(initialOrder.customerId) || undefined,
         outletId: initialOrder.outletId || outlets[0]?.id || undefined,
-        pickupPlanAt: initialOrder.pickupPlanAt ? new Date(initialOrder.pickupPlanAt).toISOString().split('T')[0] : '',
-        returnPlanAt: initialOrder.returnPlanAt ? new Date(initialOrder.returnPlanAt).toISOString().split('T')[0] : '',
+        pickupPlanAt: initialOrder.pickupPlanAt ? getLocalDateKey(initialOrder.pickupPlanAt) : '',
+        returnPlanAt: initialOrder.returnPlanAt ? getLocalDateKey(initialOrder.returnPlanAt) : '',
         subtotal: initialOrder.subtotal || 0,
         taxAmount: initialOrder.taxAmount || 0,
         discountType: 'amount',

@@ -567,38 +567,34 @@ export function normalizeDateToISO(date: Date | string | null | undefined): stri
   return normalized ? normalized.toISOString() : '';
 }
 
+/** Shop civil-day timezone — same as Order Check / Lịch Thuê (VN UTC+7). */
+export const SHOP_TIMEZONE = 'Asia/Ho_Chi_Minh';
+const SHOP_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
+
 /**
- * Convert local date string (YYYY-MM-DD) to UTC datetime string matching mobile app format
- * 
- * Single Source of Truth: This function ensures consistent date format between frontend and mobile app
- * Mobile app sends: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 local in VN UTC+7)
- * Frontend should match this format to avoid timezone shift issues
- * 
- * @param dateStr - Local date string in YYYY-MM-DD format
- * @returns UTC datetime string in ISO format (e.g., "2026-02-24T17:00:00.000Z")
- * 
+ * Convert shop civil date (YYYY-MM-DD) to UTC instant stored in DB / sent by mobile.
+ *
+ * VN midnight on 2026-09-28 = 2026-09-27T17:00:00.000Z (NOT 2026-09-28T17:00:00.000Z).
+ * Same encoding as `getAvailabilityCivilDayBounds` / iOS `dateServerISOString` on picked days.
+ *
  * @example
- * convertLocalDateToUTCDatetime("2026-02-24") // "2026-02-24T17:00:00.000Z"
- * convertLocalDateToUTCDatetime("2026-02-26") // "2026-02-26T17:00:00.000Z"
+ * convertLocalDateToUTCDatetime("2026-09-28") // "2026-09-27T17:00:00.000Z"
  */
 export function convertLocalDateToUTCDatetime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
-  
+
   try {
-    // Parse as local date (YYYY-MM-DD)
     const [year, month, day] = dateStr.split('-').map(Number);
-    
-    // Validate parsed values
+
     if (isNaN(year) || isNaN(month) || isNaN(day)) return '';
     if (month < 1 || month > 12) return '';
     if (day < 1 || day > 31) return '';
-    
-    // Create UTC datetime at 17:00 UTC (equivalent to 00:00 local in VN UTC+7)
-    // This matches mobile app's format to ensure consistency
-    const utcDate = new Date(Date.UTC(year, month - 1, day, 17, 0, 0, 0));
-    
+
+    // Shop civil midnight → previous UTC day at 17:00 (VN UTC+7)
+    const utcDate = new Date(Date.UTC(year, month - 1, day) - SHOP_UTC_OFFSET_MS);
+
     if (isNaN(utcDate.getTime())) return '';
-    
+
     return utcDate.toISOString();
   } catch {
     return '';

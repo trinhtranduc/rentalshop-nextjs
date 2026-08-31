@@ -16,6 +16,22 @@ protocol OrderCheckViewControllerDelegate {
 }
 
 class OrderCheckViewController: BaseViewControler {
+    private static let availabilityTimeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+    private static var availabilityCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        calendar.timeZone = availabilityTimeZone
+        return calendar
+    }
+    private static let dayKeyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = availabilityCalendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = availabilityTimeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
     private struct AvailabilityMetrics {
         let stock: Int
         let shelfAvailable: Int
@@ -44,7 +60,10 @@ class OrderCheckViewController: BaseViewControler {
     private var hasRevealedContent = false
     private var productStock = 0
     private var lastAvailabilityMetrics: AvailabilityMetrics?
-    private var shouldPresentHistoryOnNextLoad = false
+    private var pendingHistoryDayKey: String?
+    private var loadedAvailabilityDayKey: String?
+    private var availabilityLoadingDayKey: String?
+    private var availabilityLoadGeneration = 0
     private weak var presentedHistorySheet: AvailabilityOrderHistorySheetViewController?
     private var occupancyLoadGeneration = 0
     /// Cached occupancy per month (key `yyyy-MM`) for the current product — no re-fetch when scrolling back.
@@ -162,8 +181,8 @@ class OrderCheckViewController: BaseViewControler {
     }
 
     private func configureOccupancyCalendar() {
-        let today = Calendar.current.startOfDay(for: Date())
-        let maxDate = Calendar.current.date(byAdding: .year, value: 1, to: today) ?? today
+        let today = Self.availabilityCalendar.startOfDay(for: Date())
+        let maxDate = Self.availabilityCalendar.date(byAdding: .year, value: 1, to: today) ?? today
         occupancyCalendarView.configure(
             selectedDate: date,
             minimumDate: today,
@@ -248,24 +267,30 @@ class OrderCheckViewController: BaseViewControler {
 
     private var titleLabel: UILabel?
 
-    private func formatDateString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        return formatter.string(from: date)
+    private func dayKey(for date: Date) -> String {
+        Self.dayKeyFormatter.string(from: date)
+    }
+
+    private func displayDate(for dayKey: String) -> String {
+        let parts = dayKey.split(separator: "-")
+        guard parts.count == 3 else { return dayKey }
+        return "\(parts[2])/\(parts[1])/\(parts[0])"
     }
 
     private func occupancyMonthCacheKey(for date: Date) -> String {
-        let components = Calendar.current.dateComponents([.year, .month], from: date)
+        let components = Self.availabilityCalendar.dateComponents([.year, .month], from: date)
         return String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
     }
 
     private func startOfMonth(for date: Date) -> Date {
-        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date)) ?? date
+        Self.availabilityCalendar.date(
+            from: Self.availabilityCalendar.dateComponents([.year, .month], from: date)
+        ) ?? date
     }
 
     private func loadOccupancyCalendar(for visibleMonth: Date) {
         guard let product else { return }
-        let calendar = Calendar.current
+        let calendar = Self.availabilityCalendar
         let monthStart = startOfMonth(for: visibleMonth)
         let cacheKey = occupancyMonthCacheKey(for: monthStart)
 
@@ -348,23 +373,45 @@ class OrderCheckViewController: BaseViewControler {
     }
 
     private func loadProductAvailabilityV2(productId: Int, date: Date) {
+        let requestedDate = Self.availabilityCalendar.startOfDay(for: date)
+        let requestedDayKey = dayKey(for: requestedDate)
+        availabilityLoadGeneration += 1
+        let generation = availabilityLoadGeneration
+        availabilityLoadingDayKey = requestedDayKey
         beginAvailabilityLoading()
         OrderService.shared.loadProductAvailabilityV2(
             productId: productId,
-            date: date,
+            dateKey: requestedDayKey,
             outletId: currentOutletId
         ) { [weak self] response, error in
-            if let err = error {
-                self?.hideProgress()
-                self?.shouldPresentHistoryOnNextLoad = false
-                UIAlertController.errorAlert(parent: self, error: err)
-            } else if let availabilityResponse = response {
-                self?.handleNewAvailabilityResponse(availabilityResponse)
-            } else {
-                self?.hideProgress()
-                self?.shouldPresentHistoryOnNextLoad = false
+            DispatchQueue.main.async {
+                guard let self,
+                      generation == self.availabilityLoadGeneration,
+                      productId == self.product?.product_id else { return }
+
+                self.availabilityLoadingDayKey = nil
+
+                if let err = error {
+                    self.hideProgress()
+                    self.clearPendingHistoryRequest(for: requestedDayKey)
+                    UIAlertController.errorAlert(parent: self, error: err)
+                } else if let availabilityResponse = response {
+                    self.handleNewAvailabilityResponse(
+                        availabilityResponse,
+                        requestedDate: requestedDate,
+                        requestedDayKey: requestedDayKey
+                    )
+                } else {
+                    self.hideProgress()
+                    self.clearPendingHistoryRequest(for: requestedDayKey)
+                }
             }
         }
+    }
+
+    private func clearPendingHistoryRequest(for requestedDayKey: String) {
+        guard pendingHistoryDayKey == requestedDayKey else { return }
+        pendingHistoryDayKey = nil
     }
 
     private func beginAvailabilityLoading() {
@@ -389,40 +436,42 @@ class OrderCheckViewController: BaseViewControler {
         }
     }
 
-    private func handleNewAvailabilityResponse(_ response: NewAvailabilityResponse) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+    private func handleNewAvailabilityResponse(
+        _ response: NewAvailabilityResponse,
+        requestedDate: Date,
+        requestedDayKey: String
+    ) {
+        if response.success, let data = response.data {
+            let metrics = resolveAvailabilityMetrics(from: data)
+            productStock = metrics.stock
+            lastAvailabilityMetrics = metrics
+            loadedAvailabilityDayKey = requestedDayKey
 
-            if response.success, let data = response.data {
-                let metrics = self.resolveAvailabilityMetrics(from: data)
-                self.productStock = metrics.stock
-                self.lastAvailabilityMetrics = metrics
+            summaryView.configure(
+                stock: metrics.stock,
+                shelfAvailable: metrics.shelfAvailable,
+                effectiveAvailable: metrics.effectiveAvailable,
+                renting: metrics.renting,
+                conflicts: metrics.conflicts,
+                checkDate: displayDate(for: requestedDayKey)
+            )
+            configureOccupancyCalendar()
+            resizeSummaryIfNeeded()
 
-                self.summaryView.configure(
-                    stock: metrics.stock,
-                    shelfAvailable: metrics.shelfAvailable,
-                    effectiveAvailable: metrics.effectiveAvailable,
-                    renting: metrics.renting,
-                    conflicts: metrics.conflicts,
-                    checkDate: self.formatDateString(self.date)
-                )
-                self.configureOccupancyCalendar()
-                self.resizeSummaryIfNeeded()
+            availabilityOrders = sortedAvailabilityOrders(data.orders ?? [])
+            revealAvailabilityContent()
+            loadOccupancyCalendar(for: requestedDate)
 
-                self.availabilityOrders = self.sortedAvailabilityOrders(data.orders ?? [])
-                self.revealAvailabilityContent()
-                self.loadOccupancyCalendar(for: self.date)
-
-                if self.shouldPresentHistoryOnNextLoad {
-                    self.shouldPresentHistoryOnNextLoad = false
-                    self.presentOrderHistorySheetIfNeeded()
-                }
-            } else {
-                self.shouldPresentHistoryOnNextLoad = false
-                let errorMessage = response.message ?? "Failed to load product availability"
-                let error = NSError.errorWithOwnMessage(message: errorMessage, domain: "OrderCheckViewController")
-                UIAlertController.errorAlert(parent: self, error: error)
+            if pendingHistoryDayKey == requestedDayKey,
+               presentOrderHistorySheetIfNeeded() {
+                pendingHistoryDayKey = nil
             }
+        } else {
+            hideProgress()
+            clearPendingHistoryRequest(for: requestedDayKey)
+            let errorMessage = response.message ?? "Failed to load product availability"
+            let error = NSError.errorWithOwnMessage(message: errorMessage, domain: "OrderCheckViewController")
+            UIAlertController.errorAlert(parent: self, error: error)
         }
     }
 
@@ -575,28 +624,41 @@ class OrderCheckViewController: BaseViewControler {
     // MARK: - Calendar + history sheet (option B)
     private func handleCalendarDaySelection(_ selected: Date) {
         guard let product else { return }
-        let day = Calendar.current.startOfDay(for: selected)
-        let isSameDay = day == Calendar.current.startOfDay(for: date)
+        let day = Self.availabilityCalendar.startOfDay(for: selected)
+        let selectedDayKey = dayKey(for: day)
+        let isSameDay = selectedDayKey == dayKey(for: date)
 
         if isSameDay {
-            presentOrderHistorySheetIfNeeded()
+            if loadedAvailabilityDayKey == selectedDayKey,
+               availabilityLoadingDayKey == nil {
+                presentOrderHistorySheetIfNeeded()
+            } else {
+                pendingHistoryDayKey = selectedDayKey
+                if availabilityLoadingDayKey == nil {
+                    loadProductAvailabilityV2(productId: product.product_id, date: day)
+                }
+            }
             return
         }
 
-        shouldPresentHistoryOnNextLoad = true
+        pendingHistoryDayKey = selectedDayKey
         date = day
         configureOccupancyCalendar()
         loadProductAvailabilityV2(productId: product.product_id, date: day)
     }
 
-    private func presentOrderHistorySheetIfNeeded() {
-        guard !availabilityOrders.isEmpty else { return }
-        if presentedHistorySheet != nil { return }
+    @discardableResult
+    private func presentOrderHistorySheetIfNeeded() -> Bool {
+        let highlightedDayKey = dayKey(for: date)
+        guard loadedAvailabilityDayKey == highlightedDayKey,
+              presentedHistorySheet == nil,
+              presentedViewController == nil,
+              viewIfLoaded?.window != nil else { return false }
 
         let metrics = lastAvailabilityMetrics
         let sheet = AvailabilityOrderHistorySheetViewController(
             orders: availabilityOrders,
-            dateTitle: formatDateString(date),
+            dateTitle: displayDate(for: highlightedDayKey),
             stock: metrics?.stock ?? productStock,
             available: metrics?.shelfAvailable ?? metrics?.effectiveAvailable ?? 0,
             renting: metrics?.renting ?? 0
@@ -607,6 +669,7 @@ class OrderCheckViewController: BaseViewControler {
         sheet.modalPresentationStyle = .pageSheet
         presentedHistorySheet = sheet
         present(sheet, animated: true)
+        return true
     }
 
     private func openOrderDetail(from availOrder: NewAvailabilityOrder, dismissing sheet: AvailabilityOrderHistorySheetViewController?) {
@@ -639,7 +702,10 @@ class OrderCheckViewController: BaseViewControler {
         self.product = product
         self.date = Date()
         hasRevealedContent = false
-        shouldPresentHistoryOnNextLoad = false
+        pendingHistoryDayKey = nil
+        loadedAvailabilityDayKey = nil
+        availabilityLoadingDayKey = nil
+        availabilityLoadGeneration += 1
         presentedHistorySheet = nil
         availabilityOrders = []
         lastAvailabilityMetrics = nil

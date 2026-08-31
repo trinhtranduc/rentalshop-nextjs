@@ -851,19 +851,19 @@ class OrderService: BaseService, OrderServiceProtocol {
     }
     
     /// Load product availability using the NEW API with detailed conflict analysis
-    /// API: GET /api/products/{productId}/availability?startDate=...&endDate=...&outletId=...&quantity=1
+    /// API: GET /api/products/{productId}/availability?date=yyyy-MM-dd&outletId=...&quantity=1
     /// Returns: stock summary, conflict details, and all active orders with isConflict flag
-    func loadProductAvailabilityV2(productId: Int, date: Date, outletId: Int?, completion: @escaping (NewAvailabilityResponse?, NSError?) -> Void) {
+    func loadProductAvailabilityV2(productId: Int, dateKey: String, outletId: Int?, completion: @escaping (NewAvailabilityResponse?, NSError?) -> Void) {
         let path = "/api/products/\(productId)/availability"
-        let dateString = date.dateServerInString() ?? ""
         
-        // Use single date mode: startDate = 00:00, endDate = 23:59
+        // Send a civil-day key instead of a UTC day window. This keeps the tapped
+        // FSCalendar day, sheet title, and API query on the same VN calendar day.
         var params: [String: Any] = [
-            "startDate": "\(dateString)T00:00:00.000Z",
-            "endDate": "\(dateString)T23:59:59.999Z",
+            "date": dateKey,
             "quantity": 1,
             "includeTimePrecision": true,
-            "includeAllOrders": true
+            "includeAllOrders": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
         ]
         
         if let outletId = outletId {
@@ -892,7 +892,7 @@ class OrderService: BaseService, OrderServiceProtocol {
             if response.success {
                 print("📊 Product Availability V2 loaded successfully:")
                 print("   Product ID: \(productId)")
-                print("   Date: \(dateString)")
+                print("   Date: \(dateKey)")
                 print("   Total Stock: \(response.data?.totalStock ?? 0)")
                 print("   Effectively Available: \(response.data?.totalAvailableStock ?? 0)")
                 print("   Total Renting: \(response.data?.totalRenting ?? 0)")
@@ -922,9 +922,10 @@ class OrderService: BaseService, OrderServiceProtocol {
         completion: @escaping ([String: Int], NSError?) -> Void
     ) {
         let path = "/api/products/\(productId)/availability-calendar"
+        // Shop civil-day keys (VN) — must match API availability-calendar + calendar paint keys.
         var params: [String: Any] = [
-            "from": from.dateServerInString() ?? "",
-            "to": to.dateServerInString() ?? ""
+            "from": from.shopDateKeyString() ?? "",
+            "to": to.shopDateKeyString() ?? ""
         ]
         if let outletId {
             params["outletId"] = outletId

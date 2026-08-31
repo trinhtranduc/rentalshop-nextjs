@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
-import { calculateEffectivelyAvailable, resolveTotalAvailableStock } from '../../../../lib/availability';
+import { calculateEffectivelyAvailable, resolveTotalAvailableStock, resolveAvailabilityQueryWindow, AVAILABILITY_CALENDAR_TIMEZONE } from '../../../../lib/availability';
 import { z } from 'zod';
 
 // Validation schema for batch availability request
@@ -171,21 +171,17 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       let durationDays = 0;
       
       if (orderType === 'RENT') {
-        // RENT orders require dates for conflict checking
-        if (date) {
-          // Single date mode - check availability for entire day
-          rentalStart = new Date(date + 'T00:00:00.000Z');
-          rentalEnd = new Date(date + 'T23:59:59.999Z');
-        } else if (startDate && endDate) {
-          // Date range mode - precise time checking
-          rentalStart = new Date(startDate);
-          rentalEnd = new Date(endDate);
-        } else {
+        // RENT orders require dates for conflict checking.
+        // Store app may send UTC civil-day windows; map to VN civil day like Lịch Thuê.
+        const resolvedWindow = resolveAvailabilityQueryWindow({ date, startDate, endDate });
+        if (!resolvedWindow) {
           return NextResponse.json(
             ResponseBuilder.error('DATE_REQUIRED'),
             { status: 400 }
           );
         }
+        rentalStart = resolvedWindow.start;
+        rentalEnd = resolvedWindow.end;
 
         // Validate date range
         if (rentalStart > rentalEnd) {
@@ -202,6 +198,8 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       }
       // SALE orders don't need dates - we check current stock and active orders
 
+      const effectiveTimeZone =
+        timeZone && timeZone !== 'UTC' ? timeZone : AVAILABILITY_CALENDAR_TIMEZONE;
       // Fetch all products at once for better performance
       // Product.merchantId is Int (number), so we can use userMerchantId directly
       const products = await db.prisma.product.findMany({
@@ -489,10 +487,10 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
                       pickupDate: orderPickup.toISOString(),
                       returnDate: orderReturn.toISOString(),
                       pickupDateLocal: includeTimePrecision
-                        ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                        ? orderPickup.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                         : orderPickup.toLocaleDateString('en-US'),
                       returnDateLocal: includeTimePrecision
-                        ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                        ? orderReturn.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                         : orderReturn.toLocaleDateString('en-US'),
                       quantity: item.quantity,
                       conflictDuration: conflictMs,
@@ -510,7 +508,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
                     returnDate: '', // SALE orders don't have return date
                     pickupDateLocal: orderPickup
                       ? (includeTimePrecision
-                          ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                          ? orderPickup.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                           : orderPickup.toLocaleDateString('en-US'))
                       : 'N/A',
                     returnDateLocal: 'N/A',
@@ -553,15 +551,15 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
                 startDate: rentalStart.toISOString(),
                 endDate: rentalEnd.toISOString(),
                 startDateLocal: includeTimePrecision
-                  ? rentalStart.toLocaleString('en-US', { timeZone, hour12: false })
+                  ? rentalStart.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                   : rentalStart.toLocaleDateString('en-US'),
                 endDateLocal: includeTimePrecision
-                  ? rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })
+                  ? rentalEnd.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })
                   : rentalEnd.toLocaleDateString('en-US'),
                 durationMs,
                 durationHours: Math.round(durationHours * 100) / 100,
                 durationDays,
-                timeZone,
+                timeZone: effectiveTimeZone,
                 includeTimePrecision,
               },
             } : {}),
@@ -588,7 +586,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
             message: orderType === 'RENT' && rentalStart && rentalEnd
               ? (isAvailable
                   ? includeTimePrecision
-                    ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
+                    ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone: effectiveTimeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
                     : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
                   : stockAvailable
                   ? `Stock available but conflicts during requested period ${includeTimePrecision ? `(${Math.round(durationHours * 100) / 100} hours)` : `(${durationDays} days)`}`
