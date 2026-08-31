@@ -1285,6 +1285,9 @@
 "availability_calendar_tap_hint" = "Tap a day to see rental orders for that date";
 "availability_orders_sheet_title" = "Orders on %@";
 "availability_overlap_on_check_day" = "Overlap on check day";
+"availability_conflict_badge" = "Overlapping";
+"availability_header_orders_on_day" = "%d rental orders · on %@";
+"availability_header_orders_conflict_summary" = "%d overlapping on %@ · %d rental orders";
 
 // MARK: - Image Search
 "Search by Image" = "Search by Image";

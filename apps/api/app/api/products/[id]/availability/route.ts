@@ -595,15 +595,17 @@ export async function GET(
             effectivelyAvailable: availabilityResultWithConflicts.effectivelyAvailable,
           },
           totalConflictsFound: outletConflicts.conflicts.length,
-          // All active orders for this product (for mobile order list display)
-          // Each order is marked with isConflict flag
-          orders: allOrdersForDisplay.map((order) =>
-            mapAvailabilityOrderDisplay(
-              order,
-              productId,
-              conflictOrderIds.has(order.id)
+          // All orders for this product (for mobile order list display).
+          // isConflict marks overlap with the tapped day; those rows are listed first.
+          orders: allOrdersForDisplay
+            .map((order) =>
+              mapAvailabilityOrderDisplay(
+                order,
+                productId,
+                conflictOrderIds.has(order.id)
+              )
             )
-          ),
+            .sort((a, b) => Number(b.isConflict) - Number(a.isConflict)),
           // Enhanced message with time precision
           message: isAvailable
             ? includeTimePrecision

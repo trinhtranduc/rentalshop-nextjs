@@ -371,84 +371,168 @@ fun AvailabilityScreen(
 @Composable
 private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
     val hasConflicts = result.conflicts.isNotEmpty() || result.orders.any { it.isConflict }
+    val conflictOrderCount = result.orders.count { it.isConflict }
+    val totalOrderCount = result.orders.size
+    val effectiveAvailable = result.effectivelyAvailable
+
     val accent = when {
-        result.isAvailable -> Color(0xFF16A34A)
+        effectiveAvailable > 0 -> Color(0xFF16A34A)
         hasConflicts -> Color(0xFFEA580C)
         else -> MaterialTheme.colorScheme.error
     }
-    val headline = when {
-        result.isAvailable -> stringResource(R.string.available)
-        hasConflicts -> stringResource(R.string.availability_conflicts)
-        else -> stringResource(R.string.unavailable)
-    }
-    val cardTint = when {
-        result.isAvailable -> Color(0xFF22C55E).copy(alpha = 0.05f)
-        hasConflicts -> Color(0xFFEA580C).copy(alpha = 0.06f)
-        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
+
+    val verdictText = when {
+        effectiveAvailable > 0 -> stringResource(
+            R.string.availability_verdict_available,
+            formatQuantity(effectiveAvailable),
+            dateLabel,
+        )
+        hasConflicts -> stringResource(R.string.availability_verdict_conflict, dateLabel)
+        else -> stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
     }
 
-    AppCard(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Row(Modifier.fillMaxWidth()) {
-            Box(
+    val verdictIcon = when {
+        effectiveAvailable > 0 -> "✓"
+        hasConflicts -> "!"
+        else -> "✕"
+    }
+
+    val cardTint = when {
+        effectiveAvailable > 0 -> Color(0xFF22C55E).copy(alpha = 0.08f)
+        hasConflicts -> Color(0xFFEA580C).copy(alpha = 0.10f)
+        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+    }
+
+    val orderSummary = when {
+        totalOrderCount <= 0 -> null
+        conflictOrderCount > 0 -> stringResource(
+            R.string.availability_header_orders_conflict_summary,
+            conflictOrderCount,
+            dateLabel,
+            totalOrderCount,
+        )
+        else -> stringResource(
+            R.string.availability_header_orders_on_day,
+            totalOrderCount,
+            dateLabel,
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        AppCard(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
                 Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(accent),
-            )
-            Column(
-                Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .background(cardTint)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .background(accent, CircleShape),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        formatQuantity(result.effectivelyAvailable),
-                        style = MaterialTheme.typography.displaySmall,
+                        verdictIcon,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        color = accent,
+                        fontSize = 16.sp,
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            headline,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = accent,
-                        )
-                        Text(
-                            stringResource(R.string.availability_verdict_date_context, dateLabel),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
-                androidx.compose.material3.HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                Text(
+                    verdictText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = accent,
                 )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    CompactMetric(stringResource(R.string.storage), result.totalStock)
-                    CompactMetric(
-                        stringResource(R.string.available),
-                        result.effectivelyAvailable,
-                        highlighted = true,
-                    )
-                    CompactMetric(stringResource(R.string.renting), result.totalRenting)
-                }
+            }
+        }
+
+        orderSummary?.let { summary ->
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = if (conflictOrderCount > 0) Color(0xFFEA580C) else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        AppCard(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                ImpressiveMetric(
+                    label = stringResource(R.string.storage),
+                    value = result.totalStock,
+                    accent = MaterialTheme.colorScheme.onSurfaceVariant,
+                    valueColor = MaterialTheme.colorScheme.onSurface,
+                )
+                ImpressiveMetric(
+                    label = stringResource(R.string.available),
+                    value = (result.totalStock - result.totalRenting).coerceAtLeast(0),
+                    accent = MaterialTheme.colorScheme.primary,
+                    valueColor = if ((result.totalStock - result.totalRenting) > 0) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                )
+                ImpressiveMetric(
+                    label = stringResource(R.string.renting),
+                    value = result.totalRenting,
+                    accent = Color(0xFFF19920),
+                    valueColor = Color(0xFFF19920),
+                )
             }
         }
     }
     result.message?.let {
         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ImpressiveMetric(
+    label: String,
+    value: Int,
+    accent: Color,
+    valueColor: Color,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Box(
+            Modifier
+                .width(24.dp)
+                .height(3.dp)
+                .background(accent, RoundedCornerShape(2.dp)),
+        )
+        Text(
+            formatQuantity(value),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor,
+        )
     }
 }
 
@@ -471,26 +555,64 @@ private fun CompactMetric(label: String, value: Int, highlighted: Boolean = fals
 
 @Composable
 private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit) {
-    // Typography parity with `OrderListCard` (order list)
+    val isConflict = order.isConflict
+    val orange = Color(0xFFF19920)
     AppCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isConflict) {
+                    Modifier.border(1.5.dp, orange.copy(alpha = 0.65f), RoundedCornerShape(10.dp))
+                } else {
+                    Modifier
+                }
+            ),
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
     ) {
-        Column(
-            Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            Modifier.background(if (isConflict) orange.copy(alpha = 0.14f) else Color.Transparent)
         ) {
+            if (isConflict) {
+                Box(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(orange),
+                )
+            }
+            Column(
+                Modifier.padding(start = if (isConflict) 18.dp else 14.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    "#${order.orderNumber.trim().removePrefix("#")}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        "#${order.orderNumber.trim().removePrefix("#")}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (isConflict) {
+                        Text(
+                            stringResource(R.string.availability_conflict_badge),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .background(orange, RoundedCornerShape(10.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
+                }
                 StatusBadge(order.status)
             }
             Text(
@@ -523,6 +645,7 @@ private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit)
                     highlighted = true,
                     modifier = Modifier.weight(1f),
                 )
+            }
             }
         }
     }
@@ -814,31 +937,64 @@ private fun AvailabilityOrdersBottomSheet(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
+            val conflictOrderCount = orders.count { it.isConflict }
             Text(
-                stringResource(R.string.availability_order_count, orders.size),
+                when {
+                    orders.isEmpty() -> stringResource(R.string.empty_day_orders)
+                    conflictOrderCount > 0 -> stringResource(
+                        R.string.availability_header_orders_conflict_summary,
+                        conflictOrderCount,
+                        dateLabel,
+                        orders.size,
+                    )
+                    else -> stringResource(
+                        R.string.availability_header_orders_on_day,
+                        orders.size,
+                        dateLabel,
+                    )
+                },
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                color = if (conflictOrderCount > 0) Color(0xFFEA580C) else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             AppCard(
                 Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
             ) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                        .padding(horizontal = 8.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
-                    CompactMetric(stringResource(R.string.storage), stock)
-                    CompactMetric(stringResource(R.string.renting), renting)
-                    CompactMetric(
-                        stringResource(R.string.available),
-                        available,
-                        highlighted = true,
+                    ImpressiveMetric(
+                        label = stringResource(R.string.storage),
+                        value = stock,
+                        accent = MaterialTheme.colorScheme.onSurfaceVariant,
+                        valueColor = MaterialTheme.colorScheme.onSurface,
+                    )
+                    ImpressiveMetric(
+                        label = stringResource(R.string.renting),
+                        value = renting,
+                        accent = Color(0xFFF19920),
+                        valueColor = Color(0xFFF19920),
+                    )
+                    ImpressiveMetric(
+                        label = stringResource(R.string.available),
+                        value = available,
+                        accent = MaterialTheme.colorScheme.primary,
+                        valueColor = if (available > 0) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
                     )
                 }
             }
-            orders.forEach { order ->
+            val displayOrders = remember(orders) {
+                orders.sortedByDescending { it.isConflict }
+            }
+            displayOrders.forEach { order ->
                 AvailabilityOrderCard(order, onClick = { onOpenOrder(order.id) })
             }
         }

@@ -220,6 +220,12 @@
     <string name="low_stock">Hết hàng</string>
     <string name="create_date">Ngày tạo</string>
     <string name="availability_conflicts">Có xung đột lịch</string>
+    <string name="availability_conflict_badge">Trùng ngày</string>
+    <string name="availability_verdict_available">Còn %1$s sản phẩm trong ngày %2$s</string>
+    <string name="availability_verdict_out_of_stock">Hết hàng trong ngày %1$s</string>
+    <string name="availability_verdict_conflict">Trùng lịch trong ngày %1$s</string>
+    <string name="availability_header_orders_on_day">%1$d đơn thuê · ngày %2$s</string>
+    <string name="availability_header_orders_conflict_summary">%1$d đơn trùng ngày %2$s · %3$d đơn thuê</string>
     <string name="collect_payment">Thu tiền</string>
     <string name="remaining">Còn lại</string>
     <string name="check_availability">Kiểm tra lịch sản phẩm</string>

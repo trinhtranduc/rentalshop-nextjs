@@ -453,7 +453,9 @@ class OrderCheckViewController: BaseViewControler {
                 effectiveAvailable: metrics.effectiveAvailable,
                 renting: metrics.renting,
                 conflicts: metrics.conflicts,
-                checkDate: displayDate(for: requestedDayKey)
+                checkDate: displayDate(for: requestedDayKey),
+                totalOrderCount: data.orders?.count ?? 0,
+                conflictOrderCount: (data.orders ?? []).filter { $0.isConflict == true }.count
             )
             configureOccupancyCalendar()
             resizeSummaryIfNeeded()
@@ -615,6 +617,11 @@ class OrderCheckViewController: BaseViewControler {
 
     private func sortedAvailabilityOrders(_ orders: [NewAvailabilityOrder]) -> [NewAvailabilityOrder] {
         orders.sorted { lhs, rhs in
+            let leftConflict = lhs.isConflict == true
+            let rightConflict = rhs.isConflict == true
+            if leftConflict != rightConflict {
+                return leftConflict && !rightConflict
+            }
             let leftPickup = lhs.pickupPlanAt?.toDate() ?? .distantPast
             let rightPickup = rhs.pickupPlanAt?.toDate() ?? .distantPast
             return leftPickup > rightPickup
@@ -661,7 +668,8 @@ class OrderCheckViewController: BaseViewControler {
             dateTitle: displayDate(for: highlightedDayKey),
             stock: metrics?.stock ?? productStock,
             available: metrics?.shelfAvailable ?? metrics?.effectiveAvailable ?? 0,
-            renting: metrics?.renting ?? 0
+            renting: metrics?.renting ?? 0,
+            conflictOrderCount: availabilityOrders.filter { $0.isConflict == true }.count
         )
         sheet.onSelectOrder = { [weak self, weak sheet] order in
             self?.openOrderDetail(from: order, dismissing: sheet)
