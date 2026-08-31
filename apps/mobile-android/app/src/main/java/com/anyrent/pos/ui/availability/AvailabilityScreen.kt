@@ -402,7 +402,7 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                     val start = full.indexOf(highlight)
                     if (start >= 0) {
                         addStyle(
-                            SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                            SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                             start,
                             start + highlight.length,
                         )
@@ -417,7 +417,7 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                 val start = full.indexOf(dateLabel)
                 if (start >= 0) {
                     addStyle(
-                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                         start,
                         start + dateLabel.length,
                     )
@@ -431,13 +431,19 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                 val start = full.indexOf(dateLabel)
                 if (start >= 0) {
                     addStyle(
-                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                         start,
                         start + dateLabel.length,
                     )
                 }
             }
         }
+    }
+
+    val verdictTitle = when {
+        effectiveAvailable > 0 -> stringResource(R.string.availability_verdict_available_title)
+        hasConflicts -> stringResource(R.string.availability_verdict_conflict_headline)
+        else -> stringResource(R.string.availability_verdict_out_of_stock_headline)
     }
 
     val cardTint = when {
@@ -474,12 +480,19 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                         fontSize = 16.sp,
                     )
                 }
-                Text(
-                    verdictAnnotatedText,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = accent,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        verdictTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                    Text(
+                        verdictAnnotatedText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = accent,
+                    )
+                }
             }
         }
 

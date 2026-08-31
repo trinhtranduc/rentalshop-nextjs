@@ -36,9 +36,16 @@ final class AvailabilityVerdictView: UIView {
         return imageView
     }()
 
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .bodyBold(size: 20)
+        label.numberOfLines = 1
+        return label
+    }()
+
     private let headlineLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyRegular(size: 18)
+        label.font = .bodyRegular(size: 15)
         label.numberOfLines = 2
         return label
     }()
@@ -74,6 +81,7 @@ final class AvailabilityVerdictView: UIView {
         layer.borderWidth = 1
 
         iconContainerView.addSubview(iconImageView)
+        textStackView.addArrangedSubview(titleLabel)
         textStackView.addArrangedSubview(headlineLabel)
         rowStackView.addArrangedSubview(iconContainerView)
         rowStackView.addArrangedSubview(textStackView)
@@ -89,6 +97,7 @@ final class AvailabilityVerdictView: UIView {
         textStackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         rowStackView.alignment = .center
 
@@ -120,7 +129,7 @@ final class AvailabilityVerdictView: UIView {
             if range.location != NSNotFound {
                 attributed.addAttributes(
                     [
-                        .font: UIFont.bodyBold(size: 22),
+                        .font: UIFont.bodyBold(size: 16),
                         .foregroundColor: accentColor
                     ],
                     range: range
@@ -143,7 +152,7 @@ final class AvailabilityVerdictView: UIView {
         if range.location != NSNotFound {
             attributed.addAttributes(
                 [
-                    .font: UIFont.bodyBold(size: 22),
+                    .font: UIFont.bodyBold(size: 16),
                     .foregroundColor: color
                 ],
                 range: range
@@ -160,6 +169,8 @@ final class AvailabilityVerdictView: UIView {
             iconContainerView.backgroundColor = UIColor(hexString: "22C55E")
             iconImageView.image = UIImage(systemName: "checkmark")
             let accentColor = UIColor(hexString: "16A34A")
+            titleLabel.text = "availability_verdict_available_title".localized()
+            titleLabel.textColor = accentColor
             headlineLabel.textColor = accentColor
             let countText = availableCount.formatStringInCommon()
             headlineLabel.attributedText = availableHeadline(
@@ -172,6 +183,8 @@ final class AvailabilityVerdictView: UIView {
             layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.18).cgColor
             iconContainerView.backgroundColor = .actionDanger
             iconImageView.image = UIImage(systemName: "xmark")
+            titleLabel.text = "availability_verdict_out_of_stock_headline".localized()
+            titleLabel.textColor = .actionDanger
             headlineLabel.textColor = .actionDanger
             headlineLabel.attributedText = datedHeadline(
                 formatKey: "availability_verdict_out_of_stock",
@@ -183,6 +196,8 @@ final class AvailabilityVerdictView: UIView {
             layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.22).cgColor
             iconContainerView.backgroundColor = APP_ORANGE_COLOR
             iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+            titleLabel.text = "availability_verdict_conflict_headline".localized()
+            titleLabel.textColor = APP_ORANGE_COLOR
             headlineLabel.textColor = APP_ORANGE_COLOR
             headlineLabel.attributedText = datedHeadline(
                 formatKey: "availability_verdict_conflict",
