@@ -36,16 +36,9 @@ final class AvailabilityVerdictView: UIView {
         return imageView
     }()
 
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .bodyBold(size: 20)
-        label.numberOfLines = 1
-        return label
-    }()
-
     private let headlineLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyRegular(size: 15)
+        label.font = .bodyRegular(size: 18)
         label.numberOfLines = 2
         return label
     }()
@@ -81,7 +74,6 @@ final class AvailabilityVerdictView: UIView {
         layer.borderWidth = 1
 
         iconContainerView.addSubview(iconImageView)
-        textStackView.addArrangedSubview(titleLabel)
         textStackView.addArrangedSubview(headlineLabel)
         rowStackView.addArrangedSubview(iconContainerView)
         rowStackView.addArrangedSubview(textStackView)
@@ -97,7 +89,6 @@ final class AvailabilityVerdictView: UIView {
         textStackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         rowStackView.alignment = .center
 
@@ -129,7 +120,7 @@ final class AvailabilityVerdictView: UIView {
             if range.location != NSNotFound {
                 attributed.addAttributes(
                     [
-                        .font: UIFont.bodyBold(size: 16),
+                        .font: UIFont.bodyBold(size: 22),
                         .foregroundColor: accentColor
                     ],
                     range: range
@@ -152,7 +143,7 @@ final class AvailabilityVerdictView: UIView {
         if range.location != NSNotFound {
             attributed.addAttributes(
                 [
-                    .font: UIFont.bodyBold(size: 16),
+                    .font: UIFont.bodyBold(size: 22),
                     .foregroundColor: color
                 ],
                 range: range
@@ -169,8 +160,6 @@ final class AvailabilityVerdictView: UIView {
             iconContainerView.backgroundColor = UIColor(hexString: "22C55E")
             iconImageView.image = UIImage(systemName: "checkmark")
             let accentColor = UIColor(hexString: "16A34A")
-            titleLabel.text = "availability_verdict_available_title".localized()
-            titleLabel.textColor = accentColor
             headlineLabel.textColor = accentColor
             let countText = availableCount.formatStringInCommon()
             headlineLabel.attributedText = availableHeadline(
@@ -178,31 +167,17 @@ final class AvailabilityVerdictView: UIView {
                 checkDate: checkDate,
                 accentColor: accentColor
             )
-        case .outOfStock:
+        case .outOfStock, .conflictWarning:
+            // User wants only remaining / out-of-stock copy — booked-out day = hết hàng.
             backgroundColor = UIColor.actionDanger.withAlphaComponent(0.08)
             layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.18).cgColor
             iconContainerView.backgroundColor = .actionDanger
             iconImageView.image = UIImage(systemName: "xmark")
-            titleLabel.text = "availability_verdict_out_of_stock_headline".localized()
-            titleLabel.textColor = .actionDanger
             headlineLabel.textColor = .actionDanger
             headlineLabel.attributedText = datedHeadline(
                 formatKey: "availability_verdict_out_of_stock",
                 checkDate: checkDate,
                 color: .actionDanger
-            )
-        case .conflictWarning:
-            backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.10)
-            layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.22).cgColor
-            iconContainerView.backgroundColor = APP_ORANGE_COLOR
-            iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
-            titleLabel.text = "availability_verdict_conflict_headline".localized()
-            titleLabel.textColor = APP_ORANGE_COLOR
-            headlineLabel.textColor = APP_ORANGE_COLOR
-            headlineLabel.attributedText = datedHeadline(
-                formatKey: "availability_verdict_conflict",
-                checkDate: checkDate,
-                color: APP_ORANGE_COLOR
             )
         }
     }
@@ -335,171 +310,12 @@ final class AvailabilityMetricsCardView: UIView {
     }
 }
 
-// MARK: - Order summary banner
-
-final class AvailabilityOrderSummaryBannerView: UIView {
-
-    private enum Metrics {
-        static let cornerRadius: CGFloat = 12
-    }
-
-    private let containerView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = Metrics.cornerRadius
-        view.layer.borderWidth = 1
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let iconImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        imageView.setContentHuggingPriority(.required, for: .horizontal)
-        return imageView
-    }()
-
-    private let primaryLabel: UILabel = {
-        let label = UILabel()
-        label.font = .bodyBold(size: 16)
-        label.numberOfLines = 2
-        label.textAlignment = .left
-        return label
-    }()
-
-    private let secondaryLabel: UILabel = {
-        let label = UILabel()
-        label.font = .captionMedium(size: 13)
-        label.numberOfLines = 1
-        label.textAlignment = .left
-        return label
-    }()
-
-    private lazy var textStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [primaryLabel, secondaryLabel])
-        stack.axis = .vertical
-        stack.spacing = 3
-        stack.alignment = .leading
-        return stack
-    }()
-
-    private lazy var rowStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [iconImageView, textStackView])
-        stack.axis = .horizontal
-        stack.spacing = 10
-        stack.alignment = .center
-        return stack
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupUI()
-    }
-
-    private func setupUI() {
-        addSubview(containerView)
-        containerView.addSubview(rowStackView)
-
-        containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        iconImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(22)
-        }
-
-        rowStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 14, bottom: 12, right: 14))
-        }
-    }
-
-    private func attributedPrimary(
-        countText: String,
-        suffix: String,
-        accentColor: UIColor
-    ) -> NSAttributedString {
-        let full = "\(countText) \(suffix)"
-        let attributed = NSMutableAttributedString(
-            string: full,
-            attributes: [
-                .font: UIFont.bodyMedium(size: 15),
-                .foregroundColor: accentColor,
-            ]
-        )
-        let range = (full as NSString).range(of: countText)
-        if range.location != NSNotFound {
-            attributed.addAttributes(
-                [
-                    .font: UIFont.bodyBold(size: 22),
-                    .foregroundColor: accentColor,
-                ],
-                range: range
-            )
-        }
-        return attributed
-    }
-
-    func configure(totalOrderCount: Int, conflictOrderCount: Int, checkDate: String) {
-        guard totalOrderCount > 0 else {
-            isHidden = true
-            primaryLabel.text = nil
-            secondaryLabel.text = nil
-            return
-        }
-
-        isHidden = false
-        secondaryLabel.isHidden = false
-
-        if conflictOrderCount > 0 {
-            containerView.backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.14)
-            containerView.layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.45).cgColor
-            iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
-            iconImageView.tintColor = APP_ORANGE_COLOR
-
-            let countText = conflictOrderCount.formatStringInCommon()
-            primaryLabel.attributedText = attributedPrimary(
-                countText: countText,
-                suffix: String(format: "availability_header_conflict_suffix".localized(), checkDate),
-                accentColor: APP_ORANGE_COLOR
-            )
-            secondaryLabel.text = String(
-                format: "availability_header_total_rental_subtitle".localized(),
-                totalOrderCount.formatStringInCommon()
-            )
-            secondaryLabel.textColor = APP_ORANGE_COLOR.withAlphaComponent(0.88)
-        } else {
-            containerView.backgroundColor = UIColor.brandPrimary.withAlphaComponent(0.08)
-            containerView.layer.borderColor = UIColor.brandPrimary.withAlphaComponent(0.22).cgColor
-            iconImageView.image = UIImage(systemName: "doc.text.fill")
-            iconImageView.tintColor = .brandPrimary
-
-            let countText = totalOrderCount.formatStringInCommon()
-            primaryLabel.attributedText = attributedPrimary(
-                countText: countText,
-                suffix: "availability_header_orders_suffix".localized(),
-                accentColor: .brandPrimary
-            )
-            secondaryLabel.isHidden = false
-            secondaryLabel.text = String(
-                format: "availability_header_no_overlap_subtitle".localized(),
-                checkDate
-            )
-            secondaryLabel.textColor = .textSecondary
-        }
-    }
-}
-
-// MARK: - Summary Header (verdict + order summary + metrics)
+// MARK: - Summary Header (verdict + metrics)
 
 final class AvailabilitySummaryHeaderView: UIView {
 
     private let verdictView = AvailabilityVerdictView()
     private let metricsCardView = AvailabilityMetricsCardView()
-    private let orderSummaryBanner = AvailabilityOrderSummaryBannerView()
 
     private let contentStackView: UIStackView = {
         let stack = UIStackView()
@@ -523,7 +339,6 @@ final class AvailabilitySummaryHeaderView: UIView {
         backgroundColor = .backgroundPrimary
 
         contentStackView.addArrangedSubview(verdictView)
-        contentStackView.addArrangedSubview(orderSummaryBanner)
         contentStackView.addArrangedSubview(metricsCardView)
         addSubview(contentStackView)
 
@@ -540,20 +355,12 @@ final class AvailabilitySummaryHeaderView: UIView {
         effectiveAvailable: Int,
         renting: Int,
         conflicts: Int,
-        checkDate: String,
-        totalOrderCount: Int,
-        conflictOrderCount: Int
+        checkDate: String
     ) {
         if effectiveAvailable > 0 {
             verdictView.configure(
                 style: .available,
                 availableCount: effectiveAvailable,
-                checkDate: checkDate
-            )
-        } else if conflicts > 0 {
-            verdictView.configure(
-                style: .conflictWarning,
-                availableCount: 0,
                 checkDate: checkDate
             )
         } else {
@@ -565,11 +372,6 @@ final class AvailabilitySummaryHeaderView: UIView {
         }
 
         metricsCardView.configure(stock: stock, available: shelfAvailable, renting: renting)
-        orderSummaryBanner.configure(
-            totalOrderCount: totalOrderCount,
-            conflictOrderCount: conflictOrderCount,
-            checkDate: checkDate
-        )
     }
 }
 
@@ -1652,11 +1454,9 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
     var onSelectOrder: ((NewAvailabilityOrder) -> Void)?
 
     private let orders: [NewAvailabilityOrder]
-    private let dateTitle: String
     private let stock: Int
     private let available: Int
     private let renting: Int
-    private let conflictOrderCount: Int
 
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
@@ -1673,7 +1473,7 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         if orders.isEmpty {
             let emptyLabel = UILabel()
-            emptyLabel.text = "No orders for this day".localized()
+            emptyLabel.text = "availability_history_empty".localized()
             emptyLabel.font = Utils.regularFont(size: 15)
             emptyLabel.textColor = .textSecondary
             emptyLabel.textAlignment = .center
@@ -1688,15 +1488,12 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         dateTitle: String,
         stock: Int,
         available: Int,
-        renting: Int,
-        conflictOrderCount: Int = 0
+        renting: Int
     ) {
         self.orders = orders
-        self.dateTitle = dateTitle
         self.stock = stock
         self.available = available
         self.renting = renting
-        self.conflictOrderCount = conflictOrderCount
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -1716,7 +1513,6 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         titleLabel.text = "availability_orders_sheet_title".localized()
 
         let metricsCard = makeMetricsHeader()
-        let orderSummaryBanner = AvailabilityOrderSummaryBannerView()
 
         let headerStack: UIStackView
         if orders.isEmpty {
@@ -1728,12 +1524,12 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
             emptyLabel.numberOfLines = 0
             headerStack = UIStackView(arrangedSubviews: [titleLabel, emptyLabel, metricsCard])
         } else {
-            orderSummaryBanner.configure(
-                totalOrderCount: orders.count,
-                conflictOrderCount: conflictOrderCount,
-                checkDate: dateTitle
-            )
-            headerStack = UIStackView(arrangedSubviews: [titleLabel, orderSummaryBanner, metricsCard])
+            let countLabel = UILabel()
+            countLabel.font = .captionMedium(size: 13)
+            countLabel.textColor = .textSecondary
+            countLabel.textAlignment = .center
+            countLabel.text = String(format: "availability_order_count".localized(), orders.count)
+            headerStack = UIStackView(arrangedSubviews: [titleLabel, countLabel, metricsCard])
         }
 
         headerStack.axis = .vertical

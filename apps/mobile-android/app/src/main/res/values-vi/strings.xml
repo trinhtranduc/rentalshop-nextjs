@@ -224,7 +224,7 @@
     <string name="availability_verdict_available_title">Còn sẵn</string>
     <string name="availability_verdict_out_of_stock_headline">Hết hàng</string>
     <string name="availability_verdict_conflict_headline">Trùng lịch</string>
-    <string name="availability_verdict_available">Còn %1$s còn trống vào ngày %2$s</string>
+    <string name="availability_verdict_available">Còn %1$s item trong ngày %2$s</string>
     <string name="availability_verdict_out_of_stock">Hết hàng ngày %1$s</string>
     <string name="availability_verdict_conflict">Trùng lịch ngày %1$s</string>
     <string name="availability_header_orders_on_day">%1$d đơn thuê</string>
