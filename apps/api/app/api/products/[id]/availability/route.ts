@@ -338,22 +338,21 @@ export async function GET(
         pickup: o.pickupPlanAt?.toISOString(), return: o.returnPlanAt?.toISOString()
       })));
 
-      // 5b. Fetch rental orders for the selected civil day (mobile sheet display).
-      // `includeAllOrders` expands statuses (RETURNED/CANCELLED), never the date range.
+      // 5b. All orders for this product (mobile history sheet).
+      // Date tap only affects isConflict flags — not which rows are returned.
+      // includeAllOrders=true → every order type/status; false → active RENT only.
       const ordersWhereClause: any = {
-        orderType: ORDER_TYPE.RENT as any,
         outletId: finalOutletId,
         deletedAt: null,
-        pickupPlanAt: { lt: rentalEnd },
-        returnPlanAt: { gte: rentalStart },
         orderItems: {
           some: {
             productId: productId,
           }
         }
       };
-      
+
       if (!includeAllOrders) {
+        ordersWhereClause.orderType = ORDER_TYPE.RENT as any;
         ordersWhereClause.status = {
           in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
         };
