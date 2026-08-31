@@ -207,7 +207,7 @@
     <string name="related_orders">Related orders</string>
     <string name="view_order_history">View order history</string>
     <string name="hide_order_history">Hide order history</string>
-    <string name="availability_orders_sheet_title">Orders on %1$s</string>
+    <string name="availability_orders_sheet_title">All rental orders</string>
     <string name="availability_order_count">%1$d orders</string>
     <string name="availability_verdict_date_context">On %1$s</string>
     <string name="total_stock_value">Total stock: %1$d</string>
@@ -229,11 +229,13 @@
     <string name="availability_verdict_available">%1$s slots left on %2$s</string>
     <string name="availability_verdict_out_of_stock">Out of stock on %1$s</string>
     <string name="availability_verdict_conflict">Schedule conflict on %1$s</string>
-    <string name="availability_header_orders_on_day">%1$d rental orders · on %2$s</string>
+    <string name="availability_header_orders_on_day">%1$d rental orders</string>
     <string name="availability_header_orders_conflict_summary">%1$d overlapping on %2$s · %3$d rental orders</string>
     <string name="availability_header_conflict_suffix">overlapping on %1$s</string>
-    <string name="availability_header_orders_suffix">rental orders · on %1$s</string>
+    <string name="availability_header_orders_suffix">rental orders</string>
     <string name="availability_header_total_rental_subtitle">%1$s rental orders total</string>
+    <string name="availability_header_no_overlap_subtitle">None overlapping on %1$s</string>
+    <string name="availability_history_empty">No rental orders for this product</string>
     <string name="collect_payment">Collect payment</string>
     <string name="remaining">Remaining</string>
     <string name="check_availability">Check availability</string>
@@ -322,7 +324,7 @@
     <string name="calendar_has_orders">None left</string>
     <string name="availability_calendar_qty_label">avail.</string>
     <string name="availability_calendar_qty_hint">Number in each cell = qty available to rent</string>
-    <string name="availability_calendar_tap_hint">Tap a day to see rental orders for that date</string>
+    <string name="availability_calendar_tap_hint">Tap a day to see overlapping orders</string>
     <string name="storage">Storage</string>
     <string name="renting">Renting</string>
     <string name="swipe_charts">Swipe horizontally to see more</string>

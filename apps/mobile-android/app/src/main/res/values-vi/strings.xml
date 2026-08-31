@@ -205,7 +205,7 @@
     <string name="related_orders">Đơn liên quan</string>
     <string name="view_order_history">Xem lịch sử đơn hàng</string>
     <string name="hide_order_history">Ẩn lịch sử đơn hàng</string>
-    <string name="availability_orders_sheet_title">Đơn thuê · %1$s</string>
+    <string name="availability_orders_sheet_title">Tất cả đơn thuê</string>
     <string name="availability_order_count">%1$d đơn</string>
     <string name="availability_verdict_date_context">Trong ngày %1$s</string>
     <string name="total_stock_value">Tổng tồn kho: %1$d</string>
@@ -227,11 +227,13 @@
     <string name="availability_verdict_available">Còn %1$s còn trống vào ngày %2$s</string>
     <string name="availability_verdict_out_of_stock">Hết hàng ngày %1$s</string>
     <string name="availability_verdict_conflict">Trùng lịch ngày %1$s</string>
-    <string name="availability_header_orders_on_day">%1$d đơn thuê · ngày %2$s</string>
+    <string name="availability_header_orders_on_day">%1$d đơn thuê</string>
     <string name="availability_header_orders_conflict_summary">%1$d đơn trùng ngày %2$s · %3$d đơn thuê</string>
     <string name="availability_header_conflict_suffix">đơn trùng ngày %1$s</string>
-    <string name="availability_header_orders_suffix">đơn thuê · ngày %1$s</string>
+    <string name="availability_header_orders_suffix">đơn thuê</string>
     <string name="availability_header_total_rental_subtitle">Tổng %1$s đơn thuê</string>
+    <string name="availability_header_no_overlap_subtitle">Không trùng ngày %1$s</string>
+    <string name="availability_history_empty">Chưa có đơn thuê cho sản phẩm này</string>
     <string name="collect_payment">Thu tiền</string>
     <string name="remaining">Còn lại</string>
     <string name="check_availability">Kiểm tra lịch sản phẩm</string>
@@ -320,7 +322,7 @@
     <string name="calendar_has_orders">Hết</string>
     <string name="availability_calendar_qty_label">còn</string>
     <string name="availability_calendar_qty_hint">Số trong ô = lượng còn cho thuê</string>
-    <string name="availability_calendar_tap_hint">Chạm một ngày để xem đơn thuê trong ngày</string>
+    <string name="availability_calendar_tap_hint">Chạm một ngày để xem đơn trùng lịch</string>
     <string name="storage">Trong kho</string>
     <string name="renting">Đang thuê</string>
     <string name="swipe_charts">Vuốt ngang để xem thêm</string>

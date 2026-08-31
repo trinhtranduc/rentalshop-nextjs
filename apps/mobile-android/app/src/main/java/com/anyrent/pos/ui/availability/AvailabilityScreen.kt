@@ -583,7 +583,7 @@ private fun AvailabilityOrderSummaryBanner(
             val suffix = if (hasConflict) {
                 stringResource(R.string.availability_header_conflict_suffix, dateLabel)
             } else {
-                stringResource(R.string.availability_header_orders_suffix, dateLabel)
+                stringResource(R.string.availability_header_orders_suffix)
             }
             androidx.compose.material3.Text(
                 text = buildAnnotatedString {
@@ -617,6 +617,13 @@ private fun AvailabilityOrderSummaryBanner(
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = orange.copy(alpha = 0.88f),
+                )
+            } else {
+                Text(
+                    stringResource(R.string.availability_header_no_overlap_subtitle, dateLabel),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -1053,14 +1060,14 @@ private fun AvailabilityOrdersBottomSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                stringResource(R.string.availability_orders_sheet_title, dateLabel),
+                stringResource(R.string.availability_orders_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
             val conflictOrderCount = orders.count { it.isConflict }
             if (orders.isEmpty()) {
                 Text(
-                    stringResource(R.string.empty_day_orders),
+                    stringResource(R.string.availability_history_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

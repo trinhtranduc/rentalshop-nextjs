@@ -1275,21 +1275,22 @@
 "availability_verdict_conflict" = "Trùng lịch ngày %@";
 "Rental history" = "Lịch sử thuê";
 "availability_order_count" = "%d đơn";
-"availability_history_empty" = "Chưa có lịch sử thuê cho ngày này";
+"availability_history_empty" = "Chưa có đơn thuê cho sản phẩm này";
 "availability_calendar_plenty" = "Nhiều";
 "availability_calendar_low" = "Sắp hết";
 "availability_calendar_none" = "Hết";
 "availability_calendar_qty_label" = "còn";
 "availability_calendar_qty_hint" = "Số trong ô = lượng còn cho thuê";
-"availability_calendar_tap_hint" = "Chạm một ngày để xem đơn thuê trong ngày";
-"availability_orders_sheet_title" = "Đơn thuê · %@";
+"availability_calendar_tap_hint" = "Chạm một ngày để xem đơn trùng lịch";
+"availability_orders_sheet_title" = "Tất cả đơn thuê";
 "availability_overlap_on_check_day" = "Trùng trong ngày kiểm tra";
 "availability_conflict_badge" = "Trùng ngày";
-"availability_header_orders_on_day" = "%d đơn thuê · ngày %@";
+"availability_header_orders_on_day" = "%d đơn thuê";
 "availability_header_orders_conflict_summary" = "%d đơn trùng ngày %@ · %d đơn thuê";
 "availability_header_conflict_suffix" = "đơn trùng ngày %@";
-"availability_header_orders_suffix" = "đơn thuê · ngày %@";
+"availability_header_orders_suffix" = "đơn thuê";
 "availability_header_total_rental_subtitle" = "Tổng %@ đơn thuê";
+"availability_header_no_overlap_subtitle" = "Không trùng ngày %@";
 
 // MARK: - Image Search
 "Search by Image" = "Tìm kiếm bằng hình ảnh";

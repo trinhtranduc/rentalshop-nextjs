@@ -480,10 +480,15 @@ final class AvailabilityOrderSummaryBannerView: UIView {
             let countText = totalOrderCount.formatStringInCommon()
             primaryLabel.attributedText = attributedPrimary(
                 countText: countText,
-                suffix: String(format: "availability_header_orders_suffix".localized(), checkDate),
+                suffix: "availability_header_orders_suffix".localized(),
                 accentColor: .brandPrimary
             )
-            secondaryLabel.isHidden = true
+            secondaryLabel.isHidden = false
+            secondaryLabel.text = String(
+                format: "availability_header_no_overlap_subtitle".localized(),
+                checkDate
+            )
+            secondaryLabel.textColor = .textSecondary
         }
     }
 }
@@ -1708,7 +1713,7 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         titleLabel.textColor = .textPrimary
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 2
-        titleLabel.text = String(format: "availability_orders_sheet_title".localized(), dateTitle)
+        titleLabel.text = "availability_orders_sheet_title".localized()
 
         let metricsCard = makeMetricsHeader()
         let orderSummaryBanner = AvailabilityOrderSummaryBannerView()
