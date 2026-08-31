@@ -80,11 +80,22 @@ export type OrderCheckTapResult = {
   tappedDayKey: string;
   queryMode: OrderCheckQueryMode;
   calendarAvailable: number;
-  /** All RENT orders overlapping the day (includeAllOrders=true on API). */
+  /** All product orders for the sheet; isConflict marks tapped-day overlap only. */
   ordersInSheet: Array<OrderCheckTestOrder & { isConflict: boolean }>;
   conflictOrderIds: number[];
   window: { start: Date; end: Date; civilDayYmd: string | null };
 };
+
+/** Mirrors GET /availability includeAllOrders filter for the orders array. */
+export function ordersForAvailabilitySheet(
+  orders: OrderCheckTestOrder[],
+  includeAllOrders: boolean
+): OrderCheckTestOrder[] {
+  if (includeAllOrders) return orders;
+  return orders.filter(
+    (o) => o.orderType === 'RENT' && ACTIVE_RENT_STATUSES.has(o.status)
+  );
+}
 
 /**
  * End-to-end simulation: user taps a calendar cell → paint qty + open order sheet.
@@ -94,12 +105,15 @@ export function simulateOrderCheckDayTap(input: {
   stock: number;
   orders: OrderCheckTestOrder[];
   queryMode?: OrderCheckQueryMode;
+  /** Mobile Order Check sends includeAllOrders=true. */
+  includeAllOrders?: boolean;
 }): OrderCheckTapResult {
-  const { tappedDayKey, stock, orders, queryMode = 'date' } = input;
+  const { tappedDayKey, stock, orders, queryMode = 'date', includeAllOrders = true } = input;
   const window = resolveTappedDayWindow(tappedDayKey, queryMode);
 
-  const rentOrders = orders.filter((o) => o.orderType === 'RENT');
-  const activeRent = rentOrders.filter((o) => ACTIVE_RENT_STATUSES.has(o.status));
+  const activeRent = orders.filter(
+    (o) => o.orderType === 'RENT' && ACTIVE_RENT_STATUSES.has(o.status)
+  );
 
   const conflictOrderIds = activeRent
     .filter((o) =>
@@ -109,14 +123,10 @@ export function simulateOrderCheckDayTap(input: {
 
   const conflictIdSet = new Set(conflictOrderIds);
 
-  const ordersInSheet = rentOrders
-    .filter((o) =>
-      rentalPeriodOverlaps(o.pickupPlanAt, o.returnPlanAt, window.start, window.end)
-    )
-    .map((o) => ({
-      ...o,
-      isConflict: conflictIdSet.has(o.id),
-    }));
+  const ordersInSheet = ordersForAvailabilitySheet(orders, includeAllOrders).map((o) => ({
+    ...o,
+    isConflict: conflictIdSet.has(o.id),
+  }));
 
   return {
     tappedDayKey,

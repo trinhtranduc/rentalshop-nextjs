@@ -50,7 +50,7 @@ describe('Order Check day tap — calendar paint matches conflict', () => {
     expect(result.conflictOrderIds).toEqual([12351]);
   });
 
-  it('tap 27/09 when order is on 28/09 only: calendar 1, sheet empty, no conflict', () => {
+  it('tap 27/09 when order is on 28/09 only: calendar 1, sheet shows order without conflict', () => {
     const order = mobileSameDayOrder(102, '2026-09-28');
     const result = simulateOrderCheckDayTap({
       tappedDayKey: '2026-09-27',
@@ -59,11 +59,12 @@ describe('Order Check day tap — calendar paint matches conflict', () => {
     });
 
     expect(result.calendarAvailable).toBe(1);
-    expect(result.ordersInSheet).toHaveLength(0);
+    expect(result.ordersInSheet).toHaveLength(1);
+    expect(result.ordersInSheet[0].isConflict).toBe(false);
     expect(result.conflictOrderIds).toHaveLength(0);
   });
 
-  it('tap 29/09 when order is on 28/09 only: calendar 1, sheet empty', () => {
+  it('tap 29/09 when order is on 28/09 only: calendar 1, sheet shows order without conflict', () => {
     const order = mobileSameDayOrder(103, '2026-09-28');
     const result = simulateOrderCheckDayTap({
       tappedDayKey: '2026-09-29',
@@ -72,7 +73,8 @@ describe('Order Check day tap — calendar paint matches conflict', () => {
     });
 
     expect(result.calendarAvailable).toBe(1);
-    expect(result.ordersInSheet).toHaveLength(0);
+    expect(result.ordersInSheet).toHaveLength(1);
+    expect(result.ordersInSheet[0].isConflict).toBe(false);
   });
 
   it('Aug screenshot: tap 27 must not flag order on 28 as conflict', () => {
@@ -84,7 +86,8 @@ describe('Order Check day tap — calendar paint matches conflict', () => {
     });
 
     expect(tap27.calendarAvailable).toBe(1);
-    expect(tap27.ordersInSheet.every((o) => !o.isConflict)).toBe(true);
+    expect(tap27.ordersInSheet).toHaveLength(1);
+    expect(tap27.ordersInSheet[0].isConflict).toBe(false);
 
     const tap28 = simulateOrderCheckDayTap({
       tappedDayKey: '2026-08-28',
@@ -121,6 +124,32 @@ describe('Order Check query mode parity (date= vs store T00/T23)', () => {
     expect(viaStore.ordersInSheet.map((o) => o.isConflict)).toEqual(
       viaDate.ordersInSheet.map((o) => o.isConflict)
     );
+  });
+});
+
+describe('Order Check sheet — all product orders, highlight conflict on tapped day only', () => {
+  it('returns every order; only the one on the tapped day gets isConflict', () => {
+    const order27 = mobileSameDayOrder(1001, '2026-09-27');
+    const order28 = mobileSameDayOrder(1002, '2026-09-28');
+
+    const tap27 = simulateOrderCheckDayTap({
+      tappedDayKey: '2026-09-27',
+      stock: 1,
+      orders: [order27, order28],
+    });
+
+    expect(tap27.ordersInSheet).toHaveLength(2);
+    expect(tap27.ordersInSheet.find((o) => o.id === 1001)?.isConflict).toBe(true);
+    expect(tap27.ordersInSheet.find((o) => o.id === 1002)?.isConflict).toBe(false);
+
+    const tap28 = simulateOrderCheckDayTap({
+      tappedDayKey: '2026-09-28',
+      stock: 1,
+      orders: [order27, order28],
+    });
+
+    expect(tap28.ordersInSheet.find((o) => o.id === 1001)?.isConflict).toBe(false);
+    expect(tap28.ordersInSheet.find((o) => o.id === 1002)?.isConflict).toBe(true);
   });
 });
 
@@ -172,9 +201,9 @@ describe('Order Check sheet — status and order type rules', () => {
       orders: [saleOrder, rentOrder],
     });
 
-    expect(result.ordersInSheet).toHaveLength(1);
-    expect(result.ordersInSheet[0].id).toBe(602);
-    expect(result.ordersInSheet[0].isConflict).toBe(true);
+    expect(result.ordersInSheet).toHaveLength(2);
+    expect(result.ordersInSheet.find((o) => o.id === 601)?.isConflict).toBe(false);
+    expect(result.ordersInSheet.find((o) => o.id === 602)?.isConflict).toBe(true);
     expect(result.calendarAvailable).toBe(0);
   });
 });
@@ -197,8 +226,8 @@ describe('Order Check multi-day rental spans', () => {
 
     expect(
       simulateOrderCheckDayTap({ tappedDayKey: '2026-09-25', stock: 1, orders: [order] })
-        .ordersInSheet
-    ).toHaveLength(0);
+        .ordersInSheet[0]?.isConflict
+    ).toBe(false);
 
     expect(calendarRemainingForDay('2026-09-27', 1, [order])).toBe(0);
     expect(calendarRemainingForDay('2026-09-25', 1, [order])).toBe(1);
@@ -247,7 +276,8 @@ describe('Shop date encoding (web + mobile write path)', () => {
       stock: 1,
       orders: [legacyOrder],
     });
-    expect(tap28.ordersInSheet).toHaveLength(0);
+    expect(tap28.ordersInSheet).toHaveLength(1);
+    expect(tap28.ordersInSheet[0].isConflict).toBe(false);
     expect(tap28.calendarAvailable).toBe(1);
   });
 });
