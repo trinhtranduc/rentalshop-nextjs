@@ -223,11 +223,14 @@
     <string name="create_date">Create date</string>
     <string name="availability_conflicts">Conflicts found</string>
     <string name="availability_conflict_badge">Overlapping</string>
-    <string name="availability_verdict_available">%1$s products available on %2$s</string>
+    <string name="availability_verdict_available">%1$s slots left on %2$s</string>
     <string name="availability_verdict_out_of_stock">Out of stock on %1$s</string>
     <string name="availability_verdict_conflict">Schedule conflict on %1$s</string>
     <string name="availability_header_orders_on_day">%1$d rental orders · on %2$s</string>
     <string name="availability_header_orders_conflict_summary">%1$d overlapping on %2$s · %3$d rental orders</string>
+    <string name="availability_header_conflict_suffix">overlapping on %1$s</string>
+    <string name="availability_header_orders_suffix">rental orders · on %1$s</string>
+    <string name="availability_header_total_rental_subtitle">%1$s rental orders total</string>
     <string name="collect_payment">Collect payment</string>
     <string name="remaining">Remaining</string>
     <string name="check_availability">Check availability</string>

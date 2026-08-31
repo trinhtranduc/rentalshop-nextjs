@@ -63,8 +63,9 @@ import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -381,20 +382,62 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
         else -> MaterialTheme.colorScheme.error
     }
 
-    val verdictText = when {
-        effectiveAvailable > 0 -> stringResource(
-            R.string.availability_verdict_available,
-            formatQuantity(effectiveAvailable),
-            dateLabel,
-        )
-        hasConflicts -> stringResource(R.string.availability_verdict_conflict, dateLabel)
-        else -> stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
-    }
-
     val verdictIcon = when {
         effectiveAvailable > 0 -> "✓"
         hasConflicts -> "!"
         else -> "✕"
+    }
+
+    val verdictAnnotatedText = when {
+        effectiveAvailable > 0 -> {
+            val countText = formatQuantity(effectiveAvailable)
+            val full = stringResource(
+                R.string.availability_verdict_available,
+                countText,
+                dateLabel,
+            )
+            buildAnnotatedString {
+                append(full)
+                listOf(countText, dateLabel).forEach { highlight ->
+                    val start = full.indexOf(highlight)
+                    if (start >= 0) {
+                        addStyle(
+                            SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                            start,
+                            start + highlight.length,
+                        )
+                    }
+                }
+            }
+        }
+        hasConflicts -> {
+            val full = stringResource(R.string.availability_verdict_conflict, dateLabel)
+            buildAnnotatedString {
+                append(full)
+                val start = full.indexOf(dateLabel)
+                if (start >= 0) {
+                    addStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                        start,
+                        start + dateLabel.length,
+                    )
+                }
+            }
+        }
+        else -> {
+            val full = stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
+            buildAnnotatedString {
+                append(full)
+                val start = full.indexOf(dateLabel)
+                if (start >= 0) {
+                    addStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                        start,
+                        start + dateLabel.length,
+                    )
+                }
+            }
+        }
     }
 
     val cardTint = when {
@@ -403,20 +446,7 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
         else -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
     }
 
-    val orderSummary = when {
-        totalOrderCount <= 0 -> null
-        conflictOrderCount > 0 -> stringResource(
-            R.string.availability_header_orders_conflict_summary,
-            conflictOrderCount,
-            dateLabel,
-            totalOrderCount,
-        )
-        else -> stringResource(
-            R.string.availability_header_orders_on_day,
-            totalOrderCount,
-            dateLabel,
-        )
-    }
+    val orderSummaryVisible = totalOrderCount > 0
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         AppCard(
@@ -445,7 +475,7 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                     )
                 }
                 Text(
-                    verdictText,
+                    verdictAnnotatedText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = accent,
@@ -453,14 +483,11 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
             }
         }
 
-        orderSummary?.let { summary ->
-            Text(
-                summary,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = if (conflictOrderCount > 0) Color(0xFFEA580C) else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
+        if (orderSummaryVisible) {
+            AvailabilityOrderSummaryBanner(
+                totalOrderCount = totalOrderCount,
+                conflictOrderCount = conflictOrderCount,
+                dateLabel = dateLabel,
             )
         }
 
@@ -483,9 +510,9 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
                 ImpressiveMetric(
                     label = stringResource(R.string.available),
                     value = (result.totalStock - result.totalRenting).coerceAtLeast(0),
-                    accent = MaterialTheme.colorScheme.primary,
+                    accent = AvailableGreenAccent,
                     valueColor = if ((result.totalStock - result.totalRenting) > 0) {
-                        MaterialTheme.colorScheme.primary
+                        AvailableGreen
                     } else {
                         MaterialTheme.colorScheme.error
                     },
@@ -501,6 +528,85 @@ private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) 
     }
     result.message?.let {
         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun AvailabilityOrderSummaryBanner(
+    totalOrderCount: Int,
+    conflictOrderCount: Int,
+    dateLabel: String,
+) {
+    val hasConflict = conflictOrderCount > 0
+    val orange = Color(0xFFF19920)
+    val accent = if (hasConflict) orange else MaterialTheme.colorScheme.primary
+    val background = accent.copy(alpha = if (hasConflict) 0.14f else 0.08f)
+    val border = accent.copy(alpha = if (hasConflict) 0.45f else 0.22f)
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(background, RoundedCornerShape(12.dp))
+            .border(1.dp, border, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier
+                .size(22.dp)
+                .background(accent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (hasConflict) "!" else "≡",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            val countText = if (hasConflict) conflictOrderCount else totalOrderCount
+            val suffix = if (hasConflict) {
+                stringResource(R.string.availability_header_conflict_suffix, dateLabel)
+            } else {
+                stringResource(R.string.availability_header_orders_suffix, dateLabel)
+            }
+            androidx.compose.material3.Text(
+                text = buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            color = accent,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                        ),
+                    ) {
+                        append(formatQuantity(countText))
+                    }
+                    append(" ")
+                    withStyle(
+                        SpanStyle(
+                            color = accent,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                        ),
+                    ) {
+                        append(suffix)
+                    }
+                },
+            )
+            if (hasConflict) {
+                Text(
+                    stringResource(
+                        R.string.availability_header_total_rental_subtitle,
+                        formatQuantity(totalOrderCount),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = orange.copy(alpha = 0.88f),
+                )
+            }
+        }
     }
 }
 
@@ -683,7 +789,8 @@ private fun AvailabilityDateCell(
     }
 }
 
-private val EmptyGreenFill = Color(0xFFEDF9F2)
+private val AvailableGreen = Color(0xFF16A34A)
+private val AvailableGreenAccent = Color(0xFF22C55E)
 private val EmptyGreenText = Color(0xFF178C57)
 private val LowYellowFill = Color(0xFFFFFAEB)
 private val LowYellowText = Color(0xFFB87A0D)
@@ -938,25 +1045,19 @@ private fun AvailabilityOrdersBottomSheet(
                 fontWeight = FontWeight.SemiBold,
             )
             val conflictOrderCount = orders.count { it.isConflict }
-            Text(
-                when {
-                    orders.isEmpty() -> stringResource(R.string.empty_day_orders)
-                    conflictOrderCount > 0 -> stringResource(
-                        R.string.availability_header_orders_conflict_summary,
-                        conflictOrderCount,
-                        dateLabel,
-                        orders.size,
-                    )
-                    else -> stringResource(
-                        R.string.availability_header_orders_on_day,
-                        orders.size,
-                        dateLabel,
-                    )
-                },
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = if (conflictOrderCount > 0) Color(0xFFEA580C) else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (orders.isEmpty()) {
+                Text(
+                    stringResource(R.string.empty_day_orders),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                AvailabilityOrderSummaryBanner(
+                    totalOrderCount = orders.size,
+                    conflictOrderCount = conflictOrderCount,
+                    dateLabel = dateLabel,
+                )
+            }
             AppCard(
                 Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -982,12 +1083,8 @@ private fun AvailabilityOrdersBottomSheet(
                     ImpressiveMetric(
                         label = stringResource(R.string.available),
                         value = available,
-                        accent = MaterialTheme.colorScheme.primary,
-                        valueColor = if (available > 0) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        },
+                        accent = AvailableGreenAccent,
+                        valueColor = if (available > 0) AvailableGreen else MaterialTheme.colorScheme.error,
                     )
                 }
             }
