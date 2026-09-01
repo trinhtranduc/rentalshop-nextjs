@@ -1270,9 +1270,9 @@
 "availability_verdict_available_title" = "Còn hàng";
 "availability_verdict_out_of_stock_headline" = "Hết hàng thật";
 "availability_verdict_conflict_headline" = "Trùng lịch (hết vì đã thuê)";
-"availability_verdict_available" = "Còn %@ item trong ngày %@";
-"availability_verdict_out_of_stock" = "Hết hàng ngày %@";
-"availability_verdict_conflict" = "Trùng lịch ngày %@";
+"availability_verdict_available" = "Còn %@ sản phẩm trong ngày %@";
+"availability_verdict_out_of_stock" = "Hết hàng trong ngày %@";
+"availability_verdict_conflict" = "Trùng lịch trong ngày %@";
 "Rental history" = "Lịch sử thuê";
 "availability_order_count" = "%d đơn";
 "availability_history_empty" = "Chưa có đơn thuê cho sản phẩm này";
@@ -1282,7 +1282,8 @@
 "availability_calendar_qty_label" = "còn";
 "availability_calendar_qty_hint" = "Số trong ô = lượng còn cho thuê";
 "availability_calendar_tap_hint" = "Chạm một ngày để xem đơn trùng lịch";
-"availability_orders_sheet_title" = "Tất cả đơn thuê";
+"availability_orders_sheet_title" = "Đơn trong ngày";
+"availability_orders_type_breakdown" = "Có %d đơn thuê %d đơn bán";
 "availability_overlap_on_check_day" = "Trùng trong ngày kiểm tra";
 "availability_conflict_badge" = "Trùng ngày";
 "availability_header_orders_on_day" = "%d đơn thuê";

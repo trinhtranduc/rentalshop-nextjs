@@ -1,0 +1,148 @@
+import { db } from '@rentalshop/database';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import {
+  aggregateConflictingQuantities,
+  calculateEffectivelyAvailable,
+  getAvailabilityCivilDayBounds,
+  toAvailabilityCivilDateKey,
+  type ConflictingOrderInput,
+} from './availability';
+
+export type ProductListEffectiveAvailabilityInput = {
+  id: number;
+};
+
+/**
+ * Effective availability for one product/outlet on a civil day (same math as Order Check).
+ */
+export function computeEffectiveAvailableForDay(input: {
+  stock: number;
+  available: number;
+  renting: number;
+  conflictingQuantity: number;
+  reservedConflictQuantity: number;
+}): number {
+  return calculateEffectivelyAvailable({
+    totalStock: input.stock,
+    totalAvailableStock: input.available,
+    totalRenting: input.renting,
+    conflictingQuantity: input.conflictingQuantity,
+    reservedConflictQuantity: input.reservedConflictQuantity,
+  });
+}
+
+/**
+ * Batch-compute today's effective availability for product list badges.
+ * Uses VN civil day bounds — matches GET /api/products/[id]/availability?date=YYYY-MM-DD.
+ */
+export async function batchTodayEffectiveAvailability(
+  products: ProductListEffectiveAvailabilityInput[],
+  outletId: number,
+  civilDayYmd: string = toAvailabilityCivilDateKey(new Date())
+): Promise<Map<number, number>> {
+  const result = new Map<number, number>();
+  if (!products.length || !outletId) {
+    return result;
+  }
+
+  const bounds = getAvailabilityCivilDayBounds(civilDayYmd);
+  if (!bounds) {
+    return result;
+  }
+
+  const productIds = products.map((product) => product.id);
+  const { start: rentalStart, end: rentalEnd } = bounds;
+
+  const outletStocks = await db.prisma.outletStock.findMany({
+    where: {
+      productId: { in: productIds },
+      outletId,
+    },
+    select: {
+      productId: true,
+      stock: true,
+      available: true,
+      renting: true,
+    },
+  });
+
+  const stockByProduct = new Map(outletStocks.map((row) => [row.productId, row]));
+
+  const conflictingOrders = await db.prisma.order.findMany({
+    where: {
+      orderType: ORDER_TYPE.RENT as any,
+      status: {
+        in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any],
+      },
+      outletId,
+      deletedAt: null,
+      pickupPlanAt: { lt: rentalEnd },
+      returnPlanAt: { gte: rentalStart },
+      orderItems: {
+        some: {
+          productId: { in: productIds },
+        },
+      },
+    },
+    include: {
+      orderItems: {
+        where: {
+          productId: { in: productIds },
+        },
+        select: {
+          productId: true,
+          quantity: true,
+        },
+      },
+    },
+  });
+
+  for (const productId of productIds) {
+    const stock = stockByProduct.get(productId);
+    if (!stock) {
+      result.set(productId, 0);
+      continue;
+    }
+
+    const { conflictingQuantity, reservedConflictQuantity } = aggregateConflictingQuantities(
+      productId,
+      outletId,
+      conflictingOrders as ConflictingOrderInput[]
+    );
+
+    result.set(
+      productId,
+      computeEffectiveAvailableForDay({
+        stock: stock.stock,
+        available: stock.available,
+        renting: stock.renting,
+        conflictingQuantity,
+        reservedConflictQuantity,
+      })
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Resolve outlet for today's effective availability on product list.
+ * Mobile POS always sends outletId; outlet staff use assigned outlet.
+ */
+export function resolveProductListAvailabilityOutletId(input: {
+  role: string;
+  userOutletId?: number;
+  queryOutletId?: number;
+}): number | undefined {
+  const { role, userOutletId, queryOutletId } = input;
+
+  if (queryOutletId && queryOutletId > 0) {
+    return queryOutletId;
+  }
+
+  if (userOutletId && userOutletId > 0) {
+    return userOutletId;
+  }
+
+  return undefined;
+}

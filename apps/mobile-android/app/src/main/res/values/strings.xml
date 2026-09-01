@@ -207,7 +207,8 @@
     <string name="related_orders">Related orders</string>
     <string name="view_order_history">View order history</string>
     <string name="hide_order_history">Hide order history</string>
-    <string name="availability_orders_sheet_title">All rental orders</string>
+    <string name="availability_orders_sheet_title">Orders for this day</string>
+    <string name="availability_orders_type_breakdown">%1$d rental, %2$d sale orders</string>
     <string name="availability_order_count">%1$d orders</string>
     <string name="availability_verdict_date_context">On %1$s</string>
     <string name="total_stock_value">Total stock: %1$d</string>
@@ -226,7 +227,7 @@
     <string name="availability_verdict_available_title">In stock</string>
     <string name="availability_verdict_out_of_stock_headline">Out of stock</string>
     <string name="availability_verdict_conflict_headline">Schedule conflict (booked out)</string>
-    <string name="availability_verdict_available">%1$s items left on %2$s</string>
+    <string name="availability_verdict_available">%1$s products left on %2$s</string>
     <string name="availability_verdict_out_of_stock">Out of stock on %1$s</string>
     <string name="availability_verdict_conflict">Schedule conflict on %1$s</string>
     <string name="availability_header_orders_on_day">%1$d rental orders</string>

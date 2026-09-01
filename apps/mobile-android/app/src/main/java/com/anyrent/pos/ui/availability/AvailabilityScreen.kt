@@ -111,7 +111,7 @@ fun AvailabilityScreen(
     LaunchedEffect(state.result, state.checking, pendingHistorySheet) {
         if (!state.checking && pendingHistorySheet) {
             pendingHistorySheet = false
-            if (focusedProductMode && state.result?.orders?.isNotEmpty() == true) {
+            if (focusedProductMode && state.result != null) {
                 showHistorySheet = true
             }
         }
@@ -262,14 +262,16 @@ fun AvailabilityScreen(
                     )
                 }
             }
-            state.result?.let { result ->
-                item {
-                    AvailabilitySummary(
-                        result = result,
-                        dateLabel = state.selectedDate.format(
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                        ),
-                    )
+            if (!focusedProductMode) {
+                state.result?.let { result ->
+                    item {
+                        AvailabilitySummary(
+                            result = result,
+                            dateLabel = state.selectedDate.format(
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                            ),
+                        )
+                    }
                 }
             }
             if (state.selectedProduct != null && (focusedProductMode || state.result != null)) {
@@ -295,7 +297,7 @@ fun AvailabilityScreen(
                                 onMonthChange = { visibleMonth = it },
                                 onSelect = { day ->
                                     val sameDay = day == state.selectedDate
-                                    if (focusedProductMode && sameDay && state.result?.orders?.isNotEmpty() == true) {
+                                    if (focusedProductMode && sameDay && state.result != null) {
                                         showHistorySheet = true
                                     } else {
                                         pendingHistorySheet = focusedProductMode
@@ -356,10 +358,10 @@ fun AvailabilityScreen(
         state.result?.let { result ->
             AvailabilityOrdersBottomSheet(
                 orders = result.orders,
-                dateLabel = state.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                stock = result.totalStock,
-                available = result.effectivelyAvailable,
-                renting = result.totalRenting,
+                dateLabel = state.selectedDate.format(
+                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                ),
+                effectiveAvailable = result.effectivelyAvailable,
                 onDismiss = { showHistorySheet = false },
                 onOpenOrder = { orderId ->
                     showHistorySheet = false
@@ -371,213 +373,66 @@ fun AvailabilityScreen(
 }
 
 @Composable
-private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
-    val effectiveAvailable = result.effectivelyAvailable
-    val hasConflicts = result.conflicts.isNotEmpty() || result.orders.any { it.isConflict }
-    val orange = Color(0xFFF19920)
-
-    val accent = when {
-        effectiveAvailable > 0 -> Color(0xFF16A34A)
-        hasConflicts -> orange
-        else -> MaterialTheme.colorScheme.error
-    }
-    val cardTint = when {
-        effectiveAvailable > 0 -> Color(0xFF22C55E).copy(alpha = 0.08f)
-        hasConflicts -> orange.copy(alpha = 0.10f)
-        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-    }
-    val verdictIcon = when {
-        effectiveAvailable > 0 -> "✓"
-        hasConflicts -> "!"
-        else -> "✕"
-    }
-
-    val verdictTitle = when {
-        effectiveAvailable > 0 -> stringResource(R.string.availability_verdict_available_title)
-        hasConflicts -> stringResource(R.string.availability_verdict_conflict_headline)
-        else -> stringResource(R.string.availability_verdict_out_of_stock_headline)
-    }
-
-    val verdictAnnotatedText = when {
-        effectiveAvailable > 0 -> {
-            val countText = formatQuantity(effectiveAvailable)
-            val full = stringResource(
-                R.string.availability_verdict_available,
-                countText,
-                dateLabel,
-            )
-            buildAnnotatedString {
-                append(full)
-                listOf(countText, dateLabel).forEach { highlight ->
-                    val start = full.indexOf(highlight)
-                    if (start >= 0) {
-                        addStyle(
-                            SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                            start,
-                            start + highlight.length,
-                        )
-                    }
-                }
-            }
-        }
-        hasConflicts -> {
-            val full = stringResource(R.string.availability_verdict_conflict, dateLabel)
-            buildAnnotatedString {
-                append(full)
-                val start = full.indexOf(dateLabel)
-                if (start >= 0) {
-                    addStyle(
-                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                        start,
-                        start + dateLabel.length,
-                    )
-                }
-            }
-        }
-        else -> {
-            val full = stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
-            buildAnnotatedString {
-                append(full)
-                val start = full.indexOf(dateLabel)
-                if (start >= 0) {
-                    addStyle(
-                        SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                        start,
-                        start + dateLabel.length,
-                    )
-                }
-            }
-        }
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        AppCard(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(cardTint)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(32.dp)
-                        .background(accent, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        verdictIcon,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                    )
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        verdictTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                    )
-                    Text(
-                        verdictAnnotatedText,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = accent,
-                    )
-                }
-            }
-        }
-
-        AppCard(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                ImpressiveMetric(
-                    label = stringResource(R.string.storage),
-                    value = result.totalStock,
-                    accent = MaterialTheme.colorScheme.onSurfaceVariant,
-                    valueColor = MaterialTheme.colorScheme.onSurface,
-                )
-                ImpressiveMetric(
-                    label = stringResource(R.string.available),
-                    value = (result.totalStock - result.totalRenting).coerceAtLeast(0),
-                    accent = AvailableGreenAccent,
-                    valueColor = if ((result.totalStock - result.totalRenting) > 0) {
-                        AvailableGreen
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-                )
-                ImpressiveMetric(
-                    label = stringResource(R.string.renting),
-                    value = result.totalRenting,
-                    accent = orange,
-                    valueColor = orange,
-                )
-            }
-        }
-    }
-    result.message?.let {
-        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun ImpressiveMetric(
-    label: String,
-    value: Int,
-    accent: Color,
-    valueColor: Color,
+private fun AvailabilityDayVerdictBanner(
+    effectiveAvailable: Int,
+    dateLabel: String,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
+    val accent = if (effectiveAvailable > 0) Color(0xFF16A34A) else MaterialTheme.colorScheme.error
+    val cardTint = if (effectiveAvailable > 0) {
+        Color(0xFF22C55E).copy(alpha = 0.08f)
+    } else {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+    }
+    val verdictIcon = if (effectiveAvailable > 0) "✓" else "✕"
+    val verdictText = if (effectiveAvailable > 0) {
+        stringResource(
+            R.string.availability_verdict_available,
+            formatQuantity(effectiveAvailable),
+            dateLabel,
         )
+    } else {
+        stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
+    }
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(cardTint, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Box(
             Modifier
-                .width(24.dp)
-                .height(3.dp)
-                .background(accent, RoundedCornerShape(2.dp)),
-        )
+                .size(40.dp)
+                .background(accent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                verdictIcon,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+        }
         Text(
-            formatQuantity(value),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = valueColor,
+            verdictText,
+            style = MaterialTheme.typography.titleLarge,
+            color = accent,
         )
     }
 }
 
 @Composable
-private fun CompactMetric(label: String, value: Int, highlighted: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        AvailabilityDayVerdictBanner(
+            effectiveAvailable = result.effectivelyAvailable,
+            dateLabel = dateLabel,
         )
-        Text(
-            formatQuantity(value),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = if (highlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        )
+        result.message?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -943,9 +798,7 @@ private fun AvailabilityDayCell(
 private fun AvailabilityOrdersBottomSheet(
     orders: List<AvailabilityOrder>,
     dateLabel: String,
-    stock: Int,
-    available: Int,
-    renting: Int,
+    effectiveAvailable: Int,
     onDismiss: () -> Unit,
     onOpenOrder: (Int) -> Unit,
 ) {
@@ -966,48 +819,23 @@ private fun AvailabilityOrdersBottomSheet(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
+            AvailabilityDayVerdictBanner(
+                effectiveAvailable = effectiveAvailable,
+                dateLabel = dateLabel,
+            )
+            val rentCount = orders.count { it.orderType.equals("RENT", ignoreCase = true) }
+            val saleCount = orders.count { it.orderType.equals("SALE", ignoreCase = true) }
+            Text(
+                stringResource(R.string.availability_orders_type_breakdown, rentCount, saleCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (orders.isEmpty()) {
                 Text(
                     stringResource(R.string.availability_history_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            } else {
-                Text(
-                    stringResource(R.string.availability_order_count, orders.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            AppCard(
-                Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    ImpressiveMetric(
-                        label = stringResource(R.string.storage),
-                        value = stock,
-                        accent = MaterialTheme.colorScheme.onSurfaceVariant,
-                        valueColor = MaterialTheme.colorScheme.onSurface,
-                    )
-                    ImpressiveMetric(
-                        label = stringResource(R.string.renting),
-                        value = renting,
-                        accent = Color(0xFFF19920),
-                        valueColor = Color(0xFFF19920),
-                    )
-                    ImpressiveMetric(
-                        label = stringResource(R.string.available),
-                        value = available,
-                        accent = AvailableGreenAccent,
-                        valueColor = if (available > 0) AvailableGreen else MaterialTheme.colorScheme.error,
-                    )
-                }
             }
             val displayOrders = remember(orders) {
                 orders.sortedByDescending { it.isConflict }

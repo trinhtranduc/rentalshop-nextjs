@@ -90,9 +90,7 @@ class OrderCheckViewController: BaseViewControler {
     }()
 
     private var occupancyCalendarHeightConstraint: Constraint?
-    private var summaryHeightConstraint: Constraint?
     private var lastOccupancyCalendarHeight: CGFloat = 0
-    private var lastSummaryHeight: CGFloat = 0
 
     private lazy var scrollView: UIScrollView = {
         let scroll = UIScrollView()
@@ -109,8 +107,6 @@ class OrderCheckViewController: BaseViewControler {
         return view
     }()
 
-    private lazy var summaryView = AvailabilitySummaryHeaderView()
-
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -125,7 +121,7 @@ class OrderCheckViewController: BaseViewControler {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        resizeSummaryIfNeeded()
+        updateOccupancyCalendarHeightIfNeeded()
     }
 
     private func updateOccupancyCalendarHeightIfNeeded() {
@@ -143,29 +139,19 @@ class OrderCheckViewController: BaseViewControler {
         guard customNavBar != nil else { return }
 
         view.addSubview(scrollView)
-        scrollView.addSubview(summaryView)
         scrollView.addSubview(calendarSurfaceView)
         calendarSurfaceView.addSubview(occupancyCalendarView)
-
-        summaryView.alpha = 0
-        summaryView.isHidden = true
 
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(customNavBar!.snp.bottom)
             make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
-        summaryView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(6)
-            make.leading.trailing.equalTo(scrollView.frameLayoutGuide)
-            summaryHeightConstraint = make.height.equalTo(0).constraint
-        }
-
         let initialCalendarHeight = AvailabilityOccupancyCalendarView.fixedBlockHeight
         calendarSurfaceView.snp.makeConstraints { make in
-            make.top.equalTo(summaryView.snp.bottom).offset(12)
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(6)
             make.leading.trailing.equalTo(scrollView.frameLayoutGuide).inset(16)
-            make.bottom.equalToSuperview().offset(-16)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-16)
         }
 
         occupancyCalendarView.snp.makeConstraints { make in
@@ -192,34 +178,6 @@ class OrderCheckViewController: BaseViewControler {
 
     private func updateOccupancyCalendarHeight() {
         updateOccupancyCalendarHeightIfNeeded()
-    }
-
-    private func resizeSummaryIfNeeded() {
-        let width = view.bounds.width
-        guard width > 0, !summaryView.isHidden else {
-            if summaryHeightConstraint?.layoutConstraints.first?.constant != 0 {
-                summaryHeightConstraint?.update(offset: 0)
-            }
-            return
-        }
-
-        summaryView.frame = CGRect(x: 0, y: 0, width: width, height: 1)
-        summaryView.setNeedsLayout()
-        summaryView.layoutIfNeeded()
-
-        let height = summaryView.systemLayoutSizeFitting(
-            CGSize(width: width, height: UILayoutFittingCompressedSize.height),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
-        ).height
-
-        guard height > 0 else { return }
-
-        if abs(lastSummaryHeight - height) > 0.5 {
-            lastSummaryHeight = height
-            summaryHeightConstraint?.update(offset: height)
-            view.layoutIfNeeded()
-        }
     }
 
     // MARK: - Custom Navigation Bar Setup
@@ -426,14 +384,7 @@ class OrderCheckViewController: BaseViewControler {
     private func revealAvailabilityContent() {
         hideProgress()
         hasRevealedContent = true
-        if isLoadingAvailability {
-            isLoadingAvailability = false
-            summaryView.isHidden = false
-            UIView.animate(withDuration: 0.2) {
-                self.summaryView.alpha = 1
-            }
-            resizeSummaryIfNeeded()
-        }
+        isLoadingAvailability = false
     }
 
     private func handleNewAvailabilityResponse(
@@ -447,19 +398,10 @@ class OrderCheckViewController: BaseViewControler {
             lastAvailabilityMetrics = metrics
             loadedAvailabilityDayKey = requestedDayKey
 
-            summaryView.configure(
-                stock: metrics.stock,
-                shelfAvailable: metrics.shelfAvailable,
-                effectiveAvailable: metrics.effectiveAvailable,
-                renting: metrics.renting,
-                conflicts: metrics.conflicts,
-                checkDate: displayDate(for: requestedDayKey)
-            )
             configureOccupancyCalendar()
-            resizeSummaryIfNeeded()
+            revealAvailabilityContent()
 
             availabilityOrders = sortedAvailabilityOrders(data.orders ?? [])
-            revealAvailabilityContent()
             loadOccupancyCalendar(for: requestedDate)
 
             if pendingHistoryDayKey == requestedDayKey,
@@ -663,10 +605,8 @@ class OrderCheckViewController: BaseViewControler {
         let metrics = lastAvailabilityMetrics
         let sheet = AvailabilityOrderHistorySheetViewController(
             orders: availabilityOrders,
-            dateTitle: displayDate(for: highlightedDayKey),
-            stock: metrics?.stock ?? productStock,
-            available: metrics?.shelfAvailable ?? metrics?.effectiveAvailable ?? 0,
-            renting: metrics?.renting ?? 0
+            checkDate: displayDate(for: highlightedDayKey),
+            effectiveAvailable: metrics?.effectiveAvailable ?? 0
         )
         sheet.onSelectOrder = { [weak self, weak sheet] order in
             self?.openOrderDetail(from: order, dismissing: sheet)
@@ -714,10 +654,6 @@ class OrderCheckViewController: BaseViewControler {
         presentedHistorySheet = nil
         availabilityOrders = []
         lastAvailabilityMetrics = nil
-        summaryView.alpha = 0
-        summaryView.isHidden = true
-        lastSummaryHeight = 0
-        summaryHeightConstraint?.update(offset: 0)
         if isViewLoaded {
             resetOccupancyCache()
             configureOccupancyCalendar()

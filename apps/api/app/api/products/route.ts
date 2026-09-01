@@ -8,6 +8,10 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
+import {
+  batchTodayEffectiveAvailability,
+  resolveProductListAvailabilityOutletId,
+} from '../../../lib/product-list-effective-availability';
 
 const IMAGE_UPLOAD_ERROR_PREFIX = 'IMAGE_UPLOAD_FAILED::';
 
@@ -146,6 +150,20 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     // Check if user has permission to view costPrice
     const canViewCostPrice = await hasPermission(user, 'products.manage');
 
+    const availabilityOutletId = resolveProductListAvailabilityOutletId({
+      role: user.role,
+      userOutletId: userScope.outletId,
+      queryOutletId,
+    });
+
+    const todayEffectiveByProduct =
+      availabilityOutletId && result.data?.length
+        ? await batchTodayEffectiveAvailability(
+            result.data.map((product: { id: number }) => ({ id: product.id })),
+            availabilityOutletId
+          )
+        : new Map<number, number>();
+
     // Process product images and filter outletStock based on queryOutletId
     // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
@@ -159,23 +177,41 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         outletStock = outletStock.filter((stock: any) => stock.outlet?.id === queryOutletId);
       }
       
-      // Ensure available is calculated correctly: available = stock - renting
-      outletStock = outletStock.map((stock: any) => ({
-        ...stock,
-        available: Math.max(0, (stock.stock || 0) - (stock.renting || 0))
-      }));
-      
-      // Calculate total renting from all outlets (use original outletStock before filtering)
-      const totalRenting = (product.outletStock || []).reduce((sum: number, stock: any) => sum + (stock.renting || 0), 0);
-      // Calculate available at product level: totalStock - totalRenting
-      const available = Math.max(0, (product.totalStock || 0) - totalRenting);
+      const effectiveAvailableToday = availabilityOutletId
+        ? todayEffectiveByProduct.get(product.id)
+        : undefined;
+
+      // Product list "Có sẵn": today's schedulable count (matches Order Check for today).
+      // Fallback to shelf stock when outlet context is missing (e.g. admin without outletId).
+      const totalRenting = (product.outletStock || []).reduce(
+        (sum: number, stock: any) => sum + (stock.renting || 0),
+        0
+      );
+      const shelfAvailable = Math.max(0, (product.totalStock || 0) - totalRenting);
+      const available =
+        effectiveAvailableToday !== undefined ? effectiveAvailableToday : shelfAvailable;
+
+      outletStock = outletStock.map((stock: any) => {
+        const outletMatches =
+          availabilityOutletId != null && stock.outlet?.id === availabilityOutletId;
+        const outletEffective =
+          outletMatches && effectiveAvailableToday !== undefined
+            ? effectiveAvailableToday
+            : Math.max(0, (stock.stock || 0) - (stock.renting || 0));
+
+        return {
+          ...stock,
+          available: outletEffective,
+        };
+      });
       
       // Build product object, excluding costPrice if user doesn't have permission
       const productData: any = {
         ...product,
         images: imageUrls,
-        available: available, // Product-level available = totalStock - sum(renting from all outlets)
-        outletStock: outletStock // Show stock filtered by outletId (if provided) with calculated available
+        available,
+        effectiveAvailableToday: effectiveAvailableToday ?? available,
+        outletStock,
       };
       
       // Only include costPrice if user has products.manage permission

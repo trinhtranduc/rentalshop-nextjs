@@ -22,6 +22,7 @@ data class AvailabilityConflict(
 data class AvailabilityOrder(
     val id: Int,
     val orderNumber: String,
+    val orderType: String?,
     val status: String,
     val customerName: String?,
     val quantity: Int,
