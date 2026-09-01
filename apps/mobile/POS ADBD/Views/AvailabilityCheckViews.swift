@@ -14,12 +14,13 @@ final class AvailabilityVerdictView: UIView {
     enum Style {
         case available
         case outOfStock
-        case conflictWarning
     }
 
     private enum Metrics {
         static let cornerRadius: CGFloat = 14
-        static let iconSize: CGFloat = 32
+        static let iconSize: CGFloat = 40
+        static let messageFontSize: CGFloat = 20
+        static let messageHighlightFontSize: CGFloat = 24
     }
 
     private let iconContainerView: UIView = {
@@ -36,17 +37,17 @@ final class AvailabilityVerdictView: UIView {
         return imageView
     }()
 
-    private let headlineLabel: UILabel = {
+    private let messageLabel: UILabel = {
         let label = UILabel()
-        label.font = .bodyRegular(size: 18)
-        label.numberOfLines = 2
+        label.font = .bodyRegular(size: Metrics.messageFontSize)
+        label.numberOfLines = 0
         return label
     }()
 
     private let textStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = 0
         stack.alignment = .leading
         return stack
     }()
@@ -74,10 +75,9 @@ final class AvailabilityVerdictView: UIView {
         layer.borderWidth = 1
 
         iconContainerView.addSubview(iconImageView)
-        textStackView.addArrangedSubview(headlineLabel)
+        textStackView.addArrangedSubview(messageLabel)
         rowStackView.addArrangedSubview(iconContainerView)
         rowStackView.addArrangedSubview(textStackView)
-
         addSubview(rowStackView)
 
         iconContainerView.snp.makeConstraints { make in
@@ -88,13 +88,15 @@ final class AvailabilityVerdictView: UIView {
 
         textStackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textStackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        messageLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        messageLabel.setContentHuggingPriority(.required, for: .vertical)
+        messageLabel.setContentCompressionResistancePriority(.required, for: .vertical)
 
-        rowStackView.alignment = .center
+        rowStackView.alignment = .top
 
         iconImageView.snp.makeConstraints { make in
             make.center.equalToSuperview()
-            make.width.height.equalTo(18)
+            make.width.height.equalTo(20)
         }
 
         rowStackView.snp.makeConstraints { make in
@@ -102,7 +104,18 @@ final class AvailabilityVerdictView: UIView {
         }
     }
 
-    private func availableHeadline(countText: String, checkDate: String, accentColor: UIColor) -> NSAttributedString {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let horizontalInsets: CGFloat = 32
+        let iconWidth = Metrics.iconSize
+        let spacing: CGFloat = 12
+        let textWidth = bounds.width - horizontalInsets - iconWidth - spacing
+        if textWidth > 0 {
+            messageLabel.preferredMaxLayoutWidth = textWidth
+        }
+    }
+
+    private func availableMessage(countText: String, checkDate: String, accentColor: UIColor) -> NSAttributedString {
         let text = String(
             format: "availability_verdict_available".localized(),
             countText,
@@ -111,31 +124,45 @@ final class AvailabilityVerdictView: UIView {
         let attributed = NSMutableAttributedString(
             string: text,
             attributes: [
-                .font: UIFont.bodyRegular(size: 18),
+                .font: UIFont.bodyMedium(size: Metrics.messageFontSize),
                 .foregroundColor: accentColor
             ]
         )
-        let range = (text as NSString).range(of: countText)
+        for highlight in [countText, checkDate] {
+            let range = (text as NSString).range(of: highlight)
+            if range.location != NSNotFound {
+                attributed.addAttributes(
+                    [
+                        .font: UIFont.bodyBold(size: Metrics.messageHighlightFontSize),
+                        .foregroundColor: accentColor
+                    ],
+                    range: range
+                )
+            }
+        }
+        return attributed
+    }
+
+    private func datedMessage(formatKey: String, checkDate: String, color: UIColor) -> NSAttributedString {
+        let text = String(format: formatKey.localized(), checkDate)
+        let attributed = NSMutableAttributedString(
+            string: text,
+            attributes: [
+                .font: UIFont.bodyMedium(size: Metrics.messageFontSize),
+                .foregroundColor: color
+            ]
+        )
+        let range = (text as NSString).range(of: checkDate)
         if range.location != NSNotFound {
             attributed.addAttributes(
                 [
-                    .font: UIFont.bodyBold(size: 22),
-                    .foregroundColor: accentColor
+                    .font: UIFont.bodyBold(size: Metrics.messageHighlightFontSize),
+                    .foregroundColor: color
                 ],
                 range: range
             )
         }
         return attributed
-    }
-
-    private func plainHeadline(_ text: String, color: UIColor) -> NSAttributedString {
-        NSAttributedString(
-            string: text,
-            attributes: [
-                .font: UIFont.bodyRegular(size: 18),
-                .foregroundColor: color
-            ]
-        )
     }
 
     func configure(style: Style, availableCount: Int, checkDate: String) {
@@ -146,9 +173,9 @@ final class AvailabilityVerdictView: UIView {
             iconContainerView.backgroundColor = UIColor(hexString: "22C55E")
             iconImageView.image = UIImage(systemName: "checkmark")
             let accentColor = UIColor(hexString: "16A34A")
-            headlineLabel.textColor = accentColor
+            messageLabel.textColor = accentColor
             let countText = availableCount.formatStringInCommon()
-            headlineLabel.attributedText = availableHeadline(
+            messageLabel.attributedText = availableMessage(
                 countText: countText,
                 checkDate: checkDate,
                 accentColor: accentColor
@@ -158,251 +185,21 @@ final class AvailabilityVerdictView: UIView {
             layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.18).cgColor
             iconContainerView.backgroundColor = .actionDanger
             iconImageView.image = UIImage(systemName: "xmark")
-            headlineLabel.textColor = .actionDanger
-            headlineLabel.attributedText = plainHeadline(
-                String(format: "availability_verdict_out_of_stock".localized(), checkDate),
+            messageLabel.textColor = .actionDanger
+            messageLabel.attributedText = datedMessage(
+                formatKey: "availability_verdict_out_of_stock",
+                checkDate: checkDate,
                 color: .actionDanger
             )
-        case .conflictWarning:
-            backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.10)
-            layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.22).cgColor
-            iconContainerView.backgroundColor = APP_ORANGE_COLOR
-            iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
-            headlineLabel.textColor = APP_ORANGE_COLOR
-            headlineLabel.attributedText = plainHeadline(
-                String(format: "availability_verdict_conflict".localized(), checkDate),
-                color: APP_ORANGE_COLOR
-            )
         }
     }
 }
 
-// MARK: - Metrics Card
-
-final class AvailabilityMetricsCardView: UIView {
-
-    private let storageValueLabel = UILabel()
-    private let availableValueLabel = UILabel()
-    private let rentingValueLabel = UILabel()
-
-    private let columnsStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.alignment = .fill
-        return stack
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupUI()
-    }
-
-    private func setupUI() {
-        backgroundColor = .backgroundCard
-        layer.cornerRadius = 14
-        layer.borderWidth = 1
-        layer.borderColor = UIColor.borderColor.withAlphaComponent(0.6).cgColor
-
-        let storage = makeColumn(
-            title: "Storage".localized(),
-            systemImage: "archivebox.fill",
-            valueLabel: storageValueLabel,
-            valueColor: .textPrimary
-        )
-        let available = makeColumn(
-            title: "Available".localized(),
-            systemImage: "checkmark.circle.fill",
-            valueLabel: availableValueLabel,
-            valueColor: .brandPrimary
-        )
-        let renting = makeColumn(
-            title: "Renting".localized(),
-            systemImage: "clock.fill",
-            valueLabel: rentingValueLabel,
-            valueColor: .textPrimary
-        )
-
-        [storage, available, renting].enumerated().forEach { index, column in
-            columnsStackView.addArrangedSubview(column)
-            if index > 0 {
-                let divider = UIView()
-                divider.backgroundColor = UIColor.borderColor.withAlphaComponent(0.75)
-                column.addSubview(divider)
-                divider.snp.makeConstraints { make in
-                    make.leading.equalToSuperview()
-                    make.top.bottom.equalToSuperview().inset(14)
-                    make.width.equalTo(1)
-                }
-            }
-        }
-
-        addSubview(columnsStackView)
-        columnsStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 16, left: 8, bottom: 16, right: 8))
-        }
-    }
-
-    private func makeColumn(
-        title: String,
-        systemImage: String,
-        valueLabel: UILabel,
-        valueColor: UIColor
-    ) -> UIView {
-        let container = UIView()
-
-        let iconView = UIImageView()
-        iconView.image = UIImage(systemName: systemImage)
-        iconView.tintColor = .textSecondary
-        iconView.contentMode = .scaleAspectFit
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .captionMedium(size: 13)
-        titleLabel.textColor = .textSecondary
-        titleLabel.textAlignment = .center
-        titleLabel.numberOfLines = 2
-        titleLabel.lineBreakMode = .byWordWrapping
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.85
-
-        let titleRow = UIStackView(arrangedSubviews: [iconView, titleLabel])
-        titleRow.axis = .horizontal
-        titleRow.spacing = 4
-        titleRow.alignment = .center
-
-        iconView.snp.makeConstraints { make in
-            make.width.height.equalTo(14)
-        }
-
-        valueLabel.font = .bodyBold(size: 26)
-        valueLabel.textColor = valueColor
-        valueLabel.textAlignment = .center
-        valueLabel.text = "0"
-        valueLabel.adjustsFontSizeToFitWidth = true
-        valueLabel.minimumScaleFactor = 0.65
-
-        let stack = UIStackView(arrangedSubviews: [titleRow, valueLabel])
-        stack.axis = .vertical
-        stack.spacing = 8
-        stack.alignment = .center
-
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(4)
-            make.leading.trailing.equalToSuperview().inset(6)
-        }
-
-        return container
-    }
-
-    func configure(stock: Int, available: Int, renting: Int) {
-        storageValueLabel.text = stock.formatStringInCommon()
-        availableValueLabel.text = available.formatStringInCommon()
-        rentingValueLabel.text = renting.formatStringInCommon()
-        availableValueLabel.textColor = available > 0 ? .brandPrimary : .actionDanger
-    }
-}
-
-// MARK: - Summary Header (compact verdict + metrics)
+// MARK: - Summary Header
 
 final class AvailabilitySummaryHeaderView: UIView {
 
-    private enum Metrics {
-        static let cornerRadius: CGFloat = 12
-        static let accentWidth: CGFloat = 4
-    }
-
-    private let cardView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .backgroundCard
-        view.layer.cornerRadius = Metrics.cornerRadius
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let accentBar: UIView = {
-        let view = UIView()
-        view.backgroundColor = .brandPrimary
-        return view
-    }()
-
-    private let countLabel: UILabel = {
-        let label = UILabel()
-        label.font = .bodyBold(size: 34)
-        label.textColor = .textPrimary
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-
-    private let headlineLabel: UILabel = {
-        let label = UILabel()
-        label.font = .bodyMedium(size: 15)
-        label.textColor = .textPrimary
-        label.numberOfLines = 1
-        return label
-    }()
-
-    private let dateContextLabel: UILabel = {
-        let label = UILabel()
-        label.font = .captionMedium(size: 12)
-        label.textColor = .textSecondary
-        label.numberOfLines = 1
-        return label
-    }()
-
-    private let metricsDivider: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.borderColor.withAlphaComponent(0.55)
-        return view
-    }()
-
-    private let storageValueLabel = UILabel()
-    private let availableValueLabel = UILabel()
-    private let rentingValueLabel = UILabel()
-
-    private lazy var heroTextStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [headlineLabel, dateContextLabel])
-        stack.axis = .vertical
-        stack.spacing = 2
-        stack.alignment = .leading
-        return stack
-    }()
-
-    private lazy var heroRowStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [countLabel, heroTextStack])
-        stack.axis = .horizontal
-        stack.spacing = 12
-        stack.alignment = .center
-        return stack
-    }()
-
-    private lazy var metricsRowStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [
-            makeMetricColumn(title: "Storage".localized(), valueLabel: storageValueLabel),
-            makeMetricColumn(title: "Available".localized(), valueLabel: availableValueLabel),
-            makeMetricColumn(title: "Renting".localized(), valueLabel: rentingValueLabel),
-        ])
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.alignment = .fill
-        return stack
-    }()
-
-    private lazy var contentStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [heroRowStack, metricsDivider, metricsRowStack])
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.alignment = .fill
-        return stack
-    }()
+    private let verdictView = AvailabilityVerdictView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -417,60 +214,13 @@ final class AvailabilitySummaryHeaderView: UIView {
     private func setupUI() {
         backgroundColor = .backgroundPrimary
 
-        addSubview(cardView)
-        cardView.addSubview(accentBar)
-        cardView.addSubview(contentStackView)
+        addSubview(verdictView)
 
-        cardView.snp.makeConstraints { make in
+        verdictView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(4)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview()
         }
-
-        accentBar.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            make.width.equalTo(Metrics.accentWidth)
-        }
-
-        contentStackView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(14)
-            make.leading.equalTo(accentBar.snp.trailing).offset(14)
-            make.trailing.equalToSuperview().inset(14)
-        }
-
-        metricsDivider.snp.makeConstraints { make in
-            make.height.equalTo(1)
-        }
-    }
-
-    private func makeMetricColumn(title: String, valueLabel: UILabel) -> UIView {
-        let container = UIView()
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .captionMedium(size: 11)
-        titleLabel.textColor = .textTertiary
-        titleLabel.textAlignment = .center
-        titleLabel.numberOfLines = 1
-
-        valueLabel.font = .bodyBold(size: 18)
-        valueLabel.textColor = .textPrimary
-        valueLabel.textAlignment = .center
-        valueLabel.text = "0"
-        valueLabel.adjustsFontSizeToFitWidth = true
-        valueLabel.minimumScaleFactor = 0.75
-
-        let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
-        stack.axis = .vertical
-        stack.spacing = 4
-        stack.alignment = .center
-
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        return container
     }
 
     func configure(
@@ -481,42 +231,17 @@ final class AvailabilitySummaryHeaderView: UIView {
         conflicts: Int,
         checkDate: String
     ) {
-        storageValueLabel.text = stock.formatStringInCommon()
-        availableValueLabel.text = shelfAvailable.formatStringInCommon()
-        rentingValueLabel.text = renting.formatStringInCommon()
-        availableValueLabel.textColor = shelfAvailable > 0 ? .brandPrimary : .actionDanger
+        let style: AvailabilityVerdictView.Style = effectiveAvailable > 0 ? .available : .outOfStock
 
-        dateContextLabel.text = String(
-            format: "availability_verdict_date_context".localized(),
-            checkDate
+        verdictView.configure(
+            style: style,
+            availableCount: effectiveAvailable,
+            checkDate: checkDate
         )
-
-        let accentColor: UIColor
-        if effectiveAvailable > 0 {
-            accentColor = UIColor(hexString: "16A34A")
-            countLabel.text = effectiveAvailable.formatStringInCommon()
-            countLabel.textColor = accentColor
-            headlineLabel.text = "Available".localized()
-            cardView.backgroundColor = UIColor(hexString: "22C55E").withAlphaComponent(0.05)
-            cardView.layer.borderColor = UIColor(hexString: "22C55E").withAlphaComponent(0.14).cgColor
-        } else if conflicts > 0 {
-            accentColor = APP_ORANGE_COLOR
-            countLabel.text = "0"
-            countLabel.textColor = accentColor
-            headlineLabel.text = "availability_verdict_conflict_headline".localized()
-            cardView.backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.06)
-            cardView.layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.16).cgColor
-        } else {
-            accentColor = .actionDanger
-            countLabel.text = "0"
-            countLabel.textColor = accentColor
-            headlineLabel.text = "availability_verdict_out_of_stock_headline".localized()
-            cardView.backgroundColor = UIColor.actionDanger.withAlphaComponent(0.05)
-            cardView.layer.borderColor = UIColor.actionDanger.withAlphaComponent(0.14).cgColor
-        }
-
-        accentBar.backgroundColor = accentColor
-        headlineLabel.textColor = accentColor
+        isHidden = false
+        alpha = 1
+        setNeedsLayout()
+        layoutIfNeeded()
     }
 }
 
@@ -623,6 +348,39 @@ final class AvailabilityHistoryCell: UITableViewCell {
         view.layer.cornerRadius = Metrics.cardCornerRadius
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.55).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let conflictAccentView: UIView = {
+        let view = UIView()
+        view.backgroundColor = APP_ORANGE_COLOR
+        view.isHidden = true
+        return view
+    }()
+
+    private let conflictBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .captionMedium(size: 11)
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        label.text = "availability_conflict_badge".localized()
+        label.textColor = .white
+        return label
+    }()
+
+    private lazy var conflictBadgeContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = APP_ORANGE_COLOR
+        view.layer.cornerRadius = 10
+        view.clipsToBounds = true
+        view.isHidden = true
+        view.addSubview(conflictBadgeLabel)
+        conflictBadgeLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8))
+        }
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentCompressionResistancePriority(.required, for: .horizontal)
         return view
     }()
 
@@ -666,7 +424,12 @@ final class AvailabilityHistoryCell: UITableViewCell {
     }()
 
     private lazy var orderTitleRowStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [orderNumberLabel, orderTypeBadgeContainer, UIView()])
+        let stack = UIStackView(arrangedSubviews: [
+            orderNumberLabel,
+            orderTypeBadgeContainer,
+            conflictBadgeContainer,
+            UIView()
+        ])
         stack.axis = .horizontal
         stack.spacing = 8
         stack.alignment = .center
@@ -795,8 +558,14 @@ final class AvailabilityHistoryCell: UITableViewCell {
 
         orderNumberLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
+        cardView.addSubview(conflictAccentView)
         cardView.addSubview(contentStackView)
         contentView.addSubview(cardView)
+
+        conflictAccentView.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+            make.width.equalTo(4)
+        }
 
         dividerView.snp.makeConstraints { make in
             make.height.equalTo(1)
@@ -837,14 +606,23 @@ final class AvailabilityHistoryCell: UITableViewCell {
             statusPillLabel.backgroundColor = .backgroundTertiary
         }
 
-        if order.isConflict == true {
-            cardView.backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.06)
-            cardView.layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.22).cgColor
+        let isConflict = order.isConflict == true
+        conflictAccentView.isHidden = !isConflict
+        conflictBadgeContainer.isHidden = !isConflict
+        if isConflict {
+            cardView.backgroundColor = APP_ORANGE_COLOR.withAlphaComponent(0.14)
+            cardView.layer.borderWidth = 1.5
+            cardView.layer.borderColor = APP_ORANGE_COLOR.withAlphaComponent(0.65).cgColor
             quantityValueLabel.textColor = APP_ORANGE_COLOR
+            pickupValueLabel.textColor = APP_ORANGE_COLOR
+            returnValueLabel.textColor = APP_ORANGE_COLOR
         } else {
             cardView.backgroundColor = .backgroundCard
+            cardView.layer.borderWidth = 1
             cardView.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.55).cgColor
             quantityValueLabel.textColor = .brandPrimary
+            pickupValueLabel.textColor = .textPrimary
+            returnValueLabel.textColor = .textPrimary
         }
     }
 
@@ -1546,10 +1324,8 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
     var onSelectOrder: ((NewAvailabilityOrder) -> Void)?
 
     private let orders: [NewAvailabilityOrder]
-    private let dateTitle: String
-    private let stock: Int
-    private let available: Int
-    private let renting: Int
+    private let checkDate: String
+    private let effectiveAvailable: Int
 
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
@@ -1566,7 +1342,7 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         if orders.isEmpty {
             let emptyLabel = UILabel()
-            emptyLabel.text = "No orders for this day".localized()
+            emptyLabel.text = "availability_history_empty".localized()
             emptyLabel.font = Utils.regularFont(size: 15)
             emptyLabel.textColor = .textSecondary
             emptyLabel.textAlignment = .center
@@ -1578,16 +1354,12 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
 
     init(
         orders: [NewAvailabilityOrder],
-        dateTitle: String,
-        stock: Int,
-        available: Int,
-        renting: Int
+        checkDate: String,
+        effectiveAvailable: Int
     ) {
         self.orders = orders
-        self.dateTitle = dateTitle
-        self.stock = stock
-        self.available = available
-        self.renting = renting
+        self.checkDate = checkDate
+        self.effectiveAvailable = effectiveAvailable
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -1604,21 +1376,14 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         titleLabel.textColor = .textPrimary
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 2
-        titleLabel.text = String(format: "availability_orders_sheet_title".localized(), dateTitle)
+        titleLabel.text = "availability_orders_sheet_title".localized()
 
-        let countLabel = UILabel()
-        countLabel.font = .captionMedium(size: 13)
-        countLabel.textColor = .textSecondary
-        countLabel.textAlignment = .center
-        countLabel.text = String(format: "availability_order_count".localized(), orders.count)
+        tableView.tableHeaderView = makeOrdersListTableHeader()
 
-        let metricsCard = makeMetricsHeader()
-
-        let headerStack = UIStackView(arrangedSubviews: [titleLabel, countLabel, metricsCard])
+        let headerStack = UIStackView(arrangedSubviews: [titleLabel])
         headerStack.axis = .vertical
         headerStack.spacing = 10
         headerStack.alignment = .fill
-        headerStack.setCustomSpacing(4, after: titleLabel)
 
         view.addSubview(headerStack)
         view.addSubview(tableView)
@@ -1639,50 +1404,78 @@ final class AvailabilityOrderHistorySheetViewController: UIViewController {
         }
     }
 
-    private func makeMetricsHeader() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .backgroundCard
-        card.layer.cornerRadius = 12
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.borderColor.withAlphaComponent(0.45).cgColor
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        resizeOrdersListTableHeaderIfNeeded()
+    }
 
-        func column(title: String, value: Int, valueColor: UIColor) -> UIView {
-            let titleLabel = UILabel()
-            titleLabel.text = title
-            titleLabel.font = .captionMedium(size: 11)
-            titleLabel.textColor = .textTertiary
-            titleLabel.textAlignment = .center
+    private var rentOrderCount: Int {
+        orders.filter { ($0.orderType ?? "").uppercased() == "RENT" }.count
+    }
 
-            let valueLabel = UILabel()
-            valueLabel.text = value.formatStringInCommon()
-            valueLabel.font = .bodyBold(size: 20)
-            valueLabel.textColor = valueColor
-            valueLabel.textAlignment = .center
-            valueLabel.adjustsFontSizeToFitWidth = true
-            valueLabel.minimumScaleFactor = 0.75
+    private var saleOrderCount: Int {
+        orders.filter { ($0.orderType ?? "").uppercased() == "SALE" }.count
+    }
 
-            let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
-            stack.axis = .vertical
-            stack.spacing = 4
-            stack.alignment = .center
-            return stack
+    private func makeOrdersListTableHeader() -> UIView {
+        let container = UIView()
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 10
+        stack.alignment = .fill
+
+        let verdictView = AvailabilityVerdictView()
+        let style: AvailabilityVerdictView.Style = effectiveAvailable > 0 ? .available : .outOfStock
+        verdictView.configure(
+            style: style,
+            availableCount: effectiveAvailable,
+            checkDate: checkDate
+        )
+        stack.addArrangedSubview(verdictView)
+
+        let breakdownLabel = UILabel()
+        breakdownLabel.font = .captionMedium(size: 13)
+        breakdownLabel.textColor = .textSecondary
+        breakdownLabel.textAlignment = .center
+        breakdownLabel.numberOfLines = 0
+        breakdownLabel.text = String(
+            format: "availability_orders_type_breakdown".localized(),
+            rentOrderCount,
+            saleOrderCount
+        )
+        stack.addArrangedSubview(breakdownLabel)
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-8)
         }
 
-        let availableColor: UIColor = available > 0 ? .brandPrimary : .actionDanger
-        let row = UIStackView(arrangedSubviews: [
-            column(title: "Storage".localized(), value: stock, valueColor: .textPrimary),
-            column(title: "Renting".localized(), value: renting, valueColor: .textPrimary),
-            column(title: "Available".localized(), value: available, valueColor: availableColor),
-        ])
-        row.axis = .horizontal
-        row.distribution = .fillEqually
-        row.alignment = .center
+        return container
+    }
 
-        card.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 8, bottom: 12, right: 8))
-        }
-        return card
+    private func resizeOrdersListTableHeaderIfNeeded() {
+        guard let header = tableView.tableHeaderView,
+              let stack = header.subviews.first as? UIStackView else { return }
+
+        let width = tableView.bounds.width
+        guard width > 0 else { return }
+
+        header.frame.size.width = width
+        stack.setNeedsLayout()
+        stack.layoutIfNeeded()
+
+        let targetHeight = stack.systemLayoutSizeFitting(
+            CGSize(width: width - 32, height: UILayoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height + 12
+
+        guard abs(header.frame.height - targetHeight) > 0.5 else { return }
+        header.frame.size.height = targetHeight
+        tableView.tableHeaderView = header
     }
 }
 

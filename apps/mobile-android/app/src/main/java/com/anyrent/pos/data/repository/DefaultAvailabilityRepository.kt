@@ -245,6 +245,7 @@ class DefaultAvailabilityRepository(
                 AvailabilityOrder(
                     id = id,
                     orderNumber = item.optString("orderNumber").ifBlank { "#$id" },
+                    orderType = item.optString("orderType").takeIf { it.isNotBlank() },
                     status = item.optString("status"),
                     customerName = item.optString("customerName").takeIf { it.isNotBlank() },
                     quantity = quantityInOrder,

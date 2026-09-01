@@ -150,6 +150,8 @@ describe('Order Check sheet — all product orders, highlight conflict on tapped
 
     expect(tap28.ordersInSheet.find((o) => o.id === 1001)?.isConflict).toBe(false);
     expect(tap28.ordersInSheet.find((o) => o.id === 1002)?.isConflict).toBe(true);
+    expect(tap27.ordersInSheet[0].id).toBe(1001);
+    expect(tap28.ordersInSheet[0].id).toBe(1002);
   });
 });
 

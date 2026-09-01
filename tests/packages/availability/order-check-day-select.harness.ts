@@ -123,10 +123,12 @@ export function simulateOrderCheckDayTap(input: {
 
   const conflictIdSet = new Set(conflictOrderIds);
 
-  const ordersInSheet = ordersForAvailabilitySheet(orders, includeAllOrders).map((o) => ({
-    ...o,
-    isConflict: conflictIdSet.has(o.id),
-  }));
+  const ordersInSheet = ordersForAvailabilitySheet(orders, includeAllOrders)
+    .map((o) => ({
+      ...o,
+      isConflict: conflictIdSet.has(o.id),
+    }))
+    .sort((a, b) => Number(b.isConflict) - Number(a.isConflict));
 
   return {
     tappedDayKey,
