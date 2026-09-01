@@ -63,6 +63,8 @@ import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import java.time.LocalDate
@@ -109,7 +111,7 @@ fun AvailabilityScreen(
     LaunchedEffect(state.result, state.checking, pendingHistorySheet) {
         if (!state.checking && pendingHistorySheet) {
             pendingHistorySheet = false
-            if (focusedProductMode && state.result?.orders?.isNotEmpty() == true) {
+            if (focusedProductMode && state.result != null) {
                 showHistorySheet = true
             }
         }
@@ -260,14 +262,16 @@ fun AvailabilityScreen(
                     )
                 }
             }
-            state.result?.let { result ->
-                item {
-                    AvailabilitySummary(
-                        result = result,
-                        dateLabel = state.selectedDate.format(
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                        ),
-                    )
+            if (!focusedProductMode) {
+                state.result?.let { result ->
+                    item {
+                        AvailabilitySummary(
+                            result = result,
+                            dateLabel = state.selectedDate.format(
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                            ),
+                        )
+                    }
                 }
             }
             if (state.selectedProduct != null && (focusedProductMode || state.result != null)) {
@@ -293,7 +297,7 @@ fun AvailabilityScreen(
                                 onMonthChange = { visibleMonth = it },
                                 onSelect = { day ->
                                     val sameDay = day == state.selectedDate
-                                    if (focusedProductMode && sameDay && state.result?.orders?.isNotEmpty() == true) {
+                                    if (focusedProductMode && sameDay && state.result != null) {
                                         showHistorySheet = true
                                     } else {
                                         pendingHistorySheet = focusedProductMode
@@ -354,10 +358,10 @@ fun AvailabilityScreen(
         state.result?.let { result ->
             AvailabilityOrdersBottomSheet(
                 orders = result.orders,
-                dateLabel = state.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                stock = result.totalStock,
-                available = result.effectivelyAvailable,
-                renting = result.totalRenting,
+                dateLabel = state.selectedDate.format(
+                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                ),
+                effectiveAvailable = result.effectivelyAvailable,
                 onDismiss = { showHistorySheet = false },
                 onOpenOrder = { orderId ->
                     showHistorySheet = false
@@ -369,128 +373,129 @@ fun AvailabilityScreen(
 }
 
 @Composable
-private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
-    val hasConflicts = result.conflicts.isNotEmpty() || result.orders.any { it.isConflict }
-    val accent = when {
-        result.isAvailable -> Color(0xFF16A34A)
-        hasConflicts -> Color(0xFFEA580C)
-        else -> MaterialTheme.colorScheme.error
+private fun AvailabilityDayVerdictBanner(
+    effectiveAvailable: Int,
+    dateLabel: String,
+) {
+    val accent = if (effectiveAvailable > 0) Color(0xFF16A34A) else MaterialTheme.colorScheme.error
+    val cardTint = if (effectiveAvailable > 0) {
+        Color(0xFF22C55E).copy(alpha = 0.08f)
+    } else {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
     }
-    val headline = when {
-        result.isAvailable -> stringResource(R.string.available)
-        hasConflicts -> stringResource(R.string.availability_conflicts)
-        else -> stringResource(R.string.unavailable)
-    }
-    val cardTint = when {
-        result.isAvailable -> Color(0xFF22C55E).copy(alpha = 0.05f)
-        hasConflicts -> Color(0xFFEA580C).copy(alpha = 0.06f)
-        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.05f)
+    val verdictIcon = if (effectiveAvailable > 0) "✓" else "✕"
+    val verdictText = if (effectiveAvailable > 0) {
+        stringResource(
+            R.string.availability_verdict_available,
+            formatQuantity(effectiveAvailable),
+            dateLabel,
+        )
+    } else {
+        stringResource(R.string.availability_verdict_out_of_stock, dateLabel)
     }
 
-    AppCard(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(cardTint, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(Modifier.fillMaxWidth()) {
-            Box(
-                Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(accent),
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(accent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                verdictIcon,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
             )
-            Column(
-                Modifier
-                    .weight(1f)
-                    .background(cardTint)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        formatQuantity(result.effectivelyAvailable),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            headline,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = accent,
-                        )
-                        Text(
-                            stringResource(R.string.availability_verdict_date_context, dateLabel),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                androidx.compose.material3.HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    CompactMetric(stringResource(R.string.storage), result.totalStock)
-                    CompactMetric(
-                        stringResource(R.string.available),
-                        result.effectivelyAvailable,
-                        highlighted = true,
-                    )
-                    CompactMetric(stringResource(R.string.renting), result.totalRenting)
-                }
-            }
         }
-    }
-    result.message?.let {
-        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            verdictText,
+            style = MaterialTheme.typography.titleLarge,
+            color = accent,
+        )
     }
 }
 
 @Composable
-private fun CompactMetric(label: String, value: Int, highlighted: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+private fun AvailabilitySummary(result: ProductAvailability, dateLabel: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        AvailabilityDayVerdictBanner(
+            effectiveAvailable = result.effectivelyAvailable,
+            dateLabel = dateLabel,
         )
-        Text(
-            formatQuantity(value),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = if (highlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        )
+        result.message?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
 @Composable
 private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit) {
-    // Typography parity with `OrderListCard` (order list)
+    val isConflict = order.isConflict
+    val orange = Color(0xFFF19920)
     AppCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isConflict) {
+                    Modifier.border(1.5.dp, orange.copy(alpha = 0.65f), RoundedCornerShape(10.dp))
+                } else {
+                    Modifier
+                }
+            ),
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
     ) {
-        Column(
-            Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            Modifier.background(if (isConflict) orange.copy(alpha = 0.14f) else Color.Transparent)
         ) {
+            if (isConflict) {
+                Box(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(orange),
+                )
+            }
+            Column(
+                Modifier.padding(start = if (isConflict) 18.dp else 14.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    "#${order.orderNumber.trim().removePrefix("#")}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        "#${order.orderNumber.trim().removePrefix("#")}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (isConflict) {
+                        Text(
+                            stringResource(R.string.availability_conflict_badge),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .background(orange, RoundedCornerShape(10.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
+                }
                 StatusBadge(order.status)
             }
             Text(
@@ -523,6 +528,7 @@ private fun AvailabilityOrderCard(order: AvailabilityOrder, onClick: () -> Unit)
                     highlighted = true,
                     modifier = Modifier.weight(1f),
                 )
+            }
             }
         }
     }
@@ -560,7 +566,8 @@ private fun AvailabilityDateCell(
     }
 }
 
-private val EmptyGreenFill = Color(0xFFEDF9F2)
+private val AvailableGreen = Color(0xFF16A34A)
+private val AvailableGreenAccent = Color(0xFF22C55E)
 private val EmptyGreenText = Color(0xFF178C57)
 private val LowYellowFill = Color(0xFFFFFAEB)
 private val LowYellowText = Color(0xFFB87A0D)
@@ -791,9 +798,7 @@ private fun AvailabilityDayCell(
 private fun AvailabilityOrdersBottomSheet(
     orders: List<AvailabilityOrder>,
     dateLabel: String,
-    stock: Int,
-    available: Int,
-    renting: Int,
+    effectiveAvailable: Int,
     onDismiss: () -> Unit,
     onOpenOrder: (Int) -> Unit,
 ) {
@@ -810,35 +815,32 @@ private fun AvailabilityOrdersBottomSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                stringResource(R.string.availability_orders_sheet_title, dateLabel),
+                stringResource(R.string.availability_orders_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
+            AvailabilityDayVerdictBanner(
+                effectiveAvailable = effectiveAvailable,
+                dateLabel = dateLabel,
+            )
+            val rentCount = orders.count { it.orderType.equals("RENT", ignoreCase = true) }
+            val saleCount = orders.count { it.orderType.equals("SALE", ignoreCase = true) }
             Text(
-                stringResource(R.string.availability_order_count, orders.size),
+                stringResource(R.string.availability_orders_type_breakdown, rentCount, saleCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AppCard(
-                Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    CompactMetric(stringResource(R.string.storage), stock)
-                    CompactMetric(stringResource(R.string.renting), renting)
-                    CompactMetric(
-                        stringResource(R.string.available),
-                        available,
-                        highlighted = true,
-                    )
-                }
+            if (orders.isEmpty()) {
+                Text(
+                    stringResource(R.string.availability_history_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            orders.forEach { order ->
+            val displayOrders = remember(orders) {
+                orders.sortedByDescending { it.isConflict }
+            }
+            displayOrders.forEach { order ->
                 AvailabilityOrderCard(order, onClick = { onOpenOrder(order.id) })
             }
         }

@@ -316,9 +316,11 @@ class ProductCell: UITableViewCell {
             productNameLabel.text = name
         }
         
-        // Calculate available quantity
+        // Calculate available quantity — prefer today's effective count from API (matches Order Check).
         let availableValue: Int
-        if let available = product.available {
+        if let effective = product.effectiveAvailableToday {
+            availableValue = effective
+        } else if let available = product.available {
             availableValue = available
         } else if let totalStock = product.totalStock, let renting = product.renting {
             availableValue = max(0, totalStock - renting)

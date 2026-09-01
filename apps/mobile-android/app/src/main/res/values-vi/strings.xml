@@ -205,7 +205,8 @@
     <string name="related_orders">Đơn liên quan</string>
     <string name="view_order_history">Xem lịch sử đơn hàng</string>
     <string name="hide_order_history">Ẩn lịch sử đơn hàng</string>
-    <string name="availability_orders_sheet_title">Đơn thuê · %1$s</string>
+    <string name="availability_orders_sheet_title">Đơn trong ngày</string>
+    <string name="availability_orders_type_breakdown">Có %1$d đơn thuê %2$d đơn bán</string>
     <string name="availability_order_count">%1$d đơn</string>
     <string name="availability_verdict_date_context">Trong ngày %1$s</string>
     <string name="total_stock_value">Tổng tồn kho: %1$d</string>
@@ -220,6 +221,20 @@
     <string name="low_stock">Hết hàng</string>
     <string name="create_date">Ngày tạo</string>
     <string name="availability_conflicts">Có xung đột lịch</string>
+    <string name="availability_conflict_badge">Trùng ngày</string>
+    <string name="availability_verdict_available_title">Còn hàng</string>
+    <string name="availability_verdict_out_of_stock_headline">Hết hàng thật</string>
+    <string name="availability_verdict_conflict_headline">Trùng lịch (hết vì đã thuê)</string>
+    <string name="availability_verdict_available">Còn %1$s sản phẩm trong ngày %2$s</string>
+    <string name="availability_verdict_out_of_stock">Hết hàng trong ngày %1$s</string>
+    <string name="availability_verdict_conflict">Trùng lịch trong ngày %1$s</string>
+    <string name="availability_header_orders_on_day">%1$d đơn thuê</string>
+    <string name="availability_header_orders_conflict_summary">%1$d đơn trùng ngày %2$s · %3$d đơn thuê</string>
+    <string name="availability_header_conflict_suffix">đơn trùng ngày %1$s</string>
+    <string name="availability_header_orders_suffix">đơn thuê</string>
+    <string name="availability_header_total_rental_subtitle">Tổng %1$s đơn thuê</string>
+    <string name="availability_header_no_overlap_subtitle">Không trùng ngày %1$s</string>
+    <string name="availability_history_empty">Chưa có đơn thuê cho sản phẩm này</string>
     <string name="collect_payment">Thu tiền</string>
     <string name="remaining">Còn lại</string>
     <string name="check_availability">Kiểm tra lịch sản phẩm</string>
@@ -308,7 +323,7 @@
     <string name="calendar_has_orders">Hết</string>
     <string name="availability_calendar_qty_label">còn</string>
     <string name="availability_calendar_qty_hint">Số trong ô = lượng còn cho thuê</string>
-    <string name="availability_calendar_tap_hint">Chạm một ngày để xem đơn thuê trong ngày</string>
+    <string name="availability_calendar_tap_hint">Chạm một ngày để xem đơn trùng lịch</string>
     <string name="storage">Trong kho</string>
     <string name="renting">Đang thuê</string>
     <string name="swipe_charts">Vuốt ngang để xem thêm</string>

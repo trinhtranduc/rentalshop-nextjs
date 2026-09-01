@@ -1269,22 +1269,31 @@
 "On check day" = "On check day";
 "availability_verdict_date_context" = "On %@";
 "availability_verdict_available_headline" = "%@ available";
+"availability_verdict_available_title" = "In stock";
 "availability_verdict_out_of_stock_headline" = "Out of stock";
-"availability_verdict_conflict_headline" = "Schedule conflict";
-"availability_verdict_available" = "%@ products available on %@";
+"availability_verdict_conflict_headline" = "Schedule conflict (booked out)";
+"availability_verdict_available" = "%@ products left on %@";
 "availability_verdict_out_of_stock" = "Out of stock on %@";
 "availability_verdict_conflict" = "Schedule conflict on %@";
 "Rental history" = "Rental history";
 "availability_order_count" = "%d orders";
-"availability_history_empty" = "No rental history for this day";
+"availability_history_empty" = "No rental orders for this product";
 "availability_calendar_plenty" = "Plenty";
 "availability_calendar_low" = "Low";
 "availability_calendar_none" = "None left";
 "availability_calendar_qty_label" = "avail.";
 "availability_calendar_qty_hint" = "Number in each cell = qty available to rent";
-"availability_calendar_tap_hint" = "Tap a day to see rental orders for that date";
-"availability_orders_sheet_title" = "Orders on %@";
+"availability_calendar_tap_hint" = "Tap a day to see overlapping orders";
+"availability_orders_sheet_title" = "Orders for this day";
+"availability_orders_type_breakdown" = "%d rental, %d sale orders";
 "availability_overlap_on_check_day" = "Overlap on check day";
+"availability_conflict_badge" = "Overlapping";
+"availability_header_orders_on_day" = "%d rental orders";
+"availability_header_orders_conflict_summary" = "%d overlapping on %@ · %d rental orders";
+"availability_header_conflict_suffix" = "overlapping on %@";
+"availability_header_orders_suffix" = "rental orders";
+"availability_header_total_rental_subtitle" = "%@ rental orders total";
+"availability_header_no_overlap_subtitle" = "None overlapping on %@";
 
 // MARK: - Image Search
 "Search by Image" = "Search by Image";
