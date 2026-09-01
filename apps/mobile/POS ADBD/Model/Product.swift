@@ -62,6 +62,7 @@ struct Product: Codable, Comparable, Copying {
     var totalStock: Int?
     var renting: Int?
     var available: Int?
+    var effectiveAvailableToday: Int?
     var rentPrice: Double?
     var salePrice: Double?
     var costPrice: Double?
@@ -165,6 +166,7 @@ struct Product: Codable, Comparable, Copying {
         case totalStock
         case renting
         case available
+        case effectiveAvailableToday
         case rentPrice
         case salePrice
         case costPrice
@@ -262,6 +264,7 @@ struct Product: Codable, Comparable, Copying {
         self.outletId = try container.decodeIfPresent(Int.self, forKey: .outletId)
         self.renting = try container.decodeIfPresent(Int.self, forKey: .renting)
         self.available = try container.decodeIfPresent(Int.self, forKey: .available)
+        self.effectiveAvailableToday = try container.decodeIfPresent(Int.self, forKey: .effectiveAvailableToday)
         self.categoryId = try container.decodeIfPresent(Int.self, forKey: .categoryId)
         self.category = try container.decodeIfPresent(CategoryDetail.self, forKey: .category)
         
