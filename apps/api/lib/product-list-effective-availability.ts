@@ -1,20 +1,40 @@
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 import {
-  aggregateConflictingQuantities,
-  calculateEffectivelyAvailable,
+  calendarDayAvailability,
   getAvailabilityCivilDayBounds,
   toAvailabilityCivilDateKey,
-  type ConflictingOrderInput,
-} from './availability';
+} from './availability-calendar-days';
 
 export type ProductListEffectiveAvailabilityInput = {
   id: number;
 };
 
+export type CivilDayOrderInput = {
+  pickupPlanAt: Date | null;
+  returnPlanAt: Date | null;
+  quantity: number;
+};
+
 /**
- * Effective availability for one product/outlet on a civil day (same math as Order Check).
+ * Effective availability for one civil day — same math as Order Check calendar cells.
  */
+export function effectiveAvailableForCivilDay(input: {
+  stock: number;
+  civilDayYmd: string;
+  orders: CivilDayOrderInput[];
+}): number {
+  const days = calendarDayAvailability({
+    stock: Math.max(0, input.stock),
+    fromYmd: input.civilDayYmd,
+    toYmd: input.civilDayYmd,
+    orders: input.orders,
+  });
+
+  return days.find((day) => day.date === input.civilDayYmd)?.available ?? Math.max(0, input.stock);
+}
+
+/** @deprecated Use effectiveAvailableForCivilDay — kept for existing unit tests. */
 export function computeEffectiveAvailableForDay(input: {
   stock: number;
   available: number;
@@ -22,13 +42,7 @@ export function computeEffectiveAvailableForDay(input: {
   conflictingQuantity: number;
   reservedConflictQuantity: number;
 }): number {
-  return calculateEffectivelyAvailable({
-    totalStock: input.stock,
-    totalAvailableStock: input.available,
-    totalRenting: input.renting,
-    conflictingQuantity: input.conflictingQuantity,
-    reservedConflictQuantity: input.reservedConflictQuantity,
-  });
+  return Math.max(0, input.stock - input.conflictingQuantity);
 }
 
 /**
@@ -68,7 +82,7 @@ export async function batchTodayEffectiveAvailability(
 
   const stockByProduct = new Map(outletStocks.map((row) => [row.productId, row]));
 
-  const conflictingOrders = await db.prisma.order.findMany({
+  const overlappingRentOrders = await db.prisma.order.findMany({
     where: {
       orderType: ORDER_TYPE.RENT as any,
       status: {
@@ -84,7 +98,9 @@ export async function batchTodayEffectiveAvailability(
         },
       },
     },
-    include: {
+    select: {
+      pickupPlanAt: true,
+      returnPlanAt: true,
       orderItems: {
         where: {
           productId: { in: productIds },
@@ -97,6 +113,31 @@ export async function batchTodayEffectiveAvailability(
     },
   });
 
+  const ordersByProduct = new Map<number, CivilDayOrderInput[]>();
+
+  for (const order of overlappingRentOrders) {
+    const quantitiesByProduct = new Map<number, number>();
+
+    for (const item of order.orderItems) {
+      if (!item.productId) continue;
+      quantitiesByProduct.set(
+        item.productId,
+        (quantitiesByProduct.get(item.productId) ?? 0) + item.quantity
+      );
+    }
+
+    for (const [productId, quantity] of quantitiesByProduct) {
+      if (quantity <= 0) continue;
+      const list = ordersByProduct.get(productId) ?? [];
+      list.push({
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        quantity,
+      });
+      ordersByProduct.set(productId, list);
+    }
+  }
+
   for (const productId of productIds) {
     const stock = stockByProduct.get(productId);
     if (!stock) {
@@ -104,20 +145,12 @@ export async function batchTodayEffectiveAvailability(
       continue;
     }
 
-    const { conflictingQuantity, reservedConflictQuantity } = aggregateConflictingQuantities(
-      productId,
-      outletId,
-      conflictingOrders as ConflictingOrderInput[]
-    );
-
     result.set(
       productId,
-      computeEffectiveAvailableForDay({
+      effectiveAvailableForCivilDay({
         stock: stock.stock,
-        available: stock.available,
-        renting: stock.renting,
-        conflictingQuantity,
-        reservedConflictQuantity,
+        civilDayYmd,
+        orders: ordersByProduct.get(productId) ?? [],
       })
     );
   }
@@ -133,8 +166,10 @@ export function resolveProductListAvailabilityOutletId(input: {
   role: string;
   userOutletId?: number;
   queryOutletId?: number;
+  /** Backend outlet filter (OUTLET_* roles always have this). */
+  filterOutletId?: number;
 }): number | undefined {
-  const { role, userOutletId, queryOutletId } = input;
+  const { userOutletId, queryOutletId, filterOutletId } = input;
 
   if (queryOutletId && queryOutletId > 0) {
     return queryOutletId;
@@ -142,6 +177,10 @@ export function resolveProductListAvailabilityOutletId(input: {
 
   if (userOutletId && userOutletId > 0) {
     return userOutletId;
+  }
+
+  if (filterOutletId && filterOutletId > 0) {
+    return filterOutletId;
   }
 
   return undefined;

@@ -154,6 +154,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       role: user.role,
       userOutletId: userScope.outletId,
       queryOutletId,
+      filterOutletId,
     });
 
     const todayEffectiveByProduct =
@@ -181,13 +182,25 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         ? todayEffectiveByProduct.get(product.id)
         : undefined;
 
-      // Product list "Có sẵn": today's schedulable count (matches Order Check for today).
-      // Fallback to shelf stock when outlet context is missing (e.g. admin without outletId).
-      const totalRenting = (product.outletStock || []).reduce(
-        (sum: number, stock: any) => sum + (stock.renting || 0),
-        0
-      );
-      const shelfAvailable = Math.max(0, (product.totalStock || 0) - totalRenting);
+      const scopedOutletStock =
+        availabilityOutletId != null
+          ? (product.outletStock || []).find(
+              (stock: any) => stock.outlet?.id === availabilityOutletId
+            )
+          : undefined;
+
+      // Product list "Có sẵn": today's schedulable count (matches Order Check calendar for today).
+      // Fallback to shelf stock when outlet context is missing (e.g. merchant without outletId).
+      const totalRenting = scopedOutletStock
+        ? scopedOutletStock.renting || 0
+        : (product.outletStock || []).reduce(
+            (sum: number, stock: any) => sum + (stock.renting || 0),
+            0
+          );
+      const shelfStock = scopedOutletStock
+        ? scopedOutletStock.stock || 0
+        : product.totalStock || 0;
+      const shelfAvailable = Math.max(0, shelfStock - totalRenting);
       const available =
         effectiveAvailableToday !== undefined ? effectiveAvailableToday : shelfAvailable;
 
@@ -204,7 +217,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
           available: outletEffective,
         };
       });
-      
+
       // Build product object, excluding costPrice if user doesn't have permission
       const productData: any = {
         ...product,
@@ -213,6 +226,13 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         effectiveAvailableToday: effectiveAvailableToday ?? available,
         outletStock,
       };
+
+      // Mobile list shows product.totalStock / renting — align with scoped outlet when known.
+      if (scopedOutletStock && effectiveAvailableToday !== undefined) {
+        productData.totalStock = scopedOutletStock.stock ?? 0;
+        productData.stock = scopedOutletStock.stock ?? 0;
+        productData.renting = scopedOutletStock.renting ?? 0;
+      }
       
       // Only include costPrice if user has products.manage permission
       if (canViewCostPrice) {

@@ -1,15 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@jest/globals';
 import {
   computeEffectiveAvailableForDay,
+  effectiveAvailableForCivilDay,
   resolveProductListAvailabilityOutletId,
 } from '../../../apps/api/lib/product-list-effective-availability';
-import { USER_ROLE } from '@rentalshop/constants';
+import { calendarRemainingForDay, mobileSameDayOrder } from './order-check-day-select.harness';
 
 describe('resolveProductListAvailabilityOutletId', () => {
   it('prefers query outletId from mobile POS', () => {
     expect(
       resolveProductListAvailabilityOutletId({
-        role: USER_ROLE.MERCHANT,
+        role: 'MERCHANT',
         userOutletId: undefined,
         queryOutletId: 30,
       })
@@ -19,9 +20,20 @@ describe('resolveProductListAvailabilityOutletId', () => {
   it('falls back to assigned outlet for outlet staff', () => {
     expect(
       resolveProductListAvailabilityOutletId({
-        role: USER_ROLE.OUTLET_STAFF,
+        role: 'OUTLET_STAFF',
         userOutletId: 30,
         queryOutletId: undefined,
+      })
+    ).toBe(30);
+  });
+
+  it('falls back to filter outlet for outlet staff without query param', () => {
+    expect(
+      resolveProductListAvailabilityOutletId({
+        role: 'OUTLET_STAFF',
+        userOutletId: undefined,
+        queryOutletId: undefined,
+        filterOutletId: 30,
       })
     ).toBe(30);
   });
@@ -29,7 +41,7 @@ describe('resolveProductListAvailabilityOutletId', () => {
   it('returns undefined when no outlet context', () => {
     expect(
       resolveProductListAvailabilityOutletId({
-        role: USER_ROLE.MERCHANT,
+        role: 'MERCHANT',
         userOutletId: undefined,
         queryOutletId: undefined,
       })
@@ -73,5 +85,30 @@ describe('computeEffectiveAvailableForDay (product list badge)', () => {
         reservedConflictQuantity: 0,
       })
     ).toBe(19);
+  });
+});
+
+describe('effectiveAvailableForCivilDay (matches Order Check calendar)', () => {
+  it('same-day booking shows 0 available on that VN civil day', () => {
+    const ymd = '2026-08-28';
+    const order = mobileSameDayOrder(1, ymd);
+    const orders = [
+      {
+        pickupPlanAt: order.pickupPlanAt,
+        returnPlanAt: order.returnPlanAt,
+        quantity: 1,
+      },
+    ];
+
+    expect(
+      effectiveAvailableForCivilDay({ stock: 1, civilDayYmd: ymd, orders })
+    ).toBe(0);
+
+    expect(calendarRemainingForDay(ymd, 1, [order])).toBe(0);
+  });
+
+  it('no bookings → full stock available today', () => {
+    const ymd = '2026-09-01';
+    expect(effectiveAvailableForCivilDay({ stock: 5, civilDayYmd: ymd, orders: [] })).toBe(5);
   });
 });
