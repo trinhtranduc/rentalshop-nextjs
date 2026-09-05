@@ -407,6 +407,7 @@ export default function OrdersPage() {
       merchantName: (order as any).merchantName || order.outlet?.merchant?.name || 'Unknown',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
+      notes: order.notes,
       pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
       returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
       pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,

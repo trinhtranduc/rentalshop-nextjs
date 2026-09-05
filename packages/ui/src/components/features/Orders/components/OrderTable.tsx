@@ -13,12 +13,12 @@ import {
 } from '../../../ui/dropdown-menu';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
-import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
-import { formatPhoneNumber } from '@rentalshop/utils';
-import { Copy, Gift } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { formatPhoneNumber, formatFullDateByLocale, formatDateTimeByLocale } from '@rentalshop/utils';
+import { ChevronDown, Copy, Gift } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
-import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
+import type { OrderListItem } from '@rentalshop/types';
 
 interface OrderTableProps {
   orders: OrderListItem[];
@@ -49,6 +49,18 @@ export const OrderTable = React.memo(function OrderTable({
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
   const { toastSuccess } = useToast();
+  const locale = useLocale();
+  const tableId = React.useId();
+  const [expandedOrderIds, setExpandedOrderIds] = React.useState<Set<number>>(() => new Set());
+
+  const toggleOrderExpanded = (orderId: number) => {
+    setExpandedOrderIds(previous => {
+      const next = new Set(previous);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
   
   const handleCopyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
@@ -139,13 +151,13 @@ export const OrderTable = React.memo(function OrderTable({
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
     // Use the new date utility for consistent formatting (date only for pickup/return dates)
-    return useFormattedFullDate(dateString);
+    return formatFullDateByLocale(dateString, locale);
   };
   
   // Format date with time for createdAt
   const formatDateTime = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
-    return useFormattedDateTime(dateString);
+    return formatDateTimeByLocale(dateString, locale);
   };
 
   const getOrderIcon = () => {
@@ -195,6 +207,9 @@ export const OrderTable = React.memo(function OrderTable({
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
+              <th scope="col" className="w-14 px-2 py-3">
+                <span className="sr-only">{t('detail.orderInformation')}</span>
+              </th>
               {/* Select All Checkbox */}
               {onSelectionChange && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
@@ -286,8 +301,26 @@ export const OrderTable = React.memo(function OrderTable({
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {orders.map((order) => {
               const orderIsSelected = isSelected(order.id);
+              const isExpanded = expandedOrderIds.has(order.id);
+              const informationId = `${tableId}-order-${order.id}`;
               return (
-              <tr key={order.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${orderIsSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+              <React.Fragment key={order.id}>
+              <tr className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${orderIsSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                <td className="px-2 py-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 text-gray-600 dark:text-gray-300"
+                    aria-expanded={isExpanded}
+                    aria-controls={informationId}
+                    aria-label={t(isExpanded ? 'actions.collapseOrder' : 'actions.expandOrder', { orderNumber: order.orderNumber })}
+                    title={t(isExpanded ? 'actions.collapseOrder' : 'actions.expandOrder', { orderNumber: order.orderNumber })}
+                    onClick={() => toggleOrderExpanded(order.id)}
+                  >
+                    <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform duration-200 motion-reduce:transition-none ${isExpanded ? 'rotate-180' : '-rotate-90'}`} />
+                  </Button>
+                </td>
                 {/* Checkbox */}
                 {onSelectionChange && (
                   <td className="px-6 py-3 whitespace-nowrap">
@@ -396,7 +429,7 @@ export const OrderTable = React.memo(function OrderTable({
                       onClick={() => onOrderAction('view', order.orderNumber)}
                     >
                       <Eye className="h-4 w-4 shrink-0" />
-                      <span>{t('actions.view')}</span>
+                      <span>{t('actions.details')}</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -432,6 +465,44 @@ export const OrderTable = React.memo(function OrderTable({
                   </div>
                 </td>
               </tr>
+              <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50">
+                {isExpanded && (
+                  <td colSpan={9 + (onSelectionChange ? 1 : 0) + (showMerchant ? 1 : 0)} className="px-6 py-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('detail.orderInformation')} · {order.orderNumber}
+                      </h3>
+                      <dl className="grid grid-cols-2 gap-x-8 gap-y-4 xl:grid-cols-4">
+                        {[
+                          [t('customer.name'), order.customerName || '—'],
+                          [t('customer.phone'), formatPhoneNumber(order.customerPhone || '') || '—'],
+                          [t('messages.outlet'), order.outletName || '—'],
+                          [t('items.title'), String(order.itemCount)],
+                          [t('amount.total'), formatMoney(order.totalAmount)],
+                          [t('amount.deposit'), formatMoney(order.depositAmount)],
+                          ...(order.orderType === 'RENT' ? [
+                            [t('dates.pickupDate'), formatDateTime(order.pickupPlanAt)],
+                            [t('dates.returnDate'), formatDateTime(order.returnPlanAt)],
+                          ] : []),
+                          [t('dates.createdDate'), formatDateTime(order.createdAt)],
+                        ].map(([label, value]) => (
+                          <div key={label} className="min-w-0">
+                            <dt className="text-xs text-gray-500 dark:text-gray-400">{label}</dt>
+                            <dd className="mt-1 break-words text-sm font-medium text-gray-900 dark:text-white">{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('detail.notes')}</p>
+                        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-white">
+                          {order.notes?.trim() || t('detail.noNotes')}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                )}
+              </tr>
+              </React.Fragment>
             );
             })}
           </tbody>

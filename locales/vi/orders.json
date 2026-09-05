@@ -152,6 +152,9 @@
   },
   "actions": {
     "label": "Hành động",
+    "details": "Chi tiết",
+    "expandOrder": "Mở rộng thông tin đơn hàng {orderNumber}",
+    "collapseOrder": "Thu gọn thông tin đơn hàng {orderNumber}",
     "view": "Xem",
     "edit": "Sửa",
     "viewCustomer": "Xem khách hàng",

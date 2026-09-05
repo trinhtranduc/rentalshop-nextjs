@@ -152,6 +152,9 @@
   },
   "actions": {
     "label": "Actions",
+    "details": "Details",
+    "expandOrder": "Expand information for order {orderNumber}",
+    "collapseOrder": "Collapse information for order {orderNumber}",
     "view": "View",
     "edit": "Edit",
     "viewCustomer": "View Customer",
