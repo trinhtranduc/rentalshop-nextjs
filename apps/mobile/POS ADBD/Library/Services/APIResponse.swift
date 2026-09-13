@@ -354,6 +354,21 @@ struct APIEmptyResponse: Codable {
     }
 }
 
+struct ShopImageIndexData: Codable {
+    let scanned: Int?
+    let skippedIndexed: Int?
+    let skippedNoImages: Int?
+    let queued: Int?
+}
+
+struct ShopImageIndexResponse: Codable {
+    let success: Bool
+    let code: String?
+    let message: String?
+    let data: ShopImageIndexData?
+    let error: String?
+}
+
 // MARK: - Resend Verification Response Models
 
 // Resend Verification Data - contains message from API

@@ -333,10 +333,11 @@ fun OverviewScreen(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            PerformanceMode.REVENUE,
-                            PerformanceMode.GROWTH,
-                            PerformanceMode.ORDERS,
-                        ).forEach { mode ->
+                            listOf(
+                                PerformanceMode.REVENUE,
+                                PerformanceMode.GROWTH,
+                                PerformanceMode.ORDERS,
+                            ).forEach { mode ->
                                 val label = when (mode) {
                                     PerformanceMode.REVENUE -> stringResource(R.string.revenue)
                                     PerformanceMode.GROWTH -> stringResource(R.string.growth_percent)

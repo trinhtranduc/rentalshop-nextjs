@@ -59,6 +59,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.theme.BrandPrimary
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment

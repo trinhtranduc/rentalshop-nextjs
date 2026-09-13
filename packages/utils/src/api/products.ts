@@ -481,7 +481,37 @@ export const productsApi = {
   },
 
   /**
-   * Queue CLIP embeddings for products that have images but are not in Qdrant yet.
+   * Scan the shop catalog and queue CLIP embeddings for products that have
+   * photos but are not indexed yet. Already-indexed products are skipped.
+   */
+  async indexShopImages(payload?: {
+    force?: boolean;
+    merchantId?: number;
+  }): Promise<ApiResponse<{
+    merchantId: number;
+    scanned: number;
+    skippedIndexed: number;
+    skippedNoImages: number;
+    queued: number;
+    force: boolean;
+  }>> {
+    const response = await authenticatedFetch('/api/products/index-images', {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return await parseApiResponse<{
+      merchantId: number;
+      scanned: number;
+      skippedIndexed: number;
+      skippedNoImages: number;
+      queued: number;
+      force: boolean;
+    }>(response);
+  },
+
+  /**
+   * Queue CLIP embeddings for products that have images but are not indexed yet.
+   * @deprecated Use {@link indexShopImages}
    */
   async syncEmbeddings(payload?: {
     force?: boolean;
@@ -492,6 +522,9 @@ export const productsApi = {
     queued: number;
     force: boolean;
     hasMore: boolean;
+    skippedIndexed?: number;
+    skippedNoImages?: number;
+    scanned?: number;
   }>> {
     const response = await authenticatedFetch('/api/products/sync-embeddings', {
       method: 'POST',
@@ -503,6 +536,9 @@ export const productsApi = {
       queued: number;
       force: boolean;
       hasMore: boolean;
+      skippedIndexed?: number;
+      skippedNoImages?: number;
+      scanned?: number;
     }>(response);
   },
 

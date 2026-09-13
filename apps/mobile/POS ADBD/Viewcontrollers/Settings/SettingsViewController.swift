@@ -141,6 +141,10 @@ class SettingsViewController: BaseViewControler {
             // if PermissionManager.shared.canManageBankAccounts() {
             //     items.append(.bankAccounts)
             // }
+
+            if PermissionManager.shared.canManageProducts() {
+                items.append(.indexShopImages)
+            }
             
             return items
         case .about:
@@ -157,6 +161,7 @@ class SettingsViewController: BaseViewControler {
         case notifications
         case printer
         case export
+        case indexShopImages
         case bankAccounts
         case appInfo
         case deleteAccount
@@ -170,6 +175,7 @@ class SettingsViewController: BaseViewControler {
             case .notifications: return "Notifications".localized()
             case .printer: return "Printer Configuration".localized()
             case .export: return "Export Data".localized()
+            case .indexShopImages: return "product.imageSearch.indexShop".localized()
             case .bankAccounts: return "Bank Accounts".localized()
             case .appInfo: return "App Information".localized()
             case .deleteAccount: return "Delete Account".localized()
@@ -191,6 +197,7 @@ class SettingsViewController: BaseViewControler {
             case .notifications: return UIImage(systemName: "bell.fill")
             case .printer: return UIImage(systemName: "printer.fill")
             case .export: return UIImage(systemName: "square.and.arrow.up")
+            case .indexShopImages: return UIImage(systemName: "photo.on.rectangle.angled")
             case .bankAccounts: return UIImage(systemName: "creditcard.fill")
             case .appInfo: return UIImage(systemName: "info.circle.fill")
             case .deleteAccount: return UIImage(systemName: "trash")
@@ -200,7 +207,7 @@ class SettingsViewController: BaseViewControler {
         
         var iconColor: UIColor {
             switch self {
-            case .account, .subscription, .printer, .appInfo, .export, .bankAccounts, .deleteAccount, .userManagement, .notifications:
+            case .account, .subscription, .printer, .appInfo, .export, .indexShopImages, .bankAccounts, .deleteAccount, .userManagement, .notifications:
                 return .neutralGray
             case .logout:
                 return .actionDanger
@@ -426,6 +433,9 @@ class SettingsViewController: BaseViewControler {
         case .export:
             let exportVC = ExportViewController()
             navigationController?.pushViewController(exportVC, animated: true)
+
+        case .indexShopImages:
+            confirmIndexShopImages()
             
         case .bankAccounts:
             let bankAccountVC = BankAccountViewController()
@@ -440,6 +450,47 @@ class SettingsViewController: BaseViewControler {
             
         case .logout:
             showLogoutAlert()
+        }
+    }
+
+    private func confirmIndexShopImages() {
+        let alert = UIAlertController(
+            title: "product.imageSearch.indexShop".localized(),
+            message: "product.imageSearch.indexShopConfirm".localized(),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "Confirm".localized(), style: .default) { [weak self] _ in
+            self?.runIndexShopImages()
+        })
+        present(alert, animated: true)
+    }
+
+    private func runIndexShopImages() {
+        showProgressText(text: "Loading...".localized())
+        ProductService.shared.indexShopImages { [weak self] queued, skippedIndexed, error in
+            self?.hideProgress()
+            if let error {
+                UIAlertController.errorAlert(parent: self, error: error)
+                return
+            }
+            let message: String
+            if queued == 0 {
+                message = skippedIndexed > 0
+                    ? "product.imageSearch.indexShopNone".localized()
+                    : "product.imageSearch.indexShopEmpty".localized()
+            } else {
+                message = String(
+                    format: "product.imageSearch.indexShopQueued".localized(),
+                    queued,
+                    skippedIndexed
+                )
+            }
+            self?.showToast(
+                message: message,
+                duration: 3.5,
+                icon: UIImage(systemName: "checkmark.circle.fill")
+            )
         }
     }
     

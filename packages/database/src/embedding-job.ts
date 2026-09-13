@@ -1,5 +1,6 @@
 import { prisma } from './client';
 import { generateProductEmbedding } from './jobs/generate-product-embeddings';
+import { parseProductImages } from '@rentalshop/utils';
 
 const prismaAny = prisma as any;
 
@@ -164,5 +165,77 @@ export const simplifiedEmbeddingJobs = {
       batchSize: 1,
       productId: input.productId
     });
+  },
+
+  /**
+   * Scan a shop catalog and queue CLIP jobs for products that have photos
+   * but are not indexed yet (`embeddingGeneratedAt` set = skip).
+   */
+  queueShopImageIndex: async (input: {
+    merchantId: number;
+    force?: boolean;
+  }): Promise<{
+    scanned: number;
+    skippedIndexed: number;
+    skippedNoImages: number;
+    queued: number;
+  }> => {
+    const { merchantId, force = false } = input;
+
+    const products = await prismaAny.product.findMany({
+      where: { merchantId, isActive: true },
+      select: { id: true, images: true, embeddingGeneratedAt: true }
+    });
+
+    let skippedIndexed = 0;
+    let skippedNoImages = 0;
+    const toQueue: number[] = [];
+
+    for (const product of products) {
+      const images = parseProductImages(product.images);
+      if (images.length === 0) {
+        skippedNoImages += 1;
+        continue;
+      }
+      if (!force && product.embeddingGeneratedAt) {
+        skippedIndexed += 1;
+        continue;
+      }
+      toQueue.push(product.id);
+    }
+
+    let queued = toQueue.length;
+    if (toQueue.length > 0) {
+      const pending = await prismaAny.embeddingJob.findMany({
+        where: { productId: { in: toQueue }, status: 'PENDING' },
+        select: { productId: true }
+      });
+      const pendingIds = new Set(pending.map((row: { productId: number }) => row.productId));
+      const fresh = toQueue.filter((id) => !pendingIds.has(id));
+      queued = fresh.length;
+      if (fresh.length > 0) {
+        await prismaAny.embeddingJob.createMany({
+          data: fresh.map((productId: number) => ({
+            productId,
+            source: force ? 'manual-force' : 'shop-index',
+            priority: 5,
+            status: 'PENDING'
+          }))
+        });
+      }
+    }
+
+    void simplifiedEmbeddingJobs
+      .processPending({ batchSize: 5 })
+      .catch((error: any) => {
+        console.error('[Shop image index] processPending failed:', error?.message || error);
+      });
+
+    return {
+      scanned: products.length,
+      skippedIndexed,
+      skippedNoImages,
+      queued
+    };
   }
 };

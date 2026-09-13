@@ -24,6 +24,7 @@ protocol ProductServiceProtocol {
     func searchProductsByImage(image: UIImage, limit: Int?, minSimilarity: Float?, categoryId: Int?, completion: @escaping (_ products: [Product]?, _ total: Int?, _ message: String?, _ error: NSError?) -> Void)
     func searchProductsByImage(imageData: Data, image: UIImage, limit: Int?, minSimilarity: Float?, categoryId: Int?, completion: @escaping (_ products: [Product]?, _ total: Int?, _ message: String?, _ error: NSError?) -> Void)
     func syncProductEmbeddings(productId: Int, completion: @escaping (_ error: NSError?) -> Void)
+    func indexShopImages(completion: @escaping (_ queued: Int, _ skippedIndexed: Int, _ error: NSError?) -> Void)
 }
 
 class ProductService: BaseService, ProductServiceProtocol {
@@ -309,7 +310,43 @@ class ProductService: BaseService, ProductServiceProtocol {
                         message: apiResponse.message,
                         error: apiResponse.error,
                         httpStatusCode: nil,
-                        defaultMessage: "product.imageSearch.failed".localized()
+                        defaultMessage: "Failed to sync embeddings"
+                    )
+                )
+            }
+        }
+    }
+
+    /// Scan shop catalog: index products with photos that are not indexed yet.
+    func indexShopImages(completion: @escaping (Int, Int, NSError?) -> Void) {
+        let path = "\(APIEndpoint.Path.products)/index-images"
+        performPOST(
+            path: path,
+            parameters: [:],
+            responseType: ShopImageIndexResponse.self,
+            context: "ProductService.indexShopImages"
+        ) { apiResponse, error in
+            if let error = error {
+                completion(0, 0, error)
+                return
+            }
+            guard let apiResponse = apiResponse else {
+                completion(0, 0, NSError.errorWithOwnMessage(message: "No response received", domain: "RC"))
+                return
+            }
+            if apiResponse.success {
+                completion(apiResponse.data?.queued ?? 0, apiResponse.data?.skippedIndexed ?? 0, nil)
+            } else {
+                completion(
+                    0,
+                    0,
+                    self.createErrorFromResponse(
+                        success: apiResponse.success,
+                        code: apiResponse.code,
+                        message: apiResponse.message,
+                        error: apiResponse.error,
+                        httpStatusCode: nil,
+                        defaultMessage: "Failed to index shop photos"
                     )
                 )
             }
