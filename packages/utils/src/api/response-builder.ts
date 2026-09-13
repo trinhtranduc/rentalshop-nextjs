@@ -44,6 +44,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Validation Errors
   'INVALID_QUERY': 'Invalid query parameters',
   'INVALID_PAYLOAD': 'Invalid request payload',
+  'MISSING_PRODUCT_DATA': 'Missing product data in request body',
+  'INVALID_JSON_DATA': 'Invalid product data JSON',
   'INVALID_USER_DATA': 'Invalid user data',
   'INVALID_UPDATE_DATA': 'Invalid update data',
   'BUSINESS_NAME_REQUIRED': 'Business name is required',
