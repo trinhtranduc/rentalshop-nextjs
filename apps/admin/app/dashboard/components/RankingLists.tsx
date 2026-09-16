@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, useFormatCurrency } from '@rentalshop/ui';
+import { Button, ImageLightbox, useFormatCurrency } from '@rentalshop/ui';
 import { useDashboardTranslations } from '@rentalshop/hooks';
 import type { TopOutlet, TopProduct } from '@rentalshop/types';
 import { Package, Store } from 'lucide-react';
@@ -92,44 +92,56 @@ export function TopProductRow({
   product,
   rank,
   sortBy,
-  onClick
+  onProductClick,
+  onShopClick
 }: {
   product: TopProduct;
   rank: number;
   sortBy: RankingSortBy;
-  onClick: () => void;
+  onProductClick: () => void;
+  onShopClick?: () => void;
 }) {
   const tDashboard = useDashboardTranslations();
   const formatMoney = useFormatCurrency();
   const quantity = product.quantity ?? product.rentalCount ?? 0;
-  const shopLabel = [product.outletName, product.merchantName].filter(Boolean).join(' · ');
+  const shopName = product.outletName?.trim() || '—';
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-lg bg-gray-50 p-2 text-left transition-colors hover:bg-gray-100 sm:gap-3 sm:p-3"
-    >
+    <div className="flex w-full items-center gap-2 rounded-lg bg-gray-50 p-2 sm:gap-3 sm:p-3">
       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-sm font-bold text-white">
         {rank}
       </div>
       {product.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ImageLightbox
           src={product.image}
           alt={product.name}
-          className="h-10 w-10 flex-shrink-0 rounded-lg border border-gray-100 bg-gray-50 object-cover"
+          triggerClassName="h-12 w-12 flex-shrink-0 rounded-lg border border-gray-100 bg-gray-50"
+          imgClassName="h-12 w-12 rounded-lg object-cover"
         />
       ) : (
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50">
           <Package className="h-5 w-5 text-blue-700" />
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{product.name}</div>
-        <div className="truncate text-xs text-gray-500">
-          {shopLabel || product.category}
-        </div>
+        <button
+          type="button"
+          onClick={onProductClick}
+          className="block max-w-full truncate text-left text-sm font-medium text-gray-900 hover:text-blue-700 hover:underline"
+        >
+          {product.name}
+        </button>
+        <button
+          type="button"
+          onClick={onShopClick}
+          disabled={!onShopClick}
+          className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-gray-500 hover:text-blue-700 disabled:cursor-default disabled:hover:text-gray-500"
+        >
+          <Store className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">
+            {tDashboard('charts.shopName')}: {shopName}
+          </span>
+        </button>
       </div>
       <div className="flex-shrink-0 text-right">
         {sortBy === 'quantity' ? (
@@ -148,7 +160,7 @@ export function TopProductRow({
           </>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 

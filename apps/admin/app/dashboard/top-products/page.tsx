@@ -130,11 +130,16 @@ export default function TopProductsPage() {
                   product={product}
                   rank={(page - 1) * limit + index + 1}
                   sortBy={sortBy}
-                  onClick={() => {
+                  onProductClick={() => {
                     if (product.merchantId && product.id) {
                       router.push(`/merchants/${product.merchantId}/products/${product.id}`);
                     }
                   }}
+                  onShopClick={
+                    product.merchantId && product.outletId
+                      ? () => router.push(`/merchants/${product.merchantId}/outlets/${product.outletId}`)
+                      : undefined
+                  }
                 />
               ))
             ) : (
