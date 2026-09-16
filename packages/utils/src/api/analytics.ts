@@ -9,6 +9,7 @@ export interface AnalyticsFilters {
   outletIds?: number[]; // Array of outlet IDs for comparison (comma-separated in query string)
   merchantId?: number;
   groupBy?: 'day' | 'week' | 'month' | 'year';
+  limit?: number;
 }
 
 export interface RevenueData {
@@ -190,8 +191,23 @@ export const analyticsApi = {
     const params = new URLSearchParams();
     if (filters?.startDate) params.append('startDate', filters.startDate);
     if (filters?.endDate) params.append('endDate', filters.endDate);
-    
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
     const url = `${apiUrls.analytics.topProducts}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await authenticatedFetch(url);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Get shops (outlets) with the most orders in the period
+   */
+  async getTopOutlets(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const url = `${apiUrls.analytics.topOutlets}${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
   },

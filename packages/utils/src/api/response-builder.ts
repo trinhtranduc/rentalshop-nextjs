@@ -249,6 +249,8 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'EMBEDDING_JOBS_CRON_HEALTHY': 'Embedding jobs cron is healthy',
   'EMBEDDING_SYNC_QUEUED': 'Product queued for image-search indexing',
   'EMBEDDING_SYNC_COMPLETED': 'Product image search is ready',
+  'TOP_OUTLETS_SUCCESS': 'Top shops retrieved successfully',
+  'TOP_PRODUCTS_SUCCESS': 'Top products retrieved successfully',
 };
 
 /**

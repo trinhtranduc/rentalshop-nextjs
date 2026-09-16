@@ -19,7 +19,8 @@ import { CardClean,
   OrderChart,
   Badge,
   StatusBadge,
-  PageLoadingIndicator
+  PageLoadingIndicator,
+  useFormatCurrency
 } from '@rentalshop/ui';
 import { 
   AdminPageHeader,
@@ -28,7 +29,8 @@ import {
 } from '@rentalshop/ui';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations } from '@rentalshop/hooks';
+import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
   Users, 
   DollarSign, 
@@ -39,7 +41,8 @@ import {
   Clock,
   CheckCircle,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Package
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -210,6 +213,8 @@ const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({
 export default function AdminDashboard() {
   const { toastError } = useToast();
   const { user } = useAuth();
+  const tDashboard = useDashboardTranslations();
+  const formatMoney = useFormatCurrency();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalMerchants: 0,
     totalOutlets: 0,
@@ -229,6 +234,8 @@ export default function AdminDashboard() {
   const [merchantsRegistrationData, setMerchantsRegistrationData] = useState<any[]>([]);
   const [ordersData, setOrdersData] = useState<any[]>([]);
   const [newMerchants, setNewMerchants] = useState<any[]>([]);
+  const [topShops, setTopShops] = useState<TopOutlet[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [subscriptionStats, setSubscriptionStats] = useState({
     active: 0,
     trial: 0,
@@ -494,7 +501,9 @@ export default function AdminDashboard() {
         ordersResponse,
         merchantsResponse,
         subscriptionsResponse,
-        growthMetricsResponse
+        growthMetricsResponse,
+        topShopsResponse,
+        topProductsResponse
       ] = await Promise.all([
         analyticsApi.getSystemAnalytics(filters),
         analyticsApi.getRecentActivities(10, 0),
@@ -502,7 +511,9 @@ export default function AdminDashboard() {
         analyticsApi.getOrderAnalytics(filters),
         import('@rentalshop/utils').then(({ merchantsApi }) => merchantsApi.getMerchants()),
         import('@rentalshop/utils').then(({ subscriptionsApi }) => subscriptionsApi.search({ limit: 1000 })),
-        analyticsApi.getGrowthMetrics(filters)
+        analyticsApi.getGrowthMetrics(filters),
+        analyticsApi.getTopOutlets({ ...filters, limit: 5 }),
+        analyticsApi.getTopProducts({ ...filters, limit: 5 })
       ]);
 
       // System metrics
@@ -580,6 +591,18 @@ export default function AdminDashboard() {
       // Growth metrics
       if (growthMetricsResponse.success && growthMetricsResponse.data) {
         setGrowthMetrics(growthMetricsResponse.data);
+      }
+
+      if (topShopsResponse.success && Array.isArray(topShopsResponse.data)) {
+        setTopShops(topShopsResponse.data);
+      } else {
+        setTopShops([]);
+      }
+
+      if (topProductsResponse.success && Array.isArray(topProductsResponse.data)) {
+        setTopProducts(topProductsResponse.data);
+      } else {
+        setTopProducts([]);
       }
 
       // New merchants (sort by creation date)
@@ -901,6 +924,103 @@ export default function AdminDashboard() {
             </Card>
           </div>
         )}
+
+        {/* Top shop (most orders) + top products for the selected period */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-blue-700" />
+                {tDashboard('charts.topShops')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topShops.length > 0 ? (
+                <div className="space-y-3">
+                  {topShops.map((shop, index) => (
+                    <div
+                      key={shop.id}
+                      className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer gap-2"
+                      onClick={() => router.push(`/merchants/${shop.merchantId}/outlets/${shop.id}`)}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">{shop.name}</div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {[shop.merchantName, shop.city].filter(Boolean).join(' · ')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-sm font-medium text-gray-900">
+                          {shop.orderCount.toLocaleString()} {tDashboard('charts.ordersCount')}
+                        </div>
+                        <div className="text-xs text-gray-500">{formatMoney(shop.totalRevenue || 0)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Store className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>{tDashboard('charts.noData')}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-700" />
+                {tDashboard('charts.topProducts')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topProducts.length > 0 ? (
+                <div className="space-y-3">
+                  {topProducts.map((product, index) => (
+                    <div key={product.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      {product.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-10 h-10 rounded-lg object-cover border border-gray-100 bg-gray-50 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <Package className="w-5 h-5 text-blue-700" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{product.name}</div>
+                        <div className="text-xs text-gray-500 truncate">{product.category}</div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-sm font-medium text-gray-900">{formatMoney(product.totalRevenue || 0)}</div>
+                        <div className="text-xs text-gray-500">
+                          {product.rentalCount || 0} {tDashboard('charts.totalOrders')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>{tDashboard('charts.noData')}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Enhanced Dashboard Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">

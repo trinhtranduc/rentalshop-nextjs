@@ -27,6 +27,7 @@ import { API } from '@rentalshop/constants';
  *   - series       — chart points (daily or monthly)
  *   - topProducts  — top products by revenue in the period
  *   - topCustomers — top customers by spend in the period
+ *   - topOutlets   — shops (outlets) with the most orders in the period
  */
 export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   try {

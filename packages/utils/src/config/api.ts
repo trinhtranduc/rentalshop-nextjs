@@ -196,6 +196,7 @@ export interface ApiUrls {
     period: string;
     overview: string;
     topProducts: string;
+    topOutlets: string;
     topCustomers: string;
     recentOrders: string;
     recentActivities: string;
@@ -758,6 +759,7 @@ function createApiUrls(): ApiUrls {
       period: `${base}/api/analytics/period`,
       overview: `${base}/api/analytics/overview`,
       topProducts: `${base}/api/analytics/top-products`,
+      topOutlets: `${base}/api/analytics/top-outlets`,
       topCustomers: `${base}/api/analytics/top-customers`,
       recentOrders: `${base}/api/analytics/recent-orders`,
       recentActivities: `${base}/api/analytics/recent-activities`,
