@@ -8,7 +8,7 @@ export interface TopOutletRank {
   totalRevenue: number;
 }
 
-export function rankOutletsByOrderCount(
+export function rankOutletsByRevenue(
   groups: Array<{ outletId: number; orderCount: number; totalRevenue: number }>,
   outlets: Array<{
     id: number;
@@ -20,7 +20,7 @@ export function rankOutletsByOrderCount(
   const byId = new Map(outlets.map((outlet) => [outlet.id, outlet]));
   return groups
     .slice()
-    .sort((a, b) => b.orderCount - a.orderCount || b.totalRevenue - a.totalRevenue)
+    .sort((a, b) => b.totalRevenue - a.totalRevenue || b.orderCount - a.orderCount)
     .map((group) => {
       const outlet = byId.get(group.outletId);
       if (!outlet) return null;

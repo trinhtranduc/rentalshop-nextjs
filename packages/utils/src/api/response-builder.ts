@@ -251,6 +251,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'EMBEDDING_SYNC_COMPLETED': 'Product image search is ready',
   'TOP_OUTLETS_SUCCESS': 'Top shops retrieved successfully',
   'TOP_PRODUCTS_SUCCESS': 'Top products retrieved successfully',
+  'OUTLET_FOUND': 'Outlet retrieved successfully',
 };
 
 /**

@@ -1,135 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, normalizeStartDate, normalizeEndDate, parseProductImages } from '@rentalshop/utils';
+import { db, prisma } from '@rentalshop/database';
+import {
+  handleApiError,
+  ResponseBuilder,
+  normalizeStartDate,
+  normalizeEndDate
+} from '@rentalshop/utils';
+import {
+  computeTopProductsByShop,
+  parseRankingQuery,
+  resolveAnalyticsOutletFilter
+} from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 
 /**
- * GET /api/analytics/top-products - Get top-performing products
- * 
- * Authorization: Roles with 'analytics.view.products' permission can access
- * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view product analytics
- * - OUTLET_STAFF: Cannot access (dashboard only)
- * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * GET /api/analytics/top-products
+ * Products ranked per shop by revenue or quantity in the date range.
+ *
+ * Query: startDate, endDate, sortBy=revenue|quantity, page, limit
  */
-export const GET = withPermissions(['analytics.view.products'])(async (request, { user, userScope }) => {
-  try {
-    // Get query parameters for date filtering
-    const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const limit = parseInt(searchParams.get('limit') || '10');
+export const GET = withPermissions(['analytics.view.products'])(
+  async (request, { user, userScope }) => {
+    try {
+      const { searchParams } = new URL(request.url);
+      const startDate = searchParams.get('startDate');
+      const endDate = searchParams.get('endDate');
+      const { page, limit, sortBy } = parseRankingQuery(searchParams);
 
-    // Apply role-based filtering (consistent with other APIs)
-    let orderWhereClause: any = {};
-
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+      if (!startDate || !endDate) {
+        return NextResponse.json(ResponseBuilder.error('MISSING_REQUIRED_FIELD'), {
+          status: API.STATUS.BAD_REQUEST
+        });
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
+
+      const start = normalizeStartDate(startDate);
+      const end = normalizeEndDate(endDate);
+      if (!start || !end || start > end) {
+        return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), {
+          status: API.STATUS.BAD_REQUEST
+        });
       }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
+
+      const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
+      if (outletFilter === null) {
+        return NextResponse.json(
+          ResponseBuilder.success('NO_DATA_AVAILABLE', {
+            items: [],
+            page: 1,
+            limit,
+            total: 0,
+            totalPages: 1
+          })
+        );
+      }
+
+      const topProducts = await computeTopProductsByShop(prisma, {
+        outletFilter,
+        rangeStart: start,
+        rangeEnd: end,
+        sortBy,
+        page,
+        limit
       });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json(
-        ResponseBuilder.success('NO_DATA_AVAILABLE', [])
-      );
+
+      return NextResponse.json(ResponseBuilder.success('TOP_PRODUCTS_SUCCESS', topProducts));
+    } catch (error) {
+      console.error('Error fetching top products analytics:', error);
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
-
-    // Add date filtering if provided
-    if (startDate || endDate) {
-      orderWhereClause.createdAt = {};
-      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
-      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
-      if (normalizedStart) orderWhereClause.createdAt.gte = normalizedStart;
-      if (normalizedEnd) orderWhereClause.createdAt.lte = normalizedEnd;
-    }
-
-    // Get orders based on user scope
-    // Use a high cap so the ranking is computed over the whole period (not just first 1000).
-    const orders = await db.orders.search({
-      where: orderWhereClause,
-      limit: 10000 // Get enough orders to analyze
-    });
-
-    const orderIds = orders.data?.map(order => order.id) || [];
-
-    // Then get the top products from those orders.
-    // Respect the caller-provided `limit` (mobile sends limit=3) instead of a fixed 10.
-    const topProducts = orderIds.length > 0 ? await db.orderItems.groupBy({
-      by: ['productId'],
-      where: {
-        orderId: { in: orderIds },
-        productId: { not: null } // OrderItem.productId is nullable
-      },
-      _count: {
-        productId: true
-      },
-      _sum: {
-        totalPrice: true
-      },
-      orderBy: {
-        _sum: {
-          totalPrice: 'desc' // Order by total revenue instead of count
-        }
-      },
-      take: limit
-    }) : [];
-
-    // Get product details for each top product in order
-    const topProductsWithDetails = [];
-    for (const item of topProducts) {
-      const productId = typeof item.productId === 'number' ? item.productId : Number((item as any).productId);
-      if (!Number.isFinite(productId) || productId <= 0) continue;
-      const product = await db.products.findById(productId);
-
-      // ✅ Use shared parseProductImages() for backward compatibility
-      // Handles: array, JSON string, comma-separated string, quoted string
-      const productImages = parseProductImages(product?.images);
-      const firstImage = productImages.length > 0 ? productImages[0] : null;
-
-      topProductsWithDetails.push({
-        id: product?.id || 0, // Use id (number) as the external ID
-        name: product?.name || 'Unknown Product',
-        rentPrice: product?.rentPrice || 0,
-        category: product?.category?.name || 'Uncategorized',
-        note: product?.description || null,
-        rentalCount: (item._count as any).productId,
-        totalRevenue: item._sum?.totalPrice || 0,
-        image: firstImage
-      });
-    }
-
-    return NextResponse.json(
-      ResponseBuilder.success('TOP_PRODUCTS_SUCCESS', topProductsWithDetails)
-    );
-
-  } catch (error) {
-    console.error('❌ Error fetching top products analytics:', error);
-    
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
   }
-});
+);
 
 export const runtime = 'nodejs';

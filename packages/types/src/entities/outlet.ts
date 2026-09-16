@@ -251,8 +251,8 @@ export interface OutletStockLevel {
 }
 
 /**
- * Top shop (outlet) by order volume in a period.
- * Ranked by order count — cancelled orders are excluded.
+ * Top shop (outlet) by revenue in a period.
+ * Ranked by order totalAmount — cancelled orders are excluded.
  */
 export interface TopOutlet {
   id: number;

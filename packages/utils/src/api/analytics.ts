@@ -10,6 +10,8 @@ export interface AnalyticsFilters {
   merchantId?: number;
   groupBy?: 'day' | 'week' | 'month' | 'year';
   limit?: number;
+  page?: number;
+  sortBy?: 'revenue' | 'quantity';
 }
 
 export interface RevenueData {
@@ -185,13 +187,16 @@ export const analyticsApi = {
   },
 
   /**
-   * Get top products
+   * Get top products per shop, ranked by revenue or quantity.
+   * `data` is { items, page, limit, total, totalPages }.
    */
   async getTopProducts(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     if (filters?.startDate) params.append('startDate', filters.startDate);
     if (filters?.endDate) params.append('endDate', filters.endDate);
     if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
 
     const url = `${apiUrls.analytics.topProducts}${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await authenticatedFetch(url);
@@ -199,13 +204,15 @@ export const analyticsApi = {
   },
 
   /**
-   * Get shops (outlets) with the most orders in the period
+   * Get shops (outlets) ranked by revenue in the period.
+   * `data` is { items, page, limit, total, totalPages }.
    */
   async getTopOutlets(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     if (filters?.startDate) params.append('startDate', filters.startDate);
     if (filters?.endDate) params.append('endDate', filters.endDate);
     if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.page) params.append('page', filters.page.toString());
 
     const url = `${apiUrls.analytics.topOutlets}${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await authenticatedFetch(url);
