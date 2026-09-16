@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { merchantsApi } from '@rentalshop/utils';
+import { merchantsApi, parseApiResponse } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { PageWrapper,
   PageHeader,
@@ -67,14 +67,14 @@ export default function OutletDetailPage() {
       if (merchantData.success && merchantData.data) {
         setMerchantName(merchantData.data.name);
       }
-      
-      // Fetch outlet details
-      const response = await merchantsApi.outlets.get(parseInt(merchantId), parseInt(outletId));
-      const data = await response.json();
 
-      if (data.success) {
+      const response = await merchantsApi.outlets.get(parseInt(merchantId), parseInt(outletId));
+      const data = await parseApiResponse<OutletDetail>(response);
+
+      if (data.success && data.data) {
         setOutlet(data.data);
         setEditData(data.data);
+        setError(null);
       } else {
         setError(data.message || 'Failed to fetch outlet details');
       }
@@ -90,12 +90,11 @@ export default function OutletDetailPage() {
     try {
       // Use centralized API client with automatic authentication and error handling
       const response = await merchantsApi.outlets.update(parseInt(merchantId), parseInt(outletId), editData);
-      const data = await response.json();
+      const data = await parseApiResponse<OutletDetail>(response);
 
-      if (data.success) {
+      if (data.success && data.data) {
         setOutlet(data.data);
         setIsEditing(false);
-        // Show success toast
         toastSuccess('Outlet updated', 'Changes saved successfully.');
       } else {
         const msg = data.message || 'Failed to update outlet';

@@ -962,13 +962,13 @@ export default function AdminDashboard() {
         {/* Top shops by revenue + top products per shop for the selected period */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 gap-3">
+            <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Store className="w-5 h-5 text-blue-700" />
                 {tDashboard('charts.topShops')}
               </CardTitle>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => router.push(`/dashboard/top-shops?period=${period}`)}
               >
@@ -986,6 +986,13 @@ export default function AdminDashboard() {
                       onClick={() => router.push(`/merchants/${shop.merchantId}/outlets/${shop.id}`)}
                     />
                   ))}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push(`/dashboard/top-shops?period=${period}`)}
+                  >
+                    {tCommon('buttons.viewAll')}
+                  </Button>
                 </div>
               ) : (
                 <RankingEmptyState kind="shops" />
@@ -1001,7 +1008,7 @@ export default function AdminDashboard() {
                   {tDashboard('charts.topProducts')}
                 </CardTitle>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => router.push(`/dashboard/top-products?period=${period}&sortBy=${productSortBy}`)}
                 >
@@ -1027,6 +1034,13 @@ export default function AdminDashboard() {
                       }}
                     />
                   ))}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push(`/dashboard/top-products?period=${period}&sortBy=${productSortBy}`)}
+                  >
+                    {tCommon('buttons.viewAll')}
+                  </Button>
                 </div>
               ) : (
                 <RankingEmptyState kind="products" />
