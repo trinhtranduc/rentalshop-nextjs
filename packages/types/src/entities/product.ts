@@ -300,8 +300,13 @@ export interface TopProduct {
   rentPrice: number;
   category: string;
   rentalCount: number;
+  quantity?: number;
   totalRevenue: number;
   image?: string | null;
+  outletId?: number;
+  outletName?: string;
+  merchantId?: number;
+  merchantName?: string;
 }
 
 /**

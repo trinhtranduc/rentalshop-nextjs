@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
-  computeTopOutletsByOrderCount,
+  handleApiError,
+  ResponseBuilder,
+  normalizeStartDate,
+  normalizeEndDate
+} from '@rentalshop/utils';
+import {
+  computeTopOutletsRanking,
+  parseRankingQuery,
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/top-outlets
- * Shops (outlets) with the most orders in the date range.
+ * Shops (outlets) ranked by revenue in the date range.
  *
- * Query: startDate, endDate (YYYY-MM-DD), limit (default 5, max 50)
+ * Query: startDate, endDate (YYYY-MM-DD), page, limit (default 5, max 100)
  */
 export const GET = withPermissions(['analytics.view.orders'])(
   async (request, { user, userScope }) => {
@@ -20,8 +26,7 @@ export const GET = withPermissions(['analytics.view.orders'])(
       const { searchParams } = new URL(request.url);
       const startDate = searchParams.get('startDate');
       const endDate = searchParams.get('endDate');
-      const parsedLimit = parseInt(searchParams.get('limit') || '5', 10);
-      const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 50) : 5;
+      const { page, limit } = parseRankingQuery(searchParams);
 
       if (!startDate || !endDate) {
         return NextResponse.json(ResponseBuilder.error('MISSING_REQUIRED_FIELD'), {
@@ -29,9 +34,9 @@ export const GET = withPermissions(['analytics.view.orders'])(
         });
       }
 
-      const start = new Date(startDate + 'T00:00:00.000Z');
-      const end = new Date(endDate + 'T23:59:59.999Z');
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      const start = normalizeStartDate(startDate);
+      const end = normalizeEndDate(endDate);
+      if (!start || !end || start > end) {
         return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), {
           status: API.STATUS.BAD_REQUEST
         });
@@ -39,13 +44,22 @@ export const GET = withPermissions(['analytics.view.orders'])(
 
       const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
       if (outletFilter === null) {
-        return NextResponse.json(ResponseBuilder.success('NO_DATA_AVAILABLE', []));
+        return NextResponse.json(
+          ResponseBuilder.success('NO_DATA_AVAILABLE', {
+            items: [],
+            page: 1,
+            limit,
+            total: 0,
+            totalPages: 1
+          })
+        );
       }
 
-      const topOutlets = await computeTopOutletsByOrderCount(prisma, {
+      const topOutlets = await computeTopOutletsRanking(prisma, {
         outletFilter,
         rangeStart: start,
         rangeEnd: end,
+        page,
         limit
       });
 

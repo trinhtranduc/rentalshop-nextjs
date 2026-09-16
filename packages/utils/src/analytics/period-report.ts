@@ -11,10 +11,19 @@ import {
   type IncomePeriodSummary
 } from './income-period-summary';
 import { getUTCDateKey } from '../core/date';
-import { rankOutletsByOrderCount, type TopOutletRank } from './top-outlet-rank';
+import { paginateRanked, type RankingPage } from './ranking-page';
+import { rankOutletsByRevenue, type TopOutletRank } from './top-outlet-rank';
+import {
+  aggregateProductShopSales,
+  rankProductShops,
+  type ProductRankSortBy
+} from './top-product-rank';
 
+export type { RankingPage, RankingSortBy } from './ranking-page';
+export { paginateRanked, parseRankingQuery } from './ranking-page';
 export type { TopOutletRank } from './top-outlet-rank';
-export { rankOutletsByOrderCount } from './top-outlet-rank';
+export { rankOutletsByRevenue } from './top-outlet-rank';
+export type { ProductRankSortBy } from './top-product-rank';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -103,16 +112,17 @@ export async function resolveAnalyticsOutletFilter(
   return null;
 }
 
-export async function computeTopOutletsByOrderCount(
+export async function computeTopOutletsRanking(
   prisma: PrismaClient,
   params: {
     outletFilter: Record<string, any>;
     rangeStart: Date;
     rangeEnd: Date;
-    limit: number;
+    page?: number;
+    limit?: number;
   }
-): Promise<TopOutletRank[]> {
-  const { outletFilter, rangeStart, rangeEnd, limit } = params;
+): Promise<RankingPage<TopOutletRank>> {
+  const { outletFilter, rangeStart, rangeEnd, page = 1, limit = 5 } = params;
   const grouped = await prisma.order.groupBy({
     by: ['outletId'],
     where: {
@@ -121,16 +131,25 @@ export async function computeTopOutletsByOrderCount(
       status: { not: ORDER_STATUS.CANCELLED as any },
       createdAt: { gte: rangeStart, lte: rangeEnd }
     },
-    _count: { id: true },
-    _sum: { totalAmount: true },
-    orderBy: { _count: { id: 'desc' } },
-    take: limit
+    _count: { _all: true },
+    _sum: { totalAmount: true }
   });
 
-  if (grouped.length === 0) return [];
+  if (grouped.length === 0) {
+    return paginateRanked<TopOutletRank>([], page, limit);
+  }
 
+  const rankedGroups = grouped
+    .map((row) => ({
+      outletId: row.outletId,
+      orderCount: row._count._all,
+      totalRevenue: row._sum.totalAmount || 0
+    }))
+    .sort((a, b) => b.totalRevenue - a.totalRevenue || b.orderCount - a.orderCount);
+
+  const pageSlice = paginateRanked(rankedGroups, page, limit);
   const outlets = await prisma.outlet.findMany({
-    where: { id: { in: grouped.map((row) => row.outletId) } },
+    where: { id: { in: pageSlice.items.map((row) => row.outletId) } },
     select: {
       id: true,
       name: true,
@@ -139,14 +158,127 @@ export async function computeTopOutletsByOrderCount(
     }
   });
 
-  return rankOutletsByOrderCount(
-    grouped.map((row) => ({
-      outletId: row.outletId,
-      orderCount: row._count.id,
-      totalRevenue: row._sum.totalAmount || 0
-    })),
-    outlets
+  return {
+    ...pageSlice,
+    items: rankOutletsByRevenue(pageSlice.items, outlets)
+  };
+}
+
+export interface TopProductShopRank {
+  id: number;
+  name: string;
+  rentPrice: number;
+  category: string;
+  note: string | null;
+  rentalCount: number;
+  quantity: number;
+  totalRevenue: number;
+  image: string | null;
+  outletId: number;
+  outletName: string;
+  merchantId: number;
+  merchantName: string;
+}
+
+export async function computeTopProductsByShop(
+  prisma: PrismaClient,
+  params: {
+    outletFilter: Record<string, any>;
+    rangeStart: Date;
+    rangeEnd: Date;
+    sortBy?: ProductRankSortBy;
+    page?: number;
+    limit?: number;
+  }
+): Promise<RankingPage<TopProductShopRank>> {
+  const { outletFilter, rangeStart, rangeEnd, sortBy = 'revenue', page = 1, limit = 5 } = params;
+  const rows = await prisma.orderItem.findMany({
+    where: {
+      productId: { not: null },
+      order: {
+        ...outletFilter,
+        deletedAt: null,
+        status: { not: ORDER_STATUS.CANCELLED as any },
+        createdAt: { gte: rangeStart, lte: rangeEnd }
+      }
+    },
+    select: {
+      productId: true,
+      quantity: true,
+      totalPrice: true,
+      order: { select: { outletId: true } }
+    }
+  });
+
+  const ranked = rankProductShops(
+    aggregateProductShopSales(
+      rows.map((row) => ({
+        productId: row.productId,
+        quantity: row.quantity,
+        totalPrice: row.totalPrice,
+        outletId: row.order.outletId
+      }))
+    ),
+    sortBy
   );
+
+  const pageSlice = paginateRanked(ranked, page, limit);
+  if (pageSlice.items.length === 0) {
+    return paginateRanked<TopProductShopRank>([], page, limit);
+  }
+
+  const productIds = [...new Set(pageSlice.items.map((row) => row.productId))];
+  const outletIds = [...new Set(pageSlice.items.map((row) => row.outletId))];
+
+  const [products, outlets] = await Promise.all([
+    prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        name: true,
+        rentPrice: true,
+        description: true,
+        images: true,
+        category: { select: { name: true } },
+        merchant: { select: { id: true, name: true } }
+      }
+    }),
+    prisma.outlet.findMany({
+      where: { id: { in: outletIds } },
+      select: {
+        id: true,
+        name: true,
+        merchant: { select: { id: true, name: true } }
+      }
+    })
+  ]);
+
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const outletById = new Map(outlets.map((outlet) => [outlet.id, outlet]));
+
+  return {
+    ...pageSlice,
+    items: pageSlice.items.map((row) => {
+      const product = productById.get(row.productId);
+      const outlet = outletById.get(row.outletId);
+      const images = parseProductImages(product?.images);
+      return {
+        id: product?.id || row.productId,
+        name: product?.name || 'Unknown Product',
+        rentPrice: product?.rentPrice || 0,
+        category: product?.category?.name || 'Uncategorized',
+        note: product?.description || null,
+        rentalCount: row.quantity,
+        quantity: row.quantity,
+        totalRevenue: row.totalRevenue,
+        image: images.length > 0 ? images[0] : null,
+        outletId: outlet?.id || row.outletId,
+        outletName: outlet?.name || 'Unknown Shop',
+        merchantId: outlet?.merchant.id || product?.merchant.id || 0,
+        merchantName: outlet?.merchant.name || product?.merchant.name || ''
+      };
+    })
+  };
 }
 
 export function emptyAnalyticsPeriodReport(
@@ -604,10 +736,11 @@ export async function buildAnalyticsPeriodReport(
     computeGrowth(),
     computeTopProducts(),
     computeTopCustomers(),
-    computeTopOutletsByOrderCount(prisma, {
+    computeTopOutletsRanking(prisma, {
       outletFilter,
       rangeStart,
       rangeEnd,
+      page: 1,
       limit
     })
   ]);
@@ -651,6 +784,6 @@ export async function buildAnalyticsPeriodReport(
     series,
     topProducts: valueOr(settled[3], [], 'topProducts'),
     topCustomers: valueOr(settled[4], [], 'topCustomers'),
-    topOutlets: valueOr(settled[5], [], 'topOutlets')
+    topOutlets: valueOr(settled[5], paginateRanked([], 1, limit), 'topOutlets').items
   };
 }
