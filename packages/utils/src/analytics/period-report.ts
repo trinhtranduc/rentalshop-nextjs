@@ -11,6 +11,10 @@ import {
   type IncomePeriodSummary
 } from './income-period-summary';
 import { getUTCDateKey } from '../core/date';
+import { rankOutletsByOrderCount, type TopOutletRank } from './top-outlet-rank';
+
+export type { TopOutletRank } from './top-outlet-rank';
+export { rankOutletsByOrderCount } from './top-outlet-rank';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -60,6 +64,7 @@ export interface AnalyticsPeriodReport {
   series: AnalyticsPeriodSeriesPoint[];
   topProducts: any[];
   topCustomers: any[];
+  topOutlets: TopOutletRank[];
 }
 
 type DbApi = {
@@ -98,6 +103,52 @@ export async function resolveAnalyticsOutletFilter(
   return null;
 }
 
+export async function computeTopOutletsByOrderCount(
+  prisma: PrismaClient,
+  params: {
+    outletFilter: Record<string, any>;
+    rangeStart: Date;
+    rangeEnd: Date;
+    limit: number;
+  }
+): Promise<TopOutletRank[]> {
+  const { outletFilter, rangeStart, rangeEnd, limit } = params;
+  const grouped = await prisma.order.groupBy({
+    by: ['outletId'],
+    where: {
+      ...outletFilter,
+      deletedAt: null,
+      status: { not: ORDER_STATUS.CANCELLED as any },
+      createdAt: { gte: rangeStart, lte: rangeEnd }
+    },
+    _count: { id: true },
+    _sum: { totalAmount: true },
+    orderBy: { _count: { id: 'desc' } },
+    take: limit
+  });
+
+  if (grouped.length === 0) return [];
+
+  const outlets = await prisma.outlet.findMany({
+    where: { id: { in: grouped.map((row) => row.outletId) } },
+    select: {
+      id: true,
+      name: true,
+      city: true,
+      merchant: { select: { id: true, name: true } }
+    }
+  });
+
+  return rankOutletsByOrderCount(
+    grouped.map((row) => ({
+      outletId: row.outletId,
+      orderCount: row._count.id,
+      totalRevenue: row._sum.totalAmount || 0
+    })),
+    outlets
+  );
+}
+
 export function emptyAnalyticsPeriodReport(
   startDate: string,
   endDate: string,
@@ -116,7 +167,8 @@ export function emptyAnalyticsPeriodReport(
     growth: zeroGrowth,
     series: [],
     topProducts: [],
-    topCustomers: []
+    topCustomers: [],
+    topOutlets: []
   };
 }
 
@@ -551,7 +603,13 @@ export async function buildAnalyticsPeriodReport(
     computeSeries(),
     computeGrowth(),
     computeTopProducts(),
-    computeTopCustomers()
+    computeTopCustomers(),
+    computeTopOutletsByOrderCount(prisma, {
+      outletFilter,
+      rangeStart,
+      rangeEnd,
+      limit
+    })
   ]);
 
   const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
@@ -592,6 +650,7 @@ export async function buildAnalyticsPeriodReport(
     growth,
     series,
     topProducts: valueOr(settled[3], [], 'topProducts'),
-    topCustomers: valueOr(settled[4], [], 'topCustomers')
+    topCustomers: valueOr(settled[4], [], 'topCustomers'),
+    topOutlets: valueOr(settled[5], [], 'topOutlets')
   };
 }

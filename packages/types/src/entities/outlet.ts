@@ -249,3 +249,17 @@ export interface OutletStockLevel {
   isLowStock: boolean;
   isOutOfStock: boolean;
 }
+
+/**
+ * Top shop (outlet) by order volume in a period.
+ * Ranked by order count — cancelled orders are excluded.
+ */
+export interface TopOutlet {
+  id: number;
+  name: string;
+  merchantId: number;
+  merchantName: string;
+  city?: string | null;
+  orderCount: number;
+  totalRevenue: number;
+}
