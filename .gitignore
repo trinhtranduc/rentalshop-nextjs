@@ -165,3 +165,7 @@ apps/mobile-android/store/*.pem
 
 # Local git worktrees
 .worktrees/
+
+# Claude Code: personal settings and hook audit log stay local
+.claude/settings.local.json
+.claude/hooks/gate.log

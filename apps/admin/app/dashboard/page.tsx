@@ -28,7 +28,8 @@ import {
 } from '@rentalshop/ui';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
   Users, 
   DollarSign, 
@@ -39,7 +40,8 @@ import {
   Clock,
   CheckCircle,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Package
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -50,6 +52,17 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import {
+  getAdminDashboardDateRange,
+  unwrapRankingPage,
+  type RankingSortBy
+} from './ranking-period';
+import {
+  RankingEmptyState,
+  RankingSortButtons,
+  TopProductRow,
+  TopShopRow
+} from './components/RankingLists';
 
 interface SystemMetrics {
   totalMerchants: number;
@@ -210,6 +223,8 @@ const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({
 export default function AdminDashboard() {
   const { toastError } = useToast();
   const { user } = useAuth();
+  const tDashboard = useDashboardTranslations();
+  const tCommon = useCommonTranslations();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalMerchants: 0,
     totalOutlets: 0,
@@ -229,6 +244,9 @@ export default function AdminDashboard() {
   const [merchantsRegistrationData, setMerchantsRegistrationData] = useState<any[]>([]);
   const [ordersData, setOrdersData] = useState<any[]>([]);
   const [newMerchants, setNewMerchants] = useState<any[]>([]);
+  const [topShops, setTopShops] = useState<TopOutlet[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [productSortBy, setProductSortBy] = useState<RankingSortBy>('revenue');
   const [subscriptionStats, setSubscriptionStats] = useState({
     active: 0,
     trial: 0,
@@ -682,10 +700,46 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]); // Only depend on period - toastError is stable
 
+  const fetchRankings = useCallback(async () => {
+    try {
+      const range = getAdminDashboardDateRange(period);
+      const filters = {
+        startDate: range.startDate,
+        endDate: range.endDate,
+        limit: 5,
+        page: 1
+      };
+      const [topShopsResponse, topProductsResponse] = await Promise.all([
+        analyticsApi.getTopOutlets(filters),
+        analyticsApi.getTopProducts({ ...filters, sortBy: productSortBy })
+      ]);
+
+      if (topShopsResponse.success) {
+        setTopShops(unwrapRankingPage<TopOutlet>(topShopsResponse.data).items);
+      } else {
+        setTopShops([]);
+      }
+
+      if (topProductsResponse.success) {
+        setTopProducts(unwrapRankingPage<TopProduct>(topProductsResponse.data).items);
+      } else {
+        setTopProducts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching ranking metrics:', error);
+      setTopShops([]);
+      setTopProducts([]);
+    }
+  }, [period, productSortBy]);
+
   // Fetch when period changes
   useEffect(() => {
     fetchSystemMetrics();
   }, [fetchSystemMetrics]);
+
+  useEffect(() => {
+    fetchRankings();
+  }, [fetchRankings]);
 
   // Enhanced metrics with icons and trends
   const getPeriodLabel = () => {
@@ -779,7 +833,10 @@ export default function AdminDashboard() {
           </div>
           <Button
             variant="default"
-            onClick={fetchSystemMetrics}
+            onClick={() => {
+              fetchSystemMetrics();
+              fetchRankings();
+            }}
             disabled={loading}
             className="px-4 py-2 text-sm"
           >
@@ -901,6 +958,100 @@ export default function AdminDashboard() {
             </Card>
           </div>
         )}
+
+        {/* Top shops by revenue + top products per shop for the selected period */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-blue-700" />
+                {tDashboard('charts.topShops')}
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/dashboard/top-shops?period=${period}`)}
+              >
+                {tCommon('buttons.viewAll')}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {topShops.length > 0 ? (
+                <div className="space-y-3">
+                  {topShops.map((shop, index) => (
+                    <TopShopRow
+                      key={shop.id}
+                      shop={shop}
+                      rank={index + 1}
+                      onClick={() => router.push(`/merchants/${shop.merchantId}/outlets/${shop.id}`)}
+                    />
+                  ))}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push(`/dashboard/top-shops?period=${period}`)}
+                  >
+                    {tCommon('buttons.viewAll')}
+                  </Button>
+                </div>
+              ) : (
+                <RankingEmptyState kind="shops" />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-blue-700" />
+                  {tDashboard('charts.topProducts')}
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/top-products?period=${period}&sortBy=${productSortBy}`)}
+                >
+                  {tCommon('buttons.viewAll')}
+                </Button>
+              </div>
+              <RankingSortButtons sortBy={productSortBy} onChange={setProductSortBy} />
+            </CardHeader>
+            <CardContent>
+              {topProducts.length > 0 ? (
+                <div className="space-y-3">
+                  {topProducts.map((product, index) => (
+                    <TopProductRow
+                      key={`${product.id}-${product.outletId ?? index}`}
+                      product={product}
+                      rank={index + 1}
+                      sortBy={productSortBy}
+                      onProductClick={() => {
+                        if (product.merchantId && product.id) {
+                          router.push(`/merchants/${product.merchantId}/products/${product.id}`);
+                        }
+                      }}
+                      onShopClick={
+                        product.merchantId && product.outletId
+                          ? () => router.push(`/merchants/${product.merchantId}/outlets/${product.outletId}`)
+                          : undefined
+                      }
+                    />
+                  ))}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push(`/dashboard/top-products?period=${period}&sortBy=${productSortBy}`)}
+                  >
+                    {tCommon('buttons.viewAll')}
+                  </Button>
+                </div>
+              ) : (
+                <RankingEmptyState kind="products" />
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Enhanced Dashboard Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">

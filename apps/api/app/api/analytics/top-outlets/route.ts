@@ -8,25 +8,25 @@ import {
   normalizeEndDate
 } from '@rentalshop/utils';
 import {
-  computeTopProductsByShop,
+  computeTopOutletsRanking,
   parseRankingQuery,
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 
 /**
- * GET /api/analytics/top-products
- * Products ranked per shop by revenue or quantity in the date range.
+ * GET /api/analytics/top-outlets
+ * Shops (outlets) ranked by revenue in the date range.
  *
- * Query: startDate, endDate, sortBy=revenue|quantity, page, limit
+ * Query: startDate, endDate (YYYY-MM-DD), page, limit (default 5, max 100)
  */
-export const GET = withPermissions(['analytics.view.products'])(
+export const GET = withPermissions(['analytics.view.orders'])(
   async (request, { user, userScope }) => {
     try {
       const { searchParams } = new URL(request.url);
       const startDate = searchParams.get('startDate');
       const endDate = searchParams.get('endDate');
-      const { page, limit, sortBy } = parseRankingQuery(searchParams);
+      const { page, limit } = parseRankingQuery(searchParams);
 
       if (!startDate || !endDate) {
         return NextResponse.json(ResponseBuilder.error('MISSING_REQUIRED_FIELD'), {
@@ -55,18 +55,17 @@ export const GET = withPermissions(['analytics.view.products'])(
         );
       }
 
-      const topProducts = await computeTopProductsByShop(prisma, {
+      const topOutlets = await computeTopOutletsRanking(prisma, {
         outletFilter,
         rangeStart: start,
         rangeEnd: end,
-        sortBy,
         page,
         limit
       });
 
-      return NextResponse.json(ResponseBuilder.success('TOP_PRODUCTS_SUCCESS', topProducts));
+      return NextResponse.json(ResponseBuilder.success('TOP_OUTLETS_SUCCESS', topOutlets));
     } catch (error) {
-      console.error('Error fetching top products analytics:', error);
+      console.error('Error fetching top outlets analytics:', error);
       const { response, statusCode } = handleApiError(error);
       return NextResponse.json(response, { status: statusCode });
     }
