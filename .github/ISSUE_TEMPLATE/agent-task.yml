@@ -1,0 +1,52 @@
+name: Agent task
+description: Work packaged for a coding agent, with acceptance and the files it may touch
+title: "agent: "
+labels: ["agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the outcome is already decided and an agent will implement it.
+        The agent follows `AGENTS.md` and must not open a PR without `Fixes #<this issue>`.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Verifiable end state.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      description: One check per line. Each check needs a test, a command, or a screen to exercise.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Files and systems in scope
+      description: Paths the agent may edit. Anything else needs a new issue.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Roles, Vietnam civil days, dual IDs, mobile parity, no production commands.
+    validations:
+      required: true
+  - type: dropdown
+    id: skills
+    attributes:
+      label: Domain skills
+      multiple: true
+      options:
+        - api-route-standard
+        - timezone-dates
+        - db-migration
+        - i18n-keys
+        - mobile-parity
+        - bug-fix-tdd
+    validations:
+      required: false

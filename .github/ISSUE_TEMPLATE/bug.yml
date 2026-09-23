@@ -1,0 +1,53 @@
+name: Bug
+description: A broken behavior that used to work or does not match the spec
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        File this before a fix branch. The agent copies `.agent/changes/_template/` to
+        `.agent/changes/<issue>-<slug>/` and reproduces the bug with a failing test first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened
+      description: Who hit it, what they did, what they saw.
+      placeholder: Outlet staff opened Overview for today and the revenue number included deposits.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: The result that should be true when this is fixed.
+    validations:
+      required: true
+  - type: dropdown
+    id: apps
+    attributes:
+      label: Affected apps
+      multiple: true
+      options:
+        - api
+        - admin
+        - client
+        - ios
+        - android
+        - packages
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Roles, dates, mobile clients already in the field, data that must not change.
+    validations:
+      required: false
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Error text, order number, screenshot, or request id. No secrets.
+    validations:
+      required: false
