@@ -1,5 +1,8 @@
 # intent/
 
+Older drafts stay here. New work goes in `.agent/changes/<issue>-<slug>/` (`intent.md`, `spec.md`,
+`plan.md`). Open the GitHub issue first. See `AGENTS.md` and `.agents/skills/capture-intent`.
+
 Version-controlled statements of *what is wanted, why, and under which constraints* (Stage 1 of the
 AI-native SDLC). One file per initiative, named `YYYY-MM-DD-<slug>.md`, copied from `TEMPLATE.md`.
 

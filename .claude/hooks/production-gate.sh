@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse approval gate (see CLAUDE.md → Commands / Workflow).
+# PreToolUse approval gate (see AGENTS.md and .agents/skills/protocol-guardian).
 # Reads the tool call as JSON on stdin. Exit 0 = allow, exit 2 = block (stderr is shown to Claude).
 # Every verdict is appended to .claude/hooks/gate.log for audit.
 set -u

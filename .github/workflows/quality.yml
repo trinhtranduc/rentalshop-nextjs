@@ -1,0 +1,67 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main, dev, develop]
+  push:
+    branches: [main, dev, develop]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Lint, build, and Jest stay in ci.yml. This workflow adds the checks that file
+# does not run: TypeScript, and the shape of .agent/changes folders in the diff.
+jobs:
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=./prisma/schema.prisma
+
+      - name: Type check
+        run: yarn type-check
+
+  change-folders:
+    name: Change folder shape
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require intent, spec, and plan when a change folder is touched
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          git diff --name-only "$BASE_SHA"...HEAD -- .agent/changes \
+            | grep -E '^[.]agent/changes/[^_][^/]+/' \
+            | cut -d/ -f1-3 \
+            | sort -u \
+            | while read -r dir; do
+                [ -n "$dir" ] || continue
+                missing=""
+                for file in intent.md spec.md plan.md; do
+                  if [ ! -f "$dir/$file" ]; then
+                    missing="$missing $file"
+                  fi
+                done
+                if [ -n "$missing" ]; then
+                  echo "::error::$dir is missing:$missing"
+                  exit 1
+                fi
+              done

@@ -1,0 +1,52 @@
+name: Feature
+description: A new outcome, with constraints, before any implementation
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the outcome, not the patch. After the issue exists, write
+        `.agent/changes/<issue>-<slug>/intent.md`, `spec.md`, and `plan.md` before coding.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happens today and why it is costly.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What better looks like, in a form a test or a reviewer can check.
+    validations:
+      required: true
+  - type: dropdown
+    id: apps
+    attributes:
+      label: Affected apps
+      multiple: true
+      options:
+        - api
+        - admin
+        - client
+        - ios
+        - android
+        - packages
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Must-not-break behavior, privacy, performance, backward compatibility.
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: Decisions that are not made yet. Leave blank if there are none.
+    validations:
+      required: false

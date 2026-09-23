@@ -1,0 +1,38 @@
+name: PR governance
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main, dev, develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Issue before PR. The check fails closed when the body does not link an issue.
+# Branch protection should require this check on main. The workflow cannot set that itself.
+jobs:
+  issue-first:
+    name: Issue linked
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Fixes, Closes, or Resolves
+        env:
+          ACTOR: ${{ github.actor }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -eu
+          case "$ACTOR" in
+            dependabot[bot]|renovate[bot])
+              echo "Bot PR, skip"
+              exit 0
+              ;;
+          esac
+          text=$(printf '%s\n%s\n' "$TITLE" "$BODY")
+          if printf '%s\n' "$text" | grep -Eiq '(fix(e[sd])?|close[sd]?|resolve[sd]?):?[[:space:]]+#[0-9]+'; then
+            echo "Issue link found"
+            exit 0
+          fi
+          echo "::error::Open a GitHub issue first, then add 'Fixes #<number>' to the PR body. See AGENTS.md and .agents/skills/issue-first/SKILL.md."
+          exit 1
