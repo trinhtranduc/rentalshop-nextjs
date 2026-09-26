@@ -342,6 +342,14 @@ export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number
 export { getDefaultOutlet, getDefaultBankAccount } from './outlet';
 export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
+export {
+  orderCreateAdvisoryLockKey,
+  orderItemSignature
+} from './order-create-idempotency';
+export type {
+  OrderCreateDuplicateParams,
+  OrderCreateItemSignature
+} from './order-create-idempotency';
 
 // Registration functions
 export { registerUser, registerMerchantWithTrial } from './registration';

@@ -832,9 +832,31 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     };
 
     console.log('🔍 Creating order with data:', orderData);
-    
-    // Use simplified database API
-    const order = await db.orders.create(orderData);
+
+    // Serialize identical creates (iOS double-confirm / client retry) with an
+    // advisory lock, then reuse a recent matching order instead of inserting again.
+    const { order, replay: isDuplicateReplay } = await db.orders.createUnlessRecentDuplicate(
+      {
+        outletId: parsed.data.outletId,
+        customerId: parsed.data.customerId ?? null,
+        createdById: user.id,
+        orderType: parsed.data.orderType,
+        totalAmount: parsed.data.totalAmount,
+        // Match what we persist (resolved product.id), not the raw request ids.
+        items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }))
+      },
+      orderData
+    );
+
+    if (isDuplicateReplay) {
+      console.warn(
+        '⚠️ Duplicate order create detected, returning existing order:',
+        (order as { orderNumber?: string }).orderNumber
+      );
+    }
 
     let loyaltyOrder = order;
     // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
@@ -844,7 +866,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const wantsSaleEarn = Boolean(
       parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
     );
-    if (wantsRedeem || wantsSaleEarn) {
+    if (!isDuplicateReplay && (wantsRedeem || wantsSaleEarn)) {
       const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
       if (hasLoyalty && wantsRedeem) {
         // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
@@ -876,7 +898,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logCreate({
+    if (!isDuplicateReplay) await auditHelper.logCreate({
       entityType: 'Order',
       entityId: String(loyaltyOrder.id),
       entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
