@@ -1913,7 +1913,16 @@ class PreviewViewController: BaseViewControler {
         present(controller, animated: true)
     }
     
+    /// Guards the whole save round-trip (payment dialog + API call) so a double tap
+    /// cannot submit the same order twice.
+    private var isSavingOrder = false
+    /// Separate latch for the network create so payment confirm cannot fire twice.
+    private var isCreateRequestInFlight = false
+
     @objc private func saveOrder() {
+        guard !isSavingOrder else { return }
+        isSavingOrder = true
+        saveButton.isEnabled = false
         HapticFeedback.medium()
         
         // For existing orders (OrderViewModel), show payment dialog for rent orders
@@ -1955,13 +1964,21 @@ class PreviewViewController: BaseViewControler {
     }
     
     private func proceedWithSave() {
+        guard !isCreateRequestInFlight else { return }
+        isCreateRequestInFlight = true
+        isSavingOrder = true
+        saveButton.isEnabled = false
+        showProgressText(text: "Loading...".localized())
+
         let noteImageData = noteImages.compactMap { image in
             UIImageJPEGRepresentation(image, 0.8)
         }
 
-        if let cartViewModel = viewModel as? CartViewModel, !noteImageData.isEmpty {
+        if viewModel is CartViewModel, !noteImageData.isEmpty {
             OrderService.shared.createOrder(from: CartStore.shared.cart, notesImages: noteImageData) { [weak self] order, error in
                 DispatchQueue.main.async {
+                    self?.hideProgress()
+                    self?.finishSavingOrder()
                     if let error = error {
                         UIAlertController.errorAlert(parent: self, error: error)
                         return
@@ -1974,16 +1991,28 @@ class PreviewViewController: BaseViewControler {
         }
 
         viewModel.saveOrder { [weak self] result in
-            switch result {
-            case .success:
-                // For CartViewModel, we need to get the created order
-                // Since CartViewModel.saveOrder doesn't return order directly,
-                // we'll complete with nil and SaleViewController will handle reload
-                self?.completeOrder()
-            case .failure(let error):
-                UIAlertController.errorAlert(parent: self, error: error)
+            // Client-side validation can fail synchronously; always hop to main
+            // so alerts present after the payment sheet is gone.
+            DispatchQueue.main.async {
+                self?.hideProgress()
+                self?.finishSavingOrder()
+                switch result {
+                case .success:
+                    // For CartViewModel, we need to get the created order
+                    // Since CartViewModel.saveOrder doesn't return order directly,
+                    // we'll complete with nil and SaleViewController will handle reload
+                    self?.completeOrder()
+                case .failure(let error):
+                    UIAlertController.errorAlert(parent: self, error: error)
+                }
             }
         }
+    }
+
+    private func finishSavingOrder() {
+        isCreateRequestInFlight = false
+        isSavingOrder = false
+        saveButton.isEnabled = true
     }
     
     
@@ -2956,12 +2985,17 @@ extension PreviewViewController{
 // MARK: - PaymentCollectionViewControllerDelegate
 extension PreviewViewController: PaymentCollectionViewControllerDelegate {
     func didConfirmPayment(sender: PaymentCollectionViewController) {
-        // After confirming payment, proceed with saving the order
-        proceedWithSave()
+        // This runs inside the payment sheet's dismiss completion. Presenting an alert
+        // right here races the dismissal transition and UIKit can drop it silently.
+        // Hop to the next runloop so the sheet is fully gone before we save/alert.
+        DispatchQueue.main.async { [weak self] in
+            self?.proceedWithSave()
+        }
     }
     
     func didCancelPayment(sender: PaymentCollectionViewController) {
-        // User cancelled payment, do nothing
+        // User cancelled payment: release the save guard so they can try again.
+        finishSavingOrder()
     }
 }
 

@@ -20,6 +20,8 @@ class PaymentCollectionViewController: UIViewController {
     private var paymentType: PaymentType?
     private var amount: Double = 0
     private var collateralDetails: String?
+    /// Latches once Confirm/Cancel is tapped so the delegate can never fire twice.
+    private var isConfirming = false
     
     // MARK: - UI Components
     private lazy var titleLabel: UILabel = {
@@ -364,19 +366,32 @@ class PaymentCollectionViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func cancelTapped() {
+        guard !isConfirming else { return }
+        isConfirming = true
+
         dismiss(animated: true) {
             self.delegate?.didCancelPayment(sender: self)
         }
     }
     
     @objc private func confirmTapped() {
+        // A second tap during dismiss used to fire didConfirmPayment twice and
+        // create two orders. Latch on the first tap.
+        guard !isConfirming else { return }
+        isConfirming = true
+        confirmButton.isEnabled = false
+        cancelButton.isEnabled = false
+
         dismiss(animated: true) {
             self.delegate?.didConfirmPayment(sender: self)
         }
     }
     
     @objc private func backgroundTapped() {
-        dismiss(animated: true)
+        guard !isConfirming else { return }
+        dismiss(animated: true) {
+            self.delegate?.didCancelPayment(sender: self)
+        }
     }
     
     // Add slide to dismiss functionality
@@ -392,7 +407,10 @@ class PaymentCollectionViewController: UIViewController {
         case .ended:
             let velocity = gesture.velocity(in: view)
             if velocity.y >= 1500 || translation.y >= 200 {
-                dismiss(animated: true)
+                guard !isConfirming else { return }
+                dismiss(animated: true) {
+                    self.delegate?.didCancelPayment(sender: self)
+                }
             } else {
                 UIView.animate(withDuration: 0.3) {
                     self.view.transform = .identity

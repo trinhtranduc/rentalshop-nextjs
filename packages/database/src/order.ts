@@ -7,6 +7,11 @@ import type {
   OrderSearchResponse
 } from '@rentalshop/types';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
+import {
+  orderCreateAdvisoryLockKey,
+  orderItemSignature,
+  type OrderCreateDuplicateParams
+} from './order-create-idempotency';
 
 const ORDER_DATE_FILTER_FIELDS = ['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt'] as const;
 type OrderDateFilterField = (typeof ORDER_DATE_FILTER_FIELDS)[number];
@@ -1011,6 +1016,87 @@ export const simplifiedOrders = {
         },
         payments: true
       }
+    });
+  },
+
+  /**
+   * Create an order, or return a recent identical one.
+   *
+   * Holds a Postgres advisory lock for the create signature so two concurrent
+   * identical POSTs (iOS double-confirm / retry) cannot both insert.
+   */
+  createUnlessRecentDuplicate: async (
+    duplicateParams: OrderCreateDuplicateParams,
+    data: any,
+    withinMs: number = 60000
+  ): Promise<{ order: any; replay: boolean }> => {
+    const lockKey = orderCreateAdvisoryLockKey(duplicateParams);
+    const wantedSignature = orderItemSignature(duplicateParams.items);
+    const since = new Date(Date.now() - withinMs);
+
+    const orderInclude = {
+      customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+      outlet: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      orderItems: {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          deposit: true,
+          productId: true,
+          notes: true,
+          rentalDays: true,
+          pricingType: true,
+          pricingOptionId: true,
+          productName: true,
+          productBarcode: true,
+          productImages: true,
+          product: { select: { id: true, name: true, barcode: true, images: true } }
+        }
+      },
+      payments: true
+    } as const;
+
+    return prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
+
+      const candidates = await tx.order.findMany({
+        where: {
+          deletedAt: null,
+          outletId: duplicateParams.outletId,
+          customerId: duplicateParams.customerId ?? null,
+          createdById: duplicateParams.createdById,
+          orderType: duplicateParams.orderType as any,
+          totalAmount: duplicateParams.totalAmount,
+          createdAt: { gte: since }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: orderInclude
+      });
+
+      const existing =
+        candidates.find(
+          (candidate) =>
+            orderItemSignature(
+              (candidate.orderItems || []).map((item) => ({
+                productId: item.productId ?? 0,
+                quantity: item.quantity
+              }))
+            ) === wantedSignature
+        ) || null;
+
+      if (existing) {
+        return { order: existing, replay: true };
+      }
+
+      const order = await tx.order.create({
+        data,
+        include: orderInclude
+      });
+      return { order, replay: false };
     });
   },
 
