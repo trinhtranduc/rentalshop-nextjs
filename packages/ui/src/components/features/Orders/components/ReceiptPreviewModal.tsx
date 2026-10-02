@@ -16,6 +16,7 @@ import { formatCurrency, formatPhoneNumber } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { resolveReceiptPrintNote } from './receipt-print-note';
+import { computeReceiptTotals } from './receipt-totals';
 
 interface ReceiptPreviewModalProps {
   isOpen: boolean;
@@ -297,10 +298,8 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
   const formatDateTime = useFormattedDateTime; // For createdAt (with time)
 
-  // Calculate totals
-  const subtotal = order.totalAmount || 0;
-  const discount = order.discountAmount || 0;
-  const total = subtotal - discount;
+  // totalAmount is stored after the discounts: it is the total, not the subtotal (#352)
+  const { subtotal, discount, loyaltyDiscount, total } = computeReceiptTotals(order);
 
   return (
     <div className="bg-white p-4 rounded-lg border font-mono text-sm leading-tight max-w-2xl mx-auto">
@@ -412,26 +411,20 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
       <div className="mb-2"></div>
       <div className="text-right font-bold">
         <div>{t('receipt.subtotal')}: {formatCurrency(subtotal, 'VND')}</div>
-        {order.discountAmount && order.discountAmount > 0 ? (
-          <>
-            <div>
-              {t('receipt.discount')}: {formatCurrency(order.discountAmount, 'VND')} 
-              {order.discountType === 'percentage' && order.discountValue 
-                ? ` (${order.discountValue}%)` 
-                : ''}
-            </div>
-            <div>------------------------------------------------</div>
-            <div>{t('receipt.total')}: {formatCurrency(total, 'VND')}</div>
-            <div></div>
-          </>
-        ) : (
-          <>
-            <div>{t('receipt.discount')}: 0</div>
-            <div>------------------------------------------------</div>
-            <div>{t('receipt.total')}: {formatCurrency(subtotal, 'VND')}</div>
-            <div></div>
-          </>
+        <div>
+          {t('receipt.discount')}: {discount > 0 ? formatCurrency(discount, 'VND') : 0}
+          {discount > 0 && order.discountType === 'percentage' && order.discountValue
+            ? ` (${order.discountValue}%)`
+            : ''}
+        </div>
+        {loyaltyDiscount > 0 && (
+          <div>
+            {t('receipt.loyaltyDiscount')}: {formatCurrency(loyaltyDiscount, 'VND')}
+          </div>
         )}
+        <div>------------------------------------------------</div>
+        <div>{t('receipt.total')}: {formatCurrency(total, 'VND')}</div>
+        <div></div>
       </div>
       
       {/* Footer for rent orders */}
