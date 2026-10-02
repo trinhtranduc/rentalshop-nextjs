@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.navigation
 
+import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -141,8 +143,16 @@ fun AnyRentNavHost(
         }
     }
 
+    val context = LocalContext.current
     LaunchedEffect(rootNavController) {
-        SessionStore.sessionExpired.collect {
+        SessionStore.sessionExpired.collect { code ->
+            // Say why: another device signed in vs. the session simply ended (#344)
+            val reason = if (code == "SESSION_REPLACED") {
+                R.string.api_error_session_replaced
+            } else {
+                R.string.api_error_session_expired
+            }
+            Toast.makeText(context, context.getString(reason), Toast.LENGTH_LONG).show()
             rootNavController.navigate(Routes.Login) {
                 popUpTo(rootNavController.graph.id) { inclusive = true }
                 launchSingleTop = true

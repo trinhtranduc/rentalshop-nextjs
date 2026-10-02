@@ -1,7 +1,7 @@
 // Import order matters: @rentalshop/database and @rentalshop/auth/server import each other.
 // Loading database first avoids "require_server is not a function" in next dev.
 import { db } from '@rentalshop/database';
-import { generateToken, verifyTokenSimple } from '@rentalshop/auth/server';
+import { generateRefreshableToken, generateToken, verifyTokenSimple } from '@rentalshop/auth/server';
 
 /**
  * Shared logic for POST /api/auth/refresh and POST /api/mobile/auth/refresh (#343).
@@ -25,8 +25,12 @@ function sessionFailure(status: 'replaced' | 'expired'): RefreshResult {
   return { ok: false, code: status === 'replaced' ? 'SESSION_REPLACED' : 'SESSION_EXPIRED', status: 401 };
 }
 
-function signFor(dbUser: DbUser, sessionId: string | undefined): string {
-  return generateToken({
+function signFor(
+  dbUser: DbUser,
+  sessionId: string | undefined,
+  sign: typeof generateToken = generateToken
+): string {
+  return sign({
     userId: dbUser.id,
     email: dbUser.email,
     role: dbUser.role,
@@ -84,7 +88,12 @@ export async function refreshWithRefreshToken(input: {
     return { ok: false, code: 'USER_NOT_FOUND_OR_INACTIVE', status: 401 };
   }
 
-  return { ok: true, token: signFor(dbUser, rotation.sessionId!), refreshToken: rotation.newToken };
+  // Refresh-token clients get a 1-hour access token (#344)
+  return {
+    ok: true,
+    token: signFor(dbUser, rotation.sessionId!, generateRefreshableToken),
+    refreshToken: rotation.newToken,
+  };
 }
 
 /**

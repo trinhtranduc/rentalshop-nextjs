@@ -58,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.anyrent.pos.ui.common.AppCard
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.theme.BrandPrimary
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
@@ -568,6 +569,7 @@ private fun AvailabilityDateCell(
 
 private val AvailableGreen = Color(0xFF16A34A)
 private val AvailableGreenAccent = Color(0xFF22C55E)
+private val EmptyGreenFill = Color(0xFFEDF9F2)
 private val EmptyGreenText = Color(0xFF178C57)
 private val LowYellowFill = Color(0xFFFFFAEB)
 private val LowYellowText = Color(0xFFB87A0D)

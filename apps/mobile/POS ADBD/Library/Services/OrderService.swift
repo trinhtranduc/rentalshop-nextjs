@@ -40,7 +40,7 @@ class OrderService: BaseService, OrderServiceProtocol {
             }
             print("📤 \(context) Notes Images Count: \(notesImages.count)")
 
-            AF.upload(
+            AuthSession.shared.upload(
                 multipartFormData: { multipartFormData in
                     multipartFormData.append(requestData, withName: "data")
 
