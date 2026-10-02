@@ -1,7 +1,7 @@
 /**
  * #350 — "today" for the operations panel is the Vietnam civil day.
  */
-import { getOperationsDay, getOperationsWeek, daysBetweenDateKeys } from '../../apps/api/lib/outlet-operations-day';
+import { getOperationsDay, getOperationsWeek, daysBetweenDateKeys, civilDayRange } from '../../apps/api/lib/outlet-operations-day';
 
 describe('getOperationsDay (#350)', () => {
   it('16:59:59Z is still the same Vietnam day (23:59:59 +07)', () => {
@@ -45,5 +45,19 @@ describe('getOperationsWeek (#350)', () => {
     const week = getOperationsWeek(new Date('2026-10-01T16:59:59.000Z'));
     expect(week[6].dateKey).toBe('2026-10-01');
     expect(week[0].dateKey).toBe('2026-09-25');
+  });
+});
+
+describe('civilDayRange (dashboard "today")', () => {
+  // The enhanced dashboard read startDate=2026-10-02 as 00:00Z (07:00 in Vietnam) and missed
+  // orders created between midnight and 7 am.
+  it('a YYYY-MM-DD range covers the whole Vietnam days', () => {
+    const r = civilDayRange('2026-10-02', '2026-10-02');
+    expect(r.start.toISOString()).toBe('2026-10-01T17:00:00.000Z');
+    expect(r.end.toISOString()).toBe('2026-10-02T16:59:59.999Z');
+  });
+
+  it('a multi-day range ends at the end of the last day', () => {
+    expect(civilDayRange('2026-09-01', '2026-09-30').end.toISOString()).toBe('2026-09-30T16:59:59.999Z');
   });
 });
