@@ -67,6 +67,7 @@ describe('toActiveOrders', () => {
     id: 14,
     orderNumber: 'ORD-001-0014',
     status: 'PICKUPED',
+    orderType: 'RENT',
     customer: { firstName: 'Amber', lastName: 'Ramirez' },
     pickupPlanAt: '2026-09-28T06:42:55.772Z',
     returnPlanAt: '2026-10-02T17:42:36.921Z',
@@ -82,6 +83,7 @@ describe('toActiveOrders', () => {
     expect(row.returnPlanAt).toBe('2026-10-03');
     expect(row.isConflict).toBe(true);
     expect(row.customerName).toBe('Amber Ramirez');
+    expect(row.orderType).toBe('RENT');
   });
 
   it('counts only the units of the checked product', () => {
@@ -102,6 +104,11 @@ describe('freeUnitsByDay', () => {
 
   it('subtracts every order covering the day; a same-day pickup and return still occupies it', () => {
     expect(freeUnitsByDay(23, orders, ['2026-10-02', '2026-10-03', '2026-10-04'])).toEqual([21, 20, 23]);
+  });
+
+  it('ignores sale orders, like the availability API, so the grid matches the period result', () => {
+    const withSale = [...orders, { pickupPlanAt: '2026-10-03', returnPlanAt: '2026-10-03', quantity: 5, orderType: 'SALE' }];
+    expect(freeUnitsByDay(23, withSale, ['2026-10-03'])).toEqual([20]);
   });
 
   it('never goes below zero', () => {
