@@ -162,12 +162,12 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   };
 
   return (
-    <div className={`flex items-center border border-gray-300 rounded-md overflow-hidden bg-white ${className}`}>
+    <div className={`flex h-9 items-center border border-slate-300 rounded-lg overflow-hidden bg-white ${className}`}>
       <button
         type="button"
         onClick={handleDecrease}
         disabled={value <= min}
-        className="flex-shrink-0 w-8 h-8 hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
+        className="flex-shrink-0 w-9 h-9 hover:bg-slate-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
         aria-label={decreaseLabel}
       >
         <Minus className="w-4 h-4" />
@@ -176,7 +176,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         type="text"
         value={value}
         onChange={handleChange}
-        className="w-9 min-w-0 text-center text-sm font-medium tabular-nums border-0 focus:ring-0 focus:outline-none bg-white px-0 h-8"
+        className="w-10 min-w-0 text-center text-sm font-medium tabular-nums border-0 focus:ring-0 focus:outline-none bg-white px-0 h-9"
         aria-label={inputLabel}
         inputMode="numeric"
         min={min}
@@ -186,7 +186,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         type="button"
         onClick={handleIncrease}
         disabled={max !== undefined && value >= max}
-        className="flex-shrink-0 w-8 h-8 hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
+        className="flex-shrink-0 w-9 h-9 hover:bg-slate-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
         aria-label={increaseLabel}
       >
         <Plus className="w-4 h-4" />
@@ -466,7 +466,7 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
     if (matched?.id != null && onUpdatePricingOption) onUpdatePricingOption(item.productId, matched.id);
     else onUpdatePricingType?.(item.productId, nextType);
   };
-  const fieldLabel = 'mb-1 block text-xs font-medium text-gray-600';
+  const fieldLabel = 'mb-1 block h-4 text-xs font-medium leading-4 text-slate-600';
   const ids = `item-${item.productId}`;
 
   return (
@@ -498,7 +498,7 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
       </div>
 
       {/* Line 2: every value with its label, the pricing choice in plain sight */}
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:ml-[3.25rem] sm:flex sm:flex-wrap sm:items-end">
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:ml-[3.25rem] sm:flex sm:flex-wrap sm:items-start sm:gap-x-3 xl:flex-nowrap">
         <div>
           <span className={fieldLabel}>{t('form.quantity')}</span>
           <QuantityInput
@@ -512,9 +512,9 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
         </div>
 
         {orderType === 'RENT' && (
-          <div>
+          <div className="col-span-2 sm:col-span-1">
             <span className={fieldLabel} id={`${ids}-pricing`}>{t('form.pricingMethod')}</span>
-            <div role="radiogroup" aria-labelledby={`${ids}-pricing`} className="flex h-8 w-full min-w-0 overflow-hidden rounded-md border border-gray-300 p-0.5 sm:inline-flex sm:w-auto">
+            <div role="radiogroup" aria-labelledby={`${ids}-pricing`} className="flex h-9 w-full min-w-0 gap-0.5 rounded-lg bg-slate-100 p-0.5 sm:inline-flex sm:w-auto">
               {(['FIXED', 'DAILY'] as const).map((type) => {
                 const selected = pricingType === type;
                 return (
@@ -524,8 +524,8 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setPricing(type)}
-                    className={`flex-1 whitespace-nowrap rounded px-2.5 text-xs font-medium transition-colors sm:flex-none ${
-                      selected ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'
+                    className={`flex-1 whitespace-nowrap rounded-md px-2.5 text-sm transition-colors sm:flex-none ${
+                      selected ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'font-medium text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {t(`form.pricing.${type}`)}
@@ -536,7 +536,7 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
           </div>
         )}
 
-        <div className="sm:w-28">
+        <div className="sm:w-24">
           <label className={fieldLabel} htmlFor={`${ids}-price`}>
             {t('form.unitPrice')}
             {line.isDaily ? <span className="font-normal text-gray-500"> /{t('summary.day')}</span> : null}
@@ -547,12 +547,12 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
             onChange={(value) => onUpdate(item.productId, 'unitPrice', value)}
             min={0}
             decimals={0}
-            className="h-8 bg-white text-right text-sm tabular-nums"
+            className="h-9 rounded-lg border-slate-300 bg-white text-right text-sm font-medium tabular-nums"
           />
         </div>
 
         {orderType === 'RENT' && (
-          <div className="sm:w-24">
+          <div className="sm:w-20">
             <label className={fieldLabel} htmlFor={`${ids}-deposit`}>{t('form.depositPerUnit')}</label>
             <NumberInput
               id={`${ids}-deposit`}
@@ -560,16 +560,16 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
               onChange={(value) => onUpdate(item.productId, 'deposit', value)}
               min={0}
               decimals={0}
-              className="h-8 bg-white text-right text-sm tabular-nums"
+              className="h-9 rounded-lg border-slate-300 bg-white text-right text-sm font-medium tabular-nums"
             />
           </div>
         )}
 
         <div className="col-span-2 flex items-end justify-between gap-3 border-t border-gray-100 pt-2 sm:ml-auto sm:block sm:border-0 sm:pt-0 sm:text-right">
-          <span className={`${fieldLabel} sm:mb-1`}>{t('form.lineTotal')}</span>
+          <span className={fieldLabel}>{t('form.lineTotal')}</span>
           <div>
-            <p className="text-base font-semibold tabular-nums text-gray-900">{formatMoney(line.total)}</p>
-            <p className="text-xs tabular-nums text-gray-600">
+            <p className="flex h-9 items-center justify-end text-base font-semibold tabular-nums text-slate-900">{formatMoney(line.total)}</p>
+            <p className="-mt-1 text-xs tabular-nums text-slate-600">
               {item.quantity} × {formatMoney(item.unitPrice)}
               {line.isDaily ? ` ${t('form.timesDays', { days: line.days })}` : ''}
             </p>

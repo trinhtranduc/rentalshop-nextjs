@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, Input, Label, Switch, useFormatCurrency } from '@rentalshop/ui';
-import { Coins } from 'lucide-react';
+import { Award, Coins } from 'lucide-react';
 import type { LoyaltyCustomerSummary } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
@@ -38,9 +38,10 @@ const CompactLoyalty: React.FC<LoyaltyRedeemSectionProps> = ({
   // No programme for this shop (or no data): show nothing
   if (!summary) return null;
   return (
-    <div className="space-y-1.5 rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-700">
+    <div className="space-y-1.5 text-xs text-slate-700">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        {summary.tier?.name && <Badge variant="secondary" className="text-[11px]">{summary.tier.name}</Badge>}
+        <Award className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+        {summary.tier?.name && <span className="font-semibold text-slate-900">{summary.tier.name}</span>}
         <span className="tabular-nums">{t('form.loyalty.points', { points: summary.points })}</span>
         {summary.canRedeem && (
           <label className="ml-auto inline-flex min-h-[28px] cursor-pointer items-center gap-1.5 font-medium text-gray-900">

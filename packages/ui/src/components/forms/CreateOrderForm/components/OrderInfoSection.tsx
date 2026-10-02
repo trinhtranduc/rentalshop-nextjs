@@ -214,6 +214,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   }, []);
 
   const isRent = formData.orderType === 'RENT';
+  // Money inputs share one width so their right edges line up with the amounts
+  const moneyInput = 'h-10 w-32 rounded-lg border-slate-300 bg-white text-right text-sm font-medium tabular-nums';
   const currencySign = String(merchantData?.currency || 'VND').toUpperCase() === 'USD' ? '$' : '₫';
   const rentalDays = isRent && formData.pickupPlanAt && formData.returnPlanAt
     ? countRentalDays(formData.pickupPlanAt, formData.returnPlanAt)
@@ -234,8 +236,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           <>
         {/* 1. Customer first: who the order is for (create-order UI) */}
         <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            {t('messages.customer')} <span className="text-red-500">*</span>
+          <label className="text-sm font-medium text-slate-700">
+            {t('messages.customer')} <span className="text-red-600">*</span>
           </label>
           <div className="relative">
             <div className="relative">
@@ -277,10 +279,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                     onCustomerSearch('');
                   }
                 }}
-                className={`h-11 w-full rounded-lg border pl-4 pr-12 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-                  selectedCustomer 
-                    ? 'border-green-500 bg-green-50 text-green-900 font-medium' 
-                    : 'border-gray-300 bg-white text-gray-900 hover:border-gray-400 focus:border-blue-500 focus:ring-blue-100'
+                className={`h-10 w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 ${
+                  selectedCustomer ? 'font-medium' : 'hover:border-slate-400'
                 }`}
               />
               {selectedCustomer ? (
@@ -289,7 +289,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   size="icon"
                   type="button"
                   onClick={onCustomerClear}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0"
+                  className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-slate-500 transition-colors hover:text-slate-900"
                   title={t('messages.clearSelectedCustomer')}
                 >
                   <X className="w-4 h-4" />
@@ -436,36 +436,33 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           {isEditMode && (
             <p className="text-xs text-gray-600">{t('messages.cannotChangeWhenEditing')}</p>
           )}
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1" role="group" aria-label={t('messages.orderType')}>
-            <Button
-              type="button"
-              variant={formData.orderType === 'RENT' ? 'default' : 'ghost'}
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'RENT');
-                }
-              }}
-              className={`h-8 px-3 text-sm ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {t('form.orderType.RENT')}
-            </Button>
-            <Button
-              type="button"
-              variant={formData.orderType === 'SALE' ? 'default' : 'ghost'}
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'SALE');
-                  onFormDataChange('pickupPlanAt', '');
-                  onFormDataChange('returnPlanAt', '');
-                  onFormDataChange('depositAmount', 0);
-                }
-              }}
-              className={`h-8 px-3 text-sm ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {t('form.orderType.SALE')}
-            </Button>
+          <div className="grid grid-cols-2 gap-0.5 rounded-lg bg-slate-100 p-0.5 h-10" role="radiogroup" aria-label={t('messages.orderType')}>
+            {(['RENT', 'SALE'] as const).map((type) => {
+              const selected = formData.orderType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={isEditMode}
+                  onClick={() => {
+                    if (isEditMode || selected) return;
+                    onFormDataChange('orderType', type);
+                    if (type === 'SALE') {
+                      onFormDataChange('pickupPlanAt', '');
+                      onFormDataChange('returnPlanAt', '');
+                      onFormDataChange('depositAmount', 0);
+                    }
+                  }}
+                  className={`rounded-md text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                    selected ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'font-medium text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t(`form.orderType.${type}`)}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -554,8 +551,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                         onFormDataChange('returnPlanAt', range.to);
                         onUpdateRentalDates(range.from, range.to);
                       }}
-                      className={`inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors ${
-                        selected ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-800 hover:bg-gray-50'
+                      className={`inline-flex h-8 items-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors ${
+                        selected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
                       {t(`form.quick.${id}`)}
@@ -622,12 +619,12 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
 
           <div className="flex items-start justify-between gap-3 py-2">
-            <dt className="pt-1.5">
+            <dt className="pt-2.5">
               <label htmlFor="order-discount" className="text-gray-700">{t('summary.discount')}</label>
             </dt>
             <dd className="text-right">
-              <div className="inline-flex h-8 items-stretch overflow-hidden rounded-md border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-blue-500">
-                <div className="flex border-r border-gray-300 bg-gray-50" role="radiogroup" aria-label={t('summary.discount')}>
+              <div className="flex items-center justify-end gap-2">
+                <div className="grid grid-cols-2 gap-0.5 rounded-lg bg-slate-100 p-0.5 h-10 w-[4.5rem]" role="radiogroup" aria-label={t('summary.discount')}>
                   {(['amount', 'percentage'] as const).map((type) => {
                     const selected = formData.discountType === type;
                     return (
@@ -643,7 +640,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                           onFormDataChange('discountType', type);
                           onFormDataChange('discountValue', type === 'percentage' ? Math.min(100, current) : Math.min(formData.subtotal || 0, current));
                         }}
-                        className={`min-w-[2rem] px-2 text-xs font-semibold ${selected ? 'bg-white text-gray-900 shadow-[inset_0_-2px_0_0_#111827]' : 'text-gray-500 hover:text-gray-800'}`}
+                        className={`rounded-md text-sm transition-colors ${selected ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'font-medium text-slate-600 hover:text-slate-900'}`}
                       >
                         {type === 'amount' ? currencySign : '%'}
                       </button>
@@ -664,7 +661,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   max={formData.discountType === 'percentage' ? 100 : formData.subtotal || 0}
                   decimals={0}
                   placeholder="0"
-                  className="h-8 w-28 rounded-none border-0 bg-white text-right text-sm font-medium tabular-nums shadow-none focus-visible:ring-0"
+                  className={moneyInput}
                 />
               </div>
               {formData.discountType === 'percentage' && formData.discountAmount > 0 && (
@@ -682,7 +679,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
           {isRent && (
             <div className="flex items-start justify-between gap-3 py-2">
-              <dt className="pt-1.5">
+              <dt className="pt-2">
                 <label htmlFor="order-deposit" className="text-gray-700">{t('summary.deposit')}</label>
                 <p className="text-xs text-gray-500">{t('form.depositHint')}</p>
               </dt>
@@ -694,7 +691,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   min={0}
                   decimals={0}
                   placeholder="0"
-                  className="h-8 w-[9.5rem] bg-white text-right text-sm font-medium tabular-nums"
+                  className={moneyInput}
                 />
               </dd>
             </div>
@@ -719,13 +716,13 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </button>
         )}
 
-        <div className="rounded-lg bg-gray-900 px-4 py-3 text-white">
+        <div className="border-t border-slate-200 pt-3">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-medium">{isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}</span>
-            <span className="text-2xl font-bold tabular-nums">{formatMoney(collect)}</span>
+            <span className="text-[15px] font-semibold text-slate-900">{isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}</span>
+            <span className="text-2xl font-bold tabular-nums text-slate-900">{formatMoney(collect)}</span>
           </div>
           {isRent && deposit > 0 && (
-            <p className="mt-0.5 text-right text-xs tabular-nums text-gray-300">
+            <p className="mt-0.5 text-right text-xs tabular-nums text-slate-600">
               {t('form.summary.breakdown', { rent: formatMoney(orderTotal), deposit: formatMoney(deposit) })}
             </p>
           )}
@@ -733,7 +730,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         {onSubmit && (
           <div className="w-full space-y-1.5">
-            <Button type="button" disabled={loading || !isFormValid} onClick={onSubmit} className="h-10 w-full">
+            <Button type="button" disabled={loading || !isFormValid} onClick={onSubmit} className="h-11 w-full text-base font-semibold">
               {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
             </Button>
             {/* One status line: short stock and what is still missing */}
