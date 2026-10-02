@@ -5,7 +5,7 @@
  */
 
 const mockDb = {
-  refreshTokens: { rotate: jest.fn(), revoke: jest.fn() },
+  refreshTokens: { rotate: jest.fn(), revoke: jest.fn(), findSessionId: jest.fn() },
   users: { findById: jest.fn() },
   sessions: { getSessionStatus: jest.fn(), getUserActiveSessions: jest.fn() },
 };
@@ -68,6 +68,18 @@ describe('refresh binds to the refresh token session (#343)', () => {
 
     expect(result).toEqual({ ok: false, code: 'SESSION_EXPIRED', status: 401 });
     expect(mockAuth.generateToken).not.toHaveBeenCalled();
+  });
+
+  it('checks the session before rotating, so a token revoked by a newer login answers SESSION_REPLACED (found in E2E)', async () => {
+    // A newer login revoked this refresh token. Rotating first would hit reuse detection and
+    // answer REFRESH_TOKEN_INVALID, hiding the "signed in on another device" reason.
+    mockDb.refreshTokens.findSessionId.mockResolvedValue('session-a');
+    mockDb.sessions.getSessionStatus.mockResolvedValue('replaced');
+
+    const result: any = await refreshWithRefreshToken({ refreshToken: 'rt-revoked-by-login' });
+
+    expect(result).toEqual({ ok: false, code: 'SESSION_REPLACED', status: 401 });
+    expect(mockDb.refreshTokens.rotate).not.toHaveBeenCalled();
   });
 
   it('returns REFRESH_TOKEN_INVALID for an unknown, revoked or expired refresh token', async () => {
