@@ -27,3 +27,13 @@ export function daysBetweenDateKeys(fromKey: string, toKey: string): number {
   };
   return Math.round((toUtcMidnight(toKey) - toUtcMidnight(fromKey)) / DAY_MS);
 }
+
+/** The 7 Vietnam civil days ending today, oldest first (sparkline on the Today dashboard). */
+export function getOperationsWeek(now: Date = new Date()) {
+  const today = getOperationsDay(now);
+  return Array.from({ length: 7 }, (_, i) => {
+    const start = new Date(today.start.getTime() - (6 - i) * DAY_MS);
+    const end = new Date(start.getTime() + DAY_MS - 1);
+    return { dateKey: toAvailabilityCivilDateKey(start), start, end };
+  });
+}

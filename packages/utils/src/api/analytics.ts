@@ -33,6 +33,10 @@ export interface OutletOperations {
   noShows: OutletOperationsList;
   /** Due back in the 3 civil days after today */
   returnsSoon: OutletOperationsList;
+  /** Rentals already handed over / taken back today (not cancelled) */
+  doneToday: { pickups: number; returns: number };
+  /** New orders per Vietnam civil day, last 7 days, oldest first (today last) */
+  newOrdersByDay: { date: string; count: number }[];
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };

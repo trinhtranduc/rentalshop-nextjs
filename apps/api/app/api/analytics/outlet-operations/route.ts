@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { daysBetweenDateKeys, getOperationsDay, toOperationsDateKey } from '../../../../lib/outlet-operations-day';
+import { daysBetweenDateKeys, getOperationsDay, getOperationsWeek, toOperationsDateKey } from '../../../../lib/outlet-operations-day';
 
 const querySchema = z.object({
   outletIds: z.string().regex(/^\d+(,\d+)*$/).optional(),
@@ -49,7 +49,8 @@ function toRow(order: OperationsRow, todayKey: string, withOverdue = false) {
  *
  * Today's work for an outlet team, for the current Vietnam civil day (#350):
  * RENT orders to hand over, to take back, overdue, no-shows, and due back in the next 3 days
- * (each: count + up to 50 rows).
+ * (each: count + up to 50 rows), handovers/returns already done today (`doneToday`), and new orders
+ * per day for the last 7 days (`newOrdersByDay`, oldest first, counts only).
  * `cash` (deposits held, deposits due back today, fees on returns today) only with analytics.view.revenue.
  *
  * Access: analytics.view.dashboard.
@@ -90,7 +91,14 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const day = getOperationsDay();
     // Look-ahead for "returns in the next 3 days" (Vietnam has no DST: civil days are 24h)
     const soonEnd = new Date(day.end.getTime() + 3 * 24 * 60 * 60 * 1000);
-    const ops = await db.outletOperations.get({ outletIds, start: day.start, end: day.end, soonEnd, includeCash });
+    const ops = await db.outletOperations.get({
+      outletIds,
+      start: day.start,
+      end: day.end,
+      soonEnd,
+      includeCash,
+      trendDays: getOperationsWeek(),
+    });
 
     const list = (group: { count: number; orders: OperationsRow[] }, withOverdue = false) => ({
       count: group.count,
@@ -106,6 +114,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         overdueReturns: list(ops.overdueReturns as any, true),
         noShows: list(ops.noShows as any),
         returnsSoon: list(ops.returnsSoon as any),
+        doneToday: ops.doneToday,
+        newOrdersByDay: ops.newOrdersByDay,
         cash: ops.cash,
       })
     );

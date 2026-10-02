@@ -28,6 +28,8 @@ export interface OutletOperationsQuery {
   /** End of the look-ahead window for `returnsSoon` (end of today + 3 civil days) */
   soonEnd: Date;
   includeCash: boolean;
+  /** Civil days (oldest first) for `newOrdersByDay`; omitted → empty series */
+  trendDays?: { dateKey: string; start: Date; end: Date }[];
 }
 
 async function listWithCount(where: any, orderBy: any) {
@@ -38,7 +40,7 @@ async function listWithCount(where: any, orderBy: any) {
   return { count, orders };
 }
 
-export async function getOutletOperations({ outletIds, start, end, soonEnd, includeCash }: OutletOperationsQuery) {
+export async function getOutletOperations({ outletIds, start, end, soonEnd, includeCash, trendDays = [] }: OutletOperationsQuery) {
   const base = { orderType: 'RENT' as const, deletedAt: null, outletId: { in: outletIds } };
 
   const pickupsTodayWhere = { ...base, status: 'RESERVED' as const, pickupPlanAt: { gte: start, lte: end } };
@@ -47,16 +49,31 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
   const noShowWhere = { ...base, status: 'RESERVED' as const, pickupPlanAt: { lt: start } };
   const returnsSoonWhere = { ...base, status: 'PICKUPED' as const, returnPlanAt: { gt: end, lte: soonEnd } };
 
-  const [pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon] = await Promise.all([
-    listWithCount(pickupsTodayWhere, { pickupPlanAt: 'asc' }),
-    listWithCount(returnsTodayWhere, { returnPlanAt: 'asc' }),
-    listWithCount(overdueWhere, { returnPlanAt: 'asc' }),
-    listWithCount(noShowWhere, { pickupPlanAt: 'asc' }),
-    listWithCount(returnsSoonWhere, { returnPlanAt: 'asc' }),
-  ]);
+  // Handovers and returns already done today: the "done" part of the progress bars
+  const doneBase = { ...base, status: { not: 'CANCELLED' as const } };
+
+  const [pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, pickedUpToday, returnedToday, newOrderCounts] =
+    await Promise.all([
+      listWithCount(pickupsTodayWhere, { pickupPlanAt: 'asc' }),
+      listWithCount(returnsTodayWhere, { returnPlanAt: 'asc' }),
+      listWithCount(overdueWhere, { returnPlanAt: 'asc' }),
+      listWithCount(noShowWhere, { pickupPlanAt: 'asc' }),
+      listWithCount(returnsSoonWhere, { returnPlanAt: 'asc' }),
+      prisma.order.count({ where: { ...doneBase, pickedUpAt: { gte: start, lte: end } } }),
+      prisma.order.count({ where: { ...doneBase, returnedAt: { gte: start, lte: end } } }),
+      // New orders per civil day (all order types), indexed by (outletId, createdAt)
+      Promise.all(
+        trendDays.map((day) =>
+          prisma.order.count({ where: { outletId: { in: outletIds }, deletedAt: null, createdAt: { gte: day.start, lte: day.end } } })
+        )
+      ),
+    ]);
+
+  const doneToday = { pickups: pickedUpToday, returns: returnedToday };
+  const newOrdersByDay = trendDays.map((day, i) => ({ date: day.dateKey, count: newOrderCounts[i] }));
 
   if (!includeCash) {
-    return { pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, cash: null };
+    return { pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, doneToday, newOrdersByDay, cash: null };
   }
 
   const depositSum = { depositAmount: true, securityDeposit: true } as const;
@@ -80,6 +97,8 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
     overdueReturns,
     noShows,
     returnsSoon,
+    doneToday,
+    newOrdersByDay,
     cash: {
       depositsHeld: {
         depositAmount: held._sum.depositAmount ?? 0,
