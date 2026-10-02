@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { 
   CardClean, 
   CardHeaderClean, 
@@ -30,7 +31,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  ChevronRight,
   Plus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
@@ -1406,120 +1406,59 @@ export default function DashboardPage() {
             <OutletOperationsPanel state={operations} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
-              {/* Recent Activity - Modern Card Design */}
-              <CardClean size="md" className="bg-white shadow-sm">
-                <CardHeaderClean className="pb-4 border-b border-gray-100">
-                  <CardTitleClean size="md" className="text-gray-900 font-semibold">
-                    {t('operations.newOrders')}
-                  </CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean className="pt-4">
+              {/* Recent activity: two-line rows like the operations panel (~66px, was ~98px) (#350) */}
+              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <header className="flex items-baseline justify-between px-4 pt-4">
+                  {/* Orders with activity today (not only created today), so no count next to the
+                      "Đơn mới hôm nay" KPI to avoid two different numbers */}
+                  <h2 className="text-base font-semibold text-gray-900">{t('recentActivity.title')}</h2>
+                </header>
+                <div className="px-4 pb-2">
                   {loadingCharts ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                            <div>
-                              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                              <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            </div>
-                          </div>
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
                   ) : (todayOrders || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(todayOrders || []).slice(0, 6).map(order => {
-                        const statusClassName = getStatusBadgeColor(order.status);
-                        const hasRentalDates = order.pickupPlanAt && order.returnPlanAt;
-                        
-                        // Translate order type
-                        const orderTypeKey = order.orderType ? `orderType.${order.orderType}` : null;
-                        const translatedOrderType = orderTypeKey ? to(orderTypeKey) : null;
-                        
-                        // Translate order status - map API status to translation key
-                        const statusMap: Record<string, string> = {
-                          'RESERVED': 'status.RESERVED',
-                          'PICKUPED': 'status.PICKUPED',
-                          'RETURNED': 'status.RETURNED',
-                          'COMPLETED': 'status.COMPLETED',
-                          'CANCELLED': 'status.CANCELLED'
-                        };
-                        const statusKey = statusMap[order.status] || `status.${order.status}`;
-                        const translatedStatus = to(statusKey);
-                        
+                    <ul className="divide-y divide-gray-100">
+                      {(todayOrders || []).slice(0, 8).map(order => {
+                        const translatedOrderType = order.orderType ? to(`orderType.${order.orderType}`) : null;
+                        const translatedStatus = to(`status.${order.status}`);
+                        const detail = order.pickupPlanAt && order.returnPlanAt
+                          ? `${formatFullDateByLocale(order.pickupPlanAt, locale)} – ${formatFullDateByLocale(order.returnPlanAt, locale)}`
+                          : order.productNames || '';
                         return (
-                          <div 
-                            key={order.id} 
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                            onClick={() => {
-                              // Use orderNumber instead of id for navigation
-                              // Order detail page expects orderNumber without "ORD-" prefix
-                              // e.g., "003-0003" from "ORD-003-0003"
-                              const orderNumberForRoute = order.orderNumber 
-                                ? order.orderNumber.replace(/^ORD-/, '') 
-                                : order.id.toString();
-                              console.log('🔍 Dashboard: Navigating to order:', {
-                                orderId: order.id,
-                                orderNumber: order.orderNumber,
-                                navigatedTo: orderNumberForRoute
-                              });
-                              router.push(`/orders/${orderNumberForRoute}`);
-                            }}
-                          >
-                            <Package className="w-5 h-5 text-blue-700 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-                                <h4 className="font-medium text-gray-800 whitespace-nowrap">#{order.orderNumber}</h4>
-                                {translatedOrderType && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap">
-                                    {translatedOrderType}
-                                  </span>
-                                )}
+                          <li key={order.id}>
+                            <Link
+                              href={`/orders/${order.orderNumber}`}
+                              className="-mx-2 flex items-start gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-gray-50"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                  <span className="whitespace-nowrap font-medium text-gray-900">#{order.orderNumber}</span>
+                                  {translatedOrderType && (
+                                    <span className="whitespace-nowrap rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">
+                                      {translatedOrderType}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-0.5 truncate text-xs text-gray-500">
+                                  {[order.customerName, detail].filter(Boolean).join(' · ')}
+                                </p>
                               </div>
-                              {hasRentalDates ? (
-                                <>
-                                  <p className="text-sm text-gray-600">
-                                    {formatFullDateByLocale(order.pickupPlanAt, locale)} - {formatFullDateByLocale(order.returnPlanAt, locale)}
-                                  </p>
-                                  {order.customerName && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-sm text-gray-600 truncate">
-                                    {order.productNames || (order.createdAt ? formatFullDateByLocale(order.createdAt, locale) : '')}
-                                  </p>
-                                  {order.customerName && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${statusClassName} mt-1`}>
-                                {translatedStatus}
-                              </span>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                          </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-medium text-gray-900">{formatMoney(order.totalAmount || 0)}</p>
+                                <span className={`mt-0.5 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium ${getStatusBadgeColor(order.status)}`}>
+                                  {translatedStatus}
+                                </span>
+                              </div>
+                            </Link>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ul>
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-300" />
-                      </div>
-                      <p className="text-sm">{tc('labels.noData')}</p>
-                    </div>
+                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
                   )}
-                </CardContentClean>
-              </CardClean>
+                </div>
+              </section>
 
               <UpcomingReturnsCard state={operations} />
             </div>
