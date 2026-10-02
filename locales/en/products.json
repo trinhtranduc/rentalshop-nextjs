@@ -291,7 +291,9 @@
   "form": {
     "stockIsSum": "Added up from the outlet stock below",
     "sectionInfo": "Product details",
-    "editTitle": "Edit product"
+    "editTitle": "Edit product",
+    "sectionOrganise": "Organisation",
+    "stockTotal": "Total stock: {count}"
   },
   "view": {
     "noImage": "No photo",

@@ -291,7 +291,9 @@
   "form": {
     "stockIsSum": "Tự cộng từ tồn kho các cửa hàng bên dưới",
     "sectionInfo": "Thông tin sản phẩm",
-    "editTitle": "Sửa sản phẩm"
+    "editTitle": "Sửa sản phẩm",
+    "sectionOrganise": "Phân loại & mã",
+    "stockTotal": "Tổng tồn kho: {count}"
   },
   "view": {
     "noImage": "Chưa có ảnh",

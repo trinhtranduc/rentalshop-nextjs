@@ -894,8 +894,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       <form id={formId} onSubmit={handleSubmit} className="space-y-4">
         {(() => {
-          const infoEl = (
-            <div className="space-y-3">
+          const nameEl = (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
               <Input
@@ -906,8 +905,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
               {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          );
+          const skuEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.sku')}</label>
                 <Input
@@ -916,7 +915,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   placeholder={t('fields.sku')}
                 />
               </div>
-
+          );
+          const barcodeEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
@@ -932,12 +932,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     size="sm"
                     onClick={() => handleInputChange('barcode', generateBarcode())}
                     title={t('messages.generateBarcode')}
+                    aria-label={t('messages.generateBarcode')}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-
+          );
+          const categoryEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
                 <Select
@@ -959,8 +961,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </Select>
                 {errors.categoryId && <p className="text-sm text-red-500">{errors.categoryId}</p>}
               </div>
-            </div>
-
+          );
+          const descriptionEl = (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.description')}</label>
               <Textarea
@@ -970,7 +972,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 rows={2}
               />
             </div>
-
+          );
+          const infoEl = (
+            <div className="space-y-3">
+              {nameEl}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {skuEl}
+                {barcodeEl}
+                {categoryEl}
+              </div>
+              {descriptionEl}
             </div>
           );
           const pricingEl = (
@@ -1059,6 +1070,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </div>
                 )}
 
+                {!(isPage && outlets.length > 1) && (
                 <div>
                   <NumericInput
                     label={t('fields.stock')}
@@ -1074,6 +1086,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   {outlets.length > 1 && <p className="mt-1 text-xs text-gray-600">{t('form.stockIsSum')}</p>}
                   {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
                 </div>
+                )}
               </div>
             </div>
                     </>
@@ -1362,21 +1375,37 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </>
             );
           }
-          // Edit page: what it is (info, photos) on the left; money and stock on the right, each in a card
+          // Edit page (Shopify-style): the product itself in the main column (name, photos, prices, stock);
+          // organisation (category, barcode, SKU) in a narrow side column
           const card = 'rounded-xl border border-gray-200 bg-white p-4 sm:p-5 [&>div:first-child]:mt-0 [&>div:first-child]:border-t-0 [&>div:first-child]:pt-0';
           return (
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
               <div className="min-w-0 space-y-4">
                 <section className={card} aria-label={t('form.sectionInfo')}>
-                  <h2 className="mb-3 text-sm font-semibold text-gray-900">{t('form.sectionInfo')}</h2>
-                  {infoEl}
+                  <div className="space-y-3">
+                    {nameEl}
+                    {descriptionEl}
+                  </div>
                 </section>
                 <section className={card}>{imagesEl}</section>
-              </div>
-              <div className="min-w-0 space-y-4">
                 <section className={card}>{pricingEl}</section>
-                {outlets.length > 1 && <section className={card}>{stockEl}</section>}
+                {outlets.length > 1 && (
+                  <section className={card}>
+                    <p className="mb-2 text-right text-sm text-gray-700">
+                      {t('form.stockTotal', { count: formData.totalStock })}
+                    </p>
+                    {stockEl}
+                  </section>
+                )}
               </div>
+              <aside className="min-w-0 space-y-4 lg:sticky lg:top-4">
+                <section className={`${card} space-y-3`} aria-label={t('form.sectionOrganise')}>
+                  <h2 className="text-sm font-semibold text-gray-900">{t('form.sectionOrganise')}</h2>
+                  {categoryEl}
+                  {barcodeEl}
+                  {skuEl}
+                </section>
+              </aside>
             </div>
           );
         })()}
