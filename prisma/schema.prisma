@@ -91,16 +91,20 @@ model Notification {
 }
 
 model UserSession {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  sessionId     String    @unique
-  ipAddress     String?
-  userAgent     String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  expiresAt     DateTime
-  invalidatedAt DateTime?
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  sessionId         String    @unique
+  ipAddress         String?
+  userAgent         String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  expiresAt         DateTime
+  // Sliding sessions (mobile): expiresAt moves forward on use, never past absoluteExpiresAt.
+  // Null on both means a fixed-expiry session (web, rows before #343).
+  absoluteExpiresAt DateTime?
+  idleTimeoutDays   Int?
+  invalidatedAt     DateTime?
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isActive])
   @@index([sessionId])
@@ -119,10 +123,12 @@ model RefreshToken {
   expiresAt  DateTime
   revokedAt  DateTime?
   replacedBy String? // Token rotation: points to the new token hash
+  sessionId  String? // UserSession.sessionId this token refreshes; null tokens cannot refresh
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRevoked])
   @@index([tokenHash])
+  @@index([sessionId])
   @@index([expiresAt])
 }
 
@@ -190,6 +196,8 @@ model Outlet {
   name         String
   address      String?
   description  String?
+  /// Printed at the bottom of RENT receipts, e.g. "Vui lòng mang theo CMND khi lấy đồ" (#347)
+  printNote    String?
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())

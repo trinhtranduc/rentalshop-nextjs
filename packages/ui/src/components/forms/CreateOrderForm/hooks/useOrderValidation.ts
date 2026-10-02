@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
+import { countRentalDays } from '@rentalshop/utils';
 import type { 
   OrderFormData, 
   OrderItemFormData, 
@@ -16,10 +17,7 @@ export const useOrderValidation = () => {
   // Calculate rental days
   const calculateRentalDays = useCallback((startDate: string, endDate: string): number => {
     if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return countRentalDays(startDate, endDate);
   }, []);
 
   // Validate form

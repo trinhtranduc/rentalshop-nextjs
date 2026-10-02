@@ -137,9 +137,9 @@ describe('PricingResolver', () => {
       );
 
       expect(result.unitPrice).toBe(50);
-      expect(result.totalPrice).toBe(150); // 3 days * $50
+      expect(result.totalPrice).toBe(200); // 15 → 18, Vietnam days with both ends = 4 days * $50 (#351)
       expect(result.deposit).toBe(100);
-      expect(result.rentalDays).toBe(3);
+      expect(result.rentalDays).toBe(4);
     });
 
     // WEEKLY pricing has been removed - test skipped
@@ -251,7 +251,7 @@ describe('PricingResolver', () => {
       );
 
       expect(result.unitPrice).toBe(50);
-      expect(result.totalPrice).toBe(150); // 3 days (rounded up) * $50
+      expect(result.totalPrice).toBe(150); // 15 → 17, Vietnam days with both ends = 3 days * $50
       expect(result.rentalDays).toBe(3);
     });
 

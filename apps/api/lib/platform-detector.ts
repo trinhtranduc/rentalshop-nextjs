@@ -48,11 +48,12 @@ export function detectPlatform(request: Request): PlatformInfo {
 function detectPlatformFromUserAgent(userAgent: string): PlatformInfo {
   const ua = userAgent.toLowerCase();
 
-  // Check for mobile patterns
-  if (/mobile|android|iphone|ipad|ipod/i.test(ua)) {
+  // Check for mobile patterns.
+  // okhttp: Android builds before #343 send OkHttp's default User-Agent and no platform header.
+  if (/mobile|android|iphone|ipad|ipod|okhttp/i.test(ua)) {
     let deviceType: DeviceType = 'unknown';
     
-    if (/android/i.test(ua)) {
+    if (/android|okhttp/i.test(ua)) {
       deviceType = 'android';
     } else if (/iphone|ipad|ipod/i.test(ua)) {
       deviceType = 'ios';

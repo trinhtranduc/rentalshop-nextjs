@@ -45,7 +45,7 @@ import {
   Skeleton,
   ImageLightbox
 } from '@rentalshop/ui';
-import { formatCurrency } from '@rentalshop/utils';
+import { formatCurrency, countRentalDays } from '@rentalshop/utils';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   ShoppingCart, 
@@ -159,10 +159,7 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
   // Calculate rental duration for rental orders
   const getRentalDuration = () => {
     if (orderData.orderType === 'RENT' && orderData.pickupPlanAt && orderData.returnPlanAt) {
-      const start = new Date(orderData.pickupPlanAt);
-      const end = new Date(orderData.returnPlanAt);
-      const durationMs = end.getTime() - start.getTime();
-      return Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+      return countRentalDays(orderData.pickupPlanAt, orderData.returnPlanAt);
     }
     return 0;
   };
