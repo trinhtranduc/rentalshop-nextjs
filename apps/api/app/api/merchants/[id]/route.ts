@@ -30,6 +30,10 @@ export async function GET(
         return validation.error!;
       }
       const merchant = validation.merchant!;
+      // Older merchants have no tenantKey; settings builds the product link and referral code from it
+      if (!(merchant as any).tenantKey) {
+        (merchant as any).tenantKey = await db.merchants.ensureTenantKey(merchantId);
+      }
 
       console.log('✅ Merchant found:', merchant);
 

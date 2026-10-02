@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { 
   CardClean, 
   CardHeaderClean, 
@@ -25,21 +26,20 @@ import {
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
-  PackageCheck,
-  Users,
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  FileText,
-  ChevronRight
+  Plus
 } from 'lucide-react';
-import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
-import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
+// Plain formatters, not the useFormatted* hooks: these run inside loops (#349, Rules of Hooks)
+import { formatMonthOnlyByLocale, formatDailyByLocale } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS_COLORS, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { OutletOperationsPanel, ShiftCashCard, Sparkline, UpcomingReturnsCard, useOutletOperations } from './OutletOperationsPanel';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -65,6 +65,10 @@ interface DashboardStats {
   ordersGrowth: number;
   customerBase: number;
   totalCollateral: number; // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+  // Range periods (#350): from /api/analytics/period → operational
+  newOrders: number;
+  cancelledOrders: number;
+  depositRefund: number;
 }
 
 interface IncomeData {
@@ -119,11 +123,6 @@ const getStatusDotColor = (statusKey: string): string => {
   return 'bg-gray-600';
 };
 
-// Get status badge color class - use the same function as order pages
-const getStatusBadgeColor = (status: string): string => {
-  return getOrderStatusClassName(status);
-};
-
 // Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
 const formatDateAsYYYYMMDD = (date: Date): string => {
   const year = date.getFullYear();
@@ -170,7 +169,7 @@ const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick, isMoney = false, spark, sparkLabel }: {
   title: string;
   value: string | number;
   change: string;
@@ -179,78 +178,75 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
   color: string;
   trend: 'up' | 'down' | 'neutral';
   onClick?: () => void;
+  /** Money value: format with the merchant currency. Guessing from the (translated) title failed in Vietnamese (#349). */
+  isMoney?: boolean;
+  /** Last 7 days, today last: drawn next to the value (#350) */
+  spark?: number[];
+  /** Words for the sparkline (it is aria-hidden) */
+  sparkLabel?: string;
 }) => {
   const formatMoney = useFormatCurrency();
-  const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
+  const shouldShowDollar = isMoney;
   
+  // Compact KPI tile (#350): title, then value and growth on one line. ~80px instead of ~160px.
   const cardContent = (
-    <CardClean 
-      variant="default" 
-      size="md" 
-      className={`group bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 h-full flex flex-col ${onClick ? 'hover:border-blue-300' : ''}`}
+    <div
+      className={`h-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-3 sm:px-4 transition-colors duration-200 ${
+        onClick ? 'group-hover:border-blue-300 group-hover:bg-blue-50/30' : ''
+      }`}
     >
-      <CardHeaderClean className="pb-3 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitleClean size="sm" className="text-gray-600 font-medium text-sm flex items-center">
-            {title}
-            <FieldTooltip text={tooltip} />
-          </CardTitleClean>
-        </div>
-      </CardHeaderClean>
-      <CardContentClean className="pt-0 flex-1 flex flex-col">
-        <p className={`text-3xl font-bold ${color} mb-3`}>
-          {typeof value === 'number' 
-            ? shouldShowDollar 
+      <div className="flex items-start gap-1 text-xs sm:text-sm font-medium text-gray-600">
+        {/* Wraps on phones (three tiles per row) instead of cutting "Doanh th…" */}
+        <span className="leading-snug">{title}</span>
+        <FieldTooltip text={tooltip} />
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className={`text-xl sm:text-2xl font-bold leading-tight tabular-nums ${color}`}>
+          {typeof value === 'number'
+            ? shouldShowDollar
               ? formatMoney(value)
               : value.toLocaleString()
             : value}
         </p>
-        <div className="flex-1 flex flex-col justify-end">
         {change && (
-            <div className="flex items-center gap-1.5 mb-2">
-            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
-              trend === 'up' ? 'bg-green-50 text-green-700' : 
-              trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
-            }`}>
-              {trend === 'up' ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : trend === 'down' ? (
-                <ArrowDownRight className="w-3.5 h-3.5" />
-              ) : (
-                <Minus className="w-3.5 h-3.5" />
-              )}
-              {change}
-            </div>
-          </div>
+          <span
+            className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold ${
+              trend === 'up' ? 'bg-green-50 text-green-700' : trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
+            }`}
+          >
+            {trend === 'up' ? (
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            ) : trend === 'down' ? (
+              <ArrowDownRight className="h-3.5 w-3.5" />
+            ) : (
+              <Minus className="h-3.5 w-3.5" />
+            )}
+            {change}
+          </span>
         )}
-        {description && (
-          <p className="text-gray-500 text-xs mt-2">{description}</p>
+        {spark && spark.length > 1 && (
+          <span className="ml-auto max-sm:hidden" title={sparkLabel}>
+            <Sparkline values={spark} />
+            {sparkLabel && <span className="sr-only">{sparkLabel}</span>}
+          </span>
         )}
-          {onClick && (
-            <p className="text-xs text-blue-600 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              Click to view details →
-            </p>
-          )}
-        </div>
-      </CardContentClean>
-    </CardClean>
+      </div>
+      {description && <p className="mt-0.5 text-xs text-gray-500">{description}</p>}
+    </div>
   );
 
   if (onClick) {
+    // Whole tile is clickable through a transparent stretched button laid over it; the tooltip
+    // button sits above it, so it is not nested inside another interactive element (WCAG 4.1.2, #350)
     return (
-      <div 
-        onClick={onClick}
-        className="cursor-pointer h-full"
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick();
-          }
-        }}
-      >
-        {cardContent}
+      <div className="group relative h-full">
+        <div className="h-full [&_button]:relative [&_button]:z-20">{cardContent}</div>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={title}
+          className="absolute inset-0 z-10 cursor-pointer rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        />
       </div>
     );
   }
@@ -262,13 +258,15 @@ type DashboardPeriod = 'today' | '7d' | '30d' | 'month' | 'year';
 const DASHBOARD_PERIODS: DashboardPeriod[] = ['today', '7d', '30d', 'month', 'year'];
 type PerformanceChartMode = 'revenue' | 'growth' | 'orders';
 
-function formatGrowthPercent(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value)) return '—';
-  const abs = Math.abs(value);
-  const formatted = abs.toFixed(abs % 1 === 0 ? 0 : 1);
-  if (value > 0) return `↑${formatted}%`;
-  if (value < 0) return `↓${formatted}%`;
-  return `→${formatted}%`;
+/**
+ * Growth chip for range KPIs (#350). A jump of 1000%+ means the previous period was (almost) empty,
+ * so a percentage is noise: show "new" instead.
+ */
+function growthChip(value: number | null | undefined, newLabel: string): { text: string; trend: 'up' | 'down' | 'neutral' } {
+  if (value == null || Number.isNaN(value) || value === 0) return { text: '', trend: 'neutral' };
+  if (Math.abs(value) >= 1000) return { text: newLabel, trend: 'up' };
+  const text = `${value > 0 ? '+' : ''}${value.toFixed(Math.abs(value) % 1 === 0 ? 0 : 1)}%`;
+  return { text, trend: value > 0 ? 'up' : 'down' };
 }
 
 // ============================================================================
@@ -280,11 +278,10 @@ export default function DashboardPage() {
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
-  const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   // ✅ Use permissions hook to check permissions
-  const { canCreateProducts, hasPermission, canViewRevenue, canViewOrderAnalytics, canViewCustomerAnalytics, canViewProductAnalytics } = usePermissions();
+  const { hasPermission, canViewRevenue, canViewOrderAnalytics, canViewCustomerAnalytics, canViewProductAnalytics } = usePermissions();
   const locale = useNextIntlLocale() as 'en' | 'vi';
   
   // Check if user has full analytics access (not just dashboard)
@@ -321,14 +318,15 @@ export default function DashboardPage() {
     revenueGrowth: 0,
     ordersGrowth: 0,
     customerBase: 0,
-    totalCollateral: 0 // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+    totalCollateral: 0, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
+    newOrders: 0,
+    cancelledOrders: 0,
+    depositRefund: 0
   });
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
   const [orderData, setOrderData] = useState<OrderData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
-  const [todayOrders, setTodayOrders] = useState<any[]>([]);
-  const [activeRentalOrders, setActiveRentalOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
   const [currentDateRange, setCurrentDateRange] = useState<{startDate: string, endDate: string}>({startDate: '', endDate: ''});
   
@@ -342,6 +340,8 @@ export default function DashboardPage() {
   
   // Outlet comparison state (MERCHANT only)
   const [selectedOutlets, setSelectedOutlets] = useState<number[]>([]); // Empty = all outlets
+  // Today's work + returns soon: one request shared by the panel and the list (#350)
+  const operations = useOutletOperations(selectedOutlets);
 
   // Memoize selectedOutlets to prevent unnecessary re-renders (must be before fetchDashboardData)
   const selectedOutletsKey = useMemo(() => {
@@ -431,6 +431,8 @@ export default function DashboardPage() {
   // Sync URL params on mount
   // Users without full analytics access can only view 'today' period
   useEffect(() => {
+    // Permissions are unknown until the user loads; enforcing earlier reset ?period=30d to today (#350)
+    if (authLoading || !user) return;
     if (!hasFullAnalyticsAccess) {
       setTimePeriod('today');
       const params = new URLSearchParams(searchParams.toString());
@@ -443,7 +445,7 @@ export default function DashboardPage() {
     if (urlPeriod && DASHBOARD_PERIODS.includes(urlPeriod as DashboardPeriod)) {
       setTimePeriod(urlPeriod as DashboardPeriod);
     }
-      }, [searchParams, hasFullAnalyticsAccess, router]);
+      }, [searchParams, hasFullAnalyticsAccess, router, authLoading, user]);
 
   // Memoize fetchDashboardData function to prevent unnecessary re-creations
   const fetchDashboardData = useCallback(async () => {
@@ -639,6 +641,7 @@ export default function DashboardPage() {
       let topCustomersResponse: any = { success: false, data: null };
       
       let periodRevenueTotals: { totalRevenue?: number; totalActualRevenue?: number; totalOrders?: number } | null = null;
+      let periodOperational: { orderCounts?: { new?: number; cancelled?: number }; totalDepositRefund?: number } | null = null;
       
       if (canViewFullAnalytics) {
         const periodResponse = results[3];
@@ -647,6 +650,7 @@ export default function DashboardPage() {
         if (periodResponse?.success && periodResponse.data) {
           const period = periodResponse.data as any;
           periodRevenueTotals = period.revenue ?? null;
+          periodOperational = period.operational ?? null;
           growthMetricsResponse = {
             success: true,
             data: period.growth ?? null,
@@ -738,7 +742,11 @@ export default function DashboardPage() {
             apiStats.thisMonth?.revenue ??
             0,
           totalRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders ?? 0,
+          // Was the same number as totalRentals (#350); kept for the today view handlers
           completedRentals: periodRevenueTotals?.totalOrders ?? apiStats.thisMonth?.orders ?? 0,
+          newOrders: periodOperational?.orderCounts?.new ?? 0,
+          cancelledOrders: periodOperational?.orderCounts?.cancelled ?? 0,
+          depositRefund: periodOperational?.totalDepositRefund ?? 0,
           // Period growth is vs previous equal-length window; prefer it over enhanced-dashboard MoM.
           customerGrowth: growthMetrics.customerGrowth || 0,
           futureRevenue: 0, // Not available in current API
@@ -806,24 +814,9 @@ export default function DashboardPage() {
       }
 
       if (dashboardResponse.success && dashboardResponse.data) {
-        setTodayOrders(dashboardResponse.data.todayOrders || []);
         setOrderStatusCounts(dashboardResponse.data.orderStatusCounts || {});
       }
 
-      // Fetch active rental orders (PICKUPED status) for the list section
-      try {
-        const activeRentalsResponse = await ordersApi.searchOrders({
-          status: 'PICKUPED',
-          limit: 10,
-          sortBy: 'pickupPlanAt',
-          sortOrder: 'desc',
-        });
-        if (activeRentalsResponse.success && activeRentalsResponse.data?.orders) {
-          setActiveRentalOrders(activeRentalsResponse.data.orders);
-        }
-      } catch (err) {
-        console.error('Error fetching active rental orders:', err);
-      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -859,7 +852,10 @@ export default function DashboardPage() {
         revenueGrowth: 0,
         ordersGrowth: 0,
         customerBase: 0,
-        totalCollateral: 0
+        totalCollateral: 0,
+        newOrders: 0,
+        cancelledOrders: 0,
+        depositRefund: 0
       });
       setIncomeData([]);
       setOrderData([]);
@@ -1095,9 +1091,9 @@ export default function DashboardPage() {
         try {
           const date = new Date(group.period);
           if (timePeriod === 'year') {
-            periodLabel = useFormattedMonthOnly(date);
+            periodLabel = formatMonthOnlyByLocale(date, locale);
           } else {
-            periodLabel = useFormattedDaily(date);
+            periodLabel = formatDailyByLocale(date, locale);
           }
         } catch {
           periodLabel = group.period;
@@ -1179,10 +1175,6 @@ export default function DashboardPage() {
     router.push(`/orders?startDate=${today}&endDate=${today}`);
   };
 
-  const handleViewOverdueReturns = () => {
-    const today = getTodayDateString();
-    router.push(`/orders?status=${ORDER_STATUS.PICKUPED}&endDate=${today}`);
-  };
 
   // Navigation handlers for month/year view stat cards
   const handleViewTotalOrders = () => {
@@ -1216,36 +1208,6 @@ export default function DashboardPage() {
     router.push(`/orders?startDate=${startDate}&endDate=${endDate}`);
   };
 
-  const handleViewCompletedOrders = () => {
-    // Use currentDateRange if available, otherwise calculate from timePeriod
-    let startDate: string;
-    let endDate: string;
-    
-    if (currentDateRange.startDate && currentDateRange.endDate) {
-      startDate = currentDateRange.startDate;
-      endDate = currentDateRange.endDate;
-    } else {
-      // Fallback: calculate from timePeriod
-      const today = new Date();
-      if (timePeriod === 'month') {
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        startDate = monthStart.toISOString().split('T')[0];
-        endDate = monthEnd.toISOString().split('T')[0];
-      } else if (timePeriod === 'year') {
-        const currentYear = today.getFullYear();
-        startDate = `${currentYear}-01-01`;
-        endDate = `${currentYear}-12-31`;
-      } else {
-        // Default to today
-        const todayStr = getTodayDateString();
-        startDate = todayStr;
-        endDate = todayStr;
-      }
-    }
-    
-    router.push(`/orders?status=${ORDER_STATUS.COMPLETED}&startDate=${startDate}&endDate=${endDate}`);
-  };
   
   // Debug: log revenue data for chart
   useEffect(() => {
@@ -1337,16 +1299,16 @@ export default function DashboardPage() {
         )}
 
         {/* Welcome Header - Modern Style */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')} 👋
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')}
               </h1>
-              <p className="text-base text-gray-600">
-                {timePeriod === 'today'
-                  ? t('overview')
-                  : timePeriod === '7d'
+              {/* Today needs no subtitle: the panel shows the date (#350) */}
+              {timePeriod !== 'today' && (
+              <p className="mt-1 text-sm text-gray-600">
+                {timePeriod === '7d'
                   ? `${t('overview')} — ${tc('time.last7Days')}`
                   : timePeriod === '30d'
                   ? `${t('overview')} — ${tc('time.last30Days')}`
@@ -1355,12 +1317,14 @@ export default function DashboardPage() {
                   : `${t('overview')} - ${new Date().getFullYear()}`
                 }
               </p>
+              )}
             </div>
             
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
             {/* Time Period Filter - Modern Pills */}
             {/* Users without full analytics access can only view 'today' - hide month/year tabs */}
             {hasFullAnalyticsAccess ? (
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-full sm:w-fit overflow-x-auto">
               {[
                 { id: 'today', label: tc('time.today') },
                 { id: '7d', label: tc('time.last7Days') },
@@ -1371,7 +1335,7 @@ export default function DashboardPage() {
                 <button
                   key={period.id}
                   onClick={() => updateTimePeriod(period.id as DashboardPeriod)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     timePeriod === period.id
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
@@ -1381,34 +1345,37 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-            ) : (
-              // For users without full analytics access, show only "Today" label (not clickable)
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
-                <div className="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm">
-                  {tc('time.today')}
-                </div>
-              </div>
+            ) : null /* Only one period without full analytics: no picker that looks clickable (#350) */}
+            {/* Replaces the "Thao tác nhanh" card at the bottom (#350) */}
+            {hasPermission('orders.create') && (
+              <Button onClick={() => router.push('/orders/create')} className="shrink-0 cursor-pointer">
+                <Plus className="mr-1.5 h-4 w-4" />
+                {t('quickActions.createOrder')}
+              </Button>
             )}
+            </div>
           </div>
         </div>
 
         {/* Today View - Operational Focus */}
         {timePeriod === 'today' && (
           <>
-            {/* Today's Key Metrics - Simplified Grid */}
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 items-stretch ${hasFullAnalyticsAccess ? 'md:grid-cols-5' : ''}`}>
-              {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
-                <StatCard
-                  title={t('stats.todayRevenue')}
-                  value={currentStats.todayRevenue}
-                  change=""
-                  description=""
-                  tooltip={t('tooltips.todayRevenue')}
-                  color="text-blue-700"
-                  trend="neutral"
-                />
+            {/* Today (#350): three KPIs (new orders with a 7-day line), then today's work as progress,
+                booked hours and one line per order; cash and returns-soon on the side. Recent activity
+                was removed: the "new orders" tile links to today's orders. */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 items-stretch">
               <StatCard
-                title={t('stats.todayRentals')}
+                isMoney
+                title={t('operations.kpi.netCashToday')}
+                value={currentStats.todayRevenue}
+                change=""
+                description=""
+                tooltip={t('operations.kpi.netCashTodayTooltip')}
+                color="text-blue-700"
+                trend="neutral"
+              />
+              <StatCard
+                title={t('operations.newOrders')}
                 value={currentStats.todayRentals}
                 change=""
                 description=""
@@ -1416,6 +1383,14 @@ export default function DashboardPage() {
                 color="text-blue-700"
                 trend="neutral"
                 onClick={handleViewTodayRentals}
+                spark={operations.data?.newOrdersByDay?.map((day) => day.count)}
+                sparkLabel={
+                  operations.data?.newOrdersByDay?.length
+                    ? t('operations.kpi.ordersTrend', {
+                        values: operations.data.newOrdersByDay.map((day) => day.count).join(', '),
+                      })
+                    : undefined
+                }
               />
               <StatCard
                 title={t('stats.activeRentals')}
@@ -1427,225 +1402,16 @@ export default function DashboardPage() {
                 trend="neutral"
                 onClick={currentStats.activeRentals > 0 ? handleViewActiveRentals : undefined}
               />
-              <StatCard
-                title={t('stats.overdueReturns')}
-                value={currentStats.overdueItems}
-                change=""
-                description=""
-                tooltip={t('tooltips.overdueReturns')}
-                color="text-blue-700"
-                trend="neutral"
-                onClick={currentStats.overdueItems > 0 ? handleViewOverdueReturns : undefined}
-              />
-              {/* Total Collateral Card - Show for users with full analytics access */}
-              {hasFullAnalyticsAccess && (
-                <StatCard
-                  title={t('stats.totalCollateral')}
-                  value={currentStats.totalCollateral}
-                  change=""
-                  description=""
-                  tooltip={t('tooltips.totalCollateral')}
-                  color="text-blue-700"
-                  trend="neutral"
-              />
-              )}
             </div>
 
-            {/* Today's Operations - 2 Columns - Modern Design */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Recent Activity - Modern Card Design */}
-              <CardClean size="md" className="bg-white shadow-sm">
-                <CardHeaderClean className="pb-4 border-b border-gray-100">
-                  <CardTitleClean size="md" className="text-gray-900 font-semibold">
-                    {t('recentActivity.title')}
-                  </CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean className="pt-4">
-                  {loadingCharts ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                            <div>
-                              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                              <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            </div>
-                          </div>
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (todayOrders || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(todayOrders || []).slice(0, 6).map(order => {
-                        const statusClassName = getStatusBadgeColor(order.status);
-                        const hasRentalDates = order.pickupPlanAt && order.returnPlanAt;
-                        
-                        // Translate order type
-                        const orderTypeKey = order.orderType ? `orderType.${order.orderType}` : null;
-                        const translatedOrderType = orderTypeKey ? to(orderTypeKey) : null;
-                        
-                        // Translate order status - map API status to translation key
-                        const statusMap: Record<string, string> = {
-                          'RESERVED': 'status.RESERVED',
-                          'PICKUPED': 'status.PICKUPED',
-                          'RETURNED': 'status.RETURNED',
-                          'COMPLETED': 'status.COMPLETED',
-                          'CANCELLED': 'status.CANCELLED'
-                        };
-                        const statusKey = statusMap[order.status] || `status.${order.status}`;
-                        const translatedStatus = to(statusKey);
-                        
-                        return (
-                          <div 
-                            key={order.id} 
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                            onClick={() => {
-                              // Use orderNumber instead of id for navigation
-                              // Order detail page expects orderNumber without "ORD-" prefix
-                              // e.g., "003-0003" from "ORD-003-0003"
-                              const orderNumberForRoute = order.orderNumber 
-                                ? order.orderNumber.replace(/^ORD-/, '') 
-                                : order.id.toString();
-                              console.log('🔍 Dashboard: Navigating to order:', {
-                                orderId: order.id,
-                                orderNumber: order.orderNumber,
-                                navigatedTo: orderNumberForRoute
-                              });
-                              router.push(`/orders/${orderNumberForRoute}`);
-                            }}
-                          >
-                            <Package className="w-5 h-5 text-blue-700 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
-                                {translatedOrderType && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
-                                    {translatedOrderType}
-                                  </span>
-                                )}
-                              </div>
-                              {hasRentalDates ? (
-                                <>
-                                  <p className="text-sm text-gray-600">
-                                    {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
-                                  </p>
-                                  {order.customerName && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-sm text-gray-600 truncate">{order.productNames || tc('labels.noData')}</p>
-                                  {order.customerName && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClassName} mt-1`}>
-                                {translatedStatus}
-                              </span>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-300" />
-                      </div>
-                      <p className="text-sm">{tc('labels.noData')}</p>
-                    </div>
-                  )}
-                </CardContentClean>
-              </CardClean>
-
-              {/* Active Rentals List - Modern Design */}
-              <CardClean size="md" className="bg-white shadow-sm">
-                <CardHeaderClean className="pb-4 border-b border-gray-100">
-                  <CardTitleClean size="md" className="text-gray-900 font-semibold">
-                    {t('stats.activeRentals')} ({activeRentalOrders.length})
-                  </CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean className="pt-4">
-                  {loadingCharts ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                            <div>
-                              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                              <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            </div>
-                          </div>
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : activeRentalOrders.length > 0 ? (
-                    <div className="space-y-2">
-                      {activeRentalOrders.slice(0, 6).map(order => {
-                        const orderNumberForRoute = order.orderNumber 
-                          ? order.orderNumber.replace(/^ORD-/, '') 
-                          : order.id.toString();
-                        return (
-                          <div 
-                            key={order.id} 
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                            onClick={() => router.push(`/orders/${orderNumberForRoute}`)}
-                          >
-                            <Package className="w-5 h-5 text-orange-600 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-orange-50 text-orange-700 border-orange-200">
-                                  {to('status.PICKUPED')}
-                                </span>
-                              </div>
-                              {order.pickupPlanAt && order.returnPlanAt ? (
-                                <p className="text-sm text-gray-600">
-                                  {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
-                                </p>
-                              ) : null}
-                              {(order.customerName || order.customer) && (
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {order.customerName || [order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ')}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {activeRentalOrders.length > 6 && (
-                        <Button
-                          variant="ghost"
-                          className="w-full text-sm text-blue-600 hover:text-blue-700"
-                          onClick={() => router.push(`/orders?status=${ORDER_STATUS.PICKUPED}`)}
-                        >
-                          {tc('buttons.viewAll')} ({activeRentalOrders.length})
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-300" />
-                      </div>
-                      <p className="text-sm">{t('stats.noActiveRentals')}</p>
-                    </div>
-                  )}
-                </CardContentClean>
-              </CardClean>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 mb-6 items-start">
+              <div className="min-w-0 lg:col-span-2">
+                <OutletOperationsPanel state={operations} />
+              </div>
+              <div className="grid min-w-0 gap-4">
+                <ShiftCashCard state={operations} />
+                <UpcomingReturnsCard state={operations} />
+              </div>
             </div>
           </>
         )}
@@ -1653,115 +1419,105 @@ export default function DashboardPage() {
         {/* Month/Year View - Strategic Focus */}
         {isRangePeriod && (
           <>
-            {/* Business Performance Metrics - Simplified */}
-            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 items-stretch`}>
-              <StatCard
-                title={t('stats.totalOrders')}
-                value={currentStats.totalRentals}
-                change={currentStats.ordersGrowth > 0 ? `+${currentStats.ordersGrowth.toFixed(1)}%` : currentStats.ordersGrowth < 0 ? `${currentStats.ordersGrowth.toFixed(1)}%` : ''}
-                description=""
-                tooltip={t('tooltips.totalOrders')}
-                color="text-blue-700"
-                trend={currentStats.ordersGrowth > 0 ? "up" : currentStats.ordersGrowth < 0 ? "down" : "neutral"}
-                onClick={currentStats.totalRentals > 0 ? handleViewTotalOrders : undefined}
-              />
-              <StatCard
-                title={t('stats.completedOrders')}
-                value={currentStats.completedRentals}
-                change=""
-                description=""
-                tooltip={t('tooltips.completedOrders')}
-                color="text-blue-700"
-                trend="neutral"
-                onClick={currentStats.completedRentals > 0 ? handleViewCompletedOrders : undefined}
-              />
-              {/* Total Collateral Card - Show for all users with analytics access */}
-              {hasFullAnalyticsAccess && (
-                <StatCard
-                  title={t('stats.totalCollateral')}
-                  value={currentStats.totalCollateral}
-                  change=""
-                  description=""
-                  tooltip={t('tooltips.totalCollateral')}
-                  color="text-blue-700"
-                  trend="neutral"
-                />
-              )}
-            </div>
-
-            {/* Outlet Selector - Only for MERCHANT role in month/year views */}
-            {user?.role === 'MERCHANT' && outlets.length > 1 && isRangePeriod && (
-              <CardClean size="md" className="mb-6">
-                <CardHeaderClean>
-                  <CardTitleClean size="sm">{t('charts.compareOutlets')}</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600">{t('charts.selectOutletsToCompare')}</p>
-                    <div className="flex flex-wrap gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedOutlets.length === 0}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedOutlets([]); // All outlets
-                            } else {
-                              // If unchecking "All", select first outlet
-                              if (outlets.length > 0) {
-                                setSelectedOutlets([outlets[0].id]);
-                              }
-                            }
-                          }}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-700">{t('charts.allOutlets')}</span>
-                      </label>
-                      {outlets.map((outlet) => {
-                        const isChecked = selectedOutlets.length === 0 ? true : selectedOutlets.includes(outlet.id);
-                        return (
-                          <label key={outlet.id} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  // Add outlet to selection
-                                  if (selectedOutlets.length === 0) {
-                                    // If "all" was selected, replace with this outlet
-                                    setSelectedOutlets([outlet.id]);
-                                  } else if (!selectedOutlets.includes(outlet.id)) {
-                                    setSelectedOutlets([...selectedOutlets, outlet.id]);
-                                  }
-                                } else {
-                                  // Remove outlet from selection
-                                  if (selectedOutlets.length === 0) {
-                                    // If "all" was checked, select all except this one
-                                    setSelectedOutlets(outlets.filter(o => o.id !== outlet.id).map(o => o.id));
-                                  } else {
-                                    const newSelection = selectedOutlets.filter(id => id !== outlet.id);
-                                    // If no outlets selected, default to all (empty array)
-                                    setSelectedOutlets(newSelection.length > 0 ? newSelection : []);
-                                  }
-                                }
-                              }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">{outlet.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </CardContentClean>
-              </CardClean>
-            )}
+            {/* Range KPIs (#350): net cash in, new orders, cancelled orders, deposit refunds.
+                Deposits held are a "now" number and live in the Today view. */}
+            {(() => {
+              // `period` revenue is net cash in (refunds and returned deposits subtracted) and can be
+              // negative; a % change on it is meaningless then. Gross revenue needs the API (#350 follow-up).
+              const revenueChip = currentStats.totalRevenue < 0
+                ? { text: '', trend: 'neutral' as const }
+                : growthChip(currentStats.revenueGrowth, t('operations.kpi.new'));
+              const ordersChip = growthChip(currentStats.ordersGrowth, t('operations.kpi.new'));
+              return (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-stretch">
+                  <StatCard
+                    isMoney
+                    title={t('operations.kpi.netRevenue')}
+                    value={currentStats.totalRevenue}
+                    change={revenueChip.text}
+                    description=""
+                    tooltip={t('operations.kpi.netRevenueTooltip')}
+                    color={currentStats.totalRevenue < 0 ? 'text-red-700' : 'text-blue-700'}
+                    trend={revenueChip.trend}
+                  />
+                  <StatCard
+                    title={t('operations.kpi.newOrders')}
+                    value={currentStats.newOrders}
+                    change={ordersChip.text}
+                    description=""
+                    tooltip={t('tooltips.totalOrders')}
+                    color="text-blue-700"
+                    trend={ordersChip.trend}
+                    onClick={currentStats.newOrders > 0 ? handleViewTotalOrders : undefined}
+                  />
+                  <StatCard
+                    // A count, not "cancelled ÷ new": orders created earlier and cancelled in the
+                    // period pushed that ratio past 100%
+                    title={t('operations.kpi.cancelled')}
+                    value={currentStats.cancelledOrders}
+                    change=""
+                    description=""
+                    tooltip={t('operations.kpi.cancelledTooltip')}
+                    color={currentStats.cancelledOrders > 0 ? 'text-red-700' : 'text-blue-700'}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    isMoney
+                    title={t('operations.kpi.depositRefund')}
+                    value={currentStats.depositRefund}
+                    change=""
+                    description=""
+                    tooltip={t('operations.kpi.depositRefundTooltip')}
+                    color="text-blue-700"
+                    trend="neutral"
+                  />
+                </div>
+              );
+            })()}
 
             {/* Revenue Charts - Hidden for users without full analytics access - Simplified */}
             {hasFullAnalyticsAccess && (
               <CardClean size="md" className="mb-6">
                 <CardHeaderClean>
-                  <CardTitleClean size="md">{t('charts.performance')}</CardTitleClean>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <CardTitleClean size="md">{t('charts.performance')}</CardTitleClean>
+                    {/* Outlet filter as chips inside the chart card (was a separate card) (#350) */}
+                    {user?.role === 'MERCHANT' && outlets.length > 1 && (
+                      <div className="flex flex-wrap gap-2" role="group" aria-label={t('charts.selectOutletsToCompare')}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOutlets([])}
+                          aria-pressed={selectedOutlets.length === 0}
+                          className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                            selectedOutlets.length === 0 ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {t('charts.allOutlets')}
+                        </button>
+                        {outlets.map((outlet) => {
+                          const active = selectedOutlets.includes(outlet.id);
+                          return (
+                            <button
+                              key={outlet.id}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => {
+                                const next = active
+                                  ? selectedOutlets.filter((id) => id !== outlet.id)
+                                  : [...selectedOutlets, outlet.id];
+                                setSelectedOutlets(next.length === outlets.length ? [] : next);
+                              }}
+                              className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                                active ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              {outlet.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </CardHeaderClean>
                 <CardContentClean>
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -1784,53 +1540,7 @@ export default function DashboardPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500">
-                      {performanceMode === 'revenue'
-                        ? t('stats.totalRevenue')
-                        : performanceMode === 'growth'
-                        ? t('charts.growthPercent')
-                        : t('stats.totalOrders')}
-                    </p>
-                    <p className={`text-3xl font-bold ${
-                      performanceMode === 'orders'
-                        ? 'text-amber-600'
-                        : performanceMode === 'growth'
-                        ? currentStats.revenueGrowth > 0
-                          ? 'text-green-700'
-                          : currentStats.revenueGrowth < 0
-                          ? 'text-red-700'
-                          : 'text-gray-700'
-                        : 'text-blue-700'
-                    }`}>
-                      {performanceMode === 'revenue'
-                        ? formatMoney(currentStats.totalRevenue)
-                        : performanceMode === 'growth'
-                        ? formatGrowthPercent(currentStats.revenueGrowth)
-                        : currentStats.totalRentals}
-                    </p>
-                    {(performanceMode === 'growth'
-                      ? true
-                      : performanceMode === 'orders'
-                      ? currentStats.ordersGrowth !== 0
-                      : currentStats.revenueGrowth !== 0) && (
-                      <p className={`text-sm mt-1 ${
-                        (performanceMode === 'orders' ? currentStats.ordersGrowth : currentStats.revenueGrowth) > 0
-                          ? 'text-green-700'
-                          : (performanceMode === 'orders' ? currentStats.ordersGrowth : currentStats.revenueGrowth) < 0
-                          ? 'text-red-700'
-                          : 'text-gray-500'
-                      }`}>
-                        {performanceMode === 'growth'
-                          ? t('charts.vsPreviousPeriod')
-                          : `${formatGrowthPercent(
-                              performanceMode === 'orders'
-                                ? currentStats.ordersGrowth
-                                : currentStats.revenueGrowth
-                            )}  ${t('charts.vsPreviousPeriod')}`}
-                      </p>
-                    )}
-                  </div>
+                  {/* The period total and growth are in the KPI row above; not repeated here (#350) */}
                   {performanceMode === 'orders' ? (
                     <OrderChart
                       data={currentOrderData}
@@ -1863,160 +1573,87 @@ export default function DashboardPage() {
               </CardClean>
             )}
 
-            {/* Analytics Section - Simplified */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{t('charts.topProducts')}</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
+            {/* Rankings: two-line rows with rank, like the Today lists (#350) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-start">
+              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <header className="px-4 pt-4">
+                  <h2 className="text-base font-semibold text-gray-900">{t('charts.topProducts')}</h2>
+                </header>
+                <div className="px-4 pb-2">
                   {loadingCharts ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
                   ) : (currentTopProducts || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(currentTopProducts || []).map(product => (
-                        <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <ol className="divide-y divide-gray-100">
+                      {(currentTopProducts || []).map((product, index) => (
+                        <li key={product.id} className="flex items-center gap-3 py-2.5">
+                          <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-400">{index + 1}</span>
                           {product.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={product.image}
-                              alt={product.name}
-                              className="w-10 h-10 rounded-lg object-cover border border-gray-100 bg-gray-50 flex-shrink-0"
+                              alt=""
+                              className="h-8 w-8 shrink-0 rounded-md border border-gray-100 bg-gray-50 object-cover"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                              <Package className="w-5 h-5 text-blue-700" />
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50">
+                              <Package className="h-4 w-4 text-blue-700" aria-hidden="true" />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-800 truncate">{product.name}</h4>
-                            <p className="text-sm text-gray-600 truncate">{product.category}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
+                            {product.category && <p className="truncate text-xs text-gray-500">{product.category}</p>}
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-medium text-gray-900 text-base">{formatMoney(product.totalRevenue || 0)}</p>
-                            <p className="text-sm text-gray-500">{product.rentalCount || 0} {t('charts.totalOrders')}</p>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-medium text-gray-900">{formatMoney(product.totalRevenue || 0)}</p>
+                            <p className="text-xs text-gray-500">{t('operations.cash.orders', { count: product.rentalCount || 0 })}</p>
                           </div>
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>{tc('labels.noData')}</p>
-                    </div>
+                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
                   )}
-                </CardContentClean>
-              </CardClean>
-              
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{t('charts.customerActivity')}</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
+                </div>
+              </section>
+
+              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <header className="px-4 pt-4">
+                  <h2 className="text-base font-semibold text-gray-900">{t('operations.topCustomers')}</h2>
+                </header>
+                <div className="px-4 pb-2">
                   {loadingCharts ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
                   ) : (currentTopCustomers || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(currentTopCustomers || []).map(customer => (
-                        <div key={customer.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <Users className="w-5 h-5 text-purple-600" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-800">{customer.name}</h4>
-                            <p className="text-sm text-gray-600">{customer.location}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
-                            <p className="text-sm text-gray-500">{customer.orderCount || 0} {t('charts.totalOrders')}</p>
-                            <p className="text-xs text-gray-400">
-                              {customer.rentalCount || 0} {t('charts.rentals')} • {customer.saleCount || 0} {t('charts.sales')}
-                            </p>
-                          </div>
-                        </div>
+                    <ol className="divide-y divide-gray-100">
+                      {(currentTopCustomers || []).map((customer, index) => (
+                        <li key={customer.id}>
+                          <Link
+                            href={`/customers/${customer.id}`}
+                            className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-gray-50"
+                          >
+                            <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-400">{index + 1}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-gray-900">{customer.name}</p>
+                              <p className="truncate text-xs text-gray-500">
+                                {customer.rentalCount || 0} {t('charts.rentals')} · {customer.saleCount || 0} {t('charts.sales')}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-medium text-gray-900">{formatMoney(customer.totalSpent || 0)}</p>
+                              <p className="text-xs text-gray-500">{t('operations.cash.orders', { count: customer.orderCount || 0 })}</p>
+                            </div>
+                          </Link>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>{tc('labels.noData')}</p>
-                    </div>
+                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
                   )}
-                </CardContentClean>
-              </CardClean>
+                </div>
+              </section>
             </div>
           </>
         )}
-
-        {/* Admin Quick Actions - Simple Design */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <h2 className="text-base font-medium mb-3 text-gray-900">{t('quickActions.title')}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button
-              variant="ghost"
-              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-              onClick={() => router.push('/orders/create')}
-            >
-              <Package className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.createOrder')}</p>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-              onClick={() => setShowAddCustomerDialog(true)}
-            >
-              <Users className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addCustomer')}</p>
-            </Button>
-            
-            {canCreateProducts && (
-              <Button
-                variant="ghost"
-                className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-                onClick={() => setShowAddProductDialog(true)}
-              >
-                <PackageCheck className="w-5 h-5 text-gray-700" />
-                <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
-              </Button>
-            )}
-            
-            <Button
-              variant="ghost"
-              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-              onClick={() => router.push('/orders')}
-            >
-              <FileText className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.viewOrders')}</p>
-            </Button>
-          </div>
-        </div>
 
         {/* Add Customer Dialog */}
         <AddCustomerDialog

@@ -79,7 +79,7 @@ export function LanguageSection() {
             onValueChange={handleLanguageChange}
             disabled={isPending}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label={t('language.selectLanguage')}>
               <SelectValue placeholder={t('language.selectALanguage')} />
             </SelectTrigger>
             <SelectContent>

@@ -541,4 +541,5 @@
     <string name="api_error_product_has_no_images">Thêm ảnh sản phẩm rồi thử lại.</string>
     <string name="api_error_invalid_credentials">Email hoặc mật khẩu không đúng.</string>
     <string name="api_error_session_expired">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</string>
+    <string name="api_error_session_replaced">Tài khoản đã được đăng nhập trên thiết bị khác. Vui lòng đăng nhập lại.</string>
 </resources>

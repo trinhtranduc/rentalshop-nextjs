@@ -49,6 +49,7 @@ import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
 import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
+import type { ItemAvailability } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
 import { LoyaltyRedeemSection } from './components/LoyaltyRedeemSection';
@@ -66,6 +67,19 @@ import type {
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
 
 export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
+  // Free units per item for the period, reported by the item rows (short-stock warning in the summary)
+  const [itemAvailability, setItemAvailability] = useState<Map<number, ItemAvailability>>(new Map());
+  const handleAvailabilityChange = useCallback((productId: number, availability: ItemAvailability | null) => {
+    setItemAvailability((prev) => {
+      const current = prev.get(productId);
+      if (!availability && !current) return prev;
+      if (availability && current && current.free === availability.free && current.total === availability.total) return prev;
+      const next = new Map(prev);
+      if (availability) next.set(productId, availability);
+      else next.delete(productId);
+      return next;
+    });
+  }, []);
   const {
     customers = [],
     products = [],
@@ -769,67 +783,59 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const isFormValidForUI = isFormValid(formData, orderItems);
 
   return (
-    <div className="w-full min-h-full bg-bg-secondary">
-      <div className="w-full">
-        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 items-stretch">
-          {/* Column 1 - Products Section (2/3 = 66.67%) */}
-          {/* items-stretch will make this column match Column 2's height */}
-          <div className="lg:w-2/3 flex flex-col">
-            <ProductsSection
-              orderItems={orderItems}
-              products={[...products, ...searchedProducts]} // Combine initial products with searched products
-              onAddProduct={addProductToOrder}
-              onRemoveProduct={removeProductFromOrder}
-              onUpdateOrderItem={updateOrderItem}
-              onUpdatePricingOption={updateItemPricingOption}
-              onUpdatePricingType={updateItemPricingType}
-              onSearchProducts={handleProductSearch} // Use our custom search function
-              isLoadingProducts={isLoadingProducts}
-              orderType={formData.orderType}
-              pickupDate={formData.pickupPlanAt}
-              returnDate={formData.returnPlanAt}
-              getProductAvailabilityStatus={getProductAvailabilityStatus}
-              currency={currency}
-              outletId={formData.outletId}
-            />
-          </div>
-
-          {/* Column 2 - Order Information + Order Summary & Actions (1/3 = 33.33%) - Merged into 1 Card */}
-          {/* This column has dynamic height based on content */}
-          <div className="lg:w-1/3 flex flex-col">
-            <Card className="flex flex-col h-full w-full">
-              <CardHeader className="pb-3 flex-shrink-0">
-                <CardTitle className="text-base flex items-center gap-2">
-                  {t('detail.orderInformation')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-1 overflow-visible p-6 pt-0">
-                {isEditMode && initialOrder ? (
-                  <LoyaltyOrderInfo
-                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
-                    loyaltyDiscount={initialOrder.loyaltyDiscount}
-                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
-                    orderType={formData.orderType}
-                    orderStatus={initialOrder.status || 'RESERVED'}
-                  />
-                ) : (
-                  <LoyaltyRedeemSection
-                    summary={loyalty.summary}
-                    usePoints={loyalty.usePoints}
-                    onUsePointsChange={loyalty.setUsePoints}
-                    redeemPoints={loyalty.redeemPoints}
-                    onRedeemPointsChange={loyalty.setRedeemPoints}
+    <div className="w-full min-h-full bg-bg-secondary pb-24 lg:pb-0">
+      <div className="w-full space-y-4 px-4 py-4">
+        {/* Phones: order type and dates, items, customer, payment. Large screens: items left, the rest right */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto_1fr] lg:items-start">
+          <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-start-1 xl:col-span-4 xl:col-start-9">
+            {/* Order: type, period, customer in one card; the outlet name in its header */}
+            <Card className="w-full">
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-gray-900">{t('form.orderTitle')}</h2>
+                  {outlets.length <= 1 && (
+                    <span className="truncate text-xs text-gray-600">{outlets.find((o) => o.id === formData.outletId)?.name || outlets[0]?.name}</span>
+                  )}
+                </div>
+                <OrderInfoSection part="top"
+                  formData={formData}
+                  outlets={outlets}
+                  selectedCustomer={selectedCustomer}
+                  searchQuery={searchQuery}
+                  customerSearchResults={customerSearchResults}
+                  isLoadingCustomers={isLoadingCustomers}
+                  isEditMode={isEditMode}
+                  merchantData={merchantData}
+                  onFormDataChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+                  onCustomerSelect={handleCustomerSelect}
+                  onCustomerClear={() => {
+                    setSelectedCustomer(null);
+                    setSearchQuery('');
+                    setFormData(prev => ({ ...prev, customerId: undefined }));
+                  }}
+                  onSearchQueryChange={setSearchQuery}
+                  onCustomerSearch={searchCustomers}
+                  onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
+                  onCustomerEdit={handleCustomerEdit}
+                  onCustomerView={handleCustomerView}
+                  onUpdateRentalDates={updateRentalDates}
+                      hideCardWrapper={true}
+                    orderItems={orderItems}
+                    loading={loading || isSubmitting}
+                    isFormValid={isFormValidForUI}
+                    onSubmit={handleSubmit}
+                    onCancel={isEditMode ? onCancel : handleInternalCancel}
+                    resetKey={resetKey}
                     loyaltyDiscount={loyalty.loyaltyDiscount}
                     amountDue={loyalty.amountDue}
-                    loading={loyalty.loading}
-                    validationError={loyalty.validationError}
-                    enabled={!!formData.customerId}
-                    earnPreview={loyalty.earnPreview}
-                    orderType={formData.orderType}
+                    shortItems={orderItems
+                      .filter((item) => {
+                        const a = itemAvailability.get(item.productId);
+                        return a != null && (item.quantity || 1) > a.free;
+                      })
+                      .map((item) => item.product?.name || `#${item.productId}`)}
                   />
-                )}
-                {/* Order Information Content with Order Summary - Takes full height */}
-            <OrderInfoSection
+                <OrderInfoSection part="customer"
               formData={formData}
               outlets={outlets}
               selectedCustomer={selectedCustomer}
@@ -860,10 +866,135 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 resetKey={resetKey}
                 loyaltyDiscount={loyalty.loyaltyDiscount}
                 amountDue={loyalty.amountDue}
+                shortItems={orderItems
+                  .filter((item) => {
+                    const a = itemAvailability.get(item.productId);
+                    return a != null && (item.quantity || 1) > a.free;
+                  })
+                  .map((item) => item.product?.name || `#${item.productId}`)}
+              />
+                {isEditMode && initialOrder ? (
+                  <LoyaltyOrderInfo
+                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
+                    loyaltyDiscount={initialOrder.loyaltyDiscount}
+                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
+                    orderType={formData.orderType}
+                    orderStatus={initialOrder.status || 'RESERVED'}
+                  />
+                ) : (
+                  <LoyaltyRedeemSection
+                    summary={loyalty.summary}
+                    usePoints={loyalty.usePoints}
+                    onUsePointsChange={loyalty.setUsePoints}
+                    redeemPoints={loyalty.redeemPoints}
+                    onRedeemPointsChange={loyalty.setRedeemPoints}
+                    loyaltyDiscount={loyalty.loyaltyDiscount}
+                    amountDue={loyalty.amountDue}
+                    loading={loyalty.loading}
+                    validationError={loyalty.validationError}
+                    enabled={!!formData.customerId}
+                    earnPreview={loyalty.earnPreview}
+                    orderType={formData.orderType}
+                    compact
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          {/* Items */}
+          <div className="min-w-0 lg:col-span-7 lg:row-span-4 lg:row-start-1 xl:col-span-8">
+            <ProductsSection
+              orderItems={orderItems}
+              products={[...products, ...searchedProducts]} // Combine initial products with searched products
+              onAddProduct={addProductToOrder}
+              onRemoveProduct={removeProductFromOrder}
+              onUpdateOrderItem={updateOrderItem}
+              onUpdatePricingOption={updateItemPricingOption}
+              onUpdatePricingType={updateItemPricingType}
+              onSearchProducts={handleProductSearch} // Use our custom search function
+              isLoadingProducts={isLoadingProducts}
+              orderType={formData.orderType}
+              pickupDate={formData.pickupPlanAt}
+              returnDate={formData.returnPlanAt}
+              getProductAvailabilityStatus={getProductAvailabilityStatus}
+              currency={currency}
+              outletId={formData.outletId}
+              onAvailabilityChange={handleAvailabilityChange}
+            />
+          </div>
+          <div className="min-w-0 lg:col-span-5 lg:col-start-8 xl:col-span-4 xl:col-start-9">
+            <Card className="w-full">
+              <CardContent className="space-y-4 p-4">
+                <h2 className="text-sm font-semibold text-gray-900">{t('form.paymentTitle')}</h2>
+
+                <OrderInfoSection part="payment"
+              formData={formData}
+              outlets={outlets}
+              selectedCustomer={selectedCustomer}
+              searchQuery={searchQuery}
+              customerSearchResults={customerSearchResults}
+              isLoadingCustomers={isLoadingCustomers}
+              isEditMode={isEditMode}
+              merchantData={merchantData}
+              onFormDataChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+              onCustomerSelect={handleCustomerSelect}
+              onCustomerClear={() => {
+                setSelectedCustomer(null);
+                setSearchQuery('');
+                setFormData(prev => ({ ...prev, customerId: undefined }));
+              }}
+              onSearchQueryChange={setSearchQuery}
+              onCustomerSearch={searchCustomers}
+              onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
+              onCustomerEdit={handleCustomerEdit}
+              onCustomerView={handleCustomerView}
+              onUpdateRentalDates={updateRentalDates}
+                  hideCardWrapper={true}
+                orderItems={orderItems}
+                loading={loading || isSubmitting}
+                isFormValid={isFormValidForUI}
+                onSubmit={handleSubmit}
+                onCancel={isEditMode ? onCancel : handleInternalCancel}
+                resetKey={resetKey}
+                loyaltyDiscount={loyalty.loyaltyDiscount}
+                amountDue={loyalty.amountDue}
+                shortItems={orderItems
+                  .filter((item) => {
+                    const a = itemAvailability.get(item.productId);
+                    return a != null && (item.quantity || 1) > a.free;
+                  })
+                  .map((item) => item.product?.name || `#${item.productId}`)}
               />
               </CardContent>
             </Card>
           </div>
+        </div>
+      </div>
+
+      {/* Phones: total and the create button always reachable */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-600">{t('form.summary.collectNow')}</p>
+            <p className="text-lg font-bold tabular-nums text-gray-900">
+              {formatCurrency(
+                formData.orderType === 'RENT'
+                  ? formData.depositAmount || 0
+                  : loyalty.loyaltyDiscount > 0 && loyalty.amountDue != null
+                  ? loyalty.amountDue
+                  : formData.totalAmount,
+                currency as any
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading || isSubmitting || !isFormValidForUI}
+            className="h-11 shrink-0 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white disabled:bg-blue-300"
+          >
+            {isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
+          </button>
         </div>
       </div>
 

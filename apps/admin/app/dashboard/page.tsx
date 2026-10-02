@@ -1026,12 +1026,16 @@ export default function AdminDashboard() {
                       product={product}
                       rank={index + 1}
                       sortBy={productSortBy}
-                      onClick={() => {
+                      onProductClick={() => {
                         if (product.merchantId && product.id) {
                           router.push(`/merchants/${product.merchantId}/products/${product.id}`);
-                          return;
                         }
                       }}
+                      onShopClick={
+                        product.merchantId && product.outletId
+                          ? () => router.push(`/merchants/${product.merchantId}/outlets/${product.outletId}`)
+                          : undefined
+                      }
                     />
                   ))}
                   <Button

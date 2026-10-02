@@ -9,6 +9,7 @@ import {
   PricingResolver,
   resolveSelectedOption,
   calculateDurationInUnit,
+  countRentalDays,
   getDurationUnitLabel,
   ResponseBuilder, 
   handleApiError, 
@@ -32,6 +33,7 @@ import {
   handleLoyaltyOnOrderCreate,
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
+import { civilDayRange } from '../../../lib/outlet-operations-day';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -109,13 +111,23 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     });
     
     // Implement role-based filtering
+    const dayKey = /^\d{4}-\d{2}-\d{2}$/;
+    const civilRange =
+      startDate && dayKey.test(String(startDate)) && (!endDate || dayKey.test(String(endDate)))
+        ? civilDayRange(String(startDate), String(endDate || startDate))
+        : null;
     let searchFilters: any = {
       customerId,
       productId,
       orderType,
       status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      // YYYY-MM-DD means Vietnam civil days ("today" used to start at 07:00 Vietnam time)
+      ...(civilRange
+        ? { startDate: civilRange.start, endDate: civilRange.end, exactDateRange: true }
+        : {
+            startDate: startDate ? new Date(startDate) : undefined,
+            endDate: endDate ? new Date(endDate) : undefined,
+          }),
       dateField,
       q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
@@ -679,8 +691,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60)));
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
       } else if (dominantPricingType === 'DAILY') {
-        const diffTime = returnDate.getTime() - pickup.getTime();
-        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        // Pickup and return day both count (#351), same as iOS and Android
+        rentalDuration = countRentalDays(pickup, returnDate);
         console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
         rentalDuration = 1;

@@ -45,6 +45,8 @@ export interface ActiveOrder {
   returnPlanAt: string;
   quantity: number;
   status: string;
+  /** RENT or SALE; only rentals hold units over days */
+  orderType?: string;
   isConflict: boolean;
 }
 

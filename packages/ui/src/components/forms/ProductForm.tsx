@@ -100,6 +100,8 @@ interface ProductFormProps {
   hideSubmitButton?: boolean; // Hide submit button when using external action buttons
   formId?: string; // Form ID for external submit buttons
   useMultipartUpload?: boolean; // New prop to enable multipart form data upload
+  /** 'page': full-page edit layout in cards and two columns; default stacks for dialogs */
+  layout?: 'stacked' | 'page';
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -116,8 +118,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   hideHeader = false,
   hideSubmitButton = false,
   formId,
+  layout = 'stacked',
   useMultipartUpload = false
 }) => {
+  const isPage = layout === 'page';
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
@@ -659,12 +663,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
   const updateOutletStock = (outletId: number, field: 'stock', value: number) => {
-    setFormData(prev => ({
-      ...prev,
-      outletStock: prev.outletStock.map(item =>
+    setFormData(prev => {
+      const outletStock = prev.outletStock.map(item =>
         item.outletId === outletId ? { ...item, [field]: value } : item
-      )
-    }));
+      );
+      // Several outlets: the total is the sum, so the two numbers can never disagree
+      const totalStock = outlets.length > 1
+        ? outletStock.reduce((sum, item) => sum + (Number(item.stock) || 0), 0)
+        : prev.totalStock;
+      return { ...prev, outletStock, totalStock };
+    });
   };
 
 
@@ -885,8 +893,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       )}
 
       <form id={formId} onSubmit={handleSubmit} className="space-y-4">
-        {/* Product Information */}
-        <div className="space-y-3">
+        {(() => {
+          const nameEl = (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
               <Input
@@ -897,8 +905,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
               {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          );
+          const skuEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.sku')}</label>
                 <Input
@@ -907,7 +915,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   placeholder={t('fields.sku')}
                 />
               </div>
-
+          );
+          const barcodeEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
@@ -923,12 +932,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     size="sm"
                     onClick={() => handleInputChange('barcode', generateBarcode())}
                     title={t('messages.generateBarcode')}
+                    aria-label={t('messages.generateBarcode')}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-
+          );
+          const categoryEl = (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
                 <Select
@@ -937,7 +948,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     handleInputChange('categoryId', value);
                   }}
                 >
-                  <SelectTrigger className={errors.categoryId ? 'border-red-500' : ''}>
+                  <SelectTrigger aria-label={t('fields.category')} className={errors.categoryId ? 'border-red-500' : ''}>
                     <SelectValue placeholder={t('fields.category')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -950,8 +961,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </Select>
                 {errors.categoryId && <p className="text-sm text-red-500">{errors.categoryId}</p>}
               </div>
-            </div>
-
+          );
+          const descriptionEl = (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.description')}</label>
               <Textarea
@@ -961,7 +972,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 rows={2}
               />
             </div>
-
+          );
+          const infoEl = (
+            <div className="space-y-3">
+              {nameEl}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {skuEl}
+                {barcodeEl}
+                {categoryEl}
+              </div>
+              {descriptionEl}
+            </div>
+          );
+          const pricingEl = (
+            <>
             {/* Compact pricing — no dynamic "add price" rows */}
             <div className="pt-3 border-t border-border space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground">{t('pricing.title')}</h3>
@@ -974,10 +998,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <NumericInput
-                    label={`${t('pricing.pricePerRental')} *`}
+                    label={t('pricing.pricePerRental')}
                     value={getOptionPrice(PRICING_TYPE.FIXED)}
                     onChange={(value) => updateRentPricing(PRICING_TYPE.FIXED, value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.rentPrice}
                     required
                     allowDecimals={true}
@@ -992,7 +1016,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     label={t('pricing.pricePerDay')}
                     value={getOptionPrice(PRICING_TYPE.DAILY)}
                     onChange={(value) => updateRentPricing(PRICING_TYPE.DAILY, value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     allowDecimals={true}
                     maxDecimalPlaces={2}
                     disabled={!canEditPricing}
@@ -1003,13 +1027,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </div>
               </div>
 
-              <div className={`grid grid-cols-1 gap-3 ${canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+              <div className={`grid grid-cols-1 gap-3 ${isPage ? 'sm:grid-cols-2' : canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div>
                   <NumericInput
                     label={t('fields.deposit')}
                     value={formData.deposit}
                     onChange={(value) => handleInputChange('deposit', value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.deposit}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
@@ -1022,7 +1046,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     label={t('fields.salePrice')}
                     value={formData.salePrice}
                     onChange={(value) => handleInputChange('salePrice', value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.salePrice}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
@@ -1037,7 +1061,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       label={t('fields.costPrice')}
                       value={formData.costPrice}
                       onChange={(value) => handleInputChange('costPrice', value)}
-                      placeholder="0.00"
+                      placeholder="0"
                       error={!!errors.costPrice}
                       allowDecimals={true}
                       maxDecimalPlaces={2}
@@ -1046,23 +1070,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </div>
                 )}
 
+                {!(isPage && outlets.length > 1) && (
                 <div>
                   <NumericInput
-                    label={`${t('fields.stock')} *`}
+                    label={t('fields.stock')}
                     value={formData.totalStock}
                     onChange={(value) => handleInputChange('totalStock', value)}
                     placeholder="0"
                     error={!!errors.totalStock}
                     required
+                    disabled={outlets.length > 1}
                     allowDecimals={false}
                     min={0}
                   />
+                  {outlets.length > 1 && <p className="mt-1 text-xs text-gray-600">{t('form.stockIsSum')}</p>}
                   {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
                 </div>
+                )}
               </div>
             </div>
-        </div>
-
+                    </>
+          );
+          const stockEl = (
+            <>
         {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
         {outlets.length > 1 ? (
           <div className="border-t pt-3 mt-3">
@@ -1125,6 +1155,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           </div>
         ) : null}
 
+            </>
+          );
+          const imagesEl = (
+            <>
         {/* Enhanced Image Management */}
         <div className="border-t pt-4 mt-4">
           <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
@@ -1149,7 +1183,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </p>
               <p className="text-text-secondary text-sm mb-3">
                 {useMultipartUpload 
-                  ? `${t('messages.imageFormats')} (will be uploaded with form data)`
+                  ? t('messages.imageFormats')
                   : t('messages.imageFormats')
                 }
               </p>
@@ -1326,6 +1360,55 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
 
+
+            </>
+          );
+          if (!isPage) {
+            return (
+              <>
+                <div className="space-y-3">
+                  {infoEl}
+                  {pricingEl}
+                </div>
+                {stockEl}
+                {imagesEl}
+              </>
+            );
+          }
+          // Edit page (Shopify-style): the product itself in the main column (name, photos, prices, stock);
+          // organisation (category, barcode, SKU) in a narrow side column
+          const card = 'rounded-xl border border-gray-200 bg-white p-4 sm:p-5 [&>div:first-child]:mt-0 [&>div:first-child]:border-t-0 [&>div:first-child]:pt-0';
+          return (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+              <div className="min-w-0 space-y-4">
+                <section className={card} aria-label={t('form.sectionInfo')}>
+                  <div className="space-y-3">
+                    {nameEl}
+                    {descriptionEl}
+                  </div>
+                </section>
+                <section className={card}>{imagesEl}</section>
+                <section className={card}>{pricingEl}</section>
+                {outlets.length > 1 && (
+                  <section className={card}>
+                    <p className="mb-2 text-right text-sm text-gray-700">
+                      {t('form.stockTotal', { count: formData.totalStock })}
+                    </p>
+                    {stockEl}
+                  </section>
+                )}
+              </div>
+              <aside className="min-w-0 space-y-4 lg:sticky lg:top-4">
+                <section className={`${card} space-y-3`} aria-label={t('form.sectionOrganise')}>
+                  <h2 className="text-sm font-semibold text-gray-900">{t('form.sectionOrganise')}</h2>
+                  {categoryEl}
+                  {barcodeEl}
+                  {skuEl}
+                </section>
+              </aside>
+            </div>
+          );
+        })()}
 
         {/* Action Buttons */}
         {!hideSubmitButton && (

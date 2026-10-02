@@ -20,7 +20,9 @@ All detailed documentation is available in the [`docs/`](docs/) folder:
 
 ### Development
 - **[Git Workflow Guide](docs/GIT_WORKFLOW_GUIDE.md)** - Git workflow and best practices
-- **[.cursorrules](.cursorrules)** - Development rules and best practices including API standardization
+- **[CLAUDE.md](CLAUDE.md)** - AI-native development guide for Claude Code: commands, conventions, known pitfalls (source of truth)
+- **[intent/](intent/)** - Version-controlled intent documents that start every feature
+- **[.cursorrules](.cursorrules)** - Legacy detailed rulebook (API standardization, ID strategy); `CLAUDE.md` wins on conflict
 
 ## 🚀 Quick Start
 

@@ -1,21 +1,28 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   PageWrapper,
-  PageHeader,
-  PageTitle,
   Breadcrumb,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@rentalshop/ui';
 import type { BreadcrumbItem, DateRange } from '@rentalshop/ui';
 import { useAvailabilityTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { ProductWithStock } from '@rentalshop/types';
 import type { CurrencyCode } from '@rentalshop/types';
-import { AvailabilityInputPanel } from './AvailabilityInputPanel';
-import { AvailabilityResultSide } from './AvailabilityResultSide';
+import { AvailabilityPeriodBar, keyToPickerDate, pickerDateToKey } from './AvailabilityPeriodBar';
+import { AvailabilityProductList } from './AvailabilityProductList';
+import { AvailabilityDetail } from './AvailabilityDetail';
 import { loadProductById } from './useAvailabilityCheck';
-import { needsOutletSelection, toActiveOrders } from './utils';
+import { useAvailabilityResults } from './useAvailabilityResults';
+import { needsOutletSelection } from './utils';
+import { addDaysToKey, toActiveOrders } from './availability-days';
+import type { RawOrder } from './availability-days';
 import type { AvailabilityCheckPageProps, SelectedProduct, ActiveOrder } from './types';
 import { ordersApi } from '@rentalshop/utils';
 
@@ -41,14 +48,12 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
       to: r ? new Date(r) : undefined,
     };
   });
-  const [activeOrders, setActiveOrders] = useState<Map<number, ActiveOrder[]>>(new Map());
+  // Raw active orders per product; conflict flags are derived from the period, so changing
+  // dates does not refetch (the page used to fetch every product's orders twice)
+  const [productOrders, setProductOrders] = useState<Map<number, RawOrder[]>>(new Map());
 
-  const pickup = dateRange.from
-    ? `${dateRange.from.getFullYear()}-${String(dateRange.from.getMonth() + 1).padStart(2, '0')}-${String(dateRange.from.getDate()).padStart(2, '0')}`
-    : '';
-  const returnDate = dateRange.to
-    ? `${dateRange.to.getFullYear()}-${String(dateRange.to.getMonth() + 1).padStart(2, '0')}-${String(dateRange.to.getDate()).padStart(2, '0')}`
-    : '';
+  const pickup = pickerDateToKey(dateRange.from);
+  const returnDate = pickerDateToKey(dateRange.to);
 
   const userOutletId = user?.outletId;
   const showOutletSelect = needsOutletSelection(user?.role, userOutletId);
@@ -67,9 +72,15 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
     [selectedProducts, activeProductId]
   );
 
+  // Products whose orders were requested for the current outlet (one request per product)
+  const requestedRef = useRef<Set<string>>(new Set());
+
   const fetchOrdersForProduct = useCallback(
     async (productId: number) => {
       if (!resolvedOutletId) return;
+      const key = `${resolvedOutletId}:${productId}`;
+      if (requestedRef.current.has(key)) return;
+      requestedRef.current.add(key);
       try {
         const response = await ordersApi.searchOrders({
           productId,
@@ -80,17 +91,17 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
         });
         if (response.success && response.data?.orders) {
           // Filter to only active orders (RESERVED + PICKUPED) client-side
-          const activeOnly = response.data.orders.filter(
-            (o: any) => o.status === 'RESERVED' || o.status === 'PICKUPED'
+          const activeOnly = (response.data.orders as RawOrder[]).filter(
+            (o) => o.status === 'RESERVED' || o.status === 'PICKUPED'
           );
-          const orders = toActiveOrders(activeOnly, pickup, returnDate);
-          setActiveOrders((prev) => new Map(prev).set(productId, orders));
+          setProductOrders((prev) => new Map(prev).set(productId, activeOnly));
         }
       } catch (err) {
+        requestedRef.current.delete(key);
         console.error('Failed to fetch orders for product:', productId, err);
       }
     },
-    [resolvedOutletId, pickup, returnDate]
+    [resolvedOutletId]
   );
 
   const handleAddProduct = useCallback(
@@ -102,9 +113,8 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
       }
       setSelectedProducts((prev) => [...prev, { product, quantity: 1 }]);
       setActiveProductId(product.id);
-      void fetchOrdersForProduct(product.id);
     },
-    [selectedProducts, fetchOrdersForProduct]
+    [selectedProducts]
   );
 
   const handleRemoveProduct = useCallback(
@@ -117,10 +127,13 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
         });
         return next;
       });
-      setActiveOrders((prev) => {
+      setProductOrders((prev) => {
         const next = new Map(prev);
         next.delete(productId);
         return next;
+      });
+      requestedRef.current.forEach((key) => {
+        if (key.endsWith(`:${productId}`)) requestedRef.current.delete(key);
       });
     },
     []
@@ -134,12 +147,38 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
     );
   }, []);
 
+  // Another outlet: the cached orders belong to the old one
   useEffect(() => {
-    if (!pickup || !returnDate) return;
-    selectedProducts.forEach((sp) => {
-      void fetchOrdersForProduct(sp.product.id);
-    });
-  }, [pickup, returnDate, resolvedOutletId]);
+    setProductOrders(new Map());
+  }, [resolvedOutletId]);
+  useEffect(() => {
+    selectedProducts.forEach((sp) => void fetchOrdersForProduct(sp.product.id));
+  }, [selectedProducts, fetchOrdersForProduct]);
+
+  const { results, ready: periodReady, retry } = useAvailabilityResults(
+    selectedProducts.map((sp) => ({ productId: sp.product.id, quantity: sp.quantity })),
+    dateError ? '' : pickup,
+    returnDate,
+    resolvedOutletId
+  );
+
+  const activeOrders: ActiveOrder[] = useMemo(
+    () =>
+      activeProductId
+        ? toActiveOrders(productOrders.get(activeProductId) || [], activeProductId, pickup, returnDate)
+        : [],
+    [productOrders, activeProductId, pickup, returnDate]
+  );
+
+  // A tap on a day in the grid keeps the period length and starts it on that day
+  const handlePickDay = useCallback(
+    (dayKey: string) => {
+      const length =
+        pickup && returnDate ? Math.round((Date.parse(returnDate) - Date.parse(pickup)) / 86400000) : 0;
+      setDateRange({ from: keyToPickerDate(dayKey), to: keyToPickerDate(addDaysToKey(dayKey, length)) });
+    },
+    [pickup, returnDate]
+  );
 
   useEffect(() => {
     const productIdParam = searchParams.get('productId');
@@ -158,7 +197,6 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
         setActiveProductId(product.id);
         return [...prev, { product, quantity: 1 }];
       });
-      void fetchOrdersForProduct(product.id);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial deep link only
   }, []);
@@ -182,57 +220,74 @@ export const AvailabilityCheckPage: React.FC<AvailabilityCheckPageProps> = ({
     { label: t('breadcrumb'), href: '/availability' },
   ];
 
+  const outletName = outlets.find((o) => o.id === resolvedOutletId)?.name || user?.outlet?.name;
+
   return (
     <PageWrapper maxWidth="7xl">
-      <Breadcrumb items={breadcrumbItems} />
-      <PageHeader className="mb-4">
-        <PageTitle subtitle={t('subtitle')}>{t('title')}</PageTitle>
-      </PageHeader>
+      <Breadcrumb items={breadcrumbItems} showHome={false} />
+      {/* Title with the outlet next to it; a picker only for owners with several outlets */}
+      <div className="mb-4 mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{t('title')}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
+        </div>
+        {showOutletSelect && outlets.length > 1 ? (
+          <Select value={outletId ? String(outletId) : undefined} onValueChange={(v) => setOutletId(v ? parseInt(v, 10) : undefined)}>
+            <SelectTrigger className="h-9 w-full sm:w-64" aria-label={t('outlet')}>
+              <SelectValue placeholder={t('selectOutlet')} />
+            </SelectTrigger>
+            <SelectContent>
+              {outlets.map((o) => (
+                <SelectItem key={o.id} value={String(o.id)}>
+                  {o.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          outletName && <span className="truncate text-sm text-gray-600">{outletName}</span>
+        )}
+      </div>
+
+      <AvailabilityPeriodBar dateRange={dateRange} onChange={setDateRange} dateError={dateError} disabled={panelDisabled} />
 
       {selectedProducts.length >= MAX_PRODUCTS && (
-        <p className="text-sm text-amber-600 mb-3">{t('maxProductsReached')}</p>
+        <p className="mt-3 text-sm text-amber-700">{t('maxProductsReached')}</p>
       )}
 
-      <div className="bg-white rounded-xl border border-border shadow-sm min-h-[calc(100vh-180px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
-          {/* Left panel */}
-          <div className="lg:col-span-5 xl:col-span-5 p-4 lg:p-5 lg:border-r border-border">
-            <AvailabilityInputPanel
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              dateError={dateError}
-              showOutletSelect={showOutletSelect}
-              outletId={outletId}
-              outlets={outlets}
-              onOutletChange={setOutletId}
-              selectedProducts={selectedProducts}
-              activeProductId={activeProductId}
-              onSelectActive={setActiveProductId}
-              onAddProduct={handleAddProduct}
-              onRemoveProduct={handleRemoveProduct}
-              onQuantityChange={handleQuantityChange}
-              canAddProduct={selectedProducts.length < MAX_PRODUCTS}
-              outletIdForSearch={resolvedOutletId}
-              currency={currency as CurrencyCode}
-              disabled={panelDisabled}
-            />
-          </div>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+        <div className="rounded-xl border border-border bg-bg-card p-4 lg:col-span-5">
+          <AvailabilityProductList
+            selectedProducts={selectedProducts}
+            results={results}
+            periodReady={periodReady}
+            activeProductId={activeProductId}
+            onSelectActive={setActiveProductId}
+            onAddProduct={handleAddProduct}
+            onRemoveProduct={handleRemoveProduct}
+            onQuantityChange={handleQuantityChange}
+            canAddProduct={selectedProducts.length < MAX_PRODUCTS}
+            outletIdForSearch={resolvedOutletId}
+            currency={currency as CurrencyCode}
+            disabled={panelDisabled}
+          />
+        </div>
 
-          {/* Right panel */}
-          <div className="lg:col-span-7 xl:col-span-7 p-4 lg:p-5">
-            <AvailabilityResultSide
-              product={activeSelection?.product ?? null}
-              quantity={activeSelection?.quantity ?? 1}
+        {activeSelection && (
+          <div className="rounded-xl border border-border bg-bg-card p-4 lg:col-span-7">
+            <AvailabilityDetail
+              product={activeSelection.product}
+              quantity={activeSelection.quantity}
               pickup={pickup}
               returnDate={returnDate}
-              outletId={resolvedOutletId}
-              dateError={dateError}
-              activeOrders={
-                activeProductId ? activeOrders.get(activeProductId) || [] : []
-              }
+              periodReady={periodReady}
+              check={results.get(activeSelection.product.id)}
+              orders={activeOrders}
+              onPickDay={handlePickDay}
+              onRetry={retry}
             />
           </div>
-        </div>
+        )}
       </div>
     </PageWrapper>
   );

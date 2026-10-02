@@ -88,7 +88,7 @@
     "hourlyDescription": "Price per hour (e.g., vehicles, tools)",
     "daily": "Daily Rate",
     "dailyLabel": "Daily",
-    "dailyDescription": "Price per day (e.g., construction equipment)",
+    "dailyDescription": "Leave empty if not rented by the day",
     "weekly": "Weekly Rate",
     "monthly": "Monthly Rate",
     "custom": "Custom Rate",
@@ -117,7 +117,8 @@
     "viewHistory": "View History",
     "duplicate": "Duplicate Product",
     "archive": "Archive Product",
-    "restore": "Restore Product"
+    "restore": "Restore Product",
+    "backToProduct": "Back to product"
   },
   "rentNow": "Rent Now",
   "details": "Details",
@@ -166,7 +167,8 @@
     "categoryLabel": "Category",
     "allCategories": "All Categories",
     "priceRange": "Price Range",
-    "clear": "Clear"
+    "clear": "Clear",
+    "loading": "Loading..."
   },
   "imageSearch": {
     "title": "Search Products by Image",
@@ -277,6 +279,31 @@
     "total": "Total",
     "successCount": "Success",
     "failedCount": "Failed"
+  },
+  "list": {
+    "free": "free",
+    "rentingOut": "{count} rented out",
+    "moreActions": "Actions for {name}",
+    "select": "Select {name}",
+    "rentPrice": "Rent price",
+    "stock": "Stock"
+  },
+  "form": {
+    "stockIsSum": "Added up from the outlet stock below",
+    "sectionInfo": "Product details",
+    "editTitle": "Edit product",
+    "sectionOrganise": "Organisation",
+    "stockTotal": "Total stock: {count}",
+    "singleOutletNote": "Default outlet: {name}. The product is added to this outlet.",
+    "createTitle": "New product"
+  },
+  "view": {
+    "noImage": "No photo",
+    "updated": "Created {created} · updated {updated}",
+    "stockTitle": "Stock by outlet",
+    "dailyPrice": "Daily price",
+    "perDay": "/day",
+    "depositHint": "Paid up front, taken off the rent",
+    "outlet": "Outlet"
   }
 }
-

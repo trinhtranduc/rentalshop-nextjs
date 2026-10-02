@@ -196,7 +196,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     placeholder={t('outlet.enterOutletName')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.outlet?.name || ''}
                   </p>
                 )}
@@ -216,7 +216,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     placeholder={t('outlet.enterOutletPhone')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.outlet?.phone || ''}
                   </p>
                 )}
@@ -236,7 +236,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     placeholder={t('outlet.enterOutletAddress')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.outlet?.address || ''}
                   </p>
                 )}
@@ -258,7 +258,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                       placeholder={t('outlet.enterCity') || 'Enter city'}
                     />
                   ) : (
-                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                       {user?.outlet?.city || ''}
                     </p>
                   )}
@@ -278,7 +278,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                       placeholder={t('outlet.enterState') || 'Enter state'}
                     />
                   ) : (
-                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                       {user?.outlet?.state || ''}
                     </p>
                   )}
@@ -298,7 +298,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                       placeholder={t('outlet.enterZipCode') || 'Enter ZIP code'}
                     />
                   ) : (
-                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                       {user?.outlet?.zipCode || ''}
                     </p>
                   )}
@@ -320,7 +320,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     placeholder={t('outlet.enterCountry') || 'Enter country'}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.outlet?.country || ''}
                   </p>
                 )}
@@ -340,7 +340,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     placeholder={t('outlet.enterDescription')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.outlet?.description || ''}
                   </p>
                 )}

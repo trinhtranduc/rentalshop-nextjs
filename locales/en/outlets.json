@@ -12,6 +12,8 @@
     "country": "Country",
     "phone": "Phone Number",
     "description": "Description",
+    "printNote": "Receipt note",
+    "printNoteHint": "Printed at the bottom of rental receipts, e.g. ID reminder or return policy. Max 500 characters.",
     "status": "Status",
     "manager": "Manager",
     "notAvailable": "N/A"
@@ -72,7 +74,8 @@
     "enterZipCode": "Enter ZIP code",
     "enterCountry": "Enter country",
     "enterOutletPhone": "Enter outlet phone number",
-    "enterOutletDescription": "Enter outlet description"
+    "enterOutletDescription": "Enter outlet description",
+    "enterPrintNote": "e.g. *** Please bring your ID card when picking up"
   }
 }
 

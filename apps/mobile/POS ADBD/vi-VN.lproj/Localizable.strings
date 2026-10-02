@@ -1038,6 +1038,7 @@
 
 // MARK: - Error Codes
 "SESSION_EXPIRED" = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại";
+"SESSION_REPLACED" = "Tài khoản đã được đăng nhập trên thiết bị khác. Vui lòng đăng nhập lại";
 "ACCESS_DENIED" = "Truy cập bị từ chối tài nguyên này";
 "ACCESS_TOKEN_REQUIRED" = "Yêu cầu mã truy cập";
 "ACCOUNT_DELETED_SUCCESS" = "Đã xóa tài khoản thành công";

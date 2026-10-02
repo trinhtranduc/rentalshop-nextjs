@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'lo
 // Token expiry configuration
 export const TOKEN_EXPIRY = {
   ACCESS_TOKEN: '7d',             // Web access token: 7 days
-  ACCESS_TOKEN_MOBILE: '30d',     // Mobile access token: 30 days (mobile can't refresh easily)
+  ACCESS_TOKEN_MOBILE: '90d',     // Mobile access token: 90 days = absolute session cap; store builds cannot refresh (#343)
   REFRESH_TOKEN_DAYS: 30,         // Refresh token: 30 days
 } as const;
 
@@ -33,8 +33,9 @@ export const generateToken = (payload: JWTPayload): string => {
 
 /**
  * Generate a token with longer expiry for mobile clients.
- * Mobile apps can't easily refresh tokens without user interaction,
- * so we give them 30 days instead of 7 days.
+ * Mobile apps in the stores cannot refresh tokens, so the token lives as long as the
+ * session's absolute cap (90 days). Safe only because every request checks the session
+ * in the database (authenticateRequest), so logout and a newer login still cut it off.
  */
 export const generateMobileToken = (payload: JWTPayload): string => {
   console.log('🔍 JWT GENERATE (MOBILE): Creating 30d token');
@@ -44,6 +45,19 @@ export const generateMobileToken = (payload: JWTPayload): string => {
 
 export const verifyToken = (token: string): JWTPayload => {
   return jwt.verify(token, JWT_SECRET) as JWTPayload;
+};
+
+/**
+ * True when the token has a valid signature but its exp has passed.
+ * Lets callers answer TOKEN_EXPIRED instead of INVALID_TOKEN.
+ */
+export const isTokenExpired = (token: string): boolean => {
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return false;
+  } catch (error) {
+    return error instanceof jwt.TokenExpiredError;
+  }
 };
 
 export const verifyTokenSimple = async (token: string) => {

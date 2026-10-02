@@ -12,7 +12,7 @@ export default function AddUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toastSuccess, removeToast } = useToast();
+  const { toastSuccess } = useToast();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
 
@@ -61,9 +61,10 @@ export default function AddUserPage() {
       if (response.success) {
         console.log('✅ AddUserPage: User created successfully:', response.data);
         
-        // Navigate back to users list immediately
-        // Toast will be handled by Users component when the page loads
-        router.push('/users');
+        toastSuccess(tu('messages.createSuccess'), tu('messages.createSuccess'));
+        // Open the new user, as product create does; fall back to the list
+        const newId = (response.data as any)?.id;
+        router.push(newId ? `/users/${newId}` : '/users');
       }
       // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
@@ -98,32 +99,45 @@ export default function AddUserPage() {
 
   return (
     <PageWrapper>
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-6" />
-      
-      {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-4 mb-2">
-            <Button
-              onClick={handleCancel}
-              variant="link"
-              size="sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              {tu('actions.backToUsers')}
-            </Button>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">{tu('addUser')}</h1>
-          <p className="text-gray-600 mt-1">{tu('addUser')}</p>
-        </div>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
 
-        {/* Add User Form */}
-        <UserForm
-          onSave={handleSave}
-          onCancel={handleCancel}
-          isSubmitting={isSubmitting}
-          mode="create"
-        />
+      <div className="mb-4 flex items-start gap-3">
+        <Button variant="ghost" onClick={handleCancel} size="sm" className="h-9 w-9 shrink-0 p-0" aria-label={tu('actions.backToUsers')}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0">
+          <p className="text-xs text-gray-600">{tu('title')}</p>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{tu('addUser')}</h1>
+        </div>
+      </div>
+
+      {/* Same two columns as the user page: the form, and what each role can do */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <div className="min-w-0">
+          <UserForm
+            mode="create"
+            layout="page"
+            onSave={handleSave}
+            onCancel={handleCancel}
+            isSubmitting={isSubmitting}
+            currentUser={currentUser as any}
+          />
+        </div>
+        <aside className="min-w-0 lg:sticky lg:top-4">
+          <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="role-help-title">
+            <h2 id="role-help-title" className="text-sm font-semibold text-gray-900">{tu('roleHelp.title')}</h2>
+            <dl className="mt-3 space-y-3 text-sm">
+              {(['OUTLET_ADMIN', 'OUTLET_STAFF'] as const).map((role) => (
+                <div key={role}>
+                  <dt className="font-medium text-gray-900">{tu(`roles.${role}`)}</dt>
+                  <dd className="mt-0.5 text-gray-700">{tu(`roleHelp.${role}`)}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-600">{tu('roleHelp.loginNote')}</p>
+          </section>
+        </aside>
+      </div>
     </PageWrapper>
   );
 }

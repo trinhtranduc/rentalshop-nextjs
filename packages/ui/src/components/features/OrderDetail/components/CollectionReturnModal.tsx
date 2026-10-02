@@ -1,19 +1,20 @@
-import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import React, { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogFooter,
   Button,
-  Badge
+  Input,
+  useFormatCurrency,
 } from '@rentalshop/ui';
-import { Calculator, Info, DollarSign, Package, RotateCcw } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/ui';
+import { Package, RotateCcw } from 'lucide-react';
 import { OrderWithDetails } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';
+import { computeOrderMoney } from '../order-money';
+import { collateralKey } from '../collateral';
 
-// Define SettingsForm interface locally
 interface SettingsForm {
   damageFee: number;
   securityDeposit: number;
@@ -22,10 +23,6 @@ interface SettingsForm {
   collateralImageUrl?: string;
   notes: string;
 }
-import { 
-  getCollectionDetails, 
-  getReturnDetails 
-} from '../utils';
 
 interface CollectionReturnModalProps {
   isOpen: boolean;
@@ -33,10 +30,16 @@ interface CollectionReturnModalProps {
   order: OrderWithDetails;
   settingsForm: SettingsForm;
   mode: 'collection' | 'return';
-  onConfirmPickup?: () => void;
-  onConfirmReturn?: () => void;
+  onConfirmPickup?: () => void | Promise<void>;
+  /** Called with the damage fee entered in the dialog */
+  onConfirmReturn?: (overrides?: { damageFee?: number }) => void | Promise<void>;
 }
 
+/**
+ * Hand-over and take-back dialog. Same money rules as the order page (computeOrderMoney):
+ * pickup = total − deposit paid + security deposit; return = damage + late fee − security deposit.
+ * The damage fee is entered here, when the item is back and its state is known.
+ */
 export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
   isOpen,
   onClose,
@@ -44,126 +47,134 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
   settingsForm,
   mode,
   onConfirmPickup,
-  onConfirmReturn
+  onConfirmReturn,
 }) => {
   const t = useOrderTranslations();
-  const isCollectionMode = mode === 'collection';
-  const isReturnMode = mode === 'return';
-  
-  // Get the appropriate details based on mode
-  const details = isCollectionMode 
-    ? getCollectionDetails(order, settingsForm)
-    : getReturnDetails(order, settingsForm);
+  const formatMoney = useFormatCurrency();
+  const isPickup = mode === 'collection';
+  const [damageFee, setDamageFee] = useState<number>(settingsForm.damageFee || 0);
+  const [damageText, setDamageText] = useState<string>(settingsForm.damageFee ? String(settingsForm.damageFee) : '');
+  const [submitting, setSubmitting] = useState(false);
 
-  const getModalTitle = () => {
-    if (isCollectionMode) {
-      return t('detail.pickupOrderTitle');
+  useEffect(() => {
+    if (isOpen) {
+      setDamageFee(settingsForm.damageFee || 0);
+      setDamageText(settingsForm.damageFee ? String(settingsForm.damageFee) : '');
     }
-    return t('detail.returnOrderTitle');
-  };
+  }, [isOpen, settingsForm.damageFee]);
 
-  const getModalIcon = () => {
-    if (isCollectionMode) {
-      return <Package className="w-5 h-5 text-green-600" />;
-    }
-    return <RotateCcw className="w-5 h-5 text-blue-700" />;
-  };
+  const money = computeOrderMoney(order as any, { ...settingsForm, damageFee });
+  const customer = [order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ').trim() || (order as any).customerName || '';
+  const code = collateralKey(settingsForm.collateralType);
+  // Details that only repeat the type ("ID Card" next to ID_CARD) are not shown twice
+  const details = collateralKey(settingsForm.collateralDetails) === code ? '' : settingsForm.collateralDetails || '';
+  const papers = [code && code !== 'OTHER' ? t(`detailSettings.collateral.${code}`) : '', details]
+    .filter(Boolean)
+    .join(' · ');
 
-  const getActionButtonText = () => {
-    if (isCollectionMode) {
-      return t('detail.confirmPickup');
-    }
-    return t('detail.confirmReturn');
-  };
+  const resultLabel = isPickup
+    ? t('dialogs.handover.collect')
+    : money.collect > 0
+    ? t('dialogs.takeBack.collectMore')
+    : money.collect < 0
+    ? t('dialogs.takeBack.refund')
+    : t('dialogs.takeBack.nothing');
 
   const handleConfirm = async () => {
     try {
-      if (isCollectionMode && onConfirmPickup) {
-        await onConfirmPickup();
-      } else if (isReturnMode && onConfirmReturn) {
-        await onConfirmReturn();
-      }
+      setSubmitting(true);
+      if (isPickup) await onConfirmPickup?.();
+      else await onConfirmReturn?.({ damageFee });
       onClose();
     } catch (error) {
-      // Error handling is done in the parent component
+      // The parent shows the error toast
       console.error('Error in modal confirmation:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const row = (label: React.ReactNode, value: React.ReactNode, tone = 'text-slate-900') => (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <dt className="text-slate-600">{label}</dt>
+      <dd className={`font-medium tabular-nums ${tone}`}>{value}</dd>
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {getModalIcon()}
-            <span className="font-semibold">{getModalTitle()}</span>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            {isPickup ? <Package className="h-5 w-5 text-blue-700" aria-hidden="true" /> : <RotateCcw className="h-5 w-5 text-blue-700" aria-hidden="true" />}
+            {isPickup ? t('dialogs.handover.title') : t('dialogs.takeBack.title')}
           </DialogTitle>
+          <p className="text-sm text-slate-600">
+            #{order.orderNumber}
+            {customer && ` · ${customer}`}
+            {' · '}
+            {t(`detailHeader.status.${order.status}`)}
+          </p>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Order Info Header */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">{t('detail.orderNumberLabel')} #{order.orderNumber}</span>
-              <Badge variant={order.orderType === 'RENT' ? 'default' : 'secondary'}>
-                {order.orderType}
-              </Badge>
-            </div>
-            <div className="text-sm text-gray-600">
-              {t('detail.customerLabel')}: {order.customer?.firstName} {order.customer?.lastName}
-            </div>
-            <div className="text-sm text-gray-600">
-              {t('detail.statusLabel')}: {order.status}
-            </div>
-          </div>
 
-          {/* Details Section */}
-          <div className="space-y-4">
-            {/* Clean Collection/Return Summary */}
-            <div className="text-center">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {isCollectionMode ? t('detail.collectFromCustomer') : t('detail.returnToCustomer')}
-            </h3>
-              
-              {/* Simple one-line summary */}
-              {details.calculation && details.calculation.length > 0 && (
-                <div className="text-xl font-bold text-green-700 bg-green-50 rounded-lg p-4 border border-green-200">
-                  <span>
-                    {details.calculation.find(item => (item as any).isTotal)?.value !== undefined 
-                      ? formatCurrency(details.calculation.find(item => (item as any).isTotal)?.value || 0)
-                      : '0.00'
-                    }
-                  </span>
-                  {/* Only show collateral if it actually exists and has a value */}
-                  {settingsForm.collateralType && 
-                   settingsForm.collateralType !== 'Other' && 
-                   settingsForm.collateralType.trim() !== '' && (
-                    <span className="ml-2 text-lg font-normal text-blue-700">
-                      + {settingsForm.collateralType}
-                    </span>
-                  )}
-                  {settingsForm.collateralType === 'Other' && 
-                   settingsForm.collateralDetails && 
-                   settingsForm.collateralDetails.trim() !== '' && (
-                    <span className="ml-2 text-lg font-normal text-blue-700">
-                      + {settingsForm.collateralDetails}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+        <dl className="divide-y divide-slate-100 text-sm">
+          {isPickup ? (
+            <>
+              {row(t('form.summary.orderTotal'), formatMoney(money.total))}
+              {money.deposit > 0 && row(t('detailMoney.depositPaid'), `−${formatMoney(money.deposit)}`)}
+              {money.securityDeposit > 0 && row(t('detailMoney.securityDeposit'), `+${formatMoney(money.securityDeposit)}`)}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 py-2">
+                <dt>
+                  <label htmlFor="return-damage-fee" className="text-slate-600">
+                    {t('detailMoney.damageFee')}
+                  </label>
+                </dt>
+                <dd>
+                  <Input
+                    id="return-damage-fee"
+                    inputMode="decimal"
+                    value={damageText}
+                    placeholder="0"
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d.]/g, '');
+                      setDamageText(raw);
+                      setDamageFee(Math.max(0, parseFloat(raw) || 0));
+                    }}
+                    className="h-9 w-32 text-right tabular-nums"
+                  />
+                </dd>
+              </div>
+              {money.lateFee > 0 && row(t('detailMoney.lateFee'), `+${formatMoney(money.lateFee)}`)}
+              {money.securityDeposit > 0 && row(t('detailMoney.securityBack'), formatMoney(money.securityDeposit))}
+            </>
+          )}
+        </dl>
+
+        {/* The answer: how much changes hands, and which papers */}
+        <div className={`rounded-lg px-4 py-3 ${money.collect < 0 ? 'bg-green-50' : 'bg-blue-50'}`}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className={`text-sm font-semibold ${money.collect < 0 ? 'text-green-900' : 'text-blue-900'}`}>{resultLabel}</span>
+            <span className={`text-2xl font-bold tabular-nums ${money.collect < 0 ? 'text-green-800' : 'text-blue-900'}`}>
+              {formatMoney(Math.abs(money.collect))}
+            </span>
           </div>
+          {papers && (
+            <p className="mt-1 text-sm text-slate-700">
+              {isPickup ? t('detailMoney.holdCollateral') : t('detailMoney.returnCollateral')}: <span className="font-medium">{papers}</span>
+            </p>
+          )}
         </div>
 
-        <DialogFooter className="flex gap-3">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             {t('detail.close')}
           </Button>
-          {details.calculation && details.calculation.length > 0 && (
-            <Button onClick={handleConfirm}>
-              {getActionButtonText()}
-            </Button>
-          )}
+          <Button type="button" onClick={handleConfirm} disabled={submitting} className="font-semibold">
+            {isPickup ? t('dialogs.handover.confirm') : t('dialogs.takeBack.confirm')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

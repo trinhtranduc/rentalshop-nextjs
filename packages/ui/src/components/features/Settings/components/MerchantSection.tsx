@@ -200,8 +200,9 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   // Get public product link from login response (preferred) or calculate from tenantKey
   const getPublicProductLink = () => {
     // First try: Use from login response
-    if (user?.merchant?.publicProductLink) {
-      return user.merchant.publicProductLink;
+    // Login puts the links on the user (user.publicProductLink), not on user.merchant
+    if (user?.publicProductLink || user?.merchant?.publicProductLink) {
+      return user.publicProductLink || user.merchant.publicProductLink;
     }
     // Fallback: Calculate from tenantKey
     if (!merchant?.tenantKey) return null;
@@ -214,7 +215,8 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   const publicProductLink = getPublicProductLink();
   
   // Get referral code from login response (preferred) or use tenantKey
-  const referralCode = user?.merchant?.referralLink || merchant?.tenantKey;
+  // The code is the tenantKey (login's affiliateLink is the full URL built from it)
+  const referralCode = merchant?.tenantKey;
   
   // Generate registration link with referral code
   const getRegistrationLink = () => {
@@ -321,7 +323,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterBusinessName')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.name || ''}
                   </p>
                 )}
@@ -358,7 +360,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterTaxId')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.taxId || ''}
                   </p>
                 )}
@@ -378,7 +380,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterPhone')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.phone || ''}
                   </p>
                 )}
@@ -444,7 +446,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterAddress')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.address || ''}
                   </p>
                 )}
@@ -464,7 +466,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterCity')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.city || ''}
                   </p>
                 )}
@@ -484,7 +486,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterState')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.state || ''}
                   </p>
                 )}
@@ -504,7 +506,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     placeholder={t('merchant.enterZipCode')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.zipCode || ''}
                   </p>
                 )}
@@ -566,7 +568,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {merchant?.tenantKey || ''}
                   </p>
                 )}
@@ -601,7 +603,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                   className={`flex-1 bg-gray-50 text-gray-900 text-sm ${
                     registrationLink 
                       ? 'cursor-pointer hover:bg-gray-100 transition-colors' 
-                      : 'cursor-default text-gray-400'
+                      : 'cursor-default text-gray-600 placeholder:text-gray-500'
                   }`}
                   title={registrationLink ? "Click to copy registration link" : "Registration link not available"}
                 />
@@ -656,7 +658,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 className={`flex-1 bg-gray-50 text-gray-900 font-mono text-sm ${
                   publicProductLink 
                     ? 'cursor-pointer hover:bg-gray-100 transition-colors' 
-                    : 'cursor-default text-gray-400'
+                    : 'cursor-default text-gray-600 placeholder:text-gray-500'
                 }`}
                 title={publicProductLink ? "Click to copy link" : "Public product link not available"}
               />

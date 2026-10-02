@@ -72,7 +72,7 @@
     "orderSettings": "Cài đặt đơn hàng",
     "orderActions": "Hành động",
     "viewAndManage": "Xem và quản lý thông tin đơn hàng",
-    "seller": "Người bán",
+    "seller": "Cửa hàng",
     "orderDate": "Ngày đặt hàng",
     "editSettings": "Sửa cài đặt",
     "saveChanges": "Lưu thay đổi",
@@ -116,7 +116,13 @@
     "orderNumberLabel": "Đơn hàng",
     "customerLabel": "Khách hàng",
     "statusLabel": "Trạng thái",
-    "close": "Đóng"
+    "close": "Đóng",
+    "generalNotes": "Ghi chú chung",
+    "pickupNotes": "Ghi chú lấy hàng",
+    "returnNotes": "Ghi chú trả hàng",
+    "damageNotes": "Ghi chú hư hỏng",
+    "bailAmount": "Tiền bảo lãnh",
+    "material": "Vật thế chấp"
   },
   "payment": {
     "subtotal": "Tạm tính",
@@ -395,7 +401,168 @@
     "customerSignature": "Chữ ký khách hàng",
     "storeSignature": "Chữ ký cửa hàng",
     "thankYou": "CẢM ƠN BẠN ĐÃ MUA SẮM",
-    "downloadApp": "Tải AnyRent trên App Store"
+    "downloadApp": "Tải AnyRent trên App Store",
+    "loyaltyDiscount": "Giảm giá điểm thưởng"
+  },
+  "form": {
+    "itemsTitle": "Món trong đơn",
+    "searchHint": "Tìm mẫu theo tên, mã hoặc barcode để thêm vào đơn.",
+    "emptyTitle": "Chưa có món nào",
+    "pricing": {
+      "FIXED": "Theo lần",
+      "DAILY": "Theo ngày",
+      "HOURLY": "Theo giờ"
+    },
+    "timesDays": "× {days} ngày",
+    "pricingMethod": "Cách tính giá",
+    "depositPerUnit": "Tiền cọc / bộ",
+    "itemNote": "Ghi chú món",
+    "moreOptions": "Tuỳ chọn của {name}",
+    "remove": "Bỏ {name}",
+    "quantity": "Số lượng",
+    "unitPrice": "Đơn giá",
+    "lineTotal": "Thành tiền",
+    "depositLine": "Cọc {amount}",
+    "avail": {
+      "free": "Còn {free}/{total}",
+      "short": "Thiếu {count} · còn {free}",
+      "checking": "Đang kiểm tra…",
+      "pickDates": "Chọn ngày để xem còn trống",
+      "stock": "Kho còn {available}/{total}",
+      "error": "Không kiểm tra được"
+    },
+    "orderType": {
+      "RENT": "Cho thuê",
+      "SALE": "Bán"
+    },
+    "depositAuto": "Tự cộng từ cọc của các món, có thể sửa.",
+    "summary": {
+      "rentTotal": "Tiền thuê",
+      "saleTotal": "Tiền hàng",
+      "orderTotal": "Tổng tiền đơn",
+      "collectNow": "Cần thu ngay",
+      "remainingAtPickup": "Còn lại thu khi nhận đồ"
+    },
+    "missing": {
+      "title": "Còn thiếu: {fields}",
+      "customer": "khách hàng",
+      "dates": "ngày thuê",
+      "items": "món",
+      "outlet": "cửa hàng"
+    },
+    "shortWarning": "Không đủ hàng trong kỳ: {names}",
+    "reset": "Đặt lại",
+    "resetConfirm": "Xoá hết các món và thông tin đã nhập?",
+    "decrease": "Giảm số lượng",
+    "increase": "Tăng số lượng",
+    "quick": {
+      "today": "Hôm nay",
+      "tomorrow": "Ngày mai",
+      "weekend": "Cuối tuần",
+      "threeDays": "3 ngày"
+    },
+    "customerTitle": "Khách hàng",
+    "paymentTitle": "Thanh toán",
+    "orderTitle": "Đơn hàng",
+    "loyalty": {
+      "loading": "Đang tải điểm…",
+      "points": "{points} điểm",
+      "use": "Dùng điểm",
+      "redeem": "Đổi (tối đa {max})",
+      "earnRent": "Ước tích ~{points} điểm khi trả đồ",
+      "earn": "Tích {points} điểm"
+    },
+    "depositHint": "Tự cộng từ các món"
+  },
+  "detailMoney": {
+    "stage": {
+      "pickup": "Cần thu khi giao đồ",
+      "collectAtReturn": "Cần thu khi nhận trả",
+      "refundAtReturn": "Trả lại khách khi nhận trả",
+      "sale": "Cần thu",
+      "done": "Không cần thu thêm"
+    },
+    "depositPaid": "Đã đặt cọc",
+    "securityDeposit": "Thế chấp",
+    "damageFee": "Phí hư hỏng",
+    "lateFee": "Phí trễ hạn",
+    "securityBack": "Trả lại thế chấp",
+    "holdCollateral": "Giữ thêm",
+    "returnCollateral": "Trả lại"
+  },
+  "detailHeader": {
+    "title": "Đơn #{number}",
+    "print": "In hóa đơn",
+    "edit": "Sửa",
+    "more": "Thêm thao tác",
+    "pickup": "Giao đồ",
+    "return": "Nhận trả",
+    "status": {
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đang thuê",
+      "RETURNED": "Đã trả",
+      "COMPLETED": "Hoàn thành",
+      "CANCELLED": "Đã hủy"
+    },
+    "steps": {
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đã giao đồ",
+      "RETURNED": "Đã trả đồ"
+    }
+  },
+  "detailInfo": {
+    "customer": "Khách hàng",
+    "schedule": "Lịch thuê",
+    "saleDate": "Ngày bán",
+    "days": "{count} ngày",
+    "late": "Trễ {count} ngày",
+    "pickedUpAt": "Đã giao {date}",
+    "returnedAt": "Đã trả {date}",
+    "created": "Tạo {date}",
+    "createdBy": "Tạo {date} bởi {name}",
+    "copied": "Đã chép số điện thoại",
+    "copyPhone": "Chép số điện thoại"
+  },
+  "detailItems": {
+    "title": "Món",
+    "depositEach": "cọc {amount}/bộ"
+  },
+  "detailNotes": {
+    "title": "Ghi chú",
+    "general": "Chung",
+    "pickup": "Khi giao đồ",
+    "return": "Khi trả đồ",
+    "damage": "Hư hỏng"
+  },
+  "detailSettings": {
+    "title": "Thế chấp & phí",
+    "edit": "Sửa thế chấp & phí",
+    "empty": "Chưa giữ thế chấp, chưa có phí.",
+    "holding": "Giữ",
+    "notForThisState": "không áp dụng ở trạng thái này",
+    "noteImages": "Ảnh ghi chú",
+    "collateral": {
+      "ID_CARD": "CCCD",
+      "DOCUMENT": "Giấy tờ",
+      "CASH": "Tiền mặt",
+      "CREDIT_CARD": "Thẻ tín dụng",
+      "DRIVER_LICENSE": "Bằng lái",
+      "PASSPORT": "Hộ chiếu",
+      "OTHER": "Khác"
+    }
+  },
+  "dialogs": {
+    "handover": {
+      "title": "Giao đồ cho khách",
+      "collect": "Thu của khách",
+      "confirm": "Xác nhận giao đồ"
+    },
+    "takeBack": {
+      "title": "Nhận trả đồ",
+      "collectMore": "Thu thêm của khách",
+      "refund": "Trả lại khách",
+      "nothing": "Không phát sinh tiền",
+      "confirm": "Xác nhận nhận trả"
+    }
   }
 }
-

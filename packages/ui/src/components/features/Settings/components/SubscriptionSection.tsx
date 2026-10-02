@@ -112,7 +112,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
       style: 'currency',
       currency: currency
     }).format(amount);
@@ -186,11 +186,9 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   </div>
                   <p className="text-base font-semibold text-gray-900">
                     {subscriptionData.subscription.currentPeriodEnd ? 
-                      new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      }) : 'N/A'}
+                      // Shop clock, dd/MM/yyyy like the rest of the app
+                      new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' })
+                        .format(new Date(subscriptionData.subscription.currentPeriodEnd)) : '—'}
                   </p>
                   {daysLeft != null && daysLeft !== '' && (
                     <p className="text-xs text-gray-600">
@@ -204,8 +202,10 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                     <CheckCircle className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">{t('subscription.status')}</span>
                   </div>
-                  <p className="text-base font-semibold text-gray-900 capitalize">
-                    {subscriptionData.subscription.status || t('subscription.active')}
+                  <p className="text-base font-semibold text-gray-900">
+                    {subscriptionData.subscription.status
+                      ? t(`subscription.statusValues.${String(subscriptionData.subscription.status).toUpperCase()}`)
+                      : t('subscription.active')}
                   </p>
                   <p className="text-xs text-gray-600">
                     {subscriptionData.subscription.cancelAtPeriodEnd ? t('subscription.cancelsAtPeriodEnd') : t('subscription.autoRenewalEnabled')}

@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { 
   DropdownMenu,
@@ -15,7 +14,7 @@ import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations, useTableSelection } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
-import { getProductImageUrl, useFormattedDateTime } from '@rentalshop/utils/client';
+import { getProductImageUrl } from '@rentalshop/utils/client';
 import {
   resolveProductListStockDisplay,
   type ProductListStockInput,
@@ -47,7 +46,6 @@ export function ProductTable({
 }: ProductTableProps) {
   // ✅ Use permissions hook for UI control
   const { canManageProducts, canUpdateProducts, canViewProducts, canDeleteOrders } = usePermissions();
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
@@ -80,52 +78,136 @@ export function ProductTable({
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const getStatusBadge = (isActive: boolean) => {
-    return isActive ? (
-      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        {t('status.active')}
-      </Badge>
-    ) : (
-      <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        {t('status.inactive')}
-      </Badge>
-    );
-  };
-
-  const getAvailabilityBadge = (available: number, stock: number) => {
-    if (available === 0) {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">{t('status.outOfStock')}</Badge>;
-    }
-    if (available < 5) {
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('status.lowStock')}</Badge>;
-    }
-    return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('status.inStock')}</Badge>;
-  };
-
   const handleSort = (column: string) => {
     if (onSort) {
       onSort(column);
     }
   };
 
+  // Shop clock for the created date (a hook used to be called inside the row loop)
+  const createdFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const pricingSuffix = (product: Product) => {
+    const type = (product as any).pricingType;
+    return type === 'HOURLY' ? `/${t('pricing.durationUnitHours')}` : type === 'DAILY' ? `/${t('pricing.durationUnitDays')}` : '';
+  };
+  const thumb = (product: Product, size = 'h-10 w-10') => {
+    const imageUrl = getProductImageUrl(product);
+    const hasImage = Boolean(imageUrl && imageUrl.trim() !== '' && product.images && product.images.length > 0);
+    return hasImage ? (
+      <ImageLightbox src={imageUrl} alt={product.name} triggerClassName={`${size} shrink-0 rounded-md border border-gray-200`} imgClassName="rounded-md object-cover" />
+    ) : (
+      <span className={`${size} flex shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50`}>
+        <Package className="h-4 w-4 text-gray-400" aria-hidden="true" />
+      </span>
+    );
+  };
+  /** Stock on one line: free / total with a bar, rentals out only when there are any. */
+  const stockCell = (product: Product) => {
+    const stock = resolveProductListStockDisplay(product as ProductListStockInput, scopedOutletId);
+    const pct = stock.totalStock > 0 ? Math.min(100, Math.round((stock.available / stock.totalStock) * 100)) : 0;
+    const empty = stock.available <= 0;
+    return (
+      <div className="min-w-[8rem]" title={stock.showBranchesHint ? t('inventory.listRollupHint', { count: stock.outletBranchCount }) : undefined}>
+        <p className="text-sm tabular-nums">
+          <span className={`font-semibold ${empty ? 'text-red-700' : 'text-gray-900'}`}>{stock.available}</span>
+          <span className="text-gray-500"> / {stock.totalStock} {t('list.free')}</span>
+        </p>
+        <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-gray-100" aria-hidden="true">
+          <div className={`h-full rounded-full ${empty ? 'bg-red-500' : pct < 25 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }} />
+        </div>
+        {stock.renting > 0 && <p className="mt-0.5 text-xs text-gray-600">{t('list.rentingOut', { count: stock.renting })}</p>}
+      </div>
+    );
+  };
+  const actionsMenu = (product: Product) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={t('list.moreActions', { name: product.name })}>
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {canViewProducts && (
+          <DropdownMenuItem onClick={() => onProductAction('view', product.id)}>
+            <Eye className="mr-2 h-4 w-4" />
+            {t('actions.viewDetails')}
+          </DropdownMenuItem>
+        )}
+        {canUpdateProducts && (
+          <DropdownMenuItem onClick={() => onProductAction('edit', product.id)}>
+            <Edit className="mr-2 h-4 w-4" />
+            {t('actions.edit')}
+          </DropdownMenuItem>
+        )}
+        {canViewProducts && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onProductAction('view-orders', product.id)}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              {t('actions.viewOrders')}
+            </DropdownMenuItem>
+          </>
+        )}
+        {canManageProducts && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onProductAction('delete', product.id)} className="text-red-700 focus:text-red-800">
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t('actions.delete')}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+  const nameButton = (product: Product) => (
+    <button
+      type="button"
+      onClick={() => onProductAction('view', product.id)}
+      className="text-left text-sm font-medium text-gray-900 hover:text-blue-700 hover:underline"
+    >
+      {product.name}
+    </button>
+  );
+  const sortHeader = (column: string, label: string) => (
+    <button type="button" onClick={() => handleSort(column)} className="inline-flex items-center gap-1 hover:text-gray-900">
+      {label}
+      {sortBy === column && <span aria-hidden="true">{sortOrder === 'desc' ? '↓' : '↑'}</span>}
+    </button>
+  );
+  const th = 'px-3 py-2.5 text-left text-xs font-medium text-gray-600';
+
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
-      <div className="overflow-y-auto flex-1 h-full">
+    <Card className="flex h-full flex-col border border-gray-200 shadow-sm">
+      {/* Phones: one card per product */}
+      <ul className="divide-y divide-gray-100 md:hidden">
+        {products.map((product) => (
+          <li key={product.id} className="flex items-start gap-3 p-3">
+            {thumb(product, 'h-12 w-12')}
+            <div className="min-w-0 flex-1">
+              {nameButton(product)}
+              <p className="text-xs text-gray-600">
+                {[(product as any).category?.name, product.barcode].filter(Boolean).join(' · ')}
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-start gap-x-4 gap-y-1">
+                <p className="text-sm tabular-nums">
+                  <span className="font-semibold text-gray-900">{formatMoney(product.rentPrice || 0)}</span>
+                  <span className="text-xs text-gray-500">{pricingSuffix(product)}</span>
+                </p>
+                {stockCell(product)}
+              </div>
+            </div>
+            {actionsMenu(product)}
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden h-full flex-1 overflow-y-auto md:block">
         <table className="w-full">
-          {/* Table Header with Sorting - Sticky */}
-          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
             <tr>
-              {/* Select All Checkbox */}
               {onSelectionChange && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                <th className={`${th} w-10`}>
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -133,315 +215,69 @@ export function ProductTable({
                       if (input) input.indeterminate = someSelected;
                     }}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                    title={allSelected ? tc('actions.deselectAll') || 'Deselect all' : tc('actions.selectAll') || 'Select all'}
+                    className="h-4 w-4 cursor-pointer rounded text-blue-600 focus:ring-blue-500"
+                    aria-label={allSelected ? tc('actions.deselectAll') || 'Deselect all' : tc('actions.selectAll') || 'Select all'}
                   />
                 </th>
               )}
-              {/* Product Name - Sortable */}
-              <th 
-                onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  {t('productName')}
-                  {sortBy === 'name' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              
-              {/* Merchant */}
-              {showMerchantColumn && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Merchant
-                </th>
-              )}
-              
-              {/* Category */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {tc('labels.category')}
-              </th>
-              
-              {/* Price */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {tc('labels.price')}
-              </th>
-              
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('inventory.title')}
-              </th>
-              
-              {/* Status column hidden as requested */}
-              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {tc('labels.status')}
-              </th> */}
-              
-              {/* Created Date - Sortable */}
-              <th 
-                onClick={() => handleSort('createdAt')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  {tc('labels.createdAt')}
-                  {sortBy === 'createdAt' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              
-              {/* Actions */}
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {tc('labels.actions')}
+              <th className={th}>{sortHeader('name', t('productName'))}</th>
+              {showMerchantColumn && <th className={th}>Merchant</th>}
+              <th className={th}>{tc('labels.category')}</th>
+              <th className={`${th} text-right`}>{t('list.rentPrice')}</th>
+              <th className={th}>{t('list.stock')}</th>
+              <th className={`${th} hidden min-[1400px]:table-cell`}>{sortHeader('createdAt', tc('labels.createdAt'))}</th>
+              <th className={`${th} w-12`}>
+                <span className="sr-only">{tc('labels.actions')}</span>
               </th>
             </tr>
           </thead>
-          
-          {/* Table Body */}
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100 bg-white">
             {products.map((product) => {
-              const productIsSelected = isSelected(product.id);
+              const selected = isSelected(product.id);
               return (
-              <tr 
-                key={product.id} 
-                className={`transition-colors ${
-                  productIsSelected 
-                    ? 'bg-blue-50 dark:bg-blue-900/20' 
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                {/* Checkbox */}
-                {onSelectionChange && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={productIsSelected}
-                      onChange={() => handleToggleSelect(product.id)}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      aria-label={`Select product ${product.id}`}
-                    />
-                  </td>
-                )}
-                {/* Product Name with Image */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    {/* Product Thumbnail with fallback placeholder */}
-                    <div className="relative flex-shrink-0">
-                      {(() => {
-                        const imageUrl = getProductImageUrl(product);
-                        const hasValidImage =
-                          imageUrl &&
-                          imageUrl.trim() !== '' &&
-                          product.images &&
-                          product.images.length > 0;
-
-                        return hasValidImage ? (
-                          <ImageLightbox
-                            src={imageUrl}
-                            alt={product.name}
-                            triggerClassName="h-10 w-10 rounded border border-gray-200 dark:border-gray-700"
-                            imgClassName="rounded object-cover"
-                          />
-                        ) : null;
-                      })()}
-                      <div
-                        className={`${(() => {
-                          const imageUrl = getProductImageUrl(product);
-                          const hasValidImage =
-                            imageUrl &&
-                            imageUrl.trim() !== '' &&
-                            product.images &&
-                            product.images.length > 0;
-                          return hasValidImage ? 'hidden' : '';
-                        })()} flex h-10 w-10 items-center justify-center rounded border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800`}
-                      >
-                        <Package className="h-5 w-5 text-gray-400" />
+                <tr key={product.id} className={selected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                  {onSelectionChange && (
+                    <td className="px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => handleToggleSelect(product.id)}
+                        className="h-4 w-4 cursor-pointer rounded text-blue-600 focus:ring-blue-500"
+                        aria-label={t('list.select', { name: product.name })}
+                      />
+                    </td>
+                  )}
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-3">
+                      {thumb(product)}
+                      <div className="min-w-0">
+                        {nameButton(product)}
+                        {product.barcode && <p className="text-xs text-gray-600">{product.barcode}</p>}
                       </div>
                     </div>
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {product.name}
-                      </div>
-                      {product.barcode && (
-                        <div className="text-gray-500 dark:text-gray-400 text-xs">
-                          Barcode: {product.barcode}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                
-                {/* Merchant */}
-                {showMerchantColumn && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {(product as any).merchant?.name || 'N/A'}
-                    </div>
                   </td>
-                )}
-                
-                {/* Category */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {(product as any).category?.name || 'N/A'}
-                  </div>
-                </td>
-                
-                {/* Price */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
+                  {showMerchantColumn && (
+                    <td className="px-3 py-2.5 text-sm text-gray-900">{(product as any).merchant?.name || '—'}</td>
+                  )}
+                  <td className="px-3 py-2.5 text-sm text-gray-700">{(product as any).category?.name || '—'}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                    <p className="text-sm font-semibold tabular-nums text-gray-900">
                       {formatMoney(product.rentPrice || 0)}
-                      {(product as any).pricingType && (
-                        <span className="text-xs text-gray-500 ml-1">
-                          {((product as any).pricingType === 'HOURLY' 
-                            ? `/${t('pricing.durationUnitHours')}`
-                            : (product as any).pricingType === 'DAILY'
-                            ? `/${t('pricing.durationUnitDays')}`
-                            : '')}
-                        </span>
-                      )}
-                    </div>
-                    {product.salePrice && product.salePrice > 0 && (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        {t('price.sale')}: {formatMoney(product.salePrice)}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {(() => {
-                    const stockDisplay = resolveProductListStockDisplay(
-                      product as ProductListStockInput,
-                      scopedOutletId
-                    );
-                    return (
-                  <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.totalStock')}:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {stockDisplay.totalStock}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.rentedOut')}:</span>
-                      <span className="font-medium text-amber-700 dark:text-amber-400">
-                        {stockDisplay.renting}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 dark:text-gray-400 text-xs">{t('inventory.availableStock')}:</span>
-                      <span className="font-medium text-green-600 dark:text-green-400">
-                        {stockDisplay.available}
-                      </span>
-                    </div>
-                    {stockDisplay.showBranchesHint ? (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 pt-0.5 max-w-[12rem]" title={t('inventory.stockAllocation')}>
-                        {t('inventory.listRollupHint', { count: stockDisplay.outletBranchCount })}
+                      <span className="text-xs font-normal text-gray-500">{pricingSuffix(product)}</span>
+                    </p>
+                    {product.salePrice && product.salePrice > 0 ? (
+                      <p className="text-xs tabular-nums text-gray-600">
+                        {t('price.sale')} {formatMoney(product.salePrice)}
                       </p>
                     ) : null}
-                  </div>
-                    );
-                  })()}
-                </td>
-                
-                {/* Status cell hidden as requested */}
-                {/* <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(product.isActive)}
-                </td> */}
-                
-                {/* Created Date */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {product.createdAt ? useFormattedDateTime(product.createdAt) : 'N/A'}
-                  </div>
-                </td>
-                
-                {/* Actions - Dropdown Menu */}
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setOpenDropdownId(product.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end"
-                      open={openDropdownId === product.id}
-                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? product.id : null)}
-                    >
-                      {/* ✅ View - Available if user can view products */}
-                      {canViewProducts && (
-                      <DropdownMenuItem onClick={() => {
-                        onProductAction('view', product.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        {t('actions.viewDetails')}
-                      </DropdownMenuItem>
-                      )}
-                      
-                      {/* ✅ Edit - products.manage or products.update (not OUTLET_STAFF) */}
-                      {canUpdateProducts && (
-                      <DropdownMenuItem onClick={() => {
-                        onProductAction('edit', product.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        {t('actions.edit')}
-                      </DropdownMenuItem>
-                      )}
-                      
-                      {/* ✅ View Orders - Available if user can view orders */}
-                      {canViewProducts && (
-                        <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => {
-                        onProductAction('view-orders', product.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        {t('actions.viewOrders')}
-                      </DropdownMenuItem>
-                        </>
-                      )}
-                      
-                      {/* Activate/Deactivate hidden as requested */}
-                      {/* <DropdownMenuItem onClick={() => {
-                        onProductAction('toggle-status', product.id);
-                        setOpenDropdownId(null);
-                      }}>
-                        <Package className="h-4 w-4 mr-2" />
-                        {product.isActive ? t('actions.deactivate') : t('actions.activate')}
-                      </DropdownMenuItem> */}
-                      
-                      {/* ✅ Delete - Only available if user can manage products */}
-                      {canManageProducts && (
-                        <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          onProductAction('delete', product.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t('actions.delete')}
-                      </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            );
+                  </td>
+                  <td className="px-3 py-2.5">{stockCell(product)}</td>
+                  <td className="hidden whitespace-nowrap px-3 py-2.5 text-sm tabular-nums text-gray-600 min-[1400px]:table-cell">
+                    {product.createdAt ? createdFormat.format(new Date(product.createdAt as any)) : '—'}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">{actionsMenu(product)}</td>
+                </tr>
+              );
             })}
           </tbody>
         </table>

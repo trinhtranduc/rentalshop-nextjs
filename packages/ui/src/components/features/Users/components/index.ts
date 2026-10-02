@@ -21,3 +21,4 @@ export * from './UserFormValidation';
 // // New reusable components
 export { AccountManagementCard } from './AccountManagementCard';
 export { PermissionRoleView } from './PermissionRoleView';
+export { UserBadges, UserInfoCard, UserAccountPanel, userDisplayName } from './UserProfile';

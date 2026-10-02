@@ -218,7 +218,8 @@ export default function ProductViewPage() {
             )}
             {user && canManageProducts && (
               <Button 
-                variant="destructive" 
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                 onClick={handleDelete}
                 disabled={isDeleting}
               >

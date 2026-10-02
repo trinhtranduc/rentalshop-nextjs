@@ -7,7 +7,7 @@
 import { prisma } from './client';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import type { SimpleFilters, SimpleResponse } from './index';
-import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, generateUniqueTenantKey, generateTenantKeyFromName } from '@rentalshop/utils';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 // ============================================================================
@@ -776,7 +776,46 @@ export const findFirst = async (whereClause: any) => {
   });
 };
 
+
+/**
+ * Give a merchant a tenantKey if it has none, and return it.
+ * The public product link and the referral code are both built from it, so a merchant
+ * created before tenant keys existed (or by a seed) had neither. Idempotent.
+ */
+export async function ensureTenantKey(merchantId: number): Promise<string | null> {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true, name: true, tenantKey: true },
+  });
+  if (!merchant) return null;
+  if (merchant.tenantKey) return merchant.tenantKey;
+
+  const exists = async (key: string) => !!(await prisma.merchant.findUnique({ where: { tenantKey: key }, select: { id: true } }));
+  // A name with no latin letters or digits gives an empty key, so fall back to the id
+  const base = generateTenantKeyFromName(merchant.name || '') ? merchant.name : `shop${merchant.id}`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const key = await generateUniqueTenantKey(base, exists);
+    try {
+      // Only fill an empty key, so two concurrent calls cannot overwrite each other
+      const updated = await prisma.merchant.updateMany({
+        where: { id: merchant.id, tenantKey: null },
+        data: { tenantKey: key },
+      });
+      if (updated.count === 0) {
+        const current = await prisma.merchant.findUnique({ where: { id: merchant.id }, select: { tenantKey: true } });
+        return current?.tenantKey ?? null;
+      }
+      return key;
+    } catch (error: any) {
+      if (error?.code !== 'P2002') throw error; // unique clash with a key taken meanwhile: try again
+    }
+  }
+  return null;
+}
+
 export const simplifiedMerchants = {
+  ensureTenantKey,
   findById,
   findByEmail,
   findByTenantKey,

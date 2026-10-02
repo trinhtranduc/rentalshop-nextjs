@@ -7,6 +7,10 @@ import { Input } from './input';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { cn } from '@rentalshop/ui';
 
+const TRANSLATED_ITEM_NAMES = new Set([
+  'items', 'orders', 'products', 'customers', 'users', 'outlets', 'categories', 'merchants', 'posts', 'subscriptions',
+]);
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -27,6 +31,8 @@ export function Pagination({
   itemName = "items"
 }: PaginationProps) {
   const t = useCommonTranslations();
+  // Callers pass English keys ("orders", "products", ...); show them translated (#349)
+  const itemLabel = TRANSLATED_ITEM_NAMES.has(itemName) ? t(`pagination.items.${itemName}`) : itemName;
   // Optimistic state for immediate visual feedback
   const [optimisticPage, setOptimisticPage] = useState<number | null>(null);
   // Input state for items per page
@@ -132,11 +138,11 @@ export function Pagination({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 w-full overflow-x-auto">
       <div className="flex items-center gap-4 flex-wrap">
         <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-          {t('pagination.showing')} {startItem} {t('pagination.to')} {endItem} {t('pagination.of')} {total} {itemName}
+          {t('pagination.showing')} {startItem} {t('pagination.to')} {endItem} {t('pagination.of')} {total} {itemLabel}
         </div>
         {onLimitChange && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Items per page:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('pagination.itemsPerPage')}:</span>
             <div className="flex items-center gap-1">
               <Input
                 type="text"
@@ -145,6 +151,7 @@ export function Pagination({
                 onChange={(e) => handleLimitInputChange(e.target.value)}
                 onKeyDown={handleLimitInputKeyDown}
                 onBlur={handleLimitInputSubmit}
+                aria-label={t('pagination.itemsPerPage')}
                 className="w-16 h-8 text-center text-sm px-2"
                 min={1}
                 max={3000}
@@ -156,7 +163,7 @@ export function Pagination({
                 disabled={!limitInput || parseInt(limitInput, 10) < 1 || parseInt(limitInput, 10) > 3000}
                 className="h-8 px-2"
               >
-                Apply
+                {t('pagination.apply')}
               </Button>
             </div>
             {/* Quick select buttons for common values */}

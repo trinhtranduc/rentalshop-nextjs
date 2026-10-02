@@ -81,7 +81,8 @@ export async function buildAuthLoginSuccessResponse(
         pricingType: merchant.pricingType || undefined,
         taxId: merchant.taxId || undefined,
         currency: (merchant as any).currency || 'USD',
-        tenantKey: (merchant as any).tenantKey || undefined,
+        // Older merchants have no key; give them one so the product link and referral code exist
+        tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
         subscription: subscriptionData,
       };
     }
@@ -104,7 +105,10 @@ export async function buildAuthLoginSuccessResponse(
           ? {
               id: (outlet as any).merchant.id,
               name: (outlet as any).merchant.name,
-              tenantKey: (outlet as any).merchant.tenantKey || undefined,
+              tenantKey:
+                (outlet as any).merchant.tenantKey ||
+                (await db.merchants.ensureTenantKey((outlet as any).merchant.id)) ||
+                undefined,
             }
           : undefined,
       };
@@ -118,9 +122,11 @@ export async function buildAuthLoginSuccessResponse(
   // Detect platform for session and token expiry
   const platformInfo = detectPlatform(request);
   const isMobile = platformInfo.platform === 'mobile';
-  const sessionExpiryDays = isMobile ? 30 : 7;
-
-  const session = await db.sessions.createUserSession(user.id, ipAddress, userAgent, sessionExpiryDays);
+  // Mobile sessions slide: 30 days idle, 90 days absolute (= mobile JWT lifetime).
+  // Web sessions keep a fixed 7 days.
+  const session = isMobile
+    ? await db.sessions.createUserSession(user.id, ipAddress, userAgent, 30, { absoluteDays: 90 })
+    : await db.sessions.createUserSession(user.id, ipAddress, userAgent, 7);
 
   const passwordChangedAt = (user as any).passwordChangedAt
     ? Math.floor((user as any).passwordChangedAt.getTime() / 1000)
@@ -160,9 +166,9 @@ export async function buildAuthLoginSuccessResponse(
       permissionsChangedAt,
     } as any;
 
-    // Mobile gets 30-day token (can't easily refresh without app rebuild)
+    // Mobile gets a 90-day token (store builds cannot refresh); the session check still applies
     if (isMobile) {
-      console.log('📱 LOGIN: Mobile platform detected, issuing 30-day token');
+      console.log('📱 LOGIN: Mobile platform detected, issuing 90-day token');
       return generateMobileToken(tokenPayload);
     }
 

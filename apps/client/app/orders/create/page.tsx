@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
   Card, 
   CardContent, 
-  Button,
   PageWrapper,
   useToast,
   FormSkeleton,
@@ -26,7 +25,6 @@ import {
   categoriesApi
 } from '@rentalshop/utils';
 import { useAuth, useOrderTranslations, useCommonTranslations, useDashboardTranslations } from '@rentalshop/hooks';
-import { Package, Tag, Users, ArrowUpRight, PackageCheck } from 'lucide-react';
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -39,7 +37,7 @@ export default function CreateOrderPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
-  const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number }>>([]);
+  const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number; printNote?: string | null }>>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [resetFormFn, setResetFormFn] = useState<(() => void) | null>(null);
   
@@ -121,7 +119,8 @@ export default function CreateOrderPage() {
           const mapped = outletsArray.map((o: any) => ({ 
             id: o.id, // Use the id field that's already provided by the API
             name: o.name,
-            merchantId: o.merchantId || o.merchant?.id
+            merchantId: o.merchantId || o.merchant?.id,
+            printNote: o.printNote ?? null, // RENT receipt footer after create (#347)
           }));
           
           console.log('🔍 Mapped outlets for frontend:', mapped);
@@ -305,7 +304,7 @@ export default function CreateOrderPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-6 px-6">
+            <div className="space-y-2 lg:px-2">
           <CreateOrderForm
             onSubmit={handleSubmit}
             onCancel={handleCancel}
@@ -318,50 +317,12 @@ export default function CreateOrderPage() {
             onFormReady={handleFormReady}
           />
               
-              {/* Quick Actions - Similar to Dashboard */}
-              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4 text-gray-900">{td('quickActions.title')}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
-                    onClick={() => setShowProductDialog(true)}
-                  >
-                    <PackageCheck className="w-5 h-5 text-gray-700" />
-                    <div className="text-left flex-1">
-                      <p className="font-semibold text-sm text-gray-900">{td('quickActions.addProduct')}</p>
-                      <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
-                    onClick={() => setShowCategoryDialog(true)}
-                  >
-                    <Tag className="w-5 h-5 text-gray-700" />
-                    <div className="text-left flex-1">
-                      <p className="font-semibold text-sm text-gray-900">{td('quickActions.addCategory')}</p>
-                      <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
-                    onClick={() => setShowCustomerDialog(true)}
-                  >
-                    <Users className="w-5 h-5 text-gray-700" />
-                    <div className="text-left flex-1">
-                      <p className="font-semibold text-sm text-gray-900">{td('quickActions.addCustomer')}</p>
-                      <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Button>
-                </div>
-              </div>
+              {/* Rarely needed while selling: one quiet link instead of a card (customer add lives in the customer search) */}
+              <p className="pb-4 text-center text-sm text-gray-600">
+                <button type="button" onClick={() => setShowProductDialog(true)} className="font-medium text-blue-700 hover:underline">
+                  + {td('quickActions.addProduct')}
+                </button>
+              </p>
             </div>
 
             {/* Quick Action Dialogs */}

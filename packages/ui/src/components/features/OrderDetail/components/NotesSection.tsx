@@ -1,5 +1,7 @@
 import React from 'react';
-import { FileText, AlertCircle, Info, MessageSquare } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { useOrderTranslations } from '@rentalshop/hooks';
+import { formatCurrency } from '@rentalshop/utils';
 
 /** Order shape needed for notes + images (OrderWithDetails or OrderData) */
 interface NotesSectionOrder {
@@ -23,136 +25,55 @@ interface NotesSectionProps {
 const imagesToArray = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
-const NoteCard: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  content: string | null | undefined;
-  images?: string[];
-  className?: string;
-}> = ({ icon, title, content, images = [], className = '' }) => {
-  const hasContent = content || images.length > 0;
-  if (!hasContent) return null;
 
-  return (
-    <div className={`border border-gray-200 rounded-lg p-4 bg-gray-50 ${className}`}>
-      <div className="flex items-start space-x-3">
-        <div className="flex-shrink-0 mt-1">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-700 mb-2">{title}</h4>
-          {content ? (
-            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap mb-3">{content}</p>
-          ) : null}
-          {images.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {images.map((url, i) => (
-                <a
-                  key={`${url}-${i}`}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-16 h-16 rounded border border-gray-200 overflow-hidden bg-gray-100 hover:opacity-90"
-                >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                </a>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-};
 
+/** All notes in one card: one labelled line each (general, pickup, return, damage), with the general note's photos. */
 export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
-  // Note images are shown only in OrderSettingsCard (right). Here we only show text notes to avoid duplicate.
-  const hasNotes =
-    order.notes ||
-    order.pickupNotes ||
-    order.returnNotes ||
-    order.damageNotes;
+  const t = useOrderTranslations();
+  const rows: Array<{ key: string; label: string; content?: string; images?: string[]; tone?: string }> = [
+    { key: 'notes', label: t('detailNotes.general'), content: order.notes, images: imagesToArray(order.notesImages) },
+    { key: 'pickup', label: t('detailNotes.pickup'), content: order.pickupNotes },
+    { key: 'return', label: t('detailNotes.return'), content: order.returnNotes },
+    { key: 'damage', label: t('detailNotes.damage'), content: order.damageNotes, tone: 'text-red-800' },
+  ].filter((row) => row.content || (row.images && row.images.length > 0));
+  const extras: Array<{ label: string; value: string }> = [];
+  if (order.bailAmount && order.bailAmount > 0) extras.push({ label: t('detail.bailAmount'), value: formatCurrency(order.bailAmount, 'VND') });
+  if (order.material) extras.push({ label: t('detail.material'), value: order.material });
 
-  if (!hasNotes) {
-    return (
-      <div className="text-center py-6 text-gray-500">
-        <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-        <p className="text-sm">No notes or additional information available</p>
-      </div>
-    );
-  }
+  // No notes: show nothing instead of a large empty placeholder
+  if (rows.length === 0 && extras.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {/* General Notes - images only in OrderSettingsCard (right), no duplicate here */}
-      <NoteCard
-        icon={<FileText className="w-4 h-4 text-gray-600" />}
-        title="General Notes"
-        content={order.notes}
-        images={[]}
-      />
-
-      {/* Pickup Notes - images disabled for now, re-enable when supporting pickupNotesImages */}
-      <NoteCard
-        icon={<Info className="w-4 h-4 text-gray-600" />}
-        title="Pickup Notes"
-        content={order.pickupNotes}
-        images={[]}
-      />
-
-      {/* Return Notes - images disabled for now, re-enable when supporting returnNotesImages */}
-      <NoteCard
-        icon={<Info className="w-4 h-4 text-gray-600" />}
-        title="Return Notes"
-        content={order.returnNotes}
-        images={[]}
-      />
-
-      {/* Damage Notes - images disabled for now, re-enable when supporting damageNotesImages */}
-      <NoteCard
-        icon={<AlertCircle className="w-4 h-4 text-gray-600" />}
-        title="Damage Notes"
-        content={order.damageNotes}
-        images={[]}
-      />
-
-      {/* Additional Information */}
-      {(order.bailAmount || order.material || order.damageFee) && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h4 className="font-medium text-gray-700 mb-3 flex items-center">
-            <Info className="w-4 h-4 text-gray-600 mr-2" />
-            Additional Details
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {order.bailAmount && order.bailAmount > 0 && (
-              <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Bail Amount</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  ${order.bailAmount.toFixed(2)}
-                </p>
-              </div>
-            )}
-            
-            {order.material && (
-              <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Material</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {order.material}
-                </p>
-              </div>
-            )}
-            
-            {order.damageFee && order.damageFee > 0 && (
-              <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Damage Fee</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  ${order.damageFee.toFixed(2)}
-                </p>
-              </div>
-            )}
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5" aria-labelledby="order-notes-title">
+      <h2 id="order-notes-title" className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <FileText className="h-4 w-4 text-slate-500" aria-hidden="true" />
+        {t('detailNotes.title')}
+      </h2>
+      <dl className="divide-y divide-slate-100 text-sm">
+        {rows.map((row) => (
+          <div key={row.key} className="grid gap-1 py-2 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-3">
+            <dt className="text-xs font-medium text-slate-600 sm:pt-0.5">{row.label}</dt>
+            <dd className={`min-w-0 ${row.tone || 'text-slate-800'}`}>
+              {row.content && <p className="whitespace-pre-wrap leading-relaxed">{row.content}</p>}
+              {row.images && row.images.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {row.images.map((url, i) => (
+                    <a key={`${url}-${i}`} href={url} target="_blank" rel="noopener noreferrer" className="block h-14 w-14 overflow-hidden rounded-md border border-slate-200 bg-slate-100 hover:opacity-90">
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </dd>
           </div>
-        </div>
-      )}
-    </div>
+        ))}
+        {extras.map((row) => (
+          <div key={row.label} className="grid gap-1 py-2 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-3">
+            <dt className="text-xs font-medium text-slate-600 sm:pt-0.5">{row.label}</dt>
+            <dd className="text-slate-800">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 };

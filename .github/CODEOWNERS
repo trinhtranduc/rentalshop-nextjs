@@ -1,0 +1,11 @@
+# Default owner. Critical paths are repeated so review requests stay obvious.
+* @trinhtranduc
+
+/apps/api/ @trinhtranduc
+/packages/auth/ @trinhtranduc
+/prisma/ @trinhtranduc
+/apps/mobile/ @trinhtranduc
+/apps/mobile-android/ @trinhtranduc
+/.github/ @trinhtranduc
+/AGENTS.md @trinhtranduc
+/CLAUDE.md @trinhtranduc

@@ -15,6 +15,8 @@ import type { OutletReference, MerchantReference } from '@rentalshop/types';
 import { formatCurrency, formatPhoneNumber } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { resolveReceiptPrintNote } from './receipt-print-note';
+import { computeReceiptTotals } from './receipt-totals';
 
 interface ReceiptPreviewModalProps {
   isOpen: boolean;
@@ -281,6 +283,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   // Get shop address from order.outlet, outlet prop, or merchant
   const shopAddress = order.outlet?.address || outlet?.address || (merchant as any)?.address || '';
   
+  // Outlet note for the RENT footer (#347)
+  const printNote = resolveReceiptPrintNote(order, outlet);
+
   // Get customer name from order.customer object or flattened fields
   const customerName = order.customer 
     ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'
@@ -293,10 +298,8 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
   const formatDateTime = useFormattedDateTime; // For createdAt (with time)
 
-  // Calculate totals
-  const subtotal = order.totalAmount || 0;
-  const discount = order.discountAmount || 0;
-  const total = subtotal - discount;
+  // totalAmount is stored after the discounts: it is the total, not the subtotal (#352)
+  const { subtotal, discount, loyaltyDiscount, total } = computeReceiptTotals(order);
 
   return (
     <div className="bg-white p-4 rounded-lg border font-mono text-sm leading-tight max-w-2xl mx-auto">
@@ -408,26 +411,20 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
       <div className="mb-2"></div>
       <div className="text-right font-bold">
         <div>{t('receipt.subtotal')}: {formatCurrency(subtotal, 'VND')}</div>
-        {order.discountAmount && order.discountAmount > 0 ? (
-          <>
-            <div>
-              {t('receipt.discount')}: {formatCurrency(order.discountAmount, 'VND')} 
-              {order.discountType === 'percentage' && order.discountValue 
-                ? ` (${order.discountValue}%)` 
-                : ''}
-            </div>
-            <div>------------------------------------------------</div>
-            <div>{t('receipt.total')}: {formatCurrency(total, 'VND')}</div>
-            <div></div>
-          </>
-        ) : (
-          <>
-            <div>{t('receipt.discount')}: 0</div>
-            <div>------------------------------------------------</div>
-            <div>{t('receipt.total')}: {formatCurrency(subtotal, 'VND')}</div>
-            <div></div>
-          </>
+        <div>
+          {t('receipt.discount')}: {discount > 0 ? formatCurrency(discount, 'VND') : 0}
+          {discount > 0 && order.discountType === 'percentage' && order.discountValue
+            ? ` (${order.discountValue}%)`
+            : ''}
+        </div>
+        {loyaltyDiscount > 0 && (
+          <div>
+            {t('receipt.loyaltyDiscount')}: {formatCurrency(loyaltyDiscount, 'VND')}
+          </div>
         )}
+        <div>------------------------------------------------</div>
+        <div>{t('receipt.total')}: {formatCurrency(total, 'VND')}</div>
+        <div></div>
       </div>
       
       {/* Footer for rent orders */}
@@ -437,6 +434,13 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
             <>
               <div className="text-center font-bold">{t('receipt.note')}</div>
               <div>{order.notes}</div>
+            </>
+          )}
+          {printNote && (
+            <>
+              <div>------------------------------------------------</div>
+              {/* Inline style: the print iframe has no Tailwind; keep the note's line breaks */}
+              <div style={{ whiteSpace: 'pre-wrap' }}>{printNote}</div>
             </>
           )}
           <div>------------------------------------------------</div>

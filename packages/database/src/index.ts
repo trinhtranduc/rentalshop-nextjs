@@ -22,6 +22,7 @@ import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
+import { outletOperations } from './outlet-operations';
 import { refreshTokens } from './refresh-tokens';
 import { deviceTokens } from './device-tokens';
 import { notifications } from './notifications';
@@ -173,6 +174,9 @@ const db = {
   // SESSION OPERATIONS (Single Session Enforcement)
   // ============================================================================
   sessions,
+
+  // OUTLET OPERATIONS PANEL (#350)
+  outletOperations,
 
   // ============================================================================
   // REFRESH TOKEN OPERATIONS

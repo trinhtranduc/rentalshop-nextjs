@@ -2,6 +2,51 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
 
+export interface OutletOperationsOrder {
+  id: number;
+  orderNumber: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  pickupPlanAt: string | null;
+  returnPlanAt: string | null;
+  totalAmount: number;
+  depositAmount: number;
+  securityDeposit: number;
+  isReadyToDeliver: boolean;
+  itemCount: number;
+  productNames: string;
+  daysOverdue?: number;
+}
+
+export interface OutletOperationsList {
+  count: number;
+  orders: OutletOperationsOrder[];
+}
+
+export interface OutletOperations {
+  /** Vietnam civil day `YYYY-MM-DD` */
+  date: string;
+  outletIds: number[];
+  pickupsToday: OutletOperationsList;
+  returnsToday: OutletOperationsList;
+  overdueReturns: OutletOperationsList;
+  noShows: OutletOperationsList;
+  /** Due back in the 3 civil days after today */
+  returnsSoon: OutletOperationsList;
+  /** Rentals already handed over / taken back today (not cancelled) */
+  doneToday: { pickups: number; returns: number };
+  /** New orders per Vietnam civil day, last 7 days, oldest first (today last) */
+  newOrdersByDay: { date: string; count: number }[];
+  /** Tomorrow's planned hand-overs (RESERVED) and returns (PICKUPED) */
+  tomorrow?: { pickups: number; returns: number } | null;
+  /** Managers only */
+  cash: {
+    depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };
+    depositsDueToday: { depositAmount: number; securityDeposit: number; orders: number };
+    feesToday: { lateFee: number; damageFee: number; orders: number };
+  } | null;
+}
+
 export interface AnalyticsFilters {
   startDate?: string;
   endDate?: string;
@@ -304,6 +349,18 @@ export const analyticsApi = {
     const url = `${apiUrls.analytics.todayMetrics}?t=${Date.now()}`;
     const response = await authenticatedFetch(url);
     return await parseApiResponse<any>(response);
+  },
+
+  /**
+   * Today's work for an outlet team (#350): handovers, returns, overdue, no-shows,
+   * and deposits/fees for managers (`cash` is null for staff).
+   * @param outletIds - merchant only: narrow to these outlets
+   */
+  async getOutletOperations(outletIds?: number[]): Promise<ApiResponse<OutletOperations>> {
+    const params = new URLSearchParams({ t: String(Date.now()) });
+    if (outletIds && outletIds.length > 0) params.set('outletIds', outletIds.join(','));
+    const response = await authenticatedFetch(`${apiUrls.analytics.outletOperations}?${params}`);
+    return await parseApiResponse<OutletOperations>(response);
   },
 
   /**

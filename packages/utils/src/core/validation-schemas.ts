@@ -519,6 +519,13 @@ export const categoriesQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+// Printed at the bottom of RENT receipts (#347). Blank clears it (stored as null).
+const outletPrintNoteSchema = z
+  .string()
+  .max(500, 'Print note must be at most 500 characters')
+  .transform((value) => (value.trim() === '' ? null : value))
+  .optional();
+
 export const outletCreateSchema = z.object({
   name: z.string().min(1, 'Outlet name is required'),
   address: z.string().optional(),
@@ -528,6 +535,7 @@ export const outletCreateSchema = z.object({
   country: z.string().optional(),
   phone: z.string().optional(),
   description: z.string().optional(),
+  printNote: outletPrintNoteSchema,
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
   // merchantId is optional - will be set from userScope or request body for ADMIN
   merchantId: z.coerce.number().int().positive().optional(),
@@ -543,6 +551,7 @@ export const outletUpdateSchema = z.object({
   zipCode: z.string().optional(),
   country: z.string().optional(),
   description: z.string().optional(),
+  printNote: outletPrintNoteSchema,
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });

@@ -72,7 +72,7 @@
     "orderSettings": "Order Settings",
     "orderActions": "Order Actions",
     "viewAndManage": "View and manage order information",
-    "seller": "Seller",
+    "seller": "Outlet",
     "orderDate": "Order Date",
     "editSettings": "Edit Settings",
     "saveChanges": "Save Changes",
@@ -116,7 +116,13 @@
     "orderNumberLabel": "Order",
     "customerLabel": "Customer",
     "statusLabel": "Status",
-    "close": "Close"
+    "close": "Close",
+    "generalNotes": "General notes",
+    "pickupNotes": "Pickup notes",
+    "returnNotes": "Return notes",
+    "damageNotes": "Damage notes",
+    "bailAmount": "Bail amount",
+    "material": "Material"
   },
   "payment": {
     "subtotal": "Subtotal",
@@ -174,7 +180,9 @@
     "confirmCreate": "Confirm & Create Order",
     "backToEdit": "Back to Edit",
     "orderPreview": "Order Preview",
-    "reviewBeforeConfirm": "Review your order details before confirming"
+    "reviewBeforeConfirm": "Review your order details before confirming",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all"
   },
   "messages": {
     "createOrder": "Create Order",
@@ -393,7 +401,168 @@
     "customerSignature": "Customer Signature",
     "storeSignature": "Store Signature",
     "thankYou": "THANK YOU FOR SHOPPING",
-    "downloadApp": "Download RentalShop on App Store"
+    "downloadApp": "Download RentalShop on App Store",
+    "loyaltyDiscount": "Loyalty discount"
+  },
+  "form": {
+    "itemsTitle": "Items",
+    "searchHint": "Search items by name, code or barcode to add them.",
+    "emptyTitle": "No items yet",
+    "pricing": {
+      "FIXED": "Per rental",
+      "DAILY": "Per day",
+      "HOURLY": "Per hour"
+    },
+    "timesDays": "× {days} days",
+    "pricingMethod": "Pricing",
+    "depositPerUnit": "Deposit per unit",
+    "itemNote": "Item note",
+    "moreOptions": "Options for {name}",
+    "remove": "Remove {name}",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "lineTotal": "Line total",
+    "depositLine": "Deposit {amount}",
+    "avail": {
+      "free": "{free}/{total} free",
+      "short": "Short {count} · {free} free",
+      "checking": "Checking…",
+      "pickDates": "Pick dates to see what is free",
+      "stock": "{available}/{total} in stock",
+      "error": "Could not check"
+    },
+    "orderType": {
+      "RENT": "Rent",
+      "SALE": "Sale"
+    },
+    "depositAuto": "Added up from the items’ deposits; you can change it.",
+    "summary": {
+      "rentTotal": "Rental",
+      "saleTotal": "Goods",
+      "orderTotal": "Order total",
+      "collectNow": "Collect now",
+      "remainingAtPickup": "Balance at pickup"
+    },
+    "missing": {
+      "title": "Still needed: {fields}",
+      "customer": "customer",
+      "dates": "rental dates",
+      "items": "items",
+      "outlet": "outlet"
+    },
+    "shortWarning": "Not enough stock for this period: {names}",
+    "reset": "Reset",
+    "resetConfirm": "Remove all items and entered details?",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "quick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "weekend": "Weekend",
+      "threeDays": "3 days"
+    },
+    "customerTitle": "Customer",
+    "paymentTitle": "Payment",
+    "orderTitle": "Order",
+    "loyalty": {
+      "loading": "Loading points…",
+      "points": "{points} points",
+      "use": "Use points",
+      "redeem": "Redeem (max {max})",
+      "earnRent": "About {points} points on return",
+      "earn": "Earns {points} points"
+    },
+    "depositHint": "Added up from the items"
+  },
+  "detailMoney": {
+    "stage": {
+      "pickup": "Collect at pickup",
+      "collectAtReturn": "Collect at return",
+      "refundAtReturn": "Refund at return",
+      "sale": "To collect",
+      "done": "Nothing more to collect"
+    },
+    "depositPaid": "Deposit paid",
+    "securityDeposit": "Security deposit",
+    "damageFee": "Damage fee",
+    "lateFee": "Late fee",
+    "securityBack": "Security deposit back",
+    "holdCollateral": "Also hold",
+    "returnCollateral": "Give back"
+  },
+  "detailHeader": {
+    "title": "Order #{number}",
+    "print": "Print receipt",
+    "edit": "Edit",
+    "more": "More actions",
+    "pickup": "Hand over",
+    "return": "Take back",
+    "status": {
+      "RESERVED": "Reserved",
+      "PICKUPED": "Picked up",
+      "RETURNED": "Returned",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "steps": {
+      "RESERVED": "Reserved",
+      "PICKUPED": "Handed over",
+      "RETURNED": "Returned"
+    }
+  },
+  "detailInfo": {
+    "customer": "Customer",
+    "schedule": "Rental",
+    "saleDate": "Sale date",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "late": "{count, plural, one {# day late} other {# days late}}",
+    "pickedUpAt": "Handed over {date}",
+    "returnedAt": "Returned {date}",
+    "created": "Created {date}",
+    "createdBy": "Created {date} by {name}",
+    "copied": "Phone number copied",
+    "copyPhone": "Copy phone number"
+  },
+  "detailItems": {
+    "title": "Items",
+    "depositEach": "deposit {amount}/unit"
+  },
+  "detailNotes": {
+    "title": "Notes",
+    "general": "General",
+    "pickup": "At pickup",
+    "return": "At return",
+    "damage": "Damage"
+  },
+  "detailSettings": {
+    "title": "Collateral & fees",
+    "edit": "Edit collateral & fees",
+    "empty": "No collateral held, no fees.",
+    "holding": "Holding",
+    "notForThisState": "not for this state",
+    "noteImages": "Note photos",
+    "collateral": {
+      "ID_CARD": "ID card",
+      "DOCUMENT": "Document",
+      "CASH": "Cash",
+      "CREDIT_CARD": "Credit card",
+      "DRIVER_LICENSE": "Driver license",
+      "PASSPORT": "Passport",
+      "OTHER": "Other"
+    }
+  },
+  "dialogs": {
+    "handover": {
+      "title": "Hand over to customer",
+      "collect": "Collect from customer",
+      "confirm": "Confirm hand-over"
+    },
+    "takeBack": {
+      "title": "Take back",
+      "collectMore": "Collect from customer",
+      "refund": "Refund to customer",
+      "nothing": "No money changes hands",
+      "confirm": "Confirm take-back"
+    }
   }
 }
-

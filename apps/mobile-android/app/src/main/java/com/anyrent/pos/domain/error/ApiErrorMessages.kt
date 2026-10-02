@@ -40,6 +40,7 @@ object ApiErrorMessages {
         "INVALID_CREDENTIALS" -> R.string.api_error_invalid_credentials
         "UNAUTHORIZED", "SESSION_EXPIRED", "TOKEN_EXPIRED", "INVALID_TOKEN" ->
             R.string.api_error_session_expired
+        "SESSION_REPLACED" -> R.string.api_error_session_replaced
         else -> 0
     }
 

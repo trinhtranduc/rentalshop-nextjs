@@ -45,6 +45,11 @@ interface UserFormProps {
   onCancel?: () => void;
   isSubmitting?: boolean;
   currentUser?: User | null;
+  /**
+   * 'page' = sections in cards, sticky save bar; 'dialog' = plain stacked form.
+   * Both drop the read-only recap: the page header or the dialog title already says who it is.
+   */
+  layout?: 'stacked' | 'page' | 'dialog';
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
@@ -53,8 +58,12 @@ export const UserForm: React.FC<UserFormProps> = ({
   onSave,
   onCancel,
   isSubmitting: externalIsSubmitting,
-  currentUser
+  currentUser,
+  layout = 'stacked'
 }) => {
+  const isPage = layout === 'page';
+  // On the page each group is its own card; in a dialog groups are split by a rule
+  const groupClass = isPage ? 'rounded-xl border border-gray-200 bg-white p-4 sm:p-5' : 'border-t pt-4 mt-4';
   const t = useUsersTranslations();
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
@@ -270,8 +279,13 @@ export const UserForm: React.FC<UserFormProps> = ({
       if (merchantId) {
         // Try to get tenantKey from merchants list first
         const selectedMerchant = merchants.find(m => m.id === merchantId);
+        // GET /merchants/:id is for ADMIN/OPS/MERCHANT only; outlet roles got a 403 here.
+        // tenantKey only feeds the email placeholder, so they simply go without it.
+        const canReadMerchant = ['ADMIN', 'OPS', 'MERCHANT'].includes(currentUser?.role || '');
         if (selectedMerchant?.tenantKey) {
           setTenantKey(selectedMerchant.tenantKey);
+        } else if (!canReadMerchant) {
+          setTenantKey('');
         } else {
           // Fetch merchant details to get tenantKey
           merchantsApi.getMerchantById(merchantId)
@@ -297,7 +311,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       // In edit mode, clear tenantKey placeholder
       setTenantKey('');
     }
-  }, [formData.merchantId, merchants, isEditMode]);
+  }, [formData.merchantId, merchants, isEditMode, currentUser?.role]);
 
   // Load outlets data (create mode only)
   useEffect(() => {
@@ -475,8 +489,8 @@ export const UserForm: React.FC<UserFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
           {/* Personal Information */}
-          <div>
-        <h3 className="text-sm font-medium text-text-primary mb-4">
+          <div className={isPage ? groupClass : undefined}>
+        <h3 className={isPage ? 'text-sm font-semibold text-gray-900 mb-4' : 'text-sm font-medium text-text-primary mb-4'}>
               {isEditMode ? t('fields.basicInformation') : t('fields.personalInformation')}
             </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -533,8 +547,8 @@ export const UserForm: React.FC<UserFormProps> = ({
 
           {/* Organization Assignment */}
           {(showMerchantField || showOutletField) && (
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-sm font-medium text-text-primary mb-4">
+        <div className={groupClass}>
+          <h3 className={isPage ? 'text-sm font-semibold text-gray-900 mb-4' : 'text-sm font-medium text-text-primary mb-4'}>
                 {t('organizationAssignment')}
               </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -572,8 +586,8 @@ export const UserForm: React.FC<UserFormProps> = ({
 
           {/* Password Section (Create mode only) */}
           {!isEditMode && (
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-sm font-medium text-text-primary mb-4">
+        <div className={groupClass}>
+          <h3 className={isPage ? 'text-sm font-semibold text-gray-900 mb-4' : 'text-sm font-medium text-text-primary mb-4'}>
                 {t('passwordSettings')}
               </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -605,10 +619,10 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           )}
 
-          {/* User Information (Edit mode only) */}
-          {isEditMode && user && (
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-sm font-medium text-text-primary mb-4">
+          {/* User Information (Edit mode only; the page shows it beside the form) */}
+          {isEditMode && user && layout === 'stacked' && (
+        <div className={groupClass}>
+          <h3 className={isPage ? 'text-sm font-semibold text-gray-900 mb-4' : 'text-sm font-medium text-text-primary mb-4'}>
                 {t('currentUserInformation')}
               </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -659,7 +673,13 @@ export const UserForm: React.FC<UserFormProps> = ({
           )}
 
           {/* Action Buttons */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+      <div
+        className={
+          isPage
+            ? 'sticky bottom-0 z-20 flex flex-wrap items-center justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 px-4 py-3 backdrop-blur'
+            : 'flex justify-end gap-3 mt-6 pt-4 border-t'
+        }
+      >
         <Button
           type="button"
           variant="outline"
