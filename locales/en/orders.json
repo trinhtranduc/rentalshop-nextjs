@@ -116,7 +116,13 @@
     "orderNumberLabel": "Order",
     "customerLabel": "Customer",
     "statusLabel": "Status",
-    "close": "Close"
+    "close": "Close",
+    "generalNotes": "General notes",
+    "pickupNotes": "Pickup notes",
+    "returnNotes": "Return notes",
+    "damageNotes": "Damage notes",
+    "bailAmount": "Bail amount",
+    "material": "Material"
   },
   "payment": {
     "subtotal": "Subtotal",
@@ -174,7 +180,9 @@
     "confirmCreate": "Confirm & Create Order",
     "backToEdit": "Back to Edit",
     "orderPreview": "Order Preview",
-    "reviewBeforeConfirm": "Review your order details before confirming"
+    "reviewBeforeConfirm": "Review your order details before confirming",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all"
   },
   "messages": {
     "createOrder": "Create Order",

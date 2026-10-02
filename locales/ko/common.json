@@ -130,7 +130,21 @@
     "rowsPerPage": "페이지당 행 수",
     "first": "첫 페이지",
     "last": "마지막 페이지",
-    "noData": "표시할 데이터 없음"
+    "noData": "표시할 데이터 없음",
+    "itemsPerPage": "페이지당 항목 수",
+    "apply": "적용",
+    "items": {
+      "items": "개 항목",
+      "orders": "개 주문",
+      "products": "개 상품",
+      "customers": "명 고객",
+      "users": "명 사용자",
+      "outlets": "개 매장",
+      "categories": "개 카테고리",
+      "merchants": "개 가맹점",
+      "posts": "개 게시물",
+      "subscriptions": "개 구독"
+    }
   },
   "time": {
     "today": "오늘",
@@ -168,5 +182,8 @@
     "MERCHANT": "상인",
     "OUTLET_ADMIN": "매장 관리자",
     "OUTLET_STAFF": "매장 직원"
+  },
+  "actions": {
+    "selectAll": "모두 선택"
   }
 }

@@ -116,7 +116,13 @@
     "orderNumberLabel": "Đơn hàng",
     "customerLabel": "Khách hàng",
     "statusLabel": "Trạng thái",
-    "close": "Đóng"
+    "close": "Đóng",
+    "generalNotes": "Ghi chú chung",
+    "pickupNotes": "Ghi chú lấy hàng",
+    "returnNotes": "Ghi chú trả hàng",
+    "damageNotes": "Ghi chú hư hỏng",
+    "bailAmount": "Tiền bảo lãnh",
+    "material": "Vật thế chấp"
   },
   "payment": {
     "subtotal": "Tạm tính",

@@ -156,6 +156,7 @@
     "imagesSelected": "ảnh đã chọn"
   },
   "filters": {
+    "loading": "Đang tải...",
     "all": "Tất cả sản phẩm",
     "available": "Có sẵn",
     "rented": "Đang cho thuê",

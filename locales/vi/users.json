@@ -51,7 +51,8 @@
     "basicInformation": "Thông tin cơ bản",
     "personalInformation": "Thông tin cá nhân",
     "roleAndPermissions": "Vai trò & Quyền hạn",
-    "readOnly": "Chỉ đọc"
+    "readOnly": "Chỉ đọc",
+    "emailStatus": "Xác thực email"
   },
   "roles": {
     "ADMIN": "Quản trị hệ thống",
@@ -136,7 +137,8 @@
     "byRole": "Lọc theo vai trò",
     "byOutlet": "Lọc theo cửa hàng",
     "active": "Đang hoạt động",
-    "inactive": "Không hoạt động"
+    "inactive": "Không hoạt động",
+    "allRoles": "Tất cả vai trò"
   },
   "stats": {
     "totalUsers": "Tổng số người dùng",
@@ -173,7 +175,15 @@
     "searchMerchants": "Tìm kiếm thương hiệu...",
     "noMerchantsFound": "Không tìm thấy thương hiệu",
     "searchOutlets": "Tìm kiếm cửa hàng...",
-    "noOutletsFound": "Không tìm thấy cửa hàng"
+    "noOutletsFound": "Không tìm thấy cửa hàng",
+    "searchUsers": "Tìm kiếm người dùng..."
+  },
+  "labels": {
+    "loading": "Đang tải..."
+  },
+  "status": {
+    "verified": "Đã xác thực",
+    "notVerified": "Chưa xác thực"
   }
 }
 

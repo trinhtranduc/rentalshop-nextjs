@@ -9,7 +9,8 @@
     "confirm": "Confirm",
     "search": "Search",
     "export": "Export",
-    "import": "Import"
+    "import": "Import",
+    "selectAll": "Select all"
   },
   "buttons": {
     "save": "Save",
@@ -145,7 +146,21 @@
     "rowsPerPage": "Rows per page",
     "first": "First",
     "last": "Last",
-    "noData": "No data to display"
+    "noData": "No data to display",
+    "itemsPerPage": "Items per page",
+    "apply": "Apply",
+    "items": {
+      "items": "items",
+      "orders": "orders",
+      "products": "products",
+      "customers": "customers",
+      "users": "users",
+      "outlets": "outlets",
+      "categories": "categories",
+      "merchants": "merchants",
+      "posts": "posts",
+      "subscriptions": "subscriptions"
+    }
   },
   "time": {
     "today": "Today",

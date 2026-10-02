@@ -37,7 +37,8 @@ import {
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
-import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
+// Plain formatters, not the useFormatted* hooks: these run inside loops (#349, Rules of Hooks)
+import { formatFullDateByLocale, formatMonthOnlyByLocale, formatDailyByLocale } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
@@ -170,7 +171,7 @@ const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick, isMoney = false }: {
   title: string;
   value: string | number;
   change: string;
@@ -179,9 +180,11 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
   color: string;
   trend: 'up' | 'down' | 'neutral';
   onClick?: () => void;
+  /** Money value: format with the merchant currency. Guessing from the (translated) title failed in Vietnamese (#349). */
+  isMoney?: boolean;
 }) => {
   const formatMoney = useFormatCurrency();
-  const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
+  const shouldShowDollar = isMoney;
   
   const cardContent = (
     <CardClean 
@@ -1095,9 +1098,9 @@ export default function DashboardPage() {
         try {
           const date = new Date(group.period);
           if (timePeriod === 'year') {
-            periodLabel = useFormattedMonthOnly(date);
+            periodLabel = formatMonthOnlyByLocale(date, locale);
           } else {
-            periodLabel = useFormattedDaily(date);
+            periodLabel = formatDailyByLocale(date, locale);
           }
         } catch {
           periodLabel = group.period;
@@ -1360,7 +1363,7 @@ export default function DashboardPage() {
             {/* Time Period Filter - Modern Pills */}
             {/* Users without full analytics access can only view 'today' - hide month/year tabs */}
             {hasFullAnalyticsAccess ? (
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-full sm:w-fit overflow-x-auto">
               {[
                 { id: 'today', label: tc('time.today') },
                 { id: '7d', label: tc('time.last7Days') },
@@ -1371,7 +1374,7 @@ export default function DashboardPage() {
                 <button
                   key={period.id}
                   onClick={() => updateTimePeriod(period.id as DashboardPeriod)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     timePeriod === period.id
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
@@ -1399,6 +1402,7 @@ export default function DashboardPage() {
             <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 items-stretch ${hasFullAnalyticsAccess ? 'md:grid-cols-5' : ''}`}>
               {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
                 <StatCard
+                  isMoney
                   title={t('stats.todayRevenue')}
                   value={currentStats.todayRevenue}
                   change=""
@@ -1440,6 +1444,7 @@ export default function DashboardPage() {
               {/* Total Collateral Card - Show for users with full analytics access */}
               {hasFullAnalyticsAccess && (
                 <StatCard
+                  isMoney
                   title={t('stats.totalCollateral')}
                   value={currentStats.totalCollateral}
                   change=""
@@ -1518,10 +1523,10 @@ export default function DashboardPage() {
                           >
                             <Package className="w-5 h-5 text-blue-700 shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                                <h4 className="font-medium text-gray-800 whitespace-nowrap">#{order.orderNumber}</h4>
                                 {translatedOrderType && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap">
                                     {translatedOrderType}
                                   </span>
                                 )}
@@ -1529,7 +1534,7 @@ export default function DashboardPage() {
                               {hasRentalDates ? (
                                 <>
                                   <p className="text-sm text-gray-600">
-                                    {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                    {formatFullDateByLocale(order.pickupPlanAt, locale)} - {formatFullDateByLocale(order.returnPlanAt, locale)}
                                   </p>
                                   {order.customerName && (
                                     <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
@@ -1537,7 +1542,9 @@ export default function DashboardPage() {
                                 </>
                               ) : (
                                 <>
-                                  <p className="text-sm text-gray-600 truncate">{order.productNames || tc('labels.noData')}</p>
+                                  <p className="text-sm text-gray-600 truncate">
+                                    {order.productNames || (order.createdAt ? formatFullDateByLocale(order.createdAt, locale) : '')}
+                                  </p>
                                   {order.customerName && (
                                     <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
                                   )}
@@ -1546,7 +1553,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right shrink-0">
                               <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClassName} mt-1`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${statusClassName} mt-1`}>
                                 {translatedStatus}
                               </span>
                             </div>
@@ -1603,15 +1610,15 @@ export default function DashboardPage() {
                           >
                             <Package className="w-5 h-5 text-orange-600 shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-orange-50 text-orange-700 border-orange-200">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                                <h4 className="font-medium text-gray-800 whitespace-nowrap">#{order.orderNumber}</h4>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap bg-orange-50 text-orange-700 border-orange-200">
                                   {to('status.PICKUPED')}
                                 </span>
                               </div>
                               {order.pickupPlanAt && order.returnPlanAt ? (
                                 <p className="text-sm text-gray-600">
-                                  {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                  {formatFullDateByLocale(order.pickupPlanAt, locale)} - {formatFullDateByLocale(order.returnPlanAt, locale)}
                                 </p>
                               ) : null}
                               {(order.customerName || order.customer) && (
@@ -1678,6 +1685,7 @@ export default function DashboardPage() {
               {/* Total Collateral Card - Show for all users with analytics access */}
               {hasFullAnalyticsAccess && (
                 <StatCard
+                  isMoney
                   title={t('stats.totalCollateral')}
                   value={currentStats.totalCollateral}
                   change=""

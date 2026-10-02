@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUsersTranslations } from '@rentalshop/hooks';
 import { 
   Card,
   CardContent,
@@ -34,6 +35,7 @@ export function UserRow({
   actions = ['view', 'edit'],
   className = "py-4"
 }: UserRowProps) {
+  const t = useUsersTranslations();
   const handleUserAction = (action: string, userId: number) => {
     console.log('🔍 UserRow: handleUserAction called:', { action, userId, user });
     onUserAction(action, userId);
@@ -90,7 +92,7 @@ export function UserRow({
   };
 
   const getEmailVerificationDisplayName = (emailVerified: boolean) => {
-    return emailVerified ? 'Verified' : 'Not Verified';
+    return emailVerified ? t('status.verified') : t('status.notVerified');
   };
 
   const formatDate = (dateString: string) => {

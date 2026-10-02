@@ -1067,6 +1067,8 @@ export const simplifiedOrders = {
       sortBy = 'createdAt', 
       sortOrder = 'desc',
       where: whereClause, 
+      // Opt-in: product names per order (dashboard lists). Off by default to keep the list query light (#349)
+      includeItemNames = false,
       ...whereFilters 
     } = filters;
     const skip = (page - 1) * limit;
@@ -1187,7 +1189,10 @@ export const simplifiedOrders = {
               orderItems: true,
               payments: true
             }
-          }
+          },
+          ...(includeItemNames
+            ? { orderItems: { select: { product: { select: { name: true } } } } }
+            : {})
         },
         orderBy, // ✅ Dynamic sorting
         skip,

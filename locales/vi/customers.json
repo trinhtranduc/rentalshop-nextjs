@@ -94,7 +94,8 @@
     "delete": "Xóa",
     "deleteCustomer": "Xóa khách hàng",
     "activate": "Kích hoạt khách hàng",
-    "deactivate": "Vô hiệu hóa khách hàng"
+    "deactivate": "Vô hiệu hóa khách hàng",
+    "selectAll": "Chọn tất cả"
   },
   "messages": {
     "createSuccess": "Tạo khách hàng thành công",

@@ -359,6 +359,7 @@
     "confirmPasswordPlaceholder": "Confirm your new password",
     "cancel": "Cancel",
     "changePassword": "Change Password",
-    "changing": "Changing..."
+    "changing": "Changing...",
+    "description": "Use at least 6 characters. You will need to log in again on other devices."
   }
 }

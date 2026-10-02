@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUsersTranslations } from '@rentalshop/hooks';
 import { 
   Input,
   Select, 
@@ -21,6 +22,7 @@ interface UserFiltersProps {
  * ✅ COMPACT USER FILTERS (Following Orders pattern)
  */
 export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: UserFiltersProps) {
+  const t = useUsersTranslations();
   const [localSearch, setLocalSearch] = React.useState<string>(filters.search || '');
   
   // Sync với filters.search khi thay đổi từ bên ngoài (ví dụ: clear filters)
@@ -54,7 +56,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
       <div className="flex-1 min-w-[280px]">
         <div className="relative">
           <Input
-            placeholder="Search users..."
+            placeholder={t('placeholders.searchUsers')}
             value={localSearch}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
@@ -82,7 +84,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
           <SelectValue placeholder="Role" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Roles</SelectItem>
+          <SelectItem value="all">{t('filters.allRoles')}</SelectItem>
           <SelectItem value="ADMIN">Admin</SelectItem>
           <SelectItem value="MERCHANT">Merchant</SelectItem>
           <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>

@@ -99,12 +99,12 @@ export function UserTable({
     return emailVerified ? (
       <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 flex items-center gap-1">
         <CheckCircle className="h-3 w-3" />
-        Verified
+        {t('status.verified')}
       </Badge>
     ) : (
       <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 flex items-center gap-1">
         <XCircle className="h-3 w-3" />
-        Not Verified
+        {t('status.notVerified')}
       </Badge>
     );
   };
@@ -151,7 +151,7 @@ export function UserTable({
                   {t('fields.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Email Status
+                  {t('fields.emailStatus')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   {t('fields.createdAt')}

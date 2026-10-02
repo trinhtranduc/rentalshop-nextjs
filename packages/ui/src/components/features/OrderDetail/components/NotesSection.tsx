@@ -1,5 +1,7 @@
 import React from 'react';
 import { FileText, AlertCircle, Info, MessageSquare } from 'lucide-react';
+import { useOrderTranslations } from '@rentalshop/hooks';
+import { formatCurrency } from '@rentalshop/utils';
 
 /** Order shape needed for notes + images (OrderWithDetails or OrderData) */
 interface NotesSectionOrder {
@@ -66,6 +68,7 @@ const NoteCard: React.FC<{
 };
 
 export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
+  const t = useOrderTranslations();
   // Note images are shown only in OrderSettingsCard (right). Here we only show text notes to avoid duplicate.
   const hasNotes =
     order.notes ||
@@ -87,7 +90,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
       {/* General Notes - images only in OrderSettingsCard (right), no duplicate here */}
       <NoteCard
         icon={<FileText className="w-4 h-4 text-gray-600" />}
-        title="General Notes"
+        title={t('detail.generalNotes')}
         content={order.notes}
         images={[]}
       />
@@ -95,7 +98,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
       {/* Pickup Notes - images disabled for now, re-enable when supporting pickupNotesImages */}
       <NoteCard
         icon={<Info className="w-4 h-4 text-gray-600" />}
-        title="Pickup Notes"
+        title={t('detail.pickupNotes')}
         content={order.pickupNotes}
         images={[]}
       />
@@ -103,7 +106,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
       {/* Return Notes - images disabled for now, re-enable when supporting returnNotesImages */}
       <NoteCard
         icon={<Info className="w-4 h-4 text-gray-600" />}
-        title="Return Notes"
+        title={t('detail.returnNotes')}
         content={order.returnNotes}
         images={[]}
       />
@@ -111,42 +114,43 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
       {/* Damage Notes - images disabled for now, re-enable when supporting damageNotesImages */}
       <NoteCard
         icon={<AlertCircle className="w-4 h-4 text-gray-600" />}
-        title="Damage Notes"
+        title={t('detail.damageNotes')}
         content={order.damageNotes}
         images={[]}
       />
 
       {/* Additional Information */}
-      {(order.bailAmount || order.material || order.damageFee) && (
+      {/* Boolean(): a bare `damageFee = 0` used to render a stray "0" (#349) */}
+      {Boolean(order.bailAmount || order.material || order.damageFee) && (
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <h4 className="font-medium text-gray-700 mb-3 flex items-center">
             <Info className="w-4 h-4 text-gray-600 mr-2" />
-            Additional Details
+            {t('messages.additionalInformation')}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {order.bailAmount && order.bailAmount > 0 && (
+            {Boolean(order.bailAmount && order.bailAmount > 0) && (
               <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Bail Amount</p>
+                <p className="text-xs text-gray-600 font-medium">{t('detail.bailAmount')}</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  ${order.bailAmount.toFixed(2)}
+                  {formatCurrency(order.bailAmount ?? 0, 'VND')}
                 </p>
               </div>
             )}
             
             {order.material && (
               <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Material</p>
+                <p className="text-xs text-gray-600 font-medium">{t('detail.material')}</p>
                 <p className="text-sm font-semibold text-gray-900">
                   {order.material}
                 </p>
               </div>
             )}
             
-            {order.damageFee && order.damageFee > 0 && (
+            {Boolean(order.damageFee && order.damageFee > 0) && (
               <div className="text-center p-3 bg-white rounded border border-gray-200">
-                <p className="text-xs text-gray-600 font-medium">Damage Fee</p>
+                <p className="text-xs text-gray-600 font-medium">{t('amount.damageFee')}</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  ${order.damageFee.toFixed(2)}
+                  {formatCurrency(order.damageFee ?? 0, 'VND')}
                 </p>
               </div>
             )}

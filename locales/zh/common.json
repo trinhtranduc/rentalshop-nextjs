@@ -130,7 +130,21 @@
     "rowsPerPage": "每页行数",
     "first": "首页",
     "last": "末页",
-    "noData": "无数据可显示"
+    "noData": "无数据可显示",
+    "itemsPerPage": "每页条数",
+    "apply": "应用",
+    "items": {
+      "items": "项",
+      "orders": "个订单",
+      "products": "个产品",
+      "customers": "位客户",
+      "users": "位用户",
+      "outlets": "家门店",
+      "categories": "个分类",
+      "merchants": "个商户",
+      "posts": "篇文章",
+      "subscriptions": "个订阅"
+    }
   },
   "time": {
     "today": "今天",
@@ -168,5 +182,8 @@
     "MERCHANT": "商户",
     "OUTLET_ADMIN": "门店管理员",
     "OUTLET_STAFF": "门店员工"
+  },
+  "actions": {
+    "selectAll": "全选"
   }
 }

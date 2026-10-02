@@ -166,7 +166,8 @@
     "categoryLabel": "Category",
     "allCategories": "All Categories",
     "priceRange": "Price Range",
-    "clear": "Clear"
+    "clear": "Clear",
+    "loading": "Loading..."
   },
   "imageSearch": {
     "title": "Search Products by Image",
