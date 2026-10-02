@@ -151,6 +151,7 @@ export function Pagination({
                 onChange={(e) => handleLimitInputChange(e.target.value)}
                 onKeyDown={handleLimitInputKeyDown}
                 onBlur={handleLimitInputSubmit}
+                aria-label={t('pagination.itemsPerPage')}
                 className="w-16 h-8 text-center text-sm px-2"
                 min={1}
                 max={3000}

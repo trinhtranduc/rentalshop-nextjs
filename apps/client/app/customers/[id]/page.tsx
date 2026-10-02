@@ -4,34 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button, 
   Breadcrumb,
-  EditCustomerForm,
-  CustomerPageHeader, 
-  CustomerInfoCard, 
+  EditCustomerDialog,
+  CustomerContactCard,
+  CustomerRecentOrders,
+  CustomerSummaryPanel,
+  CustomerLoyaltyFold,
   CustomerLoyaltyTab,
   ConfirmationDialog,
   PageWrapper,
-  PageHeader,
-  PageContent, useToast } from '@rentalshop/ui';
+  useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { customerBreadcrumbs } from '@rentalshop/utils';
-import { 
-  ArrowLeft,
-  Edit,
-  ShoppingBag,
-  Gift,
-  UserCheck,
-  UserX,
-  Trash2,
-  MapPin,
-  Phone,
-  Mail,
-  Calendar,
-  X
-} from 'lucide-react';
+import { ArrowLeft, Edit, ShoppingBag } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
 import { useAuth, useCustomerTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
-import type { EditCustomerFormRef } from '@rentalshop/ui';
 export default function CustomerPage() {
   const router = useRouter();
   const params = useParams();
@@ -53,7 +40,6 @@ export default function CustomerPage() {
   const [showOrdersSection, setShowOrdersSection] = useState(false);
   const [showLoyaltySection, setShowLoyaltySection] = useState(false);
   
-  const editCustomerFormRef = React.useRef<EditCustomerFormRef>(null);
 
   // ============================================================================
   // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
@@ -159,7 +145,7 @@ export default function CustomerPage() {
       
     } catch (error) {
       console.error('❌ CustomerPage: Error updating customer:', error);
-      // Note: Error handling is done by the form component, so no toast needed here
+      throw error; // the dialog shows it and stays open
     } finally {
       setIsUpdating(false);
     }
@@ -251,108 +237,69 @@ export default function CustomerPage() {
     );
   }
 
-  // Breadcrumb items - inline
+  const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || customer.phone || '—';
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: t('title'), href: '/customers' },
-    { label: [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer' }
+    { label: name }
   ];
 
   return (
     <PageWrapper>
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
-      <PageHeader>
-        <CustomerPageHeader
-          title={[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer'}
-          subtitle={showEditSection ? t('editCustomer') : t('customerDetails')}
-        >
-          {/* Header buttons - show different buttons based on edit mode */}
-          {showEditSection ? (
-            // Edit mode buttons
-            <div className="flex gap-2">
-              <Button
-                onClick={handleCancelEdit}
-                variant="outline"
-                className="flex items-center space-x-2"
-              >
-                <X className="w-4 h-4" />
-                <span>{tc('buttons.cancel')}</span>
-              </Button>
-            </div>
-          ) : (
-            // View mode buttons
-            <div className="flex gap-2">
-              <Button
-                onClick={handleEditCustomer}
-                variant="outline"
-                className="flex items-center space-x-2"
-              >
-                <Edit className="w-4 h-4" />
-                <span>{t('editCustomer')}</span>
-              </Button>
-              <Button
-                onClick={() => router.push(`/customers/${customerId}/orders`)}
-                variant="outline"
-                className="flex items-center space-x-2"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>{t('orders.viewOrders')}</span>
-              </Button>
-              <Button
-                onClick={() => setShowLoyaltySection((prev) => !prev)}
-                variant="outline"
-                className="flex items-center space-x-2"
-              >
-                <Gift className="w-4 h-4" />
-                <span>Loyalty</span>
-              </Button>
-              <Button
-                onClick={() => setShowDeleteConfirm(true)}
-                variant="destructive"
-                className="flex items-center space-x-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>{t('actions.delete')}</span>
-              </Button>
-            </div>
-          )}
-        </CustomerPageHeader>
-      </PageHeader>
 
-      <PageContent>
-        {/* Customer Information - Show only when NOT editing */}
-        {!showEditSection && (
-          <CustomerInfoCard 
-            customer={customer}
-            showActions={false}
-          />
-        )}
-
-        {!showEditSection && showLoyaltySection && (
-          <div className="mt-6">
-            <CustomerLoyaltyTab customerId={customer.id} />
+      {/* Header: who, and the everyday actions */}
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <Button variant="ghost" onClick={() => router.push('/customers')} size="sm" className="h-9 w-9 shrink-0 p-0" aria-label={tc('buttons.back')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{name}</h1>
+            {customer.phone && <p className="text-sm tabular-nums text-gray-600">{customer.phone}</p>}
           </div>
-        )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => router.push(`/customers/${customerId}/orders`)} variant="outline">
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            {t('actions.orders')}
+          </Button>
+          <Button onClick={handleEditCustomer}>
+            <Edit className="mr-2 h-4 w-4" />
+            {t('actions.edit')}
+          </Button>
+        </div>
+      </div>
 
-        {/* Edit Customer Section - Show only when editing */}
-        {showEditSection && (
-          <EditCustomerForm
-            ref={editCustomerFormRef}
-            customer={customer}
-            onSave={handleCustomerUpdate}
-            onCancel={handleCancelEdit}
-            isSubmitting={isUpdating}
-          />
-        )}
-      </PageContent>
+      {/* Same two columns as product and user pages */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <div className="min-w-0 space-y-4">
+          <CustomerContactCard customer={customer} />
+          <CustomerRecentOrders customer={customer} />
+          <CustomerLoyaltyFold label="Loyalty">
+            <CustomerLoyaltyTab customerId={customer.id} />
+          </CustomerLoyaltyFold>
+        </div>
+        <aside className="min-w-0 lg:sticky lg:top-4">
+          <CustomerSummaryPanel customer={customer} onDelete={() => setShowDeleteConfirm(true)} isUpdating={isUpdating} />
+        </aside>
+      </div>
+
+      {/* Edit in a dialog, as on the customer list */}
+      <EditCustomerDialog
+        open={showEditSection}
+        onOpenChange={setShowEditSection}
+        customer={customer}
+        onCustomerUpdated={handleCustomerUpdate}
+      />
 
       {/* Confirmation Dialogs */}
       <ConfirmationDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title={t('actions.delete')}
-        description={t('messages.confirmDelete')}
-        confirmText={t('actions.delete')}
+        title={t('actions.deleteCustomer')}
+        description={t('messages.confirmDeleteDetails', { name: [customer.firstName, customer.lastName].filter(Boolean).join(' ') })}
+        confirmText={t('actions.deleteCustomer')}
         onConfirm={handleDeleteCustomer}
       />
 

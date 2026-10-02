@@ -182,6 +182,9 @@
     "total": "Tổng cộng",
     "successCount": "Thành công",
     "failedCount": "Thất bại"
+  },
+  "form": {
+    "moreDetails": "Địa chỉ, CCCD, ghi chú",
+    "hideDetails": "Ẩn bớt"
   }
 }
-

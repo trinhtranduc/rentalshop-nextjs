@@ -182,6 +182,9 @@
     "total": "Total",
     "successCount": "Success",
     "failedCount": "Failed"
+  },
+  "form": {
+    "moreDetails": "Address, ID number, notes",
+    "hideDetails": "Hide extra details"
   }
 }
-

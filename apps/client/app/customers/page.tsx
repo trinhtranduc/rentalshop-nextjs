@@ -180,11 +180,8 @@ export default function CustomersPage() {
     
     switch (action) {
       case 'view':
-        // Show detail dialog
-        if (customer) {
-          setSelectedCustomer(customer);
-          setShowDetailDialog(true);
-        }
+        // The customer page has contact, orders and spend; the old dialog showed less
+        router.push(`/customers/${customerId}`);
         break;
         
       case 'edit':
@@ -302,7 +299,7 @@ export default function CustomersPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
             <PageTitle>{t('title')}</PageTitle>
-            <p className="text-sm text-gray-600">{t('title')}</p>
+            <p className="text-sm text-gray-600">{t('subtitle')}</p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
             {/* Export button - only show when customers are selected and user has export permission */}
@@ -328,7 +325,7 @@ export default function CustomersPage() {
             {canManageCustomers && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" aria-label={t('actions.title')}>
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
