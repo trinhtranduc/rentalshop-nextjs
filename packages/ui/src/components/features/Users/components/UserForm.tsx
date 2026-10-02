@@ -279,8 +279,13 @@ export const UserForm: React.FC<UserFormProps> = ({
       if (merchantId) {
         // Try to get tenantKey from merchants list first
         const selectedMerchant = merchants.find(m => m.id === merchantId);
+        // GET /merchants/:id is for ADMIN/OPS/MERCHANT only; outlet roles got a 403 here.
+        // tenantKey only feeds the email placeholder, so they simply go without it.
+        const canReadMerchant = ['ADMIN', 'OPS', 'MERCHANT'].includes(currentUser?.role || '');
         if (selectedMerchant?.tenantKey) {
           setTenantKey(selectedMerchant.tenantKey);
+        } else if (!canReadMerchant) {
+          setTenantKey('');
         } else {
           // Fetch merchant details to get tenantKey
           merchantsApi.getMerchantById(merchantId)
@@ -306,7 +311,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       // In edit mode, clear tenantKey placeholder
       setTenantKey('');
     }
-  }, [formData.merchantId, merchants, isEditMode]);
+  }, [formData.merchantId, merchants, isEditMode, currentUser?.role]);
 
   // Load outlets data (create mode only)
   useEffect(() => {

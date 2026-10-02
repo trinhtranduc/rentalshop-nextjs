@@ -62,19 +62,20 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold">
             {t('addNewUser')}
           </DialogTitle>
           <DialogDescription className="mt-1">
-            {t('addNewUserDescription') || 'Create a new user account for your organization'}
+            {t('roleHelp.loginNote')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="px-6 py-4 overflow-y-auto">
           <UserForm
             mode="create"
+            layout="dialog"
             user={undefined}
             onSave={handleSave}
             onCancel={handleCancel}

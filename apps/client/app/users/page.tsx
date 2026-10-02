@@ -351,7 +351,7 @@ export default function UsersPage() {
               </Button>
             )} */}
             <Button 
-              onClick={() => router.push('/users/add')}
+              onClick={() => setShowAddDialog(true)}
               variant="default"
               size="sm"
             >
@@ -415,8 +415,12 @@ export default function UsersPage() {
             });
             
             if (response.success) {
-              toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
+              const createdName = (userData as any).name || [userData.firstName, userData.lastName].filter(Boolean).join(' ');
+              toastSuccess(tu('messages.createSuccess'), createdName);
               refetch();
+            } else {
+              // Keep the dialog open with what was typed (e.g. plan limit reached)
+              throw response;
             }
             // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
