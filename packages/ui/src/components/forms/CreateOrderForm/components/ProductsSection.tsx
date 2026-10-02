@@ -24,6 +24,7 @@ import {
   Minus
 } from 'lucide-react';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
+import { countRentalDays } from '@rentalshop/utils';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
@@ -196,12 +197,8 @@ const getLineDisplay = (
   const isDaily = orderType === 'RENT' && (item.pricingType === 'DAILY' || item.product?.pricingType === 'DAILY');
   let days = 1;
   if (isDaily && pickupDate && returnDate) {
-    const s = new Date(pickupDate).getTime();
-    const e = new Date(returnDate).getTime();
-    if (!isNaN(s) && !isNaN(e)) {
-      const d = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
-      days = d > 0 ? d : 1;
-    }
+    // Pickup and return day both count (#351)
+    days = countRentalDays(pickupDate, returnDate);
   }
   const lineDays = isDaily ? days : 1;
   return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };

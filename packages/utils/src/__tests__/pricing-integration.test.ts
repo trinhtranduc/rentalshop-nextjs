@@ -135,9 +135,9 @@ describe('Pricing System Integration Tests', () => {
       );
 
       expect(pricing.unitPrice).toBe(150);
-      expect(pricing.totalPrice).toBe(450); // 3 days * $150
+      expect(pricing.totalPrice).toBe(600); // 15 → 18, Vietnam days with both ends = 4 days * $150 (#351)
       expect(pricing.deposit).toBe(100);
-      expect(pricing.rentalDays).toBe(3);
+      expect(pricing.rentalDays).toBe(4);
 
       // 3. Verify effective pricing config
       const config = PricingResolver.getEffectivePricingConfig(equipmentProduct, equipmentMerchant);

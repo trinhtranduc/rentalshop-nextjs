@@ -9,6 +9,7 @@ import {
   PricingResolver,
   resolveSelectedOption,
   calculateDurationInUnit,
+  countRentalDays,
   getDurationUnitLabel,
   ResponseBuilder, 
   handleApiError, 
@@ -679,8 +680,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60)));
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
       } else if (dominantPricingType === 'DAILY') {
-        const diffTime = returnDate.getTime() - pickup.getTime();
-        rentalDuration = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        // Pickup and return day both count (#351), same as iOS and Android
+        rentalDuration = countRentalDays(pickup, returnDate);
         console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
         rentalDuration = 1;

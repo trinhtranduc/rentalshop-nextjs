@@ -4,6 +4,7 @@
 
 import { Plan, Product, Merchant, PricingType, PricingDurationLimits, PricingOption } from '@rentalshop/types';
 import { BillingInterval, BUSINESS_TYPE_DEFAULTS, getBillingIntervalLabel } from '@rentalshop/constants';
+import { countRentalDays } from './rental-days';
 
 // ============================================================================
 // TYPES
@@ -607,7 +608,8 @@ export function calculateDurationInUnit(
       };
     case 'DAILY':
       return {
-        duration: Math.ceil(durationMs / (1000 * 60 * 60 * 24)), // days
+        // Civil days with pickup and return both included (#351), same as iOS and Android
+        duration: countRentalDays(start, end),
         unit: 'day'
       };
     case 'FIXED':
