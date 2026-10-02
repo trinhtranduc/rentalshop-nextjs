@@ -267,10 +267,13 @@ export default function UserPage() {
     );
   }
 
+  const displayName =
+    userData.name || [(userData as any).firstName, (userData as any).lastName].filter(Boolean).join(' ').trim() || userData.email;
+
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Users', href: '/users' },
-    { label: userData.name }
+    { label: displayName }
   ];
 
   return (
@@ -281,7 +284,7 @@ export default function UserPage() {
       {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{userData.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
             <p className="text-gray-600">{userData.email}</p>
           </div>
           <div className="flex gap-2">
@@ -367,8 +370,9 @@ export default function UserPage() {
       <ChangePasswordDialog
         open={showChangePassword}
         onOpenChange={setShowChangePassword}
-        userId={user?.id ? parseInt(user.id.toString()) : 0}
-        userName={user?.name || ''}
+        // The user on this page, not the signed-in user (that changed the wrong password)
+        userId={userData.id}
+        userName={displayName}
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
