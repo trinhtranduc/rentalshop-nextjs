@@ -1619,112 +1619,84 @@ export default function DashboardPage() {
               </CardClean>
             )}
 
-            {/* Analytics Section - Simplified */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{t('charts.topProducts')}</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
+            {/* Rankings: two-line rows with rank, like the Today lists (#350) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-start">
+              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <header className="px-4 pt-4">
+                  <h2 className="text-base font-semibold text-gray-900">{t('charts.topProducts')}</h2>
+                </header>
+                <div className="px-4 pb-2">
                   {loadingCharts ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
                   ) : (currentTopProducts || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(currentTopProducts || []).map(product => (
-                        <div key={product.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <ol className="divide-y divide-gray-100">
+                      {(currentTopProducts || []).map((product, index) => (
+                        <li key={product.id} className="flex items-center gap-3 py-2.5">
+                          <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-400">{index + 1}</span>
                           {product.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={product.image}
-                              alt={product.name}
-                              className="w-10 h-10 rounded-lg object-cover border border-gray-100 bg-gray-50 flex-shrink-0"
+                              alt=""
+                              className="h-8 w-8 shrink-0 rounded-md border border-gray-100 bg-gray-50 object-cover"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                              <Package className="w-5 h-5 text-blue-700" />
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50">
+                              <Package className="h-4 w-4 text-blue-700" aria-hidden="true" />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-800 truncate">{product.name}</h4>
-                            <p className="text-sm text-gray-600 truncate">{product.category}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
+                            {product.category && <p className="truncate text-xs text-gray-500">{product.category}</p>}
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-medium text-gray-900 text-base">{formatMoney(product.totalRevenue || 0)}</p>
-                            <p className="text-sm text-gray-500">{product.rentalCount || 0} {t('charts.totalOrders')}</p>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-medium text-gray-900">{formatMoney(product.totalRevenue || 0)}</p>
+                            <p className="text-xs text-gray-500">{t('operations.cash.orders', { count: product.rentalCount || 0 })}</p>
                           </div>
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>{tc('labels.noData')}</p>
-                    </div>
+                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
                   )}
-                </CardContentClean>
-              </CardClean>
-              
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{t('operations.topCustomers')}</CardTitleClean>
-                </CardHeaderClean>
-                <CardContentClean>
+                </div>
+              </section>
+
+              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <header className="px-4 pt-4">
+                  <h2 className="text-base font-semibold text-gray-900">{t('operations.topCustomers')}</h2>
+                </header>
+                <div className="px-4 pb-2">
                   {loadingCharts ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-                          <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
                   ) : (currentTopCustomers || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(currentTopCustomers || []).map(customer => (
-                        <div key={customer.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <Users className="w-5 h-5 text-purple-600" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-800">{customer.name}</h4>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
-                            <p className="text-sm text-gray-500">{customer.orderCount || 0} {t('charts.totalOrders')}</p>
-                            <p className="text-xs text-gray-400">
-                              {customer.rentalCount || 0} {t('charts.rentals')} • {customer.saleCount || 0} {t('charts.sales')}
-                            </p>
-                          </div>
-                        </div>
+                    <ol className="divide-y divide-gray-100">
+                      {(currentTopCustomers || []).map((customer, index) => (
+                        <li key={customer.id}>
+                          <Link
+                            href={`/customers/${customer.id}`}
+                            className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-gray-50"
+                          >
+                            <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-400">{index + 1}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-gray-900">{customer.name}</p>
+                              <p className="truncate text-xs text-gray-500">
+                                {customer.rentalCount || 0} {t('charts.rentals')} · {customer.saleCount || 0} {t('charts.sales')}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-medium text-gray-900">{formatMoney(customer.totalSpent || 0)}</p>
+                              <p className="text-xs text-gray-500">{t('operations.cash.orders', { count: customer.orderCount || 0 })}</p>
+                            </div>
+                          </Link>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>{tc('labels.noData')}</p>
-                    </div>
+                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
                   )}
-                </CardContentClean>
-              </CardClean>
+                </div>
+              </section>
             </div>
           </>
         )}

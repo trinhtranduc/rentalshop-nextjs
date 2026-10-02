@@ -149,14 +149,14 @@ export const OrderTable = React.memo(function OrderTable({
   };
 
   const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '—';
     // Use the new date utility for consistent formatting (date only for pickup/return dates)
     return formatFullDateByLocale(dateString, locale);
   };
   
   // Format date with time for createdAt
   const formatDateTime = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '—';
     return formatDateTimeByLocale(dateString, locale);
   };
 
@@ -187,7 +187,7 @@ export const OrderTable = React.memo(function OrderTable({
     <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
       {/* Batch Delete Toolbar */}
       {showBatchDeleteButton && (
-        <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between">
+        <div className="px-3 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between">
           <div className="text-sm text-blue-900 dark:text-blue-100">
             {t('messages.selectedOrders', { count: selectedOrders.length }) || `${selectedOrders.length} orders selected`}
           </div>
@@ -212,7 +212,7 @@ export const OrderTable = React.memo(function OrderTable({
               </th>
               {/* Select All Checkbox */}
               {onSelectionChange && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -227,7 +227,7 @@ export const OrderTable = React.memo(function OrderTable({
               )}
               <th 
                 onClick={() => handleSort('orderNumber')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
                   {t('orderNumber')}
@@ -236,12 +236,9 @@ export const OrderTable = React.memo(function OrderTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('orderType.label')}
-              </th>
               <th 
                 onClick={() => handleSort('status')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
                   {t('status.label')}
@@ -250,17 +247,17 @@ export const OrderTable = React.memo(function OrderTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px]">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[160px]">
                 {t('customer.label')}
               </th>
               {showMerchant && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Merchant
                 </th>
               )}
               <th 
                 onClick={() => handleSort('totalAmount')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
                   {t('amount.total')}
@@ -271,7 +268,7 @@ export const OrderTable = React.memo(function OrderTable({
               </th>
               <th 
                 onClick={() => handleSort('pickupPlanAt')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
                   {t('dates.pickupDate')}
@@ -282,7 +279,7 @@ export const OrderTable = React.memo(function OrderTable({
               </th>
               <th 
                 onClick={() => handleSort('createdAt')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="hidden min-[1400px]:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-1">
                   {t('dates.createdDate')}
@@ -291,7 +288,7 @@ export const OrderTable = React.memo(function OrderTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('actions.label')}
               </th>
             </tr>
@@ -323,7 +320,7 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 {/* Checkbox */}
                 {onSelectionChange && (
-                  <td className="px-6 py-3 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={orderIsSelected}
@@ -332,31 +329,28 @@ export const OrderTable = React.memo(function OrderTable({
                     />
                   </td>
                 )}
-                {/* Order Number */}
-                <td className="px-6 py-3 whitespace-nowrap">
+                {/* Order Number + type (type had its own column; merged to keep the table within the page, #350) */}
+                <td className="px-3 py-3 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
                     {order.orderNumber}
                     {((order as any).loyaltyPointsRedeemed > 0 || (order as any).loyaltyPointsEarned > 0) && (
                       <Gift className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" title="Có hoạt động điểm thưởng" />
                     )}
                   </div>
+                  <div className="mt-1">{getOrderTypeBadge(order.orderType)}</div>
                 </td>
                 
-                {/* Order Type */}
-                <td className="px-6 py-3 whitespace-nowrap">
-                  {getOrderTypeBadge(order.orderType)}
-                </td>
                 
                 {/* Status */}
-                <td className="px-6 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   {getStatusBadge(order.status)}
                 </td>
                 
                 {/* Customer */}
-                <td className="px-6 py-3 min-w-[200px]">
+                <td className="px-3 py-3 min-w-[160px] max-w-[220px]">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {order.customerName || 'N/A'}
+                    <div className="font-medium text-gray-900 dark:text-white truncate" title={order.customerName || undefined}>
+                      {order.customerName || '—'}
                     </div>
                     <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
                       <span className="whitespace-nowrap">{formatPhoneNumber(order.customerPhone || '')}</span>
@@ -378,20 +372,20 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 {/* Merchant */}
                 {showMerchant && (
-                  <td className="px-6 py-3 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900 dark:text-white">
-                        {order.merchantName || 'N/A'}
+                        {order.merchantName || '—'}
                       </div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        {order.outletName || 'N/A'}
+                        {order.outletName || '—'}
                       </div>
                     </div>
                   </td>
                 )}
                 
                 {/* Amount */}
-                <td className="px-6 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">{formatMoney(order.totalAmount)}</div>
                     {order.depositAmount > 0 && (
@@ -403,7 +397,7 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Pickup Date */}
-                <td className="px-6 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   <div className="text-sm text-gray-900 dark:text-white">
                     {formatDate(order.pickupPlanAt)}
                   </div>
@@ -415,30 +409,33 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Created Date */}
-                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className="hidden min-[1400px]:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDateTime(order.createdAt)}
                 </td>
                 
                 {/* Actions - View & Edit outside (icon + label), Delete in dropdown */}
-                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 gap-1.5 rounded-md border border-gray-200 px-3 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                      className="h-8 w-8 rounded-md border border-gray-200 p-0 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
                       onClick={() => onOrderAction('view', order.orderNumber)}
+                      aria-label={t('actions.details')}
+                      title={t('actions.details')}
                     >
                       <Eye className="h-4 w-4 shrink-0" />
-                      <span>{t('actions.details')}</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`h-8 gap-1.5 rounded-md border border-gray-200 px-3 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 ${order.status !== 'RESERVED' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`h-8 w-8 rounded-md border border-gray-200 p-0 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 ${order.status !== 'RESERVED' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => order.status === 'RESERVED' && onOrderAction('edit', order.orderNumber)}
+                      aria-label={t('actions.edit')}
+                      title={t('actions.edit')}
+                      aria-disabled={order.status !== 'RESERVED'}
                     >
                       <Edit className="h-4 w-4 shrink-0" />
-                      <span>{t('actions.edit')}</span>
                     </Button>
                     {(userRole !== 'OUTLET_STAFF' && (isAdmin || order.status === 'CANCELLED')) ? (
                       <DropdownMenu>
@@ -467,7 +464,7 @@ export const OrderTable = React.memo(function OrderTable({
               </tr>
               <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50">
                 {isExpanded && (
-                  <td colSpan={9 + (onSelectionChange ? 1 : 0) + (showMerchant ? 1 : 0)} className="px-6 py-5">
+                  <td colSpan={8 + (onSelectionChange ? 1 : 0) + (showMerchant ? 1 : 0)} className="px-6 py-5">
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                         {t('detail.orderInformation')} · {order.orderNumber}
