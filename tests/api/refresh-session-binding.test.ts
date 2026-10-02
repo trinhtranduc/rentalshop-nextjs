@@ -28,6 +28,7 @@ describe('refresh binds to the refresh token session (#343)', () => {
     jest.clearAllMocks();
     mockDb.users.findById.mockResolvedValue(activeUser);
     mockDb.sessions.getUserActiveSessions.mockResolvedValue([{ sessionId: 'newest-other-device' }]);
+    mockDb.refreshTokens.findSessionId.mockResolvedValue(null);
   });
 
   it('issues a token for the session linked to the refresh token', async () => {

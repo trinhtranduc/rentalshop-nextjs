@@ -1,5 +1,7 @@
-import { generateToken, verifyTokenSimple } from '@rentalshop/auth/server';
+// Import order matters: @rentalshop/database and @rentalshop/auth/server import each other.
+// Loading database first avoids "require_server is not a function" in next dev.
 import { db } from '@rentalshop/database';
+import { generateToken, verifyTokenSimple } from '@rentalshop/auth/server';
 
 /**
  * Shared logic for POST /api/auth/refresh and POST /api/mobile/auth/refresh (#343).
@@ -45,6 +47,17 @@ export async function refreshWithRefreshToken(input: {
   ipAddress?: string;
   userAgent?: string;
 }): Promise<RefreshResult> {
+  // Check the session first. A newer login revokes older refresh tokens, and rotating a revoked
+  // token trips reuse detection (REFRESH_TOKEN_INVALID), hiding the SESSION_REPLACED reason.
+  const boundSessionId = await db.refreshTokens.findSessionId(input.refreshToken);
+  if (boundSessionId) {
+    const boundStatus = await db.sessions.getSessionStatus(boundSessionId);
+    if (boundStatus !== 'active') {
+      await db.refreshTokens.revoke(input.refreshToken);
+      return sessionFailure(boundStatus);
+    }
+  }
+
   const rotation = await db.refreshTokens.rotate(input.refreshToken, {
     deviceId: input.deviceId,
     userAgent: input.userAgent,

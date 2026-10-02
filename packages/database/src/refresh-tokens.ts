@@ -188,6 +188,17 @@ export async function rotateRefreshToken(
 }
 
 /**
+ * Session a refresh token belongs to, or null when unknown or unbound.
+ */
+export async function findRefreshTokenSessionId(token: string): Promise<string | null> {
+  const refreshToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash: hashToken(token) },
+    select: { sessionId: true },
+  });
+  return refreshToken?.sessionId ?? null;
+}
+
+/**
  * Revoke a specific refresh token (for logout)
  */
 export async function revokeRefreshToken(token: string): Promise<void> {
@@ -276,6 +287,7 @@ export const refreshTokens = {
   rotate: rotateRefreshToken,
   revoke: revokeRefreshToken,
   revokeAllForUser: revokeAllUserTokens,
+  findSessionId: findRefreshTokenSessionId,
   cleanup: cleanupExpiredRefreshTokens,
   getActiveCount: getActiveTokenCount,
 };
