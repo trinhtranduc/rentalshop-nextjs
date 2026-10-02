@@ -180,19 +180,12 @@ export default function UsersPage() {
     
     switch (action) {
       case 'view':
-        // Show detail dialog
-        if (userItem) {
-          setSelectedUser(userItem);
-          setShowDetailDialog(true);
-        }
+        // One design for view and edit: the user page (the dialogs showed less and looked different)
+        router.push(`/users/${userId}`);
         break;
         
       case 'edit':
-        // Show edit dialog
-        if (userItem) {
-          setSelectedUser(userItem);
-          setShowEditDialog(true);
-        }
+        router.push(`/users/${userId}?edit=1`);
         break;
         
       case 'activate':
@@ -337,7 +330,7 @@ export default function UsersPage() {
         <div className="flex justify-between items-start">
           <div>
             <PageTitle>{tu('title')}</PageTitle>
-            <p className="text-sm text-gray-600">{tu('title')}</p>
+            <p className="text-sm text-gray-600">{tu('subtitle')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}

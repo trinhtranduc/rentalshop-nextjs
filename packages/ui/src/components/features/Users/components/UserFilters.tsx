@@ -80,7 +80,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
 
       {/* Role Filter */}
       <Select value={filters.role || 'all'} onValueChange={(value) => handleFilterChange('role', value === 'all' ? '' : value)}>
-        <SelectTrigger className="w-[160px] h-10">
+        <SelectTrigger aria-label={t('fields.role')} className="w-[160px] h-10">
           <SelectValue placeholder="Role" />
         </SelectTrigger>
         <SelectContent>

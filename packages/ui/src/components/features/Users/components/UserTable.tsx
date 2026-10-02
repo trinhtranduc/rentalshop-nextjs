@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '../../../ui/button';
-import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { 
   DropdownMenu,
@@ -10,9 +9,15 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { User } from '@rentalshop/types';
-import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX, MailCheck, Send, CheckCircle, XCircle } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, UserCheck, UserX } from 'lucide-react';
 import { useUsersTranslations, useTableSelection } from '@rentalshop/hooks';
-import { useFormattedDateTime } from '@rentalshop/utils/client';
+import { UserBadges } from './UserProfile';
+
+// Shop clock (Asia/Ho_Chi_Minh), independent of the browser timezone
+const dateTimeFormat = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+});
+const fmtDateTime = (value?: string | Date | null) => (value ? dateTimeFormat.format(new Date(value)).replace(',', '') : '—');
 
 interface UserTableProps {
   users: User[];
@@ -32,7 +37,9 @@ export function UserTable({
   onSelectionChange
 }: UserTableProps) {
   const t = useUsersTranslations();
-  const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  // Keyed by surface too: the phone list and the table each render a menu, and two open copies
+  // made the hidden one treat a click in the visible one as "outside" and close it first
+  const [openDropdownId, setOpenDropdownId] = React.useState<string | null>(null);
 
   const {
     allSelected,
@@ -58,236 +65,156 @@ export function UserTable({
     );
   }
 
-  // Use useFormattedDateTime for createdAt (with time)
-  const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return t('messages.na');
-    return useFormattedDateTime(dateString);
-  };
+  const name = (user: User) => [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email;
+  const initials = (user: User) =>
+    ((user.firstName?.[0] || '') + (user.lastName?.[0] || '') || user.email[0] || '?').toUpperCase();
 
-  const getRoleBadge = (role: string) => {
-    const variants: Record<string, string> = {
-      ADMIN: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      MERCHANT: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      OUTLET_ADMIN: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      OUTLET_STAFF: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-    };
-    
-    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
-    const roleTranslation = t(`roles.${roleKey}` as any) || role.replace('_', ' ');
+  const actionsMenu = (user: User, surface: 'list' | 'table') => {
+    const menuId = `${surface}-${user.id}`;
     return (
-      <Badge className={variants[role] || variants.OUTLET_STAFF}>
-        {roleTranslation}
-      </Badge>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0"
+          aria-label={`${t('fields.actions')}: ${name(user)}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdownId(openDropdownId === menuId ? null : menuId);
+          }}
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        open={openDropdownId === menuId}
+        onOpenChange={(open: boolean) => setOpenDropdownId(open ? menuId : null)}
+      >
+        <DropdownMenuItem onClick={() => { onUserAction('edit', user.id); setOpenDropdownId(null); }}>
+          <Edit className="h-4 w-4 mr-2" />
+          {t('actions.editUser')}
+        </DropdownMenuItem>
+        {user.role !== 'ADMIN' && (
+          <>
+            <DropdownMenuItem onClick={() => { onUserAction(user.isActive ? 'deactivate' : 'activate', user.id); setOpenDropdownId(null); }}>
+              {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
+              {user.isActive ? t('actions.deactivate') : t('actions.activate')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => { onUserAction('delete', user.id); setOpenDropdownId(null); }}
+              className="text-action-danger focus:text-action-danger"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t('actions.delete')}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
     );
   };
 
-  const getStatusBadge = (isActive: boolean) => {
-    return isActive ? (
-      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        {t('fields.active')}
-      </Badge>
-    ) : (
-      <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-        {t('fields.inactive')}
-      </Badge>
-    );
-  };
+  const avatar = (user: User) => (
+    <span
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+        user.isActive ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-600'
+      }`}
+      aria-hidden="true"
+    >
+      {initials(user)}
+    </span>
+  );
 
-  const getEmailVerificationBadge = (emailVerified: boolean | undefined) => {
-    if (emailVerified === undefined) return null;
-    
-    return emailVerified ? (
-      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 flex items-center gap-1">
-        <CheckCircle className="h-3 w-3" />
-        {t('status.verified')}
-      </Badge>
-    ) : (
-      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 flex items-center gap-1">
-        <XCircle className="h-3 w-3" />
-        {t('status.notVerified')}
-      </Badge>
-    );
-  };
-
-  const handleSort = (column: string) => {
-    if (onSort) {
-      onSort(column);
-    }
-  };
+  // The whole row opens the user; keyboard users get the name link
+  const open = (user: User) => onUserAction('view', user.id);
+  const th = 'px-4 py-2.5 text-left text-xs font-medium text-gray-600';
 
   return (
     <Card className="shadow-sm border-border flex flex-col h-full">
       <CardContent className="p-0 flex-1 overflow-hidden">
-        {/* Table with scroll - flex layout */}
-        <div className="flex-1 overflow-auto h-full">
-          <table className="w-full">
-            {/* Table Header with Sorting - Sticky */}
-            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+        {/* Phones: one card per person */}
+        <ul className="divide-y divide-gray-100 overflow-auto h-full md:hidden">
+          {users.map((user) => (
+            <li key={user.id} className="flex items-center gap-3 px-4 py-3" onClick={() => open(user)}>
+              {avatar(user)}
+              <div className="min-w-0 flex-1">
+                <button type="button" onClick={(e) => { e.stopPropagation(); open(user); }} className="block max-w-full truncate text-left text-sm font-semibold text-gray-900">
+                  {name(user)}
+                </button>
+                <p className="truncate text-xs text-gray-600">{user.outlet?.name || user.merchant?.name || user.email}</p>
+                <div className="mt-1"><UserBadges user={user} /></div>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>{actionsMenu(user, 'list')}</div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Tablet and up: table */}
+        <div className="hidden md:block flex-1 overflow-auto h-full">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
               <tr>
                 {onSelectionChange && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-12">
+                  <th className={`${th} w-12`}>
                     <input
                       type="checkbox"
                       checked={allSelected}
-                      ref={(input) => {
-                        if (input) input.indeterminate = someSelected;
-                      }}
+                      ref={(input) => { if (input) input.indeterminate = someSelected; }}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                      title={allSelected ? 'Deselect all' : 'Select all'}
+                      aria-label={allSelected ? 'Deselect all' : 'Select all'}
                     />
                   </th>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.name')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.role')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.outlet')} / {t('fields.merchant')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.status')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.emailStatus')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.createdAt')}
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  {t('fields.actions')}
-                </th>
+                <th className={th}>{t('fields.name')}</th>
+                <th className={th}>{t('fields.role')}</th>
+                <th className={th}>{t('fields.outlet')}</th>
+                <th className={`${th} hidden lg:table-cell`}>{t('fields.createdAt')}</th>
+                <th className={`${th} w-12`}><span className="sr-only">{t('fields.actions')}</span></th>
               </tr>
             </thead>
-            
-            {/* Table Body */}
-            <tbody className="bg-bg-card divide-y divide-border">
-              {users.map((user) => {
-                const userIsSelected = isSelected(user.id);
-                return (
+            <tbody className="divide-y divide-gray-100">
+              {users.map((user) => (
                 <tr
                   key={user.id}
-                  className={`transition-colors ${
-                    userIsSelected
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : 'hover:bg-bg-secondary'
-                  }`}
+                  onClick={() => open(user)}
+                  className={`cursor-pointer transition-colors ${isSelected(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                 >
                   {onSelectionChange && (
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
-                        checked={userIsSelected}
+                        checked={isSelected(user.id)}
                         onChange={() => handleToggleSelect(user.id)}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                        aria-label={name(user)}
                       />
                     </td>
                   )}
-                  {/* User Info (Name + Email) */}
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
-                          {user.firstName?.substring(0, 1)}{user.lastName?.substring(0, 1)}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-text-primary">
-                          {user.firstName} {user.lastName}
-                        </div>
-                        <div className="text-sm text-text-tertiary">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  
-                  {/* Role */}
-                  <td className="px-6 py-4">
-                    {getRoleBadge(user.role)}
-                  </td>
-                  
-                  {/* Outlet / Merchant */}
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-text-primary">
-                      {user.outlet?.name || user.merchant?.name || t('messages.na')}
-                    </div>
-                  </td>
-                  
-                  {/* Status */}
-                  <td className="px-6 py-4">
-                    {getStatusBadge(user.isActive)}
-                  </td>
-                  
-                  {/* Email Verification Status */}
-                  <td className="px-6 py-4">
-                    {getEmailVerificationBadge(user.emailVerified)}
-                  </td>
-                  
-                  {/* Created Date */}
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-text-primary">
-                      {formatDate(user.createdAt)}
-                    </div>
-                  </td>
-                
-                  
-                  {/* Actions - Dropdown Menu */}
-                  <td className="px-6 py-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
+                      {avatar(user)}
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); open(user); }}
+                          className="block max-w-[16rem] truncate text-left font-semibold text-gray-900 hover:text-blue-700 hover:underline"
                         >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent 
-                        align="end"
-                        open={openDropdownId === user.id}
-                        onOpenChange={(open: boolean) => setOpenDropdownId(open ? user.id : null)}
-                      >
-                        <DropdownMenuItem onClick={() => {
-                          onUserAction('view', user.id);
-                          setOpenDropdownId(null);
-                        }}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          {t('actions.viewDetails')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          onUserAction('edit', user.id);
-                          setOpenDropdownId(null);
-                        }}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          {t('actions.editUser')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => {
-                          onUserAction(user.isActive ? 'deactivate' : 'activate', user.id);
-                          setOpenDropdownId(null);
-                        }}>
-                          {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
-                          {user.isActive ? t('actions.deactivate') : t('actions.activate')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            onUserAction('delete', user.id);
-                            setOpenDropdownId(null);
-                          }}
-                          className="text-action-danger focus:text-action-danger"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {t('actions.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {name(user)}
+                        </button>
+                        <p className="max-w-[16rem] truncate text-xs text-gray-600">{user.email}</p>
+                      </div>
+                    </div>
                   </td>
+                  <td className="px-4 py-2.5"><UserBadges user={user} /></td>
+                  <td className="px-4 py-2.5 text-gray-900">{user.outlet?.name || user.merchant?.name || '—'}</td>
+                  <td className="hidden px-4 py-2.5 tabular-nums text-gray-700 lg:table-cell">{fmtDateTime(user.createdAt as any)}</td>
+                  <td className="px-2 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>{actionsMenu(user, 'table')}</td>
                 </tr>
-                );
-              })}
+              ))}
             </tbody>
           </table>
         </div>

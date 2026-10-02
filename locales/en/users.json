@@ -55,7 +55,8 @@
     "ADMIN": "System Administrator",
     "MERCHANT": "Merchant Owner",
     "OUTLET_ADMIN": "Outlet Manager",
-    "OUTLET_STAFF": "Outlet Staff"
+    "OUTLET_STAFF": "Outlet Staff",
+    "ARTICLE": "Article editor"
   },
   "actions": {
     "activate": "Activate User",
@@ -183,4 +184,3 @@
     "notVerified": "Not verified"
   }
 }
-

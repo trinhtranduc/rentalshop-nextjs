@@ -92,31 +92,29 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
   disabled = false,
   currentUserRole
 }) => {
-  console.log('🔍 RoleSelect: Current value:', value, 'Type:', typeof value);
-  console.log('🔍 RoleSelect: Current user role:', currentUserRole);
-  console.log('🔍 RoleSelect: Available roles for current user:', currentUserRole === 'ADMIN' ? ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'] : ['OUTLET_ADMIN', 'OUTLET_STAFF']);
-  
+  const t = useUsersTranslations();
+
   return (
     <div className="space-y-2">
-      <Label htmlFor="role">Role *</Label>
+      <Label htmlFor="role">{t('fields.role')} *</Label>
       <Select 
         value={value || undefined} 
         onValueChange={onChange}
         disabled={disabled}
       >
-        <SelectTrigger className={error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}>
-          <SelectValue placeholder={value ? `Current: ${value}` : "Select role"} />
+        <SelectTrigger id="role" aria-label={t('fields.role')} className={error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}>
+          <SelectValue placeholder={t('fields.role')} />
         </SelectTrigger>
         <SelectContent>
           {currentUserRole === 'ADMIN' && (
             <>
-              <SelectItem value="ADMIN">System Admin</SelectItem>
-              <SelectItem value="ARTICLE">Article Editor</SelectItem>
-              <SelectItem value="MERCHANT">Merchant</SelectItem>
+              <SelectItem value="ADMIN">{t('roles.ADMIN')}</SelectItem>
+              <SelectItem value="ARTICLE">{t('roles.ARTICLE')}</SelectItem>
+              <SelectItem value="MERCHANT">{t('roles.MERCHANT')}</SelectItem>
             </>
           )}
-          <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
-          <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
+          <SelectItem value="OUTLET_ADMIN">{t('roles.OUTLET_ADMIN')}</SelectItem>
+          <SelectItem value="OUTLET_STAFF">{t('roles.OUTLET_STAFF')}</SelectItem>
         </SelectContent>
       </Select>
       {error && (

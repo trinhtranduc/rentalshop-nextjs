@@ -58,7 +58,8 @@
     "ADMIN": "Quản trị hệ thống",
     "MERCHANT": "Chủ thương hiệu",
     "OUTLET_ADMIN": "Quản lý cửa hàng",
-    "OUTLET_STAFF": "Nhân viên"
+    "OUTLET_STAFF": "Nhân viên",
+    "ARTICLE": "Biên tập bài viết"
   },
   "actions": {
     "activate": "Kích hoạt người dùng",
@@ -186,4 +187,3 @@
     "notVerified": "Chưa xác thực"
   }
 }
-
