@@ -46,7 +46,8 @@
     "lowStock": "Sắp hết hàng",
     "totalStock": "Tổng tồn kho",
     "availableStock": "Có sẵn",
-    "stockSummary": "Tổng quan kho hàng",    "rentedOut": "Đã cho thuê",
+    "stockSummary": "Tổng quan kho hàng",
+    "rentedOut": "Đã cho thuê",
     "reserved": "Đã đặt",
     "updateStock": "Cập nhật tồn kho",
     "stockHistory": "Lịch sử tồn kho",
@@ -87,7 +88,7 @@
     "hourlyDescription": "Giá theo giờ (ví dụ: xe cộ, công cụ)",
     "daily": "Giá theo ngày",
     "dailyLabel": "Theo ngày",
-    "dailyDescription": "Giá theo ngày (ví dụ: thiết bị xây dựng)",
+    "dailyDescription": "Để trống nếu không cho thuê theo ngày",
     "weekly": "Giá theo tuần",
     "monthly": "Giá theo tháng",
     "custom": "Giá tùy chỉnh",
@@ -116,7 +117,8 @@
     "viewHistory": "Xem lịch sử",
     "duplicate": "Nhân bản sản phẩm",
     "archive": "Lưu trữ sản phẩm",
-    "restore": "Khôi phục sản phẩm"
+    "restore": "Khôi phục sản phẩm",
+    "backToProduct": "Quay lại sản phẩm"
   },
   "rentNow": "Thuê ngay",
   "details": "Chi tiết",
@@ -277,6 +279,25 @@
     "total": "Tổng cộng",
     "successCount": "Thành công",
     "failedCount": "Thất bại"
+  },
+  "list": {
+    "free": "còn trống",
+    "rentingOut": "{count} đang cho thuê",
+    "moreActions": "Thao tác với {name}",
+    "select": "Chọn {name}",
+    "rentPrice": "Giá thuê",
+    "stock": "Tồn kho"
+  },
+  "form": {
+    "stockIsSum": "Tự cộng từ tồn kho các cửa hàng bên dưới"
+  },
+  "view": {
+    "noImage": "Chưa có ảnh",
+    "updated": "Tạo {created} · cập nhật {updated}",
+    "stockTitle": "Tồn kho theo cửa hàng",
+    "dailyPrice": "Giá theo ngày",
+    "perDay": "/ngày",
+    "depositHint": "Khách trả trước, trừ vào tiền thuê",
+    "outlet": "Cửa hàng"
   }
 }
-

@@ -659,12 +659,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
   const updateOutletStock = (outletId: number, field: 'stock', value: number) => {
-    setFormData(prev => ({
-      ...prev,
-      outletStock: prev.outletStock.map(item =>
+    setFormData(prev => {
+      const outletStock = prev.outletStock.map(item =>
         item.outletId === outletId ? { ...item, [field]: value } : item
-      )
-    }));
+      );
+      // Several outlets: the total is the sum, so the two numbers can never disagree
+      const totalStock = outlets.length > 1
+        ? outletStock.reduce((sum, item) => sum + (Number(item.stock) || 0), 0)
+        : prev.totalStock;
+      return { ...prev, outletStock, totalStock };
+    });
   };
 
 
@@ -974,10 +978,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <NumericInput
-                    label={`${t('pricing.pricePerRental')} *`}
+                    label={t('pricing.pricePerRental')}
                     value={getOptionPrice(PRICING_TYPE.FIXED)}
                     onChange={(value) => updateRentPricing(PRICING_TYPE.FIXED, value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.rentPrice}
                     required
                     allowDecimals={true}
@@ -992,7 +996,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     label={t('pricing.pricePerDay')}
                     value={getOptionPrice(PRICING_TYPE.DAILY)}
                     onChange={(value) => updateRentPricing(PRICING_TYPE.DAILY, value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     allowDecimals={true}
                     maxDecimalPlaces={2}
                     disabled={!canEditPricing}
@@ -1009,7 +1013,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     label={t('fields.deposit')}
                     value={formData.deposit}
                     onChange={(value) => handleInputChange('deposit', value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.deposit}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
@@ -1022,7 +1026,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     label={t('fields.salePrice')}
                     value={formData.salePrice}
                     onChange={(value) => handleInputChange('salePrice', value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     error={!!errors.salePrice}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
@@ -1037,7 +1041,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       label={t('fields.costPrice')}
                       value={formData.costPrice}
                       onChange={(value) => handleInputChange('costPrice', value)}
-                      placeholder="0.00"
+                      placeholder="0"
                       error={!!errors.costPrice}
                       allowDecimals={true}
                       maxDecimalPlaces={2}
@@ -1048,15 +1052,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
                 <div>
                   <NumericInput
-                    label={`${t('fields.stock')} *`}
+                    label={t('fields.stock')}
                     value={formData.totalStock}
                     onChange={(value) => handleInputChange('totalStock', value)}
                     placeholder="0"
                     error={!!errors.totalStock}
                     required
+                    disabled={outlets.length > 1}
                     allowDecimals={false}
                     min={0}
                   />
+                  {outlets.length > 1 && <p className="mt-1 text-xs text-gray-600">{t('form.stockIsSum')}</p>}
                   {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
                 </div>
               </div>
@@ -1149,7 +1155,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </p>
               <p className="text-text-secondary text-sm mb-3">
                 {useMultipartUpload 
-                  ? `${t('messages.imageFormats')} (will be uploaded with form data)`
+                  ? t('messages.imageFormats')
                   : t('messages.imageFormats')
                 }
               </p>
