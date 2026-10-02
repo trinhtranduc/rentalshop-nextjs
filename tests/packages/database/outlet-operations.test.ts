@@ -127,4 +127,26 @@ describe('getOutletOperations (#350)', () => {
     const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     expect(result.newOrdersByDay).toEqual([]);
   });
+
+  it('tomorrow: hand-overs (RESERVED) and returns (PICKUPED) planned within tomorrow', async () => {
+    const tomorrowStart = new Date('2026-10-02T17:00:00.000Z');
+    const tomorrowEnd = new Date('2026-10-03T16:59:59.999Z');
+    mockPrisma.order.count.mockImplementation(async ({ where }: any) => {
+      if (where.pickupPlanAt?.gte?.getTime?.() === tomorrowStart.getTime()) return 3;
+      if (where.returnPlanAt?.gte?.getTime?.() === tomorrowStart.getTime()) return 2;
+      return 0;
+    });
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false, tomorrowStart, tomorrowEnd });
+    expect(result.tomorrow).toEqual({ pickups: 3, returns: 2 });
+    const pick = mockPrisma.order.count.mock.calls.find(([a]) => a.where.pickupPlanAt?.gte?.getTime?.() === tomorrowStart.getTime())[0].where;
+    expect(pick).toEqual(expect.objectContaining({ orderType: 'RENT', status: 'RESERVED', outletId: { in: [1] }, deletedAt: null }));
+    const ret = mockPrisma.order.count.mock.calls.find(([a]) => a.where.returnPlanAt?.gte?.getTime?.() === tomorrowStart.getTime())[0].where;
+    expect(ret.status).toBe('PICKUPED');
+    expect(ret.returnPlanAt).toEqual({ gte: tomorrowStart, lte: tomorrowEnd });
+  });
+
+  it('tomorrow is null when no window is given', async () => {
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    expect(result.tomorrow).toBeNull();
+  });
 });
