@@ -47,6 +47,7 @@ interface OutletFormData {
   country: string;
   phone: string;
   description: string;
+  printNote: string;
 }
 
 /**
@@ -78,6 +79,7 @@ export default function OutletsPage() {
     country: "",
     phone: "",
     description: "",
+    printNote: "",
   });
 
   // ============================================================================
@@ -201,6 +203,7 @@ export default function OutletsPage() {
               country: (outlet as any).country || "",
               phone: outlet.phone || "",
               description: outlet.description || "",
+              printNote: outlet.printNote || "",
             });
             setShowEditDialog(true);
           }
@@ -286,6 +289,7 @@ export default function OutletsPage() {
           country: formData.country,
           phone: formData.phone,
           description: formData.description,
+          printNote: formData.printNote,
         });
 
         if (response.success) {
@@ -460,6 +464,14 @@ export default function OutletsPage() {
                     </p>
                   </div>
                 )}
+                {selectedOutlet.printNote && (
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      {to("fields.printNote")}
+                    </label>
+                    <p className="text-sm whitespace-pre-wrap">{selectedOutlet.printNote}</p>
+                  </div>
+                )}
               </div>
               </div>
 
@@ -630,6 +642,26 @@ export default function OutletsPage() {
                 placeholder={to("placeholders.enterOutletDescription")}
                 rows={3}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="printNote" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                {to("fields.printNote")}
+              </Label>
+              <Textarea
+                id="printNote"
+                value={formData.printNote}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    printNote: e.target.value,
+                  }))
+                }
+                placeholder={to("placeholders.enterPrintNote")}
+                rows={3}
+                maxLength={500}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">{to("fields.printNoteHint")}</p>
             </div>
 
               {/* Action Buttons */}

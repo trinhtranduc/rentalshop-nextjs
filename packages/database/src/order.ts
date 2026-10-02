@@ -956,6 +956,7 @@ export const simplifiedOrders = {
             id: true, 
             name: true,
             merchantId: true,
+            printNote: true, // RENT receipt footer (#347)
             merchant: { select: { id: true, name: true } }
           } 
         },
@@ -2003,6 +2004,7 @@ export const simplifiedOrders = {
             zipCode: true,
             country: true,
             isActive: true,
+            printNote: true, // RENT receipt footer (#347)
             merchant: {
               select: {
                 id: true,

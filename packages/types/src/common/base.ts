@@ -195,6 +195,7 @@ export interface OutletReference {
   merchantId: number;
   merchant?: MerchantReference;
   defaultBankAccount?: BankAccountReference; // Default bank account for payments
+  printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
 }
 
 /**

@@ -196,6 +196,8 @@ model Outlet {
   name         String
   address      String?
   description  String?
+  /// Printed at the bottom of RENT receipts, e.g. "Vui lòng mang theo CMND khi lấy đồ" (#347)
+  printNote    String?
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())
