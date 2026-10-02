@@ -429,12 +429,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         }
         
         setIsEditingPersonal(false);
-        toastSuccess('Success', t('messages.personalProfileUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.personalProfileUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.personalProfileUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.personalProfileUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.personalProfileUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.personalProfileUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -457,14 +457,14 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         await refreshUser();
         
         setIsEditingMerchant(false);
-        toastSuccess('Success', t('messages.businessInfoUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.businessInfoUpdated'));
       } else {
         console.log('❌ API failed:', response.error);
-        toastError('Error', response.error || t('messages.businessInfoUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.businessInfoUpdateFailed'));
       }
     } catch (error) {
       console.error('❌ Error in handleUpdateMerchantInfo:', error);
-      toastError('Error', t('messages.businessInfoUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.businessInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -483,12 +483,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         await refreshUser();
         
         setIsEditingOutlet(false);
-        toastSuccess('Success', t('messages.outletInfoUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.outletInfoUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.outletInfoUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.outletInfoUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.outletInfoUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.outletInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -529,15 +529,15 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   const handleChangePassword = async () => {
     // ✅ Frontend validation only - prevent invalid submissions
     if (!passwordData.currentPassword) {
-      toastError('Error', t('messages.currentPasswordRequired') || 'Current password is required');
+      toastError(t('messages.errorTitle'), t('messages.currentPasswordRequired') || 'Current password is required');
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toastError('Error', t('messages.passwordMismatch'));
+      toastError(t('messages.errorTitle'), t('messages.passwordMismatch'));
       return;
     }
     if (passwordData.newPassword.length < 6) {
-      toastError('Error', t('messages.passwordTooShort'));
+      toastError(t('messages.errorTitle'), t('messages.passwordTooShort'));
       return;
     }
 
@@ -580,12 +580,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
           }
         }
         
-        toastSuccess('Success', t('messages.currencyUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.currencyUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.currencyUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.currencyUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.currencyUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.currencyUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }

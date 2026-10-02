@@ -1,19 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Card, 
-  CardContent,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
-  Button,
-  Breadcrumb
 } from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
-import { ChevronRight } from 'lucide-react';
-import { useSettingsTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -48,28 +41,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   activeSection,
   onSectionChange
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const t = useSettingsTranslations();
-  const tCommon = useCommonTranslations();
-
-  // Get active section label for breadcrumb
-  const activeMenuItem = menuItems.find(item => item.id === activeSection);
-  const activeSectionLabel = activeMenuItem?.label || t('title');
-
-  // Build breadcrumb items
-  const breadcrumbItems: BreadcrumbItem[] = [
-    {
-      label: tCommon('navigation.dashboard') || 'Dashboard',
-      href: '/dashboard'
-    },
-    {
-      label: t('title'),
-      href: '/settings'
-    },
-    {
-      label: activeSectionLabel
-    }
-  ];
 
   // Show loading state while user data is being fetched
   if (loading) {
@@ -89,75 +61,52 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     );
   }
 
-  // Show basic settings UI even if user is not loaded (keep UI as is)
-  // This prevents the infinite loading state and shows the settings interface
+  const visibleItems = menuItems.filter((item) => {
+    if (!item.roles) return true;
+    const userRole = (user?.role || '').trim().toUpperCase();
+    return item.roles.some((role) => role.toUpperCase() === userRole);
+  });
 
   return (
-    <PageWrapper>
-      <Breadcrumb 
-        items={breadcrumbItems}
-        showHome={false}
-        homeHref="/dashboard"
-        className="mb-4"
-      />
+    <div>
       <PageHeader>
         <PageTitle>{t('title')}</PageTitle>
-        <p>{t('subtitle')}</p>
       </PageHeader>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar Navigation */}
-        <div className="lg:w-64 flex-shrink-0">
-          <Card>
-            <CardContent className="p-0">
-              <nav className="space-y-1">
-                {menuItems
-                  .filter((item) => {
-                    // Filter menu items based on user role
-                    if (!item.roles) return true; // Show items without role restrictions
-                    
-                    // Normalize role comparison (trim whitespace, handle case)
-                    const userRole = (user?.role || '').trim().toUpperCase();
-                    const hasRole = item.roles.some(role => role.toUpperCase() === userRole);
-                    
-                    return hasRole;
-                  })
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeSection === item.id;
-                    
-                    return (
-                      <Button
-                        variant="ghost"
-                        key={item.id}
-                        onClick={() => onSectionChange(item.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{item.label}</p>
-                          <p className="text-xs text-gray-500 truncate">{item.description}</p>
-                        </div>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    );
-                  })}
-              </nav>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        {/* Section menu: chips that scroll on phones, a short list on desktop */}
+        <nav aria-label={t('menuItems.navLabel')} className="lg:w-56 lg:flex-shrink-0">
+          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 lg:pb-0">
+            {visibleItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <li key={item.id} className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onSectionChange(item.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                    title={item.description}
+                    className={`flex min-h-[40px] w-full items-center gap-2.5 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium transition-colors lg:rounded-lg lg:border-0 lg:px-3 ${
+                      isActive
+                        ? 'border-blue-200 bg-blue-50 text-blue-800'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 lg:bg-transparent'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    {item.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          <PageContent>
-            {children}
-          </PageContent>
+        {/* Section */}
+        <div className="min-w-0 flex-1 lg:max-w-3xl">
+          {children}
         </div>
       </div>
-    </PageWrapper>
+    </div>
   );
 };

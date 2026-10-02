@@ -213,7 +213,15 @@
     "methodManual": "Khác",
     "methodCard": "Thẻ",
     "historyEmptyFriendly": "Chưa có hoạt động nào",
-    "historyLoadingFriendly": "Đang tải lịch sử..."
+    "historyLoadingFriendly": "Đang tải lịch sử...",
+    "statusValues": {
+      "ACTIVE": "Đang hoạt động",
+      "TRIAL": "Dùng thử",
+      "PAST_DUE": "Quá hạn thanh toán",
+      "CANCELLED": "Đã hủy",
+      "EXPIRED": "Đã hết hạn",
+      "PAUSED": "Tạm dừng"
+    }
   },
   "currency": {
     "title": "Cài đặt tiền tệ",
@@ -313,7 +321,8 @@
     "account": {
       "label": "Tài khoản",
       "description": "Cài đặt tài khoản, mật khẩu và tùy chọn"
-    }
+    },
+    "navLabel": "Mục cài đặt"
   },
   "messages": {
     "updateSuccess": "Cập nhật cài đặt thành công",
@@ -335,7 +344,9 @@
     "accountDeleteFailed": "Không thể xóa tài khoản. Vui lòng thử lại.",
     "passwordMismatch": "Mật khẩu mới không khớp",
     "passwordTooShort": "Mật khẩu mới phải có ít nhất 6 ký tự",
-    "currentPasswordRequired": "Mật khẩu hiện tại là bắt buộc"
+    "currentPasswordRequired": "Mật khẩu hiện tại là bắt buộc",
+    "successTitle": "Thành công",
+    "errorTitle": "Lỗi"
   },
   "deleteAccountDialog": {
     "title": "Xóa tài khoản",
