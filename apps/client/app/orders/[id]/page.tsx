@@ -180,6 +180,12 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
+      // returnOrder only changes the status: save the damage fee entered in the return dialog first
+      if (order && (data.damage_fee || 0) !== (order.damageFee || 0)) {
+        const saved = await ordersApi.updateOrderSettings(parseInt(orderId), { damageFee: data.damage_fee || 0 });
+        if (!saved.success) throw new Error(saved.error || 'Failed to save damage fee');
+      }
+
       const result = await ordersApi.returnOrder(parseInt(orderId));
 
       if (result.success) {

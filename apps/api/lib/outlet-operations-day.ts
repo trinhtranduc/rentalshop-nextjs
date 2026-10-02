@@ -37,3 +37,12 @@ export function getOperationsWeek(now: Date = new Date()) {
     return { dateKey: toAvailabilityCivilDateKey(start), start, end };
   });
 }
+
+/** UTC bounds of Vietnam civil days `fromKey`..`toKey` (both `YYYY-MM-DD`, inclusive). */
+export function civilDayRange(fromKey: string, toKey: string): { start: Date; end: Date } {
+  const [fy, fm, fd] = fromKey.split('-').map(Number);
+  const [ty, tm, td] = toKey.split('-').map(Number);
+  const start = new Date(Date.UTC(fy, fm - 1, fd) - VN_OFFSET_MS);
+  const end = new Date(Date.UTC(ty, tm - 1, td) - VN_OFFSET_MS + DAY_MS - 1);
+  return { start, end };
+}

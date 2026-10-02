@@ -6,31 +6,10 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
+import { applyOrderDateRange } from './order-date-range';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
-const ORDER_DATE_FILTER_FIELDS = ['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt'] as const;
-type OrderDateFilterField = (typeof ORDER_DATE_FILTER_FIELDS)[number];
-
-function applyOrderDateRange(
-  where: Record<string, unknown>,
-  startDate?: Date,
-  endDate?: Date,
-  dateField?: string
-) {
-  if (!startDate && !endDate) return;
-  const field: OrderDateFilterField = ORDER_DATE_FILTER_FIELDS.includes(dateField as OrderDateFilterField)
-    ? (dateField as OrderDateFilterField)
-    : 'createdAt';
-  const range: Record<string, unknown> = {};
-  const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
-  const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
-  if (normalizedStart) range.gte = normalizedStart;
-  if (normalizedEnd) range.lte = normalizedEnd;
-  if (field === 'pickedUpAt' || field === 'returnedAt') {
-    range.not = null;
-  }
-  where[field] = range;
-}
+// Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
 
 /**
  * Build search conditions for orders with contains matching across:
@@ -1625,6 +1604,8 @@ export const simplifiedOrders = {
     startDate?: Date;
     endDate?: Date;
     dateField?: string;
+    /** startDate/endDate are exact bounds (Vietnam civil days computed by the route) */
+    exactDateRange?: boolean;
     search?: string;
     q?: string; // Support 'q' parameter (alias for 'search')
     page?: number;
@@ -1642,6 +1623,7 @@ export const simplifiedOrders = {
       startDate,
       endDate,
       dateField,
+      exactDateRange,
       search,
       q, // Add 'q' parameter support
       page = 1,
@@ -1678,7 +1660,7 @@ export const simplifiedOrders = {
       };
     }
     
-    applyOrderDateRange(where, startDate, endDate, dateField);
+    applyOrderDateRange(where, startDate, endDate, dateField, exactDateRange);
 
     // Handle merchant filter (through outlet relation)
     // merchantId is Int in schema, so we can use it directly (no conversion needed)

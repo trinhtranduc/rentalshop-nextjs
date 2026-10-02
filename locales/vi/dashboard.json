@@ -172,7 +172,9 @@
       "cancelledTooltip": "Số đơn chuyển sang hủy trong kỳ",
       "netRevenue": "Tiền thu ròng",
       "netRevenueTooltip": "Tiền thu trong kỳ sau khi trừ tiền hoàn cho đơn hủy và tiền cọc trả lại khách. Có thể âm.",
-      "ordersTrend": "Đơn mới 7 ngày qua: {values}"
+      "ordersTrend": "Đơn mới 7 ngày qua: {values}",
+      "netCashToday": "Tiền thu ròng hôm nay",
+      "netCashTodayTooltip": "Cọc của đơn mới, tiền còn lại và thế chấp khi giao đồ, phí khi nhận trả; trừ thế chấp trả lại và tiền hoàn đơn hủy."
     },
     "chips": {
       "all": "Tất cả",
@@ -198,6 +200,15 @@
     },
     "call": "Gọi {name}",
     "showMore": "Xem thêm {count} đơn",
-    "showLess": "Thu gọn"
+    "showLess": "Thu gọn",
+    "notReadyCount": "Chưa soạn đồ: {count}/{total} đơn cần giao",
+    "tomorrow": "Ngày mai: {pickups} đơn giao · {returns} đơn trả",
+    "actions": {
+      "handOver": "Giao",
+      "takeBack": "Nhận trả",
+      "failed": "Không mở được đơn",
+      "handedOver": "Đã giao đồ",
+      "takenBack": "Đã nhận trả"
+    }
   }
 }

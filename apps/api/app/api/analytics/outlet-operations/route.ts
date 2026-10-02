@@ -98,6 +98,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       soonEnd,
       includeCash,
       trendDays: getOperationsWeek(),
+      // Vietnam has no DST: tomorrow is the next 24h civil day
+      tomorrowStart: new Date(day.end.getTime() + 1),
+      tomorrowEnd: new Date(day.end.getTime() + 24 * 60 * 60 * 1000),
     });
 
     const list = (group: { count: number; orders: OperationsRow[] }, withOverdue = false) => ({
@@ -116,6 +119,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         returnsSoon: list(ops.returnsSoon as any),
         doneToday: ops.doneToday,
         newOrdersByDay: ops.newOrdersByDay,
+        tomorrow: ops.tomorrow,
         cash: ops.cash,
       })
     );

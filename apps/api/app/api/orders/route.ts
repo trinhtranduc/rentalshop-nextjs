@@ -33,6 +33,7 @@ import {
   handleLoyaltyOnOrderCreate,
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
+import { civilDayRange } from '../../../lib/outlet-operations-day';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -110,13 +111,23 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     });
     
     // Implement role-based filtering
+    const dayKey = /^\d{4}-\d{2}-\d{2}$/;
+    const civilRange =
+      startDate && dayKey.test(String(startDate)) && (!endDate || dayKey.test(String(endDate)))
+        ? civilDayRange(String(startDate), String(endDate || startDate))
+        : null;
     let searchFilters: any = {
       customerId,
       productId,
       orderType,
       status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      // YYYY-MM-DD means Vietnam civil days ("today" used to start at 07:00 Vietnam time)
+      ...(civilRange
+        ? { startDate: civilRange.start, endDate: civilRange.end, exactDateRange: true }
+        : {
+            startDate: startDate ? new Date(startDate) : undefined,
+            endDate: endDate ? new Date(endDate) : undefined,
+          }),
       dateField,
       q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,

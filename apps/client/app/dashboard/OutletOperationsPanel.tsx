@@ -3,9 +3,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Phone, Wallet } from 'lucide-react';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { CollectionReturnModal, useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useDashboardTranslations } from '@rentalshop/hooks';
-import { analyticsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import type { OutletOperations, OutletOperationsOrder } from '@rentalshop/utils';
 
 type GroupKey = 'overdueReturns' | 'pickupsToday' | 'returnsToday' | 'noShows';
@@ -122,6 +122,42 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
   const [filter, setFilter] = useState<FilterKey>('all');
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const { toastSuccess, toastError } = useToast();
+  // Hand-over / take-back straight from the list, with the same dialog as the order page
+  const [action, setAction] = useState<{ mode: 'collection' | 'return'; order: any } | null>(null);
+  const [openingId, setOpeningId] = useState<number | null>(null);
+
+  const openAction = async (mode: 'collection' | 'return', orderNumber: string, id: number) => {
+    setOpeningId(id);
+    try {
+      const res = await ordersApi.getOrderByNumber(orderNumber);
+      if (res.success && res.data) setAction({ mode, order: res.data });
+      else toastError(t('operations.actions.failed'), res.error || '');
+    } finally {
+      setOpeningId(null);
+    }
+  };
+
+  const confirmAction = async (overrides?: { damageFee?: number }) => {
+    if (!action) return;
+    const { mode, order } = action;
+    if (mode === 'collection') {
+      const res = await ordersApi.pickupOrder(order.id);
+      if (!res.success) throw new Error(res.error || 'pickup failed');
+    } else {
+      // returnOrder only changes the status: save the damage fee first
+      const fee = overrides?.damageFee ?? 0;
+      if (fee !== (order.damageFee || 0)) {
+        const saved = await ordersApi.updateOrderSettings(order.id, { damageFee: fee });
+        if (!saved.success) throw new Error(saved.error || 'damage fee failed');
+      }
+      const res = await ordersApi.returnOrder(order.id);
+      if (!res.success) throw new Error(res.error || 'return failed');
+    }
+    toastSuccess(mode === 'collection' ? t('operations.actions.handedOver') : t('operations.actions.takenBack'), `#${order.orderNumber}`);
+    setAction(null);
+    load();
+  };
 
   // Keep the "now" marker roughly in place on a dashboard left open all day
   useEffect(() => {
@@ -150,6 +186,7 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
   }
 
   const done = data.doneToday ?? { pickups: 0, returns: 0 };
+  const notReady = data.pickupsToday.orders.filter((o) => !o.isReadyToDeliver).length;
   const totalCount = GROUPS.reduce((sum, key) => sum + data[key].count, 0);
   const filterCount = filter === 'all' ? totalCount : data[filter].count;
   const visibleRows = expanded ? rows : rows.slice(0, COLLAPSED_ROWS);
@@ -214,6 +251,22 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
           barClass="bg-emerald-600"
         />
       </div>
+
+      {/* Still to prepare today, and what is coming tomorrow */}
+      {(notReady > 0 || data.tomorrow) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pt-2 text-xs text-gray-700">
+          {notReady > 0 && (
+            <span className="font-medium text-amber-800">
+              {t('operations.notReadyCount', { count: notReady, total: data.pickupsToday.count })}
+            </span>
+          )}
+          {data.tomorrow && (
+            <span>
+              {t('operations.tomorrow', { pickups: data.tomorrow.pickups, returns: data.tomorrow.returns })}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Booked hours today: when the shop will be busy */}
       <div className="px-4 pt-4">
@@ -315,6 +368,19 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
                     </span>
                     <span className="truncate text-gray-600 max-sm:col-span-2 max-sm:-mt-1 max-sm:text-xs">{name}</span>
                   </Link>
+                  {(() => {
+                    const mode = group === 'pickupsToday' || group === 'noShows' ? 'collection' : 'return';
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => openAction(mode, order.orderNumber, order.id)}
+                        disabled={openingId === order.id}
+                        className="inline-flex h-8 shrink-0 items-center rounded-md border border-blue-200 bg-blue-50 px-2.5 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60"
+                      >
+                        {mode === 'collection' ? t('operations.actions.handOver') : t('operations.actions.takeBack')}
+                      </button>
+                    );
+                  })()}
                   {order.customerPhone ? (
                     <a
                       href={`tel:${order.customerPhone}`}
@@ -345,6 +411,23 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
           <p className="pb-2 text-center text-xs text-gray-500">{t('operations.more', { count: notLoaded })}</p>
         )}
       </div>
+      {action && (
+        <CollectionReturnModal
+          isOpen
+          onClose={() => setAction(null)}
+          order={action.order}
+          settingsForm={{
+            damageFee: action.order.damageFee || 0,
+            securityDeposit: action.order.securityDeposit || 0,
+            collateralType: action.order.collateralType || '',
+            collateralDetails: action.order.collateralDetails || '',
+            notes: action.order.notes || '',
+          }}
+          mode={action.mode}
+          onConfirmPickup={() => confirmAction()}
+          onConfirmReturn={(overrides) => confirmAction(overrides)}
+        />
+      )}
     </section>
   );
 }
@@ -392,12 +475,10 @@ export function ShiftCashCard({ state }: { state: OutletOperationsState }) {
       </h2>
       <dl className="mt-2 divide-y divide-gray-100">
         {rows.map((row) => (
-          <div key={row.key} className="flex items-start justify-between gap-3 py-2.5">
-            <div className="min-w-0">
-              <dt className="text-sm font-medium text-gray-900">{row.label}</dt>
-              <p className="text-xs text-gray-600">{row.hint}</p>
-            </div>
-            <dd className="shrink-0 text-lg font-bold tabular-nums text-gray-900">{formatMoney(row.value)}</dd>
+          <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 py-2.5">
+            <dt className="text-sm font-medium text-gray-900">{row.label}</dt>
+            <dd className="row-span-2 text-lg font-bold tabular-nums text-gray-900">{formatMoney(row.value)}</dd>
+            <dd className="text-xs text-gray-600">{row.hint}</dd>
           </div>
         ))}
       </dl>

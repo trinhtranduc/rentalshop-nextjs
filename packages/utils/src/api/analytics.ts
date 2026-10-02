@@ -37,6 +37,8 @@ export interface OutletOperations {
   doneToday: { pickups: number; returns: number };
   /** New orders per Vietnam civil day, last 7 days, oldest first (today last) */
   newOrdersByDay: { date: string; count: number }[];
+  /** Tomorrow's planned hand-overs (RESERVED) and returns (PICKUPED) */
+  tomorrow?: { pickups: number; returns: number } | null;
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };

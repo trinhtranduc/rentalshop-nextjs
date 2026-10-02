@@ -172,7 +172,9 @@
       "cancelledTooltip": "Orders moved to cancelled during the period",
       "netRevenue": "Net cash in",
       "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned deposits. Can be negative.",
-      "ordersTrend": "New orders, last 7 days: {values}"
+      "ordersTrend": "New orders, last 7 days: {values}",
+      "netCashToday": "Net cash in today",
+      "netCashTodayTooltip": "Deposits on new orders, balance and security deposit at hand-over, fees at return; minus deposits given back and refunds."
     },
     "chips": {
       "all": "All",
@@ -198,6 +200,15 @@
     },
     "call": "Call {name}",
     "showMore": "Show {count} more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "notReadyCount": "Not prepared: {count}/{total} hand-overs",
+    "tomorrow": "Tomorrow: {pickups} hand-overs · {returns} returns",
+    "actions": {
+      "handOver": "Hand over",
+      "takeBack": "Take back",
+      "failed": "Could not open the order",
+      "handedOver": "Handed over",
+      "takenBack": "Taken back"
+    }
   }
 }

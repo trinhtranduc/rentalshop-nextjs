@@ -1366,11 +1366,11 @@ export default function DashboardPage() {
             <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 items-stretch">
               <StatCard
                 isMoney
-                title={t('stats.todayRevenue')}
+                title={t('operations.kpi.netCashToday')}
                 value={currentStats.todayRevenue}
                 change=""
                 description=""
-                tooltip={t('tooltips.todayRevenue')}
+                tooltip={t('operations.kpi.netCashTodayTooltip')}
                 color="text-blue-700"
                 trend="neutral"
               />
