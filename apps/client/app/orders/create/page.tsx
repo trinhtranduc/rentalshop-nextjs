@@ -39,7 +39,7 @@ export default function CreateOrderPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [customers, setCustomers] = useState<CustomerSearchResult[]>([]);
   const [products, setProducts] = useState<ProductWithStock[]>([]);
-  const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number }>>([]);
+  const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number; printNote?: string | null }>>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [resetFormFn, setResetFormFn] = useState<(() => void) | null>(null);
   
@@ -121,7 +121,8 @@ export default function CreateOrderPage() {
           const mapped = outletsArray.map((o: any) => ({ 
             id: o.id, // Use the id field that's already provided by the API
             name: o.name,
-            merchantId: o.merchantId || o.merchant?.id
+            merchantId: o.merchantId || o.merchant?.id,
+            printNote: o.printNote ?? null, // RENT receipt footer after create (#347)
           }));
           
           console.log('🔍 Mapped outlets for frontend:', mapped);

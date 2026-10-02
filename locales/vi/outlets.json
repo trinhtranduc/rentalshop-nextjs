@@ -12,6 +12,8 @@
     "country": "Quốc gia",
     "phone": "Số điện thoại",
     "description": "Mô tả",
+    "printNote": "Ghi chú in hóa đơn",
+    "printNoteHint": "In ở cuối hóa đơn thuê, ví dụ nhắc mang CMND hoặc chính sách đổi trả. Tối đa 500 ký tự.",
     "status": "Trạng thái",
     "manager": "Quản lý",
     "notAvailable": "Không có"
@@ -72,7 +74,8 @@
     "enterZipCode": "Nhập mã bưu điện",
     "enterCountry": "Nhập quốc gia",
     "enterOutletPhone": "Nhập số điện thoại cửa hàng",
-    "enterOutletDescription": "Nhập mô tả cửa hàng"
+    "enterOutletDescription": "Nhập mô tả cửa hàng",
+    "enterPrintNote": "Ví dụ: *** Vui lòng mang theo CMND/BLX khi lấy đồ"
   }
 }
 

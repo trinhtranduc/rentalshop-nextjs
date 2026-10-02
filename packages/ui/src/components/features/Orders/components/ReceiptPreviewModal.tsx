@@ -15,6 +15,7 @@ import type { OutletReference, MerchantReference } from '@rentalshop/types';
 import { formatCurrency, formatPhoneNumber } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { resolveReceiptPrintNote } from './receipt-print-note';
 
 interface ReceiptPreviewModalProps {
   isOpen: boolean;
@@ -281,6 +282,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   // Get shop address from order.outlet, outlet prop, or merchant
   const shopAddress = order.outlet?.address || outlet?.address || (merchant as any)?.address || '';
   
+  // Outlet note for the RENT footer (#347)
+  const printNote = resolveReceiptPrintNote(order, outlet);
+
   // Get customer name from order.customer object or flattened fields
   const customerName = order.customer 
     ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'
@@ -437,6 +441,13 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
             <>
               <div className="text-center font-bold">{t('receipt.note')}</div>
               <div>{order.notes}</div>
+            </>
+          )}
+          {printNote && (
+            <>
+              <div>------------------------------------------------</div>
+              {/* Inline style: the print iframe has no Tailwind; keep the note's line breaks */}
+              <div style={{ whiteSpace: 'pre-wrap' }}>{printNote}</div>
             </>
           )}
           <div>------------------------------------------------</div>
