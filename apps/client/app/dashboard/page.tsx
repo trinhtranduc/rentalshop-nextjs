@@ -26,7 +26,6 @@ import {
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
-  Users,
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
