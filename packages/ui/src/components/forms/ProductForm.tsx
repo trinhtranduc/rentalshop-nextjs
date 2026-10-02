@@ -948,7 +948,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     handleInputChange('categoryId', value);
                   }}
                 >
-                  <SelectTrigger className={errors.categoryId ? 'border-red-500' : ''}>
+                  <SelectTrigger aria-label={t('fields.category')} className={errors.categoryId ? 'border-red-500' : ''}>
                     <SelectValue placeholder={t('fields.category')} />
                   </SelectTrigger>
                   <SelectContent>

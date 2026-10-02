@@ -293,7 +293,9 @@
     "sectionInfo": "Thông tin sản phẩm",
     "editTitle": "Sửa sản phẩm",
     "sectionOrganise": "Phân loại & mã",
-    "stockTotal": "Tổng tồn kho: {count}"
+    "stockTotal": "Tổng tồn kho: {count}",
+    "singleOutletNote": "Cửa hàng mặc định: {name}. Sản phẩm sẽ được thêm vào cửa hàng này.",
+    "createTitle": "Sản phẩm mới"
   },
   "view": {
     "noImage": "Chưa có ảnh",

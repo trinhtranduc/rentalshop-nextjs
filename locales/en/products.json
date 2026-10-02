@@ -293,7 +293,9 @@
     "sectionInfo": "Product details",
     "editTitle": "Edit product",
     "sectionOrganise": "Organisation",
-    "stockTotal": "Total stock: {count}"
+    "stockTotal": "Total stock: {count}",
+    "singleOutletNote": "Default outlet: {name}. The product is added to this outlet.",
+    "createTitle": "New product"
   },
   "view": {
     "noImage": "No photo",
