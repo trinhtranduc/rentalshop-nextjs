@@ -13,5 +13,7 @@ import Foundation
 struct LoginData: Codable {
     let user: User
     let token: String?
+    /// Present on /api/mobile/auth/login (#344); bound to this login's session.
+    let refreshToken: String?
 }
 

@@ -167,17 +167,21 @@ extension AppDelegate {
     private func setupNotificationObservers() {
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleUnauthorizedAccess),
+            selector: #selector(handleUnauthorizedAccess(_:)),
             name: .userSessionExpired,  // Using correct notification name
             object: nil
         )
     }
     
-    @objc private func handleUnauthorizedAccess() {
+    @objc private func handleUnauthorizedAccess(_ notification: Notification) {
+        // Already on the login screen (e.g. a late 401 after logout)
+        guard User.account() != nil else { return }
         self.logout()
         
+        // Say why: another device signed in vs. the session simply ended (#344)
+        let code = notification.userInfo?["code"] as? String
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let errorCode = APIErrorCode.forbidden
+            let errorCode: APIErrorCode = code == APIErrorCode.sessionReplaced.rawValue ? .sessionReplaced : .sessionExpired
             let error = NSError.errorWithOwnMessage(
                 message: errorCode.defaultMessage,
                 domain: "RC",
