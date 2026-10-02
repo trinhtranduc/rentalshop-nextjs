@@ -455,6 +455,14 @@
     "reset": "Đặt lại",
     "resetConfirm": "Xoá hết các món và thông tin đã nhập?",
     "decrease": "Giảm số lượng",
-    "increase": "Tăng số lượng"
+    "increase": "Tăng số lượng",
+    "quick": {
+      "today": "Hôm nay",
+      "tomorrow": "Ngày mai",
+      "weekend": "Cuối tuần",
+      "threeDays": "3 ngày"
+    },
+    "customerTitle": "Khách hàng",
+    "paymentTitle": "Thanh toán"
   }
 }

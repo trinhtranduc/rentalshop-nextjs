@@ -17,7 +17,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  MoreHorizontal,
   Package, 
   X,
   Plus,
@@ -216,14 +215,6 @@ const getLineDisplay = (
   const lineDays = isDaily ? days : 1;
   return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
 };
-
-const getPricingUnit = (pricingType?: string | null): string => {
-  if (pricingType === 'DAILY') return '/ngày';
-  if (pricingType === 'HOURLY') return '/giờ';
-  // FIXED (per rental): no unit suffix — only daily/hourly need a unit label
-  return '';
-};
-
 
 /** Units free for the order period, reported up so the summary can warn before creating (#create-order UI). */
 export interface ItemAvailability {
@@ -469,28 +460,47 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
   }
 
   const options = ((item.product?.pricingOptions as any[]) || []);
+  const setPricing = (nextType: string) => {
+    if (nextType === pricingType) return;
+    const matched = options.find((opt: any) => (opt.type || '').toUpperCase() === nextType);
+    if (matched?.id != null && onUpdatePricingOption) onUpdatePricingOption(item.productId, matched.id);
+    else onUpdatePricingType?.(item.productId, nextType);
+  };
+  const fieldLabel = 'mb-1 block text-xs font-medium text-gray-600';
+  const ids = `item-${item.productId}`;
 
   return (
-    <li className="px-3 py-2.5">
-      {/* Phones: name and remove on the first line, numbers on the second */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap">
-        <div className="order-1 flex min-w-0 basis-[calc(100%-5rem)] items-center gap-3 sm:flex-1 sm:basis-auto">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50">
-            {imageUrl ? (
-              <ImageLightbox src={imageUrl} alt={name} triggerClassName="h-full w-full" imgClassName="object-cover" />
-            ) : (
-              <Package className="h-4 w-4 text-gray-400" aria-hidden="true" />
-            )}
-          </span>
-          <div className="min-w-0">
-            <p className="line-clamp-2 text-sm font-medium leading-snug text-gray-900" title={displayProduct?.barcode || undefined}>
-              {name}
-            </p>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">{badge}</div>
+    <li className="px-3 py-3">
+      {/* Line 1: what it is and whether it is free for the period */}
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+          {imageUrl ? (
+            <ImageLightbox src={imageUrl} alt={name} triggerClassName="h-full w-full" imgClassName="object-cover" />
+          ) : (
+            <Package className="h-4 w-4 text-gray-400" aria-hidden="true" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-medium leading-snug text-gray-900">{name}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            {displayProduct?.barcode && <span className="text-xs text-gray-600">{displayProduct.barcode}</span>}
+            {badge}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => onRemove(item.productId)}
+          aria-label={t('form.remove', { name })}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-600 hover:bg-red-50 hover:text-red-700"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
 
-        <div className="order-3 ml-[3.25rem] sm:order-2 sm:ml-0">
+      {/* Line 2: every value with its label, the pricing choice in plain sight */}
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:ml-[3.25rem] sm:flex sm:flex-wrap sm:items-end">
+        <div>
+          <span className={fieldLabel}>{t('form.quantity')}</span>
           <QuantityInput
             value={item.quantity}
             onChange={(value) => onUpdate(item.productId, 'quantity', value)}
@@ -501,108 +511,89 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
           />
         </div>
 
-        <div className="order-4 w-24 shrink-0 sm:order-3 sm:w-28">
+        {orderType === 'RENT' && (
+          <div>
+            <span className={fieldLabel} id={`${ids}-pricing`}>{t('form.pricingMethod')}</span>
+            <div role="radiogroup" aria-labelledby={`${ids}-pricing`} className="flex h-8 w-full min-w-0 overflow-hidden rounded-md border border-gray-300 p-0.5 sm:inline-flex sm:w-auto">
+              {(['FIXED', 'DAILY'] as const).map((type) => {
+                const selected = pricingType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setPricing(type)}
+                    className={`flex-1 whitespace-nowrap rounded px-2.5 text-xs font-medium transition-colors sm:flex-none ${
+                      selected ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {t(`form.pricing.${type}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="sm:w-28">
+          <label className={fieldLabel} htmlFor={`${ids}-price`}>
+            {t('form.unitPrice')}
+            {line.isDaily ? <span className="font-normal text-gray-500"> /{t('summary.day')}</span> : null}
+          </label>
           <NumberInput
+            id={`${ids}-price`}
             value={item.unitPrice}
             onChange={(value) => onUpdate(item.productId, 'unitPrice', value)}
             min={0}
             decimals={0}
-            ariaLabel={`${t('form.unitPrice')} · ${t(`form.pricing.${pricingType}`)}`}
-            className="h-8 text-right text-sm tabular-nums"
+            className="h-8 bg-white text-right text-sm tabular-nums"
           />
-          {orderType === 'RENT' && (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="mt-0.5 block w-full truncate text-right text-[11px] text-gray-600 hover:text-blue-700"
-            >
-              {t(`form.pricing.${pricingType}`)}
+        </div>
+
+        {orderType === 'RENT' && (
+          <div className="sm:w-24">
+            <label className={fieldLabel} htmlFor={`${ids}-deposit`}>{t('form.depositPerUnit')}</label>
+            <NumberInput
+              id={`${ids}-deposit`}
+              value={item.deposit || 0}
+              onChange={(value) => onUpdate(item.productId, 'deposit', value)}
+              min={0}
+              decimals={0}
+              className="h-8 bg-white text-right text-sm tabular-nums"
+            />
+          </div>
+        )}
+
+        <div className="col-span-2 flex items-end justify-between gap-3 border-t border-gray-100 pt-2 sm:ml-auto sm:block sm:border-0 sm:pt-0 sm:text-right">
+          <span className={`${fieldLabel} sm:mb-1`}>{t('form.lineTotal')}</span>
+          <div>
+            <p className="text-base font-semibold tabular-nums text-gray-900">{formatMoney(line.total)}</p>
+            <p className="text-xs tabular-nums text-gray-600">
+              {item.quantity} × {formatMoney(item.unitPrice)}
               {line.isDaily ? ` ${t('form.timesDays', { days: line.days })}` : ''}
-            </button>
-          )}
-        </div>
-
-        <div className="order-5 ml-auto w-24 shrink-0 text-right sm:order-4 sm:ml-0">
-          <p className="text-sm font-semibold tabular-nums text-gray-900">{formatMoney(line.total)}</p>
-          {orderType === 'RENT' && (item.deposit || 0) > 0 && (
-            <p className="text-[11px] tabular-nums text-gray-600">
-              {t('form.depositLine', { amount: formatMoney((item.deposit || 0) * (item.quantity || 1)) })}
             </p>
-          )}
-        </div>
-
-        <div className="order-2 flex shrink-0 items-center sm:order-5">
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={t('form.moreOptions', { name })}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onRemove(item.productId)}
-            aria-label={t('form.remove', { name })}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-red-50 hover:text-red-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          </div>
         </div>
       </div>
 
-      {open && (
-        <div className="mt-2.5 grid grid-cols-1 gap-3 rounded-md bg-gray-50 p-3 sm:ml-[3.25rem] sm:grid-cols-3">
-          {orderType === 'RENT' && (
-            <label className="block text-xs font-medium text-gray-700">
-              {t('form.pricingMethod')}
-              <select
-                value={pricingType}
-                onChange={(e) => {
-                  const nextType = e.target.value;
-                  const matched = options.find((opt: any) => (opt.type || '').toUpperCase() === nextType);
-                  if (matched?.id != null && onUpdatePricingOption) onUpdatePricingOption(item.productId, matched.id);
-                  else onUpdatePricingType?.(item.productId, nextType);
-                }}
-                className="mt-1 h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm font-normal"
-              >
-                {(['FIXED', 'DAILY'] as const).map((type) => {
-                  const opt = options.find((option: any) => (option.type || '').toUpperCase() === type);
-                  const priceLabel = opt?.price != null ? ` · ${formatMoney(opt.price)}${getPricingUnit(type)}` : '';
-                  return (
-                    <option key={type} value={type}>
-                      {t(`form.pricing.${type}`)}
-                      {priceLabel}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-          )}
-          {orderType === 'RENT' && (
-            <label className="block text-xs font-medium text-gray-700">
-              {t('form.depositPerUnit')}
-              <NumberInput
-                value={item.deposit || 0}
-                onChange={(value) => onUpdate(item.productId, 'deposit', value)}
-                min={0}
-                decimals={0}
-                className="mt-1 h-8 bg-white text-sm"
-              />
-            </label>
-          )}
-          <label className={`block text-xs font-medium text-gray-700 ${orderType === 'RENT' ? '' : 'sm:col-span-3'}`}>
-            {t('form.itemNote')}
-            <Input
-              value={item.notes}
-              onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
-              placeholder={t('messages.addNotesForItem')}
-              className="mt-1 h-8 bg-white text-sm font-normal"
-            />
-          </label>
-        </div>
-      )}
+      {/* Item note: folded until needed */}
+      <div className="mt-2 sm:ml-[3.25rem]">
+        {open ? (
+          <Input
+            value={item.notes}
+            onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
+            placeholder={t('messages.addNotesForItem')}
+            aria-label={t('form.itemNote')}
+            className="h-8 bg-white text-sm"
+            autoFocus={!item.notes}
+          />
+        ) : (
+          <button type="button" onClick={() => setOpen(true)} className="min-h-[28px] text-xs font-medium text-blue-700 hover:underline">
+            + {t('form.itemNote')}
+          </button>
+        )}
+      </div>
     </li>
   );
 };

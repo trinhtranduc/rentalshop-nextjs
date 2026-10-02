@@ -48,6 +48,7 @@ import type {
   OrderItemFormData
 } from '../types';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { quickRanges, todayShopKey } from '../../../features/Availability/availability-days';
 
 // ============================================================================
 // NUMBER INPUT WITH THOUSAND SEPARATOR
@@ -160,6 +161,8 @@ interface OrderInfoSectionProps {
   amountDue?: number;
   /** Names of items without enough free units for the period */
   shortItems?: string[];
+  /** Render one part of the form: the top bar, the customer card or the payment card */
+  part?: 'top' | 'customer' | 'payment';
 }
 
 export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
@@ -190,10 +193,21 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   loyaltyDiscount = 0,
   amountDue,
   shortItems = [],
+  part,
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const quickPeriods = React.useMemo(() => {
+    const r = quickRanges(todayShopKey());
+    return [
+      { id: 'today', range: r.today },
+      { id: 'tomorrow', range: r.tomorrow },
+      { id: 'weekend', range: r.weekend },
+      { id: 'threeDays', range: r.threeDays },
+    ] as const;
+  }, []);
 
   const isRent = formData.orderType === 'RENT';
   const deposit = isRent ? formData.depositAmount || 0 : 0;
@@ -208,6 +222,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
   const content = (
     <>
+        {(!part || part === 'customer') && (
+          <>
         {/* 1. Customer first: who the order is for (create-order UI) */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
@@ -403,6 +419,10 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         </div>
 
+          </>
+        )}
+        {(!part || part === 'top') && (
+          <>
         {/* 2. Order Type Toggle */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
@@ -451,7 +471,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           <div className="space-y-2 w-full">
             {merchantData ? (
               <RentalPeriodSelector
-                key={`rental-period-${resetKey}`}
+                key={`rental-period-${resetKey}-${formData.pickupPlanAt}-${formData.returnPlanAt}`}
                 product={{
                   id: 0, // Placeholder - will be updated when product is selected
                   name: t('messages.rentalPeriod'),
@@ -516,6 +536,31 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 />
               </div>
             )}
+            {/* Quick periods, same as Order Check */}
+            {!isEditMode && (
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('messages.rentalPeriod')}>
+                {quickPeriods.map(({ id, range }) => {
+                  const selected = formData.pickupPlanAt === range.from && formData.returnPlanAt === range.to;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => {
+                        onFormDataChange('pickupPlanAt', range.from);
+                        onFormDataChange('returnPlanAt', range.to);
+                        onUpdateRentalDates(range.from, range.to);
+                      }}
+                      className={`inline-flex min-h-[32px] items-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors ${
+                        selected ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      {t(`form.quick.${id}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -557,6 +602,10 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         </div>
         )}
 
+          </>
+        )}
+        {(!part || part === 'payment') && (
+          <>
         {/* 5. Deposit Amount - Only for RENT orders */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
@@ -634,18 +683,23 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </div>
         </div>
 
-        {/* 7. Order Notes */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">{t('messages.orderNotes')}</label>
-          <Textarea
-            placeholder={t('messages.enterOrderNotes')}
-            value={formData.notes}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
-              onFormDataChange('notes', e.target.value)
-            }
-            rows={3}
-          />
-        </div>
+        {/* 7. Order Notes: folded away until needed */}
+        {showNotes || formData.notes ? (
+          <div className="space-y-2 w-full">
+            <label htmlFor="order-notes" className="text-sm font-medium text-text-primary">{t('messages.orderNotes')}</label>
+            <Textarea
+              id="order-notes"
+              placeholder={t('messages.enterOrderNotes')}
+              value={formData.notes}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onFormDataChange('notes', e.target.value)}
+              rows={2}
+            />
+          </div>
+        ) : (
+          <button type="button" onClick={() => setShowNotes(true)} className="min-h-[32px] text-sm font-medium text-blue-700 hover:underline">
+            + {t('messages.orderNotes')}
+          </button>
+        )}
 
         {/* 8. Order Summary: rental money, then what the customer hands over at pickup */}
         <div className="w-full space-y-2 rounded-lg border border-border bg-bg-primary p-4 text-sm">
@@ -742,10 +796,17 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             )}
           </div>
         )}
+          </>
+        )}
+
     </>
   );
 
 
+
+  if (part) {
+    return <div className="w-full space-y-4">{content}</div>;
+  }
 
   if (hideCardWrapper) {
     // When hideCardWrapper is true, return content with flexbox layout

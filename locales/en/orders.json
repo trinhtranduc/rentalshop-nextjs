@@ -455,6 +455,14 @@
     "reset": "Reset",
     "resetConfirm": "Remove all items and entered details?",
     "decrease": "Decrease quantity",
-    "increase": "Increase quantity"
+    "increase": "Increase quantity",
+    "quick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "weekend": "Weekend",
+      "threeDays": "3 days"
+    },
+    "customerTitle": "Customer",
+    "paymentTitle": "Payment"
   }
 }
