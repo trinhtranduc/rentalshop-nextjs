@@ -11,6 +11,7 @@ import { getOutletOperations } from '../../../packages/database/src/outlet-opera
 
 const start = new Date('2026-10-01T17:00:00.000Z');
 const end = new Date('2026-10-02T16:59:59.999Z');
+const soonEnd = new Date('2026-10-05T16:59:59.999Z');
 
 function whereOf(fn: jest.Mock, predicate: (w: any) => boolean) {
   const call = fn.mock.calls.find(([args]) => predicate(args.where));
@@ -27,7 +28,7 @@ describe('getOutletOperations (#350)', () => {
   });
 
   it('pickups today: RESERVED rentals picked up within today, in scope, not deleted', async () => {
-    await getOutletOperations({ outletIds: [1, 3], start, end, includeCash: false });
+    await getOutletOperations({ outletIds: [1, 3], start, end, soonEnd, includeCash: false });
     const where = whereOf(mockPrisma.order.findMany, (w) => w.status === 'RESERVED' && w.pickupPlanAt?.gte);
     expect(where).toEqual(
       expect.objectContaining({
@@ -40,31 +41,37 @@ describe('getOutletOperations (#350)', () => {
   });
 
   it('returns today: PICKUPED rentals due back within today', async () => {
-    await getOutletOperations({ outletIds: [1], start, end, includeCash: false });
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     const where = whereOf(mockPrisma.order.findMany, (w) => w.status === 'PICKUPED' && w.returnPlanAt?.gte);
     expect(where.returnPlanAt).toEqual({ gte: start, lte: end });
     expect(where.orderType).toBe('RENT');
   });
 
   it('overdue: PICKUPED rentals due back before today', async () => {
-    await getOutletOperations({ outletIds: [1], start, end, includeCash: false });
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     const where = whereOf(mockPrisma.order.findMany, (w) => w.status === 'PICKUPED' && w.returnPlanAt?.lt);
     expect(where.returnPlanAt).toEqual({ lt: start });
   });
 
   it('no-shows: RESERVED rentals whose pickup day has passed', async () => {
-    await getOutletOperations({ outletIds: [1], start, end, includeCash: false });
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     const where = whereOf(mockPrisma.order.findMany, (w) => w.status === 'RESERVED' && w.pickupPlanAt?.lt);
     expect(where.pickupPlanAt).toEqual({ lt: start });
   });
 
+  it('returns soon: PICKUPED rentals due back after today, within the next 3 days', async () => {
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    const where = whereOf(mockPrisma.order.findMany, (w) => w.status === 'PICKUPED' && w.returnPlanAt?.gt);
+    expect(where.returnPlanAt).toEqual({ gt: end, lte: soonEnd });
+  });
+
   it('caps each list at 50 rows', async () => {
-    await getOutletOperations({ outletIds: [1], start, end, includeCash: false });
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     for (const [args] of mockPrisma.order.findMany.mock.calls) expect(args.take).toBe(50);
   });
 
   it('computes no money without includeCash', async () => {
-    const result = await getOutletOperations({ outletIds: [1], start, end, includeCash: false });
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     expect(result.cash).toBeNull();
     expect(mockPrisma.order.aggregate).not.toHaveBeenCalled();
   });
@@ -75,7 +82,7 @@ describe('getOutletOperations (#350)', () => {
       if (where.returnPlanAt) return { _sum: { depositAmount: 100, securityDeposit: 50 }, _count: { _all: 1 } };
       return { _sum: { depositAmount: 500, securityDeposit: 200 }, _count: { _all: 4 } };
     });
-    const result = await getOutletOperations({ outletIds: [1], start, end, includeCash: true });
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: true });
     expect(result.cash).toEqual({
       depositsHeld: { depositAmount: 500, securityDeposit: 200, orders: 4 },
       depositsDueToday: { depositAmount: 100, securityDeposit: 50, orders: 1 },

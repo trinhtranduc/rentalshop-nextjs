@@ -29,7 +29,7 @@ function req(query = ''): any {
   return { url: `http://localhost/api/analytics/outlet-operations${query}` };
 }
 
-const emptyOps = { pickupsToday: { count: 0, orders: [] }, returnsToday: { count: 0, orders: [] }, overdueReturns: { count: 0, orders: [] }, noShows: { count: 0, orders: [] }, cash: null };
+const emptyOps = { pickupsToday: { count: 0, orders: [] }, returnsToday: { count: 0, orders: [] }, overdueReturns: { count: 0, orders: [] }, noShows: { count: 0, orders: [] }, returnsSoon: { count: 0, orders: [] }, cash: null };
 
 describe('GET /api/analytics/outlet-operations (#350)', () => {
   beforeEach(() => {
@@ -74,6 +74,14 @@ describe('GET /api/analytics/outlet-operations (#350)', () => {
     const res: any = await GET(req('?outletIds=3,99'));
     expect(res.status).toBe(403);
     expect(mockDb.outletOperations.get).not.toHaveBeenCalled();
+  });
+
+  it('asks for returns in the 3 civil days after today', async () => {
+    ctx = { user: { id: 8, role: 'OUTLET_ADMIN', outletId: 3, merchantId: 2 }, userScope: { merchantId: 2, outletId: 3 } };
+    mockHasPermission.mockResolvedValue(true);
+    await GET(req());
+    const { end, soonEnd } = mockDb.outletOperations.get.mock.calls[0][0];
+    expect(soonEnd.getTime() - end.getTime()).toBe(3 * 24 * 60 * 60 * 1000);
   });
 
   it('returns the Vietnam civil day it used', async () => {
