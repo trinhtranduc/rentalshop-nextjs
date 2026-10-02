@@ -242,11 +242,14 @@ export default function ProductEditPage() {
       {/* Page Loading Indicator - Floating, non-blocking */}
       <PageLoadingIndicator loading={loading} />
       <PageHeader>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleBack} size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('actions.backToProduct')}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="ghost" onClick={handleBack} size="sm" className="h-9 w-9 p-0" aria-label={t('actions.backToProduct')}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600">{t('form.editTitle')}</p>
+            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{product.name}</h1>
+          </div>
         </div>
       </PageHeader>
 

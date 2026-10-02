@@ -100,6 +100,8 @@ interface ProductFormProps {
   hideSubmitButton?: boolean; // Hide submit button when using external action buttons
   formId?: string; // Form ID for external submit buttons
   useMultipartUpload?: boolean; // New prop to enable multipart form data upload
+  /** 'page': full-page edit layout in cards and two columns; default stacks for dialogs */
+  layout?: 'stacked' | 'page';
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -116,8 +118,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   hideHeader = false,
   hideSubmitButton = false,
   formId,
+  layout = 'stacked',
   useMultipartUpload = false
 }) => {
+  const isPage = layout === 'page';
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
@@ -889,8 +893,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       )}
 
       <form id={formId} onSubmit={handleSubmit} className="space-y-4">
-        {/* Product Information */}
-        <div className="space-y-3">
+        {(() => {
+          const infoEl = (
+            <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
               <Input
@@ -966,6 +971,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
+            </div>
+          );
+          const pricingEl = (
+            <>
             {/* Compact pricing — no dynamic "add price" rows */}
             <div className="pt-3 border-t border-border space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground">{t('pricing.title')}</h3>
@@ -1007,7 +1016,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </div>
               </div>
 
-              <div className={`grid grid-cols-1 gap-3 ${canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+              <div className={`grid grid-cols-1 gap-3 ${isPage ? 'sm:grid-cols-2' : canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div>
                   <NumericInput
                     label={t('fields.deposit')}
@@ -1067,8 +1076,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </div>
               </div>
             </div>
-        </div>
-
+                    </>
+          );
+          const stockEl = (
+            <>
         {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
         {outlets.length > 1 ? (
           <div className="border-t pt-3 mt-3">
@@ -1131,6 +1142,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           </div>
         ) : null}
 
+            </>
+          );
+          const imagesEl = (
+            <>
         {/* Enhanced Image Management */}
         <div className="border-t pt-4 mt-4">
           <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
@@ -1332,6 +1347,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
 
+
+            </>
+          );
+          if (!isPage) {
+            return (
+              <>
+                <div className="space-y-3">
+                  {infoEl}
+                  {pricingEl}
+                </div>
+                {stockEl}
+                {imagesEl}
+              </>
+            );
+          }
+          // Edit page: what it is (info, photos) on the left; money and stock on the right, each in a card
+          const card = 'rounded-xl border border-gray-200 bg-white p-4 sm:p-5 [&>div:first-child]:mt-0 [&>div:first-child]:border-t-0 [&>div:first-child]:pt-0';
+          return (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start">
+              <div className="min-w-0 space-y-4">
+                <section className={card} aria-label={t('form.sectionInfo')}>
+                  <h2 className="mb-3 text-sm font-semibold text-gray-900">{t('form.sectionInfo')}</h2>
+                  {infoEl}
+                </section>
+                <section className={card}>{imagesEl}</section>
+              </div>
+              <div className="min-w-0 space-y-4">
+                <section className={card}>{pricingEl}</section>
+                {outlets.length > 1 && <section className={card}>{stockEl}</section>}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Action Buttons */}
         {!hideSubmitButton && (

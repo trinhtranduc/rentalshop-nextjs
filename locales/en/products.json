@@ -289,7 +289,9 @@
     "stock": "Stock"
   },
   "form": {
-    "stockIsSum": "Added up from the outlet stock below"
+    "stockIsSum": "Added up from the outlet stock below",
+    "sectionInfo": "Product details",
+    "editTitle": "Edit product"
   },
   "view": {
     "noImage": "No photo",
