@@ -27,9 +27,12 @@ generic message. `/api/mobile/auth/login` does not create a session, so the apps
 
 ## Open questions
 
-- Google sign-in on mobile: same refresh support if the apps use it (see plan).
+- None. Neither app has Google sign-in.
 
 ## Decision log
 
 - 2026-10-02 — Do phase 2 right after phase 1 ("sau đó update mobile luôn") (Trinh Tran)
 - 2026-10-02 — Access token 1 hour when a refresh token is issued; refresh token 30 days, rotated (agent, per earlier agreement)
+- 2026-10-02 — iOS refreshes proactively in an Alamofire interceptor: call sites read errors from 200-path bodies without `.validate()`, so Alamofire never calls `retry` on a 401 (agent)
+- 2026-10-02 — `/api/mobile/auth/logout` stops trusting a client `x-user-id` header (public route; let anyone sign out any user) (agent)
+- 2026-10-02 — Fixed pre-existing Android compile errors on `dev` (OverviewScreen, AvailabilityScreen) to verify this change (agent)
