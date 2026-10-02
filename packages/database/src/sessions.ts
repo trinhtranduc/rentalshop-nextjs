@@ -11,9 +11,6 @@ export function generateSessionId(): string {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// A newer login deactivates older sessions inside the same transaction, so the new session's
-// createdAt lands right next to the old one's invalidatedAt.
-const REPLACED_MATCH_WINDOW_MS = 60 * 1000;
 
 export type SessionStatus = 'active' | 'replaced' | 'expired';
 
@@ -33,7 +30,10 @@ export async function createUserSession(
   options?: { absoluteDays?: number }
 ) {
   const sessionId = generateSessionId();
-  const now = Date.now();
+  // One timestamp for both writes: an older session whose invalidatedAt equals a newer
+  // session's createdAt was replaced by that login (see getSessionStatus).
+  const loginAt = new Date();
+  const now = loginAt.getTime();
   const expiresAt = new Date(now + expiryDays * DAY_MS);
   const sliding = options?.absoluteDays !== undefined;
 
@@ -47,7 +47,7 @@ export async function createUserSession(
       },
       data: {
         isActive: false,
-        invalidatedAt: new Date(),
+        invalidatedAt: loginAt,
       },
     });
 
@@ -70,6 +70,7 @@ export async function createUserSession(
         sessionId,
         ipAddress,
         userAgent,
+        createdAt: loginAt,
         expiresAt,
         absoluteExpiresAt: sliding ? new Date(now + options!.absoluteDays! * DAY_MS) : null,
         idleTimeoutDays: sliding ? expiryDays : null,
@@ -104,15 +105,12 @@ export async function getSessionStatus(sessionId: string): Promise<SessionStatus
     if (!session.invalidatedAt) {
       return 'expired';
     }
-    const invalidatedAt = session.invalidatedAt.getTime();
+    // createUserSession stamps replaced sessions with the new session's createdAt
     const newerLogin = await prisma.userSession.findFirst({
       where: {
         userId: session.userId,
         id: { not: session.id },
-        createdAt: {
-          gte: new Date(invalidatedAt - REPLACED_MATCH_WINDOW_MS),
-          lte: new Date(invalidatedAt + REPLACED_MATCH_WINDOW_MS),
-        },
+        createdAt: session.invalidatedAt,
       },
       select: { id: true, createdAt: true },
     });

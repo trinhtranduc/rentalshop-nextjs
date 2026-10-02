@@ -63,6 +63,14 @@ describe('sessions (#343)', () => {
       expect(data.idleTimeoutDays ?? null).toBeNull();
     });
 
+    it('stamps the replaced sessions with the new session createdAt (exact match, found in E2E)', async () => {
+      await createUserSession(1, 'ip', 'ua', 30, { absoluteDays: 90 });
+      const invalidatedAt = mockTx.userSession.updateMany.mock.calls[0][0].data.invalidatedAt;
+      const createdAt = mockTx.userSession.create.mock.calls[0][0].data.createdAt;
+      expect(createdAt).toBeInstanceOf(Date);
+      expect(invalidatedAt.getTime()).toBe(createdAt.getTime());
+    });
+
     it('revokes every refresh token of the user in the same transaction', async () => {
       await createUserSession(1, 'ip', 'ua', 30, { absoluteDays: 90 });
       expect(mockTx.refreshToken.updateMany).toHaveBeenCalledWith(
@@ -88,8 +96,13 @@ describe('sessions (#343)', () => {
     it('session deactivated by a newer login returns replaced', async () => {
       const invalidatedAt = new Date(NOW.getTime() - DAY_MS);
       mockPrisma.userSession.findUnique.mockResolvedValue(session({ isActive: false, invalidatedAt }));
-      mockPrisma.userSession.findFirst.mockResolvedValue({ id: 8, createdAt: new Date(invalidatedAt.getTime() + 20) });
+      mockPrisma.userSession.findFirst.mockResolvedValue({ id: 8, createdAt: invalidatedAt });
       await expect(getSessionStatus('session-abc')).resolves.toBe('replaced');
+      expect(mockPrisma.userSession.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 1, createdAt: invalidatedAt }),
+        })
+      );
     });
 
     it('logged-out session (no newer login at that moment) returns expired', async () => {
