@@ -38,6 +38,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   showPasswordToggle = false
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const t = useUsersTranslations();
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
 
@@ -63,6 +64,8 @@ export const FormField: React.FC<FormFieldProps> = ({
             size="icon"
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? t('actions.hidePassword') : t('actions.showPassword')}
+            aria-pressed={showPassword}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
             disabled={disabled}
           >

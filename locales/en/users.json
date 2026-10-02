@@ -81,7 +81,9 @@
     "backToUsers": "Back to Users",
     "save": "Save",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "messages": {
     "createSuccess": "User created successfully",
@@ -182,5 +184,11 @@
   "status": {
     "verified": "Verified",
     "notVerified": "Not verified"
+  },
+  "roleHelp": {
+    "title": "Roles",
+    "OUTLET_ADMIN": "Runs one outlet: orders, products, customers and the staff of that outlet.",
+    "OUTLET_STAFF": "Creates and handles orders. Cannot change product prices.",
+    "loginNote": "The new user signs in with this email and password, and can change the password later."
   }
 }

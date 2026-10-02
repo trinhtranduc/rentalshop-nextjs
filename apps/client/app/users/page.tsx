@@ -185,7 +185,11 @@ export default function UsersPage() {
         break;
         
       case 'edit':
-        router.push(`/users/${userId}?edit=1`);
+        // Editing is a quick change, so it stays in a dialog
+        if (userItem) {
+          setSelectedUser(userItem);
+          setShowEditDialog(true);
+        }
         break;
         
       case 'activate':
@@ -347,7 +351,7 @@ export default function UsersPage() {
               </Button>
             )} */}
             <Button 
-              onClick={() => setShowAddDialog(true)}
+              onClick={() => router.push('/users/add')}
               variant="default"
               size="sm"
             >
@@ -429,14 +433,14 @@ export default function UsersPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {tu('editUser')}: {selectedUser?.firstName} {selectedUser?.lastName}
-            </DialogTitle>
+            <DialogTitle>{tu('editUser')}</DialogTitle>
+            {selectedUser && <p className="text-sm text-gray-600">{[selectedUser.firstName, selectedUser.lastName].filter(Boolean).join(' ')}</p>}
           </DialogHeader>
           {selectedUser && (
             <UserForm
+              layout="dialog"
               user={selectedUser}
               onSave={handleUserUpdate}
               onCancel={() => {

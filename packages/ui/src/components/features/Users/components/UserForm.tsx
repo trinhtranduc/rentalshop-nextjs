@@ -45,8 +45,11 @@ interface UserFormProps {
   onCancel?: () => void;
   isSubmitting?: boolean;
   currentUser?: User | null;
-  /** 'page' = sections in cards, no read-only recap (the page shows it), sticky save bar */
-  layout?: 'stacked' | 'page';
+  /**
+   * 'page' = sections in cards, sticky save bar; 'dialog' = plain stacked form.
+   * Both drop the read-only recap: the page header or the dialog title already says who it is.
+   */
+  layout?: 'stacked' | 'page' | 'dialog';
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
@@ -612,7 +615,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           )}
 
           {/* User Information (Edit mode only; the page shows it beside the form) */}
-          {isEditMode && user && !isPage && (
+          {isEditMode && user && layout === 'stacked' && (
         <div className={groupClass}>
           <h3 className={isPage ? 'text-sm font-semibold text-gray-900 mb-4' : 'text-sm font-medium text-text-primary mb-4'}>
                 {t('currentUserInformation')}

@@ -1,13 +1,17 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button, 
   UserForm, 
   UserBadges,
   UserInfoCard,
   UserAccountPanel,
   ConfirmationDialog,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   PageWrapper,
   Breadcrumb,
   ChangePasswordDialog, useToast } from '@rentalshop/ui';
@@ -20,7 +24,6 @@ import type { User, UserUpdateInput } from '@rentalshop/ui';
 export default function UserPage() {
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, removeToast } = useToast();
   const t = useCommonTranslations();
@@ -36,8 +39,8 @@ export default function UserPage() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   
   // Section visibility states
-  // "Sửa" in the list opens this page with ?edit=1
-  const [showEditSection, setShowEditSection] = useState(searchParams?.get('edit') === '1');
+  // Edit is a dialog over this page
+  const [showEditSection, setShowEditSection] = useState(false);
   
   
   // ============================================================================
@@ -278,14 +281,13 @@ export default function UserPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            {showEditSection && <p className="text-xs text-gray-600">{tu('actions.editUser')}</p>}
             <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{displayName}</h1>
             <div className="mt-1">
               <UserBadges user={userData} />
             </div>
           </div>
         </div>
-        {!showEditSection && (
+        {(
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setShowChangePassword(true)} variant="outline">
               <Key className="mr-2 h-4 w-4" />
@@ -302,18 +304,7 @@ export default function UserPage() {
       {/* Same two columns in view and edit: the person in the main column, the account beside it */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <div className="min-w-0">
-          {!showEditSection ? (
-            <UserInfoCard user={userData} />
-          ) : (
-            <UserForm
-              mode="edit"
-              layout="page"
-              user={userData}
-              onSave={handleSave}
-              onCancel={() => setShowEditSection(false)}
-              isSubmitting={isUpdating}
-            />
-          )}
+          <UserInfoCard user={userData} />
         </div>
         <aside className="min-w-0 lg:sticky lg:top-4">
           <UserAccountPanel
@@ -325,6 +316,24 @@ export default function UserPage() {
           />
         </aside>
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={showEditSection} onOpenChange={setShowEditSection}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tu('editUser')}</DialogTitle>
+            <p className="text-sm text-gray-600">{displayName}</p>
+          </DialogHeader>
+          <UserForm
+            mode="edit"
+            layout="dialog"
+            user={userData}
+            onSave={handleSave}
+            onCancel={() => setShowEditSection(false)}
+            isSubmitting={isUpdating}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog

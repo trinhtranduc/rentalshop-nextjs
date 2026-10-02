@@ -84,7 +84,9 @@
     "backToUsers": "Quay lại danh sách",
     "save": "Lưu",
     "cancel": "Hủy",
-    "close": "Đóng"
+    "close": "Đóng",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "messages": {
     "createSuccess": "Tạo người dùng thành công",
@@ -185,5 +187,11 @@
   "status": {
     "verified": "Đã xác thực",
     "notVerified": "Chưa xác thực"
+  },
+  "roleHelp": {
+    "title": "Vai trò",
+    "OUTLET_ADMIN": "Quản lý một cửa hàng: đơn hàng, sản phẩm, khách hàng và nhân viên của cửa hàng đó.",
+    "OUTLET_STAFF": "Tạo và xử lý đơn hàng. Không sửa được giá sản phẩm.",
+    "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu."
   }
 }
