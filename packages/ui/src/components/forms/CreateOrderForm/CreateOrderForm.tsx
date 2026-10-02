@@ -49,6 +49,7 @@ import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
 import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
+import type { ItemAvailability } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
 import { LoyaltyRedeemSection } from './components/LoyaltyRedeemSection';
@@ -66,6 +67,19 @@ import type {
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
 
 export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
+  // Free units per item for the period, reported by the item rows (short-stock warning in the summary)
+  const [itemAvailability, setItemAvailability] = useState<Map<number, ItemAvailability>>(new Map());
+  const handleAvailabilityChange = useCallback((productId: number, availability: ItemAvailability | null) => {
+    setItemAvailability((prev) => {
+      const current = prev.get(productId);
+      if (!availability && !current) return prev;
+      if (availability && current && current.free === availability.free && current.total === availability.total) return prev;
+      const next = new Map(prev);
+      if (availability) next.set(productId, availability);
+      else next.delete(productId);
+      return next;
+    });
+  }, []);
   const {
     customers = [],
     products = [],
@@ -791,6 +805,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               getProductAvailabilityStatus={getProductAvailabilityStatus}
               currency={currency}
               outletId={formData.outletId}
+              onAvailabilityChange={handleAvailabilityChange}
             />
           </div>
 
@@ -860,6 +875,12 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 resetKey={resetKey}
                 loyaltyDiscount={loyalty.loyaltyDiscount}
                 amountDue={loyalty.amountDue}
+                shortItems={orderItems
+                  .filter((item) => {
+                    const a = itemAvailability.get(item.productId);
+                    return a != null && (item.quantity || 1) > a.free;
+                  })
+                  .map((item) => item.product?.name || `#${item.productId}`)}
               />
               </CardContent>
             </Card>

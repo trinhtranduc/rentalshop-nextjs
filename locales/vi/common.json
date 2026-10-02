@@ -179,7 +179,8 @@
     "year": "Năm",
     "month": "Tháng",
     "week": "Tuần",
-    "day": "Ngày"
+    "day": "Ngày",
+    "dayCount": "{count} ngày"
   },
   "periods": {
     "daily": "Hàng ngày",

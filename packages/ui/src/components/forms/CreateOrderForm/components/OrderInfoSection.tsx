@@ -39,7 +39,8 @@ import {
   Info,
   MoreVertical,
   Edit,
-  Eye
+  Eye,
+  AlertCircle
 } from 'lucide-react';
 import type { 
   OrderFormData, 
@@ -157,6 +158,8 @@ interface OrderInfoSectionProps {
   // Loyalty summary (optional)
   loyaltyDiscount?: number;
   amountDue?: number;
+  /** Names of items without enough free units for the period */
+  shortItems?: string[];
 }
 
 export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
@@ -186,162 +189,26 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   resetKey = 0,
   loyaltyDiscount = 0,
   amountDue,
+  shortItems = [],
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
 
+  const isRent = formData.orderType === 'RENT';
+  const deposit = isRent ? formData.depositAmount || 0 : 0;
+  // Total of the order after discounts (stored as totalAmount); loyalty points lower what is collected
+  const orderTotal = amountDue != null && loyaltyDiscount > 0 ? amountDue : formData.totalAmount;
+  const collect = orderTotal + deposit;
+  const missing: Array<'customer' | 'dates' | 'items' | 'outlet'> = [];
+  if (!formData.customerId && !selectedCustomer) missing.push('customer');
+  if (isRent && (!formData.pickupPlanAt || !formData.returnPlanAt)) missing.push('dates');
+  if (orderItems.length === 0) missing.push('items');
+  if (!formData.outletId) missing.push('outlet');
+
   const content = (
     <>
-        {/* 1. Order Type Toggle */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            {t('messages.orderType')}
-            {isEditMode && (
-              <span className="ml-2 text-xs text-gray-500 font-normal">
-                ({t('messages.cannotChangeWhenEditing')})
-              </span>
-            )}
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant={formData.orderType === 'RENT' ? 'default' : 'outline'}
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'RENT');
-                }
-              }}
-              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {t('orderType.RENT')}
-            </Button>
-            <Button
-              type="button"
-              variant={formData.orderType === 'SALE' ? 'default' : 'outline'}
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'SALE');
-                  onFormDataChange('pickupPlanAt', '');
-                  onFormDataChange('returnPlanAt', '');
-                  onFormDataChange('depositAmount', 0);
-                }
-              }}
-              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {t('orderType.SALE')}
-            </Button>
-          </div>
-        </div>
-
-        {/* 2. Rental Period Selection - Smart pricing based on merchant configuration */}
-        {formData.orderType === 'RENT' && (
-          <div className="space-y-2 w-full">
-            {merchantData ? (
-              <RentalPeriodSelector
-                key={`rental-period-${resetKey}`}
-                product={{
-                  id: 0, // Placeholder - will be updated when product is selected
-                  name: t('messages.rentalPeriod'),
-                  rentPrice: 0, // Will be calculated based on merchant pricing
-                  deposit: 0,
-                  categoryId: 0,
-                  stock: 0,
-                  renting: 0,
-                  available: 0,
-                  salePrice: 0,
-                  description: '',
-                  images: undefined,
-                  barcode: '',
-                  isActive: true,
-                  merchantId: 0,
-                  createdAt: new Date(),
-                  updatedAt: new Date()
-                }}
-                merchant={merchantData}
-                initialStartDate={formData.pickupPlanAt}
-                initialEndDate={formData.returnPlanAt}
-                onPeriodChange={(startAt, endAt) => {
-                  const startDate = getLocalDateKey(startAt);
-                  const endDate = getLocalDateKey(endAt);
-                  
-                  onFormDataChange('pickupPlanAt', startDate);
-                  onFormDataChange('returnPlanAt', endDate);
-                  
-                  onUpdateRentalDates(startDate, endDate);
-                }}
-                onPriceChange={(pricing) => {
-                  // Update pricing information when period changes
-                  console.log('Pricing updated:', pricing);
-                }}
-              />
-            ) : (
-              // Fallback to basic DateRangePicker if no merchant data
-              <div className="space-y-2" key={`date-range-${resetKey}`}>
-                <label className="text-sm font-medium text-text-primary">
-                  {t('messages.rentalPeriod')} <span className="text-red-500">*</span>
-                </label>
-                <DateRangePicker
-                  value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
-                  }}
-                  onChange={(range) => {
-                    const startDate = range.from ? getLocalDateKey(range.from) : '';
-                    const endDate = range.to ? getLocalDateKey(range.to) : '';
-                    
-                    onFormDataChange('pickupPlanAt', startDate);
-                    onFormDataChange('returnPlanAt', endDate);
-                    
-                    if (startDate && endDate) {
-                      onUpdateRentalDates(startDate, endDate);
-                    }
-                  }}
-                  placeholder={t('messages.selectRentalPeriod')}
-                  // Allow selecting rental dates in the past for back-dated bookings
-                  showPresets={false}
-                  format="long"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 3. Outlet Selection */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            {t('messages.outlet')} <span className="text-red-500">*</span>
-          </label>
-          <Select
-            value={formData.outletId ? String(formData.outletId) : undefined}
-            onValueChange={(value: string) => {
-              console.log('🔍 Outlet selection changed:', { 
-                previousValue: formData.outletId, 
-                newValue: value,
-                convertedValue: value ? parseInt(value, 10) : undefined,
-                outlets: outlets
-              });
-              // Convert string back to number for form data
-              const outletId = value ? parseInt(value, 10) : undefined;
-              onFormDataChange('outletId', outletId);
-            }}
-          >
-            <SelectTrigger variant="filled" className="w-full">
-              <SelectValue placeholder={t('messages.selectOutlet')} />
-            </SelectTrigger>
-            <SelectContent>
-              {outlets.map(outlet => (
-                <SelectItem key={outlet.id} value={String(outlet.id)}>
-                  {outlet.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* 4. Customer Selection */}
+        {/* 1. Customer first: who the order is for (create-order UI) */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
             {t('messages.customer')} <span className="text-red-500">*</span>
@@ -536,6 +403,160 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         </div>
 
+        {/* 2. Order Type Toggle */}
+        <div className="space-y-2 w-full">
+          <label className="text-sm font-medium text-text-primary">
+            {t('messages.orderType')}
+            {isEditMode && (
+              <span className="ml-2 text-xs text-gray-500 font-normal">
+                ({t('messages.cannotChangeWhenEditing')})
+              </span>
+            )}
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={formData.orderType === 'RENT' ? 'default' : 'outline'}
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'RENT');
+                }
+              }}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {t('form.orderType.RENT')}
+            </Button>
+            <Button
+              type="button"
+              variant={formData.orderType === 'SALE' ? 'default' : 'outline'}
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'SALE');
+                  onFormDataChange('pickupPlanAt', '');
+                  onFormDataChange('returnPlanAt', '');
+                  onFormDataChange('depositAmount', 0);
+                }
+              }}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {t('form.orderType.SALE')}
+            </Button>
+          </div>
+        </div>
+
+        {/* 2. Rental Period Selection - Smart pricing based on merchant configuration */}
+        {formData.orderType === 'RENT' && (
+          <div className="space-y-2 w-full">
+            {merchantData ? (
+              <RentalPeriodSelector
+                key={`rental-period-${resetKey}`}
+                product={{
+                  id: 0, // Placeholder - will be updated when product is selected
+                  name: t('messages.rentalPeriod'),
+                  rentPrice: 0, // Will be calculated based on merchant pricing
+                  deposit: 0,
+                  categoryId: 0,
+                  stock: 0,
+                  renting: 0,
+                  available: 0,
+                  salePrice: 0,
+                  description: '',
+                  images: undefined,
+                  barcode: '',
+                  isActive: true,
+                  merchantId: 0,
+                  createdAt: new Date(),
+                  updatedAt: new Date()
+                }}
+                merchant={merchantData}
+                initialStartDate={formData.pickupPlanAt}
+                initialEndDate={formData.returnPlanAt}
+                onPeriodChange={(startAt, endAt) => {
+                  const startDate = getLocalDateKey(startAt);
+                  const endDate = getLocalDateKey(endAt);
+                  
+                  onFormDataChange('pickupPlanAt', startDate);
+                  onFormDataChange('returnPlanAt', endDate);
+                  
+                  onUpdateRentalDates(startDate, endDate);
+                }}
+                onPriceChange={(pricing) => {
+                  // Update pricing information when period changes
+                  console.log('Pricing updated:', pricing);
+                }}
+              />
+            ) : (
+              // Fallback to basic DateRangePicker if no merchant data
+              <div className="space-y-2" key={`date-range-${resetKey}`}>
+                <label className="text-sm font-medium text-text-primary">
+                  {t('messages.rentalPeriod')} <span className="text-red-500">*</span>
+                </label>
+                <DateRangePicker
+                  value={{
+                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
+                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                  }}
+                  onChange={(range) => {
+                    const startDate = range.from ? getLocalDateKey(range.from) : '';
+                    const endDate = range.to ? getLocalDateKey(range.to) : '';
+                    
+                    onFormDataChange('pickupPlanAt', startDate);
+                    onFormDataChange('returnPlanAt', endDate);
+                    
+                    if (startDate && endDate) {
+                      onUpdateRentalDates(startDate, endDate);
+                    }
+                  }}
+                  placeholder={t('messages.selectRentalPeriod')}
+                  // Allow selecting rental dates in the past for back-dated bookings
+                  showPresets={false}
+                  format="long"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Outlet Selection: a picker only when there is a choice */}
+        {outlets.length <= 1 ? (
+          <p className="text-sm text-gray-600">
+            {t('messages.outlet')}: <span className="font-medium text-gray-900">{outlets[0]?.name || '—'}</span>
+          </p>
+        ) : (
+        <div className="space-y-2 w-full">
+          <label className="text-sm font-medium text-text-primary">
+            {t('messages.outlet')} <span className="text-red-500">*</span>
+          </label>
+          <Select
+            value={formData.outletId ? String(formData.outletId) : undefined}
+            onValueChange={(value: string) => {
+              console.log('🔍 Outlet selection changed:', { 
+                previousValue: formData.outletId, 
+                newValue: value,
+                convertedValue: value ? parseInt(value, 10) : undefined,
+                outlets: outlets
+              });
+              // Convert string back to number for form data
+              const outletId = value ? parseInt(value, 10) : undefined;
+              onFormDataChange('outletId', outletId);
+            }}
+          >
+            <SelectTrigger variant="filled" className="w-full">
+              <SelectValue placeholder={t('messages.selectOutlet')} />
+            </SelectTrigger>
+            <SelectContent>
+              {outlets.map(outlet => (
+                <SelectItem key={outlet.id} value={String(outlet.id)}>
+                  {outlet.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        )}
+
         {/* 5. Deposit Amount - Only for RENT orders */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
@@ -548,6 +569,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               placeholder={t('messages.enterDepositAmount')}
               className="w-full"
             />
+            <p className="text-xs text-gray-600">{t('form.depositAuto')}</p>
           </div>
         )}
 
@@ -560,7 +582,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 value={formData.discountValue || 0}
                 onChange={(value) => {
                   // Validate discount value before updating
-                  const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+                  const subtotal = formData.subtotal || 0;
                   let validatedValue = value;
                   
                   if (formData.discountType === 'percentage') {
@@ -576,7 +598,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 min={0}
                 max={formData.discountType === 'percentage' 
                   ? 100 
-                  : orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)}
+                  : formData.subtotal || 0}
                 decimals={0}
                 placeholder={t('messages.discountAmount')}
                 className="w-full"
@@ -586,7 +608,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               value={formData.discountType}
               onValueChange={(value: 'amount' | 'percentage') => {
                 // When changing discount type, validate the current discount value
-                const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+                const subtotal = formData.subtotal || 0;
                 let validatedDiscountValue = formData.discountValue || 0;
                 
                 if (value === 'percentage') {
@@ -625,100 +647,99 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           />
         </div>
 
-        {/* 8. Order Summary */}
-        <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary w-full">
-          <h4 className="text-sm font-semibold text-text-primary mb-3">{t('detail.orderSummary')}</h4>
-          
-          {/* Rental Duration - Show for RENT orders with dates */}
-          {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
-            <div className="pb-2 mb-2 border-b border-border">
-              <div className="flex justify-between text-sm">
-                <span className="text-text-secondary">{t('summary.rentalDuration')}:</span>
-                <span className="font-medium">
-                  {(() => {
-                    const days = countRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
-                    return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
-                  })()}
-                </span>
-              </div>
+        {/* 8. Order Summary: rental money, then what the customer hands over at pickup */}
+        <div className="w-full space-y-2 rounded-lg border border-border bg-bg-primary p-4 text-sm">
+          {isRent && formData.pickupPlanAt && formData.returnPlanAt && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('summary.rentalDuration')}</span>
+              <span className="font-medium tabular-nums">
+                {(() => {
+                  const days = countRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+                  return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
+                })()}
+              </span>
             </div>
           )}
-          
-          {/* Subtotal */}
-          <div className="flex justify-between text-sm">
-            <span className="text-text-secondary">{t('summary.subtotal')}:</span>
-            <span className="font-medium">{formatMoney(formData.subtotal)}</span>
+          <div className="flex justify-between">
+            <span className="text-gray-600">{isRent ? t('form.summary.rentTotal') : t('form.summary.saleTotal')}</span>
+            <span className="font-medium tabular-nums">{formatMoney(formData.subtotal)}</span>
           </div>
-
-          {/* Discount */}
           {formData.discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-action-success">
-              <span>{t('summary.discount')}:</span>
-              <span className="font-medium">-{formatMoney(formData.discountAmount)}</span>
+            <div className="flex justify-between text-green-800">
+              <span>
+                {t('summary.discount')}
+                {formData.discountType === 'percentage' && formData.discountValue ? ` (${formData.discountValue}%)` : ''}
+              </span>
+              <span className="font-medium tabular-nums">−{formatMoney(formData.discountAmount)}</span>
             </div>
           )}
-
-          {/* Deposit */}
-          {formData.orderType === 'RENT' && formData.depositAmount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">{t('summary.deposit')}:</span>
-              <span className="font-medium">{formatMoney(formData.depositAmount)}</span>
-            </div>
-          )}
-
-          {/* Loyalty discount */}
           {loyaltyDiscount > 0 && (
-            <div className="flex justify-between text-sm text-action-success">
-              <span>Giảm điểm loyalty:</span>
-              <span className="font-medium">-{formatMoney(loyaltyDiscount)}</span>
+            <div className="flex justify-between text-green-800">
+              <span>{t('receipt.loyaltyDiscount')}</span>
+              <span className="font-medium tabular-nums">−{formatMoney(loyaltyDiscount)}</span>
             </div>
           )}
-
-          {/* Grand Total */}
-          <div className="flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border">
-            <span>{t('summary.grandTotal')}:</span>
-            <span>{formatMoney(formData.totalAmount)}</span>
+          <div className="flex justify-between border-t border-border pt-2 font-semibold">
+            <span>{t('form.summary.orderTotal')}</span>
+            <span className="tabular-nums">{formatMoney(orderTotal)}</span>
           </div>
-
-          {loyaltyDiscount > 0 && amountDue != null && (
-            <div className="flex justify-between text-base font-bold text-action-primary">
-              <span>Số tiền cần thu:</span>
-              <span>{formatMoney(amountDue)}</span>
+          {isRent && deposit > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('summary.deposit')}</span>
+              <span className="font-medium tabular-nums">{formatMoney(deposit)}</span>
             </div>
           )}
+          <div className="flex items-baseline justify-between rounded-md bg-blue-50 px-3 py-2 text-blue-900">
+            <span className="font-semibold">
+              {isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}
+              {isRent && deposit > 0 && (
+                <span className="block text-xs font-normal text-blue-800">
+                  {t('form.summary.includesDeposit', { amount: formatMoney(deposit) })}
+                </span>
+              )}
+            </span>
+            <span className="text-lg font-bold tabular-nums">{formatMoney(collect)}</span>
+          </div>
         </div>
 
-        {/* 9. Action Buttons */}
+        {/* 9. Actions: say what is missing instead of a silent grey button */}
         {onSubmit && (
-          <div className="space-y-2 w-full">
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                disabled={loading || !isFormValid}
-                onClick={onSubmit}
-                className="flex-1"
-              >
-                {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
-              </Button>
-              {onCancel && (
-                <Button
+          <div className="w-full space-y-2">
+            {shortItems.length > 0 && (
+              <p role="status" className="flex items-start gap-1.5 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                {t('form.shortWarning', { names: shortItems.join(', ') })}
+              </p>
+            )}
+            <Button
+              type="button"
+              disabled={loading || !isFormValid}
+              onClick={onSubmit}
+              className="h-10 w-full"
+            >
+              {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
+            </Button>
+            {!loading && missing.length > 0 && (
+              <p className="text-center text-xs text-gray-600">
+                {t('form.missing.title', { fields: missing.map((key) => t(`form.missing.${key}`)).join(', ') })}
+              </p>
+            )}
+            {onCancel && (
+              <div className="text-center">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={(e) => {
-                    // Prevent all default behaviors
                     e.preventDefault();
                     e.stopPropagation();
-                    // Call reset handler
-                    onCancel();
-                    // Explicitly return false to prevent any form submission
-                    return false;
+                    // Reset wipes everything entered: ask first; edit mode just leaves
+                    if (isEditMode || window.confirm(t('form.resetConfirm'))) onCancel();
                   }}
-                  className="flex-1"
+                  className="min-h-[32px] px-2 text-sm text-gray-600 underline-offset-2 hover:text-gray-900 hover:underline"
                 >
-                  {isEditMode ? t('messages.cancel') : t('messages.resetSelection')}
-                </Button>
-              )}
-            </div>
+                  {isEditMode ? t('messages.cancel') : t('form.reset')}
+                </button>
+              </div>
+            )}
           </div>
         )}
     </>

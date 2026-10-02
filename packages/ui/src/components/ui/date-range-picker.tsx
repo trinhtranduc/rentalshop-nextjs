@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocale } from 'next-intl';
+import { useCommonTranslations } from '@rentalshop/hooks';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
@@ -219,6 +220,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   // Get locale from next-intl
   const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  const tc = useCommonTranslations();
   
   // Map locale to Intl locale string
   const intlLocaleMap: Record<string, string> = {
@@ -303,7 +305,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                     onClick={() => handlePresetClick(days)}
                     className="text-xs h-7 px-2"
                   >
-                    {days} {days === 1 ? 'day' : 'days'}
+                    {tc('time.dayCount', { count: days })}
                   </Button>
                 ))}
               </div>
@@ -397,14 +399,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               onClick={handleClear}
               className="flex-1"
             >
-              Clear
+              {tc('buttons.clear')}
             </Button>
             <Button
               size="sm"
               onClick={handleApply}
               className="flex-1"
             >
-              Apply
+              {tc('buttons.apply')}
             </Button>
           </div>
         </div>

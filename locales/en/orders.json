@@ -403,5 +403,58 @@
     "thankYou": "THANK YOU FOR SHOPPING",
     "downloadApp": "Download RentalShop on App Store",
     "loyaltyDiscount": "Loyalty discount"
+  },
+  "form": {
+    "itemsTitle": "Items",
+    "searchHint": "Search items by name, code or barcode to add them.",
+    "emptyTitle": "No items yet",
+    "pricing": {
+      "FIXED": "Per rental",
+      "DAILY": "Per day",
+      "HOURLY": "Per hour"
+    },
+    "timesDays": "× {days} days",
+    "pricingMethod": "Pricing",
+    "depositPerUnit": "Deposit per unit",
+    "itemNote": "Item note",
+    "moreOptions": "Options for {name}",
+    "remove": "Remove {name}",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "lineTotal": "Line total",
+    "depositLine": "Deposit {amount}",
+    "avail": {
+      "free": "{free}/{total} free",
+      "short": "Short {count} · {free} free",
+      "checking": "Checking…",
+      "pickDates": "Pick dates to see what is free",
+      "stock": "{available}/{total} in stock",
+      "error": "Could not check"
+    },
+    "orderType": {
+      "RENT": "Rent",
+      "SALE": "Sale"
+    },
+    "depositAuto": "Added up from the items’ deposits; you can change it.",
+    "summary": {
+      "rentTotal": "Rental",
+      "saleTotal": "Goods",
+      "orderTotal": "Order total",
+      "collectAtPickup": "Total to collect",
+      "includesDeposit": "includes deposit {amount}",
+      "collect": "Customer pays"
+    },
+    "missing": {
+      "title": "Still needed: {fields}",
+      "customer": "customer",
+      "dates": "rental dates",
+      "items": "items",
+      "outlet": "outlet"
+    },
+    "shortWarning": "Not enough stock for this period: {names}",
+    "reset": "Reset",
+    "resetConfirm": "Remove all items and entered details?",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity"
   }
 }

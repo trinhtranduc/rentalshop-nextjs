@@ -163,7 +163,8 @@
     "year": "년",
     "month": "월",
     "week": "주",
-    "day": "일"
+    "day": "일",
+    "dayCount": "{count}일"
   },
   "periods": {
     "daily": "일일",

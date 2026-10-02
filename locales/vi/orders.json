@@ -403,5 +403,58 @@
     "thankYou": "CẢM ƠN BẠN ĐÃ MUA SẮM",
     "downloadApp": "Tải AnyRent trên App Store",
     "loyaltyDiscount": "Giảm giá điểm thưởng"
+  },
+  "form": {
+    "itemsTitle": "Món trong đơn",
+    "searchHint": "Tìm mẫu theo tên, mã hoặc barcode để thêm vào đơn.",
+    "emptyTitle": "Chưa có món nào",
+    "pricing": {
+      "FIXED": "Theo lần",
+      "DAILY": "Theo ngày",
+      "HOURLY": "Theo giờ"
+    },
+    "timesDays": "× {days} ngày",
+    "pricingMethod": "Cách tính giá",
+    "depositPerUnit": "Tiền cọc / bộ",
+    "itemNote": "Ghi chú món",
+    "moreOptions": "Tuỳ chọn của {name}",
+    "remove": "Bỏ {name}",
+    "quantity": "Số lượng",
+    "unitPrice": "Đơn giá",
+    "lineTotal": "Thành tiền",
+    "depositLine": "Cọc {amount}",
+    "avail": {
+      "free": "Còn {free}/{total}",
+      "short": "Thiếu {count} · còn {free}",
+      "checking": "Đang kiểm tra…",
+      "pickDates": "Chọn ngày để xem còn trống",
+      "stock": "Kho còn {available}/{total}",
+      "error": "Không kiểm tra được"
+    },
+    "orderType": {
+      "RENT": "Cho thuê",
+      "SALE": "Bán"
+    },
+    "depositAuto": "Tự cộng từ cọc của các món, có thể sửa.",
+    "summary": {
+      "rentTotal": "Tiền thuê",
+      "saleTotal": "Tiền hàng",
+      "orderTotal": "Tổng tiền đơn",
+      "collectAtPickup": "Tổng cần thu",
+      "includesDeposit": "gồm cọc {amount}",
+      "collect": "Khách cần trả"
+    },
+    "missing": {
+      "title": "Còn thiếu: {fields}",
+      "customer": "khách hàng",
+      "dates": "ngày thuê",
+      "items": "món",
+      "outlet": "cửa hàng"
+    },
+    "shortWarning": "Không đủ hàng trong kỳ: {names}",
+    "reset": "Đặt lại",
+    "resetConfirm": "Xoá hết các món và thông tin đã nhập?",
+    "decrease": "Giảm số lượng",
+    "increase": "Tăng số lượng"
   }
 }

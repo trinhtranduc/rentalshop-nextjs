@@ -5,32 +5,30 @@
 import React from 'react';
 import { 
   Card, 
-  CardHeader, 
-  CardTitle, 
   CardContent,
   Input,
   SearchableSelect,
   Skeleton,
-  Button,
   useFormatCurrency,
   ImageLightbox
 } from '@rentalshop/ui';
 import { useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { 
-  Search, 
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  MoreHorizontal,
   Package, 
-  Trash2,
+  X,
   Plus,
   Minus
 } from 'lucide-react';
-import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
 import { countRentalDays } from '@rentalshop/utils';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
   ProductAvailabilityStatus 
 } from '../types';
-import type { Product } from '@rentalshop/types';
 
 // ============================================================================
 // NUMBER INPUT WITH THOUSAND SEPARATOR
@@ -38,6 +36,8 @@ import type { Product } from '@rentalshop/types';
 
 interface NumberInputProps {
   value: number;
+  ariaLabel?: string;
+  id?: string;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
@@ -55,7 +55,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
   step = 1,
   className = '',
   placeholder = '',
-  decimals = 0
+  decimals = 0,
+  ariaLabel,
+  id
 }) => {
   const [displayValue, setDisplayValue] = React.useState('');
   const [isFocused, setIsFocused] = React.useState(false);
@@ -108,6 +110,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
       onBlur={handleBlur}
       className={className}
       placeholder={placeholder}
+      aria-label={ariaLabel}
+      id={id}
+      inputMode="decimal"
     />
   );
 };
@@ -118,6 +123,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
 interface QuantityInputProps {
   value: number;
+  decreaseLabel?: string;
+  increaseLabel?: string;
+  inputLabel?: string;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
@@ -126,6 +134,9 @@ interface QuantityInputProps {
 
 const QuantityInput: React.FC<QuantityInputProps> = ({
   value,
+  decreaseLabel = 'Decrease quantity',
+  increaseLabel = 'Increase quantity',
+  inputLabel = 'Quantity',
   onChange,
   min = 1,
   max,
@@ -152,13 +163,13 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   };
 
   return (
-    <div className={`flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white ${className}`}>
+    <div className={`flex items-center border border-gray-300 rounded-md overflow-hidden bg-white ${className}`}>
       <button
         type="button"
         onClick={handleDecrease}
         disabled={value <= min}
-        className="flex-shrink-0 px-3 py-2 h-8 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border-r border-gray-300 flex items-center justify-center"
-        aria-label="Decrease quantity"
+        className="flex-shrink-0 w-8 h-8 hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
+        aria-label={decreaseLabel}
       >
         <Minus className="w-4 h-4" />
       </button>
@@ -166,7 +177,9 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         type="text"
         value={value}
         onChange={handleChange}
-        className="flex-1 min-w-0 text-center text-sm font-medium border-0 focus:ring-0 focus:outline-none bg-white px-2 h-8"
+        className="w-9 min-w-0 text-center text-sm font-medium tabular-nums border-0 focus:ring-0 focus:outline-none bg-white px-0 h-8"
+        aria-label={inputLabel}
+        inputMode="numeric"
         min={min}
         max={max}
       />
@@ -174,8 +187,8 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         type="button"
         onClick={handleIncrease}
         disabled={max !== undefined && value >= max}
-        className="flex-shrink-0 px-3 py-2 h-8 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border-l border-gray-300 flex items-center justify-center"
-        aria-label="Increase quantity"
+        className="flex-shrink-0 w-8 h-8 hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-gray-600"
+        aria-label={increaseLabel}
       >
         <Plus className="w-4 h-4" />
       </button>
@@ -204,18 +217,19 @@ const getLineDisplay = (
   return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
 };
 
-const getPricingLabel = (pricingType?: string | null): string => {
-  if (pricingType === 'DAILY') return 'Theo ngày';
-  if (pricingType === 'HOURLY') return 'Theo giờ';
-  return 'Theo lần';
-};
-
 const getPricingUnit = (pricingType?: string | null): string => {
   if (pricingType === 'DAILY') return '/ngày';
   if (pricingType === 'HOURLY') return '/giờ';
   // FIXED (per rental): no unit suffix — only daily/hourly need a unit label
   return '';
 };
+
+
+/** Units free for the order period, reported up so the summary can warn before creating (#create-order UI). */
+export interface ItemAvailability {
+  free: number;
+  total: number;
+}
 
 interface ProductsSectionProps {
   orderItems: OrderItemFormData[];
@@ -234,8 +248,10 @@ interface ProductsSectionProps {
   getProductAvailabilityStatus: (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity?: number) => Promise<ProductAvailabilityStatus>;
   currency?: 'USD' | 'VND';
   outletId?: number; // Required to get correct stock from outletStock
+  onAvailabilityChange?: (productId: number, availability: ItemAvailability | null) => void;
 }
 
+/** Items of the order: search on top, then one line per item (details behind "⋯"). */
 export const ProductsSection: React.FC<ProductsSectionProps> = ({
   orderItems,
   products,
@@ -250,107 +266,75 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   pickupDate,
   returnDate,
   getProductAvailabilityStatus,
-  currency = 'USD',
   outletId,
+  onAvailabilityChange,
 }) => {
   const t = useOrderTranslations();
-  const tp = useProductTranslations();
 
   return (
-    <Card className="flex flex-col h-full w-full">
-      <CardContent className="flex flex-col flex-1 p-6">
-        {/* Search and Filter Bar */}
-        <div className="space-y-3 flex-shrink-0 mb-4">
-          <div className="flex gap-2">
-            {/* Text Search */}
-            <div className="relative flex-1">
-              <SearchableSelect
-                placeholder={t('messages.searchProducts')}
-                value={undefined}
-                onChange={(productId: number) => {
-                  console.log('🔍 SearchableSelect onChange called with productId:', productId);
-                  console.log('🔍 Available products:', products);
-                  // Find the product and add it to order
-                  const product = products.find(p => p.id === productId);
-                  console.log('🔍 Found product:', product);
-                  if (product) {
-                    console.log('🔍 Calling onAddProduct with product:', product);
-                    onAddProduct(product);
-                  } else {
-                    console.error('❌ Product not found for ID:', productId);
-                  }
-                }}
-                onSearch={onSearchProducts}
-                searchPlaceholder="Type to search products..."
-                emptyText="No products found. Try a different search term."
-                showAddNew={false}
-                productRowStyle="default" // Options: 'default' (with blue border) | 'compact' | 'minimal'
-              />
-              {isLoadingProducts && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Skeleton className="w-4 h-4 rounded-full" />
-                </div>
-              )}
+    <Card className="flex w-full flex-col">
+      <CardContent className="flex flex-col p-4 sm:p-5">
+        <div className="relative">
+          <SearchableSelect
+            placeholder={t('messages.searchProducts')}
+            value={undefined}
+            onChange={(productId: number) => {
+              const product = products.find(p => p.id === productId);
+              if (product) onAddProduct(product);
+            }}
+            onSearch={onSearchProducts}
+            searchPlaceholder={t('messages.searchProducts')}
+            emptyText={t('messages.searchProductsAbove')}
+            showAddNew={false}
+            productRowStyle="default"
+          />
+          {isLoadingProducts && (
+            <div className="absolute right-10 top-1/2 -translate-y-1/2">
+              <Skeleton className="h-4 w-4 rounded-full" />
             </div>
-            {/* AI Image Search temporarily disabled */}
-          </div>
+          )}
         </div>
 
-        {/* Selected Products Section - Takes remaining space */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <Card className="border border-gray-200 flex flex-col h-full">
-            <CardHeader className="pb-3 flex-shrink-0">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                {tp('selectedProducts')} <span className="text-red-500">*</span>
-                <span className="text-sm font-normal text-gray-500">({orderItems.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0 overflow-y-auto">
-              {orderItems.length === 0 ? (
-                /* Empty State Placeholder */
-                <div className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
-                    <Package className="w-16 h-16" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">
-                    {tp('noProductsSelected')}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">
-                    {t('messages.searchProductsAbove')}
-                  </p>
-                </div>
-              ) : (
-                /* Product List */
-                <div className="space-y-3">
-                  {orderItems.map((item, index) => (
-                    <OrderItemCard
-                      key={index}
-                      item={item}
-                      product={products.find(p => p.id === item.productId)}
-                      onRemove={onRemoveProduct}
-                      onUpdate={onUpdateOrderItem}
-                      onUpdatePricingOption={onUpdatePricingOption}
-                      onUpdatePricingType={onUpdatePricingType}
-                      orderType={orderType}
-                      pickupDate={pickupDate}
-                      returnDate={returnDate}
-                      getProductAvailabilityStatus={getProductAvailabilityStatus}
-                      outletId={outletId}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="mt-4 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-900">
+            {t('form.itemsTitle')} <span className="text-red-600" aria-hidden="true">*</span>
+          </h2>
+          <span className="text-xs tabular-nums text-gray-600">{orderItems.length}</span>
         </div>
+
+        {orderItems.length === 0 ? (
+          <div className="mt-3 flex flex-col items-center rounded-lg border border-dashed border-gray-300 px-6 py-10 text-center">
+            <Package className="h-10 w-10 text-gray-400" aria-hidden="true" />
+            <p className="mt-2 text-sm font-medium text-gray-900">{t('form.emptyTitle')}</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-600">{t('form.searchHint')}</p>
+          </div>
+        ) : (
+          <ul className="mt-2 divide-y divide-gray-200 rounded-lg border border-gray-200">
+            {orderItems.map((item) => (
+              <OrderItemRow
+                key={item.productId}
+                item={item}
+                product={products.find(p => p.id === item.productId)}
+                onRemove={onRemoveProduct}
+                onUpdate={onUpdateOrderItem}
+                onUpdatePricingOption={onUpdatePricingOption}
+                onUpdatePricingType={onUpdatePricingType}
+                orderType={orderType}
+                pickupDate={pickupDate}
+                returnDate={returnDate}
+                getProductAvailabilityStatus={getProductAvailabilityStatus}
+                outletId={outletId}
+                onAvailabilityChange={onAvailabilityChange}
+              />
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
 };
 
-// OrderItemCard sub-component
-interface OrderItemCardProps {
+interface OrderItemRowProps {
   item: OrderItemFormData;
   product?: ProductWithStock;
   onRemove: (productId: number) => void;
@@ -361,10 +345,53 @@ interface OrderItemCardProps {
   pickupDate?: string;
   returnDate?: string;
   getProductAvailabilityStatus: (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity?: number) => Promise<ProductAvailabilityStatus>;
-  outletId?: number; // Required to get correct stock from outletStock
+  outletId?: number;
+  onAvailabilityChange?: (productId: number, availability: ItemAvailability | null) => void;
 }
 
-const OrderItemCard: React.FC<OrderItemCardProps> = ({
+/** "Còn 8/12" or "Thiếu 3 · còn 8" for the period, or the outlet stock without dates. */
+function useItemAvailability(
+  product: ProductWithStock | undefined,
+  orderType: 'RENT' | 'SALE',
+  pickupDate: string | undefined,
+  returnDate: string | undefined,
+  quantity: number,
+  getStatus: OrderItemRowProps['getProductAvailabilityStatus']
+) {
+  const [state, setState] = React.useState<{ loading: boolean; error: boolean; data: ItemAvailability | null }>({
+    loading: false,
+    error: false,
+    data: null,
+  });
+  const ready = Boolean(product && orderType === 'RENT' && pickupDate && returnDate);
+
+  React.useEffect(() => {
+    if (!ready || !product) {
+      setState({ loading: false, error: false, data: null });
+      return;
+    }
+    let cancelled = false;
+    setState((prev) => ({ ...prev, loading: true, error: false }));
+    const timer = setTimeout(async () => {
+      try {
+        const status = await getStatus(product, pickupDate, returnDate, quantity);
+        if (cancelled) return;
+        const free = status.effectivelyAvailable ?? status.totalAvailableStock ?? 0;
+        setState({ loading: false, error: false, data: { free, total: status.totalStock ?? free } });
+      } catch {
+        if (!cancelled) setState({ loading: false, error: true, data: null });
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [ready, product, pickupDate, returnDate, quantity, getStatus]);
+
+  return { ready, ...state };
+}
+
+const OrderItemRow: React.FC<OrderItemRowProps> = ({
   item,
   product,
   onRemove,
@@ -375,355 +402,207 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   pickupDate,
   returnDate,
   getProductAvailabilityStatus,
-  outletId
+  outletId,
+  onAvailabilityChange,
 }) => {
-  // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
-  const tp = useProductTranslations();
-  
-  // Use the product information stored in the item instead of the external product
-  // This ensures all order items are displayed even if the external products array is incomplete
+  const [open, setOpen] = React.useState(Boolean(item.notes));
   const displayProduct = item.product || product;
-  
-  console.log('🔍 OrderItemCard: displayProduct check:', {
-    itemId: item.id,
-    productId: item.productId,
-    hasItemProduct: !!item.product,
-    itemProductName: item.product?.name,
-    itemProductNameType: typeof item.product?.name,
-    hasProduct: !!product,
-    productName: product?.name,
-    displayProduct: displayProduct,
-    displayProductName: displayProduct?.name,
-    displayProductNameType: typeof displayProduct?.name,
-    displayProductNameLength: displayProduct?.name?.length
-  });
-  
-  if (!displayProduct) {
-    // Fallback display when no product information is available
-    return (
-      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-        <div className="flex items-start gap-4 mb-3">
-          <div className="flex-shrink-0">
-            <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-200 flex items-center justify-center">
-              <Package className="w-8 h-8 text-gray-400" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">
-                  {tp('productId')}: {item.productId}
-                </h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  {tp('productInformationNotAvailable')}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onRemove(item.productId)}
-                className="text-red-500 hover:text-red-700 p-1 h-auto w-auto"
-                title={t('messages.removeProduct')}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Input Fields */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              {t('messages.quantity')}
-            </label>
-            <input
-              type="number"
-              value={item.quantity}
-              onChange={(e) => onUpdate(item.productId, 'quantity', parseInt(e.target.value) || 1)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="1"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              {t('messages.unitPrice')}
-            </label>
-            <input
-              type="number"
-              value={item.unitPrice}
-              onChange={(e) => onUpdate(item.productId, 'unitPrice', parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              step="0.01"
-              min="0"
-            />
-          </div>
-        </div>
-        
-        {/* Notes */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.orderNotes')}
-          </label>
-          <textarea
-            value={item.notes || ''}
-            onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows={2}
-            placeholder={t('messages.addNotesAboutProduct')}
-          />
-        </div>
-        
-        {/* Summary */}
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">
-            {(() => {
-              const d = getLineDisplay(item, orderType, pickupDate, returnDate);
-              return `Total: ${item.quantity} × ${item.unitPrice} ₫${d.isDaily ? ` × ${d.days} ngày` : ''} = ${d.total} ₫`;
-            })()}
-          </span>
-          {orderType === 'RENT' && (
-            <span className="text-gray-600">
-              {t('messages.deposit')}: {item.deposit || 0} ₫
-            </span>
-          )}
-        </div>
-      </div>
+  const name = displayProduct?.name || `#${item.productId}`;
+  const imageUrl = displayProduct?.images?.[0];
+  const line = getLineDisplay(item, orderType, pickupDate, returnDate);
+  const pricingType = (item.pricingType || 'FIXED').toUpperCase();
+  const availability = useItemAvailability(
+    product || (item.product as ProductWithStock | undefined),
+    orderType,
+    pickupDate,
+    returnDate,
+    item.quantity || 1,
+    getProductAvailabilityStatus
+  );
+
+  // Report the period result up so the summary can name short items
+  React.useEffect(() => {
+    onAvailabilityChange?.(item.productId, availability.ready ? availability.data : null);
+  }, [availability.ready, availability.data, item.productId, onAvailabilityChange]);
+  React.useEffect(() => () => onAvailabilityChange?.(item.productId, null), [item.productId, onAvailabilityChange]);
+
+  const outletStock = outletId
+    ? (product || displayProduct)?.outletStock?.find((os: any) => os.outletId === outletId)
+    : undefined;
+  const short = availability.data ? Math.max(0, (item.quantity || 1) - availability.data.free) : 0;
+
+  let badge: React.ReactNode = null;
+  if (availability.ready) {
+    if (availability.loading && !availability.data) {
+      badge = (
+        <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          {t('form.avail.checking')}
+        </span>
+      );
+    } else if (availability.error) {
+      badge = <span className="text-xs font-medium text-red-700">{t('form.avail.error')}</span>;
+    } else if (availability.data) {
+      badge = (
+        <span
+          className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+            short > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-800'
+          }`}
+        >
+          {short > 0 ? <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
+          {short > 0
+            ? t('form.avail.short', { count: short, free: availability.data.free })
+            : t('form.avail.free', { free: availability.data.free, total: availability.data.total })}
+        </span>
+      );
+    }
+  } else if (orderType === 'RENT' && !(pickupDate && returnDate)) {
+    badge = <span className="text-xs text-gray-600">{t('form.avail.pickDates')}</span>;
+  } else if (outletStock) {
+    badge = (
+      <span className={`text-xs ${outletStock.available > 0 ? 'text-gray-600' : 'font-semibold text-red-700'}`}>
+        {t('form.avail.stock', { available: outletStock.available, total: outletStock.stock })}
+      </span>
     );
   }
 
-  const imageUrl = displayProduct.images?.[0];
+  const options = ((item.product?.pricingOptions as any[]) || []);
 
   return (
-    <div className="p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-blue-300">
-      {/* Product Header with Image */}
-      <div className="flex items-start gap-4 mb-3">
-        {/* Product Image */}
-        <div className="flex-shrink-0">
-          {imageUrl ? (
-            <div className="h-16 w-16 overflow-hidden rounded-lg border-2 border-blue-100 shadow-sm">
-              <ImageLightbox
-                src={imageUrl}
-                alt={displayProduct.name || t('messages.product')}
-                triggerClassName="h-full w-full"
-                imgClassName="object-cover"
-              />
-            </div>
-          ) : (
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border-2 border-blue-100 shadow-sm">
-              <Package className="w-8 h-8 text-blue-400" />
-            </div>
-          )}
-        </div>
-
-        {/* Product Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="font-semibold text-gray-900 text-base mb-1">
-                {displayProduct.name || t('messages.unknownProduct')}
-              </div>
-              <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-0.5 rounded inline-block">
-                {displayProduct.barcode || t('messages.noBarcode')}
-              </div>
-              {/* Availability Warning & Stock Info */}
-              <div className="mt-2">
-                {/* Stock Information - Show basic stock for SALE or RENT without dates */}
-                {(() => {
-                  // For RENT orders with dates, don't show basic stock (will show in ProductAvailabilityAsyncDisplay)
-                  if (orderType === 'RENT' && pickupDate && returnDate) {
-                    return null;
-                  }
-                  
-                  // Get stock from product's outletStock filtered by outletId
-                  // Only use outletStock if outletId matches, otherwise use default values (0)
-                  let stockInfo: { available: number; stock: number; renting: number } | null = null;
-                  
-                  // Try to get from product prop first (most up-to-date)
-                  const sourceProduct = product || displayProduct;
-                  
-                  if (sourceProduct?.outletStock && outletId) {
-                    // Find outletStock for the current outlet - must match exactly
-                    const outletStock = sourceProduct.outletStock.find((os: any) => os.outletId === outletId);
-                    if (outletStock) {
-                      stockInfo = {
-                        available: outletStock.available,
-                        stock: outletStock.stock,
-                        renting: outletStock.renting
-                      };
-                    }
-                  }
-                  
-                  // If no match found, use default values (0) - no fallback
-                  const available = stockInfo?.available ?? 0;
-                  const stock = stockInfo?.stock ?? 0;
-                  
-                  // Single line stock display: "Kho: X | Có sẵn: Y (Hết)" if Y = 0
-                  return (
-                    <div className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
-                      <span><span className="font-semibold">Kho:</span> {stock}</span>
-                      <span className="text-gray-400">|</span>
-                      <span>
-                        <span className="font-semibold">Có sẵn:</span>{' '}
-                        <span className={available > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                          {available}
-                        </span>
-                        {available === 0 && <span className="text-red-600 font-semibold"> (Hết)</span>}
-                      </span>
-                    </div>
-                  );
-                })()}
-                
-                {/* Availability check for RENT orders with dates */}
-                {orderType === 'RENT' && (
-                  <>
-                    {product && pickupDate && returnDate ? (
-                      <div className="mt-1">
-                      <ProductAvailabilityAsyncDisplay 
-                        product={product}
-                        pickupDate={pickupDate}
-                        returnDate={returnDate}
-                        requestedQuantity={item.quantity || 1}
-                        getProductAvailabilityStatus={getProductAvailabilityStatus}
-                      />
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Chọn ngày thuê để kiểm tra khả dụng
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemove(item.productId)}
-              className="shrink-0 h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
-              title="Remove product"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+    <li className="px-3 py-2.5">
+      {/* Phones: name and remove on the first line, numbers on the second */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap">
+        <div className="order-1 flex min-w-0 basis-[calc(100%-5rem)] items-center gap-3 sm:flex-1 sm:basis-auto">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+            {imageUrl ? (
+              <ImageLightbox src={imageUrl} alt={name} triggerClassName="h-full w-full" imgClassName="object-cover" />
+            ) : (
+              <Package className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="line-clamp-2 text-sm font-medium leading-snug text-gray-900" title={displayProduct?.barcode || undefined}>
+              {name}
+            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">{badge}</div>
           </div>
         </div>
-      </div>
 
-      {/* Editable Fields */}
-      <div className={`grid grid-cols-1 gap-3 mt-4 pt-4 border-t border-gray-200 ${orderType === 'RENT' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-        {/* Quantity */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.quantity')}
-          </label>
+        <div className="order-3 ml-[3.25rem] sm:order-2 sm:ml-0">
           <QuantityInput
             value={item.quantity}
             onChange={(value) => onUpdate(item.productId, 'quantity', value)}
             min={1}
-            className="h-8"
+            decreaseLabel={t('form.decrease')}
+            increaseLabel={t('form.increase')}
+            inputLabel={t('form.quantity')}
           />
         </div>
 
-        {/* Unit Price */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.unitPrice')} · {getPricingLabel(item.pricingType)}
-          </label>
+        <div className="order-4 w-24 shrink-0 sm:order-3 sm:w-28">
           <NumberInput
             value={item.unitPrice}
             onChange={(value) => onUpdate(item.productId, 'unitPrice', value)}
             min={0}
-            step={0.01}
             decimals={0}
-            className="h-8 text-sm"
+            ariaLabel={`${t('form.unitPrice')} · ${t(`form.pricing.${pricingType}`)}`}
+            className="h-8 text-right text-sm tabular-nums"
           />
+          {orderType === 'RENT' && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="mt-0.5 block w-full truncate text-right text-[11px] text-gray-600 hover:text-blue-700"
+            >
+              {t(`form.pricing.${pricingType}`)}
+              {line.isDaily ? ` ${t('form.timesDays', { days: line.days })}` : ''}
+            </button>
+          )}
         </div>
 
-        {/* Deposit - Only show for RENT orders */}
-        {orderType === 'RENT' && (
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              {t('messages.deposit')}
-            </label>
-            <NumberInput
-              value={item.deposit || 0}
-              onChange={(value) => onUpdate(item.productId, 'deposit', value)}
-              min={0}
-              step={0.01}
-              decimals={0}
-              className="h-8 text-sm"
-            />
-          </div>
-        )}
+        <div className="order-5 ml-auto w-24 shrink-0 text-right sm:order-4 sm:ml-0">
+          <p className="text-sm font-semibold tabular-nums text-gray-900">{formatMoney(line.total)}</p>
+          {orderType === 'RENT' && (item.deposit || 0) > 0 && (
+            <p className="text-[11px] tabular-nums text-gray-600">
+              {t('form.depositLine', { amount: formatMoney((item.deposit || 0) * (item.quantity || 1)) })}
+            </p>
+          )}
+        </div>
+
+        <div className="order-2 flex shrink-0 items-center sm:order-5">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={t('form.moreOptions', { name })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRemove(item.productId)}
+            aria-label={t('form.remove', { name })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-red-50 hover:text-red-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Pricing mode: always allow Per rental (FIXED) / Per day (DAILY) on RENT lines — matches mobile */}
-      {orderType === 'RENT' && (
-        <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1">Cách tính giá</label>
-          <select
-            value={(item.pricingType || 'FIXED').toUpperCase()}
-            onChange={(e) => {
-              const nextType = e.target.value;
-              // Prefer configured option id when present; otherwise switch by type only
-              const opts = (item.product?.pricingOptions as any[]) || [];
-              const matched = opts.find((opt: any) => (opt.type || '').toUpperCase() === nextType);
-              if (matched?.id != null && onUpdatePricingOption) {
-                onUpdatePricingOption(item.productId, matched.id);
-              } else {
-                onUpdatePricingType?.(item.productId, nextType);
-              }
-            }}
-            className="h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm"
-          >
-            {(['FIXED', 'DAILY'] as const).map((type) => {
-              const opt = ((item.product?.pricingOptions as any[]) || []).find(
-                (option: any) => (option.type || '').toUpperCase() === type
-              );
-              const priceLabel = opt?.price != null ? ` · ${formatMoney(opt.price)}${getPricingUnit(type)}` : '';
-              return (
-                <option key={type} value={type}>
-                  {getPricingLabel(type)}{priceLabel}
-                </option>
-              );
-            })}
-          </select>
+      {open && (
+        <div className="mt-2.5 grid grid-cols-1 gap-3 rounded-md bg-gray-50 p-3 sm:ml-[3.25rem] sm:grid-cols-3">
+          {orderType === 'RENT' && (
+            <label className="block text-xs font-medium text-gray-700">
+              {t('form.pricingMethod')}
+              <select
+                value={pricingType}
+                onChange={(e) => {
+                  const nextType = e.target.value;
+                  const matched = options.find((opt: any) => (opt.type || '').toUpperCase() === nextType);
+                  if (matched?.id != null && onUpdatePricingOption) onUpdatePricingOption(item.productId, matched.id);
+                  else onUpdatePricingType?.(item.productId, nextType);
+                }}
+                className="mt-1 h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm font-normal"
+              >
+                {(['FIXED', 'DAILY'] as const).map((type) => {
+                  const opt = options.find((option: any) => (option.type || '').toUpperCase() === type);
+                  const priceLabel = opt?.price != null ? ` · ${formatMoney(opt.price)}${getPricingUnit(type)}` : '';
+                  return (
+                    <option key={type} value={type}>
+                      {t(`form.pricing.${type}`)}
+                      {priceLabel}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+          )}
+          {orderType === 'RENT' && (
+            <label className="block text-xs font-medium text-gray-700">
+              {t('form.depositPerUnit')}
+              <NumberInput
+                value={item.deposit || 0}
+                onChange={(value) => onUpdate(item.productId, 'deposit', value)}
+                min={0}
+                decimals={0}
+                className="mt-1 h-8 bg-white text-sm"
+              />
+            </label>
+          )}
+          <label className={`block text-xs font-medium text-gray-700 ${orderType === 'RENT' ? '' : 'sm:col-span-3'}`}>
+            {t('form.itemNote')}
+            <Input
+              value={item.notes}
+              onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
+              placeholder={t('messages.addNotesForItem')}
+              className="mt-1 h-8 bg-white text-sm font-normal"
+            />
+          </label>
         </div>
       )}
-
-      {/* Notes */}
-      <div className="mt-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          {t('messages.orderNotes')}
-        </label>
-        <Input
-          value={item.notes}
-          onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
-          placeholder={t('messages.addNotesForItem')}
-          className="h-8 text-sm"
-        />
-      </div>
-
-      {/* Summary */}
-      <div className="flex items-center justify-between mt-4 pt-4 border-t-2 border-blue-100 bg-blue-50/50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
-        {(() => {
-          const d = getLineDisplay(item, orderType, pickupDate, returnDate);
-          return (
-            <div className="text-sm text-gray-600">
-              {item.quantity} × {formatMoney(item.unitPrice)} {getPricingUnit(item.pricingType)}{d.isDaily ? ` × ${d.days} ngày` : ''} = {formatMoney(d.total)}
-            </div>
-          );
-        })()}
-        {/* Only show deposit for RENT orders - Display total deposit (deposit per unit * quantity) */}
-        {orderType === 'RENT' && (
-          <div className="text-sm text-gray-600">
-            {t('messages.deposit')}: {formatMoney((item.deposit || 0) * (item.quantity || 1))}
-          </div>
-        )}
-      </div>
-    </div>
+    </li>
   );
 };
