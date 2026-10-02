@@ -36,6 +36,7 @@ export async function createRefreshToken(
     deviceId?: string;
     userAgent?: string;
     ipAddress?: string;
+    sessionId?: string;
   }
 ): Promise<string> {
   const token = generateRefreshToken();
@@ -51,6 +52,7 @@ export async function createRefreshToken(
       deviceId: options?.deviceId || null,
       userAgent: options?.userAgent || null,
       ipAddress: options?.ipAddress || null,
+      sessionId: options?.sessionId || null,
       expiresAt,
     },
   });
@@ -118,7 +120,7 @@ export async function rotateRefreshToken(
     userAgent?: string;
     ipAddress?: string;
   }
-): Promise<{ newToken: string; userId: number } | null> {
+): Promise<{ newToken: string; userId: number; sessionId: string | null } | null> {
   const oldTokenHash = hashToken(oldToken);
 
   const existingToken = await prisma.refreshToken.findUnique({
@@ -172,6 +174,7 @@ export async function rotateRefreshToken(
         deviceId: options?.deviceId || existingToken.deviceId,
         userAgent: options?.userAgent || existingToken.userAgent,
         ipAddress: options?.ipAddress || existingToken.ipAddress,
+        sessionId: existingToken.sessionId,
         expiresAt,
       },
     }),
@@ -180,7 +183,19 @@ export async function rotateRefreshToken(
   return {
     newToken,
     userId: existingToken.userId,
+    sessionId: existingToken.sessionId,
   };
+}
+
+/**
+ * Session a refresh token belongs to, or null when unknown or unbound.
+ */
+export async function findRefreshTokenSessionId(token: string): Promise<string | null> {
+  const refreshToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash: hashToken(token) },
+    select: { sessionId: true },
+  });
+  return refreshToken?.sessionId ?? null;
 }
 
 /**
@@ -272,6 +287,7 @@ export const refreshTokens = {
   rotate: rotateRefreshToken,
   revoke: revokeRefreshToken,
   revokeAllForUser: revokeAllUserTokens,
+  findSessionId: findRefreshTokenSessionId,
   cleanup: cleanupExpiredRefreshTokens,
   getActiveCount: getActiveTokenCount,
 };

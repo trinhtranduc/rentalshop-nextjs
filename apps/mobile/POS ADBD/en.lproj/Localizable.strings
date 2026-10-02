@@ -1040,6 +1040,7 @@
 
 // MARK: - Error Codes
 "SESSION_EXPIRED" = "Your session has expired. Please login again";
+"SESSION_REPLACED" = "Your account was signed in on another device. Please login again";
 "ACCESS_DENIED" = "Access denied to this resource";
 "ACCESS_TOKEN_REQUIRED" = "Access token is required";
 "ACCOUNT_DELETED_SUCCESS" = "Account deleted successfully";
