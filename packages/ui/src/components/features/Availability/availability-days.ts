@@ -67,15 +67,28 @@ export function keyRangesOverlap(aStart: string, aEnd: string, bStart: string, b
   return aStart <= bEnd && bStart <= aEnd;
 }
 
+/** The fields of an `/api/orders` row this page reads. */
+export interface RawOrder {
+  id: number;
+  orderNumber?: string;
+  status?: string;
+  orderType?: string;
+  pickupPlanAt?: string | null;
+  returnPlanAt?: string | null;
+  customerName?: string;
+  customer?: { firstName?: string | null; lastName?: string | null } | null;
+  orderItems?: { productId?: number; product?: { id?: number }; quantity?: number }[];
+}
+
 /**
  * Orders from `/api/orders` → rows for the checked product, with Vietnam day keys and only
  * that product's units (an order can hold several products).
  */
-export function toActiveOrders(orders: any[], productId: number, pickupKey?: string, returnKey?: string): ActiveOrder[] {
+export function toActiveOrders(orders: RawOrder[], productId: number, pickupKey?: string, returnKey?: string): ActiveOrder[] {
   return orders.map((o) => {
     const pickupPlanAt = o.pickupPlanAt ? shopDateKey(o.pickupPlanAt) : '';
     const returnPlanAt = o.returnPlanAt ? shopDateKey(o.returnPlanAt) : pickupPlanAt;
-    const items: any[] = o.orderItems || [];
+    const items = o.orderItems || [];
     const quantity = items
       .filter((item) => (item.productId ?? item.product?.id) === productId)
       .reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -89,6 +102,7 @@ export function toActiveOrders(orders: any[], productId: number, pickupKey?: str
       returnPlanAt,
       quantity: quantity || 1,
       status: o.status || 'RESERVED',
+      orderType: o.orderType,
       isConflict:
         Boolean(pickupKey && returnKey && pickupPlanAt) &&
         keyRangesOverlap(pickupKey as string, returnKey as string, pickupPlanAt, returnPlanAt),
@@ -96,10 +110,14 @@ export function toActiveOrders(orders: any[], productId: number, pickupKey?: str
   });
 }
 
-/** Units still free on each day: stock minus every active order covering that day. */
+/**
+ * Units still free on each day: stock minus every rental covering that day. Sale orders are left out,
+ * like the availability API, so the day grid matches the period result.
+ */
 export function freeUnitsByDay(totalStock: number, orders: ActiveOrder[], dayKeys: string[]): number[] {
+  const rentals = orders.filter((o) => o.orderType !== 'SALE');
   return dayKeys.map((day) => {
-    const busy = orders
+    const busy = rentals
       .filter((o) => o.pickupPlanAt && keyRangesOverlap(day, day, o.pickupPlanAt, o.returnPlanAt || o.pickupPlanAt))
       .reduce((sum, o) => sum + o.quantity, 0);
     return Math.max(0, totalStock - busy);
