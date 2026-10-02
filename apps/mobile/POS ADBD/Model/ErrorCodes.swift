@@ -104,6 +104,7 @@ enum APIErrorCode: String, Codable, CaseIterable {
     
     // MARK: - Access Control Errors
     case sessionExpired = "SESSION_EXPIRED"
+    case sessionReplaced = "SESSION_REPLACED"
     case crossMerchantAccessDenied = "CROSS_MERCHANT_ACCESS_DENIED"
     case userNotAssigned = "USER_NOT_ASSIGNED"
     case merchantAssociationRequired = "MERCHANT_ASSOCIATION_REQUIRED"
@@ -595,6 +596,7 @@ struct APIErrorMessages {
         .forbidden: "Access denied",
         .invalidToken: "Invalid authentication token",
         .tokenExpired: "Authentication token has expired",
+        .sessionReplaced: "Your account was signed in on another device. Please login again.",
         .invalidCredentials: "Invalid email or password",
         .emailNotVerified: "Email has not been verified. Please check your email and verify your account before logging in.",
         .emailAlreadyVerified: "Your email is already verified. You can log in now.",
@@ -947,6 +949,7 @@ struct APIErrorStatusCodes {
         .forbidden: 403,
         .invalidToken: 401,
         .tokenExpired: 401,
+        .sessionReplaced: 401,
         .invalidCredentials: 401,
         .emailNotVerified: 403,
         .emailAlreadyVerified: 400,

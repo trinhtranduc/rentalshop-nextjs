@@ -542,4 +542,5 @@
     <string name="api_error_product_has_no_images">Add a product photo, then try again.</string>
     <string name="api_error_invalid_credentials">Incorrect email or password.</string>
     <string name="api_error_session_expired">Your session has expired. Please sign in again.</string>
+    <string name="api_error_session_replaced">Your account was signed in on another device. Please sign in again.</string>
 </resources>

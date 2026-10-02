@@ -5,7 +5,7 @@
 // All other files should import from here to maintain consistency
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenSimple } from './jwt';
+import { isTokenExpired, verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
@@ -368,6 +368,44 @@ function mergePermissionsWithProtection(
 // ============================================================================
 
 /**
+ * 401 for a token that failed verification: TOKEN_EXPIRED when only exp has passed
+ * (the client may refresh), INVALID_TOKEN otherwise.
+ */
+function tokenRejectedResponse(token: string): NextResponse {
+  if (isTokenExpired(token)) {
+    return NextResponse.json(
+      { success: false, code: 'TOKEN_EXPIRED', message: 'Your login has expired. Please login again.' },
+      { status: 401 }
+    );
+  }
+  return NextResponse.json(
+    { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
+    { status: 401 }
+  );
+}
+
+/**
+ * 401 for a session that is no longer usable. SESSION_REPLACED means the same account
+ * logged in on another device; SESSION_EXPIRED covers logout, admin reset and timeouts.
+ */
+export function sessionRejectedResponse(status: 'replaced' | 'expired'): NextResponse {
+  if (status === 'replaced') {
+    return NextResponse.json(
+      {
+        success: false,
+        code: 'SESSION_REPLACED',
+        message: 'Your account was signed in on another device. Please login again.'
+      },
+      { status: 401 }
+    );
+  }
+  return NextResponse.json(
+    { success: false, code: 'SESSION_EXPIRED', message: 'Your session has expired. Please login again.' },
+    { status: 401 }
+  );
+}
+
+/**
  * Authenticate request and return user or error
  * This is the SINGLE authentication function used everywhere
  */
@@ -413,23 +451,11 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       }
       
       // For other errors, treat as authentication failure
-      return {
-        success: false,
-        response: NextResponse.json(
-          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
-          { status: 401 }
-        )
-      };
+      return { success: false, response: tokenRejectedResponse(token) };
     }
     
     if (!user) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
-          { status: 401 }
-        )
-      };
+      return { success: false, response: tokenRejectedResponse(token) };
     }
 
     // ============================================================================
@@ -552,21 +578,12 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     // ============================================================================
     // SESSION VALIDATION (Single Session Enforcement)
     // ============================================================================
-    // Check if session is still valid (not invalidated by a newer login)
+    // Check the session on every request (not cached). Mobile tokens live 90 days, so this check
+    // is what makes logout and "a newer login signs out the older device" take effect (#343).
     if (user.sessionId) {
-      const isSessionValid = await db.sessions.validateSession(user.sessionId);
-      if (!isSessionValid) {
-        return {
-          success: false,
-          response: NextResponse.json(
-            { 
-              success: false, 
-              code: 'SESSION_EXPIRED', 
-              message: 'Your session has expired. Please login again.' 
-            },
-            { status: 401 }
-          )
-        };
+      const sessionStatus = await db.sessions.getSessionStatus(user.sessionId);
+      if (sessionStatus !== 'active') {
+        return { success: false, response: sessionRejectedResponse(sessionStatus) };
       }
     }
 
