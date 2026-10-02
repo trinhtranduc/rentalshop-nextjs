@@ -112,7 +112,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   const collateralCode = collateralKey(tempSettings.collateralType);
   const collateralLabel = [
     collateralCode && collateralCode !== 'OTHER' ? t(`detailSettings.collateral.${collateralCode}`) : '',
-    tempSettings.collateralDetails || '',
+    collateralKey(tempSettings.collateralDetails) === collateralCode ? '' : tempSettings.collateralDetails || '',
   ]
     .filter(Boolean)
     .join(' · ');

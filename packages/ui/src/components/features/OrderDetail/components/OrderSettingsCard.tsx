@@ -584,7 +584,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   <div className="flex justify-between gap-3">
                     <dt className="text-slate-600">{t('detailSettings.holding')}</dt>
                     <dd className="min-w-0 text-right font-medium">
-                      {[labelFor(settingsForm.collateralType), settingsForm.collateralDetails].filter(Boolean).join(' · ')}
+                      {[labelFor(settingsForm.collateralType), collateralKey(settingsForm.collateralDetails) === collateralKey(settingsForm.collateralType) ? '' : settingsForm.collateralDetails].filter(Boolean).join(' · ')}
                     </dd>
                   </div>
                 )}

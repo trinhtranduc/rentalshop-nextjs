@@ -550,5 +550,19 @@
       "PASSPORT": "Passport",
       "OTHER": "Other"
     }
+  },
+  "dialogs": {
+    "handover": {
+      "title": "Hand over to customer",
+      "collect": "Collect from customer",
+      "confirm": "Confirm hand-over"
+    },
+    "takeBack": {
+      "title": "Take back",
+      "collectMore": "Collect from customer",
+      "refund": "Refund to customer",
+      "nothing": "No money changes hands",
+      "confirm": "Confirm take-back"
+    }
   }
 }

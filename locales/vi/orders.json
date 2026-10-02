@@ -550,5 +550,19 @@
       "PASSPORT": "Hộ chiếu",
       "OTHER": "Khác"
     }
+  },
+  "dialogs": {
+    "handover": {
+      "title": "Giao đồ cho khách",
+      "collect": "Thu của khách",
+      "confirm": "Xác nhận giao đồ"
+    },
+    "takeBack": {
+      "title": "Nhận trả đồ",
+      "collectMore": "Thu thêm của khách",
+      "refund": "Trả lại khách",
+      "nothing": "Không phát sinh tiền",
+      "confirm": "Xác nhận nhận trả"
+    }
   }
 }

@@ -438,15 +438,16 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     }
   };
 
-  const handleReturnOrder = async () => {
+  const handleReturnOrder = async (overrides?: { damageFee?: number }) => {
     if (!onReturn) return;
+    const damageFee = overrides?.damageFee ?? tempSettings.damageFee ?? 0;
     
     try {
       setIsReturnLoading(true);
       await onReturn(order.id, {
         order_status: 'RETURNED',
         notes: tempSettings.notes || '',
-        damage_fee: tempSettings.damageFee || 0
+        damage_fee: damageFee
       });
       setIsReturnModalOpen(false);
     } catch (error) {
