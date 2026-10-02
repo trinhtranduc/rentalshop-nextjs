@@ -32,14 +32,14 @@ import {
   Minus,
   Plus
 } from 'lucide-react';
-import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 // Plain formatters, not the useFormatted* hooks: these run inside loops (#349, Rules of Hooks)
-import { formatFullDateByLocale, formatMonthOnlyByLocale, formatDailyByLocale } from '@rentalshop/utils';
+import { formatMonthOnlyByLocale, formatDailyByLocale } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS, getOrderStatusClassName, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { OutletOperationsPanel, UpcomingReturnsCard, useOutletOperations } from './OutletOperationsPanel';
+import { ORDER_STATUS_COLORS, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { OutletOperationsPanel, ShiftCashCard, Sparkline, UpcomingReturnsCard, useOutletOperations } from './OutletOperationsPanel';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -123,11 +123,6 @@ const getStatusDotColor = (statusKey: string): string => {
   return 'bg-gray-600';
 };
 
-// Get status badge color class - use the same function as order pages
-const getStatusBadgeColor = (status: string): string => {
-  return getOrderStatusClassName(status);
-};
-
 // Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
 const formatDateAsYYYYMMDD = (date: Date): string => {
   const year = date.getFullYear();
@@ -174,7 +169,7 @@ const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick, isMoney = false }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend, onClick, isMoney = false, spark, sparkLabel }: {
   title: string;
   value: string | number;
   change: string;
@@ -185,6 +180,10 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
   onClick?: () => void;
   /** Money value: format with the merchant currency. Guessing from the (translated) title failed in Vietnamese (#349). */
   isMoney?: boolean;
+  /** Last 7 days, today last: drawn next to the value (#350) */
+  spark?: number[];
+  /** Words for the sparkline (it is aria-hidden) */
+  sparkLabel?: string;
 }) => {
   const formatMoney = useFormatCurrency();
   const shouldShowDollar = isMoney;
@@ -193,7 +192,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
   const cardContent = (
     <div
       className={`h-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-3 sm:px-4 transition-colors duration-200 ${
-        onClick ? 'hover:border-blue-300 hover:bg-blue-50/30' : ''
+        onClick ? 'group-hover:border-blue-300 group-hover:bg-blue-50/30' : ''
       }`}
     >
       <div className="flex items-start gap-1 text-xs sm:text-sm font-medium text-gray-600">
@@ -201,8 +200,8 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
         <span className="leading-snug">{title}</span>
         <FieldTooltip text={tooltip} />
       </div>
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <p className={`text-xl sm:text-2xl font-bold leading-tight ${color}`}>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className={`text-xl sm:text-2xl font-bold leading-tight tabular-nums ${color}`}>
           {typeof value === 'number'
             ? shouldShowDollar
               ? formatMoney(value)
@@ -225,26 +224,29 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, on
             {change}
           </span>
         )}
+        {spark && spark.length > 1 && (
+          <span className="ml-auto max-sm:hidden" title={sparkLabel}>
+            <Sparkline values={spark} />
+            {sparkLabel && <span className="sr-only">{sparkLabel}</span>}
+          </span>
+        )}
       </div>
       {description && <p className="mt-0.5 text-xs text-gray-500">{description}</p>}
     </div>
   );
 
   if (onClick) {
+    // Whole tile is clickable through a transparent stretched button laid over it; the tooltip
+    // button sits above it, so it is not nested inside another interactive element (WCAG 4.1.2, #350)
     return (
-      <div 
-        onClick={onClick}
-        className="cursor-pointer h-full"
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick();
-          }
-        }}
-      >
-        {cardContent}
+      <div className="group relative h-full">
+        <div className="h-full [&_button]:relative [&_button]:z-20">{cardContent}</div>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={title}
+          className="absolute inset-0 z-10 cursor-pointer rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        />
       </div>
     );
   }
@@ -276,7 +278,6 @@ export default function DashboardPage() {
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
-  const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   // ✅ Use permissions hook to check permissions
@@ -326,7 +327,6 @@ export default function DashboardPage() {
   const [orderData, setOrderData] = useState<OrderData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
-  const [todayOrders, setTodayOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
   const [currentDateRange, setCurrentDateRange] = useState<{startDate: string, endDate: string}>({startDate: '', endDate: ''});
   
@@ -814,7 +814,6 @@ export default function DashboardPage() {
       }
 
       if (dashboardResponse.success && dashboardResponse.data) {
-        setTodayOrders(dashboardResponse.data.todayOrders || []);
         setOrderStatusCounts(dashboardResponse.data.orderStatusCounts || {});
       }
 
@@ -1300,16 +1299,16 @@ export default function DashboardPage() {
         )}
 
         {/* Welcome Header - Modern Style */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')} 👋
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')}
               </h1>
-              <p className="text-base text-gray-600">
-                {timePeriod === 'today'
-                  ? t('overview')
-                  : timePeriod === '7d'
+              {/* Today needs no subtitle: the panel shows the date (#350) */}
+              {timePeriod !== 'today' && (
+              <p className="mt-1 text-sm text-gray-600">
+                {timePeriod === '7d'
                   ? `${t('overview')} — ${tc('time.last7Days')}`
                   : timePeriod === '30d'
                   ? `${t('overview')} — ${tc('time.last30Days')}`
@@ -1318,6 +1317,7 @@ export default function DashboardPage() {
                   : `${t('overview')} - ${new Date().getFullYear()}`
                 }
               </p>
+              )}
             </div>
             
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
@@ -1345,14 +1345,7 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-            ) : (
-              // For users without full analytics access, show only "Today" label (not clickable)
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
-                <div className="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm">
-                  {tc('time.today')}
-                </div>
-              </div>
-            )}
+            ) : null /* Only one period without full analytics: no picker that looks clickable (#350) */}
             {/* Replaces the "Thao tác nhanh" card at the bottom (#350) */}
             {hasPermission('orders.create') && (
               <Button onClick={() => router.push('/orders/create')} className="shrink-0 cursor-pointer">
@@ -1367,9 +1360,10 @@ export default function DashboardPage() {
         {/* Today View - Operational Focus */}
         {timePeriod === 'today' && (
           <>
-            {/* Today: compact KPIs, then today's work, then new orders + returns soon (#350).
-                One place per fact: overdue lives in the panel, deposits in "Tiền trong ca". */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 items-stretch">
+            {/* Today (#350): three KPIs (new orders with a 7-day line), then today's work as progress,
+                booked hours and one line per order; cash and returns-soon on the side. Recent activity
+                was removed: the "new orders" tile links to today's orders. */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 items-stretch">
               <StatCard
                 isMoney
                 title={t('stats.todayRevenue')}
@@ -1389,6 +1383,14 @@ export default function DashboardPage() {
                 color="text-blue-700"
                 trend="neutral"
                 onClick={handleViewTodayRentals}
+                spark={operations.data?.newOrdersByDay?.map((day) => day.count)}
+                sparkLabel={
+                  operations.data?.newOrdersByDay?.length
+                    ? t('operations.kpi.ordersTrend', {
+                        values: operations.data.newOrdersByDay.map((day) => day.count).join(', '),
+                      })
+                    : undefined
+                }
               />
               <StatCard
                 title={t('stats.activeRentals')}
@@ -1402,64 +1404,14 @@ export default function DashboardPage() {
               />
             </div>
 
-            <OutletOperationsPanel state={operations} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
-              {/* Recent activity: two-line rows like the operations panel (~66px, was ~98px) (#350) */}
-              <section className="min-w-0 rounded-lg border border-gray-200 bg-white">
-                <header className="flex items-baseline justify-between px-4 pt-4">
-                  {/* Orders with activity today (not only created today), so no count next to the
-                      "Đơn mới hôm nay" KPI to avoid two different numbers */}
-                  <h2 className="text-base font-semibold text-gray-900">{t('recentActivity.title')}</h2>
-                </header>
-                <div className="px-4 pb-2">
-                  {loadingCharts ? (
-                    <div className="my-4 h-24 rounded-md bg-gray-50 animate-pulse" />
-                  ) : (todayOrders || []).length > 0 ? (
-                    <ul className="divide-y divide-gray-100">
-                      {(todayOrders || []).slice(0, 8).map(order => {
-                        const translatedOrderType = order.orderType ? to(`orderType.${order.orderType}`) : null;
-                        const translatedStatus = to(`status.${order.status}`);
-                        const detail = order.pickupPlanAt && order.returnPlanAt
-                          ? `${formatFullDateByLocale(order.pickupPlanAt, locale)} – ${formatFullDateByLocale(order.returnPlanAt, locale)}`
-                          : order.productNames || '';
-                        return (
-                          <li key={order.id}>
-                            <Link
-                              href={`/orders/${order.orderNumber}`}
-                              className="-mx-2 flex items-start gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-gray-50"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                  <span className="whitespace-nowrap font-medium text-gray-900">#{order.orderNumber}</span>
-                                  {translatedOrderType && (
-                                    <span className="whitespace-nowrap rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">
-                                      {translatedOrderType}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="mt-0.5 truncate text-xs text-gray-500">
-                                  {[order.customerName, detail].filter(Boolean).join(' · ')}
-                                </p>
-                              </div>
-                              <div className="shrink-0 text-right">
-                                <p className="text-sm font-medium text-gray-900">{formatMoney(order.totalAmount || 0)}</p>
-                                <span className={`mt-0.5 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium ${getStatusBadgeColor(order.status)}`}>
-                                  {translatedStatus}
-                                </span>
-                              </div>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="py-6 text-center text-sm text-gray-500">{tc('labels.noData')}</p>
-                  )}
-                </div>
-              </section>
-
-              <UpcomingReturnsCard state={operations} />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 mb-6 items-start">
+              <div className="min-w-0 lg:col-span-2">
+                <OutletOperationsPanel state={operations} />
+              </div>
+              <div className="grid min-w-0 gap-4">
+                <ShiftCashCard state={operations} />
+                <UpcomingReturnsCard state={operations} />
+              </div>
             </div>
           </>
         )}
@@ -1467,24 +1419,25 @@ export default function DashboardPage() {
         {/* Month/Year View - Strategic Focus */}
         {isRangePeriod && (
           <>
-            {/* Range KPIs (#350): revenue, new orders, cancel rate, deposit refunds.
+            {/* Range KPIs (#350): net cash in, new orders, cancelled orders, deposit refunds.
                 Deposits held are a "now" number and live in the Today view. */}
             {(() => {
-              const revenueChip = growthChip(currentStats.revenueGrowth, t('operations.kpi.new'));
+              // `period` revenue is net cash in (refunds and returned deposits subtracted) and can be
+              // negative; a % change on it is meaningless then. Gross revenue needs the API (#350 follow-up).
+              const revenueChip = currentStats.totalRevenue < 0
+                ? { text: '', trend: 'neutral' as const }
+                : growthChip(currentStats.revenueGrowth, t('operations.kpi.new'));
               const ordersChip = growthChip(currentStats.ordersGrowth, t('operations.kpi.new'));
-              const cancelRate = currentStats.newOrders > 0
-                ? Math.round((currentStats.cancelledOrders / currentStats.newOrders) * 100)
-                : 0;
               return (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-stretch">
                   <StatCard
                     isMoney
-                    title={t('operations.kpi.revenue')}
+                    title={t('operations.kpi.netRevenue')}
                     value={currentStats.totalRevenue}
                     change={revenueChip.text}
                     description=""
-                    tooltip={t('tooltips.totalRevenue')}
-                    color="text-blue-700"
+                    tooltip={t('operations.kpi.netRevenueTooltip')}
+                    color={currentStats.totalRevenue < 0 ? 'text-red-700' : 'text-blue-700'}
                     trend={revenueChip.trend}
                   />
                   <StatCard
@@ -1498,12 +1451,14 @@ export default function DashboardPage() {
                     onClick={currentStats.newOrders > 0 ? handleViewTotalOrders : undefined}
                   />
                   <StatCard
-                    title={t('operations.kpi.cancelRate')}
-                    value={`${cancelRate}%`}
+                    // A count, not "cancelled ÷ new": orders created earlier and cancelled in the
+                    // period pushed that ratio past 100%
+                    title={t('operations.kpi.cancelled')}
+                    value={currentStats.cancelledOrders}
                     change=""
-                    description={t('operations.cash.orders', { count: currentStats.cancelledOrders })}
-                    tooltip={t('operations.kpi.cancelRateTooltip')}
-                    color={cancelRate >= 20 ? 'text-red-700' : 'text-blue-700'}
+                    description=""
+                    tooltip={t('operations.kpi.cancelledTooltip')}
+                    color={currentStats.cancelledOrders > 0 ? 'text-red-700' : 'text-blue-700'}
                     trend="neutral"
                   />
                   <StatCard

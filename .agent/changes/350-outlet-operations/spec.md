@@ -19,8 +19,22 @@ Issue: #350 · Status: accepted · Intent: ./intent.md
 9. Web: panel above the stat cards with 4 tabs and counts; rows link to `/orders/{orderNumber}` and `tel:`; the
    cash card only for managers; empty states; vi/en strings.
 
+10. `doneToday`: `pickups` = RENT orders in scope, not deleted, not CANCELLED, `pickedUpAt` within today;
+    `returns` = same with `returnedAt` within today. Feeds the "Đã giao x/y", "Đã nhận trả x/y" bars.
+11. `newOrdersByDay`: the 7 Vietnam civil days ending today, oldest first, `{ date, count }` of orders (any type,
+    not deleted, in scope) created that day. Counts only, so staff get it too.
+12. Web, Today view (review round 2, "too much text"): 3 KPIs, "Đơn mới" with a 7-day sparkline; the panel shows
+    two progress bars, a 7h–22h strip of booked handover/return times with a "now" marker, filter chips with
+    counts, and one line per order (urgency edge, status in words, customer, call button), most urgent first.
+    Deposits are one number plus a bar of what goes back today. "Hoạt động gần đây" is removed.
+13. Web, range KPIs: "Đơn hủy" is a count (the cancelled ÷ new ratio went past 100%); the revenue tile is labeled
+    "Tiền thu ròng" (the `period` API returns net cash in, which can be negative) and shows no % when negative.
+14. A11y: clickable KPI tiles do not nest the tooltip button (stretched button); `FieldTooltip` has a 24px target
+    and opens on focus and tap.
+
 ## Out of scope
 
+Gross revenue and the outlet filter in the `period` API, the month range timezone (separate issue).
 Payment-method breakdown, inline status actions, tomorrow prep, stock, staff ranking, mobile.
 
 ## Acceptance
@@ -29,3 +43,5 @@ Payment-method breakdown, inline status actions, tomorrow prep, stock, staff ran
 - [ ] 2–5, 7 where clauses in `tests/packages/database/outlet-operations.test.ts`
 - [ ] 8 in `tests/api/outlet-operations-route.test.ts`
 - [ ] 9 on localhost as merchant, outlet admin, staff (screenshots)
+- [ ] 10, 11 in `tests/packages/database/outlet-operations.test.ts`; the 7-day window in `tests/api/outlet-operations-day.test.ts`
+- [ ] 12–14 on localhost (screenshots, axe on the Today view: 0 violations)

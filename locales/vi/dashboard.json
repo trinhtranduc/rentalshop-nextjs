@@ -133,7 +133,8 @@
       "pickupsToday": "Hôm nay không có đơn cần giao.",
       "returnsToday": "Hôm nay không có đơn cần nhận trả.",
       "overdueReturns": "Không có đơn quá hạn.",
-      "noShows": "Mọi đơn đặt đều đã được lấy."
+      "noShows": "Mọi đơn đặt đều đã được lấy.",
+      "all": "Hôm nay không còn việc cần xử lý."
     },
     "ready": "Đã soạn đồ",
     "notReady": "Chưa soạn đồ",
@@ -150,7 +151,9 @@
       "depositsDueToday": "Cọc phải hoàn hôm nay",
       "feesToday": "Phí thu khi nhận trả hôm nay",
       "orders": "{count} đơn",
-      "feesBreakdown": "Trễ hạn {late} · Hư hỏng {damage}"
+      "feesBreakdown": "Trễ hạn {late} · Hư hỏng {damage}",
+      "dueTodayShort": "{amount} phải hoàn cho khách hôm nay",
+      "feesShort": "Phí thu hôm nay {amount}"
     },
     "newOrders": "Đơn mới hôm nay",
     "viewDetails": "Xem chi tiết",
@@ -163,10 +166,38 @@
       "new": "Mới",
       "revenue": "Doanh thu",
       "newOrders": "Đơn mới",
-      "cancelRate": "Tỉ lệ hủy",
-      "cancelRateTooltip": "Số đơn hủy chia cho số đơn mới trong kỳ",
       "depositRefund": "Tiền cọc đã hoàn",
-      "depositRefundTooltip": "Tiền cọc trả lại khách trong kỳ. Hiện thành cột âm trên biểu đồ doanh thu."
-    }
+      "depositRefundTooltip": "Tiền cọc trả lại khách trong kỳ. Hiện thành cột âm trên biểu đồ doanh thu.",
+      "cancelled": "Đơn hủy",
+      "cancelledTooltip": "Số đơn chuyển sang hủy trong kỳ",
+      "netRevenue": "Tiền thu ròng",
+      "netRevenueTooltip": "Tiền thu trong kỳ sau khi trừ tiền hoàn cho đơn hủy và tiền cọc trả lại khách. Có thể âm.",
+      "ordersTrend": "Đơn mới 7 ngày qua: {values}"
+    },
+    "chips": {
+      "all": "Tất cả",
+      "overdueReturns": "Quá hạn",
+      "pickupsToday": "Cần giao",
+      "returnsToday": "Nhận trả",
+      "noShows": "Chưa lấy"
+    },
+    "progress": {
+      "pickups": "Đã giao",
+      "returns": "Đã nhận trả"
+    },
+    "timeline": {
+      "pickup": "giao",
+      "return": "trả",
+      "now": "bây giờ",
+      "summary": "Hôm nay có {pickups} lượt giao và {returns} lượt trả đã hẹn giờ"
+    },
+    "row": {
+      "pickupAt": "Giao {time}",
+      "returnAt": "Trả {time}",
+      "noShow": "Hẹn lấy {date}"
+    },
+    "call": "Gọi {name}",
+    "showMore": "Xem thêm {count} đơn",
+    "showLess": "Thu gọn"
   }
 }

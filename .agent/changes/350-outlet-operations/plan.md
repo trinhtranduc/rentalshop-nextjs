@@ -11,6 +11,8 @@ Issue: #350 · Status: accepted · Spec: ./spec.md
 5. `packages/utils`: `apiUrls.analytics.outletOperations`, `analyticsApi.getOutletOperations`.
 6. `apps/client/app/dashboard/OutletOperationsPanel.tsx` + mount in `page.tsx`.
 7. i18n `dashboard.operations.*` en + vi (`i18n-keys`).
+8. Review round 2: failing tests for `doneToday`, `newOrdersByDay`, `getOperationsWeek`; then the API fields,
+   the visual Today panel (`ShiftCashCard`, `Sparkline`), range KPI fixes, `FieldTooltip` target size.
 
 ## Verify
 

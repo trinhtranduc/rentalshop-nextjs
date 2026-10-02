@@ -133,7 +133,8 @@
       "pickupsToday": "No handovers today.",
       "returnsToday": "No returns due today.",
       "overdueReturns": "No overdue rentals.",
-      "noShows": "Every reservation was picked up."
+      "noShows": "Every reservation was picked up.",
+      "all": "Nothing left to handle today."
     },
     "ready": "Ready",
     "notReady": "Not prepared",
@@ -150,7 +151,9 @@
       "depositsDueToday": "Deposits to refund today",
       "feesToday": "Fees collected on returns today",
       "orders": "{count, plural, one {# order} other {# orders}}",
-      "feesBreakdown": "Late {late} · Damage {damage}"
+      "feesBreakdown": "Late {late} · Damage {damage}",
+      "dueTodayShort": "{amount} goes back to customers today",
+      "feesShort": "Fees collected today {amount}"
     },
     "newOrders": "New orders today",
     "viewDetails": "View details",
@@ -163,10 +166,38 @@
       "new": "New",
       "revenue": "Revenue",
       "newOrders": "New orders",
-      "cancelRate": "Cancellation rate",
-      "cancelRateTooltip": "Cancelled orders divided by new orders in the period",
       "depositRefund": "Deposits refunded",
-      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart."
-    }
+      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
+      "cancelled": "Cancelled orders",
+      "cancelledTooltip": "Orders moved to cancelled during the period",
+      "netRevenue": "Net cash in",
+      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned deposits. Can be negative.",
+      "ordersTrend": "New orders, last 7 days: {values}"
+    },
+    "chips": {
+      "all": "All",
+      "overdueReturns": "Overdue",
+      "pickupsToday": "Hand over",
+      "returnsToday": "Take back",
+      "noShows": "Not collected"
+    },
+    "progress": {
+      "pickups": "Handed over",
+      "returns": "Taken back"
+    },
+    "timeline": {
+      "pickup": "hand over",
+      "return": "take back",
+      "now": "now",
+      "summary": "{pickups} handovers and {returns} returns booked for today"
+    },
+    "row": {
+      "pickupAt": "Hand over {time}",
+      "returnAt": "Return {time}",
+      "noShow": "Was due {date}"
+    },
+    "call": "Call {name}",
+    "showMore": "Show {count} more",
+    "showLess": "Show less"
   }
 }
