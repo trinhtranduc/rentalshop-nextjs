@@ -29,6 +29,9 @@ Issue: #350 · Status: accepted · Intent: ./intent.md
     Deposits are one number plus a bar of what goes back today. "Hoạt động gần đây" is removed.
 13. Web, range KPIs: "Đơn hủy" is a count (the cancelled ÷ new ratio went past 100%); the revenue tile is labeled
     "Tiền thu ròng" (the `period` API returns net cash in, which can be negative) and shows no % when negative.
+15. Web, "Thế chấp & phí" card: shows security deposits only (held on rentals out, due back on today's returns)
+    and fees taken today. The rental deposit is a prepayment, never handed back, so it is not counted (same rule as
+    order detail, iOS and Android). The API keeps returning both amounts separately.
 14. A11y: clickable KPI tiles do not nest the tooltip button (stretched button); `FieldTooltip` has a 24px target
     and opens on focus and tap.
 

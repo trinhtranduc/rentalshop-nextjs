@@ -146,14 +146,14 @@
     "deposit": "Deposit",
     "more": "+{count} more in Orders",
     "cash": {
-      "title": "Cash on hand",
-      "depositsHeld": "Deposits held",
-      "depositsDueToday": "Deposits to refund today",
-      "feesToday": "Fees collected on returns today",
+      "title": "Security deposits & fees",
+      "feesToday": "Fees taken today",
       "orders": "{count, plural, one {# order} other {# orders}}",
       "feesBreakdown": "Late {late} · Damage {damage}",
-      "dueTodayShort": "{amount} goes back to customers today",
-      "feesShort": "Fees collected today {amount}"
+      "held": "Security deposits held",
+      "heldHint": "From {count} rentals out, given back when the item returns",
+      "backToday": "Back to customers today",
+      "backTodayHint": "Security deposits of {count} rentals due back today"
     },
     "newOrders": "New orders today",
     "viewDetails": "View details",

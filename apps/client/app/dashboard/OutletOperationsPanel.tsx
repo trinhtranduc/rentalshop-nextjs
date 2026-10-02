@@ -349,17 +349,40 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
   );
 }
 
-/** Managers only: deposits held now, and the part that goes back to customers today. */
+/**
+ * Managers only: the security deposits (thế chấp) the shop holds, what goes back today, fees taken today.
+ * The rental deposit (depositAmount) is a prepayment taken off the rent at pickup, never handed back,
+ * so it is not counted here (order detail, iOS and Android use the same rule).
+ */
 export function ShiftCashCard({ state }: { state: OutletOperationsState }) {
   const t = useDashboardTranslations();
   const formatMoney = useFormatCurrency();
   const cash = state.data?.cash;
   if (!cash) return null;
 
-  const held = cash.depositsHeld.depositAmount + cash.depositsHeld.securityDeposit;
-  const dueToday = cash.depositsDueToday.depositAmount + cash.depositsDueToday.securityDeposit;
+  const held = cash.depositsHeld.securityDeposit;
+  const backToday = cash.depositsDueToday.securityDeposit;
   const fees = cash.feesToday.lateFee + cash.feesToday.damageFee;
-  const duePct = held > 0 ? Math.min(100, Math.round((dueToday / held) * 100)) : 0;
+  const rows = [
+    {
+      key: 'held',
+      label: t('operations.cash.held'),
+      value: held,
+      hint: t('operations.cash.heldHint', { count: cash.depositsHeld.orders }),
+    },
+    {
+      key: 'back',
+      label: t('operations.cash.backToday'),
+      value: backToday,
+      hint: t('operations.cash.backTodayHint', { count: cash.depositsDueToday.orders }),
+    },
+    {
+      key: 'fees',
+      label: t('operations.cash.feesToday'),
+      value: fees,
+      hint: t('operations.cash.feesBreakdown', { late: formatMoney(cash.feesToday.lateFee), damage: formatMoney(cash.feesToday.damageFee) }),
+    },
+  ];
 
   return (
     <section className="min-w-0 rounded-lg border border-gray-200 bg-white p-4" aria-labelledby="cash-title">
@@ -367,27 +390,17 @@ export function ShiftCashCard({ state }: { state: OutletOperationsState }) {
         <Wallet className="h-4 w-4 text-gray-500" aria-hidden="true" />
         {t('operations.cash.title')}
       </h2>
-      <p className="mt-3 text-sm text-gray-600">{t('operations.cash.depositsHeld')}</p>
-      <p className="text-2xl font-bold tabular-nums text-gray-900">{formatMoney(held)}</p>
-      <div
-        className="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-100"
-        role="img"
-        aria-label={t('operations.cash.dueTodayShort', { amount: formatMoney(dueToday) })}
-      >
-        <div className="h-full rounded-full bg-amber-500" style={{ width: `${duePct}%` }} />
-      </div>
-      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-700">
-        <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" aria-hidden="true" />
-        {t('operations.cash.dueTodayShort', { amount: formatMoney(dueToday) })}
-      </p>
-      {fees > 0 && (
-        <p
-          className="mt-1 text-xs text-gray-500"
-          title={t('operations.cash.feesBreakdown', { late: formatMoney(cash.feesToday.lateFee), damage: formatMoney(cash.feesToday.damageFee) })}
-        >
-          {t('operations.cash.feesShort', { amount: formatMoney(fees) })}
-        </p>
-      )}
+      <dl className="mt-2 divide-y divide-gray-100">
+        {rows.map((row) => (
+          <div key={row.key} className="flex items-start justify-between gap-3 py-2.5">
+            <div className="min-w-0">
+              <dt className="text-sm font-medium text-gray-900">{row.label}</dt>
+              <p className="text-xs text-gray-600">{row.hint}</p>
+            </div>
+            <dd className="shrink-0 text-lg font-bold tabular-nums text-gray-900">{formatMoney(row.value)}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

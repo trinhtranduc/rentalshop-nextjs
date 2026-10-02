@@ -146,14 +146,14 @@
     "deposit": "Cọc",
     "more": "Còn {count} đơn khác trong mục Đơn hàng",
     "cash": {
-      "title": "Tiền trong ca",
-      "depositsHeld": "Tiền cọc đang giữ",
-      "depositsDueToday": "Cọc phải hoàn hôm nay",
-      "feesToday": "Phí thu khi nhận trả hôm nay",
+      "title": "Thế chấp & phí",
+      "feesToday": "Phí đã thu hôm nay",
       "orders": "{count} đơn",
       "feesBreakdown": "Trễ hạn {late} · Hư hỏng {damage}",
-      "dueTodayShort": "{amount} phải hoàn cho khách hôm nay",
-      "feesShort": "Phí thu hôm nay {amount}"
+      "held": "Đang giữ thế chấp",
+      "heldHint": "Của {count} đơn đang thuê, trả lại khi khách trả đồ",
+      "backToday": "Trả lại khách hôm nay",
+      "backTodayHint": "Thế chấp của {count} đơn hẹn trả hôm nay"
     },
     "newOrders": "Đơn mới hôm nay",
     "viewDetails": "Xem chi tiết",
