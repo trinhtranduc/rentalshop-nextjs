@@ -509,5 +509,46 @@
       "PICKUPED": "Handed over",
       "RETURNED": "Returned"
     }
+  },
+  "detailInfo": {
+    "customer": "Customer",
+    "schedule": "Rental",
+    "saleDate": "Sale date",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "late": "{count, plural, one {# day late} other {# days late}}",
+    "pickedUpAt": "Handed over {date}",
+    "returnedAt": "Returned {date}",
+    "created": "Created {date}",
+    "createdBy": "Created {date} by {name}",
+    "copied": "Phone number copied",
+    "copyPhone": "Copy phone number"
+  },
+  "detailItems": {
+    "title": "Items",
+    "depositEach": "deposit {amount}/unit"
+  },
+  "detailNotes": {
+    "title": "Notes",
+    "general": "General",
+    "pickup": "At pickup",
+    "return": "At return",
+    "damage": "Damage"
+  },
+  "detailSettings": {
+    "title": "Collateral & fees",
+    "edit": "Edit collateral & fees",
+    "empty": "No collateral held, no fees.",
+    "holding": "Holding",
+    "notForThisState": "not for this state",
+    "noteImages": "Note photos",
+    "collateral": {
+      "ID_CARD": "ID card",
+      "DOCUMENT": "Document",
+      "CASH": "Cash",
+      "CREDIT_CARD": "Credit card",
+      "DRIVER_LICENSE": "Driver license",
+      "PASSPORT": "Passport",
+      "OTHER": "Other"
+    }
   }
 }

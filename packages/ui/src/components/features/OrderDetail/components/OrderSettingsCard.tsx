@@ -21,6 +21,7 @@ import {
   DialogTitle
 } from '@rentalshop/ui';
 import { Settings, Save, Edit, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { collateralKey } from '../collateral';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
@@ -233,6 +234,15 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
   collateralTypes
 }) => {
   const t = useOrderTranslations();
+  const labelFor = (value?: string | null) => {
+    const key = collateralKey(value);
+    return key ? t(`detailSettings.collateral.${key}`) : value || '';
+  };
+  // Keep an old web value selectable so editing never shows an empty select
+  const collateralOptions = Array.from(new Set([...collateralTypes, ...(tempSettings.collateralType ? [tempSettings.collateralType] : [])]));
+  const hasAnything = Boolean(
+    (settingsForm.securityDeposit || 0) > 0 || settingsForm.collateralType || settingsForm.collateralDetails || (settingsForm.damageFee || 0) > 0
+  );
   const formatMoney = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -350,7 +360,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Settings className="w-5 h-5" />
-          {t('detail.orderSettings')}
+          {t('detailSettings.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -362,7 +372,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 {t('amount.damageFee')}
                 <FieldTooltip text={t('amount.tooltips.damageFee')} />
                 {!isDamageFeeEnabled() && (
-                  <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                  <span className="text-xs text-gray-500 ml-2">({t('detailSettings.notForThisState')})</span>
                 )}
               </Label>
               <Input
@@ -384,7 +394,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 {t('amount.securityDeposit')}
                 <FieldTooltip text={t('amount.tooltips.securityDeposit')} />
                 {!isSecurityDepositEnabled() && (
-                  <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                  <span className="text-xs text-gray-500 ml-2">({t('detailSettings.notForThisState')})</span>
                 )}
               </Label>
               <Input
@@ -406,7 +416,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 {t('amount.collateralType')}
                 <FieldTooltip text={t('amount.tooltips.collateralType')} />
                 {!isCollateralTypeEnabled() && (
-                  <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                  <span className="text-xs text-gray-500 ml-2">({t('detailSettings.notForThisState')})</span>
                 )}
               </Label>
               <Select 
@@ -418,8 +428,8 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   <SelectValue placeholder={t('messages.selectCollateralType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {collateralTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {collateralOptions.map(type => (
+                    <SelectItem key={type} value={type}>{labelFor(type)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -431,7 +441,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 {t('amount.collateralDetails')}
                 <FieldTooltip text={t('amount.tooltips.collateralDetails')} />
                 {!isCollateralDetailsEnabled() && (
-                  <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
+                  <span className="text-xs text-gray-500 ml-2">({t('detailSettings.notForThisState')})</span>
                 )}
               </Label>
               <Input
@@ -467,7 +477,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
 
             {/* Notes images (General) - only notesImages supported for now */}
             <NotesImagesField
-              label="Notes images"
+              label={t('detailSettings.noteImages')}
               images={toImagesArray(tempSettings.notesImages)}
               pendingFiles={pendingNewFiles.notesImages}
               onRemoveUrl={(url) =>
@@ -561,94 +571,43 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
           </>
         ) : (
           <>
-            {/* Display Mode */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 flex items-center">
-                  {t('amount.damageFee')}:
-                  <FieldTooltip text={t('amount.tooltips.damageFee')} />
-                </span>
-                <span className="text-sm font-medium">
-                  {isDamageFeeEnabled() 
-                    ? formatMoney(settingsForm.damageFee || 0)
-                    : <span className="text-gray-400 italic">Disabled</span>
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 flex items-center">
-                  {t('amount.securityDeposit')}:
-                  <FieldTooltip text={t('amount.tooltips.securityDeposit')} />
-                </span>
-                <span className="text-sm font-medium">
-                  {isSecurityDepositEnabled() 
-                    ? formatMoney(settingsForm.securityDeposit || 0)
-                    : <span className="text-gray-400 italic">Disabled</span>
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 flex items-center">
-                  {t('amount.collateralType')}:
-                  <FieldTooltip text={t('amount.tooltips.collateralType')} />
-                </span>
-                <span className="text-sm font-medium">
-                  {isCollateralTypeEnabled() 
-                    ? (settingsForm.collateralType || 'Not specified')
-                    : <span className="text-gray-400 italic">Disabled</span>
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 flex items-center">
-                  {t('amount.collateralDetails')}:
-                  <FieldTooltip text={t('amount.tooltips.collateralDetails')} />
-                </span>
-                <span className="text-sm font-medium">
-                  {isCollateralDetailsEnabled() 
-                    ? (settingsForm.collateralDetails || t('detail.noDetails'))
-                    : <span className="text-gray-400 italic">Disabled</span>
-                  }
-                </span>
-              </div>
-              {/* Security Document Image - HIDDEN */}
-              {/* {settingsForm.collateralImageUrl && (
-                <div className="flex flex-col gap-2">
-                  ... collateral image display ...
-                </div>
-              )} */}
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('detail.notes')}:</span>
-                <span className="text-sm font-medium">{settingsForm.notes || t('detail.noNotes')}</span>
-              </div>
-              {/* Notes images - show thumbnails and allow click to preview */}
-              {toImagesArray(settingsForm.notesImages).length > 0 && (
-                <div className="mt-3">
-                  <span className="text-sm text-gray-600 block mb-2">Notes images</span>
-                  <div className="flex flex-wrap gap-2">
-                    {toImagesArray(settingsForm.notesImages).map((url, i) => (
-                      <button
-                        key={`${url}-${i}`}
-                        type="button"
-                        onClick={() => handlePreviewImage(url)}
-                        className="w-14 h-14 rounded border border-gray-200 overflow-hidden bg-gray-100 cursor-pointer hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary p-0 flex-shrink-0"
-                      >
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+            {/* Display Mode: only what is set; notes live in the Notes card */}
+            {hasAnything ? (
+              <dl className="space-y-2 text-sm">
+                {(settingsForm.securityDeposit || 0) > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-600">{t('amount.securityDeposit')}</dt>
+                    <dd className="font-medium tabular-nums">{formatMoney(settingsForm.securityDeposit || 0)}</dd>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+                {(settingsForm.collateralType || settingsForm.collateralDetails) && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-600">{t('detailSettings.holding')}</dt>
+                    <dd className="min-w-0 text-right font-medium">
+                      {[labelFor(settingsForm.collateralType), settingsForm.collateralDetails].filter(Boolean).join(' · ')}
+                    </dd>
+                  </div>
+                )}
+                {(settingsForm.damageFee || 0) > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-600">{t('amount.damageFee')}</dt>
+                    <dd className="font-medium tabular-nums text-red-700">{formatMoney(settingsForm.damageFee || 0)}</dd>
+                  </div>
+                )}
+              </dl>
+            ) : (
+              <p className="text-sm text-slate-600">{t('detailSettings.empty')}</p>
+            )}
 
             {/* Edit Button */}
             <Button
               variant="outline"
+              size="sm"
               onClick={onStartEdit}
-              className="w-full flex items-center gap-2 mt-4"
+              className="mt-3 h-9 w-full items-center gap-2"
             >
               <Edit className="w-4 h-4" />
-              {t('detail.editSettings')}
+              {t('detailSettings.edit')}
             </Button>
           </>
         )}

@@ -13,8 +13,9 @@ import { OrderProductsList } from './components/OrderProductsList';
 import { NotesSection } from './components/NotesSection';
 import { OrderSummaryCard } from './components/OrderSummaryCard';
 import { OrderSettingsCard } from './components/OrderSettingsCard';
-import { LoyaltyOrderInfo } from '../Loyalty/LoyaltyOrderInfo';
 import { calculateCollectionTotal } from './utils';
+import { COLLATERAL_CODES } from './collateral';
+import { overdueDays } from './order-dates';
 
 // Define OrderDetailProps interface locally
 interface OrderDetailProps {
@@ -240,12 +241,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   }, [permissions, canDeleteOrders]);
   
   // Predefined collateral types
-  const COLLATERAL_TYPES = [
-    'ID Card',
-    'Driver License', 
-    'Passport',
-    'Other'
-  ];
+  // Same codes as iOS, Android and the API (labels are translated in OrderSettingsCard)
+  const COLLATERAL_TYPES: string[] = [...COLLATERAL_CODES];
   
   const orderAny = order as OrderWithDetails & { notesImages?: string[]; pickupNotesImages?: string[]; returnNotesImages?: string[]; damageNotesImages?: string[] };
   const [settingsForm, setSettingsForm] = useState<SettingsForm>({
@@ -315,6 +312,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   // ============================================================================
   
   // Determine if order is RENT type
+  const lateDays = overdueDays(order as any);
   const isRentOrder = order.orderType === 'RENT';
   
   // Determine if order is SALE type
@@ -530,6 +528,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   {t('detailHeader.title', { number: order.orderNumber })}
                 </h1>
                 <Badge className={getOrderStatusClassName(order.status)}>{t(`detailHeader.status.${order.status}`)}</Badge>
+                {lateDays > 0 && (
+                  <Badge className="border-red-200 bg-red-50 text-red-700">{t('detailInfo.late', { count: lateDays })}</Badge>
+                )}
                 <Badge className={ORDER_TYPE_COLORS[order.orderType as keyof typeof ORDER_TYPE_COLORS]}>
                   {t(`form.orderType.${order.orderType}`)}
                 </Badge>
@@ -634,15 +635,6 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               order={order} 
               tempSettings={tempSettings}
               calculateCollectionTotal={calculateCollectionTotal}
-            />
-
-            {/* Loyalty Order Info */}
-            <LoyaltyOrderInfo
-              loyaltyPointsRedeemed={(order as any).loyaltyPointsRedeemed}
-              loyaltyDiscount={(order as any).loyaltyDiscount}
-              loyaltyPointsEarned={(order as any).loyaltyPointsEarned}
-              orderType={order.orderType as 'RENT' | 'SALE'}
-              orderStatus={order.status}
             />
 
             {/* Order Settings Card - Using new component with translations */}

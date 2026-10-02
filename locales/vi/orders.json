@@ -509,5 +509,46 @@
       "PICKUPED": "Đã giao đồ",
       "RETURNED": "Đã trả đồ"
     }
+  },
+  "detailInfo": {
+    "customer": "Khách hàng",
+    "schedule": "Lịch thuê",
+    "saleDate": "Ngày bán",
+    "days": "{count} ngày",
+    "late": "Trễ {count} ngày",
+    "pickedUpAt": "Đã giao {date}",
+    "returnedAt": "Đã trả {date}",
+    "created": "Tạo {date}",
+    "createdBy": "Tạo {date} bởi {name}",
+    "copied": "Đã chép số điện thoại",
+    "copyPhone": "Chép số điện thoại"
+  },
+  "detailItems": {
+    "title": "Món",
+    "depositEach": "cọc {amount}/bộ"
+  },
+  "detailNotes": {
+    "title": "Ghi chú",
+    "general": "Chung",
+    "pickup": "Khi giao đồ",
+    "return": "Khi trả đồ",
+    "damage": "Hư hỏng"
+  },
+  "detailSettings": {
+    "title": "Thế chấp & phí",
+    "edit": "Sửa thế chấp & phí",
+    "empty": "Chưa giữ thế chấp, chưa có phí.",
+    "holding": "Giữ",
+    "notForThisState": "không áp dụng ở trạng thái này",
+    "noteImages": "Ảnh ghi chú",
+    "collateral": {
+      "ID_CARD": "CCCD",
+      "DOCUMENT": "Giấy tờ",
+      "CASH": "Tiền mặt",
+      "CREDIT_CARD": "Thẻ tín dụng",
+      "DRIVER_LICENSE": "Bằng lái",
+      "PASSPORT": "Hộ chiếu",
+      "OTHER": "Khác"
+    }
   }
 }

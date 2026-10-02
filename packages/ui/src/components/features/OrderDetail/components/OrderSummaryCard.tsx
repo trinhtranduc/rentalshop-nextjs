@@ -9,6 +9,7 @@ import type { OrderWithDetails } from '@rentalshop/types';
 import type { BankAccountReference } from '@rentalshop/types';
 import { PaymentQRCodeDialog } from './PaymentQRCodeDialog';
 import { computeOrderMoney } from '../order-money';
+import { collateralKey } from '../collateral';
 
 interface SettingsForm {
   damageFee: number;
@@ -108,10 +109,13 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   const money = computeOrderMoney(order as any, tempSettings);
   const stageKey =
     money.stage === 'return' ? (money.collect < 0 ? 'refundAtReturn' : 'collectAtReturn') : money.stage;
-  const collateralLabel =
-    tempSettings.collateralType && tempSettings.collateralType !== 'Other'
-      ? tempSettings.collateralType
-      : tempSettings.collateralDetails || '';
+  const collateralCode = collateralKey(tempSettings.collateralType);
+  const collateralLabel = [
+    collateralCode && collateralCode !== 'OTHER' ? t(`detailSettings.collateral.${collateralCode}`) : '',
+    tempSettings.collateralDetails || '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Card>
@@ -180,7 +184,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
                     <div className="flex justify-between"><dt>{t('detailMoney.lateFee')}</dt><dd className="tabular-nums">+{formatMoney(money.lateFee)}</dd></div>
                   )}
                   {money.securityDeposit > 0 && (
-                    <div className="flex justify-between"><dt>{t('detailMoney.securityBack')}</dt><dd className="tabular-nums">−{formatMoney(money.securityDeposit)}</dd></div>
+                    <div className="flex justify-between"><dt>{t('detailMoney.securityBack')}</dt><dd className="tabular-nums">{formatMoney(money.securityDeposit)}</dd></div>
                   )}
                 </>
               )}
