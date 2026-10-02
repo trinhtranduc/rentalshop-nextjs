@@ -442,7 +442,8 @@
       "orderTotal": "Order total",
       "collectAtPickup": "Total to collect",
       "includesDeposit": "includes deposit {amount}",
-      "collect": "Customer pays"
+      "collect": "Customer pays",
+      "breakdown": "Rental {rent} + deposit {deposit}"
     },
     "missing": {
       "title": "Still needed: {fields}",
@@ -464,6 +465,15 @@
     },
     "customerTitle": "Customer",
     "paymentTitle": "Payment",
-    "orderTitle": "Order"
+    "orderTitle": "Order",
+    "loyalty": {
+      "loading": "Loading points…",
+      "points": "{points} points",
+      "use": "Use points",
+      "redeem": "Redeem (max {max})",
+      "earnRent": "About {points} points on return",
+      "earn": "Earns {points} points"
+    },
+    "depositHint": "Added up from the items"
   }
 }

@@ -873,6 +873,31 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                   })
                   .map((item) => item.product?.name || `#${item.productId}`)}
               />
+                {isEditMode && initialOrder ? (
+                  <LoyaltyOrderInfo
+                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
+                    loyaltyDiscount={initialOrder.loyaltyDiscount}
+                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
+                    orderType={formData.orderType}
+                    orderStatus={initialOrder.status || 'RESERVED'}
+                  />
+                ) : (
+                  <LoyaltyRedeemSection
+                    summary={loyalty.summary}
+                    usePoints={loyalty.usePoints}
+                    onUsePointsChange={loyalty.setUsePoints}
+                    redeemPoints={loyalty.redeemPoints}
+                    onRedeemPointsChange={loyalty.setRedeemPoints}
+                    loyaltyDiscount={loyalty.loyaltyDiscount}
+                    amountDue={loyalty.amountDue}
+                    loading={loyalty.loading}
+                    validationError={loyalty.validationError}
+                    enabled={!!formData.customerId}
+                    earnPreview={loyalty.earnPreview}
+                    orderType={formData.orderType}
+                    compact
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
@@ -901,30 +926,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             <Card className="w-full">
               <CardContent className="space-y-4 p-4">
                 <h2 className="text-sm font-semibold text-gray-900">{t('form.paymentTitle')}</h2>
-                {isEditMode && initialOrder ? (
-                  <LoyaltyOrderInfo
-                    loyaltyPointsRedeemed={initialOrder.loyaltyPointsRedeemed}
-                    loyaltyDiscount={initialOrder.loyaltyDiscount}
-                    loyaltyPointsEarned={initialOrder.loyaltyPointsEarned}
-                    orderType={formData.orderType}
-                    orderStatus={initialOrder.status || 'RESERVED'}
-                  />
-                ) : (
-                  <LoyaltyRedeemSection
-                    summary={loyalty.summary}
-                    usePoints={loyalty.usePoints}
-                    onUsePointsChange={loyalty.setUsePoints}
-                    redeemPoints={loyalty.redeemPoints}
-                    onRedeemPointsChange={loyalty.setRedeemPoints}
-                    loyaltyDiscount={loyalty.loyaltyDiscount}
-                    amountDue={loyalty.amountDue}
-                    loading={loyalty.loading}
-                    validationError={loyalty.validationError}
-                    enabled={!!formData.customerId}
-                    earnPreview={loyalty.earnPreview}
-                    orderType={formData.orderType}
-                  />
-                )}
+
                 <OrderInfoSection part="payment"
               formData={formData}
               outlets={outlets}

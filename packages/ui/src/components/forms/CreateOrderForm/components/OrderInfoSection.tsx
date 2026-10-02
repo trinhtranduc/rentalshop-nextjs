@@ -214,6 +214,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   }, []);
 
   const isRent = formData.orderType === 'RENT';
+  const currencySign = String(merchantData?.currency || 'VND').toUpperCase() === 'USD' ? '$' : '₫';
   const rentalDays = isRent && formData.pickupPlanAt && formData.returnPlanAt
     ? countRentalDays(formData.pickupPlanAt, formData.returnPlanAt)
     : 0;
@@ -608,41 +609,25 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         )}
         {(!part || part === 'payment') && (
           <>
-        {/* Payment (option A): each input sits on the money line it changes */}
-        <dl className="w-full space-y-2.5 text-sm">
-          <div className="flex items-center justify-between gap-3">
+        {/* Payment: a receipt. Amounts share one right edge; on editable lines the input is the amount */}
+        <dl className="w-full divide-y divide-gray-100 text-sm">
+          <div className="flex items-center justify-between gap-3 py-2">
             <dt className="text-gray-700">
               {isRent ? t('form.summary.rentTotal') : t('form.summary.saleTotal')}
               {rentalDays > 0 && (
-                <span className="text-gray-600"> ({rentalDays} {rentalDays === 1 ? t('summary.day') : t('summary.days')})</span>
+                <span className="text-gray-500"> · {rentalDays} {rentalDays === 1 ? t('summary.day') : t('summary.days')}</span>
               )}
             </dt>
-            <dd className="font-medium tabular-nums">{formatMoney(formData.subtotal)}</dd>
+            <dd className="font-medium tabular-nums text-gray-900">{formatMoney(formData.subtotal)}</dd>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <dt>
+          <div className="flex items-start justify-between gap-3 py-2">
+            <dt className="pt-1.5">
               <label htmlFor="order-discount" className="text-gray-700">{t('summary.discount')}</label>
             </dt>
-            <dd className="flex items-center gap-2">
-              <div className="flex h-8 items-center overflow-hidden rounded-md border border-gray-300 bg-white">
-                <NumberInput
-                  id="order-discount"
-                  value={formData.discountValue || 0}
-                  onChange={(value) => {
-                    const subtotal = formData.subtotal || 0;
-                    const validatedValue = formData.discountType === 'percentage'
-                      ? Math.min(100, Math.max(0, value))
-                      : Math.min(subtotal, Math.max(0, value));
-                    onFormDataChange('discountValue', validatedValue);
-                  }}
-                  min={0}
-                  max={formData.discountType === 'percentage' ? 100 : formData.subtotal || 0}
-                  decimals={0}
-                  placeholder="0"
-                  className="h-8 w-16 rounded-none border-0 text-right text-sm tabular-nums shadow-none focus-visible:ring-0"
-                />
-                <div className="flex h-full border-l border-gray-300" role="radiogroup" aria-label={t('summary.discount')}>
+            <dd className="text-right">
+              <div className="inline-flex h-8 items-stretch overflow-hidden rounded-md border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-blue-500">
+                <div className="flex border-r border-gray-300 bg-gray-50" role="radiogroup" aria-label={t('summary.discount')}>
                   {(['amount', 'percentage'] as const).map((type) => {
                     const selected = formData.discountType === type;
                     return (
@@ -658,42 +643,50 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                           onFormDataChange('discountType', type);
                           onFormDataChange('discountValue', type === 'percentage' ? Math.min(100, current) : Math.min(formData.subtotal || 0, current));
                         }}
-                        className={`px-2 text-xs font-semibold ${selected ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                        className={`min-w-[2rem] px-2 text-xs font-semibold ${selected ? 'bg-white text-gray-900 shadow-[inset_0_-2px_0_0_#111827]' : 'text-gray-500 hover:text-gray-800'}`}
                       >
-                        {type === 'amount' ? t('messages.amount') : '%'}
+                        {type === 'amount' ? currencySign : '%'}
                       </button>
                     );
                   })}
                 </div>
+                <NumberInput
+                  id="order-discount"
+                  value={formData.discountValue || 0}
+                  onChange={(value) => {
+                    const subtotal = formData.subtotal || 0;
+                    onFormDataChange(
+                      'discountValue',
+                      formData.discountType === 'percentage' ? Math.min(100, Math.max(0, value)) : Math.min(subtotal, Math.max(0, value))
+                    );
+                  }}
+                  min={0}
+                  max={formData.discountType === 'percentage' ? 100 : formData.subtotal || 0}
+                  decimals={0}
+                  placeholder="0"
+                  className="h-8 w-28 rounded-none border-0 bg-white text-right text-sm font-medium tabular-nums shadow-none focus-visible:ring-0"
+                />
               </div>
-              <span className={`w-20 text-right font-medium tabular-nums ${formData.discountAmount > 0 ? 'text-green-800' : 'text-gray-500'}`}>
-                {formData.discountAmount > 0 ? `−${formatMoney(formData.discountAmount)}` : formatMoney(0)}
-              </span>
+              {formData.discountType === 'percentage' && formData.discountAmount > 0 && (
+                <p className="mt-1 text-xs tabular-nums text-green-800">−{formatMoney(formData.discountAmount)}</p>
+              )}
             </dd>
           </div>
 
           {loyaltyDiscount > 0 && (
-            <div className="flex items-center justify-between gap-3 text-green-800">
+            <div className="flex items-center justify-between gap-3 py-2 text-green-800">
               <dt>{t('receipt.loyaltyDiscount')}</dt>
               <dd className="font-medium tabular-nums">−{formatMoney(loyaltyDiscount)}</dd>
             </div>
           )}
 
-          {(formData.discountAmount > 0 || loyaltyDiscount > 0) && (
-            <div className="flex items-center justify-between gap-3 font-semibold">
-              <dt>{t('form.summary.orderTotal')}</dt>
-              <dd className="tabular-nums">{formatMoney(orderTotal)}</dd>
-            </div>
-          )}
-
           {isRent && (
-            <div className="flex items-center justify-between gap-3">
-              <dt>
-                <label htmlFor="order-deposit" className="text-gray-700" title={t('form.depositAuto')}>
-                  {t('summary.deposit')}
-                </label>
+            <div className="flex items-start justify-between gap-3 py-2">
+              <dt className="pt-1.5">
+                <label htmlFor="order-deposit" className="text-gray-700">{t('summary.deposit')}</label>
+                <p className="text-xs text-gray-500">{t('form.depositHint')}</p>
               </dt>
-              <dd className="flex items-center gap-2">
+              <dd>
                 <NumberInput
                   id="order-deposit"
                   value={formData.depositAmount || 0}
@@ -701,9 +694,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   min={0}
                   decimals={0}
                   placeholder="0"
-                  className="h-8 w-[7.5rem] bg-white text-right text-sm tabular-nums"
+                  className="h-8 w-[9.5rem] bg-white text-right text-sm font-medium tabular-nums"
                 />
-                <span className="w-20 text-right font-medium tabular-nums">{formatMoney(deposit)}</span>
               </dd>
             </div>
           )}
@@ -727,14 +719,16 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </button>
         )}
 
-        <div className="flex items-baseline justify-between border-t border-gray-200 pt-3">
-          <span className="font-semibold text-gray-900">
-            {isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}
-            {isRent && deposit > 0 && (
-              <span className="ml-1 text-xs font-normal text-gray-600">({t('form.summary.includesDeposit', { amount: formatMoney(deposit) })})</span>
-            )}
-          </span>
-          <span className="text-xl font-bold tabular-nums text-gray-900">{formatMoney(collect)}</span>
+        <div className="rounded-lg bg-gray-900 px-4 py-3 text-white">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-medium">{isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}</span>
+            <span className="text-2xl font-bold tabular-nums">{formatMoney(collect)}</span>
+          </div>
+          {isRent && deposit > 0 && (
+            <p className="mt-0.5 text-right text-xs tabular-nums text-gray-300">
+              {t('form.summary.breakdown', { rent: formatMoney(orderTotal), deposit: formatMoney(deposit) })}
+            </p>
+          )}
         </div>
 
         {onSubmit && (

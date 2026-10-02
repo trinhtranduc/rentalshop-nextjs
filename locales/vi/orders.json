@@ -442,7 +442,8 @@
       "orderTotal": "Tổng tiền đơn",
       "collectAtPickup": "Tổng cần thu",
       "includesDeposit": "gồm cọc {amount}",
-      "collect": "Khách cần trả"
+      "collect": "Khách cần trả",
+      "breakdown": "Tiền thuê {rent} + cọc {deposit}"
     },
     "missing": {
       "title": "Còn thiếu: {fields}",
@@ -464,6 +465,15 @@
     },
     "customerTitle": "Khách hàng",
     "paymentTitle": "Thanh toán",
-    "orderTitle": "Đơn hàng"
+    "orderTitle": "Đơn hàng",
+    "loyalty": {
+      "loading": "Đang tải điểm…",
+      "points": "{points} điểm",
+      "use": "Dùng điểm",
+      "redeem": "Đổi (tối đa {max})",
+      "earnRent": "Ước tích ~{points} điểm khi trả đồ",
+      "earn": "Tích {points} điểm"
+    },
+    "depositHint": "Tự cộng từ các món"
   }
 }
