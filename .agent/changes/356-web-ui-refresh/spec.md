@@ -12,5 +12,7 @@
    code, registration link and public product link.
 9. `/api/orders?startDate=YYYY-MM-DD` filters by the Vietnam civil day.
 10. Settings: section menu is chips below `lg`; read-only values are plain text; plan status, date and toasts are localized.
+11. Settings has "In hóa đơn" for `MERCHANT` (every outlet) and `OUTLET_ADMIN` (own outlet): one receipt note per
+    outlet, saved with `PUT /api/outlets`; `OUTLET_STAFF` does not see it and `?tab=receipt` sends them to Profile.
 
 Out of scope: #355, accent-insensitive search, currency auto-switch.

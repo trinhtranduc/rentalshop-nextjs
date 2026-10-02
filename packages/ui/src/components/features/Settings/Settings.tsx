@@ -9,7 +9,8 @@ import {
   Building2,
   Store,
   Languages,
-  Wallet
+  Wallet,
+  Printer
 } from 'lucide-react';
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
@@ -27,6 +28,7 @@ import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { LanguageSection } from './components/LanguageSection';
 import { BankAccountSection } from './components/BankAccountSection';
+import { ReceiptSection } from './components/ReceiptSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -61,6 +63,13 @@ const createSettingsMenuItems = (t: any) => [
     icon: Wallet,
     description: t('menuItems.bankAccounts.description'),
     roles: ['OUTLET_ADMIN'] // ✅ Only OUTLET_ADMIN can see bank accounts (staff cannot)
+  },
+  {
+    id: 'receipt',
+    label: t('menuItems.receipt.label'),
+    icon: Printer,
+    description: t('menuItems.receipt.description'),
+    roles: [USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN] // same roles that may edit an outlet
   },
   {
     id: 'subscription',
@@ -182,6 +191,13 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
     if (tab === 'loyalty') {
       setActiveSection('profile');
       router.replace('/loyalty');
+      return;
+    }
+
+    // Receipt note: only roles that may edit an outlet (staff would get a 403 on save)
+    if (tab === 'receipt' && user?.role && user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.OUTLET_ADMIN) {
+      setActiveSection('profile');
+      router.replace('/settings?tab=profile');
       return;
     }
 
@@ -640,6 +656,9 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
             user={user}
           />
         );
+      case 'receipt':
+        return <ReceiptSection />;
+
       case 'subscription':
         if (user?.role !== USER_ROLE.MERCHANT) {
           return null;

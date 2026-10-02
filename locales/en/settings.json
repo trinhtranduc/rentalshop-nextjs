@@ -322,7 +322,11 @@
       "label": "Account",
       "description": "Account settings, password and preferences"
     },
-    "navLabel": "Settings sections"
+    "navLabel": "Settings sections",
+    "receipt": {
+      "label": "Receipt printing",
+      "description": "Note printed at the bottom of rental receipts"
+    }
   },
   "messages": {
     "updateSuccess": "Settings updated successfully",

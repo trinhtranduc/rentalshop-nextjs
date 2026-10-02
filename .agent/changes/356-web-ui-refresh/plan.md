@@ -8,7 +8,8 @@ Done on branch `feat/availability-ui-preview` (one commit per screen, tests firs
 4. Users: list cards, view page, add/edit dialogs (`UserForm layout="dialog"`), change-password target.
 5. Customers: `CustomerProfile` components, `CustomerTable` cards, `CustomerFormDialog` fields.
 6. Settings: `SettingsLayout` menu, section read-only styles, subscription formatting.
-7. API: `db.merchants.ensureTenantKey` used by the login response and `GET /merchants/:id`.
+7. Settings: `ReceiptSection` (Outlet.printNote per outlet, #347).
+8. API: `db.merchants.ensureTenantKey` used by the login response and `GET /merchants/:id`.
 
 Verify:
 - `cd tests && TZ=UTC yarn test` and `TZ=Asia/Ho_Chi_Minh yarn test`: same 26 env-dependent suites fail as on `origin/dev`; all new suites pass.

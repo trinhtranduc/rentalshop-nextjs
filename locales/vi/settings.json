@@ -322,7 +322,11 @@
       "label": "Tài khoản",
       "description": "Cài đặt tài khoản, mật khẩu và tùy chọn"
     },
-    "navLabel": "Mục cài đặt"
+    "navLabel": "Mục cài đặt",
+    "receipt": {
+      "label": "In hóa đơn",
+      "description": "Ghi chú in ở cuối hóa đơn thuê"
+    }
   },
   "messages": {
     "updateSuccess": "Cập nhật cài đặt thành công",
