@@ -788,9 +788,15 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         {/* Phones: order type and dates, items, customer, payment. Large screens: items left, the rest right */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto_1fr] lg:items-start">
           <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-start-1 xl:col-span-4 xl:col-start-9">
-            {/* Order type, rental period with quick chips, outlet: first in the right column, as before */}
+            {/* Order: type, period, customer in one card; the outlet name in its header */}
             <Card className="w-full">
-              <CardContent className="p-4">
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-gray-900">{t('form.orderTitle')}</h2>
+                  {outlets.length <= 1 && (
+                    <span className="truncate text-xs text-gray-600">{outlets.find((o) => o.id === formData.outletId)?.name || outlets[0]?.name}</span>
+                  )}
+                </div>
                 <OrderInfoSection part="top"
                   formData={formData}
                   outlets={outlets}
@@ -829,33 +835,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                       })
                       .map((item) => item.product?.name || `#${item.productId}`)}
                   />
-              </CardContent>
-            </Card>
-          </div>
-          {/* Items */}
-          <div className="min-w-0 lg:col-span-7 lg:row-span-4 lg:row-start-1 xl:col-span-8">
-            <ProductsSection
-              orderItems={orderItems}
-              products={[...products, ...searchedProducts]} // Combine initial products with searched products
-              onAddProduct={addProductToOrder}
-              onRemoveProduct={removeProductFromOrder}
-              onUpdateOrderItem={updateOrderItem}
-              onUpdatePricingOption={updateItemPricingOption}
-              onUpdatePricingType={updateItemPricingType}
-              onSearchProducts={handleProductSearch} // Use our custom search function
-              isLoadingProducts={isLoadingProducts}
-              orderType={formData.orderType}
-              pickupDate={formData.pickupPlanAt}
-              returnDate={formData.returnPlanAt}
-              getProductAvailabilityStatus={getProductAvailabilityStatus}
-              currency={currency}
-              outletId={formData.outletId}
-              onAvailabilityChange={handleAvailabilityChange}
-            />
-          </div>
-          <div className="min-w-0 lg:col-span-5 lg:col-start-8 xl:col-span-4 xl:col-start-9">
-            <Card className="w-full">
-              <CardContent className="p-4">
                 <OrderInfoSection part="customer"
               formData={formData}
               outlets={outlets}
@@ -896,6 +875,27 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               />
               </CardContent>
             </Card>
+          </div>
+          {/* Items */}
+          <div className="min-w-0 lg:col-span-7 lg:row-span-4 lg:row-start-1 xl:col-span-8">
+            <ProductsSection
+              orderItems={orderItems}
+              products={[...products, ...searchedProducts]} // Combine initial products with searched products
+              onAddProduct={addProductToOrder}
+              onRemoveProduct={removeProductFromOrder}
+              onUpdateOrderItem={updateOrderItem}
+              onUpdatePricingOption={updateItemPricingOption}
+              onUpdatePricingType={updateItemPricingType}
+              onSearchProducts={handleProductSearch} // Use our custom search function
+              isLoadingProducts={isLoadingProducts}
+              orderType={formData.orderType}
+              pickupDate={formData.pickupPlanAt}
+              returnDate={formData.returnPlanAt}
+              getProductAvailabilityStatus={getProductAvailabilityStatus}
+              currency={currency}
+              outletId={formData.outletId}
+              onAvailabilityChange={handleAvailabilityChange}
+            />
           </div>
           <div className="min-w-0 lg:col-span-5 lg:col-start-8 xl:col-span-4 xl:col-start-9">
             <Card className="w-full">

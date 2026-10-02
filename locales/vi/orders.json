@@ -463,6 +463,7 @@
       "threeDays": "3 ngày"
     },
     "customerTitle": "Khách hàng",
-    "paymentTitle": "Thanh toán"
+    "paymentTitle": "Thanh toán",
+    "orderTitle": "Đơn hàng"
   }
 }

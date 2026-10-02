@@ -463,6 +463,7 @@
       "threeDays": "3 days"
     },
     "customerTitle": "Customer",
-    "paymentTitle": "Payment"
+    "paymentTitle": "Payment",
+    "orderTitle": "Order"
   }
 }
