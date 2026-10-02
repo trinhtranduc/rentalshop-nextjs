@@ -9,7 +9,8 @@
     "confirm": "Xác nhận",
     "search": "Tìm kiếm",
     "export": "Xuất",
-    "import": "Nhập"
+    "import": "Nhập",
+    "selectAll": "Chọn tất cả"
   },
   "buttons": {
     "save": "Lưu",
@@ -146,7 +147,20 @@
     "itemsPerPage": "Số mục mỗi trang",
     "first": "Đầu",
     "last": "Cuối",
-    "noData": "Không có dữ liệu để hiển thị"
+    "noData": "Không có dữ liệu để hiển thị",
+    "apply": "Áp dụng",
+    "items": {
+      "items": "mục",
+      "orders": "đơn hàng",
+      "products": "sản phẩm",
+      "customers": "khách hàng",
+      "users": "người dùng",
+      "outlets": "cửa hàng",
+      "categories": "danh mục",
+      "merchants": "thương hiệu",
+      "posts": "bài viết",
+      "subscriptions": "gói đăng ký"
+    }
   },
   "time": {
     "today": "Hôm nay",
@@ -165,7 +179,8 @@
     "year": "Năm",
     "month": "Tháng",
     "week": "Tuần",
-    "day": "Ngày"
+    "day": "Ngày",
+    "dayCount": "{count} ngày"
   },
   "periods": {
     "daily": "Hàng ngày",

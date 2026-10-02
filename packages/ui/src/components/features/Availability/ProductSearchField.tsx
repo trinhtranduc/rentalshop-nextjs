@@ -49,15 +49,16 @@ export const ProductSearchField: React.FC<ProductSearchFieldProps> = ({
           label: product.name,
           image: images[0],
           subtitle: product.barcode || '',
+          // Labelled: "61 • 11/11" did not say which number was the price
           details: [
-            formatCurrency(product.rentPrice ?? 0, currency),
-            `${outletStock?.available ?? 0}/${outletStock?.stock ?? 0}`,
+            t('search.stock', { available: outletStock?.available ?? 0, total: outletStock?.stock ?? 0 }),
+            t('search.price', { price: formatCurrency(product.rentPrice ?? 0, currency) }),
           ].filter(Boolean),
           type: 'product' as const,
         };
       });
     },
-    [outletId, currency]
+    [outletId, currency, t]
   );
 
   const handleSelect = useCallback(

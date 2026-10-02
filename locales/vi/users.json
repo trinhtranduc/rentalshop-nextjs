@@ -51,13 +51,15 @@
     "basicInformation": "Thông tin cơ bản",
     "personalInformation": "Thông tin cá nhân",
     "roleAndPermissions": "Vai trò & Quyền hạn",
-    "readOnly": "Chỉ đọc"
+    "readOnly": "Chỉ đọc",
+    "emailStatus": "Xác thực email"
   },
   "roles": {
     "ADMIN": "Quản trị hệ thống",
     "MERCHANT": "Chủ thương hiệu",
     "OUTLET_ADMIN": "Quản lý cửa hàng",
-    "OUTLET_STAFF": "Nhân viên"
+    "OUTLET_STAFF": "Nhân viên",
+    "ARTICLE": "Biên tập bài viết"
   },
   "actions": {
     "activate": "Kích hoạt người dùng",
@@ -82,7 +84,9 @@
     "backToUsers": "Quay lại danh sách",
     "save": "Lưu",
     "cancel": "Hủy",
-    "close": "Đóng"
+    "close": "Đóng",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "messages": {
     "createSuccess": "Tạo người dùng thành công",
@@ -136,7 +140,8 @@
     "byRole": "Lọc theo vai trò",
     "byOutlet": "Lọc theo cửa hàng",
     "active": "Đang hoạt động",
-    "inactive": "Không hoạt động"
+    "inactive": "Không hoạt động",
+    "allRoles": "Tất cả vai trò"
   },
   "stats": {
     "totalUsers": "Tổng số người dùng",
@@ -173,7 +178,20 @@
     "searchMerchants": "Tìm kiếm thương hiệu...",
     "noMerchantsFound": "Không tìm thấy thương hiệu",
     "searchOutlets": "Tìm kiếm cửa hàng...",
-    "noOutletsFound": "Không tìm thấy cửa hàng"
+    "noOutletsFound": "Không tìm thấy cửa hàng",
+    "searchUsers": "Tìm kiếm người dùng..."
+  },
+  "labels": {
+    "loading": "Đang tải..."
+  },
+  "status": {
+    "verified": "Đã xác thực",
+    "notVerified": "Chưa xác thực"
+  },
+  "roleHelp": {
+    "title": "Vai trò",
+    "OUTLET_ADMIN": "Quản lý một cửa hàng: đơn hàng, sản phẩm, khách hàng và nhân viên của cửa hàng đó.",
+    "OUTLET_STAFF": "Tạo và xử lý đơn hàng. Không sửa được giá sản phẩm.",
+    "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu."
   }
 }
-

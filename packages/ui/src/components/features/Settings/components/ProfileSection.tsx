@@ -9,7 +9,7 @@ import {
   Input,
   Label
 } from '@rentalshop/ui';
-import { useSettingsTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations, useUsersTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -45,6 +45,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   onInputChange
 }) => {
   const t = useSettingsTranslations();
+  const tu = useUsersTranslations();
   // Debug logging
   console.log('🔍 ProfileSection render - user:', user);
   console.log('🔍 ProfileSection render - user details:', {
@@ -93,7 +94,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                     placeholder={t('profile.enterFirstName')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.firstName || ''}
                   </p>
                 )}
@@ -113,7 +114,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                     placeholder={t('profile.enterLastName')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.lastName || ''}
                   </p>
                 )}
@@ -150,7 +151,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                     placeholder={t('profile.enterPhone')}
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                  <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
                     {user?.phone || ''}
                   </p>
                 )}
@@ -160,8 +161,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <Label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('profile.role')}
                 </Label>
-                <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
+                <p className="min-h-[2.5rem] border-b border-gray-100 py-2 text-gray-900">
+                  {user?.role ? tu(`roles.${user.role}`) : '—'}
                 </p>
               </div>
             </div>

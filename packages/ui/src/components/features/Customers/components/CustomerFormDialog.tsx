@@ -72,6 +72,8 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
     state?: string;
     zipCode?: string;
     country?: string;
+    idNumber?: string;
+    notes?: string;
   }
 
   const getInitialFormData = (): FormDataState => {
@@ -87,6 +89,8 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
         state: customer.state || '',
         zipCode: customer.zipCode || '',
         country: customer.country || '',
+        idNumber: (customer as any).idNumber || '',
+        notes: (customer as any).notes || '',
       };
     }
     return {
@@ -98,6 +102,8 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       state: '',
       zipCode: '',
       country: '',
+      idNumber: '',
+      notes: '',
     };
   };
 
@@ -109,7 +115,9 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       setFormData(getInitialFormData());
       setErrors({});
       setErrorMessage(null);
-      setShowMoreFields(false);
+      // Edit opens the extra details when there is something in them
+      const c: any = customer;
+      setShowMoreFields(mode === 'edit' && !!c && !!(c.address || c.city || c.idNumber || c.notes));
     }
   }, [open, initialSearchQuery, customer, mode]);
 
@@ -187,6 +195,10 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
               cleaned[key] = value;
             } else if (typeof value === 'string' && value.trim() !== '') {
               cleaned[key] = value;
+            } else if (typeof value === 'string' && mode === 'edit' && key !== 'phone') {
+              // Edit sends a cleared field as '' so it is actually cleared (it used to be dropped).
+              // Not phone: it is unique per merchant, so two empty phones would collide.
+              cleaned[key] = '';
             } else if (typeof value !== 'string') {
               cleaned[key] = value;
             }
@@ -205,6 +217,8 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
         state: formData.state || '',
         zipCode: formData.zipCode || '',
         country: formData.country || '',
+        idNumber: formData.idNumber || '',
+        notes: formData.notes || '',
       };
 
       const submitData = mode === 'edit' 
@@ -228,12 +242,12 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       await onSave(submitData);
       onOpenChange(false);
     } catch (error) {
-      let errorMsg = 'An unexpected error occurred';
+      let errorMsg = t('messages.unexpectedError');
       if (error instanceof Error) {
         if (error.message.includes('DUPLICATE_PHONE')) {
-          errorMsg = 'A customer with this phone number already exists';
+          errorMsg = t('messages.duplicatePhone');
         } else if (error.message.includes('DUPLICATE_EMAIL')) {
-          errorMsg = 'A customer with this email address already exists';
+          errorMsg = t('messages.duplicateEmail');
         } else {
           errorMsg = error.message;
         }
@@ -244,9 +258,36 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
     }
   };
 
-  const dialogTitle = mode === 'edit' 
-    ? `${t('editCustomer')}: ${[customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim() || 'N/A'}`
-    : t('createCustomer');
+  const field = (
+    key: keyof FormDataState,
+    label: string,
+    opts: { type?: string; inputMode?: 'tel' | 'email' | 'text'; autoComplete?: string; autoFocus?: boolean; required?: boolean; placeholder?: string }
+  ) => (
+    <div>
+      <Label htmlFor={key} className="text-xs font-medium text-muted-foreground mb-1.5 block">
+        {label} {opts.required && <span className="text-red-500">*</span>}
+      </Label>
+      <Input
+        id={key}
+        type={opts.type || 'text'}
+        inputMode={opts.inputMode}
+        autoComplete={opts.autoComplete}
+        autoFocus={opts.autoFocus}
+        value={formData[key] || ''}
+        onChange={(e) => handleInputChange(key, e.target.value)}
+        placeholder={opts.placeholder}
+        aria-invalid={!!errors[key]}
+        aria-describedby={errors[key] ? `${key}-error` : undefined}
+        className={errors[key] ? 'border-red-500' : ''}
+      />
+      {errors[key] && (
+        <p id={`${key}-error`} className="mt-1 text-xs text-red-600">{errors[key]}</p>
+      )}
+    </div>
+  );
+
+  const dialogTitle = mode === 'edit' ? t('editCustomer') : t('createCustomer');
+  const editingName = mode === 'edit' ? [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim() : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -256,10 +297,11 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
           <DialogTitle className="text-lg font-semibold">
             {dialogTitle}
           </DialogTitle>
+          {editingName && <p className="text-sm text-gray-600">{editingName}</p>}
         </DialogHeader>
         
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-4">
+        <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 py-4">
           {/* Error Message */}
           {errorMessage && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -269,142 +311,44 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
 
           {/* Essential Fields */}
           <div className="space-y-4">
-            {/* Customer Name */}
-            <div>
-              <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                {t('fields.name') || 'Customer Name'} <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                value={formData.name || ''}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder={t('placeholders.enterCustomerName') || 'Enter customer name'}
-                className={errors.name ? 'border-red-500' : ''}
-                autoFocus={mode === 'create'}
-              />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-600">{errors.name}</p>
-              )}
+            {/* Phone first: shops find customers by phone */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {field('phone', t('fields.phone'), { type: 'tel', inputMode: 'tel', autoComplete: 'tel', autoFocus: mode === 'create', placeholder: t('placeholders.enterPhone') })}
+              {field('name', t('fields.fullName'), { required: true, autoComplete: 'name', placeholder: t('placeholders.enterFullName') })}
             </div>
+            {field('email', t('fields.email'), { type: 'email', autoComplete: 'email', placeholder: t('placeholders.enterEmail') })}
 
-            {/* Phone & Email - Row 2 */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Phone */}
-              <div>
-                <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {t('fields.phone')}
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone || ''}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder={t('placeholders.enterPhone')}
-                  className={errors.phone ? 'border-red-500' : ''}
-                />
-                {errors.phone && (
-                  <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <Label htmlFor="email" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {t('fields.email')}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder={t('placeholders.enterEmail')}
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-                )}
-              </div>
-            </div>
-
-            {/* More Fields Toggle */}
+            {/* Rarely needed details stay folded */}
             <button
               type="button"
               onClick={() => setShowMoreFields(!showMoreFields)}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2"
+              aria-expanded={showMoreFields}
+              className="flex min-h-[36px] items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800"
             >
-              {showMoreFields ? (
-                <>
-                  <ChevronUp className="w-4 h-4" />
-                  <span>Hide additional details</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-4 h-4" />
-                  <span>Add more details (optional)</span>
-                </>
-              )}
+              {showMoreFields ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span>{showMoreFields ? t('form.hideDetails') : t('form.moreDetails')}</span>
             </button>
 
-            {/* More Fields - Collapsible */}
             {showMoreFields && (
-              <div className="space-y-4 pt-2 border-t">
-                {/* Address */}
-                <div>
-                  <Label htmlFor="address" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    {t('fields.address')}
-                  </Label>
-                  <Input
-                    id="address"
-                    type="text"
-                    value={formData.address || ''}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    placeholder={t('placeholders.enterStreetAddress')}
-                    className=""
-                  />
+              <div className="space-y-4 border-t pt-4">
+                {field('address', t('fields.address'), { autoComplete: 'street-address', placeholder: t('placeholders.enterStreetAddress') })}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {field('city', t('fields.city'), { placeholder: t('placeholders.enterCity') })}
+                  {field('state', t('fields.state'), { placeholder: t('placeholders.enterState') })}
+                  {field('zipCode', t('fields.zipCode'), { placeholder: t('placeholders.enterZipCode') })}
                 </div>
-
-                {/* City, State, ZIP */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label htmlFor="city" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {t('fields.city')}
-                    </Label>
-                    <Input
-                      id="city"
-                      type="text"
-                      value={formData.city || ''}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder={t('placeholders.enterCity')}
-                      className=""
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {t('fields.state')}
-                    </Label>
-                    <Input
-                      id="state"
-                      type="text"
-                      value={formData.state || ''}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      placeholder={t('placeholders.enterState')}
-                      className=""
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="zipCode" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {t('fields.zipCode')}
-                    </Label>
-                    <Input
-                      id="zipCode"
-                      type="text"
-                      value={formData.zipCode || ''}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                      placeholder={t('placeholders.enterZipCode')}
-                      className=""
-                    />
-                  </div>
+                {field('idNumber', t('fields.idNumber'), {})}
+                <div>
+                  <Label htmlFor="notes" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                    {t('fields.notes')}
+                  </Label>
+                  <textarea
+                    id="notes"
+                    rows={2}
+                    value={formData.notes || ''}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
                 </div>
               </div>
             )}

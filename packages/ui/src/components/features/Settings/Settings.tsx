@@ -9,7 +9,8 @@ import {
   Building2,
   Store,
   Languages,
-  Wallet
+  Wallet,
+  Printer
 } from 'lucide-react';
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
@@ -27,6 +28,7 @@ import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { LanguageSection } from './components/LanguageSection';
 import { BankAccountSection } from './components/BankAccountSection';
+import { ReceiptSection } from './components/ReceiptSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -61,6 +63,13 @@ const createSettingsMenuItems = (t: any) => [
     icon: Wallet,
     description: t('menuItems.bankAccounts.description'),
     roles: ['OUTLET_ADMIN'] // ✅ Only OUTLET_ADMIN can see bank accounts (staff cannot)
+  },
+  {
+    id: 'receipt',
+    label: t('menuItems.receipt.label'),
+    icon: Printer,
+    description: t('menuItems.receipt.description'),
+    roles: [USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN] // same roles that may edit an outlet
   },
   {
     id: 'subscription',
@@ -182,6 +191,13 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
     if (tab === 'loyalty') {
       setActiveSection('profile');
       router.replace('/loyalty');
+      return;
+    }
+
+    // Receipt note: only roles that may edit an outlet (staff would get a 403 on save)
+    if (tab === 'receipt' && user?.role && user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.OUTLET_ADMIN) {
+      setActiveSection('profile');
+      router.replace('/settings?tab=profile');
       return;
     }
 
@@ -429,12 +445,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         }
         
         setIsEditingPersonal(false);
-        toastSuccess('Success', t('messages.personalProfileUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.personalProfileUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.personalProfileUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.personalProfileUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.personalProfileUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.personalProfileUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -457,14 +473,14 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         await refreshUser();
         
         setIsEditingMerchant(false);
-        toastSuccess('Success', t('messages.businessInfoUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.businessInfoUpdated'));
       } else {
         console.log('❌ API failed:', response.error);
-        toastError('Error', response.error || t('messages.businessInfoUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.businessInfoUpdateFailed'));
       }
     } catch (error) {
       console.error('❌ Error in handleUpdateMerchantInfo:', error);
-      toastError('Error', t('messages.businessInfoUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.businessInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -483,12 +499,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
         await refreshUser();
         
         setIsEditingOutlet(false);
-        toastSuccess('Success', t('messages.outletInfoUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.outletInfoUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.outletInfoUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.outletInfoUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.outletInfoUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.outletInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -529,15 +545,15 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
   const handleChangePassword = async () => {
     // ✅ Frontend validation only - prevent invalid submissions
     if (!passwordData.currentPassword) {
-      toastError('Error', t('messages.currentPasswordRequired') || 'Current password is required');
+      toastError(t('messages.errorTitle'), t('messages.currentPasswordRequired') || 'Current password is required');
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toastError('Error', t('messages.passwordMismatch'));
+      toastError(t('messages.errorTitle'), t('messages.passwordMismatch'));
       return;
     }
     if (passwordData.newPassword.length < 6) {
-      toastError('Error', t('messages.passwordTooShort'));
+      toastError(t('messages.errorTitle'), t('messages.passwordTooShort'));
       return;
     }
 
@@ -580,12 +596,12 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
           }
         }
         
-        toastSuccess('Success', t('messages.currencyUpdated'));
+        toastSuccess(t('messages.successTitle'), t('messages.currencyUpdated'));
       } else {
-        toastError('Error', response.error || t('messages.currencyUpdateFailed'));
+        toastError(t('messages.errorTitle'), response.error || t('messages.currencyUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', t('messages.currencyUpdateFailed'));
+      toastError(t('messages.errorTitle'), t('messages.currencyUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -640,6 +656,9 @@ export const SettingsComponent: React.FC<SettingsComponentProps> = ({
             user={user}
           />
         );
+      case 'receipt':
+        return <ReceiptSection />;
+
       case 'subscription':
         if (user?.role !== USER_ROLE.MERCHANT) {
           return null;

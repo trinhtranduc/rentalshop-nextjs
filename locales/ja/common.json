@@ -130,7 +130,21 @@
     "rowsPerPage": "ページあたりの行数",
     "first": "最初",
     "last": "最後",
-    "noData": "表示するデータがありません"
+    "noData": "表示するデータがありません",
+    "itemsPerPage": "1ページあたりの件数",
+    "apply": "適用",
+    "items": {
+      "items": "件",
+      "orders": "件の注文",
+      "products": "件の商品",
+      "customers": "人の顧客",
+      "users": "人のユーザー",
+      "outlets": "店舗",
+      "categories": "カテゴリ",
+      "merchants": "加盟店",
+      "posts": "件の記事",
+      "subscriptions": "件のサブスクリプション"
+    }
   },
   "time": {
     "today": "今日",
@@ -149,7 +163,8 @@
     "year": "年",
     "month": "月",
     "week": "週",
-    "day": "日"
+    "day": "日",
+    "dayCount": "{count}日"
   },
   "periods": {
     "daily": "日次",
@@ -168,5 +183,8 @@
     "MERCHANT": "事業者",
     "OUTLET_ADMIN": "店舗管理者",
     "OUTLET_STAFF": "店舗スタッフ"
+  },
+  "actions": {
+    "selectAll": "すべて選択"
   }
 }

@@ -16,6 +16,8 @@ interface ProductAddFormProps {
   onCancel: () => void;
   onBack?: () => void;
   useMultipartUpload?: boolean; // New prop to enable multipart upload
+  /** 'page' = full-page two-column form with a sticky action bar; 'stacked' = dialog body */
+  layout?: 'stacked' | 'page';
 }
 
 export const ProductAddForm: React.FC<ProductAddFormProps> = ({
@@ -25,7 +27,8 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
   onSave,
   onCancel,
   onBack,
-  useMultipartUpload = false
+  useMultipartUpload = false,
+  layout = 'stacked'
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastError } = useToast();
@@ -51,7 +54,11 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
         totalStock: data.totalStock,
         images: useMultipartUpload ? [] : (Array.isArray(data.images) ? data.images.join(',') : (data.images || '')),
         outletStock: data.outletStock,
-      };
+        // Daily price option and cost price were dropped here before, so a new product lost them
+        ...(data.pricingType !== undefined && { pricingType: data.pricingType }),
+        ...(data.pricingOptions && { pricingOptions: data.pricingOptions }),
+        ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
+      } as ProductCreateInput;
       
       if (useMultipartUpload && files) {
         await onSave(transformedData, files);
@@ -91,17 +98,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
             hideSubmitButton={true}
             formId="product-form"
             useMultipartUpload={useMultipartUpload}
-            submitText={isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Product
-              </>
-            )}
+            layout={layout}
           />
       {/* Action Buttons */}
       <div className="space-y-4">
@@ -125,13 +122,19 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex items-center">
               <div className="text-sm text-blue-700">
-                <span className="font-medium">Outlet mặc định:</span> {safeOutlets[0].name}. Sản phẩm sẽ tự động được phân bổ cho outlet này.
+                {t('form.singleOutletNote', { name: safeOutlets[0].name })}
               </div>
             </div>
           </div>
         )}
         
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+        <div
+          className={
+            layout === 'page'
+              ? 'sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6'
+              : 'flex justify-end gap-3 mt-6 pt-4 border-t'
+          }
+        >
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             {tc('buttons.cancel')}
           </Button>

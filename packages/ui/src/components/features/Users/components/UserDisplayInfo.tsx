@@ -100,9 +100,9 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
               </div>
             </div>
             <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email Verification</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.emailStatus')}</label>
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${user.emailVerified ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-orange-100 text-orange-800 border-orange-200'}`}>
-                {user.emailVerified ? '✓ Verified' : '✗ Not Verified'}
+                {user.emailVerified ? `✓ ${t('status.verified')}` : `✗ ${t('status.notVerified')}`}
               </div>
             </div>
             <div>

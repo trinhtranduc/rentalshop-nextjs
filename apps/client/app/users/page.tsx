@@ -180,15 +180,12 @@ export default function UsersPage() {
     
     switch (action) {
       case 'view':
-        // Show detail dialog
-        if (userItem) {
-          setSelectedUser(userItem);
-          setShowDetailDialog(true);
-        }
+        // One design for view and edit: the user page (the dialogs showed less and looked different)
+        router.push(`/users/${userId}`);
         break;
         
       case 'edit':
-        // Show edit dialog
+        // Editing is a quick change, so it stays in a dialog
         if (userItem) {
           setSelectedUser(userItem);
           setShowEditDialog(true);
@@ -337,7 +334,7 @@ export default function UsersPage() {
         <div className="flex justify-between items-start">
           <div>
             <PageTitle>{tu('title')}</PageTitle>
-            <p className="text-sm text-gray-600">{tu('title')}</p>
+            <p className="text-sm text-gray-600">{tu('subtitle')}</p>
           </div>
           <div className="flex gap-3">
             {/* Export feature - temporarily hidden, will be enabled in the future */}
@@ -418,8 +415,12 @@ export default function UsersPage() {
             });
             
             if (response.success) {
-              toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
+              const createdName = (userData as { name?: string }).name || [userData.firstName, userData.lastName].filter(Boolean).join(' ');
+              toastSuccess(tu('messages.createSuccess'), createdName);
               refetch();
+            } else {
+              // Keep the dialog open with what was typed (e.g. plan limit reached)
+              throw response;
             }
             // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
@@ -436,14 +437,14 @@ export default function UsersPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {tu('editUser')}: {selectedUser?.firstName} {selectedUser?.lastName}
-            </DialogTitle>
+            <DialogTitle>{tu('editUser')}</DialogTitle>
+            {selectedUser && <p className="text-sm text-gray-600">{[selectedUser.firstName, selectedUser.lastName].filter(Boolean).join(' ')}</p>}
           </DialogHeader>
           {selectedUser && (
             <UserForm
+              layout="dialog"
               user={selectedUser}
               onSave={handleUserUpdate}
               onCancel={() => {

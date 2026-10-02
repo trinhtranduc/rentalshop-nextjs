@@ -20,12 +20,17 @@ export const FieldTooltip: React.FC<FieldTooltipProps> = ({ text, className = ''
     <div className={`relative inline-flex items-center ml-1 ${className}`}>
       <button
         type="button"
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors"
+        // 24×24 target (WCAG 2.5.8) with the same 16px icon; -m-1 keeps the layout unchanged
+        className="-m-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
+        // Keyboard and touch users see the text too, not only mouse hover
+        onFocus={() => setShowTooltip(true)}
+        onBlur={() => setShowTooltip(false)}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          setShowTooltip((open) => !open);
         }}
         aria-label="Information"
       >

@@ -94,7 +94,8 @@
     "delete": "Xóa",
     "deleteCustomer": "Xóa khách hàng",
     "activate": "Kích hoạt khách hàng",
-    "deactivate": "Vô hiệu hóa khách hàng"
+    "deactivate": "Vô hiệu hóa khách hàng",
+    "selectAll": "Chọn tất cả"
   },
   "messages": {
     "createSuccess": "Tạo khách hàng thành công",
@@ -181,6 +182,9 @@
     "total": "Tổng cộng",
     "successCount": "Thành công",
     "failedCount": "Thất bại"
+  },
+  "form": {
+    "moreDetails": "Địa chỉ, CCCD, ghi chú",
+    "hideDetails": "Ẩn bớt"
   }
 }
-

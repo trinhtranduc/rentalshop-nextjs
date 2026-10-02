@@ -1,7 +1,8 @@
 import React from 'react';
 import { Badge, Input, Label, Switch, useFormatCurrency } from '@rentalshop/ui';
-import { Coins } from 'lucide-react';
+import { Award, Coins } from 'lucide-react';
 import type { LoyaltyCustomerSummary } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface LoyaltyRedeemSectionProps {
   summary: LoyaltyCustomerSummary | null;
@@ -16,7 +17,69 @@ interface LoyaltyRedeemSectionProps {
   enabled?: boolean;
   earnPreview?: number | null;
   orderType?: 'RENT' | 'SALE';
+  /** One line under the customer field instead of a card (create order) */
+  compact?: boolean;
 }
+
+/** Loyalty as one quiet line: tier, points, "use points"; the points input only when ticked. */
+const CompactLoyalty: React.FC<LoyaltyRedeemSectionProps> = ({
+  summary,
+  usePoints,
+  onUsePointsChange,
+  redeemPoints,
+  onRedeemPointsChange,
+  loading,
+  validationError,
+  earnPreview,
+  orderType,
+}) => {
+  const t = useOrderTranslations();
+  if (loading) return <p className="text-xs text-gray-600">{t('form.loyalty.loading')}</p>;
+  // No programme for this shop (or no data): show nothing
+  if (!summary) return null;
+  return (
+    <div className="space-y-1.5 text-xs text-slate-700">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Award className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+        {summary.tier?.name && <span className="font-semibold text-slate-900">{summary.tier.name}</span>}
+        <span className="tabular-nums">{t('form.loyalty.points', { points: summary.points })}</span>
+        {summary.canRedeem && (
+          <label className="ml-auto inline-flex min-h-[28px] cursor-pointer items-center gap-1.5 font-medium text-gray-900">
+            <input
+              type="checkbox"
+              checked={usePoints}
+              onChange={(e) => onUsePointsChange(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            {t('form.loyalty.use')}
+          </label>
+        )}
+      </div>
+      {usePoints && (
+        <div className="flex items-center gap-2">
+          <label htmlFor="loyalty-points-input" className="shrink-0">
+            {t('form.loyalty.redeem', { max: summary.maxRedeemPoints })}
+          </label>
+          <Input
+            id="loyalty-points-input"
+            type="number"
+            min={0}
+            max={summary.maxRedeemPoints}
+            value={redeemPoints || ''}
+            onChange={(e) => onRedeemPointsChange(Number(e.target.value) || 0)}
+            className="h-7 w-24 bg-white text-right text-xs"
+          />
+        </div>
+      )}
+      {validationError && <p className="text-red-700">{validationError}</p>}
+      {earnPreview != null && earnPreview > 0 && (
+        <p className="text-gray-600">
+          {orderType === 'RENT' ? t('form.loyalty.earnRent', { points: earnPreview }) : t('form.loyalty.earn', { points: earnPreview })}
+        </p>
+      )}
+    </div>
+  );
+};
 
 export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
   summary,
@@ -31,10 +94,28 @@ export const LoyaltyRedeemSection: React.FC<LoyaltyRedeemSectionProps> = ({
   enabled = true,
   earnPreview,
   orderType,
+  compact = false,
 }) => {
   const formatMoney = useFormatCurrency();
 
   if (!enabled) return null;
+  if (compact) {
+    return (
+      <CompactLoyalty
+        summary={summary}
+        usePoints={usePoints}
+        onUsePointsChange={onUsePointsChange}
+        redeemPoints={redeemPoints}
+        onRedeemPointsChange={onRedeemPointsChange}
+        loyaltyDiscount={loyaltyDiscount}
+        amountDue={amountDue}
+        loading={loading}
+        validationError={validationError}
+        earnPreview={earnPreview}
+        orderType={orderType}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">

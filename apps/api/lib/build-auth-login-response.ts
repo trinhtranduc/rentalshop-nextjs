@@ -81,7 +81,8 @@ export async function buildAuthLoginSuccessResponse(
         pricingType: merchant.pricingType || undefined,
         taxId: merchant.taxId || undefined,
         currency: (merchant as any).currency || 'USD',
-        tenantKey: (merchant as any).tenantKey || undefined,
+        // Older merchants have no key; give them one so the product link and referral code exist
+        tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
         subscription: subscriptionData,
       };
     }
@@ -104,7 +105,10 @@ export async function buildAuthLoginSuccessResponse(
           ? {
               id: (outlet as any).merchant.id,
               name: (outlet as any).merchant.name,
-              tenantKey: (outlet as any).merchant.tenantKey || undefined,
+              tenantKey:
+                (outlet as any).merchant.tenantKey ||
+                (await db.merchants.ensureTenantKey((outlet as any).merchant.id)) ||
+                undefined,
             }
           : undefined,
       };

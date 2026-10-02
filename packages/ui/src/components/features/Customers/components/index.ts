@@ -25,3 +25,4 @@ export { CustomersLoading, CustomerDetailLoading } from './CustomersLoading';
 export { ImportCustomerDialog } from './ImportCustomerDialog';
 
 
+export { CustomerContactCard, CustomerRecentOrders, CustomerSummaryPanel, CustomerLoyaltyFold, customerDisplayName, customerOrderStats } from './CustomerProfile';

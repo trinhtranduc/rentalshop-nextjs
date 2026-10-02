@@ -6,6 +6,7 @@ import {
   Card, 
   Button,
   ProductsLoading,
+  PageLoadingIndicator,
   PageWrapper,
   PageHeader,
   PageContent
@@ -14,7 +15,7 @@ import {
 import { ProductEdit } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth, useDedupedApi, usePermissions } from '@rentalshop/hooks';
+import { useAuth, useDedupedApi, usePermissions, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi, 
@@ -24,6 +25,8 @@ import type { ProductWithStock, Category, Outlet } from '@rentalshop/types';
 import type { ProductInput } from '@rentalshop/types';
 
 export default function ProductEditPage() {
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   const router = useRouter();
   const params = useParams();
   const { user, loading: authLoading } = useAuth();
@@ -200,7 +203,7 @@ export default function ProductEditPage() {
               <div className="flex justify-center space-x-2">
                 <Button variant="outline" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Products
+                  {tc('navigation.products')}
                 </Button>
               </div>
             </div>
@@ -224,7 +227,7 @@ export default function ProductEditPage() {
               <div className="flex justify-center space-x-2">
                 <Button variant="outline" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Products
+                  {tc('navigation.products')}
                 </Button>
               </div>
             </div>
@@ -239,11 +242,14 @@ export default function ProductEditPage() {
       {/* Page Loading Indicator - Floating, non-blocking */}
       <PageLoadingIndicator loading={loading} />
       <PageHeader>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleBack} size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Product
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="ghost" onClick={handleBack} size="sm" className="h-9 w-9 p-0" aria-label={t('actions.backToProduct')}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600">{t('form.editTitle')}</p>
+            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{product.name}</h1>
+          </div>
         </div>
       </PageHeader>
 

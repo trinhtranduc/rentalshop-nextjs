@@ -6,6 +6,7 @@ import { CalendarNavigation } from './components/CalendarNavigation';
 import { CalendarStats } from './components/CalendarStats';
 import { CalendarGrid } from './components/CalendarGrid';
 import { CalendarLoading } from './components/CalendarLoading';
+import { sumMonthCounts } from './month-totals';
 
 import type { 
   PickupOrder, 
@@ -103,10 +104,14 @@ export function Calendars({
   });
 
   // All orders are pickup orders (RESERVED and PICKUPED status only)
-  // Backend API only returns active pickup orders
-  const totalPickups = monthOrders.length;
+  // Backend API only returns active pickup orders.
+  // The page loads per-day counts (ordersCountByDate) instead of orders, so total those (#349).
+  const monthCount = ordersCountByDate
+    ? sumMonthCounts(ordersCountByDate, currentYear, currentMonth)
+    : monthOrders.length;
+  const totalPickups = monthCount;
   const totalReturns = 0; // No return orders displayed
-  const totalOrders = monthOrders.length;
+  const totalOrders = monthCount;
 
   // Loading state
   if (loading) {

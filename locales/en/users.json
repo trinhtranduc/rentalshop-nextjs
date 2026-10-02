@@ -48,13 +48,15 @@
     "basicInformation": "Basic Information",
     "personalInformation": "Personal Information",
     "roleAndPermissions": "Role & Permissions",
-    "readOnly": "Read-only"
+    "readOnly": "Read-only",
+    "emailStatus": "Email status"
   },
   "roles": {
     "ADMIN": "System Administrator",
     "MERCHANT": "Merchant Owner",
     "OUTLET_ADMIN": "Outlet Manager",
-    "OUTLET_STAFF": "Outlet Staff"
+    "OUTLET_STAFF": "Outlet Staff",
+    "ARTICLE": "Article editor"
   },
   "actions": {
     "activate": "Activate User",
@@ -79,7 +81,9 @@
     "backToUsers": "Back to Users",
     "save": "Save",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "messages": {
     "createSuccess": "User created successfully",
@@ -133,7 +137,8 @@
     "byRole": "Filter by Role",
     "byOutlet": "Filter by Outlet",
     "active": "Active Users",
-    "inactive": "Inactive Users"
+    "inactive": "Inactive Users",
+    "allRoles": "All roles"
   },
   "stats": {
     "totalUsers": "Total Users",
@@ -170,7 +175,20 @@
     "searchMerchants": "Search merchants...",
     "noMerchantsFound": "No merchants found",
     "searchOutlets": "Search outlets...",
-    "noOutletsFound": "No outlets found"
+    "noOutletsFound": "No outlets found",
+    "searchUsers": "Search users..."
+  },
+  "labels": {
+    "loading": "Loading..."
+  },
+  "status": {
+    "verified": "Verified",
+    "notVerified": "Not verified"
+  },
+  "roleHelp": {
+    "title": "Roles",
+    "OUTLET_ADMIN": "Runs one outlet: orders, products, customers and the staff of that outlet.",
+    "OUTLET_STAFF": "Creates and handles orders. Cannot change product prices.",
+    "loginNote": "The new user signs in with this email and password, and can change the password later."
   }
 }
-

@@ -1,6 +1,6 @@
 {
   "title": "Kiểm tra mẫu còn trống",
-  "subtitle": "Trái: chọn kỳ thuê và mẫu · Phải: xem ảnh và còn trống",
+  "subtitle": "Chọn ngày và mẫu để xem shop còn đủ hàng không.",
   "breadcrumb": "Kiểm tra trống",
   "sections": {
     "product": "Chọn mẫu",
@@ -90,5 +90,45 @@
   "errors": {
     "checkFailed": "Không thể kiểm tra tồn trống",
     "loadProductFailed": "Không thể tải thông tin mẫu"
-  }
+  },
+  "productsTitle": "Mẫu cần kiểm tra",
+  "quick": {
+    "today": "Hôm nay",
+    "tomorrow": "Ngày mai",
+    "weekend": "Cuối tuần",
+    "threeDays": "3 ngày"
+  },
+  "summary": {
+    "allOk": "Đủ hàng cho cả {count} mẫu",
+    "someShort": "{count} mẫu không đủ hàng",
+    "pickDates": "Chọn ngày thuê để xem còn trống"
+  },
+  "badge": {
+    "free": "Còn {free}/{total}",
+    "short": "Thiếu {count}",
+    "error": "Lỗi"
+  },
+  "search": {
+    "price": "Giá {price}",
+    "stock": "Còn {available}/{total}"
+  },
+  "empty": {
+    "title": "Chưa chọn mẫu",
+    "description": "Tìm mẫu theo tên, mã hoặc barcode. Có thể kiểm tra nhiều mẫu cùng lúc."
+  },
+  "detail": {
+    "freeHeadline": "Còn trống {count} bộ",
+    "free": "Trống",
+    "busy": "Đang bận",
+    "need": "Bạn cần",
+    "barLabel": "Trống {free}, đang bận {busy}, cần {need}, tổng kho {total}",
+    "days": "Số bộ trống theo ngày",
+    "dayHint": "Bấm một ngày để kiểm tra từ ngày đó",
+    "dayLabel": "{date}: còn {free} bộ",
+    "conflicts": "Đơn trùng kỳ ({count})",
+    "noConflicts": "Không có đơn nào trùng kỳ này."
+  },
+  "remove": "Bỏ {name}",
+  "decrease": "Giảm số lượng",
+  "increase": "Tăng số lượng"
 }

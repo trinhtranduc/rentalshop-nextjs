@@ -8,6 +8,8 @@ import type { OrderWithDetails } from '@rentalshop/types';
 // @ts-ignore - TypeScript may not recognize the export yet
 import type { BankAccountReference } from '@rentalshop/types';
 import { PaymentQRCodeDialog } from './PaymentQRCodeDialog';
+import { computeOrderMoney } from '../order-money';
+import { collateralKey } from '../collateral';
 
 interface SettingsForm {
   damageFee: number;
@@ -27,7 +29,6 @@ interface OrderSummaryCardProps {
 export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ 
   order, 
   tempSettings,
-  calculateCollectionTotal 
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
@@ -102,31 +103,19 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   // Calculate amount to collect from customer for QR code
   // This should match the "Collection Amount" logic displayed in the UI
   // Note: QR code will always be shown if there's a bank account, but amount is only included if > 0
-  const amountToPay = React.useMemo(() => {
-    // For SALE orders: always collect total amount (if not yet paid)
-    if (order.orderType === 'SALE') {
-      return order.totalAmount || 0;
-    }
-    
-    // For RENT orders RESERVED: collect remaining amount + security deposit
-    if (order.orderType === 'RENT' && order.status === 'RESERVED') {
-      return calculateCollectionTotal(order, tempSettings);
-    }
-    
-    // For RENT orders PICKUPED: may need to collect additional fees
-    // (damage fee, late fee, etc.) when returning
-    // Always show QR code, but only include amount if > 0
-    if (order.orderType === 'RENT' && order.status === 'PICKUPED') {
-      // Calculate additional fees that need to be collected
-      const damageFee = tempSettings.damageFee || 0;
-      const lateFee = (order as any).lateFee || 0;
-      return damageFee + lateFee;
-    }
-    
-    // For other RENT statuses (RETURNED, COMPLETED, etc.): no collection needed
-    // Return 0 (QR code won't include amount, but can still be shown if needed)
-    return 0;
-  }, [order.orderType, order.status, order.totalAmount, tempSettings, calculateCollectionTotal]);
+  // QR amount: what is collected at this stage (refunds have no QR amount)
+  const amountToPay = React.useMemo(() => Math.max(0, computeOrderMoney(order as any, tempSettings).collect), [order, tempSettings]);
+
+  const money = computeOrderMoney(order as any, tempSettings);
+  const stageKey =
+    money.stage === 'return' ? (money.collect < 0 ? 'refundAtReturn' : 'collectAtReturn') : money.stage;
+  const collateralCode = collateralKey(tempSettings.collateralType);
+  const collateralLabel = [
+    collateralCode && collateralCode !== 'OTHER' ? t(`detailSettings.collateral.${collateralCode}`) : '',
+    collateralKey(tempSettings.collateralDetails) === collateralCode ? '' : tempSettings.collateralDetails || '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Card>
@@ -137,72 +126,77 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Subtotal */}
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">{t('amount.subtotal')}:</span>
-          <span className="font-medium">{formatMoney(order.totalAmount || 0)}</span>
-        </div>
+        {/* Money as a receipt, then what to collect at this stage (same rules as iOS and Android) */}
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-600">{order.orderType === 'RENT' ? t('form.summary.rentTotal') : t('form.summary.saleTotal')}</dt>
+            <dd className="font-medium tabular-nums">{formatMoney(money.subtotal)}</dd>
+          </div>
+          {money.discount > 0 && (
+            <div className="flex justify-between gap-3 text-green-800">
+              <dt>
+                {t('summary.discount')}
+                {(order as any).discountType === 'percentage' && (order as any).discountValue ? ` (${(order as any).discountValue}%)` : ''}
+              </dt>
+              <dd className="font-medium tabular-nums">−{formatMoney(money.discount)}</dd>
+            </div>
+          )}
+          {money.loyaltyDiscount > 0 && (
+            <div className="flex justify-between gap-3 text-green-800">
+              <dt>{t('receipt.loyaltyDiscount')}</dt>
+              <dd className="font-medium tabular-nums">−{formatMoney(money.loyaltyDiscount)}</dd>
+            </div>
+          )}
+          <div className="flex items-baseline justify-between gap-3 border-t border-slate-200 pt-2">
+            <dt className="font-semibold text-slate-900">{t('form.summary.orderTotal')}</dt>
+            <dd className="text-lg font-bold tabular-nums text-slate-900">{formatMoney(money.total)}</dd>
+          </div>
+        </dl>
 
-        {/* Discount Display */}
-        {(order as any).discountAmount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
-            <span>
-              {t('payment.discount')} {(order as any).discountType === 'percentage' && (order as any).discountValue 
-                ? `(${(order as any).discountValue}%)` 
-                : '(amount)'}:
+        <div className={`rounded-lg px-3 py-2.5 ${money.stage === 'done' ? 'bg-slate-50' : 'bg-blue-50'}`}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className={`text-sm font-semibold ${money.stage === 'done' ? 'text-slate-700' : 'text-blue-900'}`}>
+              {t(`detailMoney.stage.${stageKey}`)}
             </span>
-            <span className="font-medium">-{formatMoney((order as any).discountAmount)}</span>
+            {money.stage !== 'done' && (
+              <span className="text-xl font-bold tabular-nums text-blue-900">{formatMoney(Math.abs(money.collect))}</span>
+            )}
           </div>
-        )}
-
-        {/* Deposit */}
-        {order.orderType === 'RENT' && order.depositAmount > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">{t('amount.deposit')}:</span>
-            <span className="font-medium">{formatMoney(order.depositAmount)}</span>
-          </div>
-        )}
-
-        {/* Grand Total */}
-        <div className="flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200">
-          <span>{t('amount.grandTotal')}:</span>
-          <span>{formatMoney(order.totalAmount || 0)}</span>
+          {money.stage !== 'done' && (
+            <dl className="mt-1.5 space-y-0.5 text-xs text-slate-700">
+              {money.stage === 'pickup' && (
+                <>
+                  <div className="flex justify-between"><dt>{t('form.summary.orderTotal')}</dt><dd className="tabular-nums">{formatMoney(money.total)}</dd></div>
+                  {money.deposit > 0 && (
+                    <div className="flex justify-between"><dt>{t('detailMoney.depositPaid')}</dt><dd className="tabular-nums">−{formatMoney(money.deposit)}</dd></div>
+                  )}
+                  {money.securityDeposit > 0 && (
+                    <div className="flex justify-between"><dt>{t('detailMoney.securityDeposit')}</dt><dd className="tabular-nums">+{formatMoney(money.securityDeposit)}</dd></div>
+                  )}
+                </>
+              )}
+              {money.stage === 'return' && (
+                <>
+                  {money.damageFee > 0 && (
+                    <div className="flex justify-between"><dt>{t('detailMoney.damageFee')}</dt><dd className="tabular-nums">+{formatMoney(money.damageFee)}</dd></div>
+                  )}
+                  {money.lateFee > 0 && (
+                    <div className="flex justify-between"><dt>{t('detailMoney.lateFee')}</dt><dd className="tabular-nums">+{formatMoney(money.lateFee)}</dd></div>
+                  )}
+                  {money.securityDeposit > 0 && (
+                    <div className="flex justify-between"><dt>{t('detailMoney.securityBack')}</dt><dd className="tabular-nums">{formatMoney(money.securityDeposit)}</dd></div>
+                  )}
+                </>
+              )}
+              {collateralLabel && (money.stage === 'pickup' || money.stage === 'return') && (
+                <div className="flex justify-between">
+                  <dt>{money.stage === 'pickup' ? t('detailMoney.holdCollateral') : t('detailMoney.returnCollateral')}</dt>
+                  <dd>{collateralLabel}</dd>
+                </div>
+              )}
+            </dl>
+          )}
         </div>
-
-        {/* Collection Amount - Single field for RENT orders */}
-        {order.orderType === 'RENT' && (
-          <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-            <span className="text-gray-600">{t('detail.collectionAmount')}:</span>
-            <span className={`font-medium ${
-              order.status === 'RESERVED' ? 'text-yellow-700' : 
-              order.status === 'PICKUPED' ? 'text-blue-700' : 
-              'text-gray-500'
-            }`}>
-              {order.status === 'RESERVED' ? (
-                <span className="flex items-center gap-2">
-                  <span>{formatMoney(calculateCollectionTotal(order, tempSettings))}</span>
-                  {tempSettings.collateralType && tempSettings.collateralType !== 'Other' && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      + {tempSettings.collateralType}
-                    </span>
-                  )}
-                  {tempSettings.collateralType === 'Other' && tempSettings.collateralDetails && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      + {tempSettings.collateralDetails}
-                    </span>
-                  )}
-                  {tempSettings.collateralType === 'Other' && !tempSettings.collateralDetails && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      + {t('detail.collateral')}
-                    </span>
-                  )}
-                </span>
-              ) : 
-               order.status === 'PICKUPED' ? t('detail.alreadyCollected') : 
-               t('detail.noCollectionNeeded')}
-            </span>
-          </div>
-        )}
 
         {/* Show QR Code Button - Always show if bank account exists */}
         {defaultBankAccount && (

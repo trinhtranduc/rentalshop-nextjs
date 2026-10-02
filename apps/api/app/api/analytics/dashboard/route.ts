@@ -156,18 +156,10 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       
       // Recent orders (orders in the period)
       // ✅ Use orderWhereClause which already includes date filter if period === 'today'
+      // db.orders.search ignores `include`; ask for product names explicitly (#349)
       db.orders.search({
         where: orderWhereClause,
-        include: {
-          customer: { select: { firstName: true, lastName: true } },
-          outlet: { select: { name: true } },
-          orderItems: {
-            include: {
-              product: { select: { name: true } }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
+        includeItemNames: true,
       }).then(result => result.data),
       
       // Reserved orders count

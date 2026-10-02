@@ -5,6 +5,7 @@ import { productsApi } from '@rentalshop/utils';
 import type { ProductWithStock } from '@rentalshop/types';
 import type { AvailabilityCheckParams, DerivedAvailabilityResult } from './types';
 import { deriveAvailabilityResult } from './utils';
+import { shopDayRangeIso } from './availability-days';
 
 const DEBOUNCE_MS = 400;
 
@@ -45,12 +46,12 @@ export function useAvailabilityCheck({ params, enabled }: UseAvailabilityCheckOp
 
     try {
       const response = await productsApi.checkProductAvailability(params.productId, {
-        startDate: `${params.pickup}T00:00:00.000Z`,
-        endDate: `${params.returnDate}T23:59:59.999Z`,
+        // Vietnam civil days: UTC midnights missed orders returned before 07:00 on the first day
+        ...shopDayRangeIso(params.pickup, params.returnDate),
         quantity: params.quantity,
         outletId: params.outletId,
         includeTimePrecision: true,
-        timeZone: 'UTC',
+        timeZone: 'Asia/Ho_Chi_Minh',
       });
 
       if (controller.signal.aborted) return;

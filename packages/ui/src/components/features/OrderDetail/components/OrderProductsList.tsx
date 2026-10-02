@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
+import { Card, CardContent } from '../../../ui/card';
 import { Package } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormatCurrency } from '@rentalshop/ui';
@@ -9,65 +9,65 @@ interface OrderProductsListProps {
   order: OrderWithDetails;
 }
 
-const getPricingUnit = (pricingType?: string | null): string => {
-  if (pricingType === 'DAILY') return '/ngày';
-  if (pricingType === 'HOURLY') return '/giờ';
-  return '';
+/** Notes written by the system on seeded/imported orders ("Product 3 - Furniture - RENT") repeat the name. */
+const isAutoNote = (note: string, name: string) => {
+  const n = note.trim().toLowerCase();
+  return n === name.toLowerCase() || /^.+ - (rent|sale)$/i.test(note.trim()) && n.startsWith(name.toLowerCase());
 };
 
+/** One line per item: name, quantity × price and pricing, line total; the item sum at the bottom. */
 export const OrderProductsList: React.FC<OrderProductsListProps> = ({ order }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
+  const isRent = order.orderType === 'RENT';
+  const items = order.orderItems || [];
+  const sum = items.reduce((acc, item) => acc + (item.totalPrice || (item.quantity || 1) * (item.unitPrice || 0)), 0);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Package className="w-5 h-5" />
-          {t('detail.products')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {order.orderItems.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">{t('items.noItems')}</p>
-          </div>
+      <CardContent className="p-4 sm:p-5">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-slate-900">{t('detailItems.title')}</h2>
+          <span className="text-xs tabular-nums text-slate-600">{items.length}</span>
+        </div>
+        {items.length === 0 ? (
+          <p className="py-4 text-center text-sm text-slate-600">{t('items.noItems')}</p>
         ) : (
-          <div className="space-y-3">
-            {order.orderItems.map((item, index) => {
-              const productName = item.product?.name || (item as any).productName || 'Unknown Product';
-              const pricingType = (item as any).pricingType as string | null | undefined;
-              const isDaily = pricingType === 'DAILY';
-              const rentalDays = Math.max(1, (item as any).rentalDays || 1);
-              const durationSuffix = isDaily ? ` × ${rentalDays} ngày` : '';
-
+          <ul className="divide-y divide-slate-100">
+            {items.map((item, index) => {
+              const anyItem = item as any;
+              const name: string = item.product?.name || anyItem.productName || '—';
+              const image: string | undefined = anyItem.productImages?.[0] || (item.product as any)?.images?.[0];
+              const pricingType = String(anyItem.pricingType || 'FIXED').toUpperCase();
+              const isDaily = isRent && pricingType === 'DAILY';
+              const days = Math.max(1, anyItem.rentalDays || 1);
+              const note: string = anyItem.notes || '';
+              const lineTotal = item.totalPrice || (item.quantity || 1) * (item.unitPrice || 0);
               return (
-                <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                        <Package className="w-6 h-6 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 text-sm">
-                        {productName}
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {formatMoney(item.unitPrice)}{getPricingUnit(pricingType)} x {item.quantity}{durationSuffix}
-                      </div>
-                      {(item as any).notes && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {t('detail.notes')}: {(item as any).notes || t('detail.noNotes')}
-                        </div>
-                      )}
-                    </div>
+                <li key={item.id ?? index} className="flex items-center gap-3 py-2.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                    {image ? <img src={image} alt="" className="h-full w-full object-cover" /> : <Package className="h-4 w-4 text-slate-400" aria-hidden="true" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">{name}</p>
+                    <p className="text-xs tabular-nums text-slate-600">
+                      {item.quantity} × {formatMoney(item.unitPrice)}
+                      {isRent && <> · {t(`form.pricing.${isDaily ? 'DAILY' : 'FIXED'}`)}</>}
+                      {isDaily && <> × {t('detailInfo.days', { count: days })}</>}
+                      {isRent && anyItem.deposit > 0 && <> · {t('detailItems.depositEach', { amount: formatMoney(anyItem.deposit) })}</>}
+                    </p>
+                    {note && !isAutoNote(note, name) && <p className="mt-0.5 text-xs text-slate-700">{note}</p>}
                   </div>
-                </div>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900">{formatMoney(lineTotal)}</span>
+                </li>
               );
             })}
+          </ul>
+        )}
+        {items.length > 0 && (
+          <div className="mt-1 flex justify-between border-t border-slate-200 pt-2 text-sm">
+            <span className="text-slate-600">{isRent ? t('form.summary.rentTotal') : t('form.summary.saleTotal')}</span>
+            <span className="font-semibold tabular-nums text-slate-900">{formatMoney(sum)}</span>
           </div>
         )}
       </CardContent>

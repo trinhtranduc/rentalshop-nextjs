@@ -11,7 +11,8 @@ export function deriveAvailabilityResult(
     : rows[0];
 
   const effectivelyAvailable = outletRow?.effectivelyAvailable ?? data.totalAvailableStock ?? 0;
-  const totalStock = data.totalStock ?? 0;
+  // The checked outlet's stock, not the merchant-wide total
+  const totalStock = outletRow?.stock ?? data.totalStock ?? 0;
   const totalRenting = data.totalRenting ?? 0;
   const totalConflictsFound = data.totalConflictsFound ?? 0;
   const conflicts = outletRow?.conflicts ?? [];

@@ -10,8 +10,9 @@ import {
   ProductsLoading,
   Button,
   LoadingIndicator,
-  ProductAddDialog
+  ProductAddForm
 } from '@rentalshop/ui';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { 
   productsApi,
@@ -110,7 +111,7 @@ export default function ProductAddPage() {
         throw new Error('Product created but no ID returned');
       }
     } catch (err) {
-      // Re-throw the error to be handled by the dialog component
+      // Re-throw so ProductAddForm shows the error toast
       throw err;
     }
   };
@@ -214,24 +215,25 @@ export default function ProductAddPage() {
           />
         </div>
       )}
+      <PageHeader>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="ghost" onClick={() => router.push('/products')} size="sm" className="h-9 w-9 p-0" aria-label={tc('buttons.back')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600">{t('createProduct')}</p>
+            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{t('form.createTitle')}</h1>
+          </div>
+        </div>
+      </PageHeader>
       <PageContent>
-        {/* Use ProductAddDialog for consistency with other pages */}
-        <ProductAddDialog
-          open={true}
-          onOpenChange={(open) => {
-            // If dialog is closed, redirect back to products page
-            if (!open) {
-              router.push('/products');
-            }
-          }}
+        <ProductAddForm
+          layout="page"
           categories={categories}
           outlets={outlets}
           merchantId={String(merchantId || '')}
-          onProductCreated={handleProductCreated}
-          onError={(error) => {
-            // Error automatically handled by useGlobalErrorHandler
-            console.error('❌ ProductAddDialog: Error occurred:', error);
-          }}
+          onSave={handleProductCreated}
+          onCancel={() => router.push('/products')}
           useMultipartUpload={true}
         />
       </PageContent>

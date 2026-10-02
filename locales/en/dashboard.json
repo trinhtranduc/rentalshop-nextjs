@@ -118,5 +118,97 @@
     "completed": "Completed",
     "cancelled": "Cancelled",
     "ordersCount": "orders"
+  },
+  "operations": {
+    "title": "Today's work",
+    "loadFailed": "Couldn't load today's work.",
+    "retry": "Retry",
+    "tabs": {
+      "pickupsToday": "Hand over today",
+      "returnsToday": "Returns today",
+      "overdueReturns": "Overdue returns",
+      "noShows": "Not picked up"
+    },
+    "empty": {
+      "pickupsToday": "No handovers today.",
+      "returnsToday": "No returns due today.",
+      "overdueReturns": "No overdue rentals.",
+      "noShows": "Every reservation was picked up.",
+      "all": "Nothing left to handle today."
+    },
+    "ready": "Ready",
+    "notReady": "Not prepared",
+    "daysOverdue": "{days, plural, one {# day late} other {# days late}}",
+    "walkIn": "Walk-in customer",
+    "items": "{count, plural, one {# item} other {# items}}",
+    "pickup": "Pickup",
+    "return": "Return",
+    "deposit": "Deposit",
+    "more": "+{count} more in Orders",
+    "cash": {
+      "title": "Security deposits & fees",
+      "feesToday": "Fees taken today",
+      "orders": "{count, plural, one {# order} other {# orders}}",
+      "feesBreakdown": "Late {late} · Damage {damage}",
+      "held": "Security deposits held",
+      "heldHint": "From {count} rentals out, given back when the item returns",
+      "backToday": "Back to customers today",
+      "backTodayHint": "Security deposits of {count} rentals due back today"
+    },
+    "newOrders": "New orders today",
+    "viewDetails": "View details",
+    "topCustomers": "Top customers by spend",
+    "returnsSoon": {
+      "title": "Due back in the next 3 days",
+      "empty": "Nothing due back in the next 3 days."
+    },
+    "kpi": {
+      "new": "New",
+      "revenue": "Revenue",
+      "newOrders": "New orders",
+      "depositRefund": "Deposits refunded",
+      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
+      "cancelled": "Cancelled orders",
+      "cancelledTooltip": "Orders moved to cancelled during the period",
+      "netRevenue": "Net cash in",
+      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned deposits. Can be negative.",
+      "ordersTrend": "New orders, last 7 days: {values}",
+      "netCashToday": "Net cash in today",
+      "netCashTodayTooltip": "Deposits on new orders, balance and security deposit at hand-over, fees at return; minus deposits given back and refunds."
+    },
+    "chips": {
+      "all": "All",
+      "overdueReturns": "Overdue",
+      "pickupsToday": "Hand over",
+      "returnsToday": "Take back",
+      "noShows": "Not collected"
+    },
+    "progress": {
+      "pickups": "Handed over",
+      "returns": "Taken back"
+    },
+    "timeline": {
+      "pickup": "hand over",
+      "return": "take back",
+      "now": "now",
+      "summary": "{pickups} handovers and {returns} returns booked for today"
+    },
+    "row": {
+      "pickupAt": "Hand over {time}",
+      "returnAt": "Return {time}",
+      "noShow": "Was due {date}"
+    },
+    "call": "Call {name}",
+    "showMore": "Show {count} more",
+    "showLess": "Show less",
+    "notReadyCount": "Not prepared: {count}/{total} hand-overs",
+    "tomorrow": "Tomorrow: {pickups} hand-overs · {returns} returns",
+    "actions": {
+      "handOver": "Hand over",
+      "takeBack": "Take back",
+      "failed": "Could not open the order",
+      "handedOver": "Handed over",
+      "takenBack": "Taken back"
+    }
   }
 }

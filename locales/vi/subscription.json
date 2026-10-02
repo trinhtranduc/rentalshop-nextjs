@@ -211,8 +211,8 @@
     "dismissAria": "Đóng cảnh báo đăng ký"
   },
   "errors": {
-    "title": "Lỗi đăng ký",
-    "subscriptionError": "Lỗi đăng ký",
+    "title": "Lỗi gói đăng ký",
+    "subscriptionError": "Lỗi gói đăng ký",
     "planLimitExceeded": "Vượt quá giới hạn gói",
     "paused": "Gói đăng ký của bạn đang tạm dừng. Một số tính năng có thể bị giới hạn.",
     "pausedAction": "Tiếp tục gói đăng ký để truy cập tất cả tính năng.",

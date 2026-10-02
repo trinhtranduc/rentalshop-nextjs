@@ -186,6 +186,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
         hideSubmitButton={true}
         formId="product-form"
         useMultipartUpload={useMultipartUpload}
+        layout="page"
       />
 
       {canManageProducts && (
@@ -227,7 +228,8 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap items-center justify-end gap-3 mt-6 pt-4 border-t">
+      {/* Save stays in reach on a long form */}
+      <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting || isSyncingEmbeddings}>
           {tc('buttons.cancel')}
         </Button>

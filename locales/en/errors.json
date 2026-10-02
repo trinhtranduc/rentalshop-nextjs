@@ -293,6 +293,7 @@
   "DASHBOARD_DATA_SUCCESS": "Enhanced dashboard data retrieved successfully",
   "GROWTH_METRICS_SUCCESS": "Growth metrics retrieved successfully",
   "TODAY_METRICS_SUCCESS": "Today metrics retrieved successfully",
+  "OUTLET_OPERATIONS_SUCCESS": "Outlet operations retrieved successfully",
   "TOP_PRODUCTS_SUCCESS": "Top products retrieved successfully",
   "ORDER_ANALYTICS_SUCCESS": "Order analytics retrieved successfully",
   "SUBSCRIPTION_PAUSED_SUCCESS": "Subscription paused successfully",

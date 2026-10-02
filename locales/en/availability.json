@@ -1,6 +1,6 @@
 {
   "title": "Check rental availability",
-  "subtitle": "Left: rental period and product · Right: image and availability",
+  "subtitle": "Pick dates and items to see whether the shop has enough.",
   "breadcrumb": "Check availability",
   "sections": {
     "product": "Select products",
@@ -90,5 +90,45 @@
   "errors": {
     "checkFailed": "Could not check availability",
     "loadProductFailed": "Could not load product"
-  }
+  },
+  "productsTitle": "Items to check",
+  "quick": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "weekend": "Weekend",
+    "threeDays": "3 days"
+  },
+  "summary": {
+    "allOk": "Enough stock for all {count} items",
+    "someShort": "{count} items are short",
+    "pickDates": "Pick rental dates to see what is free"
+  },
+  "badge": {
+    "free": "{free}/{total} free",
+    "short": "Short {count}",
+    "error": "Error"
+  },
+  "search": {
+    "price": "Price {price}",
+    "stock": "{available}/{total} free"
+  },
+  "empty": {
+    "title": "No items yet",
+    "description": "Search by name, code or barcode. You can check several items at once."
+  },
+  "detail": {
+    "freeHeadline": "{count} units free",
+    "free": "Free",
+    "busy": "Booked",
+    "need": "You need",
+    "barLabel": "{free} free, {busy} booked, {need} needed, {total} in stock",
+    "days": "Free units per day",
+    "dayHint": "Tap a day to check from that day",
+    "dayLabel": "{date}: {free} free",
+    "conflicts": "Orders in this period ({count})",
+    "noConflicts": "No orders overlap this period."
+  },
+  "remove": "Remove {name}",
+  "decrease": "Decrease quantity",
+  "increase": "Increase quantity"
 }

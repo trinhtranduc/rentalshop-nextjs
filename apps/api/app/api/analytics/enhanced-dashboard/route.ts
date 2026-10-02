@@ -3,6 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
+import { civilDayRange, getOperationsDay } from '../../../../lib/outlet-operations-day';
 
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
@@ -106,8 +107,16 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     }
 
     // Determine date range based on parameters
-    const start = startDateParam ? new Date(startDateParam) : today;
-    const end = endDateParam ? new Date(endDateParam + 'T23:59:59') : new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    // Vietnam civil days: `new Date('2026-10-02')` is 07:00 in Vietnam and missed orders made before 7 am
+    const isDayKey = (v: string | null) => Boolean(v && /^\d{4}-\d{2}-\d{2}$/.test(v));
+    const todayRange = getOperationsDay();
+    const { start, end } =
+      isDayKey(startDateParam) && isDayKey(endDateParam || startDateParam)
+        ? civilDayRange(startDateParam as string, (endDateParam || startDateParam) as string)
+        : {
+            start: startDateParam ? new Date(startDateParam) : todayRange.start,
+            end: endDateParam ? new Date(endDateParam) : todayRange.end,
+          };
     
     // Get today's orders (for startDate to endDate range)
     const todayOrders = await db.orders.search({

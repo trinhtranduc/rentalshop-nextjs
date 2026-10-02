@@ -94,7 +94,8 @@
     "delete": "Delete",
     "deleteCustomer": "Delete Customer",
     "activate": "Activate Customer",
-    "deactivate": "Deactivate Customer"
+    "deactivate": "Deactivate Customer",
+    "selectAll": "Select all"
   },
   "messages": {
     "createSuccess": "Customer created successfully",
@@ -181,6 +182,9 @@
     "total": "Total",
     "successCount": "Success",
     "failedCount": "Failed"
+  },
+  "form": {
+    "moreDetails": "Address, ID number, notes",
+    "hideDetails": "Hide extra details"
   }
 }
-
