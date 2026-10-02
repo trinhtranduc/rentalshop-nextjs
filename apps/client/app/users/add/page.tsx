@@ -12,7 +12,7 @@ export default function AddUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toastSuccess, removeToast } = useToast();
+  const { toastSuccess } = useToast();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
 

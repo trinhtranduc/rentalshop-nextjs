@@ -124,6 +124,7 @@ export function OutletOperationsPanel({ state }: { state: OutletOperationsState 
   const [now, setNow] = useState(() => new Date());
   const { toastSuccess, toastError } = useToast();
   // Hand-over / take-back straight from the list, with the same dialog as the order page
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- full order from ordersApi, passed straight to the shared dialog
   const [action, setAction] = useState<{ mode: 'collection' | 'return'; order: any } | null>(null);
   const [openingId, setOpeningId] = useState<number | null>(null);
 

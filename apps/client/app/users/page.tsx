@@ -415,7 +415,7 @@ export default function UsersPage() {
             });
             
             if (response.success) {
-              const createdName = (userData as any).name || [userData.firstName, userData.lastName].filter(Boolean).join(' ');
+              const createdName = (userData as { name?: string }).name || [userData.firstName, userData.lastName].filter(Boolean).join(' ');
               toastSuccess(tu('messages.createSuccess'), createdName);
               refetch();
             } else {
