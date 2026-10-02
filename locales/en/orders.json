@@ -72,7 +72,7 @@
     "orderSettings": "Order Settings",
     "orderActions": "Order Actions",
     "viewAndManage": "View and manage order information",
-    "seller": "Seller",
+    "seller": "Outlet",
     "orderDate": "Order Date",
     "editSettings": "Edit Settings",
     "saveChanges": "Save Changes",
@@ -473,5 +473,41 @@
       "earn": "Earns {points} points"
     },
     "depositHint": "Added up from the items"
+  },
+  "detailMoney": {
+    "stage": {
+      "pickup": "Collect at pickup",
+      "collectAtReturn": "Collect at return",
+      "refundAtReturn": "Refund at return",
+      "sale": "To collect",
+      "done": "Nothing more to collect"
+    },
+    "depositPaid": "Deposit paid",
+    "securityDeposit": "Security deposit",
+    "damageFee": "Damage fee",
+    "lateFee": "Late fee",
+    "securityBack": "Security deposit back",
+    "holdCollateral": "Also hold",
+    "returnCollateral": "Give back"
+  },
+  "detailHeader": {
+    "title": "Order #{number}",
+    "print": "Print receipt",
+    "edit": "Edit",
+    "more": "More actions",
+    "pickup": "Hand over",
+    "return": "Take back",
+    "status": {
+      "RESERVED": "Reserved",
+      "PICKUPED": "Picked up",
+      "RETURNED": "Returned",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "steps": {
+      "RESERVED": "Reserved",
+      "PICKUPED": "Handed over",
+      "RETURNED": "Returned"
+    }
   }
 }

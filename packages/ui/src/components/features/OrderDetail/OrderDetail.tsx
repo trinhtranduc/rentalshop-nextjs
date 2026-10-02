@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Badge, Skeleton, ConfirmationDialog, Card, CardHeader, CardContent } from '@rentalshop/ui';
+import { Badge, Skeleton, ConfirmationDialog, Card, CardHeader, CardContent, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@rentalshop/ui';
+import { Check, MoreHorizontal, Pencil, Printer } from 'lucide-react';
 import { useToast } from '@rentalshop/ui';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { useOrderTranslations, usePermissions, useAuth } from '@rentalshop/hooks';
@@ -12,7 +13,6 @@ import { OrderProductsList } from './components/OrderProductsList';
 import { NotesSection } from './components/NotesSection';
 import { OrderSummaryCard } from './components/OrderSummaryCard';
 import { OrderSettingsCard } from './components/OrderSettingsCard';
-import { OrderActionsSection } from './components/OrderActionsSection';
 import { LoyaltyOrderInfo } from '../Loyalty/LoyaltyOrderInfo';
 import { calculateCollectionTotal } from './utils';
 
@@ -521,38 +521,95 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
 
   return (
     <div className="space-y-4 w-full">
-        {/* Header */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {t('orderDetails')} #{order.orderNumber}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {t('detail.viewAndManage')}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Order Type Badge */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">{t('orderType.label')}:</span>
-                <Badge 
-                  className={ORDER_TYPE_COLORS[order.orderType as keyof typeof ORDER_TYPE_COLORS]}
-                >
-                  {t(`orderType.${order.orderType}`)}
-                </Badge>
-              </div>
-              {/* Order Status */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">{t('status.label')}:</span>
-                <Badge 
-                  className={getOrderStatusClassName(order.status)}
-                >
-                  {t(`status.${order.status}`)}
+        {/* Header: who/what at a glance, the next step as the main button, cancel tucked away */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
+                  {t('detailHeader.title', { number: order.orderNumber })}
+                </h1>
+                <Badge className={getOrderStatusClassName(order.status)}>{t(`detailHeader.status.${order.status}`)}</Badge>
+                <Badge className={ORDER_TYPE_COLORS[order.orderType as keyof typeof ORDER_TYPE_COLORS]}>
+                  {t(`form.orderType.${order.orderType}`)}
                 </Badge>
               </div>
             </div>
+            {showActions && (
+              <div className="flex flex-wrap items-center gap-2">
+                {canPrint && (
+                  <Button type="button" variant="outline" size="sm" onClick={handlePrintOrder} className="h-9">
+                    <Printer className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    {t('detailHeader.print')}
+                  </Button>
+                )}
+                {canEdit && (
+                  <Button type="button" variant="outline" size="sm" onClick={handleEditOrder} className="h-9">
+                    <Pencil className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    {t('detailHeader.edit')}
+                  </Button>
+                )}
+                {(canCancel || canDelete) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="h-9 w-9 p-0" aria-label={t('detailHeader.more')}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {canCancel && (
+                        <DropdownMenuItem onClick={handleCancelOrderClick} className="text-red-700">
+                          {t('actions.cancelOrder')}
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete && (
+                        <DropdownMenuItem onClick={handleDeleteOrderClick} className="text-red-700">
+                          {t('actions.delete')}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {canPickup && (
+                  <Button type="button" size="sm" onClick={handlePickupClick} disabled={isPickupLoading} className="h-9 px-4 font-semibold">
+                    {isPickupLoading ? t('actions.pickingUp') : t('detailHeader.pickup')}
+                  </Button>
+                )}
+                {canReturn && (
+                  <Button type="button" size="sm" onClick={handleReturnClick} disabled={isReturnLoading} className="h-9 px-4 font-semibold">
+                    {isReturnLoading ? t('actions.returning') : t('detailHeader.return')}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Rental progress: reserved → picked up → returned */}
+          {isRentOrder && order.status !== 'CANCELLED' && (
+            <ol className="mt-4 flex items-center gap-2 text-xs sm:text-sm" aria-label={t('status.label')}>
+              {(['RESERVED', 'PICKUPED', 'RETURNED'] as const).map((step, index, steps) => {
+                const reached = steps.indexOf(order.status as any) >= index || order.status === 'COMPLETED';
+                const current = order.status === step;
+                return (
+                  <li key={step} className="flex min-w-0 flex-1 items-center gap-2" aria-current={current ? 'step' : undefined}>
+                    <span
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
+                        reached ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-500'
+                      }`}
+                    >
+                      {reached && !current ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
+                    </span>
+                    <span className={`truncate ${current ? 'font-semibold text-slate-900' : reached ? 'text-slate-700' : 'text-slate-500'}`}>
+                      {t(`detailHeader.steps.${step}`)}
+                    </span>
+                    {index < steps.length - 1 && (
+                      <span className={`h-px flex-1 ${steps.indexOf(order.status as any) > index ? 'bg-blue-600' : 'bg-slate-200'}`} aria-hidden="true" />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </div>
 
         {/* Main Content Grid - Fixed overflow issue */}
@@ -610,31 +667,6 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                     </div>
                     </div>
 
-        {/* Action Buttons - Using new component with translations */}
-        {showActions && (
-          <OrderActionsSection
-            order={order}
-            canEdit={!!canEdit}
-            canCancel={!!canCancel}
-            canDelete={!!canDelete}
-            canPickup={!!canPickup}
-            canReturn={!!canReturn}
-            canPrint={canPrint}
-            isRentOrder={isRentOrder}
-            isSaleOrder={isSaleOrder}
-            isPickupLoading={isPickupLoading}
-            isReturnLoading={isReturnLoading}
-            isCancelLoading={isCancelLoading}
-            isDeleteLoading={isDeleteLoading}
-            onEdit={handleEditOrder}
-            onCancel={handleCancelOrderClick}
-            onDelete={handleDeleteOrderClick}
-            onPickup={handlePickupClick}
-            onReturn={handleReturnClick}
-            onPrint={handlePrintOrder}
-          />
-        )}
-      
       {/* Collection Modal */}
       <CollectionReturnModal
         isOpen={isCollectionModalOpen}

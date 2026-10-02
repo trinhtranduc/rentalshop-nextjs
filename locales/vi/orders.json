@@ -72,7 +72,7 @@
     "orderSettings": "Cài đặt đơn hàng",
     "orderActions": "Hành động",
     "viewAndManage": "Xem và quản lý thông tin đơn hàng",
-    "seller": "Người bán",
+    "seller": "Cửa hàng",
     "orderDate": "Ngày đặt hàng",
     "editSettings": "Sửa cài đặt",
     "saveChanges": "Lưu thay đổi",
@@ -473,5 +473,41 @@
       "earn": "Tích {points} điểm"
     },
     "depositHint": "Tự cộng từ các món"
+  },
+  "detailMoney": {
+    "stage": {
+      "pickup": "Cần thu khi giao đồ",
+      "collectAtReturn": "Cần thu khi nhận trả",
+      "refundAtReturn": "Trả lại khách khi nhận trả",
+      "sale": "Cần thu",
+      "done": "Không cần thu thêm"
+    },
+    "depositPaid": "Đã đặt cọc",
+    "securityDeposit": "Thế chấp",
+    "damageFee": "Phí hư hỏng",
+    "lateFee": "Phí trễ hạn",
+    "securityBack": "Trả lại thế chấp",
+    "holdCollateral": "Giữ thêm",
+    "returnCollateral": "Trả lại"
+  },
+  "detailHeader": {
+    "title": "Đơn #{number}",
+    "print": "In hóa đơn",
+    "edit": "Sửa",
+    "more": "Thêm thao tác",
+    "pickup": "Giao đồ",
+    "return": "Nhận trả",
+    "status": {
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đang thuê",
+      "RETURNED": "Đã trả",
+      "COMPLETED": "Hoàn thành",
+      "CANCELLED": "Đã hủy"
+    },
+    "steps": {
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đã giao đồ",
+      "RETURNED": "Đã trả đồ"
+    }
   }
 }

@@ -345,7 +345,7 @@ export default function OrderDetailPage() {
 
   // Breadcrumb items - temporary fix
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Orders', href: '/orders' },
+    { label: tc('navigation.orders'), href: '/orders' },
     { label: order.orderNumber }
   ];
 

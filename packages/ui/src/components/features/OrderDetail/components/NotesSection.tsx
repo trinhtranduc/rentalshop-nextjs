@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, AlertCircle, Info, MessageSquare } from 'lucide-react';
+import { FileText, AlertCircle, Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { formatCurrency } from '@rentalshop/utils';
 
@@ -76,14 +76,8 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ order }) => {
     order.returnNotes ||
     order.damageNotes;
 
-  if (!hasNotes) {
-    return (
-      <div className="text-center py-6 text-gray-500">
-        <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-        <p className="text-sm">No notes or additional information available</p>
-      </div>
-    );
-  }
+  // No notes: show nothing instead of a large empty placeholder
+  if (!hasNotes) return null;
 
   return (
     <div className="space-y-4">
