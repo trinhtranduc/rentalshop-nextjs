@@ -8,6 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SECRET_LOCAL || 'lo
 export const TOKEN_EXPIRY = {
   ACCESS_TOKEN: '7d',             // Web access token: 7 days
   ACCESS_TOKEN_MOBILE: '90d',     // Mobile access token: 90 days = absolute session cap; store builds cannot refresh (#343)
+  ACCESS_TOKEN_REFRESHABLE: '1h',  // Clients holding a refresh token (#344): short access token
   REFRESH_TOKEN_DAYS: 30,         // Refresh token: 30 days
 } as const;
 
@@ -41,6 +42,13 @@ export const generateMobileToken = (payload: JWTPayload): string => {
   console.log('🔍 JWT GENERATE (MOBILE): Creating 30d token');
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY.ACCESS_TOKEN_MOBILE });
   return token;
+};
+
+/**
+ * Generate a short access token for clients that also hold a refresh token (#344).
+ */
+export const generateRefreshableToken = (payload: JWTPayload): string => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY.ACCESS_TOKEN_REFRESHABLE });
 };
 
 export const verifyToken = (token: string): JWTPayload => {
