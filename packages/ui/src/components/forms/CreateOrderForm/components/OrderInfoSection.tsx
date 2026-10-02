@@ -29,7 +29,7 @@ import {
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { getLocalDateKey } from '@rentalshop/utils';
+import { getLocalDateKey, countRentalDays } from '@rentalshop/utils';
 import { 
   User, 
   Search, 
@@ -636,9 +636,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 <span className="text-text-secondary">{t('summary.rentalDuration')}:</span>
                 <span className="font-medium">
                   {(() => {
-                    const start = new Date(formData.pickupPlanAt);
-                    const end = new Date(formData.returnPlanAt);
-                    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                    const days = countRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
                     return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
                   })()}
                 </span>

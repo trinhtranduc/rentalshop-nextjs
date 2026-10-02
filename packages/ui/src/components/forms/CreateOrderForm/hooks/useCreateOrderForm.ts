@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@rentalshop/ui';
-import { customersApi, handleApiError, convertLocalDateToUTCDatetime, getLocalDateKey } from '@rentalshop/utils';
+import { customersApi, handleApiError, convertLocalDateToUTCDatetime, getLocalDateKey, countRentalDays } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
   OrderFormData, 
@@ -14,14 +14,8 @@ import type {
 } from '../types';
 
 // ---- Pricing option helpers (multi-option products) ----
-const deriveRentalDays = (start?: string, end?: string): number => {
-  if (!start || !end) return 1;
-  const s = new Date(start).getTime();
-  const e = new Date(end).getTime();
-  if (isNaN(s) || isNaN(e)) return 1;
-  const days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
-  return days > 0 ? days : 1;
-};
+// Pickup and return day both count (#351), same as iOS and Android
+const deriveRentalDays = (start?: string, end?: string): number => countRentalDays(start, end);
 
 const getItemOptions = (item: OrderItemFormData): Array<{ id?: number; type: string; price: number; isDefault?: boolean }> =>
   (item.product?.pricingOptions as any[]) || [];
@@ -468,10 +462,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   // Calculate rental days
   const calculateRentalDays = useCallback((startDate: string, endDate: string): number => {
     if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return countRentalDays(startDate, endDate);
   }, []);
 
   // Update rental dates and recalculate prices

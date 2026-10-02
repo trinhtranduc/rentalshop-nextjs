@@ -205,3 +205,6 @@ export * from './audit-config';
 
 // Revenue calculator utilities (single source of truth for revenue calculations)
 export * from './revenue-calculator';
+
+// Rental days: pickup and return day both included (#351)
+export { countRentalDays } from './rental-days';
