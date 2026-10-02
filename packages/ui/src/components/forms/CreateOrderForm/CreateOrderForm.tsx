@@ -975,11 +975,14 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-gray-600">{formData.orderType === 'RENT' ? t('form.summary.collectAtPickup') : t('form.summary.collect')}</p>
+            <p className="text-xs text-gray-600">{t('form.summary.collectNow')}</p>
             <p className="text-lg font-bold tabular-nums text-gray-900">
               {formatCurrency(
-                (loyalty.loyaltyDiscount > 0 && loyalty.amountDue != null ? loyalty.amountDue : formData.totalAmount) +
-                  (formData.orderType === 'RENT' ? formData.depositAmount || 0 : 0),
+                formData.orderType === 'RENT'
+                  ? formData.depositAmount || 0
+                  : loyalty.loyaltyDiscount > 0 && loyalty.amountDue != null
+                  ? loyalty.amountDue
+                  : formData.totalAmount,
                 currency as any
               )}
             </p>

@@ -223,7 +223,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   const deposit = isRent ? formData.depositAmount || 0 : 0;
   // Total of the order after discounts (stored as totalAmount); loyalty points lower what is collected
   const orderTotal = amountDue != null && loyaltyDiscount > 0 ? amountDue : formData.totalAmount;
-  const collect = orderTotal + deposit;
+  // What the shop takes now: a rental's deposit (the rest at pickup, as order detail and iOS compute it); a sale's total
+  const collectNow = isRent ? deposit : orderTotal;
   const missing: Array<'customer' | 'dates' | 'items' | 'outlet'> = [];
   if (!formData.customerId && !selectedCustomer) missing.push('customer');
   if (isRent && (!formData.pickupPlanAt || !formData.returnPlanAt)) missing.push('dates');
@@ -716,15 +717,23 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </button>
         )}
 
+        {/* Collected now: the deposit for a rental (balance at pickup), the whole total for a sale */}
         <div className="border-t border-slate-200 pt-3">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[15px] font-semibold text-slate-900">{isRent ? t('form.summary.collectAtPickup') : t('form.summary.collect')}</span>
-            <span className="text-2xl font-bold tabular-nums text-slate-900">{formatMoney(collect)}</span>
+            <span className="text-[15px] font-semibold text-slate-900">{t('form.summary.collectNow')}</span>
+            <span className="text-2xl font-bold tabular-nums text-slate-900">{formatMoney(collectNow)}</span>
           </div>
-          {isRent && deposit > 0 && (
-            <p className="mt-0.5 text-right text-xs tabular-nums text-slate-600">
-              {t('form.summary.breakdown', { rent: formatMoney(orderTotal), deposit: formatMoney(deposit) })}
-            </p>
+          {isRent && (
+            <dl className="mt-1 space-y-0.5 text-xs text-slate-600">
+              <div className="flex justify-between">
+                <dt>{t('form.summary.orderTotal')}</dt>
+                <dd className="tabular-nums">{formatMoney(orderTotal)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>{t('form.summary.remainingAtPickup')}</dt>
+                <dd className="tabular-nums">{formatMoney(Math.max(0, orderTotal - deposit))}</dd>
+              </div>
+            </dl>
           )}
         </div>
 

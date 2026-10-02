@@ -440,10 +440,8 @@
       "rentTotal": "Tiền thuê",
       "saleTotal": "Tiền hàng",
       "orderTotal": "Tổng tiền đơn",
-      "collectAtPickup": "Tổng cần thu",
-      "includesDeposit": "gồm cọc {amount}",
-      "collect": "Khách cần trả",
-      "breakdown": "Tiền thuê {rent} + cọc {deposit}"
+      "collectNow": "Cần thu ngay",
+      "remainingAtPickup": "Còn lại thu khi nhận đồ"
     },
     "missing": {
       "title": "Còn thiếu: {fields}",

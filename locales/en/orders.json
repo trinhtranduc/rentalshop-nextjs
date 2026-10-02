@@ -440,10 +440,8 @@
       "rentTotal": "Rental",
       "saleTotal": "Goods",
       "orderTotal": "Order total",
-      "collectAtPickup": "Total to collect",
-      "includesDeposit": "includes deposit {amount}",
-      "collect": "Customer pays",
-      "breakdown": "Rental {rent} + deposit {deposit}"
+      "collectNow": "Collect now",
+      "remainingAtPickup": "Balance at pickup"
     },
     "missing": {
       "title": "Still needed: {fields}",
