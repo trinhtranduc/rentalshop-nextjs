@@ -92,4 +92,39 @@ describe('getOutletOperations (#350)', () => {
     expect(feesWhere.returnedAt).toEqual({ gte: start, lte: end });
     expect(feesWhere.status).toEqual({ not: 'CANCELLED' });
   });
+
+  it('done today: rentals handed over or taken back within today, cancelled excluded', async () => {
+    mockPrisma.order.count.mockImplementation(async ({ where }: any) => (where.pickedUpAt ? 2 : where.returnedAt ? 1 : 0));
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    expect(result.doneToday).toEqual({ pickups: 2, returns: 1 });
+    const picked = mockPrisma.order.count.mock.calls.find(([a]) => a.where.pickedUpAt)[0].where;
+    expect(picked).toEqual(
+      expect.objectContaining({ orderType: 'RENT', outletId: { in: [1] }, deletedAt: null, status: { not: 'CANCELLED' }, pickedUpAt: { gte: start, lte: end } })
+    );
+    const returned = mockPrisma.order.count.mock.calls.find(([a]) => a.where.returnedAt)[0].where;
+    expect(returned.returnedAt).toEqual({ gte: start, lte: end });
+  });
+
+  it('new orders by day: one count per civil day, all order types, in scope', async () => {
+    const days = [
+      { dateKey: '2026-10-01', start: new Date('2026-09-30T17:00:00.000Z'), end: new Date('2026-10-01T16:59:59.999Z') },
+      { dateKey: '2026-10-02', start, end },
+    ];
+    mockPrisma.order.count.mockImplementation(async ({ where }: any) =>
+      where.createdAt ? (where.createdAt.gte.getTime() === start.getTime() ? 4 : 2) : 0
+    );
+    const result = await getOutletOperations({ outletIds: [1, 3], start, end, soonEnd, includeCash: false, trendDays: days });
+    expect(result.newOrdersByDay).toEqual([
+      { date: '2026-10-01', count: 2 },
+      { date: '2026-10-02', count: 4 },
+    ]);
+    const created = mockPrisma.order.count.mock.calls.filter(([a]) => a.where.createdAt).map(([a]) => a.where);
+    expect(created).toHaveLength(2);
+    expect(created[0]).toEqual({ outletId: { in: [1, 3] }, deletedAt: null, createdAt: { gte: days[0].start, lte: days[0].end } });
+  });
+
+  it('new orders by day is empty without trend days', async () => {
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    expect(result.newOrdersByDay).toEqual([]);
+  });
 });
