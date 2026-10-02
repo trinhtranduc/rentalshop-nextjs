@@ -55,6 +55,7 @@
 		047C0A602D9E43E200EF2C50 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 047C0A5F2D9E43E200EF2C50 /* SnapKit */; };
 		048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CE2D7727AF00069256 /* AuthenticationService.swift */; };
 		048838D52D7727AF00069256 /* BaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CF2D7727AF00069256 /* BaseService.swift */; };
+		3440A0012F1E010100000002 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3440A0012F1E010100000001 /* AuthSession.swift */; };
 		048838D62D7727AF00069256 /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D12D7727AF00069256 /* OrderService.swift */; };
 		048838D72D7727AF00069256 /* ProductService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D22D7727AF00069256 /* ProductService.swift */; };
 		048838D82D7727AF00069256 /* CustomerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D02D7727AF00069256 /* CustomerService.swift */; };
@@ -333,6 +334,7 @@
 		0465CA4F2EE3478600629F03 /* anyrent.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = anyrent.icon; sourceTree = "<group>"; };
 		048838CE2D7727AF00069256 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		048838CF2D7727AF00069256 /* BaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseService.swift; sourceTree = "<group>"; };
+		3440A0012F1E010100000001 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		048838D02D7727AF00069256 /* CustomerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerService.swift; sourceTree = "<group>"; };
 		048838D12D7727AF00069256 /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderService.swift; sourceTree = "<group>"; };
 		048838D22D7727AF00069256 /* ProductService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductService.swift; sourceTree = "<group>"; };
@@ -620,6 +622,7 @@
 				048838D92D77282100069256 /* APIEndpoint.swift */,
 				048838CE2D7727AF00069256 /* AuthenticationService.swift */,
 				048838CF2D7727AF00069256 /* BaseService.swift */,
+				3440A0012F1E010100000001 /* AuthSession.swift */,
 				048838D02D7727AF00069256 /* CustomerService.swift */,
 				048838D12D7727AF00069256 /* OrderService.swift */,
 				048839B02D79F11900069257 /* LoyaltyService.swift */,
@@ -1518,6 +1521,7 @@
 				043F063D2D8548760047DC11 /* HapticBarButtonItem.swift in Sources */,
 				048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */,
 				048838D52D7727AF00069256 /* BaseService.swift in Sources */,
+				3440A0012F1E010100000002 /* AuthSession.swift in Sources */,
 				048838D62D7727AF00069256 /* OrderService.swift in Sources */,
 				048839B12D79F11900069257 /* LoyaltyService.swift in Sources */,
 				040330E92EA88EF5003BC33E /* Plan.swift in Sources */,

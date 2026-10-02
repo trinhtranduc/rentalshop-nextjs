@@ -68,7 +68,7 @@ final class PushNotificationManager: NSObject {
         ]
 
         print("📲 Registering device for push: \(fullURL)")
-        AF.request(
+        AuthSession.shared.request(
             fullURL,
             method: .post,
             parameters: params,
@@ -99,7 +99,7 @@ final class PushNotificationManager: NSObject {
         ]
 
         print("📲 Unregistering device push: \(fullURL)")
-        AF.request(
+        AuthSession.shared.request(
             fullURL,
             method: .delete,
             parameters: params,

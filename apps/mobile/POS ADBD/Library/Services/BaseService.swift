@@ -77,7 +77,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -119,7 +119,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -161,7 +161,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .put, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .put, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -188,7 +188,7 @@ class BaseService {
             for (key, value) in BaseService.jsonHeader.dictionary {
                 request.setValue(value, forHTTPHeaderField: key)
             }
-            AF.request(request).responseData { response in
+            AuthSession.shared.request(request).responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
         } catch {
@@ -233,7 +233,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .patch, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .patch, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -258,7 +258,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .delete, parameters: parameters, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .delete, parameters: parameters, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -344,7 +344,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .get, parameters: parameters, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: parameters, headers: BaseService.jsonHeader)
             .responseData { [weak self] response in
                 guard let self = self else { return }
                 
@@ -427,7 +427,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.upload(multipartFormData: { multipart in
+        AuthSession.shared.upload(multipartFormData: { multipart in
             // Handle parameters
             for (key, value) in parameters {
                 let data: Data?
