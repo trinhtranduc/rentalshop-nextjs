@@ -118,5 +118,55 @@
     "completed": "Hoàn thành",
     "cancelled": "Đã hủy",
     "ordersCount": "đơn hàng"
+  },
+  "operations": {
+    "title": "Việc hôm nay",
+    "loadFailed": "Không tải được việc hôm nay.",
+    "retry": "Thử lại",
+    "tabs": {
+      "pickupsToday": "Cần giao hôm nay",
+      "returnsToday": "Nhận trả hôm nay",
+      "overdueReturns": "Quá hạn trả",
+      "noShows": "Khách chưa đến lấy"
+    },
+    "empty": {
+      "pickupsToday": "Hôm nay không có đơn cần giao.",
+      "returnsToday": "Hôm nay không có đơn cần nhận trả.",
+      "overdueReturns": "Không có đơn quá hạn.",
+      "noShows": "Mọi đơn đặt đều đã được lấy."
+    },
+    "ready": "Đã soạn đồ",
+    "notReady": "Chưa soạn đồ",
+    "daysOverdue": "Trễ {days} ngày",
+    "walkIn": "Khách vãng lai",
+    "items": "{count} món",
+    "pickup": "Lấy",
+    "return": "Trả",
+    "deposit": "Cọc",
+    "more": "Còn {count} đơn khác trong mục Đơn hàng",
+    "cash": {
+      "title": "Tiền trong ca",
+      "depositsHeld": "Tiền cọc đang giữ",
+      "depositsDueToday": "Cọc phải hoàn hôm nay",
+      "feesToday": "Phí thu khi nhận trả hôm nay",
+      "orders": "{count} đơn",
+      "feesBreakdown": "Trễ hạn {late} · Hư hỏng {damage}"
+    },
+    "newOrders": "Đơn mới hôm nay",
+    "viewDetails": "Xem chi tiết",
+    "topCustomers": "Khách chi tiêu nhiều nhất",
+    "returnsSoon": {
+      "title": "Sắp trả trong 3 ngày",
+      "empty": "Không có đơn nào trả trong 3 ngày tới."
+    },
+    "kpi": {
+      "new": "Mới",
+      "revenue": "Doanh thu",
+      "newOrders": "Đơn mới",
+      "cancelRate": "Tỉ lệ hủy",
+      "cancelRateTooltip": "Số đơn hủy chia cho số đơn mới trong kỳ",
+      "depositRefund": "Tiền cọc đã hoàn",
+      "depositRefundTooltip": "Tiền cọc trả lại khách trong kỳ. Hiện thành cột âm trên biểu đồ doanh thu."
+    }
   }
 }

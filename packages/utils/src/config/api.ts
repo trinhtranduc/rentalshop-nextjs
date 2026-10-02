@@ -205,6 +205,7 @@ export interface ApiUrls {
     seasonalTrends: string;
     export: string;
     todayMetrics: string;
+    outletOperations: string;
     growthMetrics: string;
     enhancedDashboard: string;
   };
@@ -768,6 +769,7 @@ function createApiUrls(): ApiUrls {
       seasonalTrends: `${base}/api/analytics/seasonal-trends`,
       export: `${base}/api/analytics/export`,
       todayMetrics: `${base}/api/analytics/today-metrics`,
+      outletOperations: `${base}/api/analytics/outlet-operations`,
       growthMetrics: `${base}/api/analytics/growth-metrics`,
       enhancedDashboard: `${base}/api/analytics/enhanced-dashboard`,
     },

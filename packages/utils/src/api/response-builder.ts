@@ -239,6 +239,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'DASHBOARD_DATA_SUCCESS': 'Enhanced dashboard data retrieved successfully',
   'GROWTH_METRICS_SUCCESS': 'Growth metrics retrieved successfully',
   'TODAY_METRICS_SUCCESS': 'Today metrics retrieved successfully',
+  'OUTLET_OPERATIONS_SUCCESS': 'Outlet operations retrieved successfully',
   'MERCHANT_REGISTERED_TRIAL_SUCCESS': 'Merchant registered successfully with 14-day free trial',
   'MERCHANT_ACCOUNT_CREATED_SUCCESS': 'Merchant account created successfully with default outlet and trial subscription',
   'USER_ACCOUNT_CREATED_SUCCESS': 'User account created successfully',

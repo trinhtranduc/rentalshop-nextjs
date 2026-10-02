@@ -118,5 +118,55 @@
     "completed": "Completed",
     "cancelled": "Cancelled",
     "ordersCount": "orders"
+  },
+  "operations": {
+    "title": "Today's work",
+    "loadFailed": "Couldn't load today's work.",
+    "retry": "Retry",
+    "tabs": {
+      "pickupsToday": "Hand over today",
+      "returnsToday": "Returns today",
+      "overdueReturns": "Overdue returns",
+      "noShows": "Not picked up"
+    },
+    "empty": {
+      "pickupsToday": "No handovers today.",
+      "returnsToday": "No returns due today.",
+      "overdueReturns": "No overdue rentals.",
+      "noShows": "Every reservation was picked up."
+    },
+    "ready": "Ready",
+    "notReady": "Not prepared",
+    "daysOverdue": "{days, plural, one {# day late} other {# days late}}",
+    "walkIn": "Walk-in customer",
+    "items": "{count, plural, one {# item} other {# items}}",
+    "pickup": "Pickup",
+    "return": "Return",
+    "deposit": "Deposit",
+    "more": "+{count} more in Orders",
+    "cash": {
+      "title": "Cash on hand",
+      "depositsHeld": "Deposits held",
+      "depositsDueToday": "Deposits to refund today",
+      "feesToday": "Fees collected on returns today",
+      "orders": "{count, plural, one {# order} other {# orders}}",
+      "feesBreakdown": "Late {late} · Damage {damage}"
+    },
+    "newOrders": "New orders today",
+    "viewDetails": "View details",
+    "topCustomers": "Top customers by spend",
+    "returnsSoon": {
+      "title": "Due back in the next 3 days",
+      "empty": "Nothing due back in the next 3 days."
+    },
+    "kpi": {
+      "new": "New",
+      "revenue": "Revenue",
+      "newOrders": "New orders",
+      "cancelRate": "Cancellation rate",
+      "cancelRateTooltip": "Cancelled orders divided by new orders in the period",
+      "depositRefund": "Deposits refunded",
+      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart."
+    }
   }
 }

@@ -26,3 +26,4 @@ Vietnam civil day; SQL filtering; staff never get money fields; no schema change
 - 2026-10-02 — Takings by payment method dropped from phase 1: order payments are not stored with a method (agent)
 - 2026-10-02 — Rows link to the order and to `tel:`; status actions stay on the order page in phase 1 (agent)
 - 2026-10-02 — Built on top of `fix/349-web-ui-quick-fixes` for a combined localhost preview (agent)
+- 2026-10-02 — Dashboard redesign folded into #350 ("đồng ý" to the audit proposal): one place per fact. Today: compact KPI row (revenue, new orders, renting, deposits held), operations panel, new orders today + returns in next 3 days, "+ Tạo đơn" in header instead of quick actions. Ranges: revenue / orders / avg order / cancel rate KPIs, fix completed == total, outlet picker inside the chart card, top customers without address, "Mới" instead of huge growth %, period kept in the URL (Trinh Tran)

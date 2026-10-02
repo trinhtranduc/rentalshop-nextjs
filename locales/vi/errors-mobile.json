@@ -316,6 +316,7 @@
   "DASHBOARD_DATA_SUCCESS": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
   "GROWTH_METRICS_SUCCESS": "Lấy số liệu tăng trưởng thành công",
   "TODAY_METRICS_SUCCESS": "Lấy số liệu hôm nay thành công",
+  "OUTLET_OPERATIONS_SUCCESS": "Lấy việc cần làm hôm nay thành công",
   "TOP_PRODUCTS_SUCCESS": "Lấy sản phẩm hàng đầu thành công",
   "ORDER_ANALYTICS_SUCCESS": "Lấy phân tích đơn hàng thành công",
   "SUBSCRIPTION_PAUSED_SUCCESS": "Tạm dừng đăng ký thành công",
