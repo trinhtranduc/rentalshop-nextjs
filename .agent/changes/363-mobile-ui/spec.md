@@ -7,7 +7,10 @@ Issue: #363 · Status: draft · Intent: ./intent.md · Design: canvas boards nam
 ### 0. App version
 1. On launch and on foreground, the app reads `GET /api/mobile/app-config`; below `minVersion` it shows a
    blocking "Cập nhật ứng dụng" screen with the store link; if the call fails, the app continues.
-2. Android sends `X-App-Version` and `X-Client-Platform` on every request (iOS already does).
+2. Android sends `X-App-Version`, `X-Client-Platform` and `X-Device-Type` on every request (iOS already does).
+2c. Feature flags come from app-config `features` (`newOrders`, `newOrderDetail`, `newProducts`, `newCalendar`,
+    `newOverview`, `newSettings`), cached; a flag off keeps the old screen.
+2d. iOS decodes an unknown order status as `unknown` instead of failing the whole response.
 2b. Day-based calls send `timeZone` = device zone (`TimeZone.current.identifier` / `ZoneId.systemDefault().id`); the app shows dates in the device zone.
 
 ### 1. Orders tab [Main, VL-tat-ca, VL-tim, Loc, VL-ban]
@@ -20,6 +23,7 @@ Issue: #363 · Status: draft · Intent: ./intent.md · Design: canvas boards nam
 7. Search (from either list) finds rentals and sales by name, phone, order code and product name; sale rows tagged "Bán · …".
 8. A response for an old query never replaces a newer one (stale-response guard); switching view resets paging and filters.
 9. No raw status code is ever shown; unknown status falls back to a neutral label.
+9b. Today list rows use `amountDue` / `refundDue` / `lateDays` / `items` from `outlet-operations`; the app does not recompute money.
 
 ### 2. Order detail [CT-gon, CT-qua-han, Nhan-tra, Giao-do, CT-ban]
 10. Rental detail: status pill, progress Đã đặt → Giao → Trả with dates, items with image, money block,
