@@ -90,6 +90,25 @@ NEXT_PUBLIC_CLIENT_URL=https://anyrent.shop
 - **Description**: Base URL for client application (used in email links)
 - **Default**: `https://dev.anyrent.shop` (development), `https://anyrent.shop` (production)
 
+#### Mobile App Config (`GET /api/mobile/app-config`)
+```bash
+IOS_MIN_VERSION=1.1.3
+IOS_LATEST_VERSION=1.2.0
+IOS_STORE_URL=https://apps.apple.com/app/id<app-id>
+ANDROID_MIN_VERSION=0.1.3
+ANDROID_LATEST_VERSION=0.2.0
+ANDROID_STORE_URL=https://play.google.com/store/apps/details?id=anyrent.shop
+MOBILE_FEATURES=newOrders,newOrderDetail
+```
+- **Description**: What the iOS and Android apps read on launch (#362)
+  - `*_MIN_VERSION`: apps below this version show a blocking update screen. Format `x.y.z`
+  - `*_LATEST_VERSION`: newest version in the store (for an optional "update available" hint)
+  - `*_STORE_URL`: link the update screen opens
+  - `MOBILE_FEATURES`: comma-separated new screens to turn on: `newOrders`, `newOrderDetail`, `newProducts`,
+    `newCalendar`, `newOverview`, `newSettings`. Unknown keys are ignored
+- **Default**: min `0.0.0` (never forces an update), latest = current release, iOS store URL empty,
+  every feature off. Changes reach devices within 5 minutes (response cache)
+
 #### Build Configuration
 ```bash
 SKIP_ENV_VALIDATION=true
