@@ -260,6 +260,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'TOP_OUTLETS_SUCCESS': 'Top shops retrieved successfully',
   'TOP_PRODUCTS_SUCCESS': 'Top products retrieved successfully',
   'OUTLET_FOUND': 'Outlet retrieved successfully',
+  'APP_CONFIG_SUCCESS': 'App config retrieved successfully',
 };
 
 /**
