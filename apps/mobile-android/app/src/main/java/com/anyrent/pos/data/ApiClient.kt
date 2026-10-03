@@ -16,6 +16,8 @@ import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.data.model.SubscriptionStatus
 import com.anyrent.pos.data.model.TodayMetrics
 import com.anyrent.pos.data.model.UserProfile
+import com.anyrent.pos.data.repository.appConfigFromJson
+import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -39,6 +41,8 @@ class ApiClient(
     private val tokenProvider: () -> String? = { SessionStore.accessToken },
     private val onUnauthorized: () -> Unit = { SessionStore.expireAuth() },
     private val client: OkHttpClient = defaultHttpClient(),
+    /** Sent as `X-App-Version` so the API can tell app versions apart (minimum version, request logs) */
+    private val appVersion: String = BuildConfig.VERSION_NAME,
 ) {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
     data class PageResult<T>(
@@ -884,6 +888,13 @@ class ApiClient(
         )
     }
 
+    /** Public `GET /api/mobile/app-config`: minimum app version and which new screens are on (#370) */
+    fun appConfig(): Result<AppConfig> = runCatching {
+        val json = execute(get("$baseUrl/api/mobile/app-config", authed = false))
+        requireSuccess(json)
+        appConfigFromJson(json.optJSONObject("data") ?: JSONObject())
+    }
+
     fun healthCheck(): Result<Boolean> = runCatching {
         val json = execute(get("$baseUrl/api/health", authed = false))
         json.optBoolean("success", true) || json.has("status")
@@ -1007,6 +1018,10 @@ class ApiClient(
             .build()
 
     private fun Request.Builder.applyAuth(authed: Boolean): Request.Builder {
+        // Same platform headers as iOS BaseService, on every call (also unauthenticated ones)
+        header("X-Client-Platform", "mobile")
+        header("X-Device-Type", "android")
+        header("X-App-Version", appVersion)
         if (authed) {
             val token = tokenProvider()
             if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")

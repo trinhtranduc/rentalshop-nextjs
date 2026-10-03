@@ -420,6 +420,9 @@
     <string name="status_returned">Đã trả</string>
     <string name="status_completed">Hoàn thành</string>
     <string name="status_cancelled">Đã hủy</string>
+    <string name="update_required_title">Cần cập nhật ứng dụng</string>
+    <string name="update_required_message">Cần phiên bản AnyRent mới để tiếp tục sử dụng. Vui lòng cập nhật ứng dụng.</string>
+    <string name="update_required_button">Cập nhật</string>
     <string name="order_search_hint">Mã đơn, tên, số điện thoại…</string>
     <string name="phone_visible">Đang hiển thị số điện thoại</string>
     <string name="item_count">%1$d sản phẩm</string>

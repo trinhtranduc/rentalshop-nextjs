@@ -122,14 +122,6 @@ fun nextOrderStatuses(orderType: String, status: String): List<String> {
     return OrderStatusFlow.next(type, current).map { it.name }
 }
 
-fun orderStatusColor(status: String): Color = when (status.uppercase()) {
-    "RESERVED" -> Color(0xFF2563EB)
-    "PICKUPED" -> Color(0xFFD97706)
-    "RETURNED", "COMPLETED" -> Color(0xFF16A34A)
-    "CANCELLED" -> Color(0xFFDC2626)
-    else -> Color(0xFF6B7280)
-}
-
 /**
  * iOS `ProductPreviewCell.pricingCalculationText` — order detail / cart preview lines.
  *
@@ -159,3 +151,41 @@ fun orderLinePricingText(
     }
     return base
 }
+
+// ---------------------------------------------------------------------------------------------
+// Redesign formatters (#370): dates in the device time zone, money in Vietnamese style
+// ---------------------------------------------------------------------------------------------
+
+/** IANA zone of the device, sent as `timeZone` on day-based API calls */
+fun deviceTimeZoneId(): String = ZoneId.systemDefault().id
+
+/** `T7 03/10` in Vietnamese, `Sat 03/10` otherwise, for the civil day of [instant] in [zone] */
+fun formatDayShort(
+    instant: Instant,
+    zone: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String {
+    val date = instant.atZone(zone).toLocalDate()
+    val dayMonth = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
+    val weekday = if (locale.language == "vi") {
+        when (date.dayOfWeek) {
+            java.time.DayOfWeek.SUNDAY -> "CN"
+            else -> "T${date.dayOfWeek.value + 1}"
+        }
+    } else {
+        date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale)
+    }
+    return "$weekday $dayMonth"
+}
+
+/** `yyyy-MM-dd` civil day of [instant] in [zone] */
+fun dayKey(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String =
+    instant.atZone(zone).toLocalDate().toString()
+
+/** `1.150.000đ` (dot grouping, no decimals) */
+fun formatMoneyVnd(amount: Double): String {
+    val rounded = Math.round(amount)
+    val digits = kotlin.math.abs(rounded).toString().reversed().chunked(3).joinToString(".").reversed()
+    return (if (rounded < 0) "−" else "") + digits + "đ"
+}
+

@@ -63,7 +63,6 @@ import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.MaskedPhoneRow
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
-import com.anyrent.pos.ui.common.orderStatusColor
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.StatusBadge
 import kotlinx.coroutines.Dispatchers

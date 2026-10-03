@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.R
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
@@ -112,7 +113,7 @@ fun OrderActionPanel(
                             }
                         }
                     },
-                    label = { Text(next) },
+                    label = { Text(OrderStatusStyle.labelRes(next)?.let { stringResource(it) } ?: next) },
                 )
             }
         }
