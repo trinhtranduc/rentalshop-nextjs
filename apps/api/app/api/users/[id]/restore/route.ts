@@ -4,6 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
+import { toPublicUser } from '../../../../../lib/user-scope';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -59,7 +60,7 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        data: restored,
+        data: toPublicUser(restored),
         code: 'USER_RESTORED_SUCCESS',
         message: 'User restored successfully'
       });

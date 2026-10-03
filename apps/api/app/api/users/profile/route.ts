@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
+import { toPublicUser } from '../../../../lib/user-scope';
 
 /**
  * GET /api/users/profile
@@ -48,7 +49,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
 
     // Transform user data to include complete merchant and outlet information
     const transformedUser = {
-      ...userProfile,
+      ...toPublicUser(userProfile),
       // Direct IDs for quick access
       merchantId: userProfile.merchant?.id,
       outletId: userProfile.outlet?.id,
@@ -217,7 +218,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
 
     // Transform user data to match GET profile response format
     const transformedUser = {
-      ...updatedUser,
+      ...toPublicUser(updatedUser),
       // Direct IDs for quick access
       merchantId: updatedUser.merchant?.id,
       outletId: updatedUser.outlet?.id,

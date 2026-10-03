@@ -10,6 +10,7 @@ import { db, prisma } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
+import { canAssignRole, isAllowedPlacement, toPublicUser } from '../../../lib/user-scope';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -175,7 +176,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: result.data.map((row: any) => toPublicUser(row)),
       pagination: {
         page: result.page,
         limit: result.limit,
@@ -233,6 +234,22 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
       );
     }
 
+    // Merchant and outlet callers: only roles they may give, only inside their own merchant/outlet
+    if (!canAssignRole(user, parsed.data.role, null)) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+    }
+    const placementAllowed = await isAllowedPlacement(
+      user,
+      userScope,
+      { outletId: parsed.data.outletId },
+      (outletId) => db.outlets.findById(outletId)
+    );
+    if (!placementAllowed) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+    }
+    // A merchant or outlet caller always creates users in its own merchant
+    const requestedMerchantId = isPlatformOpsRole(user.role) ? parsed.data.merchantId : undefined;
+
     // Smart assignment of merchantId and outletId based on role and user permissions
     let merchantId: number | undefined;
     let outletId: number | undefined;
@@ -247,11 +264,11 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
       outletId = parsed.data.role === USER_ROLE.ADMIN ? parsed.data.outletId : undefined;
     } else if (parsed.data.role === USER_ROLE.MERCHANT) {
       // MERCHANT must have merchantId, no outletId
-      merchantId = parsed.data.merchantId || userScope.merchantId;
+      merchantId = requestedMerchantId || userScope.merchantId;
       outletId = undefined;
     } else if (parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET users must have both merchantId and outletId
-      merchantId = parsed.data.merchantId || userScope.merchantId;
+      merchantId = requestedMerchantId || userScope.merchantId;
       outletId = parsed.data.outletId || userScope.outletId;
     }
 
@@ -306,7 +323,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
 
     return NextResponse.json({
       success: true,
-      data: newUser,
+      data: toPublicUser(newUser),
       code: 'USER_CREATED_SUCCESS',
         message: 'User created successfully'
     }, { status: 201 });
@@ -423,7 +440,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
     return NextResponse.json({
       success: true,
-      data: updatedUser,
+      data: toPublicUser(updatedUser),
       code: 'USER_UPDATED_SUCCESS',
         message: 'User updated successfully'
     });
