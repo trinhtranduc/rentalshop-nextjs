@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth/server';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
 import { handleApiError, getUTCDateKey, getLocalDateKey, parseProductImages } from '@rentalshop/utils';
+import { calendarScopeWhere } from '../../../../lib/calendar-scope';
+import { civilDayRange } from '../../../../lib/outlet-operations-day';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -54,9 +56,8 @@ export const GET = withReadOnlyAuth(async (
 
     const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
-    // Parse date strings
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    // Vietnam civil days of the range as UTC instants (#362): 00:00 of the first day to 23:59:59.999 of the last
+    const { start: startDate, end: endDate } = civilDayRange(startDateStr, endDateStr);
 
     console.log('📅 Date range:', { startDate, endDate });
 
@@ -84,30 +85,11 @@ export const GET = withReadOnlyAuth(async (
       where.status = ORDER_STATUS.RESERVED as any;
     }
 
-    // Role-based filtering
-    if (user.role === USER_ROLE.ADMIN) {
-      // ADMIN: Can see all orders, optionally filter by outletId
-      if (outletId) {
-        where.outletId = outletId;
-      }
-      // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === USER_ROLE.MERCHANT) {
-      // MERCHANT: Can see orders from all their outlets
-      // Filter by outlet.merchantId through relation
-      where.outlet = {
-        merchantId: userScope.merchantId
-      };
-      if (outletId) {
-        where.outletId = outletId;
-        // Remove outlet filter if outletId is specified
-        delete where.outlet;
-      }
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
-      // OUTLET users: Can only see orders from their assigned outlet
-      where.outletId = userScope.outletId;
-    }
+    // Role-based filtering; a merchant's outletId stays inside its merchant (#362)
+    Object.assign(where, calendarScopeWhere(user, userScope, outletId));
 
-    console.log('🔍 Calendar where clause:', where);
+    // Only pickups planned inside the range (the 1000-row cap used to drop older months' orders)
+    where.pickupPlanAt = { gte: startDate, lte: endDate };
 
     // Fetch orders for the month with orderItems included using db.orders.searchWithItems
     // ✅ Note: Calendar only shows RESERVED orders, which automatically excludes CANCELLED

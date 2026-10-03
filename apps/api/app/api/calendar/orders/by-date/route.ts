@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth/server';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 import type { CalendarOrderSummary } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder, parseProductImages, getLocalDateKey } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
+import { calendarDayKey, calendarScopeWhere, isValidTimeZone } from '../../../../../lib/calendar-scope';
 import { API } from '@rentalshop/constants';
 
 // Validation schema for orders by date query
@@ -26,6 +27,10 @@ const ordersByDateQuerySchema = z.object({
   ] as [string, ...string[]]).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(50), // Default 50 items per page, max 500 for iOS app
   page: z.coerce.number().int().min(1).default(1), // Page number for pagination
+  /** `return`: rentals (PICKUPED) due back that day, by return plan (#362); default: today's behaviour */
+  kind: z.enum(['pickup', 'return']).optional(),
+  /** IANA zone of the device for the day (#362); the Vietnam day when missing */
+  timeZone: z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone').optional(),
 });
 
 /**
@@ -52,7 +57,16 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📅 Orders by date query:', validatedQuery);
 
-    const { date: dateStr, outletId, merchantId, orderType, status, limit, page } = validatedQuery;
+    const { date: dateStr, outletId, merchantId, orderType, limit, page, kind, timeZone } = validatedQuery;
+    // Returns of the day are rentals still out (PICKUPED), whatever status was asked for
+    const status = kind === 'return' ? ORDER_STATUS.PICKUPED : validatedQuery.status;
+    const keyOf = calendarDayKey(timeZone);
+    const dayField: 'pickupPlanAt' | 'returnPlanAt' | 'createdAt' =
+      kind === 'return'
+        ? 'returnPlanAt'
+        : status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED || !status
+          ? 'pickupPlanAt'
+          : 'createdAt';
 
     // ✅ FIX: Parse date string as UTC to avoid timezone issues
     // "2026-02-25" should be treated as 2026-02-25 00:00:00 UTC
@@ -81,58 +95,19 @@ export const GET = withReadOnlyAuth(async (
       where.status = status as any;
     }
 
-    // Date filter based on status
-    // For RESERVED/PICKUPED: filter by pickupPlanAt (ngày dự kiến lấy)
-    // For other statuses: filter by createdAt (ngày tạo đơn)
-    // ✅ FIX: Use wider UTC range to capture all potentially relevant orders
-    if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
-      where.pickupPlanAt = {
-        gte: previousDayStartUTC,
-        lte: nextDayEndUTC
-      };
-    } else if (status) {
-      // For COMPLETED, RETURNED, CANCELLED: filter by createdAt
-      where.createdAt = {
-        gte: previousDayStartUTC,
-        lte: nextDayEndUTC
-      };
-    } else {
-      // If no status specified, default to pickupPlanAt (for backward compatibility)
-      where.pickupPlanAt = {
-        gte: previousDayStartUTC,
-        lte: nextDayEndUTC
-      };
-    }
+    // Date filter: pickup plan (default and RESERVED/PICKUPED), return plan (kind=return), else creation date
+    where[dayField] = {
+      gte: previousDayStartUTC,
+      lte: nextDayEndUTC
+    };
 
     // Add optional filters
     if (orderType) {
       where.orderType = orderType;
     }
 
-    // Role-based filtering
-    if (user.role === USER_ROLE.ADMIN) {
-      // ADMIN: Can see all orders, optionally filter by outletId
-      if (outletId) {
-        where.outletId = outletId;
-      }
-      // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === USER_ROLE.MERCHANT) {
-      // MERCHANT: Can see orders from all their outlets
-      // Filter by outlet.merchantId through relation
-      where.outlet = {
-        merchantId: userScope.merchantId
-      };
-      if (outletId) {
-        where.outletId = outletId;
-        // Remove outlet filter if outletId is specified
-        delete where.outlet;
-      }
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
-      // OUTLET users: Can only see orders from their assigned outlet
-      where.outletId = userScope.outletId;
-    }
-
-    console.log('🔍 Orders by date where clause:', where);
+    // Role-based filtering; a merchant's outletId stays inside its merchant (#362)
+    Object.assign(where, calendarScopeWhere(user, userScope, outletId));
 
     // ✅ FIX: Query ALL orders (no pagination) to filter by local date and get correct total
     // Then paginate the filtered results
@@ -147,26 +122,10 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📦 Found orders (before local date filter):', allOrders.length);
 
-    // ✅ FIX: Filter orders by exact local date using getLocalDateKey
-    // getLocalDateKey now converts UTC datetime to local date (VN UTC+7)
-    // No need to normalize first, as it would lose the local date information
+    // Keep orders whose day (in the caller's time zone, Vietnam by default) is the requested date
     const filteredOrders = allOrders.filter((order: any) => {
-      if (status === ORDER_STATUS.RESERVED || status === ORDER_STATUS.PICKUPED) {
-        // For RESERVED/PICKUPED: filter by pickupPlanAt
-        if (!order.pickupPlanAt) return false;
-        const orderDateKey = getLocalDateKey(order.pickupPlanAt);
-        return orderDateKey === dateStr;
-      } else if (status) {
-        // For other statuses: filter by createdAt
-        if (!order.createdAt) return false;
-        const orderDateKey = getLocalDateKey(order.createdAt);
-        return orderDateKey === dateStr;
-      } else {
-        // Default: filter by pickupPlanAt
-        if (!order.pickupPlanAt) return false;
-        const orderDateKey = getLocalDateKey(order.pickupPlanAt);
-        return orderDateKey === dateStr;
-      }
+      const value = order[dayField];
+      return Boolean(value) && keyOf(value) === dateStr;
     });
 
     // ✅ FIX: Calculate correct total after local date filtering
