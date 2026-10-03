@@ -5,7 +5,8 @@ Issue: #361 · Status: accepted · Intent: ./intent.md
 ## Behavior
 
 1. Allowed status changes: RENT `RESERVED→PICKUPED`, `PICKUPED→RETURNED`, `RESERVED→CANCELLED`,
-   `PICKUPED→CANCELLED`; SALE `COMPLETED→CANCELLED`, `RESERVED→COMPLETED`. Same status → allowed (no-op).
+   `PICKUPED→CANCELLED`; SALE `COMPLETED→CANCELLED`, `RESERVED→COMPLETED`, `RESERVED→CANCELLED` (older sale
+   orders). Same status → allowed (no-op).
 2. Any other change via `PATCH /api/orders/:id/status` or `PUT /api/orders/:id` → 400 `INVALID_ORDER_STATUS`,
    order not written.
 3. `PATCH /api/orders/:id/status` on an order outside the caller's outlet (OUTLET_ADMIN/STAFF) or merchant

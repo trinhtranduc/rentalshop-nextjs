@@ -31,8 +31,10 @@ describe('analytics period top products (#361)', () => {
       userRole: 'MERCHANT',
     });
 
-    expect(search).toHaveBeenCalled();
-    const where = (search.mock.calls[0][0] as any).where;
+    // The top-products query is the large one; the growth counts use limit: 1
+    const topProductsCall = search.mock.calls.find((call: any[]) => call[0].limit === 10000);
+    expect(topProductsCall).toBeDefined();
+    const where = (topProductsCall![0] as any).where;
     expect(where.status).toEqual({ not: 'CANCELLED' });
     expect(where.outletId).toEqual({ in: [1] });
   });
