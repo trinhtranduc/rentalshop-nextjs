@@ -208,6 +208,7 @@
   "OUTLET_NAME_EXISTS": "An outlet with this name already exists for this merchant",
   "CATEGORY_NAME_EXISTS": "Category with this name already exists",
   "PRODUCT_NAME_EXISTS": "A product with this name already exists. Please choose a different name.",
+  "STOCK_BELOW_RENTED": "Stock cannot be lower than the number of units currently rented out.",
   "PLAN_NAME_EXISTS": "A plan with this name already exists",
   "MERCHANT_DUPLICATE": "A merchant with this email or phone already exists. Please use a different email or phone number.",
   "EMAIL_ALREADY_EXISTS": "Email already exists",
