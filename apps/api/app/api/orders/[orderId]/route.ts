@@ -14,7 +14,7 @@ import {
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { API, USER_ROLE, ORDER_STATUS, VALIDATION } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
   calculateAmountDue,
@@ -562,6 +562,27 @@ export const PUT = async (
       } else {
         // Remove temporary field used for FormData processing
         delete body._existingOrder;
+      }
+
+      // The order itself must belong to the caller's merchant (#361), whatever outletId the body carries
+      if (user.role !== USER_ROLE.ADMIN) {
+        const orderOutlet = await db.outlets.findById(existingOrder.outletId);
+        if (!orderOutlet || orderOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+            { status: 403 }
+          );
+        }
+      }
+
+      // Only valid status changes (#361); iOS/Android send status through this route, and an echo of
+      // the current status is a no-op
+      if (body.status !== undefined && body.status !== null &&
+          !canChangeOrderStatus(existingOrder.orderType, existingOrder.status, body.status)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_ORDER_STATUS'),
+          { status: 400 }
+        );
       }
 
       // ✅ Validate outletId if provided in update

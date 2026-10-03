@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, canChangeOrderStatus } from '@rentalshop/constants';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -102,6 +102,32 @@ export async function PATCH(
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
+    // Scope (#361): outlet roles only their outlet, other merchant roles only their merchant
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (existingOrder.outletId !== userScope.outletId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    } else if (!(PLATFORM_OPS_ROLES as readonly string[]).includes(user.role)) {
+      const orderOutlet = await db.outlets.findById(existingOrder.outletId);
+      if (!orderOutlet || orderOutlet.merchantId !== userScope.merchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // Only valid status changes (#361); the same status again is a no-op
+    if (!canChangeOrderStatus(existingOrder.orderType, existingOrder.status, status)) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_ORDER_STATUS'),
+        { status: 400 }
       );
     }
 

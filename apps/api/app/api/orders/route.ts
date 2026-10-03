@@ -34,6 +34,7 @@ import {
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
 import { civilDayRange } from '../../../lib/outlet-operations-day';
+import { resolveOrderDeposits } from '../../../lib/order-deposits';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -802,9 +803,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           };
     }) || []);
 
-    // Use depositAmount from request (frontend calculates it from items)
-    // Backend trusts frontend value - no recalculation needed
-    const finalDepositAmount = parsed.data.depositAmount || 0;
+    // Use depositAmount from request (frontend calculates it from items); a SALE holds no deposit (#361)
+    const deposits = resolveOrderDeposits(
+      parsed.data.orderType,
+      parsed.data.depositAmount,
+      parsed.data.securityDeposit
+    );
 
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
@@ -815,8 +819,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       orderType: parsed.data.orderType,
       status: initialStatus,
       totalAmount: parsed.data.totalAmount,
-      depositAmount: finalDepositAmount, // ✅ Use calculated deposit or provided value
-      securityDeposit: parsed.data.securityDeposit || 0,
+      depositAmount: deposits.depositAmount,
+      securityDeposit: deposits.securityDeposit,
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
       discountType: parsed.data.discountType,

@@ -600,7 +600,12 @@ export async function buildAnalyticsPeriodReport(
 
   const computeTopProducts = async () => {
     const orders = await db.orders.search({
-      where: { ...outletFilter, createdAt: { gte: rangeStart, lte: rangeEnd } },
+      where: {
+        ...outletFilter,
+        createdAt: { gte: rangeStart, lte: rangeEnd },
+        // Rankings never count cancelled orders (#361)
+        status: { not: ORDER_STATUS.CANCELLED }
+      },
       limit: 10000
     });
     const orderIds = orders.data?.map((o: { id: number }) => o.id) || [];

@@ -85,6 +85,28 @@ export const ORDER_TYPE = {
 
 export type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 
+/**
+ * Status changes the API accepts (#361). Setting the current status again is always allowed (no-op).
+ * RENT: RESERVED → PICKUPED → RETURNED, cancel while RESERVED or PICKUPED.
+ * SALE: created COMPLETED, can be cancelled; RESERVED → COMPLETED kept for older sale orders.
+ */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderType, Partial<Record<OrderStatus, readonly OrderStatus[]>>> = {
+  [ORDER_TYPE.RENT]: {
+    [ORDER_STATUS.RESERVED]: [ORDER_STATUS.PICKUPED, ORDER_STATUS.CANCELLED],
+    [ORDER_STATUS.PICKUPED]: [ORDER_STATUS.RETURNED, ORDER_STATUS.CANCELLED],
+  },
+  [ORDER_TYPE.SALE]: {
+    [ORDER_STATUS.RESERVED]: [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED],
+    [ORDER_STATUS.COMPLETED]: [ORDER_STATUS.CANCELLED],
+  },
+};
+
+export function canChangeOrderStatus(orderType: string, from: string, to: string): boolean {
+  if (from === to) return true;
+  const allowed = ORDER_STATUS_TRANSITIONS[orderType as OrderType]?.[from as OrderStatus];
+  return Boolean(allowed && allowed.includes(to as OrderStatus));
+}
+
 // ============================================================================
 // USER ROLES
 // ============================================================================

@@ -92,6 +92,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PRODUCT_NOT_FOUND': 'Product not found',
   'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
+  'INVALID_ORDER_STATUS': 'This status change is not allowed for this order.',
   'CUSTOMER_NOT_FOUND': 'Customer not found',
   'CATEGORY_NOT_FOUND': 'Category not found',
   'PLAN_NOT_FOUND': 'Plan not found',
