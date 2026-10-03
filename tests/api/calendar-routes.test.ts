@@ -82,8 +82,8 @@ describe('calendar routes (#362)', () => {
     it("keeps a merchant's outlet filter inside its merchant", async () => {
       await countGET(req('/api/calendar/orders/count?month=10&year=2026&status=RESERVED&outletId=7'));
       const where = mockDb.orders.search.mock.calls[0][0].where;
-      expect(where.outletId).toBe(7);
-      expect(where.outlet).toEqual({ merchantId: 2 });
+      expect(where.outlet).toEqual({ id: 7, merchantId: 2 });
+      expect(where.outletId).toBeUndefined();
     });
   });
 
@@ -107,8 +107,8 @@ describe('calendar routes (#362)', () => {
     it("keeps a merchant's outlet filter inside its merchant", async () => {
       await byDateGET(req('/api/calendar/orders/by-date?date=2026-10-04&status=RESERVED&outletId=7'));
       const where = mockDb.orders.searchWithItems.mock.calls[0][0].where;
-      expect(where.outletId).toBe(7);
-      expect(where.outlet).toEqual({ merchantId: 2 });
+      expect(where.outlet).toEqual({ id: 7, merchantId: 2 });
+      expect(where.outletId).toBeUndefined();
     });
   });
 
@@ -125,7 +125,7 @@ describe('calendar routes (#362)', () => {
     it("keeps a merchant's outlet filter inside its merchant", async () => {
       await monthGET(req('/api/calendar/orders?startDate=2026-10-01&endDate=2026-10-31&outletId=7'));
       const where = mockDb.orders.searchWithItems.mock.calls[0][0].where;
-      expect(where.outlet).toEqual({ merchantId: 2 });
+      expect(where.outlet).toEqual({ id: 7, merchantId: 2 });
     });
   });
 });

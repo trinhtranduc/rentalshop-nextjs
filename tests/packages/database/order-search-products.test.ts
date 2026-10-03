@@ -28,8 +28,10 @@ describe('order search by product name (#362)', () => {
     expect(conditions).toContainEqual({ orderItems: { some: { productId: { in: [31, 32] } } } });
     expect(conditions).toContainEqual({ orderItems: { some: { productName: { contains: 'áo dài', mode: 'insensitive' } } } });
     const productQuery = mockPrisma.$queryRaw.mock.calls.find((call: any[]) => sqlText(call).includes('"Product"'))!;
-    expect(sqlText(productQuery)).toContain('"merchantId"');
-    expect(productQuery.slice(1)).toContain(2);
+    // The merchant filter is a nested SQL fragment among the values
+    const merchantFragment = productQuery.slice(1).find((value: any) => value && Array.isArray(value.strings));
+    expect(merchantFragment.strings.join(' ')).toContain('"merchantId"');
+    expect(merchantFragment.values).toContain(2);
   });
 
   it('keeps order number, phone and customer matches', async () => {

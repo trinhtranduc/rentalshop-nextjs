@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getLocalDateKey, normalizeDateToMidnightUTC } from '@rentalshop/utils';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { handleApiError, ResponseBuilder, getCalendarDayRangeInTimeZone } from '@rentalshop/utils';
+import { calendarDayKey, calendarScopeWhere, isValidTimeZone } from '../../../../../lib/calendar-scope';
+import { getOperationsDay } from '../../../../../lib/outlet-operations-day';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -24,6 +26,8 @@ const ordersCountQuerySchema = z.object({
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'To date must be in YYYY-MM-DD format').optional(),
   month: z.coerce.number().int().min(1).max(12).optional(), // Month (1-12)
   year: z.coerce.number().int().min(2000).max(2100).optional(), // Year (defaults to current year)
+  /** IANA zone of the device for day keys (#362); the Vietnam day when missing */
+  timeZone: z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone').optional(),
 });
 
 // ============================================================================
@@ -43,7 +47,8 @@ function buildWhereClause(
     status?: string;
     from?: string;
     to?: string;
-  }
+  },
+  dateField: 'pickupPlanAt' | 'returnPlanAt' = 'pickupPlanAt'
 ): any {
   const where: any = {};
 
@@ -74,13 +79,13 @@ function buildWhereClause(
       nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
     }
 
-    // Calendar always uses pickupPlanAt for filtering (ngày dự kiến lấy)
-    where.pickupPlanAt = {};
+    // Pickup plan for the calendar counts, return plan for the returns per day (#362)
+    where[dateField] = {};
     if (previousDayStartUTC) {
-      where.pickupPlanAt.gte = previousDayStartUTC;
+      where[dateField].gte = previousDayStartUTC;
     }
     if (nextDayEndUTC) {
-      where.pickupPlanAt.lte = nextDayEndUTC;
+      where[dateField].lte = nextDayEndUTC;
     }
     console.log('🔍 Filtering by pickupPlanAt (wider range):', {
       from: filters.from,
@@ -92,26 +97,8 @@ function buildWhereClause(
     });
   }
 
-  // Role-based access control
-  if (user.role === USER_ROLE.ADMIN) {
-    // ADMIN: Can see all orders, optionally filter by outletId
-    if (filters.outletId) {
-      where.outletId = filters.outletId;
-    }
-  } else if (user.role === USER_ROLE.MERCHANT) {
-    // MERCHANT: Can see orders from all their outlets
-    if (filters.outletId) {
-      where.outletId = filters.outletId;
-    } else {
-      where.outlet = { merchantId: userScope.merchantId };
-    }
-  } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
-    // OUTLET users: Can only see orders from their assigned outlet
-    const allowedOutletId = filters.outletId && filters.outletId === userScope.outletId
-      ? filters.outletId
-      : userScope.outletId;
-    where.outletId = allowedOutletId;
-  }
+  // Role-based access control; a merchant's outletId stays inside its merchant (#362)
+  Object.assign(where, calendarScopeWhere(user, userScope, filters.outletId));
 
   return where;
 }
@@ -123,18 +110,19 @@ function buildWhereClause(
  */
 function groupOrdersByDate(
   orders: any[],
-  dateField: 'pickupPlanAt' | 'createdAt'
+  dateField: 'pickupPlanAt' | 'returnPlanAt' | 'createdAt',
+  keyOf: (instant: Date | string) => string
 ): Record<string, number> {
   const countByDate: Record<string, number> = {};
 
   for (const order of orders) {
-    const dateValue = dateField === 'pickupPlanAt' ? order.pickupPlanAt : order.createdAt;
+    const dateValue = order[dateField];
     if (dateValue) {
       // ✅ FIX: Get local date key directly from UTC datetime
       // getLocalDateKey now converts UTC datetime to local date (VN UTC+7)
       // No need to normalize first, as it would lose the local date information
       // Example: "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) → "2026-02-25"
-      const dateKey = getLocalDateKey(dateValue);
+      const dateKey = keyOf(dateValue);
       if (dateKey) {
       countByDate[dateKey] = (countByDate[dateKey] || 0) + 1;
       }
@@ -150,16 +138,12 @@ function groupOrdersByDate(
  */
 function generateDateRange(from: string, to: string): string[] {
   const dates: string[] = [];
-  const startDate = new Date(from);
-  const endDate = new Date(to);
-  
-  const currentDate = new Date(startDate);
+  // `YYYY-MM-DD` keys walked on UTC dates, so the server's own time zone never shifts them
+  const currentDate = new Date(`${from}T00:00:00.000Z`);
+  const endDate = new Date(`${to}T00:00:00.000Z`);
   while (currentDate <= endDate) {
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDate.getDate()).padStart(2, '0');
-    dates.push(`${year}-${month}-${day}`);
-    currentDate.setDate(currentDate.getDate() + 1);
+    dates.push(currentDate.toISOString().slice(0, 10));
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
   }
   
   return dates;
@@ -224,7 +208,8 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
       const query = Object.fromEntries(searchParams.entries());
       const validatedQuery = ordersCountQuerySchema.parse(query);
 
-      const { outletId, merchantId, orderType, status, from, to, month, year } = validatedQuery;
+      const { outletId, merchantId, orderType, status, from, to, month, year, timeZone } = validatedQuery;
+      const keyOf = calendarDayKey(timeZone);
 
       // If month is provided, calculate from/to automatically
       let finalFrom = from;
@@ -280,7 +265,7 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
 
         // 🎯 Group orders by pickupPlanAt date (always use pickupPlanAt for calendar)
         // Status filter is already applied in where clause
-        const countByDate = groupOrdersByDate(ordersResult.data || [], dateField);
+        const countByDate = groupOrdersByDate(ordersResult.data || [], dateField, keyOf);
         
         console.log('📊 Orders grouped by pickupPlanAt:', {
           status: status || 'all',
@@ -292,6 +277,25 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
         const filledCountByDate = fillDateRange(countByDate, finalFrom, finalTo);
         
         const total = Object.values(filledCountByDate).reduce((sum, count) => sum + count, 0);
+
+        // Mobile calendar (#362): hand-overs (RESERVED by pickup plan) and returns (PICKUPED by return plan)
+        // per day, whatever `status` asked for, plus rentals already late on their return
+        const rangeFilters = { outletId, merchantId, orderType, from: finalFrom, to: finalTo };
+        const [pickupOrders, returnOrders, lateReturns] = await Promise.all([
+          db.orders.search({ where: buildWhereClause(user, userScope, { ...rangeFilters, status: ORDER_STATUS.RESERVED }), limit: 10000, page: 1 }),
+          db.orders.search({ where: buildWhereClause(user, userScope, { ...rangeFilters, status: ORDER_STATUS.PICKUPED }, 'returnPlanAt'), limit: 10000, page: 1 }),
+          db.orders.getStats({
+            ...buildWhereClause(user, userScope, { outletId, merchantId, orderType, status: ORDER_STATUS.PICKUPED }),
+            returnPlanAt: {
+              lt: timeZone ? getCalendarDayRangeInTimeZone(new Date(), timeZone).start : getOperationsDay().start,
+            },
+          }),
+        ]);
+        const pickupsByDate = fillDateRange(groupOrdersByDate(pickupOrders.data || [], 'pickupPlanAt', keyOf), finalFrom, finalTo);
+        const returnsByDate = fillDateRange(groupOrdersByDate(returnOrders.data || [], 'returnPlanAt', keyOf), finalFrom, finalTo);
+        const byDate = Object.fromEntries(
+          Object.keys(filledCountByDate).map((key) => [key, { pickups: pickupsByDate[key] || 0, returns: returnsByDate[key] || 0 }])
+        );
 
         console.log('📦 Calendar orders count:', {
           from: finalFrom,
@@ -307,6 +311,8 @@ export const GET = withPermissions(['orders.view'], { requireActiveSubscription:
           ResponseBuilder.success('ORDERS_COUNT_SUCCESS', {
             countByDate: filledCountByDate,
             total,
+            byDate,
+            lateReturns,
             filters: {
               outletId: outletId || null,
               merchantId: merchantId || null,
